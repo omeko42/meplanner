@@ -6,158 +6,76 @@
     "bistonDatetime": "2026-12-18T18:00:00+07:00",
     "timezone": "Asia/Jakarta",
     "autoRefreshSeconds": 120,
-    "googleSheetId": "1aajOKFxFktd56tkE--34gDWcoCWDDF_rOK8Q8_JpnlU",
-    "googleSiteUrl": "https://sites.google.com/d/1rgGH3cU_u-eqI3MiDvlc_WZRStWTG1NA/p/1Um8Tc_AAZRuZZ5BdxbqCqWds4qY9QUh3/edit",
-    "groomFullName": "John Doe",
-    "groomNickname": "John",
+    "googleSheetId": "",
+    "googleSiteUrl": "",
+    "totalBudgetCap": 0,
+    "showCoupleSection": true,
+    "showQuoteSection": true,
+    "showEvent1": true,
+    "showEvent2": true,
+    "showEvent3": true,
+    "showLoveStorySection": false,
+    "showGallerySection": false,
+    "showRsvpSection": true,
+    "showGiftSection": true,
+    "groomFullName": "Nama Mempelai Pria",
+    "groomNickname": "Mempelai Pria",
     "groomRankAndTitle": "Mempelai Pria",
-    "groomUnit": "Jakarta — Semarang",
-    "groomParents": "Putra Kasih dari Bapak H. Hendra Doe & Ibu Maria",
-    "groomOrigin": "Semarang, Jawa Tengah",
-    "groomInstagram": "@johndoe",
+    "groomUnit": "",
+    "groomParents": "Putra dari Bapak ... & Ibu ...",
+    "groomOrigin": "Semarang",
+    "groomInstagram": "",
     "groomPhotoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
-    "brideFullName": "Jane Doe",
-    "brideNickname": "Jane",
+    "brideFullName": "Nama Mempelai Wanita",
+    "brideNickname": "Mempelai Wanita",
     "brideTitle": "Mempelai Wanita",
-    "brideParents": "Putri Kasih dari Bapak Robert Doe & Ibu Elena",
-    "brideOrigin": "Jakarta Timur, DKI Jakarta",
-    "brideInstagram": "@janedoe",
+    "brideParents": "Putri dari Bapak ... & Ibu ...",
+    "brideOrigin": "Jakarta",
+    "brideInstagram": "",
     "bridePhotoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    "coverBgUrl": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85",
     "heroPrewedUrl": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85",
-    "event1Title": "Ibadah Biston & Pertemuan Keluarga Besar",
-    "event1Subtitle": "Ungkapan Syukur, Ramah Tamah & Doa Persiapan Pernikahan",
+    "pageBgUrl": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=2000&q=80",
+    "bgOverlayOpacity": 88,
+    "bgBlurIntensity": "sm",
+    "themePreset": "pearl-champagne",
+    "event1Title": "Acara Biston / Pertemuan Keluarga",
+    "event1Subtitle": "Ungkapan Syukur & Doa Persiapan Pernikahan",
     "event1DateLabel": "Jumat, 18 Desember 2026",
     "event1TimeLabel": "18.00 WIB – Selesai",
-    "event1Venue": "Kediaman Keluarga / Hall Pertemuan Semarang",
-    "event1Address": "Jl. Pemuda / Kawasan Simpang Lima, Kota Semarang, Jawa Tengah",
-    "event1MapsUrl": "https://maps.google.com/?q=Simpang+Lima+Semarang",
-    "event1Dresscode": "Batik Formal / Busana Rapi Sopan Nuansa Putih & Champagne",
-    "event2Title": "Ibadah Pemberkatan Nikah Kudus",
+    "event1Venue": "Lokasi Biston Semarang",
+    "event1Address": "Kota Semarang, Jawa Tengah",
+    "event1MapsUrl": "https://maps.google.com/?q=Semarang",
+    "event1Dresscode": "Busana Formal / Batik Rapi",
+    "event2Title": "Ibadah Pemberkatan Pernikahan",
     "event2Subtitle": "Peneguhan & Pemberkatan Janji Suci Pernikahan",
     "event2DateLabel": "Sabtu, 19 Desember 2026",
-    "event2TimeLabel": "09.00 WIB – 11.00 WIB",
-    "event2Venue": "Gereja Kristen / Katedral Semarang",
-    "event2Address": "Jl. Letjen Suprapto No. 32, Kota Lama, Semarang, Jawa Tengah",
-    "event2MapsUrl": "https://maps.google.com/?q=Gereja+Blenduk+Kota+Lama+Semarang",
-    "event2Dresscode": "Jas Formal / Kebaya & Batik Nuansa Putih / Ivory / Champagne",
-    "event3Title": "Resepsi Kehormatan & Ramah Tamah",
-    "event3Subtitle": "Perayaan Kasih & Jamuan Kehormatan Keluarga serta Sahabat",
+    "event2TimeLabel": "09.00 WIB – Selesai",
+    "event2Venue": "Gereja di Semarang",
+    "event2Address": "Kota Semarang, Jawa Tengah",
+    "event2MapsUrl": "https://maps.google.com/?q=Semarang",
+    "event2Dresscode": "Busana Formal Nuansa Putih / Champagne",
+    "event3Title": "Resepsi Pernikahan",
+    "event3Subtitle": "Ramah Tamah & Jamuan Kehormatan",
     "event3DateLabel": "Sabtu, 19 Desember 2026",
-    "event3TimeLabel": "18.30 WIB – 21.30 WIB",
-    "event3Venue": "Grand Ballroom Hotel Padma / Gumaya Tower Semarang",
-    "event3Address": "Jl. Sultan Agung / Jl. Gajahmada, Kota Semarang, Jawa Tengah",
-    "event3MapsUrl": "https://maps.google.com/?q=Padma+Hotel+Semarang",
-    "event3Dresscode": "Jas Lengkap / Batik Berlengan Panjang / Gaun Formal",
+    "event3TimeLabel": "18.30 WIB – Selesai",
+    "event3Venue": "Gedung Resepsi Semarang",
+    "event3Address": "Kota Semarang, Jawa Tengah",
+    "event3MapsUrl": "https://maps.google.com/?q=Semarang",
+    "event3Dresscode": "Jas Formal / Batik / Gaun",
     "quoteVerse": "Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.",
     "quoteSource": "Kolose 3 : 14",
     "invitationOpeningText": "Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, kami mengundang Bapak/Ibu/Saudara/i untuk hadir memberikan doa restu pada rangkaian acara pernikahan kami.",
-    "invitationClosingText": "Merupakan suatu kehormatan dan kebahagiaan yang mendalam bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.",
-    "giftRecipientName": "John Doe & Jane Doe",
-    "giftShippingAddress": "Kediaman Keluarga Besar di Kota Semarang, Jawa Tengah (Konfirmasi via WhatsApp)",
-    "bankAccounts": [
-      {
-        "id": "bank-1",
-        "bankName": "Bank Rakyat Indonesia (BRI)",
-        "accountNumber": "008301000123456",
-        "accountHolder": "JOHN DOE",
-        "branchOrNote": "Rekening Utama Mempelai Pria",
-        "type": "BANK"
-      },
-      {
-        "id": "bank-2",
-        "bankName": "Bank Central Asia (BCA)",
-        "accountNumber": "5420123456",
-        "accountHolder": "JANE DOE",
-        "branchOrNote": "Rekening Utama Mempelai Wanita",
-        "type": "BANK"
-      },
-      {
-        "id": "bank-3",
-        "bankName": "Bank Mandiri",
-        "accountNumber": "1350012345678",
-        "accountHolder": "JOHN DOE",
-        "branchOrNote": "KCP Semarang Pemuda",
-        "type": "BANK"
-      }
-    ],
-    "loveStory": [
-      {
-        "id": "story-1",
-        "dateLabel": "Awal Pertemuan • Jakarta",
-        "title": "Perkenalan & Langkah Pertama",
-        "location": "Jakarta",
-        "description": "Berawal dari pertemuan sederhana di tengah kesibukan aktivitas di Jakarta, percakapan hangat menumbuhkan keyakinan bahwa Tuhan mempertemukan kami di waktu yang tepat."
-      },
-      {
-        "id": "story-2",
-        "dateLabel": "Juli 2026 • Jakarta & Semarang",
-        "title": "Komitmen Keluarga & Persiapan Berkas",
-        "location": "Jakarta Timur & Semarang",
-        "description": "Kedua keluarga besar saling menguatkan komitmen. Kami mulai menata seluruh persiapan administrasi gereja, kependudukan, serta berkas persyaratan pernikahan."
-      },
-      {
-        "id": "story-3",
-        "dateLabel": "Oktober 2026 • Konseling Pranikah",
-        "title": "Pembinaan & Persiapan Pernikahan",
-        "location": "Jakarta & Semarang",
-        "description": "Mengikuti rangkaian konseling pranikah serta bimbingan perkawinan sebagai bekal membangun keluarga yang rukun, harmonis, dan diberkati."
-      },
-      {
-        "id": "story-4",
-        "dateLabel": "18 – 19 Desember 2026 • Semarang",
-        "title": "Biston & Pemberkatan Nikah Kudus",
-        "location": "Kota Semarang, Jawa Tengah",
-        "description": "Saat yang dinantikan tiba: mengikat janji suci pernikahan di hadapan Tuhan, keluarga besar, dan seluruh sahabat tercinta di Kota Semarang."
-      }
-    ],
-    "galleryPhotos": [
-      {
-        "id": "gal-1",
-        "title": "The Promise of Forever",
-        "caption": "Menatap masa depan bersama dalam kasih dan kesetiaan.",
-        "imageUrl": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80",
-        "category": "Prewedding"
-      },
-      {
-        "id": "gal-2",
-        "title": "Sacred Vows in Semarang",
-        "caption": "Persiapan menuju hari suci Biston & Pemberkatan 18-19 Desember 2026.",
-        "imageUrl": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1000&q=80",
-        "category": "Prewedding"
-      },
-      {
-        "id": "gal-3",
-        "title": "Two Hearts, One Journey",
-        "caption": "Dari Jakarta hingga Semarang, dipersatukan dalam doa.",
-        "imageUrl": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1000&q=80",
-        "category": "Momen Bersama"
-      },
-      {
-        "id": "gal-4",
-        "title": "Elegant Reception Venue",
-        "caption": "Suasana hangat penyambutan keluarga besar dan tamu kehormatan di Semarang.",
-        "imageUrl": "https://images.unsplash.com/photo-1519225336804-91fe9572de6e?auto=format&fit=crop&w=1000&q=80",
-        "category": "Venue Semarang"
-      },
-      {
-        "id": "gal-5",
-        "title": "Wedding Rings & Blessing",
-        "caption": "Lambang ikatan kasih yang tak berkesudahan.",
-        "imageUrl": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1000&q=80",
-        "category": "Persiapan & Sidang"
-      },
-      {
-        "id": "gal-6",
-        "title": "Walking Toward December 2026",
-        "caption": "Menghitung hari menuju awal kehidupan baru sebagai keluarga.",
-        "imageUrl": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1000&q=80",
-        "category": "Prewedding"
-      }
-    ],
-    "musicTitle": "Canon in D & Eternal Blessing (Instrumental Piano)",
-    "musicArtist": "Wedding Chamber Orchestra",
-    "updatedAt": "2026-10-17T23:00:00+07:00",
-    "updatedBy": "admin@wedding.id"
+    "invitationClosingText": "Merupakan suatu kehormatan dan kebahagiaan bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.",
+    "giftRecipientName": "Mempelai",
+    "giftShippingAddress": "Kota Semarang, Jawa Tengah",
+    "bankAccounts": [],
+    "loveStory": [],
+    "galleryPhotos": [],
+    "musicTitle": "Instrumental Wedding Piano",
+    "musicArtist": "Chamber Instrumental",
+    "updatedAt": "2026-10-17T23:30:00+07:00",
+    "updatedBy": "mempelai_pria"
   },
   "tasks": [
     {
@@ -174,7 +92,7 @@
       "doneAt": "21/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g2",
@@ -190,7 +108,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g3",
@@ -206,7 +124,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g4",
@@ -217,12 +135,12 @@
       "priority": "Tinggi",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Dokumen asli sudah diterima dan siap dilampirkan.",
+      "notes": "",
       "done": true,
       "doneAt": "27/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "27/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g5",
@@ -233,12 +151,12 @@
       "priority": "Tinggi",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Batal / menyesuaikan tata gereja.",
+      "notes": "Batal",
       "done": true,
       "doneAt": "21/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g6",
@@ -254,7 +172,7 @@
       "doneAt": "27/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "27/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g7",
@@ -265,28 +183,28 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "SELESAI",
-      "notes": "Sudah terdaftar di gereja.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "g8",
       "category": "Gereja",
-      "timelinePhase": "H-3 Bulan",
+      "timelinePhase": "H-6 Bulan",
       "title": "Selesaikan pembinaan/konseling pranikah",
-      "due": "2026-10-25",
+      "due": "2026-07-24",
       "priority": "Sedang",
       "owner": "Bersama",
-      "status": "PROSES",
-      "notes": "Menunggu keputusan dan jadwal sesi akhir dari pendeta pembina.",
+      "status": "BELUM",
+      "notes": "Menunggu keputusan dan jadwal",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedAt": "21/07/2026",
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p1",
@@ -302,7 +220,7 @@
       "doneAt": "21/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p2",
@@ -313,12 +231,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Seluruh fotokopi dan scan dokumen personel sudah lengkap.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p3",
@@ -329,12 +247,12 @@
       "priority": "Tinggi",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Sudah lengkap di map berkas utama.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p4",
@@ -345,12 +263,12 @@
       "priority": "Tinggi",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Diterbitkan oleh Bagrenmin / SDM Satker Bareskrim Polri.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p5",
@@ -361,12 +279,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Bermeterai Rp10.000 sesuai format SDM Polri.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p6",
@@ -377,12 +295,12 @@
       "priority": "Sedang",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Bermeterai Rp10.000 & ditandatangani calon istri.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p7",
@@ -393,12 +311,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Sudah ditandatangani Bapak & Ibu di Semarang.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p8",
@@ -414,7 +332,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p9",
@@ -425,12 +343,12 @@
       "priority": "Sedang",
       "owner": "Bersama",
       "status": "SELESAI",
-      "notes": "Pasfoto berdampingan PDH & Pakaian Nasional/Bhayangkari.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p10",
@@ -446,7 +364,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p11",
@@ -462,7 +380,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p12",
@@ -473,12 +391,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "SELESAI",
-      "notes": "Sidang BP4R / Pembinaan Perkawinan Polri telah dilaksanakan.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "p13",
@@ -488,13 +406,13 @@
       "due": "2026-11-01",
       "priority": "Tinggi",
       "owner": "Saya",
-      "status": "PROSES",
-      "notes": "Serahkan salinan ke gereja dan simpan asli di bundel dokumen hari-H.",
+      "status": "BELUM",
+      "notes": "Serahkan salinan ke gereja.",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "d1",
@@ -510,7 +428,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "d2",
@@ -521,12 +439,12 @@
       "priority": "Sedang",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Surat pengantar N1-N4 dari kelurahan Jakarta Timur.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "d3",
@@ -537,12 +455,12 @@
       "priority": "Sedang",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Dokumen asli dan legalisir sudah siap.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "d4",
@@ -558,7 +476,7 @@
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "d5",
@@ -569,12 +487,12 @@
       "priority": "Sedang",
       "owner": "Bersama",
       "status": "SELESAI",
-      "notes": "Data KTP saksi dari pihak keluarga pria dan wanita sudah lengkap.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "k1",
@@ -590,7 +508,7 @@
       "doneAt": "21/07/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "k2",
@@ -601,12 +519,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Dari Poliklinik / Biddokkes Polri.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "k3",
@@ -617,12 +535,12 @@
       "priority": "Sedang",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Sudah selesai pemeriksaan kesehatan.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "k4",
@@ -633,12 +551,12 @@
       "priority": "Tinggi",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Persyaratan administrasi kesehatan sidang perkawinan Polri.",
+      "notes": "",
       "done": true,
       "doneAt": "17/10/2026",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "task_0eb339f0-e1d2-4947-a7b8-d173230ce36f",
@@ -649,12 +567,12 @@
       "priority": "Sedang",
       "owner": "Calon",
       "status": "SELESAI",
-      "notes": "Lampiran kelengkapan berkas keluarga calon.",
+      "notes": "",
       "done": true,
       "doneAt": "08/08/2026",
       "createdAt": "23/07/2026",
       "updatedAt": "08/08/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "task_33a4016a-5838-488d-bdd8-c96744177a42",
@@ -665,12 +583,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Lampiran kelengkapan berkas orang tua.",
+      "notes": "",
       "done": true,
       "doneAt": "23/07/2026",
       "createdAt": "23/07/2026",
       "updatedAt": "23/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "task_7c9ab5d1-ea7b-4e94-90ca-3886beee3bf2",
@@ -681,92 +599,12 @@
       "priority": "Sedang",
       "owner": "Saya",
       "status": "SELESAI",
-      "notes": "Lampiran kelengkapan berkas orang tua.",
+      "notes": "",
       "done": true,
       "doneAt": "23/07/2026",
       "createdAt": "23/07/2026",
       "updatedAt": "23/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "v1",
-      "category": "Vendor & Logistik",
-      "timelinePhase": "H-3 Bulan",
-      "title": "Booking & DP Venue Resepsi serta Katering Utama di Semarang",
-      "due": "2026-09-20",
-      "priority": "Tinggi",
-      "owner": "Bersama",
-      "status": "SELESAI",
-      "notes": "Kapasitas 300-400 pax + meja VIP khusus Pimpinan Bareskrim Polri.",
-      "done": true,
-      "doneAt": "20/09/2026",
-      "createdAt": "15/08/2026",
-      "updatedAt": "20/09/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "v2",
-      "category": "Seserahan & Adat",
-      "timelinePhase": "H-1 Bulan",
-      "title": "Finalisasi Cincin Pernikahan, Alkitab Pernikahan & Kotak Seserahan",
-      "due": "2026-11-10",
-      "priority": "Tinggi",
-      "owner": "Bersama",
-      "status": "PROSES",
-      "notes": "Grafir nama kedua mempelai (19.12.2026) serta dekorasi baki hantaran.",
-      "done": false,
-      "doneAt": "",
-      "createdAt": "01/10/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "admin@wedding.id"
-    },
-    {
-      "id": "v3",
-      "category": "Vendor & Logistik",
-      "timelinePhase": "H-1 Bulan",
-      "title": "Cetak Undangan Hardcover Tebal (VIP Pejabat Polri) & Distribusi WA",
-      "due": "2026-11-15",
-      "priority": "Tinggi",
-      "owner": "Saya",
-      "status": "PROSES",
-      "notes": "Prioritas P1 - VIP (Kabareskrim, Karobinopsnal, Kapusident) diserahkan melalui Spri.",
-      "done": false,
-      "doneAt": "",
-      "createdAt": "10/10/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "v4",
-      "category": "Vendor & Logistik",
-      "timelinePhase": "H-1 Bulan",
-      "title": "Fitting Final Jas Pengantin, Gaun Pemberkatan & Seragam Keluarga",
-      "due": "2026-11-22",
-      "priority": "Sedang",
-      "owner": "Bersama",
-      "status": "BELUM",
-      "notes": "Termasuk seragam orang tua dan among tamu di Semarang.",
-      "done": false,
-      "doneAt": "",
-      "createdAt": "10/10/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "v5",
-      "category": "Vendor & Logistik",
-      "timelinePhase": "H-1 Bulan",
-      "title": "Koordinasi Hotel & Transportasi Keluarga Calon dari Jakarta Timur ke Semarang",
-      "due": "2026-11-28",
-      "priority": "Tinggi",
-      "owner": "Keluarga",
-      "status": "BELUM",
-      "notes": "Check-in keluarga besar Jakarta mulai 17 Desember 2026.",
-      "done": false,
-      "doneAt": "",
-      "createdAt": "10/10/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a1",
@@ -777,12 +615,12 @@
       "priority": "Sedang",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Cetak buku tata ibadah Biston untuk keluarga kedua mempelai.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a2",
@@ -793,12 +631,12 @@
       "priority": "Sedang",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Koordinasi lagu pujian, organis gereja, dan pembacaan ayat.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a3",
@@ -809,12 +647,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Technical meeting akhir bersama WO, majelis gereja, dan petugas Dukcapil.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a4",
@@ -825,12 +663,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "KTP, KK, Surat Izin Kawin Polri, berkas gereja, berkas Dukcapil, dan cincin.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a5",
@@ -841,12 +679,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Jumat, 18 Desember 2026 di Semarang.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "a6",
@@ -857,12 +695,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Sabtu, 19 Desember 2026 dilanjutkan Resepsi Kehormatan di Semarang.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "s1",
@@ -878,7 +716,7 @@
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "s2",
@@ -889,12 +727,12 @@
       "priority": "Sedang",
       "owner": "Bersama",
       "status": "BELUM",
-      "notes": "Pembaruan status perkawinan di Kartu Keluarga & KTP.",
+      "notes": "",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "s3",
@@ -905,12 +743,12 @@
       "priority": "Tinggi",
       "owner": "Saya",
       "status": "BELUM",
-      "notes": "Untuk administrasi kepegawaian dan kartu penunjukan istri (KPI Bhayangkari).",
+      "notes": "Untuk administrasi kepegawaian dan kartu penunjukan istri.",
       "done": false,
       "doneAt": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     }
   ],
   "guests": [
@@ -927,14 +765,14 @@
       "pax": 2,
       "confirmedPax": 2,
       "phone": "Hub Spri",
-      "address": "Lt. 17 Gedung Bareskrim Polri",
+      "address": "Lt. 17",
       "deliveryStatus": "Belum Disiapkan",
       "rsvpStatus": "Belum Konfirmasi",
       "attendanceStatus": "Belum Dicek",
       "notes": "Sudah termasuk Wakabareskrim Polri",
       "createdAt": "21/07/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "guest_c43f5913-524b-424a-97b0-54f89d199115",
@@ -949,14 +787,14 @@
       "pax": 2,
       "confirmedPax": 2,
       "phone": "Hub Spri",
-      "address": "Lt. 11 Gedung Bareskrim Polri",
+      "address": "Lt. 11",
       "deliveryStatus": "Belum Disiapkan",
       "rsvpStatus": "Belum Konfirmasi",
       "attendanceStatus": "Belum Dicek",
-      "notes": "Undangan Hardcover VIP + Konfirmasi via Spri Karobinopsnal",
+      "notes": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     },
     {
       "id": "guest_b245722b-be09-4153-94ce-64af91654625",
@@ -971,324 +809,59 @@
       "pax": 2,
       "confirmedPax": 2,
       "phone": "Hub Spri",
-      "address": "Lt. 14 Gedung Bareskrim Polri",
+      "address": "Lt. 14",
       "deliveryStatus": "Belum Disiapkan",
       "rsvpStatus": "Belum Konfirmasi",
       "attendanceStatus": "Belum Dicek",
-      "notes": "Undangan Hardcover VIP + Konfirmasi via Spri Kapusident",
+      "notes": "",
       "createdAt": "21/07/2026",
       "updatedAt": "21/07/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "guest-0004",
-      "invitationCode": "INV-0004",
-      "guestName": "KOMBES POL BURHANUDDIN, S.I.K., M.H.",
-      "guestType": "Pejabat/VIP",
-      "side": "Mempelai Pria",
-      "institution": "KABAGBINOPSNAL ROBINOPSNAL BARESKRIM POLRI",
-      "invitationFormat": "Cetak Tebal",
-      "priority": "P1 - VIP",
-      "cardQty": 1,
-      "pax": 2,
-      "confirmedPax": 2,
-      "phone": "081210009004",
-      "address": "Lt. 11 Gedung Bareskrim Polri",
-      "deliveryStatus": "Siap Kirim",
-      "rsvpStatus": "Hadir",
-      "attendanceStatus": "Belum Dicek",
-      "notes": "Atasan langsung di Robinopsnal Bareskrim Polri",
-      "createdAt": "10/08/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "guest-0005",
-      "invitationCode": "INV-0005",
-      "guestName": "KELUARGA BESAR BAPAK & IBU DI SEMARANG",
-      "guestType": "Keluarga",
-      "side": "Mempelai Pria",
-      "institution": "Keluarga Inti Mempelai Pria",
-      "invitationFormat": "Cetak & Digital",
-      "priority": "P1 - VIP",
-      "cardQty": 5,
-      "pax": 15,
-      "confirmedPax": 15,
-      "phone": "081225001122",
-      "address": "Kota Semarang, Jawa Tengah",
-      "deliveryStatus": "Sudah Diterima",
-      "rsvpStatus": "Hadir",
-      "attendanceStatus": "Belum Dicek",
-      "notes": "Keluarga inti dan panitia tuan rumah Semarang (Biston & Pemberkatan)",
-      "createdAt": "12/08/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "guest-0006",
-      "invitationCode": "INV-0006",
-      "guestName": "KELUARGA BESAR IBU MEMPELAI WANITA (JAKARTA TIMUR)",
-      "guestType": "Keluarga",
-      "side": "Mempelai Wanita",
-      "institution": "Keluarga Inti Mempelai Wanita",
-      "invitationFormat": "Cetak & Digital",
-      "priority": "P1 - VIP",
-      "cardQty": 5,
-      "pax": 12,
-      "confirmedPax": 12,
-      "phone": "081388002233",
-      "address": "Jakarta Timur, DKI Jakarta",
-      "deliveryStatus": "Sudah Diterima",
-      "rsvpStatus": "Hadir",
-      "attendanceStatus": "Belum Dicek",
-      "notes": "Rombongan keluarga Jakarta Timur menginap di hotel Semarang H-1",
-      "createdAt": "12/08/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "guest-0007",
-      "invitationCode": "INV-0007",
-      "guestName": "REKAN-REKAN STAF ROBINOPSNAL BARESKRIM POLRI",
-      "guestType": "Rekan Kerja/Polri",
-      "side": "Mempelai Pria",
-      "institution": "ROBINOPSNAL BARESKRIM POLRI",
-      "invitationFormat": "Digital WA",
-      "priority": "P2 - Utama",
-      "cardQty": 0,
-      "pax": 10,
-      "confirmedPax": 8,
-      "phone": "081298010710",
-      "address": "Gedung Bareskrim Polri Lt. 11, Jakarta Selatan",
-      "deliveryStatus": "Sudah Dikirim",
-      "rsvpStatus": "Hadir",
-      "attendanceStatus": "Belum Dicek",
-      "notes": "Rombongan rekan satu ruangan Bareskrim Polri",
-      "createdAt": "01/09/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
-    },
-    {
-      "id": "guest-0008",
-      "invitationCode": "INV-0008",
-      "guestName": "PDT. DR. YOHANES KRISTIANTO, M.Th.",
-      "guestType": "Tetangga/Gereja",
-      "side": "Bersama",
-      "institution": "Majelis & Pendeta Gereja Semarang",
-      "invitationFormat": "Cetak Reguler",
-      "priority": "P1 - VIP",
-      "cardQty": 1,
-      "pax": 2,
-      "confirmedPax": 2,
-      "phone": "081127008899",
-      "address": "Kota Semarang, Jawa Tengah",
-      "deliveryStatus": "Sudah Diterima",
-      "rsvpStatus": "Hadir",
-      "attendanceStatus": "Belum Dicek",
-      "notes": "Pendeta yang melayani ibadah Biston (18 Des) & Pemberkatan (19 Des)",
-      "createdAt": "15/09/2026",
-      "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "mempelai_pria"
     }
   ],
-  "wishes": [
-    {
-      "id": "wish-1",
-      "guestId": "guest-0004",
-      "invitationCode": "INV-0004",
-      "guestName": "Kombes Pol Burhanuddin, S.I.K., M.H.",
-      "institution": "Robinopsnal Bareskrim Polri",
-      "relation": "Pimpinan / Rekan Kedinasan",
-      "rsvpStatus": "Hadir",
-      "pax": 2,
-      "message": "Selamat menempuh hidup baru untuk kedua mempelai. Semoga seluruh persiapan hingga Biston 18 Desember dan Pemberkatan 19 Desember 2026 di Semarang berjalan lancar, serta menjadi keluarga yang selalu diberkati Tuhan YME.",
-      "createdAt": "2026-10-16T19:30:00+07:00",
-      "isPinned": true,
-      "replyFromCouple": "Terima kasih banyak Komandan atas doa restu, bimbingan, dan perhatiannya. Mohon doa restu selalu."
-    },
-    {
-      "id": "wish-2",
-      "guestId": "guest-0007",
-      "invitationCode": "INV-0007",
-      "guestName": "Rekan-Rekan Staf & Sahabat",
-      "institution": "Jakarta & Semarang",
-      "relation": "Rekan Sejawat",
-      "rsvpStatus": "Hadir",
-      "pax": 8,
-      "message": "Selamat menempuh hidup baru! Semoga lancar pemberkatan dan resepsinya di Semarang tanggal 19 Desember 2026. Kami siap hadir meramaikan di Semarang!",
-      "createdAt": "2026-10-17T10:15:00+07:00",
-      "isPinned": true
-    },
-    {
-      "id": "wish-3",
-      "guestId": "guest-0005",
-      "invitationCode": "INV-0005",
-      "guestName": "Keluarga Besar di Semarang & Jakarta",
-      "institution": "Keluarga Inti Kedua Mempelai",
-      "relation": "Keluarga Besar",
-      "rsvpStatus": "Hadir",
-      "pax": 15,
-      "message": "Tuhan memberkati setiap langkah persiapan kedua mempelai. Kiranya kasih senantiasa menjadi fondasi rumah tangga kalian berdua selamanya.",
-      "createdAt": "2026-10-17T14:40:00+07:00",
-      "isPinned": false
-    }
-  ],
-  "budgetItems": [
-    {
-      "id": "bgt-1",
-      "category": "Gedung & Venue",
-      "itemName": "Sewa Ballroom Resepsi & Ruangan VIP Semarang",
-      "vendorName": "Grand Ballroom Semarang Venue",
-      "vendorContact": "024-8412233 / Bpk. Hendra",
-      "pic": "Bersama",
-      "estimatedCost": 45000000,
-      "actualCost": 42500000,
-      "paidAmount": 25000000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-11-25",
-      "notes": "Sudah termasuk ruang transit VIP, genset backup, dan keamanan gedung.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-2",
-      "category": "Katering & Jamuan",
-      "itemName": "Katering Resepsi Utama (350 Pax) + Jamuan Biston (100 Pax)",
-      "vendorName": "Anggrek Catering Semarang",
-      "vendorContact": "081228009911 (Ibu Ratna)",
-      "pic": "Keluarga",
-      "estimatedCost": 65000000,
-      "actualCost": 63000000,
-      "paidAmount": 30000000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-12-01",
-      "notes": "Termasuk buffet utama, 5 stall gubukan favorit, dan meja jamuan VIP.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-3",
-      "category": "Dekorasi & Lighting",
-      "itemName": "Dekorasi Gereja Pemberkatan, Pelaminan & Floral Biston",
-      "vendorName": "Lumina Wedding Decor Semarang",
-      "vendorContact": "081326778899 (Kak Dimas)",
-      "pic": "Calon",
-      "estimatedCost": 28000000,
-      "actualCost": 27500000,
-      "paidAmount": 15000000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-12-05",
-      "notes": "Tema Pearl White, Ivory Lily & Champagne Gold Accent.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-4",
-      "category": "MUA & Busana",
-      "itemName": "Make Up Artist (MUA) Pengantin, Gaun Pemberkatan & Jas Formal",
-      "vendorName": "Clara Bridal & Attire Semarang",
-      "vendorContact": "081129004455 (Ci Clara)",
-      "pic": "Calon",
-      "estimatedCost": 22000000,
-      "actualCost": 21500000,
-      "paidAmount": 21500000,
-      "paymentStatus": "LUNAS",
-      "dueDate": "2026-11-15",
-      "notes": "Sudah lunas. Termasuk retouch resepsi dan makeup ibu kedua mempelai.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-5",
-      "category": "Dokumentasi Foto & Video",
-      "itemName": "Paket Foto & Video Cinematic (Biston 18 Des + Pemberkatan & Resepsi 19 Des)",
-      "vendorName": "FrameStory Photography Semarang",
-      "vendorContact": "085712349900 (Mas Rio)",
-      "pic": "Saya",
-      "estimatedCost": 16000000,
-      "actualCost": 15500000,
-      "paidAmount": 8000000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-12-10",
-      "notes": "2 Fotografer, 2 Videografer, Same Day Edit (SDE) video, dan 2 Album Magnetik.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-6",
-      "category": "Cincin & Seserahan",
-      "itemName": "Sepasang Cincin Kawin Emas Putih/Kuning & Paket Seserahan",
-      "vendorName": "Frank & Co / Jewellery Semarang",
-      "vendorContact": "024-86571122",
-      "pic": "Bersama",
-      "estimatedCost": 18500000,
-      "actualCost": 18000000,
-      "paidAmount": 18000000,
-      "paymentStatus": "LUNAS",
-      "dueDate": "2026-10-15",
-      "notes": "Sudah lunas dan grafir nama selesai.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-7",
-      "category": "Undangan & Souvenir",
-      "itemName": "Cetak Undangan Tebal VIP, Reguler & Souvenir Eksklusif Tamu",
-      "vendorName": "Kartika Printing & Craft Semarang",
-      "vendorContact": "081299887711",
-      "pic": "Saya",
-      "estimatedCost": 8500000,
-      "actualCost": 8200000,
-      "paidAmount": 8200000,
-      "paymentStatus": "LUNAS",
-      "dueDate": "2026-11-01",
-      "notes": "Undangan Cetak Tebal VIP + 300 pcs souvenir.",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-8",
-      "category": "Akomodasi & Transportasi",
-      "itemName": "Hotel Keluarga Besar (3 Malam di Semarang) & Transportasi",
-      "vendorName": "Hotel Santika / Padma Semarang",
-      "vendorContact": "024-8413115",
-      "pic": "Saya",
-      "estimatedCost": 15000000,
-      "actualCost": 14500000,
-      "paidAmount": 7500000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-12-01",
-      "notes": "5 Kamar Keluarga (Check-in 17 Des – Check-out 20 Des 2026).",
-      "updatedAt": "2026-10-17"
-    },
-    {
-      "id": "bgt-9",
-      "category": "Administrasi & Lainnya",
-      "itemName": "Administrasi Gereja, Persembahan Syukur, Dukcapil & Tim WO Hari-H",
-      "vendorName": "Harmoni Wedding Organizer Semarang",
-      "vendorContact": "081229900112 (Mbak Dinda WO)",
-      "pic": "Bersama",
-      "estimatedCost": 12000000,
-      "actualCost": 11500000,
-      "paidAmount": 6000000,
-      "paymentStatus": "DP_TERBAYAR",
-      "dueDate": "2026-12-10",
-      "notes": "Tim WO 8 kru untuk mengawal Biston (18 Des) serta Pemberkatan & Resepsi (19 Des).",
-      "updatedAt": "2026-10-17"
-    }
-  ],
+  "wishes": [],
+  "budgetItems": [],
   "adminUsers": [
     {
-      "id": "adm-1",
-      "username": "admin",
-      "nama": "Administrator Utama (Mempelai)",
+      "id": "usr-default-1",
+      "username": "mempelai_pria",
+      "nama": "Mempelai Pria",
       "role": "MEMPELAI_PRIA",
-      "jabatan": "Superadmin • Mempelai & Keluarga",
-      "email": "admin@wedding.id",
-      "password": "WeddingAdmin#2026"
+      "jabatan": "User Default • Mempelai Pria",
+      "email": "mempelai_pria@wedding.local",
+      "isDefaultUser": true,
+      "passwordHash": "scrypt$wedplan_2026_slt$218c070ec61d36ec110c06778fb79a6d4150a790506d0f2a1724fb8b142839c8e1c9f5e57ed4395bfc6bbc327ac324f28298d051626c878e830c303cd3860392"
     },
     {
-      "id": "adm-2",
-      "username": "panitia",
-      "nama": "Koordinator Keluarga & WO",
-      "role": "KOORDINATOR_WO",
-      "jabatan": "Koordinator Acara & Wedding Organizer",
-      "email": "panitia@wedding.id",
-      "password": "Panitia#2026"
+      "id": "usr-default-2",
+      "username": "mempelai_wanita",
+      "nama": "Mempelai Wanita",
+      "role": "MEMPELAI_WANITA",
+      "jabatan": "User Default • Mempelai Wanita",
+      "email": "mempelai_wanita@wedding.local",
+      "isDefaultUser": true,
+      "passwordHash": "scrypt$wedplan_2026_slt$8a317d2515d28a2a3fd8fc07d6c960b96d557ddb6b7be519fc282d05761f7994fb8579318fa64d240155ede56619468e6684a2147892373398273cf7765b8d50"
+    },
+    {
+      "id": "usr-default-3",
+      "username": "kel_pria",
+      "nama": "Keluarga Mempelai Pria",
+      "role": "KELUARGA_PRIA",
+      "jabatan": "User Default • Keluarga Pria",
+      "email": "kel_pria@wedding.local",
+      "isDefaultUser": true,
+      "passwordHash": "scrypt$wedplan_2026_slt$779a9c88fd83423f53b6524a62d5638c595d9db23fea0488ff0caa494a65bef085b53c9d6a65e442dc4cab4144bb4cc2c56ef233748c704c41f77c0c8f39360a"
+    },
+    {
+      "id": "usr-default-4",
+      "username": "kel_wanita",
+      "nama": "Keluarga Mempelai Wanita",
+      "role": "KELUARGA_WANITA",
+      "jabatan": "User Default • Keluarga Wanita",
+      "email": "kel_wanita@wedding.local",
+      "isDefaultUser": true,
+      "passwordHash": "scrypt$wedplan_2026_slt$dea17346944d14569df48b071716c213ad601ad9881eb94a4d26328f0b4aef4bb4a1ff149036887c2eea95e8947794d5dbe458006c927a9f676c8056ea98e6ca"
     }
   ],
-  "lastSyncedAt": "2026-10-17T16:21:36.906Z"
+  "lastSyncedAt": "2026-10-17T23:55:00+07:00"
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
-import { verifyAdminRequest } from '@/lib/auth';
+import { verifyAdminRequest, isPrivilegedDefaultOrSuperUser } from '@/lib/auth';
 import { inferTimelinePhase } from '@/data/seedData';
 import {
   TaskCategory,
@@ -16,6 +16,12 @@ import {
 } from '@/types';
 
 export const dynamic = 'force-dynamic';
+
+function sanitizeActor(raw?: string, fallback = 'mempelai_pria'): string {
+  const val = (raw || '').trim();
+  if (!val || val.includes('@')) return fallback;
+  return val;
+}
 
 function parseCsvRows(csvText: string): string[][] {
   const rows: string[][] = [];
@@ -134,7 +140,7 @@ export async function POST(req: NextRequest) {
             doneAt: doneAt || '',
             createdAt: createdAt || '21/07/2026',
             updatedAt: updatedAt || '17/10/2026',
-            updatedBy: updatedBy || 'agungkrisdianto98@gmail.com',
+            updatedBy: sanitizeActor(updatedBy, adminSession.username),
           });
           syncedTasksCount++;
         }
@@ -188,7 +194,7 @@ export async function POST(req: NextRequest) {
             notes: notes || '',
             createdAt: createdAt || '21/07/2026',
             updatedAt: updatedAt || '17/10/2026',
-            updatedBy: updatedBy || 'agungkrisdianto98@gmail.com',
+            updatedBy: sanitizeActor(updatedBy, adminSession.username),
           });
           syncedGuestsCount++;
         }
@@ -216,10 +222,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const hideBudget = !isPrivilegedDefaultOrSuperUser(adminSession);
     return NextResponse.json({
       success: true,
       message: `Sinkronisasi Google Sheets berhasil (${syncedTasksCount} tugas & ${syncedGuestsCount} tamu diselaraskan).`,
-      data: serverStore.getFullState(),
+      data: serverStore.getFullState(hideBudget),
     });
   } catch (error) {
     return NextResponse.json(

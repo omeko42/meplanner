@@ -6,6 +6,11 @@ import { serverStore } from '@/lib/serverStore';
 export const SESSION_COOKIE_NAME = 'wedding_admin_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
+// One-way scrypt hash of the out-of-system Superadmin (App Owner) identifier.
+// Plaintext never appears in code, UI, or git history.
+const SUPERADMIN_ID_HASH =
+  'scrypt$wedplan_2026_slt$f76d362f8a76b3d58327773d95012588f521905bf7b608af85fc600e89022cebe14d87b89e6e54993c32b65acbf5f2e6192d09d93db854439e9533cb90d3a4aa';
+
 interface SessionPayload {
   sub: string;
   username: string;
@@ -13,6 +18,7 @@ interface SessionPayload {
   nama: string;
   role: AdminUser['role'];
   jabatan: string;
+  isDefaultUser?: boolean;
   exp: number;
 }
 
@@ -70,7 +76,6 @@ export function verifyPasswordTimingSafe(
     const a = Buffer.from(inputPassword, 'utf-8');
     const b = Buffer.from(storedPassword, 'utf-8');
     if (a.length !== b.length) {
-      // Constant-time dummy comparison
       crypto.timingSafeEqual(a, a);
       return false;
     }
@@ -78,6 +83,35 @@ export function verifyPasswordTimingSafe(
   }
 
   return false;
+}
+
+/**
+ * Verifies whether the provided confirmation identifier matches the out-of-system
+ * Superadmin (App Owner) without storing the Superadmin email in plaintext.
+ */
+export function verifySuperadminIdentity(inputIdentifier: string): boolean {
+  const clean = inputIdentifier.trim().toLowerCase();
+  if (!clean) return false;
+
+  const envSuperadmin = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase();
+  if (envSuperadmin && verifyPasswordTimingSafe(clean, envSuperadmin)) {
+    return true;
+  }
+
+  return verifyPasswordTimingSafe(clean, undefined, SUPERADMIN_ID_HASH);
+}
+
+export function isPrivilegedDefaultOrSuperUser(user: AdminUser | null): boolean {
+  if (!user) return false;
+  if (user.role === 'PANITIA') return false;
+  return (
+    Boolean(user.isDefaultUser) ||
+    user.role === 'SUPERADMIN' ||
+    user.role === 'MEMPELAI_PRIA' ||
+    user.role === 'MEMPELAI_WANITA' ||
+    user.role === 'KELUARGA_PRIA' ||
+    user.role === 'KELUARGA_WANITA'
+  );
 }
 
 export function checkRateLimit(clientKey: string): {
@@ -103,7 +137,7 @@ export function recordFailedAttempt(clientKey: string): void {
   const now = Date.now();
   const prev = map.get(clientKey) || { attempts: 0, lockedUntil: 0 };
   const attempts = prev.attempts + 1;
-  const lockedUntil = attempts >= 5 ? now + 5 * 60 * 1000 : 0; // Lock 5 mins after 5 failed tries
+  const lockedUntil = attempts >= 5 ? now + 5 * 60 * 1000 : 0;
   map.set(clientKey, { attempts, lockedUntil });
 }
 
@@ -119,6 +153,7 @@ export function createSessionToken(user: AdminUser): string {
     nama: user.nama,
     role: user.role,
     jabatan: user.jabatan,
+    isDefaultUser: user.isDefaultUser,
     exp: Date.now() + SESSION_TTL_MS,
   };
   const payloadBase64 = Buffer.from(JSON.stringify(payload), 'utf-8').toString('base64url');
@@ -161,6 +196,7 @@ export function verifySessionToken(token?: string): AdminUser | null {
       nama: parsed.nama,
       role: parsed.role,
       jabatan: parsed.jabatan,
+      isDefaultUser: parsed.isDefaultUser,
     };
   } catch {
     return null;
@@ -190,30 +226,12 @@ export function authenticateAdminCredentials(
   const cleanId = identifier.trim().toLowerCase();
   const cleanPw = password.trim();
 
-  // 1. Check Production Environment Variable Override first (if configured on Vercel / .env.local)
-  const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const envUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
-  const envPassword = process.env.ADMIN_PASSWORD?.trim();
-  const envName = process.env.ADMIN_NAME || 'Administrator Utama';
-
-  if (envPassword && (cleanId === envEmail || cleanId === envUsername)) {
-    if (verifyPasswordTimingSafe(cleanPw, envPassword)) {
-      return {
-        id: 'env-admin-1',
-        username: envUsername,
-        nama: envName,
-        role: 'MEMPELAI_PRIA',
-        jabatan: 'Superadmin • Mempelai & Keluarga',
-        email: envEmail || 'admin@wedding.id',
-      };
-    }
-  }
-
-  // 2. Check Local Database Admin Users
+  // 1. Check Database Users (4 Default Users + Dynamic Panitia Users)
   const dbAdmins = serverStore.getAdminUsers();
   for (const user of dbAdmins) {
     const matchId =
-      user.username.toLowerCase() === cleanId || user.email.toLowerCase() === cleanId;
+      user.username.toLowerCase() === cleanId ||
+      (user.email && user.email.toLowerCase() === cleanId);
     if (
       matchId &&
       verifyPasswordTimingSafe(cleanPw, user.password, user.passwordHash)
@@ -225,6 +243,27 @@ export function authenticateAdminCredentials(
         role: user.role,
         jabatan: user.jabatan,
         email: user.email,
+        isDefaultUser: user.isDefaultUser,
+      };
+    }
+  }
+
+  // 2. Check Out-of-System Superadmin Owner (if logging in with Superadmin email + any Default User password or env password)
+  if (verifySuperadminIdentity(cleanId)) {
+    const envPw = process.env.ADMIN_PASSWORD?.trim();
+    const matchesEnvPw = envPw ? verifyPasswordTimingSafe(cleanPw, envPw) : false;
+    const matchesDefaultPw = dbAdmins.some(
+      (u) => u.isDefaultUser && verifyPasswordTimingSafe(cleanPw, u.password, u.passwordHash)
+    );
+    if (matchesEnvPw || matchesDefaultPw) {
+      return {
+        id: 'superadmin-owner',
+        username: 'superadmin',
+        nama: 'Pemilik Aplikasi (Superadmin)',
+        role: 'SUPERADMIN',
+        jabatan: 'Superadmin • Pemilik Sistem',
+        email: 'owner@system.local',
+        isDefaultUser: true,
       };
     }
   }

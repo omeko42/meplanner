@@ -140,6 +140,8 @@ export interface BudgetVendorItem {
   paymentStatus: VendorPaymentStatus;
   dueDate: string; // YYYY-MM-DD
   notes: string;
+  revisionNote?: string;
+  revisionCount?: number;
   updatedAt: string;
 }
 
@@ -169,7 +171,7 @@ export interface GalleryPhotoItem {
 }
 
 export interface WeddingSettings {
-  // Core Google Sheets Settings
+  // Core Settings
   siteTitle: string;
   subtitle: string;
   weddingDatetime: string;
@@ -178,6 +180,20 @@ export interface WeddingSettings {
   autoRefreshSeconds: number;
   googleSheetId: string;
   googleSiteUrl: string;
+
+  // Budget Target / Cap (Editable / Revisable)
+  totalBudgetCap: number;
+
+  // Section Visibility Toggles on Public Invitation
+  showCoupleSection: boolean;
+  showQuoteSection: boolean;
+  showEvent1: boolean;
+  showEvent2: boolean;
+  showEvent3: boolean;
+  showLoveStorySection: boolean;
+  showGallerySection: boolean;
+  showRsvpSection: boolean;
+  showGiftSection: boolean;
 
   // Couple Profiles
   groomFullName: string;
@@ -197,7 +213,7 @@ export interface WeddingSettings {
   brideInstagram: string;
   bridePhotoUrl: string;
 
-  // Event 1: Biston / Acara Keluarga (18 Des 2026)
+  // Event 1: Biston / Acara Keluarga
   event1Title: string;
   event1Subtitle: string;
   event1DateLabel: string;
@@ -207,7 +223,7 @@ export interface WeddingSettings {
   event1MapsUrl: string;
   event1Dresscode: string;
 
-  // Event 2: Pemberkatan / Akad Pernikahan (19 Des 2026 Pagi)
+  // Event 2: Pemberkatan / Akad Pernikahan
   event2Title: string;
   event2Subtitle: string;
   event2DateLabel: string;
@@ -217,7 +233,7 @@ export interface WeddingSettings {
   event2MapsUrl: string;
   event2Dresscode: string;
 
-  // Event 3: Resepsi Pernikahan (19 Des 2026 Siang/Malam)
+  // Event 3: Resepsi Pernikahan
   event3Title: string;
   event3Subtitle: string;
   event3DateLabel: string;
@@ -242,8 +258,13 @@ export interface WeddingSettings {
   loveStory: LoveStoryItem[];
   galleryPhotos: GalleryPhotoItem[];
 
-  // Hero Prewedding Background Photo
+  // Custom Background & Theme Settings
+  coverBgUrl?: string;
   heroPrewedUrl?: string;
+  pageBgUrl?: string;
+  bgOverlayOpacity?: number; // 40 to 95 (percentage of bright pearl overlay)
+  bgBlurIntensity?: 'none' | 'sm' | 'md' | 'lg';
+  themePreset?: 'pearl-champagne' | 'ivory-rose' | 'sage-garden' | 'royal-navy';
 
   // Music
   musicTitle: string;
@@ -254,10 +275,12 @@ export interface WeddingSettings {
 }
 
 export type AdminRole =
+  | 'SUPERADMIN'
   | 'MEMPELAI_PRIA'
   | 'MEMPELAI_WANITA'
-  | 'KELUARGA_INTI'
-  | 'KOORDINATOR_WO';
+  | 'KELUARGA_PRIA'
+  | 'KELUARGA_WANITA'
+  | 'PANITIA';
 
 export interface AdminUser {
   id: string;
@@ -266,6 +289,7 @@ export interface AdminUser {
   role: AdminRole;
   jabatan: string;
   email: string;
+  isDefaultUser?: boolean;
   password?: string;
   passwordHash?: string;
 }
@@ -279,4 +303,3 @@ export interface WeddingDatabaseSchema {
   adminUsers: AdminUser[];
   lastSyncedAt: string;
 }
-

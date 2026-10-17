@@ -122,6 +122,29 @@ function WeddingAppContent() {
     saveStoredAdminUser(user);
     setIsLoginModalOpen(false);
     setViewMode('ADMIN');
+    fetch('/api/wedding', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.data) {
+          setState(resData.data);
+          saveClientState(resData.data);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const handleSyncStateAndUser = (
+    nextState?: WeddingDatabaseSchema,
+    nextUser?: AdminUser
+  ) => {
+    if (nextState) {
+      setState(nextState);
+      saveClientState(nextState);
+    }
+    if (nextUser) {
+      setAdminUser(nextUser);
+      saveStoredAdminUser(nextUser);
+    }
   };
 
   const handleLogoutAdmin = async () => {
@@ -256,6 +279,7 @@ function WeddingAppContent() {
           onSyncGoogleSheets={handleSyncGoogleSheets}
           onImportBackup={handleImportBackup}
           onResetDefault={handleResetDefault}
+          onSyncStateAndUser={handleSyncStateAndUser}
         />
       ) : (
         <PublicInvitationView

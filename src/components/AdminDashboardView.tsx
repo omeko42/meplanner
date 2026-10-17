@@ -95,6 +95,10 @@ interface AdminDashboardViewProps {
   onSyncGoogleSheets: () => Promise<string>;
   onImportBackup: (payload: Partial<WeddingDatabaseSchema>) => Promise<void>;
   onResetDefault: () => Promise<void>;
+  onSyncStateAndUser?: (
+    nextState?: WeddingDatabaseSchema,
+    nextUser?: AdminUser
+  ) => void;
 }
 
 const TIMELINE_PHASES: TimelinePhase[] = [
@@ -130,6 +134,25 @@ const VENDOR_CATEGORIES: VendorCategory[] = [
   'Administrasi & Lainnya',
 ];
 
+const BACKGROUND_PRESETS = [
+  {
+    label: 'Siluet Prewedding Senja (Default)',
+    url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    label: 'White Pearl & Floral Arch',
+    url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    label: 'Romantis Outdoor Garden',
+    url: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    label: 'Minimalist Ivory Ballroom',
+    url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2000&q=85',
+  },
+];
+
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   state,
   adminUser,
@@ -148,14 +171,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSyncGoogleSheets,
   onImportBackup,
   onResetDefault,
+  onSyncStateAndUser,
 }) => {
+  const isPanitia = adminUser.role === 'PANITIA';
   const [activeTab, setActiveTab] = useState<AdminModuleTab>('readiness');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3200);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   // ============================================================================
@@ -290,7 +315,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       ...task,
       status: nextStatus,
       done: nextStatus === 'SELESAI',
-      updatedBy: adminUser.email,
+      updatedBy: adminUser.username,
     });
     showToast(`Status "${task.title}" diubah menjadi ${nextStatus}`);
   };
@@ -302,6 +327,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     'ALL'
   );
   const [editingBudget, setEditingBudget] = useState<Partial<BudgetVendorItem> | null>(null);
+  const [budgetCapInput, setBudgetCapInput] = useState<number>(
+    state.settings.totalBudgetCap || 0
+  );
 
   const filteredBudgetItems = useMemo(() => {
     if (budgetCategoryFilter === 'ALL') return state.budgetItems;
@@ -341,28 +369,56 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   }, [state.guests, guestTypeFilter, guestPriorityFilter, guestRsvpFilter, guestSearch]);
 
   // ============================================================================
-  // SETTINGS, SECURITY & BACKUP MODULE STATE
+  // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE
   // ============================================================================
   const [settingsForm, setSettingsForm] = useState<WeddingSettings>(state.settings);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [secUsername, setSecUsername] = useState(adminUser.username || 'admin');
-  const [secEmail, setSecEmail] = useState(adminUser.email || 'admin@wedding.id');
-  const [secName, setSecName] = useState(adminUser.nama || 'Administrator Utama');
-  const [secCurrentPassword, setSecCurrentPassword] = useState('');
+  // Default Users & Panitia Users from state.adminUsers
+  const defaultSystemUsers = useMemo(
+    () => (state.adminUsers || []).filter((u) => u.isDefaultUser),
+    [state.adminUsers]
+  );
+  const panitiaUsers = useMemo(
+    () => (state.adminUsers || []).filter((u) => !u.isDefaultUser || u.role === 'PANITIA'),
+    [state.adminUsers]
+  );
+
+  // State for editing a Default User (Requires Superadmin Confirmation)
+  const [selectedDefaultUserId, setSelectedDefaultUserId] = useState<string>(
+    adminUser.isDefaultUser ? adminUser.id : 'usr-mempelai-pria'
+  );
+  const [secUsername, setSecUsername] = useState(adminUser.username || '');
+  const [secName, setSecName] = useState(adminUser.nama || '');
   const [secNewPassword, setSecNewPassword] = useState('');
+  const [secSuperadminConfirm, setSecSuperadminConfirm] = useState('');
   const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
+
+  // State for adding/editing a Panitia User (No Superadmin confirmation needed)
+  const [panitiaEditId, setPanitiaEditId] = useState<string | undefined>(undefined);
+  const [panitiaUsername, setPanitiaUsername] = useState('');
+  const [panitiaNama, setPanitiaNama] = useState('');
+  const [panitiaJabatan, setPanitiaJabatan] = useState('Panitia / WO (Akses Non-Budgeting)');
+  const [panitiaPassword, setPanitiaPassword] = useState('');
+  const [isSavingPanitia, setIsSavingPanitia] = useState(false);
+
+  const handleSelectDefaultUserForEdit = (u: AdminUser) => {
+    setSelectedDefaultUserId(u.id);
+    setSecUsername(u.username);
+    setSecName(u.nama);
+    setSecNewPassword('');
+  };
 
   const handleSaveSettingsForm = async (e: React.FormEvent) => {
     e.preventDefault();
     await onUpdateSettings({
       ...settingsForm,
-      updatedBy: adminUser.email,
+      updatedBy: adminUser.username,
     });
-    showToast('Pengaturan konten undangan & sistem berhasil disimpan!');
+    showToast('Pengaturan tampilan & konten undangan berhasil disimpan!');
   };
 
-  const handleUpdateSecurityForm = async (e: React.FormEvent) => {
+  const handleUpdateDefaultUserForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdatingSecurity(true);
     try {
@@ -370,25 +426,90 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          currentPassword: secCurrentPassword,
-          newPassword: secNewPassword,
+          action: 'UPDATE_DEFAULT_USER',
+          targetUserId: selectedDefaultUserId,
           newUsername: secUsername,
-          newEmail: secEmail,
           newName: secName,
+          newPassword: secNewPassword,
+          superadminConfirmation: secSuperadminConfirm,
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        showToast(json.error || 'Gagal memperbarui kredensial keamanan Admin.');
+        showToast(json.error || 'Gagal memperbarui akun utama.');
         return;
       }
-      setSecCurrentPassword('');
       setSecNewPassword('');
-      showToast(json.message || 'Password & profil keamanan Admin berhasil diperbarui!');
+      setSecSuperadminConfirm('');
+      if (onSyncStateAndUser) {
+        onSyncStateAndUser(json.data, json.user);
+      }
+      showToast(json.message || 'Akun utama berhasil diperbarui!');
     } catch {
       showToast('Terjadi kesalahan saat menghubungi server otentikasi.');
     } finally {
       setIsUpdatingSecurity(false);
+    }
+  };
+
+  const handleUpsertPanitiaForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingPanitia(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'UPSERT_PANITIA',
+          id: panitiaEditId,
+          username: panitiaUsername,
+          nama: panitiaNama,
+          jabatan: panitiaJabatan,
+          password: panitiaPassword,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Gagal menyimpan akun Panitia.');
+        return;
+      }
+      setPanitiaEditId(undefined);
+      setPanitiaUsername('');
+      setPanitiaNama('');
+      setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
+      setPanitiaPassword('');
+      if (onSyncStateAndUser && json.data) {
+        onSyncStateAndUser(json.data);
+      }
+      showToast(json.message || 'Akun Panitia berhasil disimpan!');
+    } catch {
+      showToast('Gagal menghubungi server.');
+    } finally {
+      setIsSavingPanitia(false);
+    }
+  };
+
+  const handleDeletePanitiaAccount = async (id: string, username: string) => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'DELETE_PANITIA',
+          id,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Gagal menghapus akun Panitia.');
+        return;
+      }
+      if (onSyncStateAndUser && json.data) {
+        onSyncStateAndUser(json.data);
+      }
+      showToast(`Akun Panitia "${username}" berhasil dihapus.`);
+    } catch {
+      showToast('Gagal menghubungi server.');
     }
   };
 
@@ -477,11 +598,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
                 <div className="text-right leading-tight">
-                  <p className="text-xs font-bold text-stone-800 truncate max-w-[150px]">
+                  <p className="text-xs font-bold text-stone-800 truncate max-w-[160px]">
                     {adminUser.nama}
                   </p>
-                  <p className="text-[10px] text-[#9A742B] font-semibold">
-                    {adminUser.email}
+                  <p className="text-[10px] text-[#9A742B] font-semibold truncate max-w-[160px]">
+                    {isPanitia ? 'Panitia (Non-Budgeting)' : adminUser.jabatan}
                   </p>
                 </div>
               </div>
@@ -512,12 +633,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 icon: CheckSquare,
                 badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
               },
-              {
-                id: 'budget' as AdminModuleTab,
-                label: 'Budget & Vendor',
-                icon: Wallet,
-                badge: `${state.budgetItems.length} Item`,
-              },
+              ...(!isPanitia
+                ? [
+                    {
+                      id: 'budget' as AdminModuleTab,
+                      label: 'Anggaran & Revisi',
+                      icon: Wallet,
+                      badge: `${state.budgetItems.length} Item`,
+                    },
+                  ]
+                : []),
               {
                 id: 'guests' as AdminModuleTab,
                 label: 'Tamu & Generator WA',
@@ -526,7 +651,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               },
               {
                 id: 'settings' as AdminModuleTab,
-                label: 'Pengaturan & Keamanan',
+                label: isPanitia
+                  ? 'Pengaturan Undangan'
+                  : 'Pengaturan Undangan & Akun',
                 icon: Settings,
               },
             ].map((tab) => {
@@ -570,10 +697,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'readiness' && (
           <div className="space-y-6">
-            {/* Top Hero KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Top Hero KPI Cards (Symmetrical Height & Width) */}
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 ${
+                isPanitia ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+              } gap-4 items-stretch`}
+            >
               {/* Card 1: Overall Readiness % */}
-              <div className="bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-5 shadow-md border border-amber-400/30 flex flex-col justify-between">
+              <div className="h-full bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-5 shadow-md border border-amber-400/30 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
                     Kesiapan Pernikahan
@@ -596,13 +727,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     />
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-300">
+                <p className="text-[11px] text-slate-300 pt-2 border-t border-white/10">
                   {metrics.inProgressTasks} sedang diproses &bull; {metrics.pendingTasks} belum dimulai
                 </p>
               </div>
 
               {/* Card 2: Countdown Hari-H */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Countdown Hari-H
@@ -611,65 +742,69 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="my-3 grid grid-cols-2 gap-2">
                   <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
-                    <p className="text-[10px] font-bold uppercase text-amber-800">
-                      Biston (18 Des)
+                    <p className="text-[10px] font-bold uppercase text-amber-800 truncate">
+                      {state.settings.event1Title || 'Acara 1'}
                     </p>
                     <p className="text-2xl font-extrabold text-slate-900">
                       H-{metrics.daysToBiston}
                     </p>
                   </div>
                   <div className="p-2.5 rounded-2xl bg-slate-900 text-white">
-                    <p className="text-[10px] font-bold uppercase text-amber-300">
-                      Pemberkatan (19 Des)
+                    <p className="text-[10px] font-bold uppercase text-amber-300 truncate">
+                      {state.settings.event2Title || 'Pemberkatan'}
                     </p>
                     <p className="text-2xl font-extrabold text-amber-300">
                       H-{metrics.daysToWedding}
                     </p>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Lokasi Utama: Kota Semarang, Jawa Tengah
+                <p className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100 truncate">
+                  {state.settings.event2DateLabel} &bull; {state.settings.groomOrigin}
                 </p>
               </div>
 
-              {/* Card 3: Ringkasan Budget & Vendor */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Realisasi Budget Vendor
-                  </span>
-                  <Wallet className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="my-2">
-                  <p className="text-xl sm:text-2xl font-extrabold text-slate-900">
-                    {formatRupiah(metrics.totalActual)}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Terbayar (DP/Lunas):{' '}
-                    <span className="font-bold text-emerald-700">
-                      {formatRupiah(metrics.totalPaid)}
+              {/* Card 3: Ringkasan Budget & Revisi (Hidden for Panitia) */}
+              {!isPanitia && (
+                <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Anggaran &amp; Realisasi
                     </span>
-                  </p>
+                    <Wallet className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="my-3">
+                    <p className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                      {formatRupiah(metrics.totalActual)}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Pagu Target:{' '}
+                      <span className="font-bold text-slate-800">
+                        {formatRupiah(
+                          state.settings.totalBudgetCap || metrics.totalEstimated
+                        )}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
+                    <span className="text-emerald-700 font-bold">
+                      Dibayar: {formatRupiah(metrics.totalPaid)}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 font-bold">
+                      {state.budgetItems.length} Pos Biaya
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
-                  <span className="text-rose-600 font-bold">
-                    Sisa: {formatRupiah(metrics.totalRemaining)}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                    {metrics.lunasCount}/{state.budgetItems.length} Vendor Lunas
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Card 4: Statistik RSVP & Tamu VIP */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Statistik Tamu &amp; RSVP
                   </span>
                   <Users className="w-5 h-5 text-indigo-600" />
                 </div>
-                <div className="my-2">
+                <div className="my-3">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                       {metrics.totalGuests} Undangan
@@ -697,11 +832,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Breakdown Progress by Timeline & Domain Category */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left: Progress per Kategori (Polri, Gereja, Kependudukan, Acara, dll) */}
-              <div className="lg:col-span-6 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
+            {/* Breakdown Progress by Timeline & Domain Category (Symmetrical Equal-Height 2-Column Grid) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Left: Progress per Kategori */}
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
                   <div>
                     <h3 className="font-bold text-base text-slate-900">
                       Kesiapan per Domain (DB Wedding)
@@ -713,13 +848,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveTab('checklist')}
-                    className="text-xs font-bold text-[#0A192F] hover:underline"
+                    className="text-xs font-bold text-[#0A192F] hover:underline shrink-0"
                   >
                     Buka Checklist &rarr;
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex-1 overflow-y-auto space-y-3.5 py-4 pr-1">
                   {TASK_CATEGORIES.map((cat) => {
                     const catTasks = state.tasks.filter((t) => t.category === cat);
                     if (catTasks.length === 0) return null;
@@ -728,14 +863,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     ).length;
                     const pct = Math.round((doneCount / catTasks.length) * 100);
                     return (
-                      <div key={cat} className="space-y-1">
+                      <div key={cat} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-slate-800">{cat}</span>
                           <span className="font-mono font-bold text-slate-600">
                             {doneCount}/{catTasks.length} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
                               pct === 100
@@ -751,11 +886,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     );
                   })}
                 </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+                  <span>Total Tugas Terdata: {metrics.totalTasks} Tugas</span>
+                  <span className="font-bold text-emerald-700">
+                    {metrics.completedTasks} Selesai
+                  </span>
+                </div>
               </div>
 
               {/* Right: Urgent / Pending Priority Tasks */}
-              <div className="lg:col-span-6 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
                   <div>
                     <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
@@ -765,9 +907,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       Daftar tugas yang masih berstatus Proses / Belum Selesai
                     </p>
                   </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                    {metrics.pendingTasks + metrics.inProgressTasks} Aktif
+                  </span>
                 </div>
 
-                <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                <div className="flex-1 overflow-y-auto space-y-2.5 py-4 pr-1">
                   {state.tasks
                     .filter((t) => !t.done && t.status !== 'SELESAI')
                     .sort((a, b) => a.due.localeCompare(b.due))
@@ -815,6 +960,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                       </div>
                     ))}
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+                  <span>Klik &ldquo;Selesaikan&rdquo; untuk memperbarui progres secara instan</span>
+                  <span className="font-bold text-amber-700">
+                    {metrics.inProgressTasks} Sedang Proses
+                  </span>
                 </div>
               </div>
             </div>
@@ -1073,207 +1225,337 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
 
         {/* =====================================================================
-            MODUL 3: BUDGET & VENDOR TRACKER
+            MODUL 3: ANGGARAN, REVISI BUDGET & VENDOR (KHUSUS USER DEFAULT / NON-PANITIA)
            ===================================================================== */}
-        {activeTab === 'budget' && (
+        {activeTab === 'budget' && !isPanitia && (
           <div className="space-y-5">
-            {/* Top Summary Banner */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
-                  Budget &amp; Vendor Tracker Semarang
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500">
-                  Pencatatan estimasi biaya vs realisasi, status DP/Lunas vendor katering, gedung, dekor, MUA, dokumentasi &amp; seserahan
-                </p>
+            {/* Top Summary Banner & Editable Pagu Anggaran */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                    Akses Terbatas • Khusus Mempelai &amp; Keluarga Utama
+                  </span>
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 mt-1.5">
+                    Manajemen Anggaran, Revisi &amp; Vendor Pernikahan
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    Seluruh pos anggaran dapat ditambah, diubah, atau direvisi kapan saja sesuai kesepakatan keluarga
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingBudget({
+                      category: 'Gedung & Venue',
+                      itemName: '',
+                      vendorName: '',
+                      vendorContact: '',
+                      pic: 'Bersama',
+                      estimatedCost: 0,
+                      actualCost: 0,
+                      paidAmount: 0,
+                      paymentStatus: 'BELUM_DP',
+                      dueDate: '2026-12-01',
+                      notes: '',
+                      revisionNote: '',
+                    })
+                  }
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tambah Pos Anggaran / Vendor
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingBudget({
-                    category: 'Katering & Jamuan',
-                    itemName: '',
-                    vendorName: '',
-                    vendorContact: '',
-                    pic: 'Bersama',
-                    estimatedCost: 10000000,
-                    actualCost: 10000000,
-                    paidAmount: 0,
-                    paymentStatus: 'BELUM_DP',
-                    dueDate: '2026-12-01',
-                    notes: '',
-                  })
-                }
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                Tambah Vendor / Biaya
-              </button>
+
+              {/* Editable Pagu / Target Anggaran Keseluruhan */}
+              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-stone-900">
+                    Target Pagu Anggaran Keseluruhan (Editable / Revisi Pagu)
+                  </h4>
+                  <p className="text-xs text-stone-500">
+                    Tentukan atau revisi batas maksimal anggaran pernikahan Anda (dalam Rupiah)
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <span className="text-xs font-bold text-stone-500 absolute left-3 top-1/2 -translate-y-1/2">
+                      Rp
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={500000}
+                      value={budgetCapInput}
+                      onChange={(e) => setBudgetCapInput(Number(e.target.value) || 0)}
+                      placeholder="Contoh: 150000000"
+                      className="pl-9 pr-3.5 py-2 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm font-bold text-stone-900 w-48 sm:w-56"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onUpdateSettings({
+                        totalBudgetCap: Number(budgetCapInput) || 0,
+                        updatedBy: adminUser.username,
+                      });
+                      setSettingsForm((prev) => ({
+                        ...prev,
+                        totalBudgetCap: Number(budgetCapInput) || 0,
+                      }));
+                      showToast(
+                        `Pagu Anggaran diperbarui menjadi ${formatRupiah(
+                          Number(budgetCapInput) || 0
+                        )}`
+                      );
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shadow-xs shrink-0"
+                  >
+                    Simpan Pagu
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* 4 Financial Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-white rounded-2xl p-4 border border-slate-200">
+            {/* 4 Symmetrical Financial Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+              <div className="h-full bg-white rounded-2xl p-4 border border-slate-200 flex flex-col justify-between">
                 <p className="text-[11px] font-bold uppercase text-slate-500">
-                  Total Estimasi Pagu
+                  Target Pagu / Estimasi Awal
                 </p>
                 <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-1">
-                  {formatRupiah(metrics.totalEstimated)}
+                  {formatRupiah(
+                    state.settings.totalBudgetCap > 0
+                      ? state.settings.totalBudgetCap
+                      : metrics.totalEstimated
+                  )}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Total Estimasi Item: {formatRupiah(metrics.totalEstimated)}
                 </p>
               </div>
-              <div className="bg-white rounded-2xl p-4 border border-slate-200">
+              <div className="h-full bg-white rounded-2xl p-4 border border-slate-200 flex flex-col justify-between">
                 <p className="text-[11px] font-bold uppercase text-slate-500">
-                  Total Realisasi Kontrak
+                  Total Realisasi / Revisi
                 </p>
                 <p className="text-lg sm:text-2xl font-extrabold text-indigo-900 mt-1">
                   {formatRupiah(metrics.totalActual)}
                 </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Dari {state.budgetItems.length} pos anggaran aktif
+                </p>
               </div>
-              <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200">
+              <div className="h-full bg-emerald-50 rounded-2xl p-4 border border-emerald-200 flex flex-col justify-between">
                 <p className="text-[11px] font-bold uppercase text-emerald-800">
                   Sudah Dibayar (DP / Lunas)
                 </p>
                 <p className="text-lg sm:text-2xl font-extrabold text-emerald-700 mt-1">
                   {formatRupiah(metrics.totalPaid)}
                 </p>
+                <p className="text-[11px] text-emerald-700/80 mt-1">
+                  {metrics.lunasCount} pos berstatus Lunas
+                </p>
               </div>
-              <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200">
+              <div className="h-full bg-rose-50 rounded-2xl p-4 border border-rose-200 flex flex-col justify-between">
                 <p className="text-[11px] font-bold uppercase text-rose-800">
                   Sisa Harus Dilunasi
                 </p>
                 <p className="text-lg sm:text-2xl font-extrabold text-rose-700 mt-1">
                   {formatRupiah(metrics.totalRemaining)}
                 </p>
+                <p className="text-[11px] text-rose-700/80 mt-1">
+                  Selisih Realisasi dikurangi DP
+                </p>
               </div>
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setBudgetCategoryFilter('ALL')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
-                  budgetCategoryFilter === 'ALL'
-                    ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                    : 'bg-white text-slate-700 border-slate-200'
-                }`}
-              >
-                Semua Vendor ({state.budgetItems.length})
-              </button>
-              {VENDOR_CATEGORIES.map((vc) => {
-                const count = state.budgetItems.filter((b) => b.category === vc).length;
-                if (count === 0) return null;
-                return (
-                  <button
-                    key={vc}
-                    type="button"
-                    onClick={() => setBudgetCategoryFilter(vc)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
-                      budgetCategoryFilter === vc
-                        ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {vc} ({count})
-                  </button>
-                );
-              })}
-            </div>
+            {state.budgetItems.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setBudgetCategoryFilter('ALL')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
+                    budgetCategoryFilter === 'ALL'
+                      ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                      : 'bg-white text-slate-700 border-slate-200'
+                  }`}
+                >
+                  Semua Pos ({state.budgetItems.length})
+                </button>
+                {VENDOR_CATEGORIES.map((vc) => {
+                  const count = state.budgetItems.filter((b) => b.category === vc).length;
+                  if (count === 0) return null;
+                  return (
+                    <button
+                      key={vc}
+                      type="button"
+                      onClick={() => setBudgetCategoryFilter(vc)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
+                        budgetCategoryFilter === vc
+                          ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                          : 'bg-white text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {vc} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            {/* Vendor List Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredBudgetItems.map((item) => {
-                const effectiveTotal =
-                  item.actualCost > 0 ? item.actualCost : item.estimatedCost;
-                const remaining = Math.max(0, effectiveTotal - item.paidAmount);
-                const paidPct =
-                  effectiveTotal > 0
-                    ? Math.min(100, Math.round((item.paidAmount / effectiveTotal) * 100))
-                    : 0;
+            {/* Vendor List Cards or Clean Empty State */}
+            {filteredBudgetItems.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 border border-dashed border-slate-300 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <h3 className="font-serif text-lg font-bold text-slate-900">
+                  Belum Ada Pos Anggaran / Vendor
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+                  Seluruh data dummy telah dibersihkan. Silakan klik tombol di bawah untuk mulai mencatat estimasi anggaran, realisasi, dan revisi biaya pernikahan Anda.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingBudget({
+                      category: 'Gedung & Venue',
+                      itemName: '',
+                      vendorName: '',
+                      vendorContact: '',
+                      pic: 'Bersama',
+                      estimatedCost: 0,
+                      actualCost: 0,
+                      paidAmount: 0,
+                      paymentStatus: 'BELUM_DP',
+                      dueDate: '2026-12-01',
+                      notes: '',
+                      revisionNote: '',
+                    })
+                  }
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tambah Pos Anggaran Pertama
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {filteredBudgetItems.map((item) => {
+                  const effectiveTotal =
+                    item.actualCost > 0 ? item.actualCost : item.estimatedCost;
+                  const remaining = Math.max(0, effectiveTotal - item.paidAmount);
+                  const paidPct =
+                    effectiveTotal > 0
+                      ? Math.min(100, Math.round((item.paidAmount / effectiveTotal) * 100))
+                      : 0;
 
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-[#0A192F] text-amber-300 text-[10px] font-bold">
-                          {item.category}
-                        </span>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                            item.paymentStatus === 'LUNAS'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : item.paymentStatus === 'DP_TERBAYAR' ||
-                                item.paymentStatus === 'CICILAN'
-                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-rose-100 text-rose-800 border border-rose-300'
-                          }`}
-                        >
-                          {item.paymentStatus.replace('_', ' ')} ({paidPct}%)
-                        </span>
-                      </div>
-
-                      <h3 className="font-bold text-base text-slate-900">{item.itemName}</h3>
-                      <p className="text-xs font-semibold text-slate-700">
-                        Vendor: {item.vendorName || '-'} &bull; Kontak: {item.vendorContact || '-'}
-                      </p>
-                      {item.notes && (
-                        <p className="text-xs text-slate-500 leading-relaxed">{item.notes}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
-                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl">
-                        <div>
-                          <p className="text-[10px] text-slate-500">Estimasi / Kontrak</p>
-                          <p className="font-bold text-slate-900">
-                            {formatRupiah(effectiveTotal)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500">Sudah Dibayar</p>
-                          <p className="font-bold text-emerald-700">
-                            {formatRupiah(item.paidAmount)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500">Sisa Pelunasan</p>
-                          <p className="font-bold text-rose-600">{formatRupiah(remaining)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-slate-500">
-                          Jatuh Tempo: <strong className="text-slate-800">{item.dueDate}</strong>{' '}
-                          &bull; PIC: <strong>{item.pic}</strong>
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setEditingBudget(item)}
-                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1"
+                  return (
+                    <div
+                      key={item.id}
+                      className="h-full bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-lg bg-[#0A192F] text-amber-300 text-[10px] font-bold">
+                              {item.category}
+                            </span>
+                            {(item.revisionCount || 0) > 0 && (
+                              <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold">
+                                Revisi ke-{item.revisionCount}
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                              item.paymentStatus === 'LUNAS'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : item.paymentStatus === 'DP_TERBAYAR' ||
+                                  item.paymentStatus === 'CICILAN'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-rose-100 text-rose-800 border border-rose-300'
+                            }`}
                           >
-                            <Edit3 className="w-3.5 h-3.5" /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              await onDeleteBudget(item.id);
-                              showToast(`Vendor "${item.itemName}" dihapus.`);
-                            }}
-                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            {item.paymentStatus.replace('_', ' ')} ({paidPct}%)
+                          </span>
+                        </div>
+
+                        <h3 className="font-bold text-base text-slate-900">{item.itemName}</h3>
+                        <p className="text-xs font-semibold text-slate-700">
+                          Vendor: {item.vendorName || '-'} &bull; Kontak:{' '}
+                          {item.vendorContact || '-'}
+                        </p>
+                        {item.notes && (
+                          <p className="text-xs text-slate-500 leading-relaxed">
+                            {item.notes}
+                          </p>
+                        )}
+                        {item.revisionNote && (
+                          <p className="text-xs text-indigo-800 bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-indigo-100">
+                            <strong>Catatan Revisi:</strong> {item.revisionNote}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 pt-3 border-t border-slate-100 text-xs mt-auto">
+                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl">
+                          <div>
+                            <p className="text-[10px] text-slate-500">Estimasi Awal</p>
+                            <p className="font-bold text-slate-700">
+                              {formatRupiah(item.estimatedCost)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-500">Realisasi / Revisi</p>
+                            <p className="font-bold text-indigo-900">
+                              {formatRupiah(effectiveTotal)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-500">Sisa Pelunasan</p>
+                            <p className="font-bold text-rose-600">
+                              {formatRupiah(remaining)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] text-slate-500">
+                            Dibayar:{' '}
+                            <strong className="text-emerald-700">
+                              {formatRupiah(item.paidAmount)}
+                            </strong>{' '}
+                            &bull; PIC: <strong>{item.pic}</strong>
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEditingBudget(item)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" /> Edit / Revisi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await onDeleteBudget(item.id);
+                                showToast(`Pos "${item.itemName}" dihapus.`);
+                              }}
+                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -1782,91 +2064,806 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Pengaturan Konten Undangan Form */}
+            {/* Pengaturan Tampilan, Custom Background & Konten Undangan Form */}
             <form
               onSubmit={handleSaveSettingsForm}
               className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 text-xs sm:text-sm"
             >
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h3 className="font-serif text-xl font-bold text-slate-900">
-                    Pengaturan Konten Undangan Digital &amp; Jadwal Hari-H
+                    Pengaturan Undangan Digital, Custom Background &amp; Jadwal Acara
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Perubahan di bawah akan langsung memperbarui tampilan Undangan Digital Tamu secara real-time
+                    Atur background custom, transparansi, bagian apa saja yang ditampilkan, tanggal acara, ayat, profil mempelai, hingga rekening amplop digital
                   </p>
                 </div>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-sm"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-sm shrink-0"
                 >
                   <Save className="w-4 h-4" />
-                  Simpan Perubahan
+                  Simpan Pengaturan Undangan
                 </button>
               </div>
 
-              {/* Profil Mempelai Pria & Wanita */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                    Profil Mempelai Pria
-                  </h4>
+              {/* 1. PENGATURAN CUSTOM BACKGROUND, WALLPAPER & TRANSPARANSI */}
+              <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Nama Lengkap &amp; Gelar
-                    </label>
+                    <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[#8B6914]">
+                      1. Pengaturan Custom Background &amp; Efek Transparansi Undangan
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      Gunakan URL gambar dari mana saja (Unsplash, Google Drive direct link, Imgur, dll) atau pilih preset di bawah
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Preset Selector */}
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1.5 text-xs">
+                    Pilih Cepat Preset Background Tema Cerah / Siluet Prewedding:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 items-stretch">
+                    {BACKGROUND_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            coverBgUrl: preset.url,
+                            heroPrewedUrl: preset.url,
+                            pageBgUrl: preset.url,
+                          })
+                        }
+                        className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200 hover:border-[#D4AF37] text-left transition-all flex items-center gap-2.5"
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="w-10 h-10 rounded-lg object-cover shrink-0 border border-stone-200"
+                        />
+                        <span className="text-[11px] font-bold text-stone-800 leading-tight">
+                          {preset.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3 Custom Background URL Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
+                    <div>
+                      <label className="block font-bold text-stone-800 mb-1">
+                        URL Background Cover Pembuka
+                      </label>
+                      <p className="text-[11px] text-stone-400 mb-2">
+                        Tampil di layar pertama saat tamu membuka link undangan
+                      </p>
+                    </div>
                     <input
                       type="text"
-                      value={settingsForm.groomFullName}
+                      value={settingsForm.coverBgUrl || ''}
                       onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
+                        setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
                       }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+
+                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Nama Panggilan
+                      <label className="block font-bold text-stone-800 mb-1">
+                        URL Banner Utama / Foto Prewedding
                       </label>
-                      <input
-                        type="text"
-                        value={settingsForm.groomNickname}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, groomNickname: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
+                      <p className="text-[11px] text-stone-400 mb-2">
+                        Tampil pada kartu utama di atas Countdown Hari-H
+                      </p>
                     </div>
+                    <input
+                      type="text"
+                      value={settingsForm.heroPrewedUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
+                    />
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
+                    <div>
+                      <label className="block font-bold text-stone-800 mb-1">
+                        URL Background Wallpaper Halaman
+                      </label>
+                      <p className="text-[11px] text-stone-400 mb-2">
+                        Background tetap (fixed) di belakang seluruh kartu undangan
+                      </p>
+                    </div>
+                    <input
+                      type="text"
+                      value={settingsForm.pageBgUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Overlay Opacity & Blur Controls */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="bg-white p-3.5 rounded-xl border border-stone-200">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="font-bold text-stone-800">
+                        Tingkat Kecerahan Lapisan Transparan (Pearl Veil)
+                      </label>
+                      <span className="font-mono font-bold text-[#9A742B]">
+                        {settingsForm.bgOverlayOpacity ?? 88}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={45}
+                      max={95}
+                      value={settingsForm.bgOverlayOpacity ?? 88}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          bgOverlayOpacity: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-[#B68D40]"
+                    />
+                    <div className="flex justify-between text-[10px] text-stone-400 mt-1">
+                      <span>45% (Foto Lebih Jelas)</span>
+                      <span>88% (Putih Lembut Ideal)</span>
+                      <span>95% (Putih Bersih)</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-stone-200">
+                    <label className="block font-bold text-stone-800 mb-1.5">
+                      Efek Blur Kaca (Glassmorphism Background)
+                    </label>
+                    <select
+                      value={settingsForm.bgBlurIntensity || 'sm'}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                    >
+                      <option value="none">Tanpa Blur (Foto Tajam)</option>
+                      <option value="sm">Blur Halus (Rekomendasi)</option>
+                      <option value="md">Blur Sedang (Soft Frosted)</option>
+                      <option value="lg">Blur Kuat (Deep Glass)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. SAKLAR TAMPILAN SEKSI UNDANGAN (VISIBILITY TOGGLES) */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-900">
+                    2. Pengaturan Tampilan Seksi Undangan (Pilih Bagian yang Ditampilkan)
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Centang atau nonaktifkan bagian undangan yang ingin ditampilkan kepada tamu
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+                  {[
+                    {
+                      key: 'showQuoteSection' as const,
+                      label: 'Kutipan Ayat Suci / Doa',
+                    },
+                    {
+                      key: 'showCoupleSection' as const,
+                      label: 'Profil Kedua Mempelai',
+                    },
+                    {
+                      key: 'showEvent1' as const,
+                      label: 'Acara 1 (Biston / Keluarga)',
+                    },
+                    {
+                      key: 'showEvent2' as const,
+                      label: 'Acara 2 (Pemberkatan / Akad)',
+                    },
+                    {
+                      key: 'showEvent3' as const,
+                      label: 'Acara 3 (Resepsi Pernikahan)',
+                    },
+                    {
+                      key: 'showLoveStorySection' as const,
+                      label: 'Kisah Kasih (Love Story)',
+                    },
+                    {
+                      key: 'showGallerySection' as const,
+                      label: 'Galeri Foto Prewedding',
+                    },
+                    {
+                      key: 'showRsvpSection' as const,
+                      label: 'Form RSVP & Buku Tamu',
+                    },
+                    {
+                      key: 'showGiftSection' as const,
+                      label: 'Amplop Digital / Rekening',
+                    },
+                  ].map((item) => {
+                    const checked = settingsForm[item.key] !== false;
+                    return (
+                      <label
+                        key={item.key}
+                        className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                          checked
+                            ? 'bg-white border-[#D4AF37] shadow-2xs'
+                            : 'bg-slate-100/70 border-slate-200 text-slate-400'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              [item.key]: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 accent-[#B68D40] rounded"
+                        />
+                        <span className="font-bold text-xs text-stone-800">
+                          {item.label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. TANGGAL COUNTDOWN MANDIRI & JADWAL 3 ACARA (BISTON, PEMBERKATAN, RESEPSI) */}
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+                  <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-900">
+                    3. Pengaturan Tanggal Countdown Utama &amp; Rangkaian Acara Mandiri
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
-                        Pangkat / Jabatan
+                        Waktu Countdown Utama (Pemberkatan / Hari-H)
                       </label>
                       <input
-                        type="text"
-                        value={settingsForm.groomRankAndTitle}
+                        type="datetime-local"
+                        value={(settingsForm.weddingDatetime || '2026-12-19T09:00').slice(
+                          0,
+                          16
+                        )}
                         onChange={(e) =>
                           setSettingsForm({
                             ...settingsForm,
-                            groomRankAndTitle: e.target.value,
+                            weddingDatetime: `${e.target.value}:00+07:00`,
                           })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Waktu Countdown Acara 1 (Biston / Keluarga)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={(settingsForm.bistonDatetime || '2026-12-18T18:00').slice(
+                          0,
+                          16
+                        )}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            bistonDatetime: `${e.target.value}:00+07:00`,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Subjudul Ringkas (Tampil di Header &amp; Footer)
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.subtitle}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, subtitle: e.target.value })
                         }
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Keterangan Orang Tua Mempelai Pria
-                    </label>
+                </div>
+
+                {/* 3 Symmetrical Event Editors */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+                  {/* Acara 1 */}
+                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs uppercase text-amber-800">
+                          Acara 1 (Biston / Keluarga)
+                        </h4>
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {settingsForm.showEvent1 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={settingsForm.event1Title}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event1Title: e.target.value })
+                        }
+                        placeholder="Judul Acara 1"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1Subtitle}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event1Subtitle: e.target.value,
+                          })
+                        }
+                        placeholder="Subjudul Acara 1"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1DateLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event1DateLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Hari & Tanggal (misal: Jumat, 18 Desember 2026)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1TimeLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event1TimeLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Jam Pelaksanaan"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1Venue}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event1Venue: e.target.value })
+                        }
+                        placeholder="Nama Tempat / Venue"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1Address}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event1Address: e.target.value,
+                          })
+                        }
+                        placeholder="Alamat Lengkap"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event1Dresscode}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event1Dresscode: e.target.value,
+                          })
+                        }
+                        placeholder="Dresscode"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
                     <input
                       type="text"
-                      value={settingsForm.groomParents}
+                      value={settingsForm.event1MapsUrl}
                       onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, groomParents: e.target.value })
+                        setSettingsForm({ ...settingsForm, event1MapsUrl: e.target.value })
+                      }
+                      placeholder="Link Google Maps"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
+                    />
+                  </div>
+
+                  {/* Acara 2 */}
+                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs uppercase text-amber-800">
+                          Acara 2 (Pemberkatan / Akad)
+                        </h4>
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {settingsForm.showEvent2 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={settingsForm.event2Title}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event2Title: e.target.value })
+                        }
+                        placeholder="Judul Acara 2"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2Subtitle}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event2Subtitle: e.target.value,
+                          })
+                        }
+                        placeholder="Subjudul Acara 2"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2DateLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event2DateLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Hari & Tanggal (misal: Sabtu, 19 Desember 2026)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2TimeLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event2TimeLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Jam Pelaksanaan"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2Venue}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event2Venue: e.target.value })
+                        }
+                        placeholder="Nama Gereja / Tempat"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2Address}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event2Address: e.target.value,
+                          })
+                        }
+                        placeholder="Alamat Lengkap"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event2Dresscode}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event2Dresscode: e.target.value,
+                          })
+                        }
+                        placeholder="Dresscode"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={settingsForm.event2MapsUrl}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, event2MapsUrl: e.target.value })
+                      }
+                      placeholder="Link Google Maps"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
+                    />
+                  </div>
+
+                  {/* Acara 3 */}
+                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs uppercase text-amber-800">
+                          Acara 3 (Resepsi Pernikahan)
+                        </h4>
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {settingsForm.showEvent3 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={settingsForm.event3Title}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event3Title: e.target.value })
+                        }
+                        placeholder="Judul Acara 3"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3Subtitle}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event3Subtitle: e.target.value,
+                          })
+                        }
+                        placeholder="Subjudul Acara 3"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3DateLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event3DateLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Hari & Tanggal (misal: Sabtu, 19 Desember 2026)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3TimeLabel}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event3TimeLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Jam Pelaksanaan"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3Venue}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, event3Venue: e.target.value })
+                        }
+                        placeholder="Nama Gedung / Ballroom"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3Address}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event3Address: e.target.value,
+                          })
+                        }
+                        placeholder="Alamat Lengkap"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={settingsForm.event3Dresscode}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            event3Dresscode: e.target.value,
+                          })
+                        }
+                        placeholder="Dresscode"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={settingsForm.event3MapsUrl}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, event3MapsUrl: e.target.value })
+                      }
+                      placeholder="Link Google Maps"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. AYAT SUCI / KUTIPAN & TEKS PEMBUKA/PENUTUP UNDANGAN */}
+              <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
+                <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[#8B6914]">
+                  4. Kutipan Ayat Suci &amp; Kalimat Pembuka / Penutup Undangan (Editable)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Isi Kutipan / Ayat Pernikahan
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsForm.quoteVerse}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
                       }
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                     />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Sumber Ayat / Kutipan
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.quoteSource}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
+                      }
+                      placeholder="Contoh: Kolose 3 : 14"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Kalimat Pembuka Undangan
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsForm.invitationOpeningText}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          invitationOpeningText: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Kalimat Penutup Undangan
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsForm.invitationClosingText}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          invitationClosingText: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. PROFIL MEMPELAI PRIA & WANITA (2 KARTU SIMETRIS) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                <div className="h-full space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
+                      5A. Profil Mempelai Pria
+                    </h4>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nama Lengkap &amp; Gelar
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomFullName}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Nama Panggilan
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.groomNickname}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              groomNickname: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Pangkat / Gelar / Label
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.groomRankAndTitle}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              groomRankAndTitle: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Instansi / Profesi (Opsional)
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.groomUnit}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, groomUnit: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Kota Asal
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.groomOrigin}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, groomOrigin: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Keterangan Orang Tua Mempelai Pria
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomParents}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomParents: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
@@ -1883,63 +2880,81 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                    Profil Mempelai Wanita
-                  </h4>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Nama Lengkap &amp; Gelar
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.brideFullName}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="h-full space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
+                      5B. Profil Mempelai Wanita
+                    </h4>
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
-                        Nama Panggilan
+                        Nama Lengkap &amp; Gelar
                       </label>
                       <input
                         type="text"
-                        value={settingsForm.brideNickname}
+                        value={settingsForm.brideFullName}
                         onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, brideNickname: e.target.value })
+                          setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Nama Panggilan
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.brideNickname}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              brideNickname: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Gelar / Label
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.brideTitle}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Kota Asal
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.brideOrigin}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, brideOrigin: e.target.value })
                         }
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                       />
                     </div>
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
-                        Gelar / Asal
+                        Keterangan Orang Tua Mempelai Wanita
                       </label>
                       <input
                         type="text"
-                        value={settingsForm.brideTitle}
+                        value={settingsForm.brideParents}
                         onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
+                          setSettingsForm({ ...settingsForm, brideParents: e.target.value })
                         }
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Keterangan Orang Tua Mempelai Wanita
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.brideParents}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, brideParents: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
@@ -1957,224 +2972,178 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* Background Siluet Prewedding & Ayat Kutipan */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-[#8B6914]">
-                  Tema Visual: Foto Background Siluet Prewedding &amp; Kutipan Ayat
-                </h4>
+              {/* 6. AMPLOP DIGITAL / REKENING BANK (TAMBAH & HAPUS MANDIRI) */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-900">
+                      6. Pengaturan Amplop Digital / Rekening Bank &amp; Alamat Kado
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Tambahkan atau hapus nomor rekening bank / e-wallet yang tampil di undangan
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSettingsForm({
+                        ...settingsForm,
+                        bankAccounts: [
+                          ...(settingsForm.bankAccounts || []),
+                          {
+                            id: `bank_${Date.now().toString(36)}`,
+                            bankName: 'BANK BCA',
+                            accountNumber: '',
+                            accountHolder: settingsForm.groomFullName,
+                            branchOrNote: 'Transfer Amplop Digital',
+                            type: 'BANK',
+                          },
+                        ],
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Tambah Rekening
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      URL Foto Background Siluet Prewedding (Hero &amp; Transparansi)
+                      Nama Penerima Kado / QRIS
                     </label>
                     <input
                       type="text"
-                      value={settingsForm.heroPrewedUrl || ''}
+                      value={settingsForm.giftRecipientName}
                       onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                        setSettingsForm({
+                          ...settingsForm,
+                          giftRecipientName: e.target.value,
+                        })
                       }
-                      placeholder="https://images.unsplash.com/..."
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                     />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Sumber Kutipan / Ayat
+                      Alamat Pengiriman Kado Fisik
                     </label>
                     <input
                       type="text"
-                      value={settingsForm.quoteSource}
+                      value={settingsForm.giftShippingAddress}
                       onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
+                        setSettingsForm({
+                          ...settingsForm,
+                          giftShippingAddress: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Isi Kutipan / Ayat Pernikahan
-                  </label>
-                  <input
-                    type="text"
-                    value={settingsForm.quoteVerse}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
+
+                {(settingsForm.bankAccounts || []).length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">
+                    Belum ada nomor rekening yang ditambahkan. Klik &ldquo;Tambah Rekening&rdquo; di kanan atas jika ingin menampilkan rekening di undangan.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+                    {settingsForm.bankAccounts.map((acc, idx) => (
+                      <div
+                        key={acc.id}
+                        className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-amber-800">
+                            Rekening #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                bankAccounts: settingsForm.bankAccounts.filter(
+                                  (b) => b.id !== acc.id
+                                ),
+                              })
+                            }
+                            className="text-rose-600 hover:underline text-[11px] font-bold flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" /> Hapus
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={acc.bankName}
+                            onChange={(e) => {
+                              const next = [...settingsForm.bankAccounts];
+                              next[idx] = { ...acc, bankName: e.target.value };
+                              setSettingsForm({ ...settingsForm, bankAccounts: next });
+                            }}
+                            placeholder="Nama Bank (BCA/Mandiri/BRI)"
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={acc.accountNumber}
+                            onChange={(e) => {
+                              const next = [...settingsForm.bankAccounts];
+                              next[idx] = { ...acc, accountNumber: e.target.value };
+                              setSettingsForm({ ...settingsForm, bankAccounts: next });
+                            }}
+                            placeholder="Nomor Rekening"
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-mono"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={acc.accountHolder}
+                            onChange={(e) => {
+                              const next = [...settingsForm.bankAccounts];
+                              next[idx] = { ...acc, accountHolder: e.target.value };
+                              setSettingsForm({ ...settingsForm, bankAccounts: next });
+                            }}
+                            placeholder="Atas Nama (a.n.)"
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={acc.branchOrNote}
+                            onChange={(e) => {
+                              const next = [...settingsForm.bankAccounts];
+                              next[idx] = { ...acc, branchOrNote: e.target.value };
+                              setSettingsForm({ ...settingsForm, bankAccounts: next });
+                            }}
+                            placeholder="Catatan / Cabang"
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Jadwal & Lokasi 3 Acara */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-                  <h4 className="font-bold text-xs uppercase text-amber-800">
-                    Acara 1 (Biston - 18 Des 2026)
-                  </h4>
-                  <input
-                    type="text"
-                    value={settingsForm.event1Title}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event1Title: e.target.value })
-                    }
-                    placeholder="Judul Acara 1"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event1DateLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event1DateLabel: e.target.value })
-                    }
-                    placeholder="Hari & Tanggal"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event1TimeLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event1TimeLabel: e.target.value })
-                    }
-                    placeholder="Jam Pelaksanaan"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event1Venue}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event1Venue: e.target.value })
-                    }
-                    placeholder="Nama Tempat / Gedung"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event1MapsUrl}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event1MapsUrl: e.target.value })
-                    }
-                    placeholder="Link Google Maps"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-                  <h4 className="font-bold text-xs uppercase text-amber-800">
-                    Acara 2 (Pemberkatan - 19 Des 2026)
-                  </h4>
-                  <input
-                    type="text"
-                    value={settingsForm.event2Title}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event2Title: e.target.value })
-                    }
-                    placeholder="Judul Acara 2"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event2DateLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event2DateLabel: e.target.value })
-                    }
-                    placeholder="Hari & Tanggal"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event2TimeLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event2TimeLabel: e.target.value })
-                    }
-                    placeholder="Jam Pelaksanaan"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event2Venue}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event2Venue: e.target.value })
-                    }
-                    placeholder="Nama Gereja / Tempat"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event2MapsUrl}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event2MapsUrl: e.target.value })
-                    }
-                    placeholder="Link Google Maps"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-                  <h4 className="font-bold text-xs uppercase text-amber-800">
-                    Acara 3 (Resepsi - 19 Des 2026)
-                  </h4>
-                  <input
-                    type="text"
-                    value={settingsForm.event3Title}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event3Title: e.target.value })
-                    }
-                    placeholder="Judul Acara 3"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event3DateLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event3DateLabel: e.target.value })
-                    }
-                    placeholder="Hari & Tanggal"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event3TimeLabel}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event3TimeLabel: e.target.value })
-                    }
-                    placeholder="Jam Pelaksanaan"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event3Venue}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event3Venue: e.target.value })
-                    }
-                    placeholder="Nama Gedung Ballroom"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                  <input
-                    type="text"
-                    value={settingsForm.event3MapsUrl}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, event3MapsUrl: e.target.value })
-                    }
-                    placeholder="Link Google Maps"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Reset Data Default Button */}
+              {/* Save & Reset Bar */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await onResetDefault();
-                    showToast('Data dikembalikan ke seed awal Database Lokal.');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Reset ke Data Awal (Seed Default)
-                </button>
+                {!isPanitia ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onResetDefault();
+                      showToast('Data dikembalikan ke seed awal Database Lokal.');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset ke Data Awal (Seed Default)
+                  </button>
+                ) : (
+                  <div />
+                )}
 
                 <button
                   type="submit"
@@ -2186,109 +3155,317 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </form>
 
-            {/* Pengaturan Keamanan & Kredensial Login Admin (Server-Side Auth) */}
-            <form
-              onSubmit={handleUpdateSecurityForm}
-              className="bg-white rounded-3xl p-6 shadow-sm border border-[#D4AF37]/40 space-y-5 text-xs sm:text-sm"
-            >
-              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#8B6914]">
-                    <Shield className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
-                      Keamanan Akun &amp; Kredensial Login Admin
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      Kata sandi dienkripsi dengan algoritma <code className="font-mono">scrypt + HMAC-SHA256</code> dan disimpan di server
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">
-                    Username Login
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={secUsername}
-                    onChange={(e) => setSecUsername(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">
-                    Email Admin
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={secEmail}
-                    onChange={(e) => setSecEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">
-                    Nama Tampilan Admin
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={secName}
-                    onChange={(e) => setSecName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">
-                    Kata Sandi Saat Ini (Wajib untuk Konfirmasi) *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={secCurrentPassword}
-                    onChange={(e) => setSecCurrentPassword(e.target.value)}
-                    placeholder="Masukkan kata sandi saat ini"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">
-                    Kata Sandi Baru (Kosongkan jika tidak ingin ganti sandi)
-                  </label>
-                  <input
-                    type="password"
-                    value={secNewPassword}
-                    onChange={(e) => setSecNewPassword(e.target.value)}
-                    placeholder="Minimal 8 karakter"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={isUpdatingSecurity}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm disabled:opacity-50"
+            {/* MANAJEMEN 4 AKUN DEFAULT (KONFIRMASI SUPERADMIN) & AKUN PANITIA (KHUSUS USER DEFAULT) */}
+            {!isPanitia && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                {/* KIRI: 4 Akun Utama Default (Wajib Konfirmasi Superadmin) */}
+                <form
+                  onSubmit={handleUpdateDefaultUserForm}
+                  className="h-full bg-white rounded-3xl p-6 shadow-sm border border-[#D4AF37]/40 flex flex-col justify-between space-y-5 text-xs sm:text-sm"
                 >
-                  <KeyRound className="w-4 h-4" />
-                  <span>
-                    {isUpdatingSecurity
-                      ? 'Memperbarui Kredensial...'
-                      : 'Perbarui Kredensial & Password Admin'}
-                  </span>
-                </button>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 border-b border-stone-200 pb-4">
+                      <div className="w-10 h-10 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#8B6914] shrink-0">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-lg font-bold text-stone-900">
+                          Ubah Username &amp; Password Akun Utama
+                        </h3>
+                        <p className="text-xs text-stone-500">
+                          Perubahan username atau password pada ke-4 akun utama sistem wajib menyertakan konfirmasi Superadmin (Pemilik Aplikasi)
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Pilihan 4 Akun Default */}
+                    <div>
+                      <label className="block font-bold text-stone-700 mb-1.5">
+                        Pilih Akun Utama yang Akan Diubah:
+                      </label>
+                      <div className="grid grid-cols-2 gap-2.5 items-stretch">
+                        {defaultSystemUsers.map((u) => {
+                          const isSelected = selectedDefaultUserId === u.id;
+                          return (
+                            <button
+                              key={u.id}
+                              type="button"
+                              onClick={() => handleSelectDefaultUserForEdit(u)}
+                              className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                                isSelected
+                                  ? 'bg-[#FAF3E3] border-[#D4AF37] shadow-2xs'
+                                  : 'bg-[#FAF8F5] border-stone-200 hover:border-stone-300'
+                              }`}
+                            >
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
+                                {u.role.replace('_', ' ')}
+                              </span>
+                              <span className="font-mono font-bold text-xs text-stone-900 mt-0.5 truncate">
+                                {u.username}
+                              </span>
+                              <span className="text-[11px] text-stone-500 truncate">
+                                {u.nama}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-stone-700 mb-1">
+                          Username Baru
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={secUsername}
+                          onChange={(e) => setSecUsername(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-stone-700 mb-1">
+                          Nama Tampilan
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={secName}
+                          onChange={(e) => setSecName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-stone-700 mb-1">
+                        Password Baru (Kosongkan jika hanya mengganti username/nama)
+                      </label>
+                      <input
+                        type="password"
+                        value={secNewPassword}
+                        onChange={(e) => setSecNewPassword(e.target.value)}
+                        placeholder="Masukkan password baru (minimal 6 karakter)"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+                      <label className="block font-bold text-amber-950 mb-1">
+                        Konfirmasi Superadmin (Pemilik Aplikasi di Luar Sistem) *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={secSuperadminConfirm}
+                        onChange={(e) => setSecSuperadminConfirm(e.target.value)}
+                        placeholder="Masukkan identitas Superadmin untuk otorisasi..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-white"
+                      />
+                      <p className="text-[11px] text-amber-800 mt-1">
+                        Identitas Superadmin diverifikasi dengan hash satu arah di server dan tidak pernah ditampilkan di layar.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 mt-auto">
+                    <button
+                      type="submit"
+                      disabled={isUpdatingSecurity}
+                      className="w-full py-3 px-5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      <span>
+                        {isUpdatingSecurity
+                          ? 'Memverifikasi Superadmin...'
+                          : 'Konfirmasi & Simpan Perubahan Akun Utama'}
+                      </span>
+                    </button>
+                  </div>
+                </form>
+
+                {/* KANAN: Manajemen Akun Panitia / WO (Tambah & Kurangi Panitia, Non-Budgeting) */}
+                <div className="h-full bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between space-y-5 text-xs sm:text-sm">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                          Akses Terbatas • Non-Budgeting
+                        </span>
+                        <h3 className="font-serif text-lg font-bold text-slate-900 mt-1">
+                          Manajemen Akun Panitia / WO ({panitiaUsers.length} Akun)
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Akun utama dapat menambah atau mengurangi akun Panitia. Panitia otomatis diblokir dari menu Anggaran/Budgeting.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Form Tambah / Edit Panitia */}
+                    <form
+                      onSubmit={handleUpsertPanitiaForm}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs uppercase text-slate-800">
+                          {panitiaEditId ? 'Edit Akun Panitia' : 'Tambah Akun Panitia Baru'}
+                        </h4>
+                        {panitiaEditId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPanitiaEditId(undefined);
+                              setPanitiaUsername('');
+                              setPanitiaNama('');
+                              setPanitiaPassword('');
+                            }}
+                            className="text-[11px] font-bold text-rose-600 hover:underline"
+                          >
+                            Batal Edit
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            Username Panitia *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={panitiaUsername}
+                            onChange={(e) => setPanitiaUsername(e.target.value)}
+                            placeholder="Contoh: panitia_acara"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            Nama / Seksi Panitia *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={panitiaNama}
+                            onChange={(e) => setPanitiaNama(e.target.value)}
+                            placeholder="Contoh: Koordinator Lapangan"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            Jabatan / Tugas
+                          </label>
+                          <input
+                            type="text"
+                            value={panitiaJabatan}
+                            onChange={(e) => setPanitiaJabatan(e.target.value)}
+                            placeholder="Panitia / WO"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            {panitiaEditId
+                              ? 'Password Baru (Opsional)'
+                              : 'Password Panitia *'}
+                          </label>
+                          <input
+                            type="password"
+                            required={!panitiaEditId}
+                            value={panitiaPassword}
+                            onChange={(e) => setPanitiaPassword(e.target.value)}
+                            placeholder="Minimal 6 karakter"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSavingPanitia}
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>
+                          {isSavingPanitia
+                            ? 'Menyimpan...'
+                            : panitiaEditId
+                            ? 'Simpan Perubahan Akun Panitia'
+                            : 'Tambah Akun Panitia'}
+                        </span>
+                      </button>
+                    </form>
+
+                    {/* Daftar Akun Panitia */}
+                    <div className="space-y-2 max-h-[210px] overflow-y-auto pr-1">
+                      {panitiaUsers.length === 0 ? (
+                        <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                          Belum ada akun Panitia tambahan. Gunakan formulir di atas untuk menambahkan akun Panitia.
+                        </div>
+                      ) : (
+                        panitiaUsers.map((p) => (
+                          <div
+                            key={p.id}
+                            className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-bold text-xs text-slate-900">
+                                  {p.username}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold">
+                                  PANITIA (Non-Budget)
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 truncate">
+                                {p.nama} &bull; {p.jabatan}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPanitiaEditId(p.id);
+                                  setPanitiaUsername(p.username);
+                                  setPanitiaNama(p.nama);
+                                  setPanitiaJabatan(p.jabatan);
+                                  setPanitiaPassword('');
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeletePanitiaAccount(p.id, p.username)
+                                }
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600"
+                                title="Hapus Akun Panitia"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between mt-auto">
+                    <span>Hak Akses Panitia: Checklist, Tamu &amp; Pengaturan Undangan</span>
+                    <span className="font-bold text-rose-600">Budgeting Terkunci</span>
+                  </div>
+                </div>
               </div>
-            </form>
+            )}
           </div>
         )}
       </main>
@@ -2447,7 +3624,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   await onUpsertTask({
                     ...editingTask,
                     title: editingTask.title.trim(),
-                    updatedBy: adminUser.email,
+                    updatedBy: adminUser.username,
                   });
                   setEditingTask(null);
                   showToast('Tugas checklist berhasil disimpan!');
@@ -2466,10 +3643,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
          ======================================================================= */}
       {editingBudget && (
         <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-serif text-lg font-bold text-slate-900">
-                {editingBudget.id ? 'Edit Data Vendor & Biaya' : 'Tambah Vendor & Biaya Baru'}
+                {editingBudget.id
+                  ? 'Edit & Revisi Anggaran / Vendor'
+                  : 'Tambah Pos Anggaran & Vendor Baru'}
               </h3>
               <button
                 type="button"
@@ -2491,7 +3670,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onChange={(e) =>
                     setEditingBudget({ ...editingBudget, itemName: e.target.value })
                   }
-                  placeholder="Contoh: Katering Resepsi 350 Pax"
+                  placeholder="Contoh: Katering Resepsi / Gedung / Dekorasi"
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
                 />
               </div>
@@ -2531,7 +3710,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Estimasi (Rp)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Estimasi Awal (Rp)</label>
                   <input
                     type="number"
                     value={editingBudget.estimatedCost ?? 0}
@@ -2545,7 +3724,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Realisasi (Rp)</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Realisasi / Revisi (Rp)
+                  </label>
                   <input
                     type="number"
                     value={editingBudget.actualCost ?? 0}
@@ -2578,7 +3759,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Status Bayar</label>
                   <select
-                    value={editingBudget.paymentStatus || 'DP_TERBAYAR'}
+                    value={editingBudget.paymentStatus || 'BELUM_DP'}
                     onChange={(e) =>
                       setEditingBudget({
                         ...editingBudget,
@@ -2618,6 +3799,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               <div>
+                <label className="block font-bold text-amber-800 mb-1">
+                  Catatan Revisi Anggaran (Alasan Perubahan / Penyesuaian)
+                </label>
+                <input
+                  type="text"
+                  value={editingBudget.revisionNote || ''}
+                  onChange={(e) =>
+                    setEditingBudget({ ...editingBudget, revisionNote: e.target.value })
+                  }
+                  placeholder="Contoh: Penambahan porsi katering 50 pax / diskon paket gedung"
+                  className="w-full px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50/40"
+                />
+              </div>
+
+              <div>
                 <label className="block font-bold text-slate-700 mb-1">Catatan Kontrak</label>
                 <textarea
                   rows={2}
@@ -2647,11 +3843,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     itemName: editingBudget.itemName.trim(),
                   });
                   setEditingBudget(null);
-                  showToast('Data vendor & budget berhasil disimpan!');
+                  showToast('Data anggaran & revisi vendor berhasil disimpan!');
                 }}
                 className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
               >
-                Simpan Vendor
+                Simpan Anggaran
               </button>
             </div>
           </div>
@@ -2895,7 +4091,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   await onUpsertGuest({
                     ...editingGuest,
                     guestName: editingGuest.guestName.trim(),
-                    updatedBy: adminUser.email,
+                    updatedBy: adminUser.username,
                   });
                   setEditingGuest(null);
                   showToast('Data tamu berhasil disimpan!');

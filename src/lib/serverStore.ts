@@ -61,26 +61,18 @@ function readDbFromDisk(): WeddingDatabaseSchema {
           settings: parsed.settings
             ? { ...defaultStore.settings, ...parsed.settings }
             : defaultStore.settings,
-          tasks:
-            Array.isArray(parsed.tasks) && parsed.tasks.length > 0
-              ? parsed.tasks.map((t) => ({
-                  ...t,
-                  timelinePhase: t.timelinePhase || inferTimelinePhase(t.due, t.category),
-                  status: t.done ? 'SELESAI' : t.status || 'BELUM',
-                }))
-              : defaultStore.tasks,
-          guests:
-            Array.isArray(parsed.guests) && parsed.guests.length > 0
-              ? parsed.guests
-              : defaultStore.guests,
-          wishes:
-            Array.isArray(parsed.wishes) && parsed.wishes.length > 0
-              ? parsed.wishes
-              : defaultStore.wishes,
-          budgetItems:
-            Array.isArray(parsed.budgetItems) && parsed.budgetItems.length > 0
-              ? parsed.budgetItems
-              : defaultStore.budgetItems,
+          tasks: Array.isArray(parsed.tasks)
+            ? parsed.tasks.map((t) => ({
+                ...t,
+                timelinePhase: t.timelinePhase || inferTimelinePhase(t.due, t.category),
+                status: t.done ? 'SELESAI' : t.status || 'BELUM',
+              }))
+            : defaultStore.tasks,
+          guests: Array.isArray(parsed.guests) ? parsed.guests : defaultStore.guests,
+          wishes: Array.isArray(parsed.wishes) ? parsed.wishes : defaultStore.wishes,
+          budgetItems: Array.isArray(parsed.budgetItems)
+            ? parsed.budgetItems
+            : defaultStore.budgetItems,
           adminUsers:
             Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
               ? parsed.adminUsers
@@ -144,6 +136,7 @@ function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSc
       role: u.role,
       jabatan: u.jabatan,
       email: u.email,
+      isDefaultUser: u.isDefaultUser,
     })),
   };
 }
@@ -156,8 +149,19 @@ function formatDateSlash(date: Date = new Date()): string {
 }
 
 export const serverStore = {
-  getFullState: (): WeddingDatabaseSchema => {
-    return sanitizeStoreForClient(getStore());
+  getFullState: (hideBudgetForPanitia = false): WeddingDatabaseSchema => {
+    const sanitized = sanitizeStoreForClient(getStore());
+    if (hideBudgetForPanitia) {
+      return {
+        ...sanitized,
+        budgetItems: [],
+        settings: {
+          ...sanitized.settings,
+          totalBudgetCap: 0,
+        },
+      };
+    }
+    return sanitized;
   },
 
   getAdminUsers: (): AdminUser[] => {
@@ -176,18 +180,73 @@ export const serverStore = {
       return store.adminUsers[idx];
     }
     const fallback: AdminUser = {
-      id: id || 'adm-1',
-      username: partial.username || 'admin',
-      nama: partial.nama || 'Administrator Utama',
-      role: partial.role || 'MEMPELAI_PRIA',
-      jabatan: partial.jabatan || 'Superadmin',
-      email: partial.email || 'admin@wedding.id',
-      password: partial.password,
+      id: id || `usr_${Date.now().toString(36)}`,
+      username: partial.username || 'user',
+      nama: partial.nama || 'User',
+      role: partial.role || 'PANITIA',
+      jabatan: partial.jabatan || 'Panitia',
+      email: partial.email || '',
+      isDefaultUser: Boolean(partial.isDefaultUser),
       passwordHash: partial.passwordHash,
     };
-    store.adminUsers.unshift(fallback);
+    store.adminUsers.push(fallback);
     persistStore(store);
     return fallback;
+  },
+
+  upsertPanitiaUser: (input: {
+    id?: string;
+    username: string;
+    nama: string;
+    jabatan?: string;
+    passwordHash?: string;
+  }): AdminUser => {
+    const store = getStore();
+    const cleanUsername = input.username.trim().toLowerCase();
+    const existingIdx = input.id
+      ? store.adminUsers.findIndex((u) => u.id === input.id)
+      : store.adminUsers.findIndex(
+          (u) => !u.isDefaultUser && u.username.toLowerCase() === cleanUsername
+        );
+
+    if (existingIdx >= 0) {
+      const prev = store.adminUsers[existingIdx];
+      const updated: AdminUser = {
+        ...prev,
+        username: cleanUsername,
+        nama: input.nama.trim(),
+        jabatan: input.jabatan || prev.jabatan || 'Panitia Operasional',
+        ...(input.passwordHash ? { passwordHash: input.passwordHash, password: '' } : {}),
+      };
+      store.adminUsers[existingIdx] = updated;
+      persistStore(store);
+      return updated;
+    }
+
+    const newPanitia: AdminUser = {
+      id: `panitia_${Date.now().toString(36)}`,
+      username: cleanUsername,
+      nama: input.nama.trim(),
+      role: 'PANITIA',
+      jabatan: input.jabatan || 'Panitia / WO (Akses Non-Budgeting)',
+      email: `${cleanUsername}@wedding.local`,
+      isDefaultUser: false,
+      passwordHash: input.passwordHash,
+    };
+    store.adminUsers.push(newPanitia);
+    persistStore(store);
+    return newPanitia;
+  },
+
+  deletePanitiaUser: (id: string): boolean => {
+    const store = getStore();
+    const target = store.adminUsers.find((u) => u.id === id);
+    if (!target || target.isDefaultUser) {
+      return false; // Cannot delete the 4 default users
+    }
+    store.adminUsers = store.adminUsers.filter((u) => u.id !== id);
+    persistStore(store);
+    return true;
   },
 
   getSettings: (): WeddingSettings => {
@@ -241,7 +300,7 @@ export const serverStore = {
         status: resolvedStatus,
         doneAt: isDone ? prev.doneAt || nowSlash : '',
         updatedAt: nowSlash,
-        updatedBy: taskInput.updatedBy || prev.updatedBy || 'agungkrisdianto98@gmail.com',
+        updatedBy: taskInput.updatedBy || prev.updatedBy || 'mempelai_pria',
       };
       store.tasks[existingIdx] = updated;
       persistStore(store);
@@ -263,7 +322,7 @@ export const serverStore = {
       doneAt: isDone ? nowSlash : '',
       createdAt: nowSlash,
       updatedAt: nowSlash,
-      updatedBy: taskInput.updatedBy || 'agungkrisdianto98@gmail.com',
+      updatedBy: taskInput.updatedBy || 'mempelai_pria',
     };
 
     store.tasks.push(newTask);
@@ -302,14 +361,13 @@ export const serverStore = {
         ...guestInput,
         guestName: guestInput.guestName.trim(),
         updatedAt: nowSlash,
-        updatedBy: guestInput.updatedBy || prev.updatedBy || 'agungkrisdianto98@gmail.com',
+        updatedBy: guestInput.updatedBy || prev.updatedBy || 'mempelai_pria',
       };
       store.guests[existingIdx] = updated;
       persistStore(store);
       return updated;
     }
 
-    // Generate next INV-XXXX code
     const maxCodeNum = store.guests.reduce((max, g) => {
       const match = /INV-(\d+)/i.exec(g.invitationCode || '');
       const num = match ? parseInt(match[1], 10) : 0;
@@ -345,7 +403,7 @@ export const serverStore = {
       sessionChoice: guestInput.sessionChoice || 'Pemberkatan & Resepsi',
       createdAt: nowSlash,
       updatedAt: nowSlash,
-      updatedBy: guestInput.updatedBy || 'agungkrisdianto98@gmail.com',
+      updatedBy: guestInput.updatedBy || 'mempelai_pria',
     };
 
     store.guests.push(newGuest);
@@ -379,7 +437,6 @@ export const serverStore = {
     const nowSlash = formatDateSlash();
     const cleanName = payload.guestName.trim();
 
-    // Match existing guest by invitationCode or case-insensitive guestName
     const matchIdx = store.guests.findIndex(
       (g) =>
         (payload.invitationCode &&
@@ -517,6 +574,8 @@ export const serverStore = {
 
     if (existingIdx >= 0) {
       const prev = store.budgetItems[existingIdx];
+      const costChanged =
+        prev.estimatedCost !== estimated || prev.actualCost !== actual;
       const updated: BudgetVendorItem = {
         ...prev,
         ...input,
@@ -524,6 +583,9 @@ export const serverStore = {
         actualCost: actual,
         paidAmount: paid,
         paymentStatus: autoPaymentStatus,
+        revisionCount:
+          (prev.revisionCount || 0) + (costChanged || input.revisionNote ? 1 : 0),
+        revisionNote: input.revisionNote ?? prev.revisionNote ?? '',
         updatedAt: new Date().toISOString().slice(0, 10),
       };
       store.budgetItems[existingIdx] = updated;
@@ -544,6 +606,8 @@ export const serverStore = {
       paymentStatus: autoPaymentStatus,
       dueDate: input.dueDate || '2026-12-01',
       notes: input.notes || '',
+      revisionNote: input.revisionNote || '',
+      revisionCount: 0,
       updatedAt: new Date().toISOString().slice(0, 10),
     };
 
@@ -568,29 +632,29 @@ export const serverStore = {
     if (payload.settings) {
       store.settings = { ...store.settings, ...payload.settings };
     }
-    if (Array.isArray(payload.tasks) && payload.tasks.length > 0) {
+    if (Array.isArray(payload.tasks)) {
       store.tasks = payload.tasks.map((t) => ({
         ...t,
         timelinePhase: t.timelinePhase || inferTimelinePhase(t.due, t.category),
         status: t.done ? 'SELESAI' : t.status || 'BELUM',
       }));
     }
-    if (Array.isArray(payload.guests) && payload.guests.length > 0) {
+    if (Array.isArray(payload.guests)) {
       store.guests = payload.guests;
     }
     if (Array.isArray(payload.wishes)) {
       store.wishes = payload.wishes;
     }
-    if (Array.isArray(payload.budgetItems) && payload.budgetItems.length > 0) {
+    if (Array.isArray(payload.budgetItems)) {
       store.budgetItems = payload.budgetItems;
     }
     persistStore(store);
-    return store;
+    return sanitizeStoreForClient(store);
   },
 
   resetToDefault: (): WeddingDatabaseSchema => {
     const fresh = createDefaultStore();
     persistStore(fresh);
-    return fresh;
+    return sanitizeStoreForClient(fresh);
   },
 };

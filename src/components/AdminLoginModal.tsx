@@ -34,8 +34,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isLocalDev = process.env.NEXT_PUBLIC_APP_ENV !== 'production';
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -55,7 +53,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       const json = await res.json();
       if (!res.ok || !json.success || !json.user) {
         setErrorMsg(
-          json.error || 'Email/Username atau Kata Sandi tidak valid. Akses ditolak.'
+          json.error || 'Username atau Kata Sandi tidak valid. Akses ditolak.'
         );
         return;
       }
@@ -90,10 +88,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Otentikasi Terenkripsi
+                <ShieldCheck className="w-3.5 h-3.5" /> Akses Terproteksi
               </span>
               <h3 className="font-serif text-xl font-bold text-stone-900">
-                Portal Admin Wedding Planner
+                Portal Manajemen Pernikahan
               </h3>
             </div>
           </div>
@@ -110,7 +108,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
           <div>
             <label className="block font-bold text-stone-700 mb-1.5">
-              Email atau Username Admin
+              Username Akun
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -120,7 +118,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Masukkan email atau username admin"
+                placeholder="Masukkan username akun..."
                 className="w-full pl-10 pr-3.5 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-stone-900"
               />
             </div>
@@ -128,7 +126,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
           <div>
             <label className="block font-bold text-stone-700 mb-1.5">
-              Kata Sandi Admin
+              Kata Sandi
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -169,26 +167,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />
-                Masuk ke Dashboard Manajemen
+                Masuk ke Dashboard
               </>
             )}
           </button>
-
-          {isLocalDev && (
-            <div className="pt-3 border-t border-stone-200/80 text-[11px] text-stone-500 bg-[#FAF8F5] p-3 rounded-2xl border border-stone-200/60">
-              <p className="font-bold text-stone-700 mb-0.5">
-                Mode Testing Lokal (`.env.local`):
-              </p>
-              <p>
-                User: <code className="font-mono text-stone-800">admin@wedding.id</code>{' '}
-                (atau <code className="font-mono text-stone-800">admin</code>) &bull; Sandi:{' '}
-                <code className="font-mono text-stone-800">WeddingAdmin#2026</code>
-              </p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                Catatan: Kotak info ini hanya muncul di environment lokal dan otomatis disembunyikan pada mode produksi (`NEXT_PUBLIC_APP_ENV=production`).
-              </p>
-            </div>
-          )}
         </form>
       </div>
     </div>

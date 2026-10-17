@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
-import { verifyAdminRequest } from '@/lib/auth';
+import { isPrivilegedDefaultOrSuperUser, verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const state = serverStore.getFullState();
+    const sessionUser = verifyAdminRequest(req);
+    const hideBudget = !isPrivilegedDefaultOrSuperUser(sessionUser);
+    const state = serverStore.getFullState(hideBudget);
     return NextResponse.json({
       success: true,
       data: state,
@@ -27,18 +29,40 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, payload } = body;
 
+    const adminSession = verifyAdminRequest(req);
+
     // Only SUBMIT_RSVP is public; all other actions require a verified Admin Session
     if (action !== 'SUBMIT_RSVP') {
-      const adminSession = verifyAdminRequest(req);
       if (!adminSession) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Akses ditolak (401 Unauthorized). Silakan login sebagai Admin terlebih dahulu.',
+            error: 'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
           },
           { status: 401 }
         );
       }
+    }
+
+    const isPanitia = adminSession?.role === 'PANITIA';
+    const hideBudget = !isPrivilegedDefaultOrSuperUser(adminSession);
+
+    // Panitia is strictly forbidden from accessing or modifying Budgeting
+    if (
+      isPanitia &&
+      (action === 'UPSERT_BUDGET' ||
+        action === 'DELETE_BUDGET' ||
+        action === 'RESET_DEFAULT' ||
+        action === 'IMPORT_BACKUP')
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Akses ditolak (403 Forbidden). Akun Panitia tidak memiliki akses ke modul Anggaran / Budgeting.',
+        },
+        { status: 403 }
+      );
     }
 
     switch (action) {
@@ -47,7 +71,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           task,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -55,7 +79,7 @@ export async function POST(req: NextRequest) {
         serverStore.deleteTask(payload.id);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -64,7 +88,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           guest,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -72,7 +96,7 @@ export async function POST(req: NextRequest) {
         serverStore.deleteGuest(payload.id);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -82,7 +106,7 @@ export async function POST(req: NextRequest) {
           success: true,
           guest: result.guest,
           wish: result.wish,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -90,7 +114,7 @@ export async function POST(req: NextRequest) {
         serverStore.togglePinWish(payload.id);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -98,7 +122,7 @@ export async function POST(req: NextRequest) {
         serverStore.replyToWish(payload.id, payload.replyFromCouple);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -106,7 +130,7 @@ export async function POST(req: NextRequest) {
         serverStore.deleteWish(payload.id);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 
@@ -115,7 +139,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           budgetItem,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(false),
         });
       }
 
@@ -123,16 +147,24 @@ export async function POST(req: NextRequest) {
         serverStore.deleteBudgetItem(payload.id);
         return NextResponse.json({
           success: true,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(false),
         });
       }
 
       case 'UPDATE_SETTINGS': {
-        const settings = serverStore.updateSettings(payload);
+        // If Panitia updates settings, prevent modifying totalBudgetCap
+        const safePayload = isPanitia
+          ? (() => {
+              const copy = { ...payload };
+              delete copy.totalBudgetCap;
+              return copy;
+            })()
+          : payload;
+        const settings = serverStore.updateSettings(safePayload);
         return NextResponse.json({
           success: true,
           settings,
-          data: serverStore.getFullState(),
+          data: serverStore.getFullState(hideBudget),
         });
       }
 

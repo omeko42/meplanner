@@ -12,7 +12,6 @@ import {
   Copy,
   Check,
   Gift,
-  Sparkles,
   CheckCircle2,
   Users,
   MessageSquareHeart,
@@ -24,6 +23,7 @@ import {
   Award,
   Pin,
   X,
+  Sparkles,
 } from 'lucide-react';
 import {
   WeddingSettings,
@@ -75,7 +75,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [showQrisModal, setShowQrisModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhotoItem | null>(null);
 
+  const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
+  const pageBgUrl = settings.pageBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
+  const overlayOpacity = Math.min(96, Math.max(40, settings.bgOverlayOpacity ?? 88));
+  const blurClass =
+    settings.bgBlurIntensity === 'none'
+      ? 'backdrop-blur-none'
+      : settings.bgBlurIntensity === 'md'
+      ? 'backdrop-blur-md'
+      : settings.bgBlurIntensity === 'lg'
+      ? 'backdrop-blur-xl'
+      : 'backdrop-blur-[2px]';
 
   // Lookup matched guest from DB if ?code= or ?to= matches
   const matchedGuest = useMemo(() => {
@@ -152,6 +163,53 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
   }, [matchedGuest, guestParamName]);
 
+  const visibleEvents = useMemo(() => {
+    const list = [];
+    if (settings.showEvent1 !== false) {
+      list.push({
+        badge: 'Acara 1 • Keluarga',
+        title: settings.event1Title,
+        subtitle: settings.event1Subtitle,
+        date: settings.event1DateLabel,
+        time: settings.event1TimeLabel,
+        venue: settings.event1Venue,
+        address: settings.event1Address,
+        mapsUrl: settings.event1MapsUrl,
+        dresscode: settings.event1Dresscode,
+        highlight: false,
+      });
+    }
+    if (settings.showEvent2 !== false) {
+      list.push({
+        badge: 'Acara Utama • Sakral',
+        title: settings.event2Title,
+        subtitle: settings.event2Subtitle,
+        date: settings.event2DateLabel,
+        time: settings.event2TimeLabel,
+        venue: settings.event2Venue,
+        address: settings.event2Address,
+        mapsUrl: settings.event2MapsUrl,
+        dresscode: settings.event2Dresscode,
+        highlight: true,
+      });
+    }
+    if (settings.showEvent3 !== false) {
+      list.push({
+        badge: 'Acara 3 • Resepsi',
+        title: settings.event3Title,
+        subtitle: settings.event3Subtitle,
+        date: settings.event3DateLabel,
+        time: settings.event3TimeLabel,
+        venue: settings.event3Venue,
+        address: settings.event3Address,
+        mapsUrl: settings.event3MapsUrl,
+        dresscode: settings.event3Dresscode,
+        highlight: false,
+      });
+    }
+    return list;
+  }, [settings]);
+
   const handleOpenInvitation = () => {
     setIsOpened(true);
     weddingMusicPlayer.start();
@@ -199,19 +257,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   if (!isOpened) {
     return (
       <div className="min-h-screen relative flex flex-col justify-between overflow-hidden bg-[#FAF8F5] text-stone-800 select-none">
-        {/* Background Prewedding Silhouette Photo + Luminous Pearl Veil */}
+        {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
         <div
           className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-1000"
           style={{
-            backgroundImage: `url('${heroBgUrl}')`,
+            backgroundImage: `url('${coverBgUrl}')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-[#FAF8F5]/65 to-white/85 backdrop-blur-[2px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.25)_0%,rgba(250,248,245,0.85)_100%)]" />
+        <div
+          className={`absolute inset-0 ${blurClass}`}
+          style={{
+            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+          }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.20)_0%,rgba(250,248,245,0.80)_100%)]" />
 
         {/* Subtle Top Bar */}
         <div className="relative z-10 flex items-center justify-between px-4 sm:px-8 pt-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/75 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs">
             <WeddingRingsIcon className="w-4 h-4 text-[#B68D40]" />
             <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#8B6914]">
               The Wedding Celebration
@@ -221,8 +284,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <button
             type="button"
             onClick={onOpenAdminPortal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/75 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
-            title="Login Portal Manajemen Pernikahan (Khusus Mempelai & Panitia)"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
+            title="Login Portal Manajemen Pernikahan"
           >
             <Lock className="w-3 h-3 text-[#B68D40]" />
             <span>{isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}</span>
@@ -231,8 +294,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
         {/* Center Cover Invitation Frosted Glass Card */}
         <div className="relative z-10 max-w-xl mx-auto px-5 py-6 text-center flex flex-col items-center my-auto w-full">
-          <div className="w-full rounded-[2.25rem] bg-white/70 backdrop-blur-2xl border border-white/90 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 relative overflow-hidden">
-            {/* Soft Gold Corner Glow */}
+          <div className="w-full rounded-[2.25rem] bg-white/75 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 relative overflow-hidden">
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
@@ -256,7 +318,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </p>
 
             {/* Personalized Guest Card (Translucent Glass) */}
-            <div className="w-full rounded-2xl bg-white/80 backdrop-blur-xl border border-[#D4AF37]/35 p-5 sm:p-6 shadow-sm mb-6">
+            <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-5 sm:p-6 shadow-sm mb-6">
               <p className="text-[11px] uppercase tracking-[0.22em] text-stone-500 mb-1.5">
                 Kepada Yth. Bapak / Ibu / Saudara / i
               </p>
@@ -312,23 +374,28 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }
 
   // ============================================================================
-  // 2. MAIN OPENED INVITATION VIEW (BRIGHT PEARL, PREWED SILHOUETTE & GLASS)
+  // 2. MAIN OPENED INVITATION VIEW (SYMMETRICAL CARDS & CUSTOMIZABLE BG)
   // ============================================================================
   return (
     <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pb-24 selection:bg-[#D4AF37]/25 selection:text-stone-900">
-      {/* FIXED PREWEDDING SILHOUETTE BACKGROUND WITH TRANSLUCENT PEARL VEIL */}
+      {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 scale-105"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
           style={{
-            backgroundImage: `url('${heroBgUrl}')`,
+            backgroundImage: `url('${pageBgUrl}')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-[#FAF8F5]/70 to-white/85 backdrop-blur-[1px]" />
+        <div
+          className={`absolute inset-0 ${blurClass}`}
+          style={{
+            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+          }}
+        />
       </div>
 
       {/* TOP FLOATING GLASS NAVIGATION */}
-      <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
@@ -381,19 +448,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       </header>
 
       {/* HERO PREWEDDING SILHOUETTE BANNER & LIVE COUNTDOWN */}
-      <section className="relative z-10 overflow-hidden pt-8 pb-14 px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Translucent Hero Frame with Prewedding Silhouette */}
-          <div className="relative rounded-[2.5rem] overflow-hidden border border-white/90 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/60 backdrop-blur-xl">
+      <section className="relative z-10 overflow-hidden pt-8 pb-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="relative rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
             {/* Prewedding Silhouette Image Header */}
             <div className="relative h-72 sm:h-96 overflow-hidden">
               <img
                 src={heroBgUrl}
-                alt="Prewedding Silhouette"
+                alt="Prewedding Banner"
                 className="w-full h-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-white/35 to-transparent" />
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-xs font-semibold tracking-widest uppercase shadow-xs">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-xs font-semibold tracking-widest uppercase shadow-xs">
                 <WeddingRingsIcon className="w-4 h-4" />
                 <span>Holy Matrimony &amp; Reception</span>
               </div>
@@ -417,8 +483,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {settings.invitationOpeningText}
               </p>
 
-              {/* Countdown Timer Boxes (Frosted Pearl Glass) */}
-              <div className="grid grid-cols-4 gap-2.5 sm:gap-4 max-w-lg mx-auto mb-8">
+              {/* Countdown Timer Boxes (Symmetrical 4-Column Grid) */}
+              <div className="grid grid-cols-4 gap-3 sm:gap-4 max-w-lg mx-auto mb-8 items-stretch">
                 {[
                   { label: 'Hari', value: countdown.days },
                   { label: 'Jam', value: countdown.hours },
@@ -427,7 +493,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/35 p-3 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)]"
+                    className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-3 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
                   >
                     <div className="font-serif text-2xl sm:text-4xl font-bold text-[#9A742B]">
                       {String(item.value).padStart(2, '0')}
@@ -439,584 +505,639 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 ))}
               </div>
 
-              {/* Verse / Quote Card */}
-              <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/85 border border-[#D4AF37]/30 p-5 sm:p-6 shadow-2xs">
-                <p className="font-serif italic text-sm sm:text-base text-stone-700 leading-relaxed mb-2">
-                  &ldquo;{settings.quoteVerse}&rdquo;
-                </p>
-                <p className="text-xs font-bold tracking-widest uppercase text-[#9A742B]">
-                  — {settings.quoteSource} —
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION: PROFIL MEMPELAI (COUPLE PROFILES) */}
-      <section id="mempelai" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-            The Happy Couple
-          </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-            Profil Kedua Mempelai
-          </h2>
-          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch relative">
-          {/* Groom Card */}
-          <div className="rounded-3xl bg-white/75 backdrop-blur-xl border border-white/90 p-6 sm:p-8 text-center flex flex-col items-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden">
-              <img
-                src={settings.groomPhotoUrl}
-                alt={settings.groomFullName}
-                className="w-full h-full object-cover rounded-full bg-stone-100"
-              />
-            </div>
-            <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
-              {settings.groomRankAndTitle || 'Mempelai Pria'}
-            </span>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
-              {settings.groomFullName}
-            </h3>
-            {settings.groomUnit && (
-              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3">
-                {settings.groomUnit}
-              </p>
-            )}
-            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-              {settings.groomParents}
-            </p>
-            <div className="mt-auto pt-3 border-t border-stone-200/70 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium">
-              <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span>{settings.groomOrigin}</span>
-            </div>
-          </div>
-
-          {/* Bride Card */}
-          <div className="rounded-3xl bg-white/75 backdrop-blur-xl border border-white/90 p-6 sm:p-8 text-center flex flex-col items-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden">
-              <img
-                src={settings.bridePhotoUrl}
-                alt={settings.brideFullName}
-                className="w-full h-full object-cover rounded-full bg-stone-100"
-              />
-            </div>
-            <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
-              {settings.brideTitle || 'Mempelai Wanita'}
-            </span>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
-              {settings.brideFullName}
-            </h3>
-            <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3">
-              {settings.brideOrigin}
-            </p>
-            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-              {settings.brideParents}
-            </p>
-            <div className="mt-auto pt-3 border-t border-stone-200/70 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium">
-              <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span>{settings.brideOrigin}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS */}
-      <section id="acara" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-            Save The Date
-          </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-            Rangkaian Acara Pernikahan
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            {settings.subtitle}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {[
-            {
-              badge: 'Acara 1 • Keluarga',
-              title: settings.event1Title,
-              subtitle: settings.event1Subtitle,
-              date: settings.event1DateLabel,
-              time: settings.event1TimeLabel,
-              venue: settings.event1Venue,
-              address: settings.event1Address,
-              mapsUrl: settings.event1MapsUrl,
-              dresscode: settings.event1Dresscode,
-            },
-            {
-              badge: 'Acara Utama • Sakral',
-              title: settings.event2Title,
-              subtitle: settings.event2Subtitle,
-              date: settings.event2DateLabel,
-              time: settings.event2TimeLabel,
-              venue: settings.event2Venue,
-              address: settings.event2Address,
-              mapsUrl: settings.event2MapsUrl,
-              dresscode: settings.event2Dresscode,
-              highlight: true,
-            },
-            {
-              badge: 'Acara 3 • Resepsi',
-              title: settings.event3Title,
-              subtitle: settings.event3Subtitle,
-              date: settings.event3DateLabel,
-              time: settings.event3TimeLabel,
-              venue: settings.event3Venue,
-              address: settings.event3Address,
-              mapsUrl: settings.event3MapsUrl,
-              dresscode: settings.event3Dresscode,
-            },
-          ].map((ev, idx) => (
-            <div
-              key={idx}
-              className={`rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
-                ev.highlight
-                  ? 'bg-gradient-to-b from-white/90 via-[#FFFDF9]/90 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
-                  : 'bg-white/75 border border-white/90 shadow-[0_15px_45px_rgba(175,145,95,0.10)]'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
-                    {ev.badge}
-                  </span>
-                  <WeddingRingsIcon className="w-5 h-5 text-[#C5A059]" />
+              {/* Verse / Quote Card (Conditional via showQuoteSection) */}
+              {settings.showQuoteSection !== false && settings.quoteVerse && (
+                <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-5 sm:p-6 shadow-2xs">
+                  <p className="font-serif italic text-sm sm:text-base text-stone-700 leading-relaxed mb-2">
+                    &ldquo;{settings.quoteVerse}&rdquo;
+                  </p>
+                  {settings.quoteSource && (
+                    <p className="text-xs font-bold tracking-widest uppercase text-[#9A742B]">
+                      — {settings.quoteSource} —
+                    </p>
+                  )}
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
-                <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 mb-1">
-                  {ev.title}
+      {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS) */}
+      {settings.showCoupleSection !== false && (
+        <section id="mempelai" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+              The Happy Couple
+            </span>
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+              Profil Kedua Mempelai
+            </h2>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            {/* Groom Card */}
+            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+              <div className="flex flex-col items-center w-full">
+                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden shrink-0">
+                  <img
+                    src={settings.groomPhotoUrl}
+                    alt={settings.groomFullName}
+                    className="w-full h-full object-cover rounded-full bg-stone-100"
+                  />
+                </div>
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                  {settings.groomRankAndTitle || 'Mempelai Pria'}
+                </span>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+                  {settings.groomFullName}
                 </h3>
-                <p className="text-xs text-stone-500 mb-5">{ev.subtitle}</p>
-
-                <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-6">
-                  <div className="flex items-start gap-2.5">
-                    <Calendar className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                    <span className="font-bold text-stone-800">{ev.date}</span>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <Clock className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                    <span className="text-stone-700 font-medium">{ev.time}</span>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <MapPin className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-stone-800">{ev.venue}</p>
-                      <p className="text-xs text-stone-500 mt-0.5">{ev.address}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-3 border-t border-stone-200/70">
-                <div className="text-[11px] text-stone-500">
-                  <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
-                  {ev.dresscode}
-                </div>
-                <a
-                  href={ev.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-                >
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Buka Lokasi di Google Maps</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* SECTION: LOVE STORY & GALERI PREWEDDING */}
-      <section id="galeri" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-            Our Journey &amp; Moments
-          </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-            Kisah Kasih &amp; Galeri Momen
-          </h2>
-        </div>
-
-        {/* Love Story Timeline Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          {settings.loveStory.map((story, i) => (
-            <div
-              key={story.id || i}
-              className="rounded-3xl bg-white/75 backdrop-blur-xl border border-white/90 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)]"
-            >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
-                  {story.dateLabel}
-                </span>
-                <Heart className="w-4 h-4 text-[#C5A059]" />
-              </div>
-              <h3 className="font-serif text-lg font-bold text-stone-900 mb-1">
-                {story.title}
-              </h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                {story.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Photo Gallery Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {settings.galleryPhotos.map((photo) => (
-            <button
-              key={photo.id}
-              type="button"
-              onClick={() => setSelectedPhoto(photo)}
-              className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/90 bg-white shadow-md text-left focus:outline-none"
-            >
-              <img
-                src={photo.imageUrl}
-                alt={photo.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-950/15 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
-              <div className="absolute bottom-3 left-3 right-3 text-white">
-                <span className="text-[10px] uppercase tracking-wider text-[#F3D77D] font-semibold block">
-                  {photo.category}
-                </span>
-                <p className="font-serif text-xs sm:text-sm font-bold truncate">
-                  {photo.title}
+                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                  {settings.groomUnit || settings.groomOrigin}
+                </p>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                  {settings.groomParents}
                 </p>
               </div>
-            </button>
-          ))}
-        </div>
-      </section>
+              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto">
+                <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
+                <span>{settings.groomOrigin}</span>
+              </div>
+            </div>
 
-      {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME */}
-      <section id="rsvp" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-            RSVP &amp; Wedding Wishes
-          </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-            Konfirmasi Kehadiran &amp; Doa Restu
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time
-          </p>
-        </div>
+            {/* Bride Card */}
+            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+              <div className="flex flex-col items-center w-full">
+                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden shrink-0">
+                  <img
+                    src={settings.bridePhotoUrl}
+                    alt={settings.brideFullName}
+                    className="w-full h-full object-cover rounded-full bg-stone-100"
+                  />
+                </div>
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                  {settings.brideTitle || 'Mempelai Wanita'}
+                </span>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+                  {settings.brideFullName}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                  {settings.brideOrigin}
+                </p>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                  {settings.brideParents}
+                </p>
+              </div>
+              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto">
+                <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
+                <span>{settings.brideOrigin}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: RSVP Form (5 cols) */}
-          <form
-            onSubmit={handleRsvpFormSubmit}
-            className="lg:col-span-5 rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 shadow-[0_18px_50px_rgba(175,145,95,0.12)] space-y-4 text-xs sm:text-sm"
+      {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
+      {visibleEvents.length > 0 && (
+        <section id="acara" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+              Save The Date
+            </span>
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+              Rangkaian Acara Pernikahan
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              {settings.subtitle}
+            </p>
+          </div>
+
+          <div
+            className={`grid grid-cols-1 gap-6 items-stretch ${
+              visibleEvents.length === 1
+                ? 'max-w-lg mx-auto'
+                : visibleEvents.length === 2
+                ? 'md:grid-cols-2'
+                : 'lg:grid-cols-3'
+            }`}
           >
-            <div className="flex items-center gap-2.5 pb-3 border-b border-stone-200/80">
-              <Users className="w-5 h-5 text-[#B68D40]" />
-              <h3 className="font-serif text-lg font-bold text-stone-900">
-                Form RSVP Kehadiran
-              </h3>
-            </div>
-
-            {rsvpSubmittedSuccess && (
-              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-2.5 text-xs font-medium">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">Terima kasih atas konfirmasi &amp; doa restu Anda!</p>
-                  <p className="text-emerald-700 mt-0.5">
-                    Data kehadiran dan ucapan Anda telah tersimpan di buku tamu.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                Nama Lengkap / Gelar *
-              </label>
-              <input
-                type="text"
-                required
-                value={rsvpName}
-                onChange={(e) => setRsvpName(e.target.value)}
-                placeholder="Contoh: Bpk. Budi Santoso"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  Instansi / Kerabat
-                </label>
-                <input
-                  type="text"
-                  value={rsvpInstitution}
-                  onChange={(e) => setRsvpInstitution(e.target.value)}
-                  placeholder="Keluarga / Rekan Kerja"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  No. WhatsApp (Opsional)
-                </label>
-                <input
-                  type="text"
-                  value={rsvpPhone}
-                  onChange={(e) => setRsvpPhone(e.target.value)}
-                  placeholder="0812xxxxxxxx"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  Status Kehadiran *
-                </label>
-                <select
-                  value={rsvpStatus}
-                  onChange={(e) => setRsvpStatus(e.target.value as RsvpStatus)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
-                >
-                  <option value="Hadir">Hadir</option>
-                  <option value="Tidak Hadir">Berhalangan Hadir</option>
-                  <option value="Masih Ragu">Masih Ragu</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  Jumlah Orang (Pax)
-                </label>
-                <select
-                  value={rsvpPax}
-                  onChange={(e) => setRsvpPax(Number(e.target.value))}
-                  disabled={rsvpStatus === 'Tidak Hadir'}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none disabled:opacity-50"
-                >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n} Orang
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                Sesi Kehadiran
-              </label>
-              <select
-                value={rsvpSession}
-                onChange={(e) =>
-                  setRsvpSession(e.target.value as WeddingGuest['sessionChoice'])
-                }
-                className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+            {visibleEvents.map((ev, idx) => (
+              <div
+                key={idx}
+                className={`h-full rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
+                  ev.highlight
+                    ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
+                    : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
+                }`}
               >
-                <option value="Pemberkatan & Resepsi">
-                  Pemberkatan &amp; Resepsi (19 Des 2026)
-                </option>
-                <option value="Resepsi Saja">Resepsi Saja (19 Des 2026)</option>
-                <option value="Biston & Pemberkatan">
-                  Biston (18 Des) &amp; Pemberkatan (19 Des)
-                </option>
-                <option value="Semua Sesi">Semua Rangkaian Acara (18-19 Des)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                Ucapan &amp; Doa Restu untuk Kedua Mempelai
-              </label>
-              <textarea
-                rows={3}
-                value={rsvpMessage}
-                onChange={(e) => setRsvpMessage(e.target.value)}
-                placeholder="Tuliskan doa restu dan harapan terbaik Anda..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmittingRsvp}
-              className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-              <span>
-                {isSubmittingRsvp
-                  ? 'Menyimpan Konfirmasi...'
-                  : 'Kirim Konfirmasi & Ucapan'}
-              </span>
-            </button>
-          </form>
-
-          {/* Right: Live Guestbook Wishes Feed (7 cols) */}
-          <div className="lg:col-span-7 rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col max-h-[560px]">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-stone-200/80">
-              <div className="flex items-center gap-2">
-                <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
-                <h3 className="font-serif text-lg font-bold text-stone-900">
-                  Buku Tamu &amp; Doa Restu ({wishes.length})
-                </h3>
-              </div>
-              <span className="text-[11px] text-[#9A742B] font-semibold">
-                Real-Time Feed
-              </span>
-            </div>
-
-            <div className="overflow-y-auto space-y-3 pr-1">
-              {wishes.map((w) => (
-                <div
-                  key={w.id}
-                  className={`p-4 rounded-2xl border transition-all ${
-                    w.isPinned
-                      ? 'bg-[#FAF6EE] border-[#D4AF37]/50'
-                      : 'bg-white/90 border-stone-200/80'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="font-bold text-xs sm:text-sm text-stone-900">
-                          {w.guestName}
-                        </h4>
-                        {w.isPinned && (
-                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
-                            <Pin className="w-2.5 h-2.5" /> Disematkan
-                          </span>
-                        )}
-                      </div>
-                      {w.institution && (
-                        <p className="text-[11px] text-[#9A742B] font-medium">
-                          {w.institution}
-                        </p>
-                      )}
-                    </div>
-
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                        w.rsvpStatus === 'Hadir'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : w.rsvpStatus === 'Tidak Hadir'
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}
-                    >
-                      {w.rsvpStatus} {w.rsvpStatus === 'Hadir' ? `(${w.pax} Pax)` : ''}
+                <div className="flex flex-col flex-1">
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
+                      {ev.badge}
                     </span>
+                    <WeddingRingsIcon className="w-5 h-5 text-[#C5A059]" />
                   </div>
 
-                  <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
-                    &ldquo;{w.message}&rdquo;
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 mb-1">
+                    {ev.title}
+                  </h3>
+                  <p className="text-xs text-stone-500 mb-5 min-h-[2rem]">
+                    {ev.subtitle}
                   </p>
 
-                  {w.replyFromCouple && (
-                    <div className="mt-3 pl-3 border-l-2 border-[#D4AF37] bg-[#FAF8F5] p-2.5 rounded-r-xl text-xs text-stone-600">
-                      <span className="font-bold text-[#8B6914] block mb-0.5">
-                        Balasan Mempelai:
+                  <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-6">
+                    <div className="flex items-start gap-2.5">
+                      <Calendar className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                      <span className="font-bold text-stone-800">{ev.date}</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <Clock className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                      <span className="text-stone-700 font-medium">{ev.time}</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <MapPin className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-stone-800">{ev.venue}</p>
+                        <p className="text-xs text-stone-500 mt-0.5">{ev.address}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-3 border-t border-stone-200/70 mt-auto">
+                  <div className="text-[11px] text-stone-500 truncate">
+                    <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
+                    {ev.dresscode}
+                  </div>
+                  <a
+                    href={ev.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Buka Lokasi di Google Maps</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
+      {((settings.showLoveStorySection && settings.loveStory.length > 0) ||
+        (settings.showGallerySection && settings.galleryPhotos.length > 0)) && (
+        <section id="galeri" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+              Our Journey &amp; Moments
+            </span>
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+              Kisah Kasih &amp; Galeri Momen
+            </h2>
+          </div>
+
+          {/* Love Story Timeline Cards */}
+          {settings.showLoveStorySection && settings.loveStory.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10 items-stretch">
+              {settings.loveStory.map((story, i) => (
+                <div
+                  key={story.id || i}
+                  className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
+                        {story.dateLabel}
                       </span>
-                      {w.replyFromCouple}
+                      <Heart className="w-4 h-4 text-[#C5A059]" />
+                    </div>
+                    <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
+                      {story.title}
+                    </h3>
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      {story.description}
+                    </p>
+                  </div>
+                  {story.location && (
+                    <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-[#B68D40]" />
+                      <span>{story.location}</span>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
+          )}
 
-      {/* SECTION: AMPLOP DIGITAL / WEDDING GIFT */}
-      <section id="gift" className="relative z-10 py-10 px-4 max-w-4xl mx-auto">
-        <div className="rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B]">
-            <Gift className="w-6 h-6" />
-          </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-            Wedding Gift
-          </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2">
-            Amplop Digital &amp; Tanda Kasih
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-600 max-w-xl mx-auto mb-6">
-            Doa restu Bapak/Ibu/Saudara/i merupakan karunia terindah bagi kami. Namun apabila ingin memberikan tanda kasih secara digital, dapat melalui rekening berikut:
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
-            {settings.bankAccounts.map((acc) => {
-              const isCopied = copiedAccountId === acc.id;
-              return (
-                <div
-                  key={acc.id}
-                  className="rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 p-4 flex flex-col justify-between shadow-2xs"
+          {/* Photo Gallery Grid */}
+          {settings.showGallerySection && settings.galleryPhotos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 items-stretch">
+              {settings.galleryPhotos.map((photo) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  onClick={() => setSelectedPhoto(photo)}
+                  className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/95 bg-white shadow-md text-left focus:outline-none"
                 >
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#9A742B] block mb-1">
-                      {acc.bankName}
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-950/15 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
+                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                    <span className="text-[10px] uppercase tracking-wider text-[#F3D77D] font-semibold block">
+                      {photo.category}
                     </span>
-                    <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1">
-                      {acc.accountNumber}
-                    </p>
-                    <p className="text-xs font-semibold text-stone-700">
-                      a.n. {acc.accountHolder}
-                    </p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
-                      {acc.branchOrNote}
+                    <p className="font-serif text-xs sm:text-sm font-bold truncate">
+                      {photo.title}
                     </p>
                   </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-                  <button
-                    type="button"
-                    onClick={() => handleCopyAccount(acc.id, acc.accountNumber)}
-                    className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      isCopied
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
-                    }`}
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Nomor Disalin!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Salin No. Rekening</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-stone-200/80 text-xs text-stone-600">
-            <button
-              type="button"
-              onClick={() => setShowQrisModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
-            >
-              <QrCode className="w-4 h-4" />
-              <span>Tampilkan Barcode QRIS</span>
-            </button>
-            <span className="text-stone-500">
-              Alamat Kirim Kado: <strong className="text-stone-800">{settings.giftShippingAddress}</strong>
+      {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
+      {settings.showRsvpSection !== false && (
+        <section id="rsvp" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+              RSVP &amp; Wedding Wishes
             </span>
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+              Konfirmasi Kehadiran &amp; Doa Restu
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time
+            </p>
           </div>
-        </div>
-      </section>
+
+          {/* Equal 2-Column Grid with items-stretch and fixed matched desktop height */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            {/* Left Card: RSVP Form (Exact same width & height as Right Card) */}
+            <form
+              onSubmit={handleRsvpFormSubmit}
+              className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-stone-200/80">
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-5 h-5 text-[#B68D40]" />
+                    <h3 className="font-serif text-lg font-bold text-stone-900">
+                      Form RSVP Kehadiran
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-[#9A742B] font-semibold">
+                    Konfirmasi Online
+                  </span>
+                </div>
+
+                {rsvpSubmittedSuccess && (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-2.5 text-xs font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">
+                        Terima kasih atas konfirmasi &amp; doa restu Anda!
+                      </p>
+                      <p className="text-emerald-700 mt-0.5">
+                        Data kehadiran dan ucapan Anda telah tersimpan di buku tamu.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Nama Lengkap / Gelar *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={rsvpName}
+                    onChange={(e) => setRsvpName(e.target.value)}
+                    placeholder="Contoh: Bpk. Budi Santoso"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Instansi / Kerabat
+                    </label>
+                    <input
+                      type="text"
+                      value={rsvpInstitution}
+                      onChange={(e) => setRsvpInstitution(e.target.value)}
+                      placeholder="Keluarga / Rekan Kerja"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      No. WhatsApp (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={rsvpPhone}
+                      onChange={(e) => setRsvpPhone(e.target.value)}
+                      placeholder="0812xxxxxxxx"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Status Kehadiran *
+                    </label>
+                    <select
+                      value={rsvpStatus}
+                      onChange={(e) => setRsvpStatus(e.target.value as RsvpStatus)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+                    >
+                      <option value="Hadir">Hadir</option>
+                      <option value="Tidak Hadir">Berhalangan Hadir</option>
+                      <option value="Masih Ragu">Masih Ragu</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Jumlah Orang (Pax)
+                    </label>
+                    <select
+                      value={rsvpPax}
+                      onChange={(e) => setRsvpPax(Number(e.target.value))}
+                      disabled={rsvpStatus === 'Tidak Hadir'}
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none disabled:opacity-50"
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n} Orang
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Sesi Kehadiran
+                  </label>
+                  <select
+                    value={rsvpSession}
+                    onChange={(e) =>
+                      setRsvpSession(e.target.value as WeddingGuest['sessionChoice'])
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
+                  >
+                    <option value="Pemberkatan & Resepsi">
+                      {settings.event2Title} &amp; {settings.event3Title}
+                    </option>
+                    <option value="Resepsi Saja">{settings.event3Title} Saja</option>
+                    <option value="Biston & Pemberkatan">
+                      {settings.event1Title} &amp; {settings.event2Title}
+                    </option>
+                    <option value="Semua Sesi">Semua Rangkaian Acara</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Ucapan &amp; Doa Restu untuk Kedua Mempelai
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={rsvpMessage}
+                    onChange={(e) => setRsvpMessage(e.target.value)}
+                    placeholder="Tuliskan doa restu dan harapan terbaik Anda..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 mt-auto">
+                <button
+                  type="submit"
+                  disabled={isSubmittingRsvp}
+                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>
+                    {isSubmittingRsvp
+                      ? 'Menyimpan Konfirmasi...'
+                      : 'Kirim Konfirmasi & Ucapan'}
+                  </span>
+                </button>
+              </div>
+            </form>
+
+            {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
+            <div className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-stone-200/80 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
+                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                    Buku Tamu &amp; Doa Restu ({wishes.length})
+                  </h3>
+                </div>
+                <span className="text-[11px] text-[#9A742B] font-semibold">
+                  Real-Time Feed
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {wishes.length === 0 ? (
+                  <div className="h-full min-h-[320px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-6 flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] mb-3">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-serif text-base font-bold text-stone-800 mb-1">
+                      Belum Ada Ucapan &amp; Doa
+                    </h4>
+                    <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
+                      Jadilah yang pertama menuliskan ucapan selamat dan doa restu untuk kedua mempelai melalui formulir di samping.
+                    </p>
+                  </div>
+                ) : (
+                  wishes.map((w) => (
+                    <div
+                      key={w.id}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        w.isPinned
+                          ? 'bg-[#FAF6EE] border-[#D4AF37]/50'
+                          : 'bg-white/90 border-stone-200/80'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-xs sm:text-sm text-stone-900">
+                              {w.guestName}
+                            </h4>
+                            {w.isPinned && (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
+                                <Pin className="w-2.5 h-2.5" /> Disematkan
+                              </span>
+                            )}
+                          </div>
+                          {w.institution && (
+                            <p className="text-[11px] text-[#9A742B] font-medium">
+                              {w.institution}
+                            </p>
+                          )}
+                        </div>
+
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            w.rsvpStatus === 'Hadir'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : w.rsvpStatus === 'Tidak Hadir'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {w.rsvpStatus}{' '}
+                          {w.rsvpStatus === 'Hadir' ? `(${w.pax} Pax)` : ''}
+                        </span>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
+                        &ldquo;{w.message}&rdquo;
+                      </p>
+
+                      {w.replyFromCouple && (
+                        <div className="mt-3 pl-3 border-l-2 border-[#D4AF37] bg-[#FAF8F5] p-2.5 rounded-r-xl text-xs text-stone-600">
+                          <span className="font-bold text-[#8B6914] block mb-0.5">
+                            Balasan Mempelai:
+                          </span>
+                          {w.replyFromCouple}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="pt-3 mt-4 border-t border-stone-200/80 flex items-center justify-between text-[11px] text-stone-500 shrink-0">
+                <span>Tersinkronisasi otomatis dengan Dashboard Mempelai</span>
+                <span className="font-semibold text-[#9A742B]">
+                  {wishes.length} Doa Restu
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* SECTION: AMPLOP DIGITAL / WEDDING GIFT (CONDITIONAL & SYMMETRICAL) */}
+      {settings.showGiftSection !== false && (
+        <section id="gift" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
+          <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B]">
+              <Gift className="w-6 h-6" />
+            </div>
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+              Wedding Gift
+            </span>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2">
+              Amplop Digital &amp; Tanda Kasih
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-600 max-w-xl mx-auto mb-6">
+              Doa restu Bapak/Ibu/Saudara/i merupakan karunia terindah bagi kami. Namun apabila ingin memberikan tanda kasih secara digital, dapat melalui informasi berikut:
+            </p>
+
+            {settings.bankAccounts.length > 0 && (
+              <div
+                className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch ${
+                  settings.bankAccounts.length === 1
+                    ? 'max-w-md mx-auto'
+                    : settings.bankAccounts.length === 2
+                    ? 'md:grid-cols-2 max-w-2xl mx-auto'
+                    : 'md:grid-cols-3'
+                }`}
+              >
+                {settings.bankAccounts.map((acc) => {
+                  const isCopied = copiedAccountId === acc.id;
+                  return (
+                    <div
+                      key={acc.id}
+                      className="h-full rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 p-5 flex flex-col justify-between shadow-2xs"
+                    >
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#9A742B] block mb-1">
+                          {acc.bankName}
+                        </span>
+                        <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1">
+                          {acc.accountNumber}
+                        </p>
+                        <p className="text-xs font-semibold text-stone-700">
+                          a.n. {acc.accountHolder}
+                        </p>
+                        {acc.branchOrNote && (
+                          <p className="text-[11px] text-stone-500 mt-0.5">
+                            {acc.branchOrNote}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyAccount(acc.id, acc.accountNumber)}
+                        className={`mt-4 w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          isCopied
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
+                        }`}
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Nomor Disalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Salin No. Rekening</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-stone-200/80 text-xs text-stone-600">
+              <button
+                type="button"
+                onClick={() => setShowQrisModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>Tampilkan Barcode QRIS</span>
+              </button>
+              {settings.giftShippingAddress && (
+                <span className="text-stone-500">
+                  Alamat Kirim Kado:{' '}
+                  <strong className="text-stone-800">
+                    {settings.giftShippingAddress}
+                  </strong>
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CLOSING FOOTER */}
       <footer className="relative z-10 py-12 px-4 text-center max-w-2xl mx-auto">
@@ -1035,13 +1156,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       </footer>
 
       {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE-FIRST) */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white/85 backdrop-blur-2xl border border-[#D4AF37]/40 rounded-full px-3 py-2 shadow-[0_12px_35px_rgba(160,130,85,0.22)] flex items-center gap-1 sm:gap-2">
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white/90 backdrop-blur-2xl border border-[#D4AF37]/40 rounded-full px-3 py-2 shadow-[0_12px_35px_rgba(160,130,85,0.22)] flex items-center gap-1 sm:gap-2">
         {[
-          { href: '#mempelai', label: 'Mempelai', icon: Heart },
-          { href: '#acara', label: 'Acara', icon: Calendar },
-          { href: '#galeri', label: 'Galeri', icon: Camera },
-          { href: '#rsvp', label: 'RSVP & Doa', icon: MessageSquareHeart },
-          { href: '#gift', label: 'Amplop', icon: Gift },
+          ...(settings.showCoupleSection !== false
+            ? [{ href: '#mempelai', label: 'Mempelai', icon: Heart }]
+            : []),
+          ...(visibleEvents.length > 0
+            ? [{ href: '#acara', label: 'Acara', icon: Calendar }]
+            : []),
+          ...((settings.showLoveStorySection && settings.loveStory.length > 0) ||
+          (settings.showGallerySection && settings.galleryPhotos.length > 0)
+            ? [{ href: '#galeri', label: 'Galeri', icon: Camera }]
+            : []),
+          ...(settings.showRsvpSection !== false
+            ? [{ href: '#rsvp', label: 'RSVP & Doa', icon: MessageSquareHeart }]
+            : []),
+          ...(settings.showGiftSection !== false
+            ? [{ href: '#gift', label: 'Amplop', icon: Gift }]
+            : []),
         ].map((nav) => {
           const IconComp = nav.icon;
           return (
@@ -1069,9 +1201,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <X className="w-4 h-4" />
             </button>
             <QrCode className="w-8 h-8 text-[#B68D40] mx-auto mb-2" />
-            <h3 className="font-serif text-lg font-bold">
-              QRIS Wedding Gift
-            </h3>
+            <h3 className="font-serif text-lg font-bold">QRIS Wedding Gift</h3>
             <p className="text-xs text-stone-500 mb-4">
               a.n. {settings.giftRecipientName}
             </p>

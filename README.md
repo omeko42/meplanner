@@ -24,10 +24,10 @@ Sistem Informasi Terpadu **Manajemen Kesiapan Pernikahan (Wedding Readiness Trac
 
 ---
 
-## 🔐 Akun Login Admin Default
-- **Email / Username**: `agungkrisdianto98@gmail.com` atau `admin`
-- **Password**: `Nikah2026!`
-*(Tersedia juga tombol **1-Klik Akses Cepat** pada modal login untuk Mempelai Pria, Mempelai Wanita, dan Koordinator Keluarga/WO).*
+## 🔐 Keamanan Otentikasi & Role-Based Access Control (RBAC)
+- Seluruh kredensial akun dan password dienkripsi menggunakan **One-Way Cryptographic Hash (`scrypt`)** dan diverifikasi di sisi server (`/api/auth` & `/api/wedding`).
+- Tidak ada informasi akun maupun password sensitif yang ditampilkan pada antarmuka publik/login maupun disimpan secara *plaintext* di repositori.
+- Mendukung pemisahan hak akses antara **User Default (Mempelai & Keluarga Inti)** serta **Akun Panitia / WO** (di mana akun Panitia dibatasi secara ketat dari mengakses modul *Budgeting & Revisi Anggaran*).
 
 ---
 
