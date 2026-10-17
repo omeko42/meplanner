@@ -19,7 +19,14 @@ import {
   inferTimelinePhase,
 } from '@/data/seedData';
 
+const PRIMARY_DB_PATH = path.join(process.cwd(), 'database', 'wedding_db.json');
 const LOCAL_DB_PATH = path.join(process.cwd(), '.data', 'wedding_db.json');
+const BACKUP_DB_PATH = path.join(
+  process.cwd(),
+  'data_aplikasi',
+  'backups',
+  'wedding_db_terbaru.json'
+);
 const TMP_DB_PATH = path.join('/tmp', 'wedding_db.json');
 
 declare global {
@@ -41,7 +48,7 @@ function createDefaultStore(): WeddingDatabaseSchema {
 
 function readDbFromDisk(): WeddingDatabaseSchema {
   const defaultStore = createDefaultStore();
-  const candidatePaths = [LOCAL_DB_PATH, TMP_DB_PATH];
+  const candidatePaths = [PRIMARY_DB_PATH, LOCAL_DB_PATH, BACKUP_DB_PATH, TMP_DB_PATH];
 
   for (const dbPath of candidatePaths) {
     try {
@@ -91,21 +98,28 @@ function readDbFromDisk(): WeddingDatabaseSchema {
 function persistStore(store: WeddingDatabaseSchema): void {
   store.lastSyncedAt = new Date().toISOString();
   globalThis.__weddingGlobalStore = store;
+  const serialized = JSON.stringify(store, null, 2);
 
-  // Try writing to project .data/wedding_db.json first
-  try {
-    const dir = path.dirname(LOCAL_DB_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+  let wroteLocal = false;
+  for (const targetPath of [PRIMARY_DB_PATH, LOCAL_DB_PATH, BACKUP_DB_PATH]) {
+    try {
+      const dir = path.dirname(targetPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(targetPath, serialized, 'utf-8');
+      wroteLocal = true;
+    } catch {
+      // Ignore individual path error in restricted serverless environments
     }
-    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(store, null, 2), 'utf-8');
+  }
+
+  if (wroteLocal) {
     return;
-  } catch {
-    // Fallback to /tmp in Vercel serverless environment
   }
 
   try {
-    fs.writeFileSync(TMP_DB_PATH, JSON.stringify(store, null, 2), 'utf-8');
+    fs.writeFileSync(TMP_DB_PATH, serialized, 'utf-8');
   } catch {
     // In-memory store remains active
   }

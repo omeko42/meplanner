@@ -415,18 +415,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Sync Sheets, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Local DB Status, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleTriggerSyncSheets}
-                disabled={isSyncingSheets}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-amber-200 transition-all disabled:opacity-50"
-                title="Sinkronisasi langsung dari Google Sheets DB Wedding"
+              <div
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-[11px] font-bold text-emerald-300"
+                title="Database berjalan 100% di Lokal (database/wedding_db.json)"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheets ? 'animate-spin' : ''}`} />
-                <span className="hidden lg:inline">Sync Google Sheets</span>
-              </button>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="hidden lg:inline">DB Lokal Aktif (wedding_db.json)</span>
+                <span className="lg:hidden">DB Lokal</span>
+              </div>
 
               <button
                 type="button"
@@ -1618,20 +1616,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            {/* Database Sync & Backup / Export Panel */}
+            {/* Database Lokal & Backup / Export Panel */}
             <div className="bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-6 shadow-md border border-amber-400/30 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-amber-300">
-                    Persistensi Data &amp; Integrasi Cloud
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Database Lokal Mandiri Aktif (Sudah Di-Backup dari Spreadsheet)
                   </span>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-white">
-                    Sinkronisasi Google Sheets &amp; Backup Database (JSON / CSV Excel)
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-white mt-0.5">
+                    Database Lokal &amp; Backup Data (JSON / SQL / CSV Excel)
                   </h2>
                   <p className="text-xs text-slate-300 mt-1">
-                    Terhubung ke Google Spreadsheet DB:{' '}
+                    Lokasi DB Lokal:{' '}
                     <code className="text-amber-300 font-mono">
-                      {state.settings.googleSheetId}
+                      database/wedding_db.json
+                    </code>{' '}
+                    &bull; Backup Folder:{' '}
+                    <code className="text-emerald-300 font-mono">
+                      data_aplikasi/backups/
                     </code>
                   </p>
                 </div>
@@ -1641,14 +1644,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     type="button"
                     onClick={handleTriggerSyncSheets}
                     disabled={isSyncingSheets}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-sm transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-amber-200 font-bold text-xs transition-all disabled:opacity-50"
+                    title="Opsional: Impor ulang dari arsip Google Sheets lama jika diperlukan"
                   >
                     <RefreshCw
-                      className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
+                      className={`w-3.5 h-3.5 ${isSyncingSheets ? 'animate-spin' : ''}`}
                     />
                     {isSyncingSheets
-                      ? 'Menyinkronkan...'
-                      : 'Tarik Data Terbaru dari Google Sheets'}
+                      ? 'Mengimpor...'
+                      : 'Impor Ulang dari Arsip Spreadsheet Lama (Opsional)'}
                   </button>
                 </div>
               </div>
