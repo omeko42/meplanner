@@ -37,6 +37,11 @@ import {
   Save,
   KeyRound,
   UserPlus,
+  ChevronRight,
+  Lock,
+  Heart,
+  Image as ImageIcon,
+  BookOpen,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import {
@@ -61,6 +66,8 @@ import {
   AttendanceStatus,
   VendorCategory,
   VendorPaymentStatus,
+  LoveStoryItem,
+  GalleryPhotoItem,
 } from '@/types';
 import {
   formatRupiah,
@@ -383,6 +390,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [showAllPanitia, setShowAllPanitia] = useState(false);
   const [showAllSectionsToggle, setShowAllSectionsToggle] = useState(false);
 
+  // Wira Satya 96 Style Settings Sidebar & Sub-Tab State
+  const [settingsMenuTab, setSettingsMenuTab] = useState<
+    'visibilitas' | 'background' | 'jadwal' | 'keamanan' | 'database'
+  >('visibilitas');
+  const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
+  const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
+
+  // Expanded section key inside Visibilitas & Konten so user can toggle Switch + edit what is displayed right there
+  const [expandedSectionKey, setExpandedSectionKey] = useState<string | null>(
+    'showQuoteSection'
+  );
+
+  // Form state for adding Love Story & Gallery Photo items inside the inline editor
+  const [newStoryForm, setNewStoryForm] = useState<Omit<LoveStoryItem, 'id'>>({
+    dateLabel: '2026',
+    title: '',
+    location: 'Semarang',
+    description: '',
+  });
+  const [newPhotoForm, setNewPhotoForm] = useState<Omit<GalleryPhotoItem, 'id'>>({
+    title: '',
+    caption: '',
+    imageUrl: '',
+    category: 'Prewedding',
+  });
+
   // Active LinkedIn-style popup modal for Settings & Users
   const [activeSettingsModal, setActiveSettingsModal] = useState<
     | null
@@ -453,6 +486,124 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   ) => {
     setSettingsForm(state.settings);
     setActiveSettingsModal(modalType);
+  };
+
+  // Immediate 1-click switch toggle for any invitation section visibility
+  const handleToggleSectionSwitch = async (
+    key:
+      | 'showQuoteSection'
+      | 'showCoupleSection'
+      | 'showEvent1'
+      | 'showEvent2'
+      | 'showEvent3'
+      | 'showLoveStorySection'
+      | 'showGallerySection'
+      | 'showRsvpSection'
+      | 'showGiftSection',
+    label: string
+  ) => {
+    const currentVal = state.settings[key] !== false;
+    const nextVal = !currentVal;
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      [key]: nextVal,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    if (nextVal) {
+      setExpandedSectionKey(key);
+    }
+    showToast(
+      `Seksi "${label}" ${nextVal ? 'diaktifkan (ditampilkan)' : 'dinonaktifkan (disembunyikan)'}.`
+    );
+  };
+
+  const handleAddLoveStoryItem = async () => {
+    if (!newStoryForm.title.trim() || !newStoryForm.description.trim()) return;
+    const nextStory: LoveStoryItem[] = [
+      ...(state.settings.loveStory || []),
+      {
+        id: `story_${Date.now().toString(36)}`,
+        dateLabel: newStoryForm.dateLabel.trim() || '2026',
+        title: newStoryForm.title.trim(),
+        location: newStoryForm.location.trim() || 'Semarang',
+        description: newStoryForm.description.trim(),
+      },
+    ];
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      loveStory: nextStory,
+      showLoveStorySection: true,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    setNewStoryForm({
+      dateLabel: '2026',
+      title: '',
+      location: 'Semarang',
+      description: '',
+    });
+    showToast('Momen Kisah Kasih berhasil ditambahkan & ditampilkan!');
+  };
+
+  const handleDeleteLoveStoryItem = async (storyId: string) => {
+    const nextStory = (state.settings.loveStory || []).filter((s) => s.id !== storyId);
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      loveStory: nextStory,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    showToast('Momen Kisah Kasih dihapus.');
+  };
+
+  const handleAddGalleryPhotoItem = async () => {
+    if (!newPhotoForm.imageUrl.trim()) return;
+    const nextPhotos: GalleryPhotoItem[] = [
+      ...(state.settings.galleryPhotos || []),
+      {
+        id: `photo_${Date.now().toString(36)}`,
+        title: newPhotoForm.title.trim() || 'Momen Bahagia',
+        caption: newPhotoForm.caption.trim() || 'Prewedding',
+        imageUrl: newPhotoForm.imageUrl.trim(),
+        category: newPhotoForm.category,
+      },
+    ];
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      galleryPhotos: nextPhotos,
+      showGallerySection: true,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    setNewPhotoForm({
+      title: '',
+      caption: '',
+      imageUrl: '',
+      category: 'Prewedding',
+    });
+    showToast('Foto Galeri berhasil ditambahkan & ditampilkan!');
+  };
+
+  const handleDeleteGalleryPhotoItem = async (photoId: string) => {
+    const nextPhotos = (state.settings.galleryPhotos || []).filter((p) => p.id !== photoId);
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      galleryPhotos: nextPhotos,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    showToast('Foto Galeri dihapus.');
   };
 
   const handleSelectDefaultUserForEdit = (u: AdminUser) => {
@@ -1954,893 +2105,1962 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
            ===================================================================== */}
         {activeTab === 'settings' && (
-          <div className="space-y-6">
-            {/* Database Lokal & Backup / Export Panel */}
-            <div className="bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-6 shadow-md border border-amber-400/30 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Database Lokal Mandiri Aktif (Sudah Di-Backup dari Spreadsheet)
-                  </span>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-white mt-0.5">
-                    Database Lokal &amp; Backup Data (JSON / SQL / CSV Excel)
-                  </h2>
-                  <p className="text-xs text-slate-300 mt-1">
-                    Lokasi DB Lokal:{' '}
-                    <code className="text-amber-300 font-mono">
-                      database/wedding_db.json
-                    </code>{' '}
-                    &bull; Backup Folder:{' '}
-                    <code className="text-emerald-300 font-mono">
-                      data_aplikasi/backups/
-                    </code>
-                  </p>
+          <div className="max-w-5xl mx-auto space-y-5">
+            {/* WIRA SATYA 96 STYLE TOP HEADER BANNER */}
+            <div className="bg-white rounded-2xl border border-slate-200 px-6 py-4 shadow-2xs flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
+                  <WeddingRingsIcon className="w-6 h-6" />
                 </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleTriggerSyncSheets}
-                    disabled={isSyncingSheets}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-amber-200 font-bold text-xs transition-all disabled:opacity-50"
-                    title="Opsional: Impor ulang dari arsip Google Sheets lama jika diperlukan"
-                  >
-                    <RefreshCw
-                      className={`w-3.5 h-3.5 ${isSyncingSheets ? 'animate-spin' : ''}`}
-                    />
-                    {isSyncingSheets
-                      ? 'Mengimpor...'
-                      : 'Impor Ulang dari Arsip Spreadsheet Lama (Opsional)'}
-                  </button>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
+                    Pengaturan
+                  </h2>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                    {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
+                    {state.settings.groomNickname} &amp; {state.settings.brideNickname}
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-2 border-t border-white/10">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    triggerFileDownload(
-                      `wedding_backup_${new Date().toISOString().slice(0, 10)}.json`,
-                      JSON.stringify(state, null, 2),
-                      'application/json'
-                    );
-                    showToast('Backup JSON lengkap berhasil diunduh!');
-                  }}
-                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
+                  onClick={() => onSwitchToPublicPreview()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+                  title="Buka tampilan undangan publik"
                 >
-                  <FileJson className="w-4 h-4 text-amber-300" />
-                  Export Full JSON
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Pratinjau Undangan</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileDownload(
-                      'DB_Wedding_Tasks.csv',
-                      exportTasksToCsv(state.tasks),
-                      'text/csv;charset=utf-8;'
-                    );
-                    showToast('Sheet Tasks.csv berhasil diunduh!');
-                  }}
-                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
-                  Export Tasks (CSV)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileDownload(
-                      'DB_Wedding_Guests.csv',
-                      exportGuestsToCsv(state.guests),
-                      'text/csv;charset=utf-8;'
-                    );
-                    showToast('Sheet Guests.csv berhasil diunduh!');
-                  }}
-                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
-                  Export Guests (CSV)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileDownload(
-                      'DB_Wedding_Budget.csv',
-                      exportBudgetToCsv(state.budgetItems),
-                      'text/csv;charset=utf-8;'
-                    );
-                    showToast('Sheet Budget.csv berhasil diunduh!');
-                  }}
-                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4 text-sky-300" />
-                  Export Budget (CSV)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-3.5 py-2.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-400/40 text-xs font-bold flex items-center justify-center gap-2 text-emerald-200"
-                >
-                  <Upload className="w-4 h-4" />
-                  Import Backup JSON
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportJsonFile}
-                  className="hidden"
-                />
               </div>
             </div>
 
-            {/* =====================================================================
-                LINKEDIN-STYLE SECTION CARDS FOR SETTINGS, INVITATION & ACCOUNTS
-               ===================================================================== */}
-            <div className="space-y-4">
-              {/* CARD 1: BACKGROUND & TRANSPARANSI UNDANGAN */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Background &amp; Transparansi Undangan (3)
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Wallpaper halaman, foto sampul, banner prewedding, dan efek kaca transparan
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('background')}
-                      title="Pilih Preset / Tambah Background"
-                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('background')}
-                      title="Edit Background & Transparansi"
-                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={state.settings.coverBgUrl}
-                        alt="Cover"
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900">
-                          Background Sampul Pembuka (Cover)
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {state.settings.coverBgUrl || 'Default'}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('background')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={state.settings.heroPrewedUrl}
-                        alt="Hero"
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900">
-                          Banner Utama / Siluet Foto Prewedding
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {state.settings.heroPrewedUrl || 'Default'}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('background')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={state.settings.pageBgUrl}
-                        alt="Page BG"
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900">
-                          Wallpaper Halaman &amp; Lapisan Transparan (Pearl Veil)
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Transparansi {state.settings.bgOverlayOpacity ?? 88}% • Blur Kaca:{' '}
-                          {(state.settings.bgBlurIntensity || 'sm').toUpperCase()}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('background')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+            {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT SIDEBAR MENU */}
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden divide-y divide-slate-100">
+                {[
+                  {
+                    id: 'visibilitas' as const,
+                    label: 'Visibilitas & Isi Undangan',
+                    icon: Eye,
+                    show: true,
+                  },
+                  {
+                    id: 'background' as const,
+                    label: 'Tema & Background',
+                    icon: Sparkles,
+                    show: true,
+                  },
+                  {
+                    id: 'jadwal' as const,
+                    label: 'Jadwal & Countdown',
+                    icon: Calendar,
+                    show: true,
+                  },
+                  {
+                    id: 'keamanan' as const,
+                    label: 'Keamanan & Akun',
+                    icon: Lock,
+                    show: !isPanitia,
+                  },
+                  {
+                    id: 'database' as const,
+                    label: 'Database & Backup',
+                    icon: FileSpreadsheet,
+                    show: true,
+                  },
+                ]
+                  .filter((m) => m.show)
+                  .map((menu) => {
+                    const IconComp = menu.icon;
+                    const isActive = settingsMenuTab === menu.id;
+                    return (
+                      <button
+                        key={menu.id}
+                        type="button"
+                        onClick={() => setSettingsMenuTab(menu.id)}
+                        className={`w-full px-5 py-3.5 flex items-center justify-between text-left transition-all ${
+                          isActive
+                            ? 'bg-[#FDF2F2] text-[#8B1E1E] font-bold border-l-4 border-[#8B1E1E]'
+                            : 'bg-white hover:bg-slate-50 text-slate-700 font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <IconComp
+                            className={`w-4 h-4 ${
+                              isActive ? 'text-[#8B1E1E]' : 'text-slate-400'
+                            }`}
+                          />
+                          <span className="text-xs sm:text-sm">{menu.label}</span>
+                        </div>
+                        <ChevronRight
+                          className={`w-4 h-4 ${
+                            isActive ? 'text-[#8B1E1E]' : 'text-slate-400'
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
               </div>
 
-              {/* CARD 2: VISIBILITAS SEKSI UNDANGAN */}
-              {(() => {
-                const visibilityItems = [
-                  { key: 'showQuoteSection' as const, label: 'Kutipan Ayat Suci / Doa Pernikahan' },
-                  { key: 'showCoupleSection' as const, label: 'Profil Kedua Mempelai & Orang Tua' },
-                  { key: 'showEvent1' as const, label: `Acara 1 (${state.settings.event1Title})` },
-                  { key: 'showEvent2' as const, label: `Acara 2 (${state.settings.event2Title})` },
-                  { key: 'showEvent3' as const, label: `Acara 3 (${state.settings.event3Title})` },
-                  { key: 'showLoveStorySection' as const, label: 'Kisah Kasih (Love Story Timeline)' },
-                  { key: 'showGallerySection' as const, label: 'Galeri Foto Prewedding' },
-                  { key: 'showRsvpSection' as const, label: 'Form Konfirmasi Kehadiran (RSVP) & Buku Tamu' },
-                  { key: 'showGiftSection' as const, label: 'Amplop Digital & Alamat Pengiriman Kado' },
-                ];
-                const visibleRows = showAllSectionsToggle
-                  ? visibilityItems
-                  : visibilityItems.slice(0, 4);
-                return (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Bagian Undangan yang Ditampilkan ({visibilityItems.filter((i) => state.settings[i.key] !== false).length}/{visibilityItems.length})
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Atur seksi mana saja yang muncul atau disembunyikan pada halaman tamu
-                        </p>
-                      </div>
+              {/* RIGHT CONTENT PANEL */}
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                {/* ===============================================================
+                    MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
+                   =============================================================== */}
+                {settingsMenuTab === 'visibilitas' && (
+                  <div className="space-y-5">
+                    {/* Panel Title */}
+                    <div className="flex items-center gap-2.5">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        Pengaturan Visibilitas &amp; Konten Seksi Undangan
+                      </h3>
+                    </div>
+
+                    {/* Wira Satya 96 Segmented Blue Pill Sub-Tabs */}
+                    <div className="p-1.5 rounded-xl bg-slate-100 grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
-                        onClick={() => openSettingsPopup('visibility')}
-                        title="Edit Tampilan Seksi Undangan"
-                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                        onClick={() => setVisibilitasSubTab('semua')}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                          visibilitasSubTab === 'semua'
+                            ? 'bg-[#1D63DC] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
                       >
-                        <Edit3 className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Saklar &amp; Isi Konten (9 Seksi)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisibilitasSubTab('media');
+                          setExpandedSectionKey('showLoveStorySection');
+                        }}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                          visibilitasSubTab === 'media'
+                            ? 'bg-[#1D63DC] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Kisah Kasih &amp; Galeri Foto</span>
                       </button>
                     </div>
 
-                    <div className="divide-y divide-slate-200">
-                      {visibleRows.map((item) => {
-                        const isShown = state.settings[item.key] !== false;
-                        return (
-                          <div
-                            key={item.key}
-                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+                    {/* Status Summary Row */}
+                    {(() => {
+                      const allSections = [
+                        {
+                          key: 'showQuoteSection' as const,
+                          title: 'Kutipan Ayat Suci & Kalimat Sambutan',
+                          preview: `"${state.settings.quoteVerse}" — (${state.settings.quoteSource})`,
+                          icon: BookOpen,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showCoupleSection' as const,
+                          title: 'Profil Kedua Mempelai & Orang Tua',
+                          preview: `${state.settings.groomFullName} & ${state.settings.brideFullName}`,
+                          icon: Users,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showEvent1' as const,
+                          title: `Acara 1: ${state.settings.event1Title}`,
+                          preview: `${state.settings.event1DateLabel} • ${state.settings.event1TimeLabel} • ${state.settings.event1Venue}`,
+                          icon: Calendar,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showEvent2' as const,
+                          title: `Acara 2: ${state.settings.event2Title}`,
+                          preview: `${state.settings.event2DateLabel} • ${state.settings.event2TimeLabel} • ${state.settings.event2Venue}`,
+                          icon: Calendar,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showEvent3' as const,
+                          title: `Acara 3: ${state.settings.event3Title}`,
+                          preview: `${state.settings.event3DateLabel} • ${state.settings.event3TimeLabel} • ${state.settings.event3Venue}`,
+                          icon: Calendar,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showLoveStorySection' as const,
+                          title: 'Kisah Kasih (Love Story Timeline)',
+                          preview: `${(state.settings.loveStory || []).length} Momen Perjalanan Cinta ditampilkan di undangan`,
+                          icon: Heart,
+                          group: 'media',
+                        },
+                        {
+                          key: 'showGallerySection' as const,
+                          title: 'Galeri Foto Prewedding',
+                          preview: `${(state.settings.galleryPhotos || []).length} Foto Prewedding ditampilkan di galeri undangan`,
+                          icon: ImageIcon,
+                          group: 'media',
+                        },
+                        {
+                          key: 'showRsvpSection' as const,
+                          title: 'Form Konfirmasi Kehadiran (RSVP) & Buku Tamu',
+                          preview: `Form RSVP interaktif & ${state.wishes.length} ucapan doa buku tamu`,
+                          icon: MessageSquareHeart,
+                          group: 'semua',
+                        },
+                        {
+                          key: 'showGiftSection' as const,
+                          title: 'Amplop Digital & Pengiriman Kado',
+                          preview: `${(state.settings.bankAccounts || []).length} Rekening Bank/E-Wallet • Penerima Kado: ${state.settings.giftRecipientName}`,
+                          icon: Wallet,
+                          group: 'semua',
+                        },
+                      ];
+
+                      const activeCount = allSections.filter(
+                        (s) => state.settings[s.key] !== false
+                      ).length;
+
+                      const displayedSections =
+                        visibilitasSubTab === 'media'
+                          ? allSections.filter((s) => s.group === 'media')
+                          : allSections;
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                            <span className="text-xs text-slate-500">
+                              Aktifkan switch dan klik <strong>Atur Isi</strong> untuk mengubah apa yang ditampilkan di setiap seksi
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px] shrink-0">
+                              &bull; Aktif ({activeCount}/9 Seksi)
+                            </span>
+                          </div>
+
+                          {/* Rows List (Wira Satya 96 Row + Switch + Inline Content Editor) */}
+                          <div className="divide-y divide-slate-100">
+                            {displayedSections.map((sec) => {
+                              const SecIcon = sec.icon;
+                              const isShown = state.settings[sec.key] !== false;
+                              const isExpanded = expandedSectionKey === sec.key;
+
+                              return (
+                                <div key={sec.key} className="py-4 first:pt-1 last:pb-1">
+                                  {/* Row Header */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-start gap-3 min-w-0">
+                                      <div
+                                        className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                                          isShown
+                                            ? 'bg-emerald-50/70 border-emerald-200 text-emerald-700'
+                                            : 'bg-slate-50 border-slate-200 text-slate-400'
+                                        }`}
+                                      >
+                                        <SecIcon className="w-4 h-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="font-bold text-xs sm:text-sm text-slate-900">
+                                          {sec.title}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                                          {sec.preview}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Right Controls: Status Badge + Switch + Atur Isi Button */}
+                                    <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
+                                      <span
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                          isShown
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            : 'bg-rose-50 text-rose-600 border-rose-200'
+                                        }`}
+                                      >
+                                        {isShown ? 'Aktif' : 'Nonaktif'}
+                                      </span>
+
+                                      {/* Real Toggle Switch */}
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isShown}
+                                        onClick={() =>
+                                          handleToggleSectionSwitch(sec.key, sec.title)
+                                        }
+                                        title={
+                                          isShown
+                                            ? 'Klik untuk menyembunyikan dari undangan'
+                                            : 'Klik untuk menampilkan di undangan'
+                                        }
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                          isShown ? 'bg-emerald-600' : 'bg-slate-300'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                                            isShown ? 'translate-x-5' : 'translate-x-0'
+                                          }`}
+                                        />
+                                      </button>
+
+                                      {/* Expand Inline Content Editor Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSettingsForm(state.settings);
+                                          setExpandedSectionKey(
+                                            isExpanded ? null : sec.key
+                                          );
+                                        }}
+                                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                          isExpanded
+                                            ? 'bg-[#1D63DC] text-white border-[#1D63DC]'
+                                            : 'bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] border-blue-200'
+                                        }`}
+                                      >
+                                        {isExpanded ? 'Tutup Isi' : 'Atur Isi'}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* =========================================================
+                                      INLINE CONTENT EDITOR ("APA YANG DITAMPILKAN DIMUAT DI SINI")
+                                     ========================================================= */}
+                                  {isExpanded && (
+                                    <div className="mt-3.5 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3.5 text-xs">
+                                      {/* 1. EDITOR KUTIPAN AYAT SUCI & KALIMAT */}
+                                      {sec.key === 'showQuoteSection' && (
+                                        <form
+                                          onSubmit={handleSaveSettingsModal}
+                                          className="space-y-3"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                              Pengaturan Isi Kutipan Ayat &amp; Sambutan yang Ditampilkan
+                                            </span>
+                                          </div>
+
+                                          {/* Quick Verse Pills */}
+                                          <div className="space-y-1.5">
+                                            <span className="text-[11px] text-slate-500 font-medium">
+                                              Pilih Cepat Contoh Kutipan Ayat:
+                                            </span>
+                                            <div className="flex flex-wrap gap-1.5">
+                                              {[
+                                                {
+                                                  source: 'Kolose 3 : 14',
+                                                  verse:
+                                                    'Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.',
+                                                },
+                                                {
+                                                  source: '1 Korintus 13 : 4-7',
+                                                  verse:
+                                                    'Kasih itu sabar; kasih itu murah hati; ia menutupi segala sesuatu, percaya segala sesuatu, mengharapkan segala sesuatu, sabar menanggung segala sesuatu.',
+                                                },
+                                                {
+                                                  source: 'Matius 19 : 6',
+                                                  verse:
+                                                    'Demikianlah mereka bukan lagi dua, melainkan satu. Karena itu, apa yang telah dipersatukan Allah, tidak boleh diceraikan manusia.',
+                                                },
+                                                {
+                                                  source: 'QS. Ar-Rum : 21',
+                                                  verse:
+                                                    'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya.',
+                                                },
+                                              ].map((q) => (
+                                                <button
+                                                  key={q.source}
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      quoteSource: q.source,
+                                                      quoteVerse: q.verse,
+                                                    })
+                                                  }
+                                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                                >
+                                                  <span>{q.source}</span>
+                                                  <Plus className="w-3 h-3" />
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div>
+                                              <label className="block font-bold text-slate-700 mb-1">
+                                                Sumber Ayat / Kutipan
+                                              </label>
+                                              <input
+                                                type="text"
+                                                value={settingsForm.quoteSource || ''}
+                                                onChange={(e) =>
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    quoteSource: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Contoh: Kolose 3 : 14"
+                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold"
+                                              />
+                                            </div>
+                                            <div className="sm:col-span-2">
+                                              <label className="block font-bold text-slate-700 mb-1">
+                                                Isi Kutipan Ayat yang Ditampilkan di Undangan
+                                              </label>
+                                              <textarea
+                                                rows={2}
+                                                value={settingsForm.quoteVerse || ''}
+                                                onChange={(e) =>
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    quoteVerse: e.target.value,
+                                                  })
+                                                }
+                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                              />
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                              <label className="block font-bold text-slate-700 mb-1">
+                                                Kalimat Pembuka Undangan
+                                              </label>
+                                              <textarea
+                                                rows={2}
+                                                value={settingsForm.invitationOpeningText || ''}
+                                                onChange={(e) =>
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    invitationOpeningText: e.target.value,
+                                                  })
+                                                }
+                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block font-bold text-slate-700 mb-1">
+                                                Kalimat Penutup Undangan
+                                              </label>
+                                              <textarea
+                                                rows={2}
+                                                value={settingsForm.invitationClosingText || ''}
+                                                onChange={(e) =>
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    invitationClosingText: e.target.value,
+                                                  })
+                                                }
+                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                              />
+                                            </div>
+                                          </div>
+
+                                          <div className="flex justify-end pt-1">
+                                            <button
+                                              type="submit"
+                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                            >
+                                              Simpan Kutipan &amp; Kalimat
+                                            </button>
+                                          </div>
+                                        </form>
+                                      )}
+
+                                      {/* 2. EDITOR PROFIL KEDUA MEMPELAI */}
+                                      {sec.key === 'showCoupleSection' && (
+                                        <form
+                                          onSubmit={handleSaveSettingsModal}
+                                          className="space-y-3"
+                                        >
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Pria */}
+                                            <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                              <p className="font-bold text-slate-900 uppercase text-[11px]">
+                                                Profil Mempelai Pria
+                                              </p>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  Nama Lengkap &amp; Gelar
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.groomFullName || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      groomFullName: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                />
+                                              </div>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <label className="block text-slate-600 mb-0.5">
+                                                    Panggilan
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.groomNickname || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        groomNickname: e.target.value,
+                                                      })
+                                                    }
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="block text-slate-600 mb-0.5">
+                                                    Pangkat / Label
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.groomRankAndTitle || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        groomRankAndTitle: e.target.value,
+                                                      })
+                                                    }
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                  />
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  Orang Tua Mempelai Pria
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.groomParents || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      groomParents: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  URL Foto Mempelai Pria
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.groomPhotoUrl || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      groomPhotoUrl: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                            </div>
+
+                                            {/* Wanita */}
+                                            <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                              <p className="font-bold text-slate-900 uppercase text-[11px]">
+                                                Profil Mempelai Wanita
+                                              </p>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  Nama Lengkap &amp; Gelar
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.brideFullName || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      brideFullName: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                />
+                                              </div>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <label className="block text-slate-600 mb-0.5">
+                                                    Panggilan
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.brideNickname || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        brideNickname: e.target.value,
+                                                      })
+                                                    }
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="block text-slate-600 mb-0.5">
+                                                    Gelar / Label
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.brideTitle || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        brideTitle: e.target.value,
+                                                      })
+                                                    }
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                  />
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  Orang Tua Mempelai Wanita
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.brideParents || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      brideParents: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-slate-600 mb-0.5">
+                                                  URL Foto Mempelai Wanita
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.bridePhotoUrl || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      bridePhotoUrl: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex justify-end">
+                                            <button
+                                              type="submit"
+                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                            >
+                                              Simpan Profil Mempelai
+                                            </button>
+                                          </div>
+                                        </form>
+                                      )}
+
+                                      {/* 3, 4, 5. EDITOR ACARA 1, ACARA 2, ACARA 3 */}
+                                      {(sec.key === 'showEvent1' ||
+                                        sec.key === 'showEvent2' ||
+                                        sec.key === 'showEvent3') && (
+                                        <form
+                                          onSubmit={handleSaveSettingsModal}
+                                          className="space-y-3"
+                                        >
+                                          {(() => {
+                                            const prefix =
+                                              sec.key === 'showEvent1'
+                                                ? 'event1'
+                                                : sec.key === 'showEvent2'
+                                                  ? 'event2'
+                                                  : 'event3';
+                                            const titleKey = `${prefix}Title` as const;
+                                            const subKey = `${prefix}Subtitle` as const;
+                                            const dateKey = `${prefix}DateLabel` as const;
+                                            const timeKey = `${prefix}TimeLabel` as const;
+                                            const venueKey = `${prefix}Venue` as const;
+                                            const addrKey = `${prefix}Address` as const;
+                                            const dressKey = `${prefix}Dresscode` as const;
+                                            const mapsKey = `${prefix}MapsUrl` as const;
+
+                                            return (
+                                              <>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Nama / Judul Acara
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[titleKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [titleKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Subjudul Acara
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[subKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [subKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Hari &amp; Tanggal (Teks)
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[dateKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [dateKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Jam Pelaksanaan
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[timeKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [timeKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Nama Tempat / Gedung / Gereja
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[venueKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [venueKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Alamat Lengkap
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[addrKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [addrKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Dresscode
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[dressKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [dressKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                  <div>
+                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                      Link Google Maps
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      value={settingsForm[mapsKey] || ''}
+                                                      onChange={(e) =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          [mapsKey]: e.target.value,
+                                                        })
+                                                      }
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </>
+                                            );
+                                          })()}
+
+                                          <div className="flex justify-end">
+                                            <button
+                                              type="submit"
+                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                            >
+                                              Simpan Detail Acara
+                                            </button>
+                                          </div>
+                                        </form>
+                                      )}
+
+                                      {/* 6. EDITOR KISAH KASIH (LOVE STORY TIMELINE) */}
+                                      {sec.key === 'showLoveStorySection' && (
+                                        <div className="space-y-3">
+                                          <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                            Daftar Momen Kisah Kasih yang Ditampilkan ({(state.settings.loveStory || []).length})
+                                          </p>
+
+                                          {/* Existing Love Story List */}
+                                          {(state.settings.loveStory || []).length === 0 ? (
+                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                              Belum ada cerita perjalanan cinta. Tambahkan momen di bawah agar tampil pada seksi Kisah Kasih di undangan.
+                                            </p>
+                                          ) : (
+                                            <div className="space-y-2">
+                                              {(state.settings.loveStory || []).map((st) => (
+                                                <div
+                                                  key={st.id}
+                                                  className="p-3 rounded-lg bg-white border border-slate-200 flex items-start justify-between gap-3"
+                                                >
+                                                  <div>
+                                                    <p className="font-bold text-slate-900">
+                                                      {st.dateLabel} — {st.title}{' '}
+                                                      <span className="text-slate-400 font-normal">
+                                                        ({st.location})
+                                                      </span>
+                                                    </p>
+                                                    <p className="text-slate-600 mt-0.5">
+                                                      {st.description}
+                                                    </p>
+                                                  </div>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      handleDeleteLoveStoryItem(st.id)
+                                                    }
+                                                    className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 shrink-0"
+                                                  >
+                                                    <Trash2 className="w-4 h-4" />
+                                                  </button>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {/* Quick Suggestion Pills for Love Story */}
+                                          <div className="flex flex-wrap gap-1.5">
+                                            {[
+                                              {
+                                                dateLabel: '2022',
+                                                title: 'Pertemuan Pertama',
+                                                location: 'Semarang',
+                                                description:
+                                                  'Awal mula perkenalan yang membawa kami saling mengenal lebih dekat.',
+                                              },
+                                              {
+                                                dateLabel: '2024',
+                                                title: 'Komitmen Bersama',
+                                                location: 'Jakarta',
+                                                description:
+                                                  'Menjalani suka duka bersama dan memantapkan hati untuk melangkah ke jenjang serius.',
+                                              },
+                                              {
+                                                dateLabel: 'Desember 2026',
+                                                title: 'Ikatan Suci Pernikahan',
+                                                location: 'Semarang',
+                                                description:
+                                                  'Dengan restu Tuhan dan kedua orang tua, kami mengikat janji suci pernikahan.',
+                                              },
+                                            ].map((sug) => (
+                                              <button
+                                                key={sug.title}
+                                                type="button"
+                                                onClick={() => setNewStoryForm(sug)}
+                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                              >
+                                                <span>{sug.title}</span>
+                                                <Plus className="w-3 h-3" />
+                                              </button>
+                                            ))}
+                                          </div>
+
+                                          {/* Add New Love Story Form */}
+                                          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                              <input
+                                                type="text"
+                                                value={newStoryForm.dateLabel}
+                                                onChange={(e) =>
+                                                  setNewStoryForm({
+                                                    ...newStoryForm,
+                                                    dateLabel: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Tahun / Tanggal (misal: 2023)"
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={newStoryForm.title}
+                                                onChange={(e) =>
+                                                  setNewStoryForm({
+                                                    ...newStoryForm,
+                                                    title: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Judul Momen (misal: Pertemuan Pertama)"
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={newStoryForm.location}
+                                                onChange={(e) =>
+                                                  setNewStoryForm({
+                                                    ...newStoryForm,
+                                                    location: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Kota / Lokasi"
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                              />
+                                            </div>
+                                            <textarea
+                                              rows={2}
+                                              value={newStoryForm.description}
+                                              onChange={(e) =>
+                                                setNewStoryForm({
+                                                  ...newStoryForm,
+                                                  description: e.target.value,
+                                                })
+                                              }
+                                              placeholder="Ceritakan secara singkat momen indah tersebut..."
+                                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                            />
+                                            <div className="flex justify-end">
+                                              <button
+                                                type="button"
+                                                onClick={handleAddLoveStoryItem}
+                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                              >
+                                                <Plus className="w-3.5 h-3.5" />
+                                                Tambahkan ke Kisah Kasih
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 7. EDITOR GALERI FOTO PREWEDDING */}
+                                      {sec.key === 'showGallerySection' && (
+                                        <div className="space-y-3">
+                                          <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                            Daftar Foto Galeri yang Ditampilkan ({(state.settings.galleryPhotos || []).length})
+                                          </p>
+
+                                          {(state.settings.galleryPhotos || []).length === 0 ? (
+                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                              Belum ada foto di galeri prewedding. Tambahkan URL foto di bawah untuk menampilkan galeri pada undangan.
+                                            </p>
+                                          ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              {(state.settings.galleryPhotos || []).map(
+                                                (ph) => (
+                                                  <div
+                                                    key={ph.id}
+                                                    className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-2.5"
+                                                  >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                      <img
+                                                        src={ph.imageUrl}
+                                                        alt={ph.title}
+                                                        className="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0"
+                                                      />
+                                                      <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 truncate">
+                                                          {ph.title}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-500 truncate">
+                                                          {ph.caption}
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        handleDeleteGalleryPhotoItem(ph.id)
+                                                      }
+                                                      className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 shrink-0"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Quick Preset Photo Suggestions */}
+                                          <div className="flex flex-wrap gap-1.5">
+                                            {BACKGROUND_PRESETS.map((preset) => (
+                                              <button
+                                                key={preset.label}
+                                                type="button"
+                                                onClick={() =>
+                                                  setNewPhotoForm({
+                                                    title: preset.label,
+                                                    caption: 'Momen Prewedding',
+                                                    imageUrl: preset.url,
+                                                    category: 'Prewedding',
+                                                  })
+                                                }
+                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                              >
+                                                <span>{preset.label}</span>
+                                                <Plus className="w-3 h-3" />
+                                              </button>
+                                            ))}
+                                          </div>
+
+                                          {/* Add Photo Form */}
+                                          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              <input
+                                                type="text"
+                                                value={newPhotoForm.title}
+                                                onChange={(e) =>
+                                                  setNewPhotoForm({
+                                                    ...newPhotoForm,
+                                                    title: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Judul Foto"
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={newPhotoForm.caption}
+                                                onChange={(e) =>
+                                                  setNewPhotoForm({
+                                                    ...newPhotoForm,
+                                                    caption: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="Caption Singkat"
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                              />
+                                            </div>
+                                            <input
+                                              type="text"
+                                              value={newPhotoForm.imageUrl}
+                                              onChange={(e) =>
+                                                setNewPhotoForm({
+                                                  ...newPhotoForm,
+                                                  imageUrl: e.target.value,
+                                                })
+                                              }
+                                              placeholder="URL Gambar Foto (https://...)"
+                                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                            />
+                                            <div className="flex justify-end">
+                                              <button
+                                                type="button"
+                                                onClick={handleAddGalleryPhotoItem}
+                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                              >
+                                                <Plus className="w-3.5 h-3.5" />
+                                                Tambahkan Foto ke Galeri
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 8. EDITOR FORM RSVP & BUKU TAMU */}
+                                      {sec.key === 'showRsvpSection' && (
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
+                                          <div>
+                                            <p className="font-bold text-slate-900">
+                                              Status Form RSVP &amp; Buku Tamu Digital
+                                            </p>
+                                            <p className="text-slate-500 mt-0.5">
+                                              Saat ini tercatat <strong>{state.guests.length} tamu undangan</strong> dan <strong>{state.wishes.length} ucapan doa</strong> yang tampil di buku tamu.
+                                            </p>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => setActiveTab('guests')}
+                                            className="px-4 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shrink-0"
+                                          >
+                                            Kelola Tamu &amp; Ucapan ({state.wishes.length})
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {/* 9. EDITOR AMPLOP DIGITAL & REKENING */}
+                                      {sec.key === 'showGiftSection' && (
+                                        <div className="space-y-3">
+                                          <div className="flex items-center justify-between">
+                                            <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                              Daftar Rekening &amp; Alamat Kado ({(state.settings.bankAccounts || []).length} Rekening)
+                                            </p>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setEditingBankIndex(null);
+                                                setBankForm({
+                                                  id: '',
+                                                  bankName: 'BANK BCA',
+                                                  accountNumber: '',
+                                                  accountHolder:
+                                                    state.settings.groomFullName || 'John Doe',
+                                                  branchOrNote: 'Transfer Amplop Digital',
+                                                  type: 'BANK',
+                                                });
+                                                setActiveSettingsModal('bank_account');
+                                              }}
+                                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                            >
+                                              <Plus className="w-3.5 h-3.5" />
+                                              Tambah Rekening
+                                            </button>
+                                          </div>
+
+                                          {(state.settings.bankAccounts || []).length === 0 ? (
+                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                              Belum ada rekening bank/e-wallet. Klik &ldquo;Tambah Rekening&rdquo; untuk menampilkan amplop digital di undangan.
+                                            </p>
+                                          ) : (
+                                            <div className="space-y-2">
+                                              {(state.settings.bankAccounts || []).map(
+                                                (acc, idx) => (
+                                                  <div
+                                                    key={acc.id || idx}
+                                                    className="p-3 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-2"
+                                                  >
+                                                    <div>
+                                                      <p className="font-bold text-slate-900">
+                                                        {acc.bankName} —{' '}
+                                                        <span className="font-mono">
+                                                          {acc.accountNumber}
+                                                        </span>
+                                                      </p>
+                                                      <p className="text-slate-500">
+                                                        a.n. {acc.accountHolder} &bull;{' '}
+                                                        {acc.branchOrNote}
+                                                      </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                          setEditingBankIndex(idx);
+                                                          setBankForm({
+                                                            id: acc.id,
+                                                            bankName: acc.bankName,
+                                                            accountNumber: acc.accountNumber,
+                                                            accountHolder: acc.accountHolder,
+                                                            branchOrNote: acc.branchOrNote,
+                                                            type: acc.type || 'BANK',
+                                                          });
+                                                          setActiveSettingsModal('bank_account');
+                                                        }}
+                                                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
+                                                      >
+                                                        <Edit3 className="w-4 h-4" />
+                                                      </button>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                          handleDeleteBankAccount(acc.id)
+                                                        }
+                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
+                                                      >
+                                                        <Trash2 className="w-4 h-4" />
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+                                          )}
+
+                                          <form
+                                            onSubmit={handleSaveSettingsModal}
+                                            className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5"
+                                          >
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              <div>
+                                                <label className="block font-bold text-slate-700 mb-0.5">
+                                                  Nama Penerima Kado Fisik
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.giftRecipientName || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      giftRecipientName: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-slate-700 mb-0.5">
+                                                  Alamat Pengiriman Kado Fisik
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.giftShippingAddress || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      giftShippingAddress: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                              <button
+                                                type="submit"
+                                                className="px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                              >
+                                                Simpan Alamat Kado
+                                              </button>
+                                            </div>
+                                          </form>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* ===============================================================
+                    MENU 2: TEMA & BACKGROUND UNDANGAN
+                   =============================================================== */}
+                {settingsMenuTab === 'background' && (
+                  <form onSubmit={handleSaveSettingsModal} className="space-y-5 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Pengaturan Tema Cerah, Siluet Foto &amp; Efek Transparansi
+                        </h3>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                        &bull; Pearl Veil {settingsForm.bgOverlayOpacity ?? 88}%
+                      </span>
+                    </div>
+
+                    {/* Quick Preset Selector */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <p className="font-bold text-xs text-slate-800">
+                        Pilih Cepat Preset Background Tema Cerah / Siluet Prewedding:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {BACKGROUND_PRESETS.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                coverBgUrl: preset.url,
+                                heroPrewedUrl: preset.url,
+                                pageBgUrl: preset.url,
+                              })
+                            }
+                            className="p-2.5 rounded-xl bg-white hover:bg-blue-50/50 border border-slate-200 hover:border-blue-400 text-left transition-all flex items-center gap-3"
                           >
-                            <div>
-                              <p className="font-bold text-sm text-slate-900">{item.label}</p>
-                              <p className="text-xs text-slate-500">
-                                {isShown
-                                  ? 'Tampil secara publik di halaman undangan tamu'
-                                  : 'Disembunyikan dari halaman undangan tamu'}
+                            <img
+                              src={preset.url}
+                              alt={preset.label}
+                              className="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs text-slate-900 truncate">
+                                {preset.label}
+                              </p>
+                              <p className="text-[11px] text-blue-600 font-semibold">
+                                Gunakan Tema Ini +
                               </p>
                             </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                isShown
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-slate-100 text-slate-500 border border-slate-200'
-                              }`}
-                            >
-                              {isShown ? 'Ditampilkan' : 'Disembunyikan'}
-                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3 URL Inputs */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">
+                          URL Background Sampul Pembuka (Cover)
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.coverBgUrl || ''}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">
+                          URL Banner Utama / Siluet Foto Prewedding
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.heroPrewedUrl || ''}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">
+                          URL Wallpaper Latar Halaman Undangan
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.pageBgUrl || ''}
+                          onChange={(e) =>
+                            setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Opacity & Blur */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-slate-800 text-xs">
+                            Tingkat Transparansi Putih (Pearl Veil)
+                          </label>
+                          <span className="font-mono font-bold text-blue-700 text-xs">
+                            {settingsForm.bgOverlayOpacity ?? 88}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={45}
+                          max={95}
+                          value={settingsForm.bgOverlayOpacity ?? 88}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              bgOverlayOpacity: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-[#1D63DC]"
+                        />
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <label className="block font-bold text-slate-800 text-xs mb-1">
+                          Efek Blur Kaca (Glassmorphism)
+                        </label>
+                        <select
+                          value={settingsForm.bgBlurIntensity || 'sm'}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                        >
+                          <option value="none">Tanpa Blur (Foto Tajam)</option>
+                          <option value="sm">Blur Halus (Rekomendasi)</option>
+                          <option value="md">Blur Sedang (Soft Frosted)</option>
+                          <option value="lg">Blur Kuat (Deep Glass)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2 border-t border-slate-100">
+                      <button
+                        type="submit"
+                        className="px-6 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                      >
+                        Simpan Tema &amp; Background
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* ===============================================================
+                    MENU 3: JADWAL ACARA & WAKTU COUNTDOWN
+                   =============================================================== */}
+                {settingsMenuTab === 'jadwal' && (
+                  <div className="space-y-5 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Pengaturan Waktu Countdown &amp; Rangkaian Acara Mandiri
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openSettingsPopup('countdown')}
+                        className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#1D63DC] border border-blue-200 font-bold text-xs"
+                      >
+                        Ubah Countdown
+                      </button>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      {/* Row Countdown Utama */}
+                      <div className="py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              Target Waktu Countdown Hari-H &amp; Biston
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Pemberkatan: <span className="font-mono font-semibold">{(state.settings.weddingDatetime || '').slice(0, 16).replace('T', ' ')}</span> &bull; Acara 1: <span className="font-mono font-semibold">{(state.settings.bistonDatetime || '').slice(0, 16).replace('T', ' ')}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openSettingsPopup('countdown')}
+                          className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs shrink-0"
+                        >
+                          Edit Waktu
+                        </button>
+                      </div>
+
+                      {/* Row Acara 1, 2, 3 */}
+                      {[
+                        {
+                          modal: 'event1' as const,
+                          showKey: 'showEvent1' as const,
+                          title: state.settings.event1Title,
+                          date: state.settings.event1DateLabel,
+                          time: state.settings.event1TimeLabel,
+                          venue: state.settings.event1Venue,
+                          badge: 'Acara 1',
+                        },
+                        {
+                          modal: 'event2' as const,
+                          showKey: 'showEvent2' as const,
+                          title: state.settings.event2Title,
+                          date: state.settings.event2DateLabel,
+                          time: state.settings.event2TimeLabel,
+                          venue: state.settings.event2Venue,
+                          badge: 'Pemberkatan / Akad',
+                        },
+                        {
+                          modal: 'event3' as const,
+                          showKey: 'showEvent3' as const,
+                          title: state.settings.event3Title,
+                          date: state.settings.event3DateLabel,
+                          time: state.settings.event3TimeLabel,
+                          venue: state.settings.event3Venue,
+                          badge: 'Resepsi Utama',
+                        },
+                      ].map((ev) => {
+                        const isShown = state.settings[ev.showKey] !== false;
+                        return (
+                          <div
+                            key={ev.modal}
+                            className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-slate-900">{ev.title}</p>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
+                                    {ev.badge}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-500">
+                                  {ev.date} &bull; {ev.time} &bull; {ev.venue}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                  isShown
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-rose-50 text-rose-600 border-rose-200'
+                                }`}
+                              >
+                                {isShown ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isShown}
+                                onClick={() =>
+                                  handleToggleSectionSwitch(ev.showKey, ev.title)
+                                }
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                  isShown ? 'bg-emerald-600' : 'bg-slate-300'
+                                }`}
+                              >
+                                <span
+                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                                    isShown ? 'translate-x-5' : 'translate-x-0'
+                                  }`}
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openSettingsPopup(ev.modal)}
+                                className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                              >
+                                Edit Jadwal
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowAllSectionsToggle(!showAllSectionsToggle)}
-                      className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      {showAllSectionsToggle
-                        ? 'Sembunyikan sebagian'
-                        : `Tampilkan semua ${visibilityItems.length} bagian →`}
-                    </button>
                   </div>
-                );
-              })()}
+                )}
 
-              {/* CARD 3: RANGKAIAN ACARA & TANGGAL COUNTDOWN */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Rangkaian Acara &amp; Tanggal Countdown (4)
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Ubah tanggal pemberkatan, resepsi, waktu countdown, gedung, dan link Google Maps secara mandiri
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openSettingsPopup('countdown')}
-                    title="Edit Tanggal Countdown Utama"
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  {/* Countdown Utama */}
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-sm text-slate-900">
-                        Target Waktu Countdown Utama &amp; Subjudul
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        Hari-H: <span className="font-mono font-semibold">{(state.settings.weddingDatetime || '').slice(0, 16).replace('T', ' ')} WIB</span> • Acara 1: <span className="font-mono font-semibold">{(state.settings.bistonDatetime || '').slice(0, 16).replace('T', ' ')} WIB</span>
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Subjudul Header: {state.settings.subtitle}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('countdown')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Acara 1 */}
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-slate-900">
-                          {state.settings.event1Title}
-                        </p>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
-                          Acara 1
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        {state.settings.event1DateLabel} • {state.settings.event1TimeLabel}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {state.settings.event1Venue} — {state.settings.event1Address}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('event1')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Acara 2 */}
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-slate-900">
-                          {state.settings.event2Title}
-                        </p>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
-                          Pemberkatan / Akad
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        {state.settings.event2DateLabel} • {state.settings.event2TimeLabel}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {state.settings.event2Venue} — {state.settings.event2Address}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('event2')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Acara 3 */}
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-slate-900">
-                          {state.settings.event3Title}
-                        </p>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
-                          Resepsi Utama
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        {state.settings.event3DateLabel} • {state.settings.event3TimeLabel}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {state.settings.event3Venue} — {state.settings.event3Address}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('event3')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 4: PROFIL KEDUA MEMPELAI */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Profil Kedua Mempelai (2)
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Data nama lengkap, panggilan, gelar, orang tua, dan foto profil mempelai
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openSettingsPopup('couple_groom')}
-                    title="Edit Profil Mempelai"
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  {/* Mempelai Pria */}
-                  <div className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={state.settings.groomPhotoUrl}
-                        alt={state.settings.groomFullName}
-                        className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900">
-                          {state.settings.groomFullName}{' '}
-                          <span className="text-xs font-normal text-slate-500">
-                            ({state.settings.groomNickname})
-                          </span>
-                        </p>
-                        <p className="text-xs text-slate-600 truncate">
-                          {state.settings.groomRankAndTitle} • {state.settings.groomOrigin}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {state.settings.groomParents}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('couple_groom')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Mempelai Wanita */}
-                  <div className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <img
-                        src={state.settings.bridePhotoUrl}
-                        alt={state.settings.brideFullName}
-                        className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-slate-900">
-                          {state.settings.brideFullName}{' '}
-                          <span className="text-xs font-normal text-slate-500">
-                            ({state.settings.brideNickname})
-                          </span>
-                        </p>
-                        <p className="text-xs text-slate-600 truncate">
-                          {state.settings.brideTitle} • {state.settings.brideOrigin}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {state.settings.brideParents}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('couple_bride')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 5: KUTIPAN AYAT SUCI & KALIMAT UNDANGAN */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Kutipan Ayat &amp; Kalimat Sambutan
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Ayat suci pernikahan serta kalimat pembuka dan penutup pada undangan digital
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openSettingsPopup('quote')}
-                    title="Edit Kutipan Ayat & Kalimat"
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm text-slate-900">
-                        {state.settings.quoteSource || 'Kutipan Ayat Pernikahan'}
-                      </p>
-                      <p className="text-xs text-slate-600 italic">
-                        &ldquo;{state.settings.quoteVerse}&rdquo;
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('quote')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm text-slate-900">
-                        Kalimat Pembuka &amp; Penutup Undangan
-                      </p>
-                      <p className="text-xs text-slate-600 line-clamp-2">
-                        {state.settings.invitationOpeningText}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openSettingsPopup('quote')}
-                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 6: AMPLOP DIGITAL & REKENING BANK */}
-              {(() => {
-                const allAccounts = state.settings.bankAccounts || [];
-                const visibleAccounts = showAllBanks ? allAccounts : allAccounts.slice(0, 3);
-                return (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Amplop Digital &amp; Rekening ({allAccounts.length})
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Nomor rekening bank, e-wallet, dan alamat pengiriman tanda kasih fisik
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingBankIndex(null);
-                            setBankForm({
-                              id: '',
-                              bankName: 'BANK BCA',
-                              accountNumber: '',
-                              accountHolder: state.settings.groomFullName || 'John Doe',
-                              branchOrNote: 'Transfer Amplop Digital',
-                              type: 'BANK',
-                            });
-                            setActiveSettingsModal('bank_account');
-                          }}
-                          title="Tambah Rekening Baru"
-                          className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                        >
-                          <Plus className="w-5 h-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openSettingsPopup('gift_address')}
-                          title="Edit Alamat Pengiriman Kado"
-                          className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                      </div>
+                {/* ===============================================================
+                    MENU 4: KEAMANAN & AKUN (EXACT WIRA SATYA 96 SCREENSHOT 2 LAYOUT)
+                   =============================================================== */}
+                {settingsMenuTab === 'keamanan' && !isPanitia && (
+                  <div className="space-y-5 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        Pengaturan Profil &amp; Keamanan Akun Sistem
+                      </h3>
                     </div>
 
-                    <div className="divide-y divide-slate-200">
-                      {/* Alamat Kado Fisik */}
-                      <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
-                        <div>
-                          <p className="font-bold text-sm text-slate-900">
-                            Penerima Kado Fisik: {state.settings.giftRecipientName || '-'}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Alamat: {state.settings.giftShippingAddress || 'Belum diatur'}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => openSettingsPopup('gift_address')}
-                          className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Daftar Rekening */}
-                      {visibleAccounts.length === 0 ? (
-                        <div className="px-6 py-6 text-center text-xs text-slate-400">
-                          Belum ada rekening amplop digital. Klik tombol <strong>+</strong> di kanan atas kartu ini untuk menambahkan rekening.
-                        </div>
-                      ) : (
-                        visibleAccounts.map((acc, idx) => (
-                          <div
-                            key={acc.id || idx}
-                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
-                          >
-                            <div>
-                              <p className="font-bold text-sm text-slate-900">
-                                {acc.bankName} — <span className="font-mono">{acc.accountNumber}</span>
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                a.n. {acc.accountHolder} • {acc.branchOrNote}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingBankIndex(idx);
-                                  setBankForm({
-                                    id: acc.id,
-                                    bankName: acc.bankName,
-                                    accountNumber: acc.accountNumber,
-                                    accountHolder: acc.accountHolder,
-                                    branchOrNote: acc.branchOrNote,
-                                    type: acc.type || 'BANK',
-                                  });
-                                  setActiveSettingsModal('bank_account');
-                                }}
-                                className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteBankAccount(acc.id)}
-                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {allAccounts.length > 3 && (
+                    {/* Wira Satya 96 Blue Pill Sub-Tabs */}
+                    <div className="p-1.5 rounded-xl bg-slate-100 grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setShowAllBanks(!showAllBanks)}
-                        className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors"
+                        onClick={() => setKeamananSubTab('utama')}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                          keamananSubTab === 'utama'
+                            ? 'bg-[#1D63DC] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
                       >
-                        {showAllBanks
-                          ? 'Sembunyikan sebagian'
-                          : `Tampilkan semua ${allAccounts.length} rekening →`}
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>Akun Utama &amp; Otentikasi (4 Inti)</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setKeamananSubTab('panitia')}
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                          keamananSubTab === 'panitia'
+                            ? 'bg-[#1D63DC] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Akun Panitia &amp; WO ({panitiaUsers.length})</span>
+                      </button>
+                    </div>
+
+                    {/* SUB-TAB 1: 4 AKUN UTAMA */}
+                    {keamananSubTab === 'utama' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                          <span className="text-xs text-slate-500">
+                            Status proteksi otorisasi perubahan kredensial akun utama
+                          </span>
+                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                            &bull; Terproteksi Superadmin
+                          </span>
+                        </div>
+
+                        <div className="divide-y divide-slate-100">
+                          {defaultSystemUsers.map((u) => (
+                            <div
+                              key={u.id}
+                              className="py-3.5 flex items-center justify-between gap-4"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                                  <KeyRound className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900">
+                                    {u.nama}{' '}
+                                    <span className="font-mono text-xs text-slate-500 font-normal">
+                                      (@{u.username})
+                                    </span>
+                                  </p>
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    {u.jabatan} &bull; Hak Akses Penuh (Termasuk Budgeting)
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                                  Aktif
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectDefaultUserForEdit(u)}
+                                  className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                                >
+                                  Ubah Password
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-TAB 2: AKUN PANITIA / WO */}
+                    {keamananSubTab === 'panitia' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                          <span className="text-xs text-slate-500">
+                            Akun panitia otomatis terkunci dari tab Anggaran &amp; Revisi Vendor
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPanitiaEditId(undefined);
+                              setPanitiaUsername('');
+                              setPanitiaNama('');
+                              setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
+                              setPanitiaPassword('');
+                              setActiveSettingsModal('panitia_user');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Tambah Panitia
+                          </button>
+                        </div>
+
+                        {panitiaUsers.length === 0 ? (
+                          <div className="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                            Belum ada akun Panitia / WO tambahan. Klik <strong>+ Tambah Panitia</strong> di kanan atas untuk membuat akun panitia.
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-100">
+                            {panitiaUsers.map((pu) => (
+                              <div
+                                key={pu.id}
+                                className="py-3.5 flex items-center justify-between gap-4"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                                    <UserPlus className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-slate-900">
+                                      {pu.nama}{' '}
+                                      <span className="font-mono text-xs text-slate-500 font-normal">
+                                        (@{pu.username})
+                                      </span>
+                                    </p>
+                                    <p className="text-[11px] text-slate-500">
+                                      {pu.jabatan} &bull;{' '}
+                                      <span className="text-rose-600 font-semibold">
+                                        Non-Budgeting
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                                    Aktif
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPanitiaEditId(pu.id);
+                                      setPanitiaUsername(pu.username);
+                                      setPanitiaNama(pu.nama);
+                                      setPanitiaJabatan(pu.jabatan);
+                                      setPanitiaPassword('');
+                                      setActiveSettingsModal('panitia_user');
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeletePanitiaAccount(pu.id, pu.username)
+                                    }
+                                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                );
-              })()}
+                )}
 
-              {/* CARD 7 & 8: MANAJEMEN AKUN UTAMA & AKUN PANITIA (KHUSUS AKUN UTAMA) */}
-              {!isPanitia && (
-                <>
-                  {/* CARD 7: 4 AKUN UTAMA SISTEM */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Akun Utama Sistem ({defaultSystemUsers.length})
+                {/* ===============================================================
+                    MENU 5: DATABASE LOKAL, BACKUP & EXPORT
+                   =============================================================== */}
+                {settingsMenuTab === 'database' && (
+                  <div className="space-y-5 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Database Lokal, Sinkronisasi &amp; Backup Data
                         </h3>
-                        <p className="text-xs text-slate-500">
-                          Akun inti mempelai &amp; keluarga (Akses penuh termasuk Budgeting). Perubahan wajib konfirmasi pemilik aplikasi.
-                        </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const target =
-                            defaultSystemUsers.find((u) => u.id === selectedDefaultUserId) ||
-                            defaultSystemUsers[0];
-                          if (target) handleSelectDefaultUserForEdit(target);
-                        }}
-                        title="Ubah Username / Password Akun Utama"
-                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
+                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                        &bull; DB Lokal Aktif
+                      </span>
                     </div>
 
-                    <div className="divide-y divide-slate-200">
-                      {defaultSystemUsers.map((u) => (
-                        <div
-                          key={u.id}
-                          className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+                    <div className="divide-y divide-slate-100">
+                      {/* Backup JSON */}
+                      <div className="py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                            <FileJson className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              Backup &amp; Restore Database Lengkap (.JSON)
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Unduh seluruh data aplikasi atau pulihkan dari file JSON
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerFileDownload(
+                                `wedding_backup_${new Date().toISOString().slice(0, 10)}.json`,
+                                JSON.stringify(state, null, 2),
+                                'application/json'
+                              );
+                              showToast('Backup JSON lengkap berhasil diunduh!');
+                            }}
+                            className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                          >
+                            Export JSON
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                          >
+                            Import JSON
+                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".json"
+                            onChange={handleImportJsonFile}
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Export CSV */}
+                      <div className="py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                            <FileSpreadsheet className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              Ekspor Tabel ke Spreadsheet (.CSV Excel)
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Unduh data Checklist, Daftar Tamu, atau Anggaran dalam format CSV
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerFileDownload(
+                                'DB_Wedding_Tasks.csv',
+                                exportTasksToCsv(state.tasks),
+                                'text/csv;charset=utf-8;'
+                              );
+                              showToast('Tasks.csv berhasil diunduh!');
+                            }}
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                          >
+                            CSV Checklist
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerFileDownload(
+                                'DB_Wedding_Guests.csv',
+                                exportGuestsToCsv(state.guests),
+                                'text/csv;charset=utf-8;'
+                              );
+                              showToast('Guests.csv berhasil diunduh!');
+                            }}
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                          >
+                            CSV Tamu
+                          </button>
+                          {!isPanitia && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                triggerFileDownload(
+                                  'DB_Wedding_Budget.csv',
+                                  exportBudgetToCsv(state.budgetItems),
+                                  'text/csv;charset=utf-8;'
+                                );
+                                showToast('Budget.csv berhasil diunduh!');
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                            >
+                              CSV Anggaran
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sinkronisasi Arsip Spreadsheet */}
+                      <div className="py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
+                            <RefreshCw
+                              className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              Sinkronisasi Arsip Google Sheets ke DB Lokal
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Tarik ulang pembaruan dari arsip spreadsheet ke database lokal
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleTriggerSyncSheets}
+                          disabled={isSyncingSheets}
+                          className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs shrink-0 disabled:opacity-50"
                         >
+                          {isSyncingSheets ? 'Menyinkronkan...' : 'Tarik Data'}
+                        </button>
+                      </div>
+
+                      {/* Reset Seed Default */}
+                      {!isPanitia && (
+                        <div className="py-3.5 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs">
-                              <KeyRound className="w-4 h-4 text-amber-700" />
+                            <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
+                              <RotateCcw className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-bold text-sm text-slate-900">
-                                {u.nama}{' '}
-                                <span className="font-mono text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 ml-1">
-                                  @{u.username}
-                                </span>
+                              <p className="font-bold text-slate-900">
+                                Reset ke Data Awal (Seed Default)
                               </p>
-                              <p className="text-xs text-slate-500">{u.jabatan}</p>
+                              <p className="text-xs text-slate-500">
+                                Kembalikan pengaturan ke kondisi awal sistem
+                              </p>
                             </div>
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleSelectDefaultUserForEdit(u)}
-                            className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
-                            title="Edit Username & Password"
+                            onClick={async () => {
+                              await onResetDefault();
+                              showToast('Data dikembalikan ke seed awal Database Lokal.');
+                            }}
+                            className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            Reset Default
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* CARD 8: AKUN PANITIA / WO */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Akun Panitia &amp; WO ({panitiaUsers.length})
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Dapat ditambah atau dihapus oleh akun utama. Panitia tidak dapat membuka tab Anggaran &amp; Vendor.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPanitiaEditId(undefined);
-                          setPanitiaUsername('');
-                          setPanitiaNama('');
-                          setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
-                          setPanitiaPassword('');
-                          setActiveSettingsModal('panitia_user');
-                        }}
-                        title="Tambah Akun Panitia Baru"
-                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <div className="divide-y divide-slate-200">
-                      {panitiaUsers.length === 0 ? (
-                        <div className="px-6 py-6 text-center text-xs text-slate-400">
-                          Belum ada akun Panitia / WO tambahan. Klik tombol <strong>+</strong> di sudut kanan atas untuk membuat akun panitia.
-                        </div>
-                      ) : (
-                        (showAllPanitia ? panitiaUsers : panitiaUsers.slice(0, 4)).map((pu) => (
-                          <div
-                            key={pu.id}
-                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
-                                <UserPlus className="w-4 h-4 text-slate-600" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-sm text-slate-900">
-                                  {pu.nama}{' '}
-                                  <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-1">
-                                    @{pu.username}
-                                  </span>
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {pu.jabatan} • <span className="text-rose-600 font-semibold">Budgeting Terkunci</span>
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPanitiaEditId(pu.id);
-                                  setPanitiaUsername(pu.username);
-                                  setPanitiaNama(pu.nama);
-                                  setPanitiaJabatan(pu.jabatan);
-                                  setPanitiaPassword('');
-                                  setActiveSettingsModal('panitia_user');
-                                }}
-                                className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600"
-                                title="Edit Akun Panitia"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePanitiaAccount(pu.id, pu.username)}
-                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-500"
-                                title="Hapus Akun Panitia"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
                       )}
                     </div>
-
-                    {panitiaUsers.length > 4 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllPanitia(!showAllPanitia)}
-                        className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors"
-                      >
-                        {showAllPanitia
-                          ? 'Sembunyikan sebagian'
-                          : `Tampilkan semua ${panitiaUsers.length} akun panitia →`}
-                      </button>
-                    )}
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
