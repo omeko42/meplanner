@@ -256,27 +256,27 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // ============================================================================
   if (!isOpened) {
     return (
-      <div className="min-h-screen relative flex flex-col justify-between overflow-hidden bg-[#FAF8F5] text-stone-800 select-none">
+      <div className="min-h-[100dvh] relative flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
         <div
-          className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-1000"
+          className="fixed inset-0 bg-cover bg-center scale-105 transition-transform duration-1000 pointer-events-none"
           style={{
             backgroundImage: `url('${coverBgUrl}')`,
           }}
         />
         <div
-          className={`absolute inset-0 ${blurClass}`}
+          className={`fixed inset-0 pointer-events-none ${blurClass}`}
           style={{
             backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.20)_0%,rgba(250,248,245,0.80)_100%)]" />
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.20)_0%,rgba(250,248,245,0.80)_100%)] pointer-events-none" />
 
         {/* Subtle Top Bar */}
-        <div className="relative z-10 flex items-center justify-between px-4 sm:px-8 pt-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs">
-            <WeddingRingsIcon className="w-4 h-4 text-[#B68D40]" />
-            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#8B6914]">
+        <div className="relative z-10 flex items-center justify-between gap-2 px-3.5 sm:px-8 pt-4 sm:pt-5">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
+            <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
+            <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
               The Wedding Celebration
             </span>
           </div>
@@ -284,7 +284,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <button
             type="button"
             onClick={onOpenAdminPortal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
             title="Login Portal Manajemen Pernikahan"
           >
             <Lock className="w-3 h-3 text-[#B68D40]" />
@@ -293,33 +293,33 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
 
         {/* Center Cover Invitation Frosted Glass Card */}
-        <div className="relative z-10 max-w-xl mx-auto px-5 py-6 text-center flex flex-col items-center my-auto w-full">
-          <div className="w-full rounded-[2.25rem] bg-white/75 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 relative overflow-hidden">
+        <div className="relative z-10 max-w-xl mx-auto px-3.5 sm:px-5 py-4 sm:py-6 text-center flex flex-col items-center my-auto w-full">
+          <div className="w-full rounded-3xl sm:rounded-[2.25rem] bg-white/75 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-5 sm:p-10 relative overflow-hidden">
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
             {/* Pure Neutral Interlocking Wedding Rings Emblem */}
-            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-5">
-              <WeddingRingsIcon className="w-11 h-11 sm:w-12 sm:h-12 text-[#B68D40]" />
+            <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5">
+              <WeddingRingsIcon className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]" />
             </div>
 
-            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-[#9A742B] font-semibold mb-2">
+            <p className="text-[11px] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#9A742B] font-semibold mb-1.5 sm:mb-2">
               Undangan Pernikahan
             </p>
 
-            <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight mb-2">
+            <h1 className="font-serif text-2xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight mb-1.5 sm:mb-2 break-words">
               {settings.groomNickname}{' '}
               <span className="text-[#C5A059] font-normal italic">&amp;</span>{' '}
               {settings.brideNickname}
             </h1>
 
-            <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-6">
+            <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-4 sm:mb-6">
               {settings.event2DateLabel} &bull; {settings.groomOrigin}
             </p>
 
             {/* Personalized Guest Card (Translucent Glass) */}
-            <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-5 sm:p-6 shadow-sm mb-6">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-stone-500 mb-1.5">
+            <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
                 Kepada Yth. Bapak / Ibu / Saudara / i
               </p>
 
@@ -329,24 +329,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
               )}
 
-              <h2 className="font-serif text-lg sm:text-2xl font-bold text-stone-900 break-words leading-snug">
+              <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
                 {resolvedGuestDisplayName}
               </h2>
 
               {matchedGuest?.institution && (
-                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1">
+                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1 break-words">
                   {matchedGuest.institution}
                 </p>
               )}
 
               {matchedGuest?.invitationCode && (
-                <p className="text-[11px] text-stone-400 mt-2 font-mono">
+                <p className="text-[11px] text-stone-400 mt-1.5 font-mono">
                   Kode Undangan: {matchedGuest.invitationCode} &bull; Kuota:{' '}
                   {matchedGuest.pax} Pax
                 </p>
               )}
 
-              <p className="text-[11px] text-stone-400 mt-2 italic">
+              <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2 italic">
                 *Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar
               </p>
             </div>
@@ -355,7 +355,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={handleOpenInvitation}
-              className="group relative inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
+              className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
             >
               <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
               <span>Buka Undangan</span>
@@ -364,7 +364,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
 
         {/* Bottom Footer Note */}
-        <div className="relative z-10 text-center pb-5 px-4">
+        <div className="relative z-10 text-center pb-4 sm:pb-5 px-4">
           <p className="text-[11px] text-stone-500 font-medium">
             {settings.subtitle}
           </p>
@@ -377,7 +377,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // 2. MAIN OPENED INVITATION VIEW (SYMMETRICAL CARDS & CUSTOMIZABLE BG)
   // ============================================================================
   return (
-    <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pb-24 selection:bg-[#D4AF37]/25 selection:text-stone-900">
+    <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pb-28 sm:pb-24 overflow-x-hidden selection:bg-[#D4AF37]/25 selection:text-stone-900">
       {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
@@ -395,14 +395,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       </div>
 
       {/* TOP FLOATING GLASS NAVIGATION */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
-              <WeddingRingsIcon className="w-5 h-5" />
+      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
+              <WeddingRingsIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="truncate">
-              <p className="font-serif text-sm sm:text-base font-bold text-stone-900 truncate">
+              <p className="font-serif text-xs sm:text-base font-bold text-stone-900 truncate">
                 {settings.groomNickname} &amp; {settings.brideNickname}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
@@ -411,11 +411,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handleToggleMusic}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                 isPlayingMusic
                   ? 'bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
                   : 'bg-white/80 border-stone-200 text-stone-500'
@@ -438,53 +438,53 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={onOpenAdminPortal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
             >
               <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span>{isAdminLoggedIn ? 'Dashboard Admin' : 'Admin'}</span>
+              <span>{isAdminLoggedIn ? 'Dashboard' : 'Admin'}</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* HERO PREWEDDING SILHOUETTE BANNER & LIVE COUNTDOWN */}
-      <section className="relative z-10 overflow-hidden pt-8 pb-12 px-4">
+      <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="relative rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
+          <div className="relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
             {/* Prewedding Silhouette Image Header */}
-            <div className="relative h-72 sm:h-96 overflow-hidden">
+            <div className="relative h-60 sm:h-96 overflow-hidden">
               <img
                 src={heroBgUrl}
                 alt="Prewedding Banner"
                 className="w-full h-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-white/35 to-transparent" />
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-xs font-semibold tracking-widest uppercase shadow-xs">
-                <WeddingRingsIcon className="w-4 h-4" />
+              <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
+                <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Holy Matrimony &amp; Reception</span>
               </div>
             </div>
 
             {/* Hero Content Overlapping Frosted Area */}
-            <div className="px-6 pb-10 pt-2 text-center -mt-14 relative z-10">
-              <div className="w-16 h-16 mx-auto rounded-full bg-white/95 border border-[#D4AF37]/45 flex items-center justify-center text-[#B68D40] shadow-md mb-4">
-                <WeddingRingsIcon className="w-9 h-9" />
+            <div className="px-4 sm:px-6 pb-7 sm:pb-10 pt-2 text-center -mt-12 sm:-mt-14 relative z-10">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-white/95 border border-[#D4AF37]/45 flex items-center justify-center text-[#B68D40] shadow-md mb-3.5 sm:mb-4">
+                <WeddingRingsIcon className="w-8 h-8 sm:w-9 sm:h-9" />
               </div>
 
-              <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight mb-3">
+              <h1 className="font-serif text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
                 {settings.groomFullName}
-                <span className="block text-xl sm:text-3xl font-normal italic text-[#B68D40] my-1.5">
+                <span className="block text-lg sm:text-3xl font-normal italic text-[#B68D40] my-1 sm:my-1.5">
                   &amp;
                 </span>
                 {settings.brideFullName}
               </h1>
 
-              <p className="max-w-2xl mx-auto text-xs sm:text-sm text-stone-600 leading-relaxed mb-8">
+              <p className="max-w-2xl mx-auto text-xs sm:text-sm text-stone-600 leading-relaxed mb-6 sm:mb-8">
                 {settings.invitationOpeningText}
               </p>
 
               {/* Countdown Timer Boxes (Symmetrical 4-Column Grid) */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-4 max-w-lg mx-auto mb-8 items-stretch">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-lg mx-auto mb-6 sm:mb-8 items-stretch">
                 {[
                   { label: 'Hari', value: countdown.days },
                   { label: 'Jam', value: countdown.hours },
@@ -493,12 +493,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-3 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
+                    className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
                   >
-                    <div className="font-serif text-2xl sm:text-4xl font-bold text-[#9A742B]">
+                    <div className="font-serif text-xl sm:text-4xl font-bold text-[#9A742B]">
                       {String(item.value).padStart(2, '0')}
                     </div>
-                    <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-semibold mt-0.5">
+                    <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-stone-500 font-semibold mt-0.5">
                       {item.label}
                     </div>
                   </div>
@@ -507,12 +507,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
               {/* Verse / Quote Card (Conditional via showQuoteSection) */}
               {settings.showQuoteSection !== false && settings.quoteVerse && (
-                <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-5 sm:p-6 shadow-2xs">
-                  <p className="font-serif italic text-sm sm:text-base text-stone-700 leading-relaxed mb-2">
+                <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-4 sm:p-6 shadow-2xs">
+                  <p className="font-serif italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
                     &ldquo;{settings.quoteVerse}&rdquo;
                   </p>
                   {settings.quoteSource && (
-                    <p className="text-xs font-bold tracking-widest uppercase text-[#9A742B]">
+                    <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
                       — {settings.quoteSource} —
                     </p>
                   )}
@@ -525,8 +525,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS) */}
       {settings.showCoupleSection !== false && (
-        <section id="mempelai" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+        <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-7 sm:mb-10">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               The Happy Couple
             </span>
@@ -536,11 +536,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Groom Card */}
-            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
-                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden shrink-0">
+                <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
                   <img
                     src={settings.groomPhotoUrl}
                     alt={settings.groomFullName}
@@ -550,7 +550,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                   {settings.groomRankAndTitle || 'Mempelai Pria'}
                 </span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+                <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.groomFullName}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
@@ -567,9 +567,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
 
             {/* Bride Card */}
-            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
-                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-5 overflow-hidden shrink-0">
+                <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
                   <img
                     src={settings.bridePhotoUrl}
                     alt={settings.brideFullName}
@@ -579,7 +579,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                   {settings.brideTitle || 'Mempelai Wanita'}
                 </span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-1">
+                <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.brideFullName}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
@@ -600,8 +600,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
-        <section id="acara" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+        <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-7 sm:mb-10">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               Save The Date
             </span>
@@ -614,7 +614,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           <div
-            className={`grid grid-cols-1 gap-6 items-stretch ${
+            className={`grid grid-cols-1 gap-4 sm:gap-6 items-stretch ${
               visibleEvents.length === 1
                 ? 'max-w-lg mx-auto'
                 : visibleEvents.length === 2
@@ -625,7 +625,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {visibleEvents.map((ev, idx) => (
               <div
                 key={idx}
-                className={`h-full rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
+                className={`h-full rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
                   ev.highlight
                     ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
                     : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
@@ -642,11 +642,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 mb-1">
                     {ev.title}
                   </h3>
-                  <p className="text-xs text-stone-500 mb-5 min-h-[2rem]">
+                  <p className="text-xs text-stone-500 mb-4 sm:mb-5 min-h-[2rem]">
                     {ev.subtitle}
                   </p>
 
-                  <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-6">
+                  <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-5 sm:mb-6">
                     <div className="flex items-start gap-2.5">
                       <Calendar className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
                       <span className="font-bold text-stone-800">{ev.date}</span>
@@ -666,7 +666,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 <div className="space-y-3 pt-3 border-t border-stone-200/70 mt-auto">
-                  <div className="text-[11px] text-stone-500 truncate">
+                  <div className="text-[11px] text-stone-500 break-words">
                     <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
                     {ev.dresscode}
                   </div>
@@ -690,8 +690,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {((settings.showLoveStorySection && settings.loveStory.length > 0) ||
         (settings.showGallerySection && settings.galleryPhotos.length > 0)) && (
-        <section id="galeri" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+        <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-7 sm:mb-10">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               Our Journey &amp; Moments
             </span>
@@ -702,11 +702,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
           {/* Love Story Timeline Cards */}
           {settings.showLoveStorySection && settings.loveStory.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-8 sm:mb-10 items-stretch">
               {settings.loveStory.map((story, i) => (
                 <div
                   key={story.id || i}
-                  className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
+                  className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -735,7 +735,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
           {/* Photo Gallery Grid */}
           {settings.showGallerySection && settings.galleryPhotos.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 items-stretch">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4 items-stretch">
               {settings.galleryPhotos.map((photo) => (
                 <button
                   key={photo.id}
@@ -749,8 +749,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-950/15 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
-                  <div className="absolute bottom-3 left-3 right-3 text-white">
-                    <span className="text-[10px] uppercase tracking-wider text-[#F3D77D] font-semibold block">
+                  <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 right-2.5 sm:right-3 text-white">
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#F3D77D] font-semibold block">
                       {photo.category}
                     </span>
                     <p className="font-serif text-xs sm:text-sm font-bold truncate">
@@ -766,8 +766,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
-        <section id="rsvp" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
+        <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-7 sm:mb-10">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               RSVP &amp; Wedding Wishes
             </span>
@@ -780,17 +780,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           {/* Equal 2-Column Grid with items-stretch and fixed matched desktop height */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
             {/* Left Card: RSVP Form (Exact same width & height as Right Card) */}
             <form
               onSubmit={handleRsvpFormSubmit}
-              className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
+              className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
             >
-              <div className="space-y-4">
+              <div className="space-y-3.5 sm:space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-stone-200/80">
                   <div className="flex items-center gap-2.5">
                     <Users className="w-5 h-5 text-[#B68D40]" />
-                    <h3 className="font-serif text-lg font-bold text-stone-900">
+                    <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
                       Form RSVP Kehadiran
                     </h3>
                   </div>
@@ -854,7 +854,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
                       Status Kehadiran *
@@ -942,11 +942,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </form>
 
             {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
-            <div className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
+            <div className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-stone-200/80 shrink-0">
                 <div className="flex items-center gap-2.5">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
-                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
                     Buku Tamu &amp; Doa Restu ({wishes.length})
                   </h3>
                 </div>
@@ -955,9 +955,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="flex-1 max-h-[380px] lg:max-h-none overflow-y-auto space-y-3 pr-1">
                 {wishes.length === 0 ? (
-                  <div className="h-full min-h-[320px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-6 flex flex-col items-center justify-center text-center">
+                  <div className="h-full min-h-[260px] sm:min-h-[320px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] mb-3">
                       <Sparkles className="w-5 h-5" />
                     </div>
@@ -972,16 +972,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   wishes.map((w) => (
                     <div
                       key={w.id}
-                      className={`p-4 rounded-2xl border transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                         w.isPinned
                           ? 'bg-[#FAF6EE] border-[#D4AF37]/50'
                           : 'bg-white/90 border-stone-200/80'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <h4 className="font-bold text-xs sm:text-sm text-stone-900">
+                            <h4 className="font-bold text-xs sm:text-sm text-stone-900 break-words">
                               {w.guestName}
                             </h4>
                             {w.isPinned && (
@@ -991,7 +991,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             )}
                           </div>
                           {w.institution && (
-                            <p className="text-[11px] text-[#9A742B] font-medium">
+                            <p className="text-[11px] text-[#9A742B] font-medium truncate">
                               {w.institution}
                             </p>
                           )}
@@ -1011,7 +1011,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         </span>
                       </div>
 
-                      <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-stone-700 leading-relaxed break-words">
                         &ldquo;{w.message}&rdquo;
                       </p>
 
@@ -1028,9 +1028,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 )}
               </div>
 
-              <div className="pt-3 mt-4 border-t border-stone-200/80 flex items-center justify-between text-[11px] text-stone-500 shrink-0">
-                <span>Tersinkronisasi otomatis dengan Dashboard Mempelai</span>
-                <span className="font-semibold text-[#9A742B]">
+              <div className="pt-3 mt-4 border-t border-stone-200/80 flex items-center justify-between gap-2 text-[11px] text-stone-500 shrink-0">
+                <span className="truncate">Tersinkronisasi otomatis ke Dashboard</span>
+                <span className="font-semibold text-[#9A742B] shrink-0">
                   {wishes.length} Doa Restu
                 </span>
               </div>
@@ -1041,8 +1041,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: AMPLOP DIGITAL / WEDDING GIFT (CONDITIONAL & SYMMETRICAL) */}
       {settings.showGiftSection !== false && (
-        <section id="gift" className="relative z-10 py-10 px-4 max-w-5xl mx-auto">
-          <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-6 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+        <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
             <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B]">
               <Gift className="w-6 h-6" />
             </div>
@@ -1071,13 +1071,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   return (
                     <div
                       key={acc.id}
-                      className="h-full rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 p-5 flex flex-col justify-between shadow-2xs"
+                      className="h-full rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 p-4 sm:p-5 flex flex-col justify-between shadow-2xs"
                     >
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#9A742B] block mb-1">
                           {acc.bankName}
                         </span>
-                        <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1">
+                        <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1 break-all">
                           {acc.accountNumber}
                         </p>
                         <p className="text-xs font-semibold text-stone-700">
@@ -1121,13 +1121,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowQrisModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
               >
                 <QrCode className="w-4 h-4" />
                 <span>Tampilkan Barcode QRIS</span>
               </button>
               {settings.giftShippingAddress && (
-                <span className="text-stone-500">
+                <span className="text-stone-500 break-words">
                   Alamat Kirim Kado:{' '}
                   <strong className="text-stone-800">
                     {settings.giftShippingAddress}
@@ -1140,7 +1140,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       )}
 
       {/* CLOSING FOOTER */}
-      <footer className="relative z-10 py-12 px-4 text-center max-w-2xl mx-auto">
+      <footer className="relative z-10 py-10 sm:py-12 px-4 text-center max-w-2xl mx-auto">
         <div className="w-12 h-12 mx-auto rounded-full bg-white/85 border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] shadow-xs mb-4">
           <WeddingRingsIcon className="w-6 h-6" />
         </div>
@@ -1155,8 +1155,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </p>
       </footer>
 
-      {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE-FIRST) */}
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white/90 backdrop-blur-2xl border border-[#D4AF37]/40 rounded-full px-3 py-2 shadow-[0_12px_35px_rgba(160,130,85,0.22)] flex items-center gap-1 sm:gap-2">
+      {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE DOCK WITH VISIBLE ICON + LABEL) */}
+      <nav className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md sm:w-auto sm:max-w-none bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/45 rounded-2xl sm:rounded-full px-1.5 sm:px-3.5 py-1.5 sm:py-2 shadow-[0_12px_35px_rgba(160,130,85,0.24)] flex items-center justify-around sm:justify-center gap-0.5 sm:gap-2">
         {[
           ...(settings.showCoupleSection !== false
             ? [{ href: '#mempelai', label: 'Mempelai', icon: Heart }]
@@ -1180,10 +1180,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <a
               key={nav.href}
               href={nav.href}
-              className="px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-stone-700 hover:text-[#8B6914] hover:bg-[#FAF3E3] flex items-center gap-1.5 transition-colors"
+              className="flex-1 sm:flex-initial px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-full text-[10px] sm:text-xs font-bold text-stone-700 hover:text-[#8B6914] hover:bg-[#FAF3E3] flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-colors"
             >
-              <IconComp className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span className="hidden xs:inline sm:inline">{nav.label}</span>
+              <IconComp className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-[#B68D40] shrink-0" />
+              <span className="truncate">{nav.label}</span>
             </a>
           );
         })}
@@ -1237,15 +1237,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               alt={selectedPhoto.title}
               className="w-full max-h-[70vh] object-cover"
             />
-            <div className="p-5 flex items-center justify-between gap-4">
-              <div>
+            <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
+              <div className="min-w-0">
                 <span className="text-[10px] uppercase tracking-widest text-[#9A742B] font-bold">
                   {selectedPhoto.category}
                 </span>
-                <h4 className="font-serif text-lg font-bold text-stone-900">
+                <h4 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
                   {selectedPhoto.title}
                 </h4>
-                <p className="text-xs text-stone-600 mt-0.5">
+                <p className="text-xs text-stone-600 mt-0.5 line-clamp-2">
                   {selectedPhoto.caption}
                 </p>
               </div>

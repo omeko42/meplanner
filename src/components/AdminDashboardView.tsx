@@ -797,34 +797,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-24">
+    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-28 sm:pb-24">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-20 sm:bottom-6 right-4 z-50 bg-white text-stone-900 border-2 border-[#D4AF37] px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold max-w-md animate-bounce">
+        <div className="fixed bottom-20 sm:bottom-6 inset-x-3 sm:inset-x-auto sm:right-4 z-50 bg-white text-stone-900 border-2 border-[#D4AF37] px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold sm:max-w-md animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{toastMsg}</span>
+          <span className="line-clamp-2">{toastMsg}</span>
         </div>
       )}
 
       {/* TOP STICKY HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-3">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Neutral Wedding Rings Icon */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0">
-                <WeddingRingsIcon className="w-6 h-6" />
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0">
+                <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-serif font-bold text-sm sm:text-base text-stone-900 truncate">
+                  <h1 className="font-serif font-bold text-xs sm:text-base text-stone-900 truncate">
                     {state.settings.siteTitle}
                   </h1>
                   <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold">
                     <Sparkles className="w-3 h-3" /> All-in-One Planner
                   </span>
                 </div>
-                <p className="text-[11px] text-[#9A742B] font-medium truncate">
+                <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate">
                   {state.settings.groomNickname} &amp; {state.settings.brideNickname} &bull;{' '}
                   {state.settings.subtitle}
                 </p>
@@ -832,7 +832,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* Right Actions: Local DB Status, Preview Invitation, Admin Info & Logout */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <div
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700"
                 title="Database berjalan 100% di Lokal (database/wedding_db.json)"
@@ -845,10 +845,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => onSwitchToPublicPreview()}
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs transition-all"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
               >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Lihat Undangan</span>
+                <Eye className="w-3.5 h-3.5 shrink-0" />
+                <span className="sm:hidden">Undangan</span>
+                <span className="hidden sm:inline">Lihat Undangan</span>
               </button>
 
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
@@ -873,8 +874,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          {/* MODULE NAVIGATION TABS (Desktop & Mobile Horizontal Scroll) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar border-t border-stone-200/70">
+          {/* MODULE NAVIGATION TABS (Desktop & Tablet Horizontal Bar; Mobile also has Fixed Bottom Dock) */}
+          <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar border-t border-stone-200/70">
             {[
               {
                 id: 'readiness' as AdminModuleTab,
@@ -946,20 +947,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       </header>
 
       {/* MAIN CONTENT CONTAINER */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
         {/* =====================================================================
             MODUL 1: READINESS TRACKER (EXECUTIVE DASHBOARD)
            ===================================================================== */}
         {activeTab === 'readiness' && (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Top Hero KPI Cards (Symmetrical Height & Width) */}
             <div
               className={`grid grid-cols-1 sm:grid-cols-2 ${
                 isPanitia ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
-              } gap-4 items-stretch`}
+              } gap-3.5 sm:gap-4 items-stretch`}
             >
               {/* Card 1: Overall Readiness % */}
-              <div className="h-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E3C3] text-stone-900 rounded-3xl p-5 shadow-sm border border-[#D4AF37]/50 flex flex-col justify-between">
+              <div className="h-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E3C3] text-stone-900 rounded-3xl p-4 sm:p-5 shadow-sm border border-[#D4AF37]/50 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#8B6914]">
                     Kesiapan Pernikahan
@@ -968,7 +969,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="my-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-stone-900">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-stone-900">
                       {metrics.readinessPercent}%
                     </span>
                     <span className="text-xs text-emerald-700 font-bold">
@@ -988,7 +989,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* Card 2: Countdown Hari-H */}
-              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Countdown Hari-H
@@ -1000,7 +1001,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <p className="text-[10px] font-bold uppercase text-stone-600 truncate">
                       {state.settings.event1Title || 'Acara 1'}
                     </p>
-                    <p className="text-2xl font-extrabold text-stone-900">
+                    <p className="text-xl sm:text-2xl font-extrabold text-stone-900">
                       H-{metrics.daysToBiston}
                     </p>
                   </div>
@@ -1008,7 +1009,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <p className="text-[10px] font-bold uppercase text-[#8B6914] truncate">
                       {state.settings.event2Title || 'Pemberkatan'}
                     </p>
-                    <p className="text-2xl font-extrabold text-[#8B6914]">
+                    <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914]">
                       H-{metrics.daysToWedding}
                     </p>
                   </div>
@@ -1020,7 +1021,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               {/* Card 3: Ringkasan Budget & Revisi (Hidden for Panitia) */}
               {!isPanitia && (
-                <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
+                <div className="h-full bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                       Anggaran &amp; Realisasi
@@ -1052,7 +1053,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               )}
 
               {/* Card 4: Statistik RSVP & Tamu VIP */}
-              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Statistik Tamu &amp; RSVP
@@ -1088,15 +1089,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* Breakdown Progress by Timeline & Domain Category (Symmetrical Equal-Height 2-Column Grid) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
               {/* Left: Progress per Kategori */}
-              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-100 shrink-0">
                   <div>
-                    <h3 className="font-bold text-base text-stone-900">
+                    <h3 className="font-bold text-sm sm:text-base text-stone-900">
                       Kesiapan per Domain (DB Wedding)
                     </h3>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-[11px] sm:text-xs text-stone-500">
                       Progres administrasi Polri, Gereja, Kependudukan, Kesehatan &amp; Acara
                     </p>
                   </div>
@@ -1151,30 +1152,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* Right: Urgent / Pending Priority Tasks */}
-              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-100 shrink-0">
                   <div>
-                    <h3 className="font-bold text-base text-stone-900 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-[#B68D40]" />
-                      Fokus Penyelesaian Berikutnya
+                    <h3 className="font-bold text-sm sm:text-base text-stone-900 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#B68D40] shrink-0" />
+                      <span>Fokus Penyelesaian Berikutnya</span>
                     </h3>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-[11px] sm:text-xs text-stone-500">
                       Daftar tugas yang masih berstatus Proses / Belum Selesai
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold">
+                  <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold shrink-0">
                     {metrics.pendingTasks + metrics.inProgressTasks} Aktif
                   </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-2.5 py-4 pr-1">
+                <div className="flex-1 overflow-y-auto space-y-2.5 py-4 pr-1 max-h-[380px] lg:max-h-none">
                   {state.tasks
                     .filter((t) => !t.done && t.status !== 'SELESAI')
                     .sort((a, b) => a.due.localeCompare(b.due))
                     .map((task) => (
                       <div
                         key={task.id}
-                        className="p-3.5 rounded-2xl border border-stone-200 hover:border-[#D4AF37] bg-[#FAF8F5] flex items-start justify-between gap-3 transition-all"
+                        className="p-3.5 rounded-2xl border border-stone-200 hover:border-[#D4AF37] bg-[#FAF8F5] flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3 transition-all"
                       >
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -1209,7 +1210,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleCycleTaskStatus(task)}
-                          className="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                          className="w-full sm:w-auto text-center shrink-0 px-3 py-2 sm:py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
                         >
                           Selesaikan
                         </button>
@@ -1218,7 +1219,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
 
                 <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500 shrink-0">
-                  <span>Klik &ldquo;Selesaikan&rdquo; untuk memperbarui progres secara instan</span>
+                  <span>Klik &ldquo;Selesaikan&rdquo; untuk memperbarui progres</span>
                   <span className="font-bold text-[#8B6914]">
                     {metrics.inProgressTasks} Sedang Proses
                   </span>
@@ -1234,8 +1235,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'checklist' && (
           <div className="space-y-4">
             {/* Phase Timeline Pills & Filters */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-stone-200 space-y-3">
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-stone-200 space-y-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 <button
                   type="button"
                   onClick={() => setSelectedPhase('ALL')}
@@ -1320,16 +1321,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* LinkedIn-Style Checklist Section Card */}
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Card Header: Title (Count) on left + Plus & Edit Icons on right */}
-              <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-stone-900">
+                  <h2 className="text-base sm:text-xl font-bold text-stone-900">
                     Checklist Kesiapan ({filteredTasks.length})
                   </h2>
-                  <p className="text-xs text-stone-500">
+                  <p className="text-[11px] sm:text-xs text-stone-500">
                     Klik tombol + untuk menambah tugas baru atau ikon pensil untuk mengedit rincian tugas
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() =>
@@ -1364,7 +1365,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* Card Body: Clean LinkedIn-Style Divider Rows */}
-              <div className="divide-y divide-stone-200 px-6">
+              <div className="divide-y divide-stone-200 px-4 sm:px-6">
                 {(showAllTasks ? filteredTasks : filteredTasks.slice(0, 8)).map((task) => {
                   const effectiveStatus: TaskStatus = task.done
                     ? 'SELESAI'
@@ -1372,9 +1373,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   return (
                     <div
                       key={task.id}
-                      className="py-4 flex items-start justify-between gap-4 group"
+                      className="py-4 flex items-start justify-between gap-3 sm:gap-4 group"
                     >
-                      <div className="flex items-start gap-3.5 min-w-0">
+                      <div className="flex items-start gap-3 min-w-0">
                         <button
                           type="button"
                           onClick={() => handleCycleTaskStatus(task)}
@@ -1396,7 +1397,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div className="min-w-0 space-y-1">
                           <h4
-                            className={`font-bold text-sm sm:text-base ${
+                            className={`font-bold text-xs sm:text-base ${
                               effectiveStatus === 'SELESAI'
                                 ? 'line-through text-stone-400'
                                 : 'text-stone-900'
@@ -1405,7 +1406,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             {task.title}
                           </h4>
 
-                          <div className="flex items-center gap-2 text-xs text-stone-600 flex-wrap">
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-stone-600 flex-wrap">
                             <span className="inline-flex items-center gap-1 font-semibold text-stone-800">
                               <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                               {task.category} &bull; {task.timelinePhase}
@@ -1431,11 +1432,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => setEditingTask(task)}
-                          className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                           title="Edit Tugas"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -1446,7 +1447,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             await onDeleteTask(task.id);
                             showToast(`Tugas "${task.title}" dihapus.`);
                           }}
-                          className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                           title="Hapus Tugas"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1480,64 +1481,64 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'budget' && !isPanitia && (
           <div className="space-y-4">
-            {/* 4 Symmetrical Financial Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-              <div className="h-full bg-white rounded-2xl p-4 border border-stone-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase text-stone-500">
-                    Target Pagu Anggaran
+            {/* 4 Symmetrical Financial Cards (2x2 Grid on Mobile, 4 Columns on Desktop) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 items-stretch">
+              <div className="h-full bg-white rounded-2xl p-3.5 sm:p-4 border border-stone-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-[10px] sm:text-[11px] font-bold uppercase text-stone-500">
+                    Target Pagu
                   </p>
                   <button
                     type="button"
                     onClick={() => openSettingsPopup('budget_cap')}
-                    className="w-7 h-7 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914] shrink-0"
                     title="Edit / Revisi Target Pagu Anggaran"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <p className="text-lg sm:text-2xl font-extrabold text-stone-900 mt-1">
+                <p className="text-sm sm:text-2xl font-extrabold text-stone-900 mt-1 break-words">
                   {formatRupiah(
                     state.settings.totalBudgetCap > 0
                       ? state.settings.totalBudgetCap
                       : metrics.totalEstimated
                   )}
                 </p>
-                <p className="text-[11px] text-stone-400 mt-1">
-                  Total Estimasi Item: {formatRupiah(metrics.totalEstimated)}
+                <p className="text-[10px] sm:text-[11px] text-stone-400 mt-1 truncate">
+                  Est: {formatRupiah(metrics.totalEstimated)}
                 </p>
               </div>
-              <div className="h-full bg-[#FAF8F5] rounded-2xl p-4 border border-[#D4AF37]/40 flex flex-col justify-between">
-                <p className="text-[11px] font-bold uppercase text-[#8B6914]">
-                  Total Realisasi / Revisi
+              <div className="h-full bg-[#FAF8F5] rounded-2xl p-3.5 sm:p-4 border border-[#D4AF37]/40 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-[#8B6914]">
+                  Realisasi / Revisi
                 </p>
-                <p className="text-lg sm:text-2xl font-extrabold text-[#8B6914] mt-1">
+                <p className="text-sm sm:text-2xl font-extrabold text-[#8B6914] mt-1 break-words">
                   {formatRupiah(metrics.totalActual)}
                 </p>
-                <p className="text-[11px] text-stone-500 mt-1">
-                  Dari {state.budgetItems.length} pos anggaran aktif
+                <p className="text-[10px] sm:text-[11px] text-stone-500 mt-1">
+                  {state.budgetItems.length} pos anggaran
                 </p>
               </div>
-              <div className="h-full bg-emerald-50 rounded-2xl p-4 border border-emerald-200 flex flex-col justify-between">
-                <p className="text-[11px] font-bold uppercase text-emerald-800">
-                  Sudah Dibayar (DP / Lunas)
+              <div className="h-full bg-emerald-50 rounded-2xl p-3.5 sm:p-4 border border-emerald-200 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-emerald-800">
+                  Sudah Dibayar
                 </p>
-                <p className="text-lg sm:text-2xl font-extrabold text-emerald-700 mt-1">
+                <p className="text-sm sm:text-2xl font-extrabold text-emerald-700 mt-1 break-words">
                   {formatRupiah(metrics.totalPaid)}
                 </p>
-                <p className="text-[11px] text-emerald-700/80 mt-1">
-                  {metrics.lunasCount} pos berstatus Lunas
+                <p className="text-[10px] sm:text-[11px] text-emerald-700/80 mt-1">
+                  {metrics.lunasCount} pos Lunas
                 </p>
               </div>
-              <div className="h-full bg-rose-50 rounded-2xl p-4 border border-rose-200 flex flex-col justify-between">
-                <p className="text-[11px] font-bold uppercase text-rose-800">
-                  Sisa Harus Dilunasi
+              <div className="h-full bg-rose-50 rounded-2xl p-3.5 sm:p-4 border border-rose-200 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-rose-800">
+                  Sisa Pelunasan
                 </p>
-                <p className="text-lg sm:text-2xl font-extrabold text-rose-700 mt-1">
+                <p className="text-sm sm:text-2xl font-extrabold text-rose-700 mt-1 break-words">
                   {formatRupiah(metrics.totalRemaining)}
                 </p>
-                <p className="text-[11px] text-rose-700/80 mt-1">
-                  Selisih Realisasi dikurangi DP
+                <p className="text-[10px] sm:text-[11px] text-rose-700/80 mt-1">
+                  Realisasi - DP
                 </p>
               </div>
             </div>
@@ -1545,16 +1546,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* LinkedIn-Style Budget & Vendor Section Card */}
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Header with + and Edit icons on top-right */}
-              <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-stone-900">
+                  <h2 className="text-base sm:text-xl font-bold text-stone-900">
                     Pos Anggaran &amp; Revisi Vendor ({filteredBudgetItems.length})
                   </h2>
-                  <p className="text-xs text-stone-500">
+                  <p className="text-[11px] sm:text-xs text-stone-500">
                     Klik + untuk menambah pos pengeluaran baru atau ikon pensil untuk merevisi anggaran
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() =>
@@ -1596,7 +1597,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {filteredBudgetItems.length === 0 ? (
-                <div className="p-8 text-center space-y-3">
+                <div className="p-6 sm:p-8 text-center space-y-3">
                   <p className="text-sm font-semibold text-stone-700">
                     Belum ada pos anggaran atau vendor yang tercatat.
                   </p>
@@ -1629,7 +1630,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="divide-y divide-stone-200 px-6">
+                  <div className="divide-y divide-stone-200 px-4 sm:px-6">
                     {(showAllBudget ? filteredBudgetItems : filteredBudgetItems.slice(0, 6)).map(
                       (item) => {
                         const effectiveTotal =
@@ -1638,11 +1639,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         return (
                           <div
                             key={item.id}
-                            className="py-4 flex items-start justify-between gap-4"
+                            className="py-4 flex items-start justify-between gap-3 sm:gap-4"
                           >
                             <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-bold text-sm sm:text-base text-stone-900">
+                                <h3 className="font-bold text-xs sm:text-base text-stone-900">
                                   {item.itemName}
                                 </h3>
                                 {(item.revisionCount || 0) > 0 && (
@@ -1660,7 +1661,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   {item.paymentStatus.replace('_', ' ')}
                                 </span>
                               </div>
-                              <p className="text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                              <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
                                 <Wallet className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                                 <span>
                                   {item.category} &bull; Vendor: {item.vendorName || '-'}
@@ -1690,11 +1691,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               )}
                             </div>
 
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => setEditingBudget(item)}
-                                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                                 title="Edit / Revisi Pos Anggaran"
                               >
                                 <Edit3 className="w-4 h-4" />
@@ -1705,7 +1706,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   await onDeleteBudget(item.id);
                                   showToast(`Pos "${item.itemName}" dihapus.`);
                                 }}
-                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
+                                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                                 title="Hapus Pos Anggaran"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1742,13 +1743,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'guests' && (
           <div className="space-y-4">
             {/* Sub-tab & Filter Bar */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-stone-200 space-y-3">
+            <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-stone-200 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setGuestSubTab('list')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all ${
                       guestSubTab === 'list'
                         ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
@@ -1759,7 +1760,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setGuestSubTab('wishes')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all ${
                       guestSubTab === 'wishes'
                         ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
@@ -1827,16 +1828,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {guestSubTab === 'list' ? (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
                 {/* LinkedIn-Style Header with + and Edit icons */}
-                <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-stone-900">
+                    <h2 className="text-base sm:text-xl font-bold text-stone-900">
                       Tamu Undangan ({filteredGuests.length})
                     </h2>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-[11px] sm:text-xs text-stone-500">
                       Klik + untuk menambah tamu baru atau ikon pensil pada tiap baris untuk mengedit tamu
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() =>
@@ -1875,7 +1876,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                <div className="divide-y divide-stone-200 px-6">
+                <div className="divide-y divide-stone-200 px-4 sm:px-6">
                   {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
                     const waData = generateWhatsAppMessage(guest, state.settings);
                     const isLinkCopied = copiedGuestLinkId === guest.id;
@@ -1886,7 +1887,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-sm sm:text-base text-stone-900">
+                            <h3 className="font-bold text-xs sm:text-base text-stone-900">
                               {guest.guestName}
                             </h3>
                             <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914]">
@@ -1896,7 +1897,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {guest.priority}
                             </span>
                           </div>
-                          <p className="text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                          <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
                             <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                             <span>
                               {guest.institution || guest.guestType} &bull; {guest.side}
@@ -1997,12 +1998,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             ) : (
               /* SUB-TAB BUKU TAMU & MODERASI UCAPAN DOA */
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-                <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-stone-900">
+                    <h2 className="text-base sm:text-lg font-bold text-stone-900">
                       Buku Tamu &amp; Ucapan Doa ({state.wishes.length})
                     </h2>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-[11px] sm:text-xs text-stone-500">
                       Daftar ucapan doa yang dikirim langsung oleh tamu melalui halaman undangan
                     </p>
                   </div>
@@ -2012,7 +2013,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     Belum ada ucapan doa yang masuk dari tamu.
                   </div>
                 ) : (
-                  <div className="divide-y divide-stone-200 px-6">
+                  <div className="divide-y divide-stone-200 px-4 sm:px-6">
                     {state.wishes.map((w) => (
                       <div key={w.id} className="py-4 space-y-2">
                         <div className="flex items-start justify-between gap-3">
@@ -2105,18 +2106,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
            ===================================================================== */}
         {activeTab === 'settings' && (
-          <div className="max-w-5xl mx-auto space-y-5">
+          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5">
             {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
-            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-6 py-4 shadow-2xs flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
-                  <WeddingRingsIcon className="w-6 h-6" />
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
+                  <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-extrabold text-stone-900 leading-tight">
+                  <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
                     Pengaturan
                   </h2>
-                  <p className="text-xs text-[#9A742B] font-medium truncate mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-[#9A742B] font-medium truncate mt-0.5">
                     {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
                     {state.settings.groomNickname} &amp; {state.settings.brideNickname}
                   </p>
@@ -2127,19 +2128,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchToPublicPreview()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
                   title="Buka tampilan undangan publik"
                 >
-                  <Eye className="w-3.5 h-3.5 text-[#B68D40]" />
+                  <Eye className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                   <span className="hidden sm:inline">Pratinjau Undangan</span>
                 </button>
               </div>
             </div>
 
             {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden divide-y divide-stone-100">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+              {/* LEFT SIDEBAR MENU (2-Column Grid on Mobile, Vertical List on Desktop) */}
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-1.5 p-2 lg:p-0 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -2181,22 +2182,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         key={menu.id}
                         type="button"
                         onClick={() => setSettingsMenuTab(menu.id)}
-                        className={`w-full px-5 py-3.5 flex items-center justify-between text-left transition-all ${
+                        className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
                           isActive
-                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-l-4 border-[#B68D40]'
-                            : 'bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium'
+                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border border-[#D4AF37]/50 lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
+                            : 'bg-[#FAF8F5] lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-stone-200/70 lg:border-0'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 lg:gap-3 min-w-0">
                           <IconComp
-                            className={`w-4 h-4 ${
+                            className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
                               isActive ? 'text-[#B68D40]' : 'text-stone-400'
                             }`}
                           />
-                          <span className="text-xs sm:text-sm">{menu.label}</span>
+                          <span className="text-[11px] sm:text-xs lg:text-sm truncate">{menu.label}</span>
                         </div>
                         <ChevronRight
-                          className={`w-4 h-4 ${
+                          className={`hidden lg:block w-4 h-4 shrink-0 ${
                             isActive ? 'text-[#B68D40]' : 'text-stone-400'
                           }`}
                         />
@@ -2206,15 +2207,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-6 shadow-2xs space-y-5">
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5">
                 {/* ===============================================================
                     MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
                    =============================================================== */}
                 {settingsMenuTab === 'visibilitas' && (
-                  <div className="space-y-5">
+                  <div className="space-y-4 sm:space-y-5">
                     {/* Panel Title */}
                     <div className="flex items-center gap-2.5">
-                      <Shield className="w-4 h-4 text-[#B68D40]" />
+                      <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                       <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                         Pengaturan Visibilitas &amp; Konten Seksi Undangan
                       </h3>
@@ -2225,14 +2226,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setVisibilitasSubTab('semua')}
-                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                           visibilitasSubTab === 'semua'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Saklar &amp; Isi Konten (9 Seksi)</span>
+                        <Eye className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Saklar &amp; Isi Konten (9 Seksi)</span>
                       </button>
                       <button
                         type="button"
@@ -2240,14 +2241,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           setVisibilitasSubTab('media');
                           setExpandedSectionKey('showLoveStorySection');
                         }}
-                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                           visibilitasSubTab === 'media'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
-                        <ImageIcon className="w-3.5 h-3.5" />
-                        <span>Kisah Kasih &amp; Galeri Foto</span>
+                        <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Kisah Kasih &amp; Galeri Foto</span>
                       </button>
                     </div>
 
@@ -3553,9 +3554,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'jadwal' && (
                   <div className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <Calendar className="w-4 h-4 text-[#B68D40]" />
+                        <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                           Pengaturan Waktu Countdown &amp; Rangkaian Acara Mandiri
                         </h3>
@@ -3563,7 +3564,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => openSettingsPopup('countdown')}
-                        className="px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-xs"
+                        className="self-end sm:self-auto px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-xs shrink-0"
                       >
                         Ubah Countdown
                       </button>
@@ -3571,7 +3572,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                     <div className="divide-y divide-stone-100">
                       {/* Row Countdown Utama */}
-                      <div className="py-3.5 flex items-center justify-between gap-4">
+                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <Clock className="w-4 h-4" />
@@ -3588,7 +3589,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => openSettingsPopup('countdown')}
-                          className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
+                          className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
                         >
                           Edit Waktu
                         </button>
@@ -3635,7 +3636,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 <Calendar className="w-4 h-4" />
                               </div>
                               <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <p className="font-bold text-stone-900">{ev.title}</p>
                                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
                                     {ev.badge}
@@ -3693,9 +3694,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     MENU 4: KEAMANAN & AKUN (EXACT WIRA SATYA 96 SCREENSHOT 2 LAYOUT)
                    =============================================================== */}
                 {settingsMenuTab === 'keamanan' && !isPanitia && (
-                  <div className="space-y-5 text-xs sm:text-sm">
+                  <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
                     <div className="flex items-center gap-2.5">
-                      <Shield className="w-4 h-4 text-[#B68D40]" />
+                      <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                       <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                         Pengaturan Profil &amp; Keamanan Akun Sistem
                       </h3>
@@ -3706,37 +3707,37 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setKeamananSubTab('utama')}
-                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                           keamananSubTab === 'utama'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
-                        <KeyRound className="w-3.5 h-3.5" />
-                        <span>Akun Utama &amp; Otentikasi (4 Inti)</span>
+                        <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Akun Utama (4 Inti)</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setKeamananSubTab('panitia')}
-                        className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                           keamananSubTab === 'panitia'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Akun Panitia &amp; WO ({panitiaUsers.length})</span>
+                        <Users className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Panitia &amp; WO ({panitiaUsers.length})</span>
                       </button>
                     </div>
 
                     {/* SUB-TAB 1: 4 AKUN UTAMA */}
                     {keamananSubTab === 'utama' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-100">
                           <span className="text-xs text-stone-500">
                             Status proteksi otorisasi perubahan kredensial akun utama
                           </span>
-                          <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
+                          <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0">
                             &bull; Terproteksi Superadmin
                           </span>
                         </div>
@@ -3745,7 +3746,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           {defaultSystemUsers.map((u) => (
                             <div
                               key={u.id}
-                              className="py-3.5 flex items-center justify-between gap-4"
+                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
@@ -3764,7 +3765,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2.5 shrink-0">
+                              <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
                                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
                                   Aktif
                                 </span>
@@ -3785,7 +3786,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* SUB-TAB 2: AKUN PANITIA / WO */}
                     {keamananSubTab === 'panitia' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-100">
                           <span className="text-xs text-stone-500">
                             Akun panitia otomatis terkunci dari tab Anggaran &amp; Revisi Vendor
                           </span>
@@ -3799,7 +3800,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setPanitiaPassword('');
                               setActiveSettingsModal('panitia_user');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
+                            className="self-end sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Tambah Panitia
@@ -3815,7 +3816,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             {panitiaUsers.map((pu) => (
                               <div
                                 key={pu.id}
-                                className="py-3.5 flex items-center justify-between gap-4"
+                                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                               >
                                 <div className="flex items-center gap-3 min-w-0">
                                   <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
@@ -3837,7 +3838,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
                                     Aktif
                                   </span>
@@ -3879,22 +3880,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'database' && (
                   <div className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <FileSpreadsheet className="w-4 h-4 text-[#B68D40]" />
+                        <FileSpreadsheet className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                           Database Lokal, Sinkronisasi &amp; Backup Data
                         </h3>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                      <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] shrink-0">
                         &bull; DB Lokal Aktif
                       </span>
                     </div>
 
                     <div className="divide-y divide-stone-100">
                       {/* Backup JSON */}
-                      <div className="py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <FileJson className="w-4 h-4" />
                           </div>
@@ -3907,7 +3908,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -3940,8 +3941,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
 
                       {/* Export CSV */}
-                      <div className="py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
                             <FileSpreadsheet className="w-4 h-4" />
                           </div>
@@ -3954,7 +3955,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <div className="flex items-center gap-1.5 flex-wrap self-end sm:self-center justify-end">
                           <button
                             type="button"
                             onClick={() => {
@@ -4003,8 +4004,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
 
                       {/* Sinkronisasi Arsip Spreadsheet */}
-                      <div className="py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <RefreshCw
                               className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
@@ -4023,7 +4024,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           type="button"
                           onClick={handleTriggerSyncSheets}
                           disabled={isSyncingSheets}
-                          className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
+                          className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
                         >
                           {isSyncingSheets ? 'Menyinkronkan...' : 'Tarik Data'}
                         </button>
@@ -4031,8 +4032,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       {/* Reset Seed Default */}
                       {!isPanitia && (
-                        <div className="py-3.5 flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
+                        <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-start sm:items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
                               <RotateCcw className="w-4 h-4" />
                             </div>
@@ -4051,7 +4052,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               await onResetDefault();
                               showToast('Data dikembalikan ke seed awal Database Lokal.');
                             }}
-                            className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0"
+                            className="self-end sm:self-center px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0"
                           >
                             Reset Default
                           </button>
@@ -4070,8 +4071,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 1: TAMBAH / EDIT TUGAS CHECKLIST
          ======================================================================= */}
       {editingTask && (
-        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
               <h3 className="text-lg font-bold text-stone-900">
@@ -4277,8 +4278,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 2: TAMBAH / EDIT VENDOR & REVISI ANGGARAN
          ======================================================================= */}
       {editingBudget && (
-        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
             <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
               <h3 className="text-lg font-bold text-stone-900">
                 {editingBudget.id
@@ -4513,8 +4514,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 3: TAMBAH / EDIT TAMU UNDANGAN
          ======================================================================= */}
       {editingGuest && (
-        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
             <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
               <h3 className="text-lg font-bold text-stone-900">
                 {editingGuest.id ? 'Edit Data Tamu Undangan' : 'Tambahkan Tamu Undangan'}
@@ -4780,11 +4781,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 4: GENERATOR TEKS & LINK UNDANGAN WA
          ======================================================================= */}
       {waPreviewGuest && (
-        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           {(() => {
             const generated = generateWhatsAppMessage(waPreviewGuest, state.settings);
             return (
-              <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
                 <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-stone-900">
@@ -4856,8 +4857,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 5: POPUP PENGATURAN UNDANGAN, AKUN & PAGU BUDGET
          ======================================================================= */}
       {activeSettingsModal && (
-        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
             {/* Header */}
             <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
               <h3 className="text-lg font-bold text-stone-900">
@@ -6112,6 +6113,79 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* =======================================================================
+          MOBILE FIXED BOTTOM NAVIGATION BAR (< sm)
+         ======================================================================= */}
+      <nav
+        aria-label="Navigasi Modul Mobile"
+        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-[#D4AF37]/35 shadow-[0_-8px_24px_rgba(28,25,23,0.08)] px-1.5 pt-1.5 pb-2 pb-safe"
+      >
+        <div
+          className={`grid ${
+            isPanitia ? 'grid-cols-4' : 'grid-cols-5'
+          } gap-1 items-stretch`}
+        >
+          {[
+            {
+              id: 'readiness' as AdminModuleTab,
+              label: 'Ringkasan',
+              icon: LayoutDashboard,
+            },
+            {
+              id: 'checklist' as AdminModuleTab,
+              label: 'Checklist',
+              icon: CheckSquare,
+            },
+            ...(!isPanitia
+              ? [
+                  {
+                    id: 'budget' as AdminModuleTab,
+                    label: 'Anggaran',
+                    icon: Wallet,
+                  },
+                ]
+              : []),
+            {
+              id: 'guests' as AdminModuleTab,
+              label: 'Tamu',
+              icon: Users,
+            },
+            {
+              id: 'settings' as AdminModuleTab,
+              label: 'Pengaturan',
+              icon: Settings,
+            },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all ${
+                  active
+                    ? 'bg-gradient-to-b from-[#FAF3E3] to-[#F3E3C3] text-[#8B6914] font-extrabold border border-[#D4AF37]/45 shadow-2xs'
+                    : 'text-stone-500 hover:text-[#8B6914] font-semibold'
+                }`}
+              >
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    active ? 'text-[#B68D40]' : 'text-stone-400'
+                  }`}
+                />
+                <span className="text-[10px] leading-tight truncate max-w-full">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 };

@@ -69,10 +69,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-2xl rounded-3xl max-w-md w-full overflow-hidden shadow-[0_25px_70px_rgba(140,115,75,0.25)] border border-[#D4AF37]/40 text-stone-800">
+    <div className="fixed inset-0 z-50 bg-stone-900/45 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white/95 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[92dvh] overflow-y-auto shadow-[0_25px_70px_rgba(140,115,75,0.25)] border-t sm:border border-[#D4AF37]/40 text-stone-800 pb-safe">
         {/* Bright Pearl & Champagne Header */}
-        <div className="bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D8] p-6 relative border-b border-[#D4AF37]/25">
+        <div className="bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D8] p-5 sm:p-6 relative border-b border-[#D4AF37]/25">
           <button
             type="button"
             onClick={onClose}
@@ -82,15 +82,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F7E7CE] to-[#E6C994] border border-[#D4AF37]/50 flex items-center justify-center text-[#8B6914] shadow-xs shrink-0">
-              <WeddingRingsIcon className="w-7 h-7" />
+          <div className="flex items-center gap-3.5 pr-8">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#F7E7CE] to-[#E6C994] border border-[#D4AF37]/50 flex items-center justify-center text-[#8B6914] shadow-xs shrink-0">
+              <WeddingRingsIcon className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" /> Akses Terproteksi
               </span>
-              <h3 className="font-serif text-xl font-bold text-stone-900">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
                 Portal Manajemen Pernikahan
               </h3>
             </div>
@@ -98,7 +98,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs sm:text-sm">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs sm:text-sm">
           {errorMsg && (
             <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2.5 text-xs font-medium">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -119,7 +119,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="Masukkan username akun..."
-                className="w-full pl-10 pr-3.5 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-stone-900"
+                className="w-full pl-10 pr-3.5 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-base sm:text-sm text-stone-900"
               />
             </div>
           </div>
@@ -137,12 +137,12 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi..."
-                className="w-full pl-10 pr-10 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-stone-900"
+                className="w-full pl-10 pr-10 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-base sm:text-sm text-stone-900"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
                 tabIndex={-1}
               >
                 {showPassword ? (
