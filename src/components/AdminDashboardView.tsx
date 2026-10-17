@@ -36,6 +36,7 @@ import {
   X,
   Save,
   KeyRound,
+  UserPlus,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import {
@@ -369,10 +370,55 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   }, [state.guests, guestTypeFilter, guestPriorityFilter, guestRsvpFilter, guestSearch]);
 
   // ============================================================================
-  // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE
+  // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE (LINKEDIN CARD + MODAL STYLE)
   // ============================================================================
   const [settingsForm, setSettingsForm] = useState<WeddingSettings>(state.settings);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // LinkedIn-style "Show all ->" expand/collapse toggles for section cards
+  const [showAllTasks, setShowAllTasks] = useState(false);
+  const [showAllBudget, setShowAllBudget] = useState(false);
+  const [showAllGuests, setShowAllGuests] = useState(false);
+  const [showAllBanks, setShowAllBanks] = useState(false);
+  const [showAllPanitia, setShowAllPanitia] = useState(false);
+  const [showAllSectionsToggle, setShowAllSectionsToggle] = useState(false);
+
+  // Active LinkedIn-style popup modal for Settings & Users
+  const [activeSettingsModal, setActiveSettingsModal] = useState<
+    | null
+    | 'background'
+    | 'visibility'
+    | 'countdown'
+    | 'event1'
+    | 'event2'
+    | 'event3'
+    | 'quote'
+    | 'couple_groom'
+    | 'couple_bride'
+    | 'bank_account'
+    | 'gift_address'
+    | 'default_user'
+    | 'panitia_user'
+    | 'budget_cap'
+  >(null);
+
+  // State for adding/editing a single Bank Account inside modal
+  const [editingBankIndex, setEditingBankIndex] = useState<number | null>(null);
+  const [bankForm, setBankForm] = useState<{
+    id: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    branchOrNote: string;
+    type: 'BANK' | 'EWALLET' | 'QRIS';
+  }>({
+    id: '',
+    bankName: 'BANK BCA',
+    accountNumber: '',
+    accountHolder: state.settings.groomFullName || 'John Doe',
+    branchOrNote: 'Transfer Amplop Digital',
+    type: 'BANK',
+  });
 
   // Default Users & Panitia Users from state.adminUsers
   const defaultSystemUsers = useMemo(
@@ -386,7 +432,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   // State for editing a Default User (Requires Superadmin Confirmation)
   const [selectedDefaultUserId, setSelectedDefaultUserId] = useState<string>(
-    adminUser.isDefaultUser ? adminUser.id : 'usr-mempelai-pria'
+    adminUser.isDefaultUser ? adminUser.id : 'usr-default-1'
   );
   const [secUsername, setSecUsername] = useState(adminUser.username || '');
   const [secName, setSecName] = useState(adminUser.nama || '');
@@ -402,20 +448,76 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [panitiaPassword, setPanitiaPassword] = useState('');
   const [isSavingPanitia, setIsSavingPanitia] = useState(false);
 
+  const openSettingsPopup = (
+    modalType: NonNullable<typeof activeSettingsModal>
+  ) => {
+    setSettingsForm(state.settings);
+    setActiveSettingsModal(modalType);
+  };
+
   const handleSelectDefaultUserForEdit = (u: AdminUser) => {
     setSelectedDefaultUserId(u.id);
     setSecUsername(u.username);
     setSecName(u.nama);
     setSecNewPassword('');
+    setSecSuperadminConfirm('');
+    setActiveSettingsModal('default_user');
   };
 
-  const handleSaveSettingsForm = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSettingsModal = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     await onUpdateSettings({
       ...settingsForm,
       updatedBy: adminUser.username,
     });
-    showToast('Pengaturan tampilan & konten undangan berhasil disimpan!');
+    setActiveSettingsModal(null);
+    showToast('Perubahan berhasil disimpan!');
+  };
+
+  const handleSaveBankAccountModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bankForm.bankName.trim() || !bankForm.accountNumber.trim()) return;
+    const currentAccounts = [...(state.settings.bankAccounts || [])];
+    if (editingBankIndex !== null && currentAccounts[editingBankIndex]) {
+      currentAccounts[editingBankIndex] = {
+        ...bankForm,
+        bankName: bankForm.bankName.trim(),
+        accountNumber: bankForm.accountNumber.trim(),
+        accountHolder: bankForm.accountHolder.trim(),
+      };
+    } else {
+      currentAccounts.push({
+        ...bankForm,
+        id: `bank_${Date.now().toString(36)}`,
+        bankName: bankForm.bankName.trim(),
+        accountNumber: bankForm.accountNumber.trim(),
+        accountHolder: bankForm.accountHolder.trim(),
+      });
+    }
+    const nextSettings = {
+      ...state.settings,
+      bankAccounts: currentAccounts,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    setActiveSettingsModal(null);
+    setEditingBankIndex(null);
+    showToast('Rekening amplop digital berhasil disimpan!');
+  };
+
+  const handleDeleteBankAccount = async (bankId: string) => {
+    const nextAccounts = (state.settings.bankAccounts || []).filter(
+      (b) => b.id !== bankId
+    );
+    const nextSettings = {
+      ...state.settings,
+      bankAccounts: nextAccounts,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    showToast('Rekening berhasil dihapus.');
   };
 
   const handleUpdateDefaultUserForm = async (e: React.FormEvent) => {
@@ -441,6 +543,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
       setSecNewPassword('');
       setSecSuperadminConfirm('');
+      setActiveSettingsModal(null);
       if (onSyncStateAndUser) {
         onSyncStateAndUser(json.data, json.user);
       }
@@ -478,6 +581,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setPanitiaNama('');
       setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
       setPanitiaPassword('');
+      setActiveSettingsModal(null);
       if (onSyncStateAndUser && json.data) {
         onSyncStateAndUser(json.data);
       }
@@ -974,356 +1078,273 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
 
         {/* =====================================================================
-            MODUL 2: CHECKLIST KESIAPAN BERTAHAP (TIMELINE H-6 BULAN s/d HARI-H)
+            MODUL 2: CHECKLIST KESIAPAN BERTAHAP (LINKEDIN SECTION CARD STYLE)
            ===================================================================== */}
         {activeTab === 'checklist' && (
-          <div className="space-y-5">
-            {/* Header & Add Button */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
-                  Checklist Kesiapan Pernikahan Bertahap
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500">
-                  Terintegrasi dengan {state.tasks.length} item tugas dari Google Sheets DB Wedding (Polri, Gereja, Kependudukan, Kesehatan, Vendor &amp; Acara)
-                </p>
+          <div className="space-y-4">
+            {/* Phase Timeline Pills & Filters */}
+            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPhase('ALL')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                    selectedPhase === 'ALL'
+                      ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  Semua Fase ({state.tasks.length})
+                </button>
+                {TIMELINE_PHASES.map((phase) => {
+                  const count = state.tasks.filter((t) => t.timelinePhase === phase).length;
+                  return (
+                    <button
+                      key={phase}
+                      type="button"
+                      onClick={() => setSelectedPhase(phase)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                        selectedPhase === phase
+                          ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {phase} ({count})
+                    </button>
+                  );
+                })}
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingTask({
-                    title: '',
-                    category: 'Acara',
-                    timelinePhase: 'H-1 Bulan',
-                    due: '2026-11-20',
-                    priority: 'Tinggi',
-                    owner: 'Bersama',
-                    status: 'BELUM',
-                    notes: '',
-                    done: false,
-                  })
-                }
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                Tambah Tugas Checklist
-              </button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={taskSearch}
+                    onChange={(e) => setTaskSearch(e.target.value)}
+                    placeholder="Cari tugas, dokumen, SKCK, izin kawin..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  />
+                </div>
+
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as TaskCategory | 'ALL')}
+                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                >
+                  <option value="ALL">Semua Kategori Domain</option>
+                  {TASK_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      Kategori: {c}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
+                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                >
+                  <option value="ALL">Semua Status (Belum / Proses / Selesai)</option>
+                  <option value="BELUM">Status: Belum Dimulai</option>
+                  <option value="PROSES">Status: Sedang Proses</option>
+                  <option value="SELESAI">Status: Selesai</option>
+                </select>
+
+                <select
+                  value={selectedOwner}
+                  onChange={(e) => setSelectedOwner(e.target.value as TaskOwner | 'ALL')}
+                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                >
+                  <option value="ALL">Semua PIC (Saya / Calon / Bersama / WO)</option>
+                  <option value="Saya">PIC: Saya (Mempelai Pria)</option>
+                  <option value="Calon">PIC: Calon (Mempelai Wanita)</option>
+                  <option value="Bersama">PIC: Bersama</option>
+                  <option value="Keluarga">PIC: Keluarga</option>
+                  <option value="WO / Panitia">PIC: WO / Panitia</option>
+                </select>
+              </div>
             </div>
 
-            {/* Phase Timeline Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setSelectedPhase('ALL')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all ${
-                  selectedPhase === 'ALL'
-                    ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                Semua Fase ({state.tasks.length})
-              </button>
-              {TIMELINE_PHASES.map((phase) => {
-                const count = state.tasks.filter((t) => t.timelinePhase === phase).length;
-                return (
+            {/* LinkedIn-Style Checklist Section Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              {/* Card Header: Title (Count) on left + Plus & Edit Icons on right */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                    Checklist Kesiapan ({filteredTasks.length})
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Klik tombol + untuk menambah tugas baru atau ikon pensil untuk mengedit rincian tugas
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
                   <button
-                    key={phase}
                     type="button"
-                    onClick={() => setSelectedPhase(phase)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all ${
-                      selectedPhase === phase
-                        ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                    }`}
+                    onClick={() =>
+                      setEditingTask({
+                        title: '',
+                        category: 'Acara',
+                        timelinePhase: 'H-1 Bulan',
+                        due: '2026-11-20',
+                        priority: 'Tinggi',
+                        owner: 'Bersama',
+                        status: 'BELUM',
+                        notes: '',
+                        done: false,
+                      })
+                    }
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    title="Tambahkan tugas checklist"
                   >
-                    {phase} ({count})
+                    <Plus className="w-5 h-5" />
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Filters Bar */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={taskSearch}
-                  onChange={(e) => setTaskSearch(e.target.value)}
-                  placeholder="Cari tugas, dokumen, SKCK, izin kawin..."
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
-                />
+                  {filteredTasks[0] && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingTask(filteredTasks[0])}
+                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      title="Edit tugas checklist"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value as TaskCategory | 'ALL')}
-                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
-              >
-                <option value="ALL">Semua Kategori Domain</option>
-                {TASK_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    Kategori: {c}
-                  </option>
-                ))}
-              </select>
+              {/* Card Body: Clean LinkedIn-Style Divider Rows */}
+              <div className="divide-y divide-slate-200 px-6">
+                {(showAllTasks ? filteredTasks : filteredTasks.slice(0, 8)).map((task) => {
+                  const effectiveStatus: TaskStatus = task.done
+                    ? 'SELESAI'
+                    : task.status || 'BELUM';
+                  return (
+                    <div
+                      key={task.id}
+                      className="py-4 flex items-start justify-between gap-4 group"
+                    >
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => handleCycleTaskStatus(task)}
+                          className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center border shrink-0 transition-all ${
+                            effectiveStatus === 'SELESAI'
+                              ? 'bg-emerald-600 border-emerald-600 text-white'
+                              : effectiveStatus === 'PROSES'
+                              ? 'bg-amber-500 border-amber-500 text-slate-950'
+                              : 'bg-white border-slate-400 hover:border-[#0A66C2]'
+                          }`}
+                          title="Klik untuk ubah status (Belum -> Proses -> Selesai)"
+                        >
+                          {effectiveStatus === 'SELESAI' ? (
+                            <Check className="w-4 h-4 stroke-[3]" />
+                          ) : effectiveStatus === 'PROSES' ? (
+                            <Clock className="w-3.5 h-3.5" />
+                          ) : null}
+                        </button>
 
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
-                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
-              >
-                <option value="ALL">Semua Status (Belum / Proses / Selesai)</option>
-                <option value="BELUM">Status: Belum Dimulai</option>
-                <option value="PROSES">Status: Sedang Proses</option>
-                <option value="SELESAI">Status: Selesai</option>
-              </select>
-
-              <select
-                value={selectedOwner}
-                onChange={(e) => setSelectedOwner(e.target.value as TaskOwner | 'ALL')}
-                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
-              >
-                <option value="ALL">Semua PIC (Saya / Calon / Bersama / WO)</option>
-                <option value="Saya">PIC: Saya (Mempelai Pria)</option>
-                <option value="Calon">PIC: Calon (Mempelai Wanita)</option>
-                <option value="Bersama">PIC: Bersama</option>
-                <option value="Keluarga">PIC: Keluarga</option>
-                <option value="WO / Panitia">PIC: WO / Panitia</option>
-              </select>
-            </div>
-
-            {/* Checklist Items List */}
-            <div className="space-y-2.5">
-              {filteredTasks.map((task) => {
-                const effectiveStatus: TaskStatus = task.done
-                  ? 'SELESAI'
-                  : task.status || 'BELUM';
-                return (
-                  <div
-                    key={task.id}
-                    className={`rounded-2xl p-4 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                      effectiveStatus === 'SELESAI'
-                        ? 'bg-emerald-50/40 border-emerald-200'
-                        : effectiveStatus === 'PROSES'
-                        ? 'bg-amber-50/50 border-amber-300'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => handleCycleTaskStatus(task)}
-                        className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center border shrink-0 transition-all ${
-                          effectiveStatus === 'SELESAI'
-                            ? 'bg-emerald-600 border-emerald-600 text-white'
-                            : effectiveStatus === 'PROSES'
-                            ? 'bg-amber-500 border-amber-500 text-slate-950'
-                            : 'bg-white border-slate-300 hover:border-[#0A192F]'
-                        }`}
-                        title="Klik untuk ubah status (Belum -> Proses -> Selesai)"
-                      >
-                        {effectiveStatus === 'SELESAI' ? (
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        ) : effectiveStatus === 'PROSES' ? (
-                          <Clock className="w-3.5 h-3.5" />
-                        ) : null}
-                      </button>
-
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">
-                            {task.id}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-[#0A192F] text-amber-300 text-[10px] font-bold">
-                            {task.category}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-semibold">
-                            {task.timelinePhase}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              task.priority === 'Tinggi'
-                                ? 'bg-rose-100 text-rose-800'
-                                : task.priority === 'Sedang'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-100 text-slate-600'
+                        <div className="min-w-0 space-y-1">
+                          <h4
+                            className={`font-bold text-sm sm:text-base ${
+                              effectiveStatus === 'SELESAI'
+                                ? 'line-through text-slate-400'
+                                : 'text-slate-900'
                             }`}
                           >
-                            Prioritas {task.priority}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[10px] font-bold">
-                            PIC: {task.owner}
-                          </span>
-                        </div>
+                            {task.title}
+                          </h4>
 
-                        <h4
-                          className={`font-bold text-sm ${
-                            effectiveStatus === 'SELESAI'
-                              ? 'line-through text-slate-500'
-                              : 'text-slate-900'
-                          }`}
-                        >
-                          {task.title}
-                        </h4>
+                          <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
+                            <span className="inline-flex items-center gap-1 font-semibold text-slate-800">
+                              <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              {task.category} &bull; {task.timelinePhase}
+                            </span>
+                            <span>&bull; PIC: {task.owner}</span>
+                            <span>&bull; Target: {task.due}</span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                effectiveStatus === 'SELESAI'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : effectiveStatus === 'PROSES'
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {effectiveStatus}
+                            </span>
+                          </div>
 
-                        {task.notes && (
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            Catatan: {task.notes}
-                          </p>
-                        )}
-
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
-                          <span>Tenggat: {task.due}</span>
-                          {task.doneAt && <span>&bull; Selesai: {task.doneAt}</span>}
-                          {task.updatedBy && <span>&bull; Oleh: {task.updatedBy}</span>}
+                          {task.notes && (
+                            <p className="text-xs text-slate-500">{task.notes}</p>
+                          )}
                         </div>
                       </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setEditingTask(task)}
+                          className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                          title="Edit Tugas"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await onDeleteTask(task.id);
+                            showToast(`Tugas "${task.title}" dihapus.`);
+                          }}
+                          className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                          title="Hapus Tugas"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                      <button
-                        type="button"
-                        onClick={() => handleCycleTaskStatus(task)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                          effectiveStatus === 'SELESAI'
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : effectiveStatus === 'PROSES'
-                            ? 'bg-amber-500 text-slate-950 border-amber-500'
-                            : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-                        }`}
-                      >
-                        {effectiveStatus}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setEditingTask(task)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
-                        title="Edit Tugas"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await onDeleteTask(task.id);
-                          showToast(`Tugas "${task.title}" dihapus.`);
-                        }}
-                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
-                        title="Hapus Tugas"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {/* LinkedIn-Style "Show all ->" Footer Button */}
+              {filteredTasks.length > 8 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTasks(!showAllTasks)}
+                  className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <span>
+                    {showAllTasks
+                      ? 'Sembunyikan sebagian tugas'
+                      : `Tampilkan semua (${filteredTasks.length}) \u2192`}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {/* =====================================================================
-            MODUL 3: ANGGARAN, REVISI BUDGET & VENDOR (KHUSUS USER DEFAULT / NON-PANITIA)
+            MODUL 3: ANGGARAN, REVISI BUDGET & VENDOR (LINKEDIN SECTION CARD STYLE)
            ===================================================================== */}
         {activeTab === 'budget' && !isPanitia && (
-          <div className="space-y-5">
-            {/* Top Summary Banner & Editable Pagu Anggaran */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                    Akses Terbatas • Khusus Mempelai &amp; Keluarga Utama
-                  </span>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 mt-1.5">
-                    Manajemen Anggaran, Revisi &amp; Vendor Pernikahan
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-500">
-                    Seluruh pos anggaran dapat ditambah, diubah, atau direvisi kapan saja sesuai kesepakatan keluarga
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditingBudget({
-                      category: 'Gedung & Venue',
-                      itemName: '',
-                      vendorName: '',
-                      vendorContact: '',
-                      pic: 'Bersama',
-                      estimatedCost: 0,
-                      actualCost: 0,
-                      paidAmount: 0,
-                      paymentStatus: 'BELUM_DP',
-                      dueDate: '2026-12-01',
-                      notes: '',
-                      revisionNote: '',
-                    })
-                  }
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Pos Anggaran / Vendor
-                </button>
-              </div>
-
-              {/* Editable Pagu / Target Anggaran Keseluruhan */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-stone-900">
-                    Target Pagu Anggaran Keseluruhan (Editable / Revisi Pagu)
-                  </h4>
-                  <p className="text-xs text-stone-500">
-                    Tentukan atau revisi batas maksimal anggaran pernikahan Anda (dalam Rupiah)
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <span className="text-xs font-bold text-stone-500 absolute left-3 top-1/2 -translate-y-1/2">
-                      Rp
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      step={500000}
-                      value={budgetCapInput}
-                      onChange={(e) => setBudgetCapInput(Number(e.target.value) || 0)}
-                      placeholder="Contoh: 150000000"
-                      className="pl-9 pr-3.5 py-2 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm font-bold text-stone-900 w-48 sm:w-56"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await onUpdateSettings({
-                        totalBudgetCap: Number(budgetCapInput) || 0,
-                        updatedBy: adminUser.username,
-                      });
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        totalBudgetCap: Number(budgetCapInput) || 0,
-                      }));
-                      showToast(
-                        `Pagu Anggaran diperbarui menjadi ${formatRupiah(
-                          Number(budgetCapInput) || 0
-                        )}`
-                      );
-                    }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shadow-xs shrink-0"
-                  >
-                    Simpan Pagu
-                  </button>
-                </div>
-              </div>
-            </div>
-
+          <div className="space-y-4">
             {/* 4 Symmetrical Financial Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
               <div className="h-full bg-white rounded-2xl p-4 border border-slate-200 flex flex-col justify-between">
-                <p className="text-[11px] font-bold uppercase text-slate-500">
-                  Target Pagu / Estimasi Awal
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase text-slate-500">
+                    Target Pagu Anggaran
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openSettingsPopup('budget_cap')}
+                    className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                    title="Edit / Revisi Target Pagu Anggaran"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-1">
                   {formatRupiah(
                     state.settings.totalBudgetCap > 0
@@ -1370,220 +1391,216 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Category Filter Pills */}
-            {state.budgetItems.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                <button
-                  type="button"
-                  onClick={() => setBudgetCategoryFilter('ALL')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
-                    budgetCategoryFilter === 'ALL'
-                      ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                      : 'bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  Semua Pos ({state.budgetItems.length})
-                </button>
-                {VENDOR_CATEGORIES.map((vc) => {
-                  const count = state.budgetItems.filter((b) => b.category === vc).length;
-                  if (count === 0) return null;
-                  return (
-                    <button
-                      key={vc}
-                      type="button"
-                      onClick={() => setBudgetCategoryFilter(vc)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
-                        budgetCategoryFilter === vc
-                          ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
-                          : 'bg-white text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      {vc} ({count})
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Vendor List Cards or Clean Empty State */}
-            {filteredBudgetItems.length === 0 ? (
-              <div className="bg-white rounded-3xl p-8 border border-dashed border-slate-300 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto">
-                  <Wallet className="w-6 h-6" />
+            {/* LinkedIn-Style Budget & Vendor Section Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              {/* Header with + and Edit icons on top-right */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                    Pos Anggaran &amp; Revisi Vendor ({filteredBudgetItems.length})
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Klik + untuk menambah pos pengeluaran baru atau ikon pensil untuk merevisi anggaran
+                  </p>
                 </div>
-                <h3 className="font-serif text-lg font-bold text-slate-900">
-                  Belum Ada Pos Anggaran / Vendor
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-                  Seluruh data dummy telah dibersihkan. Silakan klik tombol di bawah untuk mulai mencatat estimasi anggaran, realisasi, dan revisi biaya pernikahan Anda.
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditingBudget({
-                      category: 'Gedung & Venue',
-                      itemName: '',
-                      vendorName: '',
-                      vendorContact: '',
-                      pic: 'Bersama',
-                      estimatedCost: 0,
-                      actualCost: 0,
-                      paidAmount: 0,
-                      paymentStatus: 'BELUM_DP',
-                      dueDate: '2026-12-01',
-                      notes: '',
-                      revisionNote: '',
-                    })
-                  }
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs shadow-xs"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Pos Anggaran Pertama
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingBudget({
+                        category: 'Gedung & Venue',
+                        itemName: '',
+                        vendorName: '',
+                        vendorContact: '',
+                        pic: 'Bersama',
+                        estimatedCost: 0,
+                        actualCost: 0,
+                        paidAmount: 0,
+                        paymentStatus: 'BELUM_DP',
+                        dueDate: '2026-12-01',
+                        notes: '',
+                        revisionNote: '',
+                      })
+                    }
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    title="Tambahkan pos anggaran / vendor"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (filteredBudgetItems[0]) {
+                        setEditingBudget(filteredBudgetItems[0]);
+                      } else {
+                        openSettingsPopup('budget_cap');
+                      }
+                    }}
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    title="Edit / Revisi Anggaran"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                {filteredBudgetItems.map((item) => {
-                  const effectiveTotal =
-                    item.actualCost > 0 ? item.actualCost : item.estimatedCost;
-                  const remaining = Math.max(0, effectiveTotal - item.paidAmount);
-                  const paidPct =
-                    effectiveTotal > 0
-                      ? Math.min(100, Math.round((item.paidAmount / effectiveTotal) * 100))
-                      : 0;
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="h-full bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-lg bg-[#0A192F] text-amber-300 text-[10px] font-bold">
-                              {item.category}
-                            </span>
-                            {(item.revisionCount || 0) > 0 && (
-                              <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold">
-                                Revisi ke-{item.revisionCount}
-                              </span>
-                            )}
-                          </div>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                              item.paymentStatus === 'LUNAS'
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : item.paymentStatus === 'DP_TERBAYAR' ||
-                                  item.paymentStatus === 'CICILAN'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : 'bg-rose-100 text-rose-800 border border-rose-300'
-                            }`}
+              {filteredBudgetItems.length === 0 ? (
+                <div className="p-8 text-center space-y-3">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Belum ada pos anggaran atau vendor yang tercatat.
+                  </p>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Klik tombol <strong>+</strong> di sudut kanan atas kartu ini untuk mulai menambahkan pos biaya dan vendor pernikahan Anda.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingBudget({
+                        category: 'Gedung & Venue',
+                        itemName: '',
+                        vendorName: '',
+                        vendorContact: '',
+                        pic: 'Bersama',
+                        estimatedCost: 0,
+                        actualCost: 0,
+                        paidAmount: 0,
+                        paymentStatus: 'BELUM_DP',
+                        dueDate: '2026-12-01',
+                        notes: '',
+                        revisionNote: '',
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-xs shadow-xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambahkan Pos Anggaran
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-slate-200 px-6">
+                    {(showAllBudget ? filteredBudgetItems : filteredBudgetItems.slice(0, 6)).map(
+                      (item) => {
+                        const effectiveTotal =
+                          item.actualCost > 0 ? item.actualCost : item.estimatedCost;
+                        const remaining = Math.max(0, effectiveTotal - item.paidAmount);
+                        return (
+                          <div
+                            key={item.id}
+                            className="py-4 flex items-start justify-between gap-4"
                           >
-                            {item.paymentStatus.replace('_', ' ')} ({paidPct}%)
-                          </span>
-                        </div>
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                                  {item.itemName}
+                                </h3>
+                                {(item.revisionCount || 0) > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold">
+                                    Revisi ke-{item.revisionCount}
+                                  </span>
+                                )}
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    item.paymentStatus === 'LUNAS'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-amber-100 text-amber-900'
+                                  }`}
+                                >
+                                  {item.paymentStatus.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+                                <Wallet className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>
+                                  {item.category} &bull; Vendor: {item.vendorName || '-'}
+                                </span>
+                                <span>
+                                  &bull; Estimasi: {formatRupiah(item.estimatedCost)}
+                                </span>
+                                <span className="font-bold text-slate-900">
+                                  &bull; Realisasi/Revisi: {formatRupiah(effectiveTotal)}
+                                </span>
+                                <span className="text-emerald-700 font-semibold">
+                                  &bull; Dibayar: {formatRupiah(item.paidAmount)}
+                                </span>
+                                {remaining > 0 && (
+                                  <span className="text-rose-600 font-semibold">
+                                    &bull; Sisa: {formatRupiah(remaining)}
+                                  </span>
+                                )}
+                              </p>
+                              {item.revisionNote && (
+                                <p className="text-xs text-indigo-800">
+                                  Catatan Revisi: {item.revisionNote}
+                                </p>
+                              )}
+                              {item.notes && (
+                                <p className="text-xs text-slate-500">{item.notes}</p>
+                              )}
+                            </div>
 
-                        <h3 className="font-bold text-base text-slate-900">{item.itemName}</h3>
-                        <p className="text-xs font-semibold text-slate-700">
-                          Vendor: {item.vendorName || '-'} &bull; Kontak:{' '}
-                          {item.vendorContact || '-'}
-                        </p>
-                        {item.notes && (
-                          <p className="text-xs text-slate-500 leading-relaxed">
-                            {item.notes}
-                          </p>
-                        )}
-                        {item.revisionNote && (
-                          <p className="text-xs text-indigo-800 bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-indigo-100">
-                            <strong>Catatan Revisi:</strong> {item.revisionNote}
-                          </p>
-                        )}
-                      </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setEditingBudget(item)}
+                                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                                title="Edit / Revisi Pos Anggaran"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await onDeleteBudget(item.id);
+                                  showToast(`Pos "${item.itemName}" dihapus.`);
+                                }}
+                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                                title="Hapus Pos Anggaran"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
 
-                      <div className="space-y-2 pt-3 border-t border-slate-100 text-xs mt-auto">
-                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl">
-                          <div>
-                            <p className="text-[10px] text-slate-500">Estimasi Awal</p>
-                            <p className="font-bold text-slate-700">
-                              {formatRupiah(item.estimatedCost)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-500">Realisasi / Revisi</p>
-                            <p className="font-bold text-indigo-900">
-                              {formatRupiah(effectiveTotal)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-500">Sisa Pelunasan</p>
-                            <p className="font-bold text-rose-600">
-                              {formatRupiah(remaining)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[11px] text-slate-500">
-                            Dibayar:{' '}
-                            <strong className="text-emerald-700">
-                              {formatRupiah(item.paidAmount)}
-                            </strong>{' '}
-                            &bull; PIC: <strong>{item.pic}</strong>
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setEditingBudget(item)}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" /> Edit / Revisi
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await onDeleteBudget(item.id);
-                                showToast(`Pos "${item.itemName}" dihapus.`);
-                              }}
-                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                  {filteredBudgetItems.length > 6 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllBudget(!showAllBudget)}
+                      className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span>
+                        {showAllBudget
+                          ? 'Sembunyikan sebagian pos anggaran'
+                          : `Tampilkan semua (${filteredBudgetItems.length}) \u2192`}
+                      </span>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
         {/* =====================================================================
-            MODUL 4: MANAJEMEN TAMU, BUKU TAMU & GENERATOR UNDANGAN WA 1-KLIK
+            MODUL 4: MANAJEMEN TAMU, BUKU TAMU & GENERATOR UNDANGAN WA (LINKEDIN CARD STYLE)
            ===================================================================== */}
         {activeTab === 'guests' && (
-          <div className="space-y-5">
-            {/* Top Banner & Sub-tab Switcher */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
-                  Manajemen Tamu &amp; Generator Undangan WhatsApp
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500">
-                  Daftar tamu VIP/Pejabat Polri, Keluarga &amp; Rekan lengkap dengan 1-Klik Kirim WA bernama otomatis
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="bg-slate-100 p-1 rounded-xl flex items-center">
+          <div className="space-y-4">
+            {/* Sub-tab & Filter Bar */}
+            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setGuestSubTab('list')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
                       guestSubTab === 'list'
-                        ? 'bg-[#0A192F] text-amber-300 shadow-2xs'
-                        : 'text-slate-600'
+                        ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
+                        : 'bg-white text-slate-700 border-slate-300'
                     }`}
                   >
                     Daftar Tamu ({state.guests.length})
@@ -1591,48 +1608,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setGuestSubTab('wishes')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
                       guestSubTab === 'wishes'
-                        ? 'bg-[#0A192F] text-amber-300 shadow-2xs'
-                        : 'text-slate-600'
+                        ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
+                        : 'bg-white text-slate-700 border-slate-300'
                     }`}
                   >
                     Buku Tamu &amp; Doa ({state.wishes.length})
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditingGuest({
-                      guestName: '',
-                      guestType: 'Pejabat/VIP',
-                      side: 'Mempelai Pria',
-                      institution: '',
-                      invitationFormat: 'Cetak Tebal',
-                      priority: 'P1 - VIP',
-                      cardQty: 1,
-                      pax: 2,
-                      phone: '',
-                      address: '',
-                      deliveryStatus: 'Belum Disiapkan',
-                      rsvpStatus: 'Belum Konfirmasi',
-                      attendanceStatus: 'Belum Dicek',
-                      notes: '',
-                    })
-                  }
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Tamu
-                </button>
               </div>
-            </div>
 
-            {guestSubTab === 'list' ? (
-              <>
-                {/* Guest Filters */}
-                <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              {guestSubTab === 'list' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                   <div className="relative">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -1682,100 +1670,112 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <option value="Tidak Hadir">RSVP: Tidak Hadir</option>
                   </select>
                 </div>
+              )}
+            </div>
 
-                {/* Guests List */}
-                <div className="space-y-3">
-                  {filteredGuests.map((guest) => {
+            {guestSubTab === 'list' ? (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* LinkedIn-Style Header with + and Edit icons */}
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                      Tamu Undangan ({filteredGuests.length})
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Klik + untuk menambah tamu baru atau ikon pensil pada tiap baris untuk mengedit tamu
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingGuest({
+                          guestName: '',
+                          guestType: 'Pejabat/VIP',
+                          side: 'Mempelai Pria',
+                          institution: '',
+                          invitationFormat: 'Cetak Tebal',
+                          priority: 'P1 - VIP',
+                          cardQty: 1,
+                          pax: 2,
+                          phone: '',
+                          address: '',
+                          deliveryStatus: 'Belum Disiapkan',
+                          rsvpStatus: 'Belum Konfirmasi',
+                          attendanceStatus: 'Belum Dicek',
+                          notes: '',
+                        })
+                      }
+                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      title="Tambahkan tamu undangan"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    {filteredGuests[0] && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingGuest(filteredGuests[0])}
+                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                        title="Edit tamu undangan"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-200 px-6">
+                  {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
                     const waData = generateWhatsAppMessage(guest, state.settings);
                     const isLinkCopied = copiedGuestLinkId === guest.id;
-
                     return (
                       <div
                         key={guest.id}
-                        className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                        className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                       >
-                        <div className="space-y-1.5 min-w-0">
+                        <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                            <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                              {guest.guestName}
+                            </h3>
+                            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-amber-300">
                               {guest.invitationCode}
                             </span>
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                guest.priority === 'P1 - VIP'
-                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                               {guest.priority}
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 text-[10px] font-bold">
-                              {guest.guestType} &bull; {guest.side}
-                            </span>
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                guest.rsvpStatus === 'Hadir'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : guest.rsvpStatus === 'Tidak Hadir'
-                                  ? 'bg-rose-100 text-rose-800'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              RSVP: {guest.rsvpStatus} ({guest.pax} Pax)
-                            </span>
                           </div>
-
-                          <h3 className="font-bold text-sm sm:text-base text-slate-900">
-                            {guest.guestName}
-                          </h3>
-
-                          {guest.institution && (
-                            <p className="text-xs font-semibold text-amber-800">
-                              {guest.institution}
-                            </p>
-                          )}
-
-                          <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-                            <span>Format: {guest.invitationFormat}</span>
-                            {guest.address && <span>&bull; Lokasi: {guest.address}</span>}
-                            {guest.phone && <span>&bull; Kontak/WA: {guest.phone}</span>}
-                            <span>&bull; Distribusi: {guest.deliveryStatus}</span>
-                          </div>
-
+                          <p className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+                            <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>
+                              {guest.institution || guest.guestType} &bull; {guest.side}
+                            </span>
+                            <span>
+                              &bull; RSVP: <strong>{guest.rsvpStatus}</strong> ({guest.pax} Pax)
+                            </span>
+                            {guest.address && <span>&bull; {guest.address}</span>}
+                          </p>
                           {guest.notes && (
-                            <p className="text-xs text-slate-500 italic">
-                              Catatan: {guest.notes}
-                            </p>
+                            <p className="text-xs text-slate-500">{guest.notes}</p>
                           )}
                         </div>
 
-                        {/* Action Buttons: 1-Click WA, Copy Link, Preview as Guest, Edit, Delete */}
-                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                           <a
                             href={waData.waHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => {
-                              if (guest.deliveryStatus === 'Belum Disiapkan') {
-                                onUpsertGuest({
-                                  ...guest,
-                                  deliveryStatus: 'Sudah Dikirim',
-                                });
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
                           >
-                            <Send className="w-3.5 h-3.5" />
-                            Kirim WA
+                            <Send className="w-3 h-3" /> Kirim WA
                           </a>
-
                           <button
                             type="button"
                             onClick={() => setWaPreviewGuest(guest)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs border border-amber-300 transition-all"
+                            className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200"
                           >
                             Teks WA
                           </button>
-
                           <button
                             type="button"
                             onClick={() => {
@@ -1784,152 +1784,167 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setTimeout(() => setCopiedGuestLinkId(null), 2000);
                               showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs"
+                            className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1"
                           >
                             {isLinkCopied ? (
                               <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" /> Disalin
+                                <Check className="w-3 h-3 text-emerald-600" /> Disalin
                               </>
                             ) : (
                               <>
-                                <Copy className="w-3.5 h-3.5" /> Salin Link
+                                <Copy className="w-3 h-3" /> Link
                               </>
                             )}
                           </button>
-
                           <button
                             type="button"
                             onClick={() => onSwitchToPublicPreview(guest)}
-                            className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
-                            title="Buka Preview Undangan atas nama tamu ini"
+                            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                            title="Preview Undangan"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </button>
-
                           <button
                             type="button"
                             onClick={() => setEditingGuest(guest)}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
-                            title="Edit Data Tamu"
+                            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                            title="Edit Tamu"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
-
                           <button
                             type="button"
                             onClick={async () => {
                               await onDeleteGuest(guest.id);
                               showToast(`Tamu "${guest.guestName}" dihapus.`);
                             }}
-                            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                            className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
                             title="Hapus Tamu"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </>
+
+                {filteredGuests.length > 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllGuests(!showAllGuests)}
+                    className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>
+                      {showAllGuests
+                        ? 'Sembunyikan sebagian tamu'
+                        : `Tampilkan semua (${filteredGuests.length}) \u2192`}
+                    </span>
+                  </button>
+                )}
+              </div>
             ) : (
               /* SUB-TAB BUKU TAMU & MODERASI UCAPAN DOA */
-              <div className="space-y-3">
-                {state.wishes.map((w) => (
-                  <div
-                    key={w.id}
-                    className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-base text-slate-900">{w.guestName}</h4>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            {w.rsvpStatus} ({w.pax} Pax)
-                          </span>
-                          {w.isPinned && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                              Disematkan
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500">{w.institution || w.relation}</p>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await onTogglePinWish(w.id);
-                            showToast('Status sematan ucapan diperbarui.');
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 ${
-                            w.isPinned
-                              ? 'bg-amber-400 text-slate-950'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                        >
-                          <Pin className="w-3.5 h-3.5" />
-                          {w.isPinned ? 'Unpin' : 'Pin'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplyingWishId(w.id);
-                            setReplyText(w.replyFromCouple || '');
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
-                        >
-                          <Reply className="w-3.5 h-3.5" /> Balas
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await onDeleteWish(w.id);
-                            showToast('Ucapan dihapus.');
-                          }}
-                          className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                      &ldquo;{w.message}&rdquo;
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">
+                      Buku Tamu &amp; Ucapan Doa ({state.wishes.length})
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Daftar ucapan doa yang dikirim langsung oleh tamu melalui halaman undangan
                     </p>
-
-                    {w.replyFromCouple && (
-                      <div className="pl-3 border-l-2 border-amber-500 text-xs text-slate-600">
-                        <strong className="text-slate-900">Balasan Mempelai:</strong>{' '}
-                        {w.replyFromCouple}
-                      </div>
-                    )}
-
-                    {replyingWishId === w.id && (
-                      <div className="flex items-center gap-2 pt-2">
-                        <input
-                          type="text"
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          placeholder="Tulis balasan terima kasih dari mempelai..."
-                          className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await onReplyWish(w.id, replyText);
-                            setReplyingWishId(null);
-                            showToast('Balasan berhasil disimpan!');
-                          }}
-                          className="px-4 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs"
-                        >
-                          Simpan Balasan
-                        </button>
-                      </div>
-                    )}
                   </div>
-                ))}
+                </div>
+                {state.wishes.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-500">
+                    Belum ada ucapan doa yang masuk dari tamu.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-200 px-6">
+                    {state.wishes.map((w) => (
+                      <div key={w.id} className="py-4 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-slate-900">
+                                {w.guestName}
+                              </h4>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                {w.rsvpStatus} ({w.pax} Pax)
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                              {w.institution || w.relation}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await onTogglePinWish(w.id);
+                                showToast('Status sematan ucapan diperbarui.');
+                              }}
+                              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold flex items-center gap-1"
+                            >
+                              <Pin className="w-3 h-3" /> {w.isPinned ? 'Unpin' : 'Pin'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingWishId(w.id);
+                                setReplyText(w.replyFromCouple || '');
+                              }}
+                              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                              title="Balas Ucapan"
+                            >
+                              <Reply className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await onDeleteWish(w.id);
+                                showToast('Ucapan dihapus.');
+                              }}
+                              className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                              title="Hapus Ucapan"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-700">&ldquo;{w.message}&rdquo;</p>
+                        {w.replyFromCouple && (
+                          <p className="text-xs text-amber-800 pl-3 border-l-2 border-amber-500">
+                            <strong>Balasan:</strong> {w.replyFromCouple}
+                          </p>
+                        )}
+                        {replyingWishId === w.id && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Tulis balasan terima kasih..."
+                              className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await onReplyWish(w.id, replyText);
+                                setReplyingWishId(null);
+                                showToast('Balasan berhasil disimpan!');
+                              }}
+                              className="px-4 py-1.5 rounded-full bg-[#0A66C2] text-white font-bold text-xs"
+                            >
+                              Simpan
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2064,1448 +2079,852 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Pengaturan Tampilan, Custom Background & Konten Undangan Form */}
-            <form
-              onSubmit={handleSaveSettingsForm}
-              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 text-xs sm:text-sm"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-slate-900">
-                    Pengaturan Undangan Digital, Custom Background &amp; Jadwal Acara
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Atur background custom, transparansi, bagian apa saja yang ditampilkan, tanggal acara, ayat, profil mempelai, hingga rekening amplop digital
-                  </p>
-                </div>
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-sm shrink-0"
-                >
-                  <Save className="w-4 h-4" />
-                  Simpan Pengaturan Undangan
-                </button>
-              </div>
-
-              {/* 1. PENGATURAN CUSTOM BACKGROUND, WALLPAPER & TRANSPARANSI */}
-              <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            {/* =====================================================================
+                LINKEDIN-STYLE SECTION CARDS FOR SETTINGS, INVITATION & ACCOUNTS
+               ===================================================================== */}
+            <div className="space-y-4">
+              {/* CARD 1: BACKGROUND & TRANSPARANSI UNDANGAN */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
                   <div>
-                    <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[#8B6914]">
-                      1. Pengaturan Custom Background &amp; Efek Transparansi Undangan
-                    </h4>
-                    <p className="text-xs text-stone-500">
-                      Gunakan URL gambar dari mana saja (Unsplash, Google Drive direct link, Imgur, dll) atau pilih preset di bawah
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Background &amp; Transparansi Undangan (3)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Wallpaper halaman, foto sampul, banner prewedding, dan efek kaca transparan
                     </p>
                   </div>
-                </div>
-
-                {/* Quick Preset Selector */}
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1.5 text-xs">
-                    Pilih Cepat Preset Background Tema Cerah / Siluet Prewedding:
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 items-stretch">
-                    {BACKGROUND_PRESETS.map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            coverBgUrl: preset.url,
-                            heroPrewedUrl: preset.url,
-                            pageBgUrl: preset.url,
-                          })
-                        }
-                        className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200 hover:border-[#D4AF37] text-left transition-all flex items-center gap-2.5"
-                      >
-                        <img
-                          src={preset.url}
-                          alt={preset.label}
-                          className="w-10 h-10 rounded-lg object-cover shrink-0 border border-stone-200"
-                        />
-                        <span className="text-[11px] font-bold text-stone-800 leading-tight">
-                          {preset.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3 Custom Background URL Inputs */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1">
-                        URL Background Cover Pembuka
-                      </label>
-                      <p className="text-[11px] text-stone-400 mb-2">
-                        Tampil di layar pertama saat tamu membuka link undangan
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      value={settingsForm.coverBgUrl || ''}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
-                      }
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
-                    />
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1">
-                        URL Banner Utama / Foto Prewedding
-                      </label>
-                      <p className="text-[11px] text-stone-400 mb-2">
-                        Tampil pada kartu utama di atas Countdown Hari-H
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      value={settingsForm.heroPrewedUrl || ''}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
-                      }
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
-                    />
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-stone-200 flex flex-col justify-between">
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1">
-                        URL Background Wallpaper Halaman
-                      </label>
-                      <p className="text-[11px] text-stone-400 mb-2">
-                        Background tetap (fixed) di belakang seluruh kartu undangan
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      value={settingsForm.pageBgUrl || ''}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
-                      }
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Overlay Opacity & Blur Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="bg-white p-3.5 rounded-xl border border-stone-200">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="font-bold text-stone-800">
-                        Tingkat Kecerahan Lapisan Transparan (Pearl Veil)
-                      </label>
-                      <span className="font-mono font-bold text-[#9A742B]">
-                        {settingsForm.bgOverlayOpacity ?? 88}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={45}
-                      max={95}
-                      value={settingsForm.bgOverlayOpacity ?? 88}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          bgOverlayOpacity: Number(e.target.value),
-                        })
-                      }
-                      className="w-full accent-[#B68D40]"
-                    />
-                    <div className="flex justify-between text-[10px] text-stone-400 mt-1">
-                      <span>45% (Foto Lebih Jelas)</span>
-                      <span>88% (Putih Lembut Ideal)</span>
-                      <span>95% (Putih Bersih)</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-stone-200">
-                    <label className="block font-bold text-stone-800 mb-1.5">
-                      Efek Blur Kaca (Glassmorphism Background)
-                    </label>
-                    <select
-                      value={settingsForm.bgBlurIntensity || 'sm'}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('background')}
+                      title="Pilih Preset / Tambah Background"
+                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
                     >
-                      <option value="none">Tanpa Blur (Foto Tajam)</option>
-                      <option value="sm">Blur Halus (Rekomendasi)</option>
-                      <option value="md">Blur Sedang (Soft Frosted)</option>
-                      <option value="lg">Blur Kuat (Deep Glass)</option>
-                    </select>
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('background')}
+                      title="Edit Background & Transparansi"
+                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-200">
+                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={state.settings.coverBgUrl}
+                        alt="Cover"
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900">
+                          Background Sampul Pembuka (Cover)
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {state.settings.coverBgUrl || 'Default'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('background')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={state.settings.heroPrewedUrl}
+                        alt="Hero"
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900">
+                          Banner Utama / Siluet Foto Prewedding
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {state.settings.heroPrewedUrl || 'Default'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('background')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={state.settings.pageBgUrl}
+                        alt="Page BG"
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900">
+                          Wallpaper Halaman &amp; Lapisan Transparan (Pearl Veil)
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Transparansi {state.settings.bgOverlayOpacity ?? 88}% • Blur Kaca:{' '}
+                          {(state.settings.bgBlurIntensity || 'sm').toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('background')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* 2. SAKLAR TAMPILAN SEKSI UNDANGAN (VISIBILITY TOGGLES) */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <div>
-                  <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-900">
-                    2. Pengaturan Tampilan Seksi Undangan (Pilih Bagian yang Ditampilkan)
-                  </h4>
-                  <p className="text-xs text-slate-500">
-                    Centang atau nonaktifkan bagian undangan yang ingin ditampilkan kepada tamu
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-                  {[
-                    {
-                      key: 'showQuoteSection' as const,
-                      label: 'Kutipan Ayat Suci / Doa',
-                    },
-                    {
-                      key: 'showCoupleSection' as const,
-                      label: 'Profil Kedua Mempelai',
-                    },
-                    {
-                      key: 'showEvent1' as const,
-                      label: 'Acara 1 (Biston / Keluarga)',
-                    },
-                    {
-                      key: 'showEvent2' as const,
-                      label: 'Acara 2 (Pemberkatan / Akad)',
-                    },
-                    {
-                      key: 'showEvent3' as const,
-                      label: 'Acara 3 (Resepsi Pernikahan)',
-                    },
-                    {
-                      key: 'showLoveStorySection' as const,
-                      label: 'Kisah Kasih (Love Story)',
-                    },
-                    {
-                      key: 'showGallerySection' as const,
-                      label: 'Galeri Foto Prewedding',
-                    },
-                    {
-                      key: 'showRsvpSection' as const,
-                      label: 'Form RSVP & Buku Tamu',
-                    },
-                    {
-                      key: 'showGiftSection' as const,
-                      label: 'Amplop Digital / Rekening',
-                    },
-                  ].map((item) => {
-                    const checked = settingsForm[item.key] !== false;
-                    return (
-                      <label
-                        key={item.key}
-                        className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
-                          checked
-                            ? 'bg-white border-[#D4AF37] shadow-2xs'
-                            : 'bg-slate-100/70 border-slate-200 text-slate-400'
-                        }`}
+              {/* CARD 2: VISIBILITAS SEKSI UNDANGAN */}
+              {(() => {
+                const visibilityItems = [
+                  { key: 'showQuoteSection' as const, label: 'Kutipan Ayat Suci / Doa Pernikahan' },
+                  { key: 'showCoupleSection' as const, label: 'Profil Kedua Mempelai & Orang Tua' },
+                  { key: 'showEvent1' as const, label: `Acara 1 (${state.settings.event1Title})` },
+                  { key: 'showEvent2' as const, label: `Acara 2 (${state.settings.event2Title})` },
+                  { key: 'showEvent3' as const, label: `Acara 3 (${state.settings.event3Title})` },
+                  { key: 'showLoveStorySection' as const, label: 'Kisah Kasih (Love Story Timeline)' },
+                  { key: 'showGallerySection' as const, label: 'Galeri Foto Prewedding' },
+                  { key: 'showRsvpSection' as const, label: 'Form Konfirmasi Kehadiran (RSVP) & Buku Tamu' },
+                  { key: 'showGiftSection' as const, label: 'Amplop Digital & Alamat Pengiriman Kado' },
+                ];
+                const visibleRows = showAllSectionsToggle
+                  ? visibilityItems
+                  : visibilityItems.slice(0, 4);
+                return (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Bagian Undangan yang Ditampilkan ({visibilityItems.filter((i) => state.settings[i.key] !== false).length}/{visibilityItems.length})
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Atur seksi mana saja yang muncul atau disembunyikan pada halaman tamu
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openSettingsPopup('visibility')}
+                        title="Edit Tampilan Seksi Undangan"
+                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              [item.key]: e.target.checked,
-                            })
-                          }
-                          className="w-4 h-4 accent-[#B68D40] rounded"
-                        />
-                        <span className="font-bold text-xs text-stone-800">
-                          {item.label}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
 
-              {/* 3. TANGGAL COUNTDOWN MANDIRI & JADWAL 3 ACARA (BISTON, PEMBERKATAN, RESEPSI) */}
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
-                  <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-amber-900">
-                    3. Pengaturan Tanggal Countdown Utama &amp; Rangkaian Acara Mandiri
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Waktu Countdown Utama (Pemberkatan / Hari-H)
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={(settingsForm.weddingDatetime || '2026-12-19T09:00').slice(
-                          0,
-                          16
-                        )}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            weddingDatetime: `${e.target.value}:00+07:00`,
-                          })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs"
-                      />
+                    <div className="divide-y divide-slate-200">
+                      {visibleRows.map((item) => {
+                        const isShown = state.settings[item.key] !== false;
+                        return (
+                          <div
+                            key={item.key}
+                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+                          >
+                            <div>
+                              <p className="font-bold text-sm text-slate-900">{item.label}</p>
+                              <p className="text-xs text-slate-500">
+                                {isShown
+                                  ? 'Tampil secara publik di halaman undangan tamu'
+                                  : 'Disembunyikan dari halaman undangan tamu'}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                isShown
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}
+                            >
+                              {isShown ? 'Ditampilkan' : 'Disembunyikan'}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Waktu Countdown Acara 1 (Biston / Keluarga)
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={(settingsForm.bistonDatetime || '2026-12-18T18:00').slice(
-                          0,
-                          16
-                        )}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            bistonDatetime: `${e.target.value}:00+07:00`,
-                          })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Subjudul Ringkas (Tampil di Header &amp; Footer)
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.subtitle}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, subtitle: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSectionsToggle(!showAllSectionsToggle)}
+                      className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      {showAllSectionsToggle
+                        ? 'Sembunyikan sebagian'
+                        : `Tampilkan semua ${visibilityItems.length} bagian →`}
+                    </button>
                   </div>
+                );
+              })()}
+
+              {/* CARD 3: RANGKAIAN ACARA & TANGGAL COUNTDOWN */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Rangkaian Acara &amp; Tanggal Countdown (4)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Ubah tanggal pemberkatan, resepsi, waktu countdown, gedung, dan link Google Maps secara mandiri
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openSettingsPopup('countdown')}
+                    title="Edit Tanggal Countdown Utama"
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
                 </div>
 
-                {/* 3 Symmetrical Event Editors */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+                <div className="divide-y divide-slate-200">
+                  {/* Countdown Utama */}
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-sm text-slate-900">
+                        Target Waktu Countdown Utama &amp; Subjudul
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Hari-H: <span className="font-mono font-semibold">{(state.settings.weddingDatetime || '').slice(0, 16).replace('T', ' ')} WIB</span> • Acara 1: <span className="font-mono font-semibold">{(state.settings.bistonDatetime || '').slice(0, 16).replace('T', ' ')} WIB</span>
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Subjudul Header: {state.settings.subtitle}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('countdown')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   {/* Acara 1 */}
-                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs uppercase text-amber-800">
-                          Acara 1 (Biston / Keluarga)
-                        </h4>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          {settingsForm.showEvent1 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-slate-900">
+                          {state.settings.event1Title}
+                        </p>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
+                          Acara 1
                         </span>
                       </div>
-                      <input
-                        type="text"
-                        value={settingsForm.event1Title}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event1Title: e.target.value })
-                        }
-                        placeholder="Judul Acara 1"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1Subtitle}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event1Subtitle: e.target.value,
-                          })
-                        }
-                        placeholder="Subjudul Acara 1"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1DateLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event1DateLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Hari & Tanggal (misal: Jumat, 18 Desember 2026)"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1TimeLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event1TimeLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Jam Pelaksanaan"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1Venue}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event1Venue: e.target.value })
-                        }
-                        placeholder="Nama Tempat / Venue"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1Address}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event1Address: e.target.value,
-                          })
-                        }
-                        placeholder="Alamat Lengkap"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event1Dresscode}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event1Dresscode: e.target.value,
-                          })
-                        }
-                        placeholder="Dresscode"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
+                      <p className="text-xs text-slate-600">
+                        {state.settings.event1DateLabel} • {state.settings.event1TimeLabel}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {state.settings.event1Venue} — {state.settings.event1Address}
+                      </p>
                     </div>
-                    <input
-                      type="text"
-                      value={settingsForm.event1MapsUrl}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, event1MapsUrl: e.target.value })
-                      }
-                      placeholder="Link Google Maps"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('event1')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                   </div>
 
                   {/* Acara 2 */}
-                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs uppercase text-amber-800">
-                          Acara 2 (Pemberkatan / Akad)
-                        </h4>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          {settingsForm.showEvent2 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-slate-900">
+                          {state.settings.event2Title}
+                        </p>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
+                          Pemberkatan / Akad
                         </span>
                       </div>
-                      <input
-                        type="text"
-                        value={settingsForm.event2Title}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event2Title: e.target.value })
-                        }
-                        placeholder="Judul Acara 2"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2Subtitle}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event2Subtitle: e.target.value,
-                          })
-                        }
-                        placeholder="Subjudul Acara 2"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2DateLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event2DateLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Hari & Tanggal (misal: Sabtu, 19 Desember 2026)"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2TimeLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event2TimeLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Jam Pelaksanaan"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2Venue}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event2Venue: e.target.value })
-                        }
-                        placeholder="Nama Gereja / Tempat"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2Address}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event2Address: e.target.value,
-                          })
-                        }
-                        placeholder="Alamat Lengkap"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event2Dresscode}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event2Dresscode: e.target.value,
-                          })
-                        }
-                        placeholder="Dresscode"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
+                      <p className="text-xs text-slate-600">
+                        {state.settings.event2DateLabel} • {state.settings.event2TimeLabel}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {state.settings.event2Venue} — {state.settings.event2Address}
+                      </p>
                     </div>
-                    <input
-                      type="text"
-                      value={settingsForm.event2MapsUrl}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, event2MapsUrl: e.target.value })
-                      }
-                      placeholder="Link Google Maps"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('event2')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                   </div>
 
                   {/* Acara 3 */}
-                  <div className="h-full p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs uppercase text-amber-800">
-                          Acara 3 (Resepsi Pernikahan)
-                        </h4>
-                        <span className="text-[10px] font-bold text-slate-500">
-                          {settingsForm.showEvent3 !== false ? 'Ditampilkan' : 'Disembunyikan'}
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-slate-900">
+                          {state.settings.event3Title}
+                        </p>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+                          Resepsi Utama
                         </span>
                       </div>
-                      <input
-                        type="text"
-                        value={settingsForm.event3Title}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event3Title: e.target.value })
-                        }
-                        placeholder="Judul Acara 3"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3Subtitle}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event3Subtitle: e.target.value,
-                          })
-                        }
-                        placeholder="Subjudul Acara 3"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3DateLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event3DateLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Hari & Tanggal (misal: Sabtu, 19 Desember 2026)"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3TimeLabel}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event3TimeLabel: e.target.value,
-                          })
-                        }
-                        placeholder="Jam Pelaksanaan"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3Venue}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, event3Venue: e.target.value })
-                        }
-                        placeholder="Nama Gedung / Ballroom"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3Address}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event3Address: e.target.value,
-                          })
-                        }
-                        placeholder="Alamat Lengkap"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={settingsForm.event3Dresscode}
-                        onChange={(e) =>
-                          setSettingsForm({
-                            ...settingsForm,
-                            event3Dresscode: e.target.value,
-                          })
-                        }
-                        placeholder="Dresscode"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
+                      <p className="text-xs text-slate-600">
+                        {state.settings.event3DateLabel} • {state.settings.event3TimeLabel}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {state.settings.event3Venue} — {state.settings.event3Address}
+                      </p>
                     </div>
-                    <input
-                      type="text"
-                      value={settingsForm.event3MapsUrl}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, event3MapsUrl: e.target.value })
-                      }
-                      placeholder="Link Google Maps"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white mt-2"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('event3')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* 4. AYAT SUCI / KUTIPAN & TEKS PEMBUKA/PENUTUP UNDANGAN */}
-              <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
-                <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[#8B6914]">
-                  4. Kutipan Ayat Suci &amp; Kalimat Pembuka / Penutup Undangan (Editable)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Isi Kutipan / Ayat Pernikahan
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={settingsForm.quoteVerse}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
+              {/* CARD 4: PROFIL KEDUA MEMPELAI */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Sumber Ayat / Kutipan
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.quoteSource}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
-                      }
-                      placeholder="Contoh: Kolose 3 : 14"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Kalimat Pembuka Undangan
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={settingsForm.invitationOpeningText}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          invitationOpeningText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Kalimat Penutup Undangan
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={settingsForm.invitationClosingText}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          invitationClosingText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 5. PROFIL MEMPELAI PRIA & WANITA (2 KARTU SIMETRIS) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                <div className="h-full space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                      5A. Profil Mempelai Pria
-                    </h4>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Nama Lengkap &amp; Gelar
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.groomFullName}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Nama Panggilan
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.groomNickname}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              groomNickname: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Pangkat / Gelar / Label
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.groomRankAndTitle}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              groomRankAndTitle: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Instansi / Profesi (Opsional)
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.groomUnit}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, groomUnit: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Kota Asal
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.groomOrigin}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, groomOrigin: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Keterangan Orang Tua Mempelai Pria
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.groomParents}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, groomParents: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      URL Foto Mempelai Pria
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.groomPhotoUrl}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, groomPhotoUrl: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="h-full space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
-                      5B. Profil Mempelai Wanita
-                    </h4>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Nama Lengkap &amp; Gelar
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.brideFullName}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Nama Panggilan
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.brideNickname}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              brideNickname: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Gelar / Label
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.brideTitle}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Kota Asal
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.brideOrigin}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, brideOrigin: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Keterangan Orang Tua Mempelai Wanita
-                      </label>
-                      <input
-                        type="text"
-                        value={settingsForm.brideParents}
-                        onChange={(e) =>
-                          setSettingsForm({ ...settingsForm, brideParents: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      URL Foto Mempelai Wanita
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.bridePhotoUrl}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, bridePhotoUrl: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 6. AMPLOP DIGITAL / REKENING BANK (TAMBAH & HAPUS MANDIRI) */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-900">
-                      6. Pengaturan Amplop Digital / Rekening Bank &amp; Alamat Kado
-                    </h4>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Profil Kedua Mempelai (2)
+                    </h3>
                     <p className="text-xs text-slate-500">
-                      Tambahkan atau hapus nomor rekening bank / e-wallet yang tampil di undangan
+                      Data nama lengkap, panggilan, gelar, orang tua, dan foto profil mempelai
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      setSettingsForm({
-                        ...settingsForm,
-                        bankAccounts: [
-                          ...(settingsForm.bankAccounts || []),
-                          {
-                            id: `bank_${Date.now().toString(36)}`,
-                            bankName: 'BANK BCA',
-                            accountNumber: '',
-                            accountHolder: settingsForm.groomFullName,
-                            branchOrNote: 'Transfer Amplop Digital',
-                            type: 'BANK',
-                          },
-                        ],
-                      })
-                    }
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs shrink-0"
+                    onClick={() => openSettingsPopup('couple_groom')}
+                    title="Edit Profil Mempelai"
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    Tambah Rekening
+                    <Edit3 className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Nama Penerima Kado / QRIS
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.giftRecipientName}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          giftRecipientName: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Alamat Pengiriman Kado Fisik
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsForm.giftShippingAddress}
-                      onChange={(e) =>
-                        setSettingsForm({
-                          ...settingsForm,
-                          giftShippingAddress: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-
-                {(settingsForm.bankAccounts || []).length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">
-                    Belum ada nomor rekening yang ditambahkan. Klik &ldquo;Tambah Rekening&rdquo; di kanan atas jika ingin menampilkan rekening di undangan.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
-                    {settingsForm.bankAccounts.map((acc, idx) => (
-                      <div
-                        key={acc.id}
-                        className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-amber-800">
-                            Rekening #{idx + 1}
+                <div className="divide-y divide-slate-200">
+                  {/* Mempelai Pria */}
+                  <div className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={state.settings.groomPhotoUrl}
+                        alt={state.settings.groomFullName}
+                        className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900">
+                          {state.settings.groomFullName}{' '}
+                          <span className="text-xs font-normal text-slate-500">
+                            ({state.settings.groomNickname})
                           </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSettingsForm({
-                                ...settingsForm,
-                                bankAccounts: settingsForm.bankAccounts.filter(
-                                  (b) => b.id !== acc.id
-                                ),
-                              })
-                            }
-                            className="text-rose-600 hover:underline text-[11px] font-bold flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" /> Hapus
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={acc.bankName}
-                            onChange={(e) => {
-                              const next = [...settingsForm.bankAccounts];
-                              next[idx] = { ...acc, bankName: e.target.value };
-                              setSettingsForm({ ...settingsForm, bankAccounts: next });
-                            }}
-                            placeholder="Nama Bank (BCA/Mandiri/BRI)"
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
-                          <input
-                            type="text"
-                            value={acc.accountNumber}
-                            onChange={(e) => {
-                              const next = [...settingsForm.bankAccounts];
-                              next[idx] = { ...acc, accountNumber: e.target.value };
-                              setSettingsForm({ ...settingsForm, bankAccounts: next });
-                            }}
-                            placeholder="Nomor Rekening"
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-mono"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={acc.accountHolder}
-                            onChange={(e) => {
-                              const next = [...settingsForm.bankAccounts];
-                              next[idx] = { ...acc, accountHolder: e.target.value };
-                              setSettingsForm({ ...settingsForm, bankAccounts: next });
-                            }}
-                            placeholder="Atas Nama (a.n.)"
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
-                          <input
-                            type="text"
-                            value={acc.branchOrNote}
-                            onChange={(e) => {
-                              const next = [...settingsForm.bankAccounts];
-                              next[idx] = { ...acc, branchOrNote: e.target.value };
-                              setSettingsForm({ ...settingsForm, bankAccounts: next });
-                            }}
-                            placeholder="Catatan / Cabang"
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Save & Reset Bar */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                {!isPanitia ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await onResetDefault();
-                      showToast('Data dikembalikan ke seed awal Database Lokal.');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset ke Data Awal (Seed Default)
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md"
-                >
-                  <Save className="w-4 h-4" />
-                  Simpan Seluruh Pengaturan Undangan
-                </button>
-              </div>
-            </form>
-
-            {/* MANAJEMEN 4 AKUN DEFAULT (KONFIRMASI SUPERADMIN) & AKUN PANITIA (KHUSUS USER DEFAULT) */}
-            {!isPanitia && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                {/* KIRI: 4 Akun Utama Default (Wajib Konfirmasi Superadmin) */}
-                <form
-                  onSubmit={handleUpdateDefaultUserForm}
-                  className="h-full bg-white rounded-3xl p-6 shadow-sm border border-[#D4AF37]/40 flex flex-col justify-between space-y-5 text-xs sm:text-sm"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3 border-b border-stone-200 pb-4">
-                      <div className="w-10 h-10 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#8B6914] shrink-0">
-                        <Shield className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-serif text-lg font-bold text-stone-900">
-                          Ubah Username &amp; Password Akun Utama
-                        </h3>
-                        <p className="text-xs text-stone-500">
-                          Perubahan username atau password pada ke-4 akun utama sistem wajib menyertakan konfirmasi Superadmin (Pemilik Aplikasi)
+                        </p>
+                        <p className="text-xs text-slate-600 truncate">
+                          {state.settings.groomRankAndTitle} • {state.settings.groomOrigin}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {state.settings.groomParents}
                         </p>
                       </div>
                     </div>
-
-                    {/* Pilihan 4 Akun Default */}
-                    <div>
-                      <label className="block font-bold text-stone-700 mb-1.5">
-                        Pilih Akun Utama yang Akan Diubah:
-                      </label>
-                      <div className="grid grid-cols-2 gap-2.5 items-stretch">
-                        {defaultSystemUsers.map((u) => {
-                          const isSelected = selectedDefaultUserId === u.id;
-                          return (
-                            <button
-                              key={u.id}
-                              type="button"
-                              onClick={() => handleSelectDefaultUserForEdit(u)}
-                              className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                                isSelected
-                                  ? 'bg-[#FAF3E3] border-[#D4AF37] shadow-2xs'
-                                  : 'bg-[#FAF8F5] border-stone-200 hover:border-stone-300'
-                              }`}
-                            >
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
-                                {u.role.replace('_', ' ')}
-                              </span>
-                              <span className="font-mono font-bold text-xs text-stone-900 mt-0.5 truncate">
-                                {u.username}
-                              </span>
-                              <span className="text-[11px] text-stone-500 truncate">
-                                {u.nama}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-stone-700 mb-1">
-                          Username Baru
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={secUsername}
-                          onChange={(e) => setSecUsername(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-stone-700 mb-1">
-                          Nama Tampilan
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={secName}
-                          onChange={(e) => setSecName(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-stone-700 mb-1">
-                        Password Baru (Kosongkan jika hanya mengganti username/nama)
-                      </label>
-                      <input
-                        type="password"
-                        value={secNewPassword}
-                        onChange={(e) => setSecNewPassword(e.target.value)}
-                        placeholder="Masukkan password baru (minimal 6 karakter)"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                      />
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80">
-                      <label className="block font-bold text-amber-950 mb-1">
-                        Konfirmasi Superadmin (Pemilik Aplikasi di Luar Sistem) *
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        value={secSuperadminConfirm}
-                        onChange={(e) => setSecSuperadminConfirm(e.target.value)}
-                        placeholder="Masukkan identitas Superadmin untuk otorisasi..."
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-white"
-                      />
-                      <p className="text-[11px] text-amber-800 mt-1">
-                        Identitas Superadmin diverifikasi dengan hash satu arah di server dan tidak pernah ditampilkan di layar.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 mt-auto">
                     <button
-                      type="submit"
-                      disabled={isUpdatingSecurity}
-                      className="w-full py-3 px-5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                      type="button"
+                      onClick={() => openSettingsPopup('couple_groom')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
                     >
-                      <KeyRound className="w-4 h-4" />
-                      <span>
-                        {isUpdatingSecurity
-                          ? 'Memverifikasi Superadmin...'
-                          : 'Konfirmasi & Simpan Perubahan Akun Utama'}
-                      </span>
+                      <Edit3 className="w-4 h-4" />
                     </button>
                   </div>
-                </form>
 
-                {/* KANAN: Manajemen Akun Panitia / WO (Tambah & Kurangi Panitia, Non-Budgeting) */}
-                <div className="h-full bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between space-y-5 text-xs sm:text-sm">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                          Akses Terbatas • Non-Budgeting
-                        </span>
-                        <h3 className="font-serif text-lg font-bold text-slate-900 mt-1">
-                          Manajemen Akun Panitia / WO ({panitiaUsers.length} Akun)
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Akun utama dapat menambah atau mengurangi akun Panitia. Panitia otomatis diblokir dari menu Anggaran/Budgeting.
+                  {/* Mempelai Wanita */}
+                  <div className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <img
+                        src={state.settings.bridePhotoUrl}
+                        alt={state.settings.brideFullName}
+                        className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900">
+                          {state.settings.brideFullName}{' '}
+                          <span className="text-xs font-normal text-slate-500">
+                            ({state.settings.brideNickname})
+                          </span>
+                        </p>
+                        <p className="text-xs text-slate-600 truncate">
+                          {state.settings.brideTitle} • {state.settings.brideOrigin}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {state.settings.brideParents}
                         </p>
                       </div>
                     </div>
-
-                    {/* Form Tambah / Edit Panitia */}
-                    <form
-                      onSubmit={handleUpsertPanitiaForm}
-                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('couple_bride')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
                     >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs uppercase text-slate-800">
-                          {panitiaEditId ? 'Edit Akun Panitia' : 'Tambah Akun Panitia Baru'}
-                        </h4>
-                        {panitiaEditId && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPanitiaEditId(undefined);
-                              setPanitiaUsername('');
-                              setPanitiaNama('');
-                              setPanitiaPassword('');
-                            }}
-                            className="text-[11px] font-bold text-rose-600 hover:underline"
-                          >
-                            Batal Edit
-                          </button>
-                        )}
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 5: KUTIPAN AYAT SUCI & KALIMAT UNDANGAN */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Kutipan Ayat &amp; Kalimat Sambutan
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Ayat suci pernikahan serta kalimat pembuka dan penutup pada undangan digital
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openSettingsPopup('quote')}
+                    title="Edit Kutipan Ayat & Kalimat"
+                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="divide-y divide-slate-200">
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-1">
+                      <p className="font-bold text-sm text-slate-900">
+                        {state.settings.quoteSource || 'Kutipan Ayat Pernikahan'}
+                      </p>
+                      <p className="text-xs text-slate-600 italic">
+                        &ldquo;{state.settings.quoteVerse}&rdquo;
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('quote')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-slate-50/70">
+                    <div className="space-y-1">
+                      <p className="font-bold text-sm text-slate-900">
+                        Kalimat Pembuka &amp; Penutup Undangan
+                      </p>
+                      <p className="text-xs text-slate-600 line-clamp-2">
+                        {state.settings.invitationOpeningText}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSettingsPopup('quote')}
+                      className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 6: AMPLOP DIGITAL & REKENING BANK */}
+              {(() => {
+                const allAccounts = state.settings.bankAccounts || [];
+                const visibleAccounts = showAllBanks ? allAccounts : allAccounts.slice(0, 3);
+                return (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Amplop Digital &amp; Rekening ({allAccounts.length})
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Nomor rekening bank, e-wallet, dan alamat pengiriman tanda kasih fisik
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingBankIndex(null);
+                            setBankForm({
+                              id: '',
+                              bankName: 'BANK BCA',
+                              accountNumber: '',
+                              accountHolder: state.settings.groomFullName || 'John Doe',
+                              branchOrNote: 'Transfer Amplop Digital',
+                              type: 'BANK',
+                            });
+                            setActiveSettingsModal('bank_account');
+                          }}
+                          title="Tambah Rekening Baru"
+                          className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openSettingsPopup('gift_address')}
+                          title="Edit Alamat Pengiriman Kado"
+                          className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-slate-200">
+                      {/* Alamat Kado Fisik */}
+                      <div className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70">
+                        <div>
+                          <p className="font-bold text-sm text-slate-900">
+                            Penerima Kado Fisik: {state.settings.giftRecipientName || '-'}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Alamat: {state.settings.giftShippingAddress || 'Belum diatur'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openSettingsPopup('gift_address')}
+                          className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">
-                            Username Panitia *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={panitiaUsername}
-                            onChange={(e) => setPanitiaUsername(e.target.value)}
-                            placeholder="Contoh: panitia_acara"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">
-                            Nama / Seksi Panitia *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={panitiaNama}
-                            onChange={(e) => setPanitiaNama(e.target.value)}
-                            placeholder="Contoh: Koordinator Lapangan"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">
-                            Jabatan / Tugas
-                          </label>
-                          <input
-                            type="text"
-                            value={panitiaJabatan}
-                            onChange={(e) => setPanitiaJabatan(e.target.value)}
-                            placeholder="Panitia / WO"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">
-                            {panitiaEditId
-                              ? 'Password Baru (Opsional)'
-                              : 'Password Panitia *'}
-                          </label>
-                          <input
-                            type="password"
-                            required={!panitiaEditId}
-                            value={panitiaPassword}
-                            onChange={(e) => setPanitiaPassword(e.target.value)}
-                            placeholder="Minimal 6 karakter"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={isSavingPanitia}
-                        className="w-full py-2.5 px-4 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>
-                          {isSavingPanitia
-                            ? 'Menyimpan...'
-                            : panitiaEditId
-                            ? 'Simpan Perubahan Akun Panitia'
-                            : 'Tambah Akun Panitia'}
-                        </span>
-                      </button>
-                    </form>
-
-                    {/* Daftar Akun Panitia */}
-                    <div className="space-y-2 max-h-[210px] overflow-y-auto pr-1">
-                      {panitiaUsers.length === 0 ? (
-                        <div className="p-4 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                          Belum ada akun Panitia tambahan. Gunakan formulir di atas untuk menambahkan akun Panitia.
+                      {/* Daftar Rekening */}
+                      {visibleAccounts.length === 0 ? (
+                        <div className="px-6 py-6 text-center text-xs text-slate-400">
+                          Belum ada rekening amplop digital. Klik tombol <strong>+</strong> di kanan atas kartu ini untuk menambahkan rekening.
                         </div>
                       ) : (
-                        panitiaUsers.map((p) => (
+                        visibleAccounts.map((acc, idx) => (
                           <div
-                            key={p.id}
-                            className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2"
+                            key={acc.id || idx}
+                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
                           >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono font-bold text-xs text-slate-900">
-                                  {p.username}
-                                </span>
-                                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold">
-                                  PANITIA (Non-Budget)
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-600 truncate">
-                                {p.nama} &bull; {p.jabatan}
+                            <div>
+                              <p className="font-bold text-sm text-slate-900">
+                                {acc.bankName} — <span className="font-mono">{acc.accountNumber}</span>
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                a.n. {acc.accountHolder} • {acc.branchOrNote}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setPanitiaEditId(p.id);
-                                  setPanitiaUsername(p.username);
-                                  setPanitiaNama(p.nama);
-                                  setPanitiaJabatan(p.jabatan);
-                                  setPanitiaPassword('');
+                                  setEditingBankIndex(idx);
+                                  setBankForm({
+                                    id: acc.id,
+                                    bankName: acc.bankName,
+                                    accountNumber: acc.accountNumber,
+                                    accountHolder: acc.accountHolder,
+                                    branchOrNote: acc.branchOrNote,
+                                    type: acc.type || 'BANK',
+                                  });
+                                  setActiveSettingsModal('bank_account');
                                 }}
-                                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs"
+                                className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600"
                               >
-                                Edit
+                                <Edit3 className="w-4 h-4" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  handleDeletePanitiaAccount(p.id, p.username)
-                                }
-                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600"
-                                title="Hapus Akun Panitia"
+                                onClick={() => handleDeleteBankAccount(acc.id)}
+                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-500"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
                         ))
                       )}
                     </div>
+
+                    {allAccounts.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllBanks(!showAllBanks)}
+                        className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors"
+                      >
+                        {showAllBanks
+                          ? 'Sembunyikan sebagian'
+                          : `Tampilkan semua ${allAccounts.length} rekening →`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* CARD 7 & 8: MANAJEMEN AKUN UTAMA & AKUN PANITIA (KHUSUS AKUN UTAMA) */}
+              {!isPanitia && (
+                <>
+                  {/* CARD 7: 4 AKUN UTAMA SISTEM */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Akun Utama Sistem ({defaultSystemUsers.length})
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Akun inti mempelai &amp; keluarga (Akses penuh termasuk Budgeting). Perubahan wajib konfirmasi pemilik aplikasi.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target =
+                            defaultSystemUsers.find((u) => u.id === selectedDefaultUserId) ||
+                            defaultSystemUsers[0];
+                          if (target) handleSelectDefaultUserForEdit(target);
+                        }}
+                        title="Ubah Username / Password Akun Utama"
+                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="divide-y divide-slate-200">
+                      {defaultSystemUsers.map((u) => (
+                        <div
+                          key={u.id}
+                          className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs">
+                              <KeyRound className="w-4 h-4 text-amber-700" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-slate-900">
+                                {u.nama}{' '}
+                                <span className="font-mono text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 ml-1">
+                                  @{u.username}
+                                </span>
+                              </p>
+                              <p className="text-xs text-slate-500">{u.jabatan}</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectDefaultUserForEdit(u)}
+                            className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600 shrink-0"
+                            title="Edit Username & Password"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between mt-auto">
-                    <span>Hak Akses Panitia: Checklist, Tamu &amp; Pengaturan Undangan</span>
-                    <span className="font-bold text-rose-600">Budgeting Terkunci</span>
+                  {/* CARD 8: AKUN PANITIA / WO */}
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Akun Panitia &amp; WO ({panitiaUsers.length})
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Dapat ditambah atau dihapus oleh akun utama. Panitia tidak dapat membuka tab Anggaran &amp; Vendor.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPanitiaEditId(undefined);
+                          setPanitiaUsername('');
+                          setPanitiaNama('');
+                          setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
+                          setPanitiaPassword('');
+                          setActiveSettingsModal('panitia_user');
+                        }}
+                        title="Tambah Akun Panitia Baru"
+                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="divide-y divide-slate-200">
+                      {panitiaUsers.length === 0 ? (
+                        <div className="px-6 py-6 text-center text-xs text-slate-400">
+                          Belum ada akun Panitia / WO tambahan. Klik tombol <strong>+</strong> di sudut kanan atas untuk membuat akun panitia.
+                        </div>
+                      ) : (
+                        (showAllPanitia ? panitiaUsers : panitiaUsers.slice(0, 4)).map((pu) => (
+                          <div
+                            key={pu.id}
+                            className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
+                                <UserPlus className="w-4 h-4 text-slate-600" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-slate-900">
+                                  {pu.nama}{' '}
+                                  <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-1">
+                                    @{pu.username}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {pu.jabatan} • <span className="text-rose-600 font-semibold">Budgeting Terkunci</span>
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPanitiaEditId(pu.id);
+                                  setPanitiaUsername(pu.username);
+                                  setPanitiaNama(pu.nama);
+                                  setPanitiaJabatan(pu.jabatan);
+                                  setPanitiaPassword('');
+                                  setActiveSettingsModal('panitia_user');
+                                }}
+                                className="w-9 h-9 rounded-full hover:bg-slate-200/70 flex items-center justify-center text-slate-600"
+                                title="Edit Akun Panitia"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePanitiaAccount(pu.id, pu.username)}
+                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-500"
+                                title="Hapus Akun Panitia"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {panitiaUsers.length > 4 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPanitia(!showAllPanitia)}
+                        className="w-full py-3.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-50 border-t border-slate-200 transition-colors"
+                      >
+                        {showAllPanitia
+                          ? 'Sembunyikan sebagian'
+                          : `Tampilkan semua ${panitiaUsers.length} akun panitia →`}
+                      </button>
+                    )}
                   </div>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </main>
 
       {/* =======================================================================
-          MODAL 1: TAMBAH / EDIT TUGAS CHECKLIST
+          MODAL 1 (LINKEDIN STYLE): TAMBAH / EDIT TUGAS CHECKLIST
          ======================================================================= */}
       {editingTask && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg font-bold text-slate-900">
-                {editingTask.id ? 'Edit Tugas Checklist' : 'Tambah Tugas Checklist Baru'}
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+            {/* LinkedIn Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                {editingTask.id ? 'Edit Tugas Kesiapan' : 'Tambahkan Tugas Kesiapan'}
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingTask(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100"
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            {/* LinkedIn Modal Body */}
+            <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+              <p className="text-xs text-slate-500">* Wajib diisi</p>
+
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Judul Tugas</label>
+                <label className="block font-medium text-slate-700 mb-1">
+                  Judul Tugas Kesiapan*
+                </label>
                 <input
                   type="text"
                   value={editingTask.title || ''}
                   onChange={(e) =>
                     setEditingTask({ ...editingTask, title: e.target.value })
                   }
-                  placeholder="Contoh: Finalisasi berkas Surat Izin Kawin..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300"
+                  placeholder="Misal: Pelunasan Katering / Gladi Bersih Pemberkatan"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none text-slate-900"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* LinkedIn-style "Disarankan berdasarkan..." pill box */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-xs text-slate-800">
+                    Disarankan berdasarkan jadwal pernikahan Anda
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { title: 'Finalisasi Daftar Tamu VIP & Pejabat', category: 'Tamu' as TaskCategory, phase: 'H-1 Bulan' as TimelinePhase },
+                    { title: 'Fitting Akhir Busana Pengantin & Seragam Keluarga', category: 'Logistik' as TaskCategory, phase: 'H-2 Minggu' as TimelinePhase },
+                    { title: 'Technical Meeting Seluruh Vendor & WO', category: 'Resepsi' as TaskCategory, phase: 'H-2 Minggu' as TimelinePhase },
+                    { title: 'Gladi Bersih Pemberkatan Gereja', category: 'Gereja' as TaskCategory, phase: 'H-7' as TimelinePhase },
+                    { title: 'Penyerahan Bukti Pelunasan Gedung & Katering', category: 'Keuangan' as TaskCategory, phase: 'H-7' as TimelinePhase },
+                  ].map((sug) => (
+                    <button
+                      key={sug.title}
+                      type="button"
+                      onClick={() =>
+                        setEditingTask({
+                          ...editingTask,
+                          title: sug.title,
+                          category: sug.category,
+                          timelinePhase: sug.phase,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                    >
+                      <span>{sug.title}</span>
+                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kategori Domain</label>
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Kategori Domain*
+                  </label>
                   <select
                     value={editingTask.category || 'Polri'}
                     onChange={(e) =>
@@ -3514,7 +2933,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         category: e.target.value as TaskCategory,
                       })
                     }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-400 bg-white"
                   >
                     {TASK_CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -3525,7 +2944,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Fase Timeline</label>
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Fase Timeline*
+                  </label>
                   <select
                     value={editingTask.timelinePhase || 'H-1 Bulan'}
                     onChange={(e) =>
@@ -3534,7 +2955,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         timelinePhase: e.target.value as TimelinePhase,
                       })
                     }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-400 bg-white"
                   >
                     {TIMELINE_PHASES.map((p) => (
                       <option key={p} value={p}>
@@ -3545,20 +2966,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Tenggat (Due)</label>
+                  <label className="block font-medium text-slate-700 mb-1">Tenggat Waktu</label>
                   <input
                     type="date"
                     value={editingTask.due || '2026-12-01'}
                     onChange={(e) =>
                       setEditingTask({ ...editingTask, due: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Prioritas</label>
+                  <label className="block font-medium text-slate-700 mb-1">Prioritas</label>
                   <select
                     value={editingTask.priority || 'Tinggi'}
                     onChange={(e) =>
@@ -3567,7 +2988,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         priority: e.target.value as TaskPriority,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Tinggi">Tinggi</option>
                     <option value="Sedang">Sedang</option>
@@ -3575,7 +2996,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">PIC / Owner</label>
+                  <label className="block font-medium text-slate-700 mb-1">PIC / Penanggung Jawab</label>
                   <select
                     value={editingTask.owner || 'Bersama'}
                     onChange={(e) =>
@@ -3584,7 +3005,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         owner: e.target.value as TaskOwner,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Saya">Saya</option>
                     <option value="Calon">Calon</option>
@@ -3596,27 +3017,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Catatan</label>
+                <label className="block font-medium text-slate-700 mb-1">Catatan Tambahan</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editingTask.notes || ''}
                   onChange={(e) =>
                     setEditingTask({ ...editingTask, notes: e.target.value })
                   }
                   placeholder="Catatan detail berkas atau koordinasi..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                  className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setEditingTask(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-              >
-                Batal
-              </button>
+            {/* LinkedIn Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -3627,11 +3042,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     updatedBy: adminUser.username,
                   });
                   setEditingTask(null);
-                  showToast('Tugas checklist berhasil disimpan!');
+                  showToast('Tugas kesiapan berhasil disimpan!');
                 }}
-                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
               >
-                Simpan Tugas
+                Simpan
               </button>
             </div>
           </div>
@@ -3639,30 +3054,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 2: TAMBAH / EDIT VENDOR & BUDGET
+          MODAL 2 (LINKEDIN STYLE): TAMBAH / EDIT VENDOR & REVISI ANGGARAN
          ======================================================================= */}
       {editingBudget && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
                 {editingBudget.id
-                  ? 'Edit & Revisi Anggaran / Vendor'
-                  : 'Tambah Pos Anggaran & Vendor Baru'}
+                  ? 'Edit & Revisi Anggaran Vendor'
+                  : 'Tambahkan Pos Anggaran / Vendor'}
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingBudget(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100"
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+              <p className="text-xs text-slate-500">* Wajib diisi</p>
+
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Nama Kebutuhan / Paket
+                <label className="block font-medium text-slate-700 mb-1">
+                  Nama Kebutuhan / Paket Vendor*
                 </label>
                 <input
                   type="text"
@@ -3670,14 +3087,49 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onChange={(e) =>
                     setEditingBudget({ ...editingBudget, itemName: e.target.value })
                   }
-                  placeholder="Contoh: Katering Resepsi / Gedung / Dekorasi"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                  placeholder="Misal: Katering Resepsi Utama 500 Pax"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Quick Suggestions Box */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <p className="font-bold text-xs text-slate-800">
+                  Disarankan berdasarkan komponen anggaran pernikahan
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { itemName: 'Sewa Gedung & Ballroom Resepsi', category: 'Gedung & Venue' as VendorCategory, est: 35000000 },
+                    { itemName: 'Paket Katering & Pondokan Tamu', category: 'Katering & Jamuan' as VendorCategory, est: 65000000 },
+                    { itemName: 'Dekorasi Pelaminan & Taman Gereja', category: 'Dekorasi & Florist' as VendorCategory, est: 25000000 },
+                    { itemName: 'MUA & Busana Pengantin + Orang Tua', category: 'MUA & Busana' as VendorCategory, est: 18000000 },
+                    { itemName: 'Dokumentasi Foto, Video & Cinematic', category: 'Dokumentasi Foto/Video' as VendorCategory, est: 12000000 },
+                    { itemName: 'Wedding Organizer (WO) Full Day', category: 'WO & MC / Hiburan' as VendorCategory, est: 10000000 },
+                  ].map((sug) => (
+                    <button
+                      key={sug.itemName}
+                      type="button"
+                      onClick={() =>
+                        setEditingBudget({
+                          ...editingBudget,
+                          itemName: sug.itemName,
+                          category: sug.category,
+                          estimatedCost: editingBudget.estimatedCost || sug.est,
+                          actualCost: editingBudget.actualCost || sug.est,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                    >
+                      <span>{sug.itemName}</span>
+                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kategori</label>
+                  <label className="block font-medium text-slate-700 mb-1">Kategori*</label>
                   <select
                     value={editingBudget.category || 'Katering & Jamuan'}
                     onChange={(e) =>
@@ -3686,7 +3138,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         category: e.target.value as VendorCategory,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     {VENDOR_CATEGORIES.map((vc) => (
                       <option key={vc} value={vc}>
@@ -3696,21 +3148,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Nama Vendor</label>
+                  <label className="block font-medium text-slate-700 mb-1">Nama Vendor</label>
                   <input
                     type="text"
                     value={editingBudget.vendorName || ''}
                     onChange={(e) =>
                       setEditingBudget({ ...editingBudget, vendorName: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    placeholder="Misal: PT Katering Nusantara"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Estimasi Awal (Rp)</label>
+                  <label className="block font-medium text-slate-700 mb-1">Estimasi Awal (Rp)*</label>
                   <input
                     type="number"
                     value={editingBudget.estimatedCost ?? 0}
@@ -3720,12 +3173,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         estimatedCost: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Realisasi / Revisi (Rp)
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Realisasi / Revisi (Rp)*
                   </label>
                   <input
                     type="number"
@@ -3736,11 +3189,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         actualCost: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Sudah Bayar (Rp)</label>
+                  <label className="block font-medium text-slate-700 mb-1">Sudah Dibayar (Rp)</label>
                   <input
                     type="number"
                     value={editingBudget.paidAmount ?? 0}
@@ -3750,14 +3203,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         paidAmount: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Status Bayar</label>
+                  <label className="block font-medium text-slate-700 mb-1">Status Pembayaran</label>
                   <select
                     value={editingBudget.paymentStatus || 'BELUM_DP'}
                     onChange={(e) =>
@@ -3766,7 +3219,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         paymentStatus: e.target.value as VendorPaymentStatus,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="BELUM_DP">BELUM DP</option>
                     <option value="DP_TERBAYAR">DP TERBAYAR</option>
@@ -3775,32 +3228,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jatuh Tempo</label>
+                  <label className="block font-medium text-slate-700 mb-1">Jatuh Tempo</label>
                   <input
                     type="date"
                     value={editingBudget.dueDate || '2026-12-01'}
                     onChange={(e) =>
                       setEditingBudget({ ...editingBudget, dueDate: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kontak Vendor</label>
+                  <label className="block font-medium text-slate-700 mb-1">Kontak Vendor</label>
                   <input
                     type="text"
                     value={editingBudget.vendorContact || ''}
                     onChange={(e) =>
                       setEditingBudget({ ...editingBudget, vendorContact: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    placeholder="0812xxxx"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-amber-800 mb-1">
-                  Catatan Revisi Anggaran (Alasan Perubahan / Penyesuaian)
+                <label className="block font-medium text-slate-700 mb-1">
+                  Catatan Revisi Anggaran (Alasan Perubahan)
                 </label>
                 <input
                   type="text"
@@ -3808,32 +3262,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onChange={(e) =>
                     setEditingBudget({ ...editingBudget, revisionNote: e.target.value })
                   }
-                  placeholder="Contoh: Penambahan porsi katering 50 pax / diskon paket gedung"
-                  className="w-full px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50/40"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Catatan Kontrak</label>
-                <textarea
-                  rows={2}
-                  value={editingBudget.notes || ''}
-                  onChange={(e) =>
-                    setEditingBudget({ ...editingBudget, notes: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                  placeholder="Misal: Penambahan 100 porsi pondokan / diskon vendor"
+                  className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setEditingBudget(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-              >
-                Batal
-              </button>
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -3845,9 +3280,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setEditingBudget(null);
                   showToast('Data anggaran & revisi vendor berhasil disimpan!');
                 }}
-                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
               >
-                Simpan Anggaran
+                Simpan
               </button>
             </div>
           </div>
@@ -3855,28 +3290,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 3: TAMBAH / EDIT TAMU UNDANGAN
+          MODAL 3 (LINKEDIN STYLE): TAMBAH / EDIT TAMU UNDANGAN
          ======================================================================= */}
       {editingGuest && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg font-bold text-slate-900">
-                {editingGuest.id ? 'Edit Data Tamu Undangan' : 'Tambah Tamu Undangan Baru'}
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                {editingGuest.id ? 'Edit Data Tamu Undangan' : 'Tambahkan Tamu Undangan'}
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingGuest(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100"
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+              <p className="text-xs text-slate-500">* Wajib diisi</p>
+
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Nama Lengkap &amp; Pangkat / Gelar
+                <label className="block font-medium text-slate-700 mb-1">
+                  Nama Lengkap &amp; Gelar / Pangkat*
                 </label>
                 <input
                   type="text"
@@ -3884,14 +3321,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onChange={(e) =>
                     setEditingGuest({ ...editingGuest, guestName: e.target.value })
                   }
-                  placeholder="Contoh: KOMJEN POL ASEP SAFRUDIN, S.I.K., M.H."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 font-semibold"
+                  placeholder="Contoh: Bpk. Ir. Budi Santoso & Ibu"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none font-semibold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* LinkedIn-style Quick Preset Chips for Guest Category & Priority */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <p className="font-bold text-xs text-slate-800">
+                  Disarankan berdasarkan kategori tamu undangan
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: 'Pejabat / VIP (Cetak Tebal)', guestType: 'Pejabat/VIP' as GuestType, priority: 'P1 - VIP' as GuestPriority, format: 'Cetak Tebal' as InvitationFormat },
+                    { label: 'Keluarga Inti & Besar', guestType: 'Keluarga' as GuestType, priority: 'P1 - VIP' as GuestPriority, format: 'Cetak & Digital' as InvitationFormat },
+                    { label: 'Rekan Kerja / Satker Polri', guestType: 'Rekan Kerja/Polri' as GuestType, priority: 'P2 - Utama' as GuestPriority, format: 'Digital WA' as InvitationFormat },
+                    { label: 'Sahabat & Rekan Angkatan', guestType: 'Teman/Sahabat' as GuestType, priority: 'P2 - Utama' as GuestPriority, format: 'Digital WA' as InvitationFormat },
+                    { label: 'Jemaat Gereja / Tetangga', guestType: 'Tetangga/Gereja' as GuestType, priority: 'P3 - Reguler' as GuestPriority, format: 'Cetak Reguler' as InvitationFormat },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() =>
+                        setEditingGuest({
+                          ...editingGuest,
+                          guestType: preset.guestType,
+                          priority: preset.priority,
+                          invitationFormat: preset.format,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                    >
+                      <span>{preset.label}</span>
+                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-medium text-slate-700 mb-1">
                     Jabatan / Instansi / Satker
                   </label>
                   <input
@@ -3900,13 +3370,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onChange={(e) =>
                       setEditingGuest({ ...editingGuest, institution: e.target.value })
                     }
-                    placeholder="KABARESKRIM POLRI"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    placeholder="Misal: Bareskrim Polri / Keluarga Besar"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    No. WhatsApp / Kontak Spri
+                  <label className="block font-medium text-slate-700 mb-1">
+                    No. WhatsApp / Kontak
                   </label>
                   <input
                     type="text"
@@ -3914,15 +3384,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onChange={(e) =>
                       setEditingGuest({ ...editingGuest, phone: e.target.value })
                     }
-                    placeholder="0812xxxx / Hub Spri"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    placeholder="0812xxxx"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kategori</label>
+                  <label className="block font-medium text-slate-700 mb-1">Kategori*</label>
                   <select
                     value={editingGuest.guestType || 'Pejabat/VIP'}
                     onChange={(e) =>
@@ -3931,7 +3401,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         guestType: e.target.value as GuestType,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Pejabat/VIP">Pejabat/VIP</option>
                     <option value="Keluarga">Keluarga</option>
@@ -3941,7 +3411,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Prioritas</label>
+                  <label className="block font-medium text-slate-700 mb-1">Prioritas</label>
                   <select
                     value={editingGuest.priority || 'P1 - VIP'}
                     onChange={(e) =>
@@ -3950,7 +3420,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         priority: e.target.value as GuestPriority,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="P1 - VIP">P1 - VIP</option>
                     <option value="P2 - Utama">P2 - Utama</option>
@@ -3958,7 +3428,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Pihak</label>
+                  <label className="block font-medium text-slate-700 mb-1">Pihak Pengundang</label>
                   <select
                     value={editingGuest.side || 'Mempelai Pria'}
                     onChange={(e) =>
@@ -3967,7 +3437,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         side: e.target.value as GuestSide,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Mempelai Pria">Mempelai Pria</option>
                     <option value="Mempelai Wanita">Mempelai Wanita</option>
@@ -3976,9 +3446,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Format Undangan</label>
+                  <label className="block font-medium text-slate-700 mb-1">Format Undangan</label>
                   <select
                     value={editingGuest.invitationFormat || 'Cetak Tebal'}
                     onChange={(e) =>
@@ -3987,7 +3457,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         invitationFormat: e.target.value as InvitationFormat,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Cetak Tebal">Cetak Tebal</option>
                     <option value="Cetak Reguler">Cetak Reguler</option>
@@ -3996,18 +3466,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kuota Pax</label>
+                  <label className="block font-medium text-slate-700 mb-1">Kuota Pax</label>
                   <input
                     type="number"
                     value={editingGuest.pax ?? 2}
                     onChange={(e) =>
                       setEditingGuest({ ...editingGuest, pax: Number(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Status RSVP</label>
+                  <label className="block font-medium text-slate-700 mb-1">Status RSVP</label>
                   <select
                     value={editingGuest.rsvpStatus || 'Belum Konfirmasi'}
                     onChange={(e) =>
@@ -4016,7 +3486,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         rsvpStatus: e.target.value as RsvpStatus,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Belum Konfirmasi">Belum Konfirmasi</option>
                     <option value="Hadir">Hadir</option>
@@ -4026,10 +3496,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Alamat / Lantai Ruangan
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Alamat / Ruangan
                   </label>
                   <input
                     type="text"
@@ -4037,13 +3507,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onChange={(e) =>
                       setEditingGuest({ ...editingGuest, address: e.target.value })
                     }
-                    placeholder="Lt. 17 Gedung Bareskrim"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                    placeholder="Alamat pengiriman undangan cetak"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Status Pengiriman
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Status Distribusi
                   </label>
                   <select
                     value={editingGuest.deliveryStatus || 'Belum Disiapkan'}
@@ -4053,7 +3523,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         deliveryStatus: e.target.value as DeliveryStatus,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
                   >
                     <option value="Belum Disiapkan">Belum Disiapkan</option>
                     <option value="Siap Kirim">Siap Kirim</option>
@@ -4062,28 +3532,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
               </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Catatan</label>
-                <input
-                  type="text"
-                  value={editingGuest.notes || ''}
-                  onChange={(e) =>
-                    setEditingGuest({ ...editingGuest, notes: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
-                />
-              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setEditingGuest(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-              >
-                Batal
-              </button>
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -4096,9 +3547,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setEditingGuest(null);
                   showToast('Data tamu berhasil disimpan!');
                 }}
-                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
               >
-                Simpan Tamu
+                Simpan
               </button>
             </div>
           </div>
@@ -4109,70 +3560,70 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 4: GENERATOR TEKS & LINK UNDANGAN WA
          ======================================================================= */}
       {waPreviewGuest && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           {(() => {
             const generated = generateWhatsAppMessage(waPreviewGuest, state.settings);
             return (
-              <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-amber-300 space-y-4 text-xs sm:text-sm">
-                <div className="flex items-center justify-between">
+              <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                      Generator Undangan WhatsApp Otomatis
-                    </span>
-                    <h3 className="font-serif text-lg font-bold text-slate-900">
-                      {waPreviewGuest.guestName}
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Bagikan Undangan WhatsApp
                     </h3>
+                    <p className="text-xs text-slate-500">{waPreviewGuest.guestName}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setWaPreviewGuest(null)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100"
+                    className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
-                  <p className="text-[11px] font-bold text-amber-900">
-                    Link Undangan Khusus Tamu Ini:
-                  </p>
-                  <p className="font-mono text-xs text-slate-800 break-all">
-                    {generated.inviteUrl}
-                  </p>
+                <div className="p-6 space-y-4">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <p className="text-[11px] font-bold text-slate-700">
+                      Link Undangan Khusus Tamu Ini:
+                    </p>
+                    <p className="font-mono text-xs text-[#0A66C2] break-all">
+                      {generated.inviteUrl}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Preview Pesan Pengantar WhatsApp:
+                    </label>
+                    <textarea
+                      readOnly
+                      rows={9}
+                      value={generated.messageText}
+                      className="w-full p-3.5 rounded-xl border border-slate-300 bg-slate-50 font-sans text-xs leading-relaxed"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Preview Pesan Pengantar WhatsApp:
-                  </label>
-                  <textarea
-                    readOnly
-                    rows={10}
-                    value={generated.messageText}
-                    className="w-full p-3.5 rounded-2xl border border-slate-300 bg-slate-50 font-sans text-xs leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2">
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(generated.messageText);
                       showToast('Seluruh teks undangan WA berhasil disalin!');
                     }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full border border-slate-400 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    Salin Teks WA
+                    Salin Teks
                   </button>
                   <a
                     href={generated.waHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    Kirim Langsung ke WhatsApp
+                    Kirim ke WhatsApp
                   </a>
                 </div>
               </div>
@@ -4180,6 +3631,1268 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           })()}
         </div>
       )}
+
+      {/* =======================================================================
+          MODAL 5 (LINKEDIN STYLE): POPUP PENGATURAN UNDANGAN, AKUN & PAGU BUDGET
+         ======================================================================= */}
+      {activeSettingsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                {activeSettingsModal === 'background' && 'Edit Background & Transparansi'}
+                {activeSettingsModal === 'visibility' && 'Atur Bagian Undangan yang Ditampilkan'}
+                {activeSettingsModal === 'countdown' && 'Edit Waktu Countdown & Subjudul'}
+                {activeSettingsModal === 'event1' && 'Edit Detail Acara 1 (Keluarga / Biston)'}
+                {activeSettingsModal === 'event2' && 'Edit Detail Acara 2 (Pemberkatan / Akad)'}
+                {activeSettingsModal === 'event3' && 'Edit Detail Acara 3 (Resepsi Pernikahan)'}
+                {activeSettingsModal === 'couple_groom' && 'Edit Profil Mempelai Pria'}
+                {activeSettingsModal === 'couple_bride' && 'Edit Profil Mempelai Wanita'}
+                {activeSettingsModal === 'quote' && 'Edit Kutipan Ayat & Kalimat Undangan'}
+                {activeSettingsModal === 'bank_account' &&
+                  (editingBankIndex !== null
+                    ? 'Edit Rekening Amplop Digital'
+                    : 'Tambahkan Rekening Amplop Digital')}
+                {activeSettingsModal === 'gift_address' && 'Edit Alamat Pengiriman Kado Fisik'}
+                {activeSettingsModal === 'default_user' && 'Ubah Kredensial Akun Utama'}
+                {activeSettingsModal === 'panitia_user' &&
+                  (panitiaEditId ? 'Edit Akun Panitia / WO' : 'Tambahkan Akun Panitia / WO')}
+                {activeSettingsModal === 'budget_cap' && 'Edit Target Pagu Anggaran Utama'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsModal(null)}
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 1. MODAL: BACKGROUND & TRANSPARANSI */}
+            {activeSettingsModal === 'background' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">
+                    * Gunakan URL gambar dari mana saja atau klik saran tema di bawah
+                  </p>
+
+                  {/* LinkedIn Suggestion Box for Background Presets */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <p className="font-bold text-xs text-slate-800">
+                      Disarankan berdasarkan tema undangan cerah &amp; elegan
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {BACKGROUND_PRESETS.map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              coverBgUrl: preset.url,
+                              heroPrewedUrl: preset.url,
+                              pageBgUrl: preset.url,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                        >
+                          <span>{preset.label}</span>
+                          <Plus className="w-3.5 h-3.5 text-slate-600" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      URL Background Sampul Pembuka (Cover)*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.coverBgUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      URL Banner Utama / Foto Siluet Prewedding*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.heroPrewedUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      URL Wallpaper Halaman Undangan*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.pageBgUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-medium text-slate-700">
+                          Kecerahan Transparan (Veil)
+                        </label>
+                        <span className="font-mono font-bold text-slate-900">
+                          {settingsForm.bgOverlayOpacity ?? 88}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={45}
+                        max={95}
+                        value={settingsForm.bgOverlayOpacity ?? 88}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            bgOverlayOpacity: Number(e.target.value),
+                          })
+                        }
+                        className="w-full accent-[#0A66C2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Efek Blur Kaca (Glassmorphism)
+                      </label>
+                      <select
+                        value={settingsForm.bgBlurIntensity || 'sm'}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                      >
+                        <option value="none">Tanpa Blur (Foto Tajam)</option>
+                        <option value="sm">Blur Halus (Rekomendasi)</option>
+                        <option value="md">Blur Sedang</option>
+                        <option value="lg">Blur Kuat</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 2. MODAL: VISIBILITAS SEKSI UNDANGAN */}
+            {activeSettingsModal === 'visibility' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-3 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">
+                    Centang seksi yang ingin ditampilkan pada undangan digital tamu:
+                  </p>
+                  <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
+                    {[
+                      { key: 'showQuoteSection' as const, label: 'Kutipan Ayat Suci / Doa Pernikahan' },
+                      { key: 'showCoupleSection' as const, label: 'Profil Kedua Mempelai & Orang Tua' },
+                      { key: 'showEvent1' as const, label: 'Acara 1 (Biston / Keluarga)' },
+                      { key: 'showEvent2' as const, label: 'Acara 2 (Pemberkatan / Akad)' },
+                      { key: 'showEvent3' as const, label: 'Acara 3 (Resepsi Pernikahan)' },
+                      { key: 'showLoveStorySection' as const, label: 'Kisah Kasih (Love Story)' },
+                      { key: 'showGallerySection' as const, label: 'Galeri Foto Prewedding' },
+                      { key: 'showRsvpSection' as const, label: 'Form RSVP & Buku Tamu' },
+                      { key: 'showGiftSection' as const, label: 'Amplop Digital / Rekening' },
+                    ].map((item) => {
+                      const checked = settingsForm[item.key] !== false;
+                      return (
+                        <label
+                          key={item.key}
+                          className="px-4 py-3 flex items-center justify-between gap-3 bg-white hover:bg-slate-50 cursor-pointer"
+                        >
+                          <span className="font-semibold text-slate-800">{item.label}</span>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [item.key]: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 accent-[#0A66C2] rounded"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 3. MODAL: COUNTDOWN & SUBTITLE */}
+            {activeSettingsModal === 'countdown' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Waktu Countdown Utama (Hari-H Pemberkatan / Akad)*
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={(settingsForm.weddingDatetime || '2026-12-19T09:00').slice(0, 16)}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          weddingDatetime: `${e.target.value}:00+07:00`,
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Waktu Countdown Acara 1 (Keluarga / Biston)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={(settingsForm.bistonDatetime || '2026-12-18T18:00').slice(0, 16)}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          bistonDatetime: `${e.target.value}:00+07:00`,
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Subjudul Ringkas (Tampil di Header &amp; Sampul)*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.subtitle || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, subtitle: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 4. MODAL: ACARA 1, ACARA 2, ACARA 3 */}
+            {(activeSettingsModal === 'event1' ||
+              activeSettingsModal === 'event2' ||
+              activeSettingsModal === 'event3') && (
+              <form onSubmit={handleSaveSettingsModal}>
+                {(() => {
+                  const prefix = activeSettingsModal;
+                  const titleKey = `${prefix}Title` as const;
+                  const subKey = `${prefix}Subtitle` as const;
+                  const dateKey = `${prefix}DateLabel` as const;
+                  const timeKey = `${prefix}TimeLabel` as const;
+                  const venueKey = `${prefix}Venue` as const;
+                  const addrKey = `${prefix}Address` as const;
+                  const dressKey = `${prefix}Dresscode` as const;
+                  const mapsKey = `${prefix}MapsUrl` as const;
+                  const showKey =
+                    prefix === 'event1'
+                      ? ('showEvent1' as const)
+                      : prefix === 'event2'
+                        ? ('showEvent2' as const)
+                        : ('showEvent3' as const);
+
+                  return (
+                    <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-slate-500">* Wajib diisi</p>
+                        <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm[showKey] !== false}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [showKey]: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 accent-[#0A66C2] rounded"
+                          />
+                          Tampilkan Acara Ini di Undangan
+                        </label>
+                      </div>
+
+                      {/* Quick Suggestions for Event Titles */}
+                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                        <p className="font-bold text-xs text-slate-800">
+                          Disarankan untuk nama acara pernikahan
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            'Pemberkatan Nikah Kudus',
+                            'Akad Nikah',
+                            'Resepsi Pernikahan',
+                            'Malam Midodareni / Biston',
+                            'Syukuran Keluarga & Adat',
+                          ].map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() =>
+                                setSettingsForm({ ...settingsForm, [titleKey]: t })
+                              }
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                            >
+                              <span>{t}</span>
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Judul Acara*
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[titleKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [titleKey]: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400 font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Subjudul Acara
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[subKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [subKey]: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Hari &amp; Tanggal (Teks Tampilan)*
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[dateKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [dateKey]: e.target.value,
+                              })
+                            }
+                            placeholder="Sabtu, 19 Desember 2026"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Waktu / Jam Pelaksanaan*
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[timeKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [timeKey]: e.target.value,
+                              })
+                            }
+                            placeholder="09.00 - 11.00 WIB"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium text-slate-700 mb-1">
+                          Nama Gedung / Gereja / Venue*
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm[venueKey] || ''}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              [venueKey]: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-medium text-slate-700 mb-1">
+                          Alamat Lengkap Lokasi*
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm[addrKey] || ''}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              [addrKey]: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Dresscode Tamu
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[dressKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [dressKey]: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-medium text-slate-700 mb-1">
+                            Link Google Maps
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm[mapsKey] || ''}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                [mapsKey]: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 5. MODAL: PROFIL MEMPELAI PRIA */}
+            {activeSettingsModal === 'couple_groom' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Nama Lengkap &amp; Gelar Mempelai Pria*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomFullName || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Nama Panggilan*
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomNickname || ''}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomNickname: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Pangkat / Gelar / Label
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomRankAndTitle || ''}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            groomRankAndTitle: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Instansi / Profesi
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomUnit || ''}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomUnit: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">Kota Asal</label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomOrigin || ''}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomOrigin: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Keterangan Orang Tua Mempelai Pria*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomParents || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomParents: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      URL Foto Mempelai Pria
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomPhotoUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomPhotoUrl: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 6. MODAL: PROFIL MEMPELAI WANITA */}
+            {activeSettingsModal === 'couple_bride' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Nama Lengkap &amp; Gelar Mempelai Wanita*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.brideFullName || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Nama Panggilan*
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.brideNickname || ''}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, brideNickname: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Gelar / Label
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.brideTitle || ''}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">Kota Asal</label>
+                    <input
+                      type="text"
+                      value={settingsForm.brideOrigin || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, brideOrigin: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Keterangan Orang Tua Mempelai Wanita*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.brideParents || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, brideParents: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      URL Foto Mempelai Wanita
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.bridePhotoUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, bridePhotoUrl: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 7. MODAL: KUTIPAN AYAT SUCI & KALIMAT UNDANGAN */}
+            {activeSettingsModal === 'quote' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  {/* Quick Suggestions for Quotes */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <p className="font-bold text-xs text-slate-800">
+                      Disarankan berdasarkan kutipan ayat pernikahan populer
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        {
+                          source: 'Kolose 3 : 14',
+                          verse:
+                            'Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.',
+                        },
+                        {
+                          source: '1 Korintus 13 : 4-7',
+                          verse:
+                            'Kasih itu sabar; kasih itu murah hati; ia menutupi segala sesuatu, percaya segala sesuatu, mengharapkan segala sesuatu, sabar menanggung segala sesuatu.',
+                        },
+                        {
+                          source: 'Matius 19 : 6',
+                          verse:
+                            'Demikianlah mereka bukan lagi dua, melainkan satu. Karena itu, apa yang telah dipersatukan Allah, tidak boleh diceraikan manusia.',
+                        },
+                        {
+                          source: 'QS. Ar-Rum : 21',
+                          verse:
+                            'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya.',
+                        },
+                      ].map((q) => (
+                        <button
+                          key={q.source}
+                          type="button"
+                          onClick={() =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              quoteSource: q.source,
+                              quoteVerse: q.verse,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                        >
+                          <span>{q.source}</span>
+                          <Plus className="w-3.5 h-3.5 text-slate-600" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Sumber Ayat / Kutipan*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.quoteSource || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Isi Kutipan Ayat Pernikahan*
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={settingsForm.quoteVerse || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Kalimat Pembuka Undangan
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsForm.invitationOpeningText || ''}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          invitationOpeningText: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Kalimat Penutup Undangan
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={settingsForm.invitationClosingText || ''}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          invitationClosingText: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 8. MODAL: TAMBAH / EDIT REKENING BANK */}
+            {activeSettingsModal === 'bank_account' && (
+              <form onSubmit={handleSaveBankAccountModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <p className="font-bold text-xs text-slate-800">
+                      Disarankan berdasarkan bank &amp; dompet digital
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { name: 'BANK BCA', type: 'BANK' as const },
+                        { name: 'BANK MANDIRI', type: 'BANK' as const },
+                        { name: 'BANK BRI', type: 'BANK' as const },
+                        { name: 'BANK BNI', type: 'BANK' as const },
+                        { name: 'GOPAY / DANA / OVO', type: 'EWALLET' as const },
+                      ].map((b) => (
+                        <button
+                          key={b.name}
+                          type="button"
+                          onClick={() =>
+                            setBankForm({ ...bankForm, bankName: b.name, type: b.type })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                        >
+                          <span>{b.name}</span>
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Nama Bank / E-Wallet*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankForm.bankName}
+                      onChange={(e) =>
+                        setBankForm({ ...bankForm, bankName: e.target.value })
+                      }
+                      placeholder="Contoh: BANK BCA"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Nomor Rekening / Nomor Akun*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankForm.accountNumber}
+                      onChange={(e) =>
+                        setBankForm({ ...bankForm, accountNumber: e.target.value })
+                      }
+                      placeholder="Contoh: 1234567890"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Atas Nama Pemilik Rekening*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankForm.accountHolder}
+                      onChange={(e) =>
+                        setBankForm({ ...bankForm, accountHolder: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Keterangan / Cabang
+                    </label>
+                    <input
+                      type="text"
+                      value={bankForm.branchOrNote}
+                      onChange={(e) =>
+                        setBankForm({ ...bankForm, branchOrNote: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 9. MODAL: ALAMAT KADO FISIK */}
+            {activeSettingsModal === 'gift_address' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Nama Penerima Kado Fisik*
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.giftRecipientName || ''}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          giftRecipientName: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Alamat Lengkap Pengiriman Kado*
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={settingsForm.giftShippingAddress || ''}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          giftShippingAddress: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 10. MODAL: EDIT PAGU ANGGARAN UTAMA */}
+            {activeSettingsModal === 'budget_cap' && (
+              <form onSubmit={handleSaveSettingsModal}>
+                <div className="p-6 space-y-4">
+                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <p className="font-bold text-xs text-slate-800">
+                      Disarankan berdasarkan skala resepsi pernikahan
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Rp 100 Juta (Intimate)', val: 100000000 },
+                        { label: 'Rp 180 Juta (Standar)', val: 180000000 },
+                        { label: 'Rp 250 Juta (Menengah)', val: 250000000 },
+                        { label: 'Rp 350 Juta (Ballroom Besar)', val: 350000000 },
+                      ].map((opt) => (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() =>
+                            setSettingsForm({ ...settingsForm, totalBudgetCap: opt.val })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                        >
+                          <span>{opt.label}</span>
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Target Pagu Anggaran Utama (Rp)*
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1000000}
+                      value={settingsForm.totalBudgetCap || 0}
+                      onChange={(e) =>
+                        setSettingsForm({
+                          ...settingsForm,
+                          totalBudgetCap: Number(e.target.value),
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono font-bold text-base"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 11. MODAL: UBAH AKUN UTAMA (DENGAN KONFIRMASI SUPERADMIN) */}
+            {activeSettingsModal === 'default_user' && (
+              <form onSubmit={handleUpdateDefaultUserForm}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">
+                    * Perubahan username/password akun utama wajib konfirmasi pemilik aplikasi
+                  </p>
+
+                  {/* Pilih Akun Utama */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <p className="font-bold text-xs text-slate-800">
+                      Pilih akun utama yang ingin diperbarui:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {defaultSystemUsers.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => handleSelectDefaultUserForEdit(u)}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border font-semibold text-xs transition-all ${
+                            selectedDefaultUserId === u.id
+                              ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
+                              : 'bg-white hover:bg-slate-100 border-slate-400 text-slate-700'
+                          }`}
+                        >
+                          <span>@{u.username}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Username Baru*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={secUsername}
+                        onChange={(e) => setSecUsername(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Nama Tampilan Akun*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={secName}
+                        onChange={(e) => setSecName(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      Password Baru (Kosongkan jika hanya mengubah nama/username)
+                    </label>
+                    <input
+                      type="password"
+                      value={secNewPassword}
+                      onChange={(e) => setSecNewPassword(e.target.value)}
+                      placeholder="Minimal 6 karakter"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-amber-900 mb-1">
+                      Identitas Konfirmasi Superadmin (Pemilik Aplikasi)*
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={secSuperadminConfirm}
+                      onChange={(e) => setSecSuperadminConfirm(e.target.value)}
+                      placeholder="Masukkan identitas superadmin pemilik aplikasi"
+                      className="w-full px-3.5 py-2 rounded-lg border border-amber-400 bg-amber-50/40 font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isUpdatingSecurity}
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
+                  >
+                    {isUpdatingSecurity ? 'Memverifikasi...' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 12. MODAL: TAMBAH / EDIT AKUN PANITIA (TANPA SUPERADMIN) */}
+            {activeSettingsModal === 'panitia_user' && (
+              <form onSubmit={handleUpsertPanitiaForm}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-slate-500">
+                    * Akun panitia dapat mengelola Checklist, Tamu &amp; Undangan, namun terkunci dari menu Anggaran (Budgeting).
+                  </p>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <p className="font-bold text-xs text-slate-800">
+                      Disarankan berdasarkan peran kepanitiaan / WO
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { u: 'ketua_panitia', n: 'Ketua Panitia Keluarga', j: 'Koordinator Umum Panitia' },
+                        { u: 'tim_wo', n: 'Koordinator Wedding Organizer', j: 'WO & Rundown Acara' },
+                        { u: 'seksi_tamu', n: 'Koordinator Penerima Tamu & VIP', j: 'Distribusi Undangan & RSVP' },
+                        { u: 'seksi_acara', n: 'Seksi Ibadah & Acara Gereja', j: 'Koordinator Pemberkatan' },
+                      ].map((role) => (
+                        <button
+                          key={role.u}
+                          type="button"
+                          onClick={() => {
+                            if (!panitiaEditId) setPanitiaUsername(role.u);
+                            setPanitiaNama(role.n);
+                            setPanitiaJabatan(role.j);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                        >
+                          <span>{role.n}</span>
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Username Login Panitia*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={panitiaUsername}
+                        onChange={(e) => setPanitiaUsername(e.target.value)}
+                        placeholder="Contoh: panitia_wo"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Nama Lengkap / Tim*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={panitiaNama}
+                        onChange={(e) => setPanitiaNama(e.target.value)}
+                        placeholder="Contoh: Koordinator WO"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Jabatan Kepanitiaan
+                      </label>
+                      <input
+                        type="text"
+                        value={panitiaJabatan}
+                        onChange={(e) => setPanitiaJabatan(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">
+                        Password Login Panitia {panitiaEditId ? '(Opsional)' : '*'}
+                      </label>
+                      <input
+                        type="password"
+                        required={!panitiaEditId}
+                        value={panitiaPassword}
+                        onChange={(e) => setPanitiaPassword(e.target.value)}
+                        placeholder="Minimal 6 karakter"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingPanitia}
+                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
+                  >
+                    {isSavingPanitia ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
