@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <rect width="120" height="120" rx="28" fill="#0A192F"/>
+  <circle cx="60" cy="60" r="46" stroke="#C5A059" stroke-width="3" stroke-dasharray="4 3"/>
+  <path d="M60 30C55 24 45 25 45 33C45 41 60 49 60 49C60 49 75 41 75 33C75 25 65 24 60 30Z" fill="#C5A059"/>
+  <text x="60" y="82" text-anchor="middle" fill="#FAF8F5" font-family="Georgia, serif" font-weight="bold" font-size="30">E&amp;J</text>
+</svg>

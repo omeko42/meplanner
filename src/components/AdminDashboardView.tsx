@@ -1,0 +1,2790 @@
+'use client';
+
+import React, { useState, useMemo, useRef } from 'react';
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Wallet,
+  Users,
+  Settings,
+  Eye,
+  LogOut,
+  Plus,
+  Search,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Calendar,
+  RefreshCw,
+  Download,
+  Upload,
+  Send,
+  Copy,
+  Check,
+  Edit3,
+  Trash2,
+  ExternalLink,
+  Award,
+  Shield,
+  Sparkles,
+  MessageSquareHeart,
+  Pin,
+  Reply,
+  FileSpreadsheet,
+  FileJson,
+  RotateCcw,
+  X,
+  Save,
+} from 'lucide-react';
+import {
+  WeddingDatabaseSchema,
+  WeddingTask,
+  WeddingGuest,
+  BudgetVendorItem,
+  GuestWish,
+  WeddingSettings,
+  AdminUser,
+  TaskCategory,
+  TimelinePhase,
+  TaskStatus,
+  TaskPriority,
+  TaskOwner,
+  GuestType,
+  GuestSide,
+  InvitationFormat,
+  GuestPriority,
+  DeliveryStatus,
+  RsvpStatus,
+  AttendanceStatus,
+  VendorCategory,
+  VendorPaymentStatus,
+} from '@/types';
+import {
+  formatRupiah,
+  generateWhatsAppMessage,
+  exportTasksToCsv,
+  exportGuestsToCsv,
+  exportBudgetToCsv,
+  triggerFileDownload,
+} from '@/lib/clientSync';
+
+export type AdminModuleTab =
+  | 'readiness'
+  | 'checklist'
+  | 'budget'
+  | 'guests'
+  | 'settings';
+
+interface AdminDashboardViewProps {
+  state: WeddingDatabaseSchema;
+  adminUser: AdminUser;
+  onSwitchToPublicPreview: (previewGuest?: WeddingGuest) => void;
+  onLogoutAdmin: () => void;
+  onUpsertTask: (task: Partial<WeddingTask> & { title: string }) => Promise<void>;
+  onDeleteTask: (id: string) => Promise<void>;
+  onUpsertGuest: (guest: Partial<WeddingGuest> & { guestName: string }) => Promise<void>;
+  onDeleteGuest: (id: string) => Promise<void>;
+  onTogglePinWish: (id: string) => Promise<void>;
+  onReplyWish: (id: string, replyFromCouple: string) => Promise<void>;
+  onDeleteWish: (id: string) => Promise<void>;
+  onUpsertBudget: (item: Partial<BudgetVendorItem> & { itemName: string }) => Promise<void>;
+  onDeleteBudget: (id: string) => Promise<void>;
+  onUpdateSettings: (partial: Partial<WeddingSettings>) => Promise<void>;
+  onSyncGoogleSheets: () => Promise<string>;
+  onImportBackup: (payload: Partial<WeddingDatabaseSchema>) => Promise<void>;
+  onResetDefault: () => Promise<void>;
+}
+
+const TIMELINE_PHASES: TimelinePhase[] = [
+  'H-6 Bulan',
+  'H-3 Bulan',
+  'H-1 Bulan',
+  'H-7',
+  'Hari-H',
+  'Setelah Menikah',
+];
+
+const TASK_CATEGORIES: TaskCategory[] = [
+  'Polri',
+  'Gereja',
+  'Kependudukan',
+  'Kesehatan & Dokumen',
+  'Acara',
+  'Vendor & Logistik',
+  'Seserahan & Adat',
+  'Setelah Menikah',
+];
+
+const VENDOR_CATEGORIES: VendorCategory[] = [
+  'Gedung & Venue',
+  'Katering & Jamuan',
+  'Dekorasi & Lighting',
+  'MUA & Busana',
+  'Dokumentasi Foto & Video',
+  'Cincin & Seserahan',
+  'Undangan & Souvenir',
+  'Akomodasi & Transportasi',
+  'Hiburan & Musik',
+  'Administrasi & Lainnya',
+];
+
+export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
+  state,
+  adminUser,
+  onSwitchToPublicPreview,
+  onLogoutAdmin,
+  onUpsertTask,
+  onDeleteTask,
+  onUpsertGuest,
+  onDeleteGuest,
+  onTogglePinWish,
+  onReplyWish,
+  onDeleteWish,
+  onUpsertBudget,
+  onDeleteBudget,
+  onUpdateSettings,
+  onSyncGoogleSheets,
+  onImportBackup,
+  onResetDefault,
+}) => {
+  const [activeTab, setActiveTab] = useState<AdminModuleTab>('readiness');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isSyncingSheets, setIsSyncingSheets] = useState(false);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3200);
+  };
+
+  // ============================================================================
+  // COMPUTED METRICS FOR READINESS TRACKER
+  // ============================================================================
+  const metrics = useMemo(() => {
+    const totalTasks = state.tasks.length;
+    const completedTasks = state.tasks.filter((t) => t.done || t.status === 'SELESAI').length;
+    const inProgressTasks = state.tasks.filter(
+      (t) => !t.done && t.status === 'PROSES'
+    ).length;
+    const pendingTasks = totalTasks - completedTasks - inProgressTasks;
+    const readinessPercent =
+      totalTasks > 0
+        ? Math.round(((completedTasks + inProgressTasks * 0.5) / totalTasks) * 100)
+        : 0;
+
+    // Days until Biston & Wedding
+    const now = Date.now();
+    const bistonMs = new Date(
+      state.settings.bistonDatetime || '2026-12-18T18:00:00+07:00'
+    ).getTime();
+    const weddingMs = new Date(
+      state.settings.weddingDatetime || '2026-12-19T09:00:00+07:00'
+    ).getTime();
+    const daysToBiston = Math.max(0, Math.ceil((bistonMs - now) / (1000 * 60 * 60 * 24)));
+    const daysToWedding = Math.max(0, Math.ceil((weddingMs - now) / (1000 * 60 * 60 * 24)));
+
+    // Budget metrics
+    const totalEstimated = state.budgetItems.reduce(
+      (sum, b) => sum + (Number(b.estimatedCost) || 0),
+      0
+    );
+    const totalActual = state.budgetItems.reduce(
+      (sum, b) => sum + (Number(b.actualCost) || Number(b.estimatedCost) || 0),
+      0
+    );
+    const totalPaid = state.budgetItems.reduce(
+      (sum, b) => sum + (Number(b.paidAmount) || 0),
+      0
+    );
+    const totalRemaining = Math.max(0, totalActual - totalPaid);
+    const lunasCount = state.budgetItems.filter((b) => b.paymentStatus === 'LUNAS').length;
+
+    // Guest & RSVP metrics
+    const totalGuests = state.guests.length;
+    const totalPaxQuota = state.guests.reduce((sum, g) => sum + (Number(g.pax) || 0), 0);
+    const vipGuestsCount = state.guests.filter(
+      (g) => g.priority === 'P1 - VIP' || g.guestType === 'Pejabat/VIP'
+    ).length;
+    const hadirGuests = state.guests.filter((g) => g.rsvpStatus === 'Hadir');
+    const hadirPax = hadirGuests.reduce(
+      (sum, g) => sum + (Number(g.confirmedPax ?? g.pax) || 0),
+      0
+    );
+    const belumKonfirmasiCount = state.guests.filter(
+      (g) => g.rsvpStatus === 'Belum Konfirmasi'
+    ).length;
+    const tidakHadirCount = state.guests.filter(
+      (g) => g.rsvpStatus === 'Tidak Hadir'
+    ).length;
+
+    return {
+      totalTasks,
+      completedTasks,
+      inProgressTasks,
+      pendingTasks,
+      readinessPercent,
+      daysToBiston,
+      daysToWedding,
+      totalEstimated,
+      totalActual,
+      totalPaid,
+      totalRemaining,
+      lunasCount,
+      totalGuests,
+      totalPaxQuota,
+      vipGuestsCount,
+      hadirGuestsCount: hadirGuests.length,
+      hadirPax,
+      belumKonfirmasiCount,
+      tidakHadirCount,
+    };
+  }, [state.tasks, state.budgetItems, state.guests, state.settings]);
+
+  // ============================================================================
+  // CHECKLIST MODULE STATE
+  // ============================================================================
+  const [taskSearch, setTaskSearch] = useState('');
+  const [selectedPhase, setSelectedPhase] = useState<TimelinePhase | 'ALL'>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<TaskCategory | 'ALL'>('ALL');
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'ALL'>('ALL');
+  const [selectedOwner, setSelectedOwner] = useState<TaskOwner | 'ALL'>('ALL');
+  const [editingTask, setEditingTask] = useState<Partial<WeddingTask> | null>(null);
+
+  const filteredTasks = useMemo(() => {
+    return state.tasks.filter((t) => {
+      if (selectedPhase !== 'ALL' && t.timelinePhase !== selectedPhase) return false;
+      if (selectedCategory !== 'ALL' && t.category !== selectedCategory) return false;
+      const effectiveStatus: TaskStatus = t.done ? 'SELESAI' : t.status || 'BELUM';
+      if (selectedStatus !== 'ALL' && effectiveStatus !== selectedStatus) return false;
+      if (selectedOwner !== 'ALL' && t.owner !== selectedOwner) return false;
+      if (taskSearch.trim()) {
+        const q = taskSearch.toLowerCase();
+        const match =
+          t.title.toLowerCase().includes(q) ||
+          t.category.toLowerCase().includes(q) ||
+          (t.notes || '').toLowerCase().includes(q) ||
+          t.id.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [
+    state.tasks,
+    selectedPhase,
+    selectedCategory,
+    selectedStatus,
+    selectedOwner,
+    taskSearch,
+  ]);
+
+  const handleCycleTaskStatus = async (task: WeddingTask) => {
+    const currentStatus: TaskStatus = task.done ? 'SELESAI' : task.status || 'BELUM';
+    const nextStatus: TaskStatus =
+      currentStatus === 'BELUM'
+        ? 'PROSES'
+        : currentStatus === 'PROSES'
+        ? 'SELESAI'
+        : 'BELUM';
+    await onUpsertTask({
+      ...task,
+      status: nextStatus,
+      done: nextStatus === 'SELESAI',
+      updatedBy: adminUser.email,
+    });
+    showToast(`Status "${task.title}" diubah menjadi ${nextStatus}`);
+  };
+
+  // ============================================================================
+  // BUDGET MODULE STATE
+  // ============================================================================
+  const [budgetCategoryFilter, setBudgetCategoryFilter] = useState<VendorCategory | 'ALL'>(
+    'ALL'
+  );
+  const [editingBudget, setEditingBudget] = useState<Partial<BudgetVendorItem> | null>(null);
+
+  const filteredBudgetItems = useMemo(() => {
+    if (budgetCategoryFilter === 'ALL') return state.budgetItems;
+    return state.budgetItems.filter((b) => b.category === budgetCategoryFilter);
+  }, [state.budgetItems, budgetCategoryFilter]);
+
+  // ============================================================================
+  // GUESTS & WA GENERATOR MODULE STATE
+  // ============================================================================
+  const [guestSubTab, setGuestSubTab] = useState<'list' | 'wishes'>('list');
+  const [guestSearch, setGuestSearch] = useState('');
+  const [guestTypeFilter, setGuestTypeFilter] = useState<GuestType | 'ALL'>('ALL');
+  const [guestPriorityFilter, setGuestPriorityFilter] = useState<GuestPriority | 'ALL'>('ALL');
+  const [guestRsvpFilter, setGuestRsvpFilter] = useState<RsvpStatus | 'ALL'>('ALL');
+  const [editingGuest, setEditingGuest] = useState<Partial<WeddingGuest> | null>(null);
+  const [waPreviewGuest, setWaPreviewGuest] = useState<WeddingGuest | null>(null);
+  const [copiedGuestLinkId, setCopiedGuestLinkId] = useState<string | null>(null);
+  const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+
+  const filteredGuests = useMemo(() => {
+    return state.guests.filter((g) => {
+      if (guestTypeFilter !== 'ALL' && g.guestType !== guestTypeFilter) return false;
+      if (guestPriorityFilter !== 'ALL' && g.priority !== guestPriorityFilter) return false;
+      if (guestRsvpFilter !== 'ALL' && g.rsvpStatus !== guestRsvpFilter) return false;
+      if (guestSearch.trim()) {
+        const q = guestSearch.toLowerCase();
+        const match =
+          g.guestName.toLowerCase().includes(q) ||
+          (g.institution || '').toLowerCase().includes(q) ||
+          (g.invitationCode || '').toLowerCase().includes(q) ||
+          (g.notes || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [state.guests, guestTypeFilter, guestPriorityFilter, guestRsvpFilter, guestSearch]);
+
+  // ============================================================================
+  // SETTINGS & BACKUP MODULE STATE
+  // ============================================================================
+  const [settingsForm, setSettingsForm] = useState<WeddingSettings>(state.settings);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveSettingsForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onUpdateSettings({
+      ...settingsForm,
+      updatedBy: adminUser.email,
+    });
+    showToast('Pengaturan konten undangan & sistem berhasil disimpan!');
+  };
+
+  const handleTriggerSyncSheets = async () => {
+    setIsSyncingSheets(true);
+    try {
+      const msg = await onSyncGoogleSheets();
+      showToast(msg);
+    } finally {
+      setIsSyncingSheets(false);
+    }
+  };
+
+  const handleImportJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const parsed = JSON.parse(String(ev.target?.result || '{}'));
+        const payload = parsed.data || parsed;
+        await onImportBackup(payload);
+        showToast('Backup JSON berhasil di-import dan dipulihkan!');
+      } catch {
+        showToast('Format file JSON tidak valid.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-900 pb-24">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-20 sm:bottom-6 right-4 z-50 bg-[#0A192F] text-amber-300 border border-amber-400/50 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold max-w-md animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* TOP STICKY HEADER BAR */}
+      <header className="sticky top-0 z-30 bg-[#0A192F] text-white border-b border-amber-400/30 shadow-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-3">
+            {/* Brand Title */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-serif font-extrabold text-sm shadow-md shrink-0">
+                E&amp;J
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-sm sm:text-base text-white truncate">
+                    {state.settings.siteTitle}
+                  </h1>
+                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold">
+                    <Sparkles className="w-3 h-3" /> All-in-One Planner
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-300/90 truncate">
+                  {state.settings.subtitle}
+                </p>
+              </div>
+            </div>
+
+            {/* Right Actions: Sync Sheets, Preview Invitation, Admin Info & Logout */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleTriggerSyncSheets}
+                disabled={isSyncingSheets}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold text-amber-200 transition-all disabled:opacity-50"
+                title="Sinkronisasi langsung dari Google Sheets DB Wedding"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheets ? 'animate-spin' : ''}`} />
+                <span className="hidden lg:inline">Sync Google Sheets</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSwitchToPublicPreview()}
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-sm transition-all"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Lihat Undangan</span>
+              </button>
+
+              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-white/15">
+                <div className="text-right leading-tight">
+                  <p className="text-xs font-bold text-white truncate max-w-[150px]">
+                    {adminUser.nama}
+                  </p>
+                  <p className="text-[10px] text-amber-300">{adminUser.role}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onLogoutAdmin}
+                className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 transition-colors"
+                title="Keluar dari Mode Admin"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* MODULE NAVIGATION TABS (Desktop & Mobile Horizontal Scroll) */}
+          <div className="flex items-center gap-1 overflow-x-auto py-2 no-scrollbar border-t border-white/10">
+            {[
+              {
+                id: 'readiness' as AdminModuleTab,
+                label: 'Readiness Tracker',
+                icon: LayoutDashboard,
+                badge: `${metrics.readinessPercent}%`,
+              },
+              {
+                id: 'checklist' as AdminModuleTab,
+                label: 'Checklist Bertahap',
+                icon: CheckSquare,
+                badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
+              },
+              {
+                id: 'budget' as AdminModuleTab,
+                label: 'Budget & Vendor',
+                icon: Wallet,
+                badge: `${ state.budgetItems.length } Item`,
+              },
+              {
+                id: 'guests' as AdminModuleTab,
+                label: 'Tamu & Generator WA',
+                icon: Users,
+                badge: `${metrics.totalGuests} Tamu`,
+              },
+              {
+                id: 'settings' as AdminModuleTab,
+                label: 'Pengaturan & Backup DB',
+                icon: Settings,
+              },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    active
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
+                        active
+                          ? 'bg-slate-950 text-amber-300'
+                          : 'bg-white/10 text-amber-300'
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT CONTAINER */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* =====================================================================
+            MODUL 1: READINESS TRACKER (EXECUTIVE DASHBOARD)
+           ===================================================================== */}
+        {activeTab === 'readiness' && (
+          <div className="space-y-6">
+            {/* Top Hero KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Overall Readiness % */}
+              <div className="bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-5 shadow-md border border-amber-400/30 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                    Kesiapan Pernikahan
+                  </span>
+                  <CheckSquare className="w-5 h-5 text-amber-400" />
+                </div>
+                <div className="my-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-extrabold text-white">
+                      {metrics.readinessPercent}%
+                    </span>
+                    <span className="text-xs text-emerald-300 font-semibold">
+                      ({metrics.completedTasks}/{metrics.totalTasks} Selesai)
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-white/15 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 rounded-full transition-all duration-500"
+                      style={{ width: `${metrics.readinessPercent}%` }}
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  {metrics.inProgressTasks} sedang diproses &bull; {metrics.pendingTasks} belum dimulai
+                </p>
+              </div>
+
+              {/* Card 2: Countdown Hari-H */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Countdown Hari-H
+                  </span>
+                  <Calendar className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="my-3 grid grid-cols-2 gap-2">
+                  <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
+                    <p className="text-[10px] font-bold uppercase text-amber-800">
+                      Biston (18 Des)
+                    </p>
+                    <p className="text-2xl font-extrabold text-slate-900">
+                      H-{metrics.daysToBiston}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-slate-900 text-white">
+                    <p className="text-[10px] font-bold uppercase text-amber-300">
+                      Pemberkatan (19 Des)
+                    </p>
+                    <p className="text-2xl font-extrabold text-amber-300">
+                      H-{metrics.daysToWedding}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Lokasi Utama: Kota Semarang, Jawa Tengah
+                </p>
+              </div>
+
+              {/* Card 3: Ringkasan Budget & Vendor */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Realisasi Budget Vendor
+                  </span>
+                  <Wallet className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="my-2">
+                  <p className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                    {formatRupiah(metrics.totalActual)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Terbayar (DP/Lunas):{' '}
+                    <span className="font-bold text-emerald-700">
+                      {formatRupiah(metrics.totalPaid)}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
+                  <span className="text-rose-600 font-bold">
+                    Sisa: {formatRupiah(metrics.totalRemaining)}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                    {metrics.lunasCount}/{state.budgetItems.length} Vendor Lunas
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: Statistik RSVP & Tamu VIP */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Statistik Tamu &amp; RSVP
+                  </span>
+                  <Users className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div className="my-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                      {metrics.totalGuests} Undangan
+                    </span>
+                    <span className="text-xs font-bold text-indigo-700">
+                      ({metrics.totalPaxQuota} Kuota Pax)
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Konfirmasi Hadir:{' '}
+                    <span className="font-bold text-emerald-700">
+                      {metrics.hadirGuestsCount} Tamu ({metrics.hadirPax} Pax)
+                    </span>
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
+                  <span className="inline-flex items-center gap-1 font-bold text-amber-800">
+                    <Award className="w-3.5 h-3.5 text-amber-600" />
+                    {metrics.vipGuestsCount} Pejabat / VIP
+                  </span>
+                  <span className="text-slate-500">
+                    {metrics.belumKonfirmasiCount} Belum Konfirmasi
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Breakdown Progress by Timeline & Domain Category */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left: Progress per Kategori (Polri, Gereja, Kependudukan, Acara, dll) */}
+              <div className="lg:col-span-6 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900">
+                      Kesiapan per Domain (DB Wedding)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Progres administrasi Polri, Gereja, Kependudukan, Kesehatan &amp; Acara
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('checklist')}
+                    className="text-xs font-bold text-[#0A192F] hover:underline"
+                  >
+                    Buka Checklist &rarr;
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {TASK_CATEGORIES.map((cat) => {
+                    const catTasks = state.tasks.filter((t) => t.category === cat);
+                    if (catTasks.length === 0) return null;
+                    const doneCount = catTasks.filter(
+                      (t) => t.done || t.status === 'SELESAI'
+                    ).length;
+                    const pct = Math.round((doneCount / catTasks.length) * 100);
+                    return (
+                      <div key={cat} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-800">{cat}</span>
+                          <span className="font-mono font-bold text-slate-600">
+                            {doneCount}/{catTasks.length} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              pct === 100
+                                ? 'bg-emerald-500'
+                                : pct >= 60
+                                ? 'bg-amber-500'
+                                : 'bg-indigo-600'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Urgent / Pending Priority Tasks */}
+              <div className="lg:col-span-6 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      Fokus Penyelesaian Berikutnya
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Daftar tugas yang masih berstatus Proses / Belum Selesai
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                  {state.tasks
+                    .filter((t) => !t.done && t.status !== 'SELESAI')
+                    .sort((a, b) => a.due.localeCompare(b.due))
+                    .map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-3.5 rounded-2xl border border-slate-200 hover:border-amber-400 bg-slate-50/70 flex items-start justify-between gap-3 transition-all"
+                      >
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2 py-0.5 rounded-md bg-[#0A192F] text-amber-300 text-[10px] font-bold">
+                              {task.category}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 text-[10px] font-semibold">
+                              {task.timelinePhase}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                task.priority === 'Tinggi'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              Prioritas {task.priority}
+                            </span>
+                          </div>
+                          <p className="font-bold text-xs sm:text-sm text-slate-900">
+                            {task.title}
+                          </p>
+                          {task.notes && (
+                            <p className="text-xs text-slate-500">{task.notes}</p>
+                          )}
+                          <p className="text-[11px] text-slate-500">
+                            Target: <span className="font-semibold">{task.due}</span> &bull; PIC:{' '}
+                            <span className="font-semibold">{task.owner}</span>
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCycleTaskStatus(task)}
+                          className="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
+                        >
+                          Selesaikan
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================================
+            MODUL 2: CHECKLIST KESIAPAN BERTAHAP (TIMELINE H-6 BULAN s/d HARI-H)
+           ===================================================================== */}
+        {activeTab === 'checklist' && (
+          <div className="space-y-5">
+            {/* Header & Add Button */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
+                  Checklist Kesiapan Pernikahan Bertahap
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Terintegrasi dengan {state.tasks.length} item tugas dari Google Sheets DB Wedding (Polri, Gereja, Kependudukan, Kesehatan, Vendor &amp; Acara)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingTask({
+                    title: '',
+                    category: 'Acara',
+                    timelinePhase: 'H-1 Bulan',
+                    due: '2026-11-20',
+                    priority: 'Tinggi',
+                    owner: 'Bersama',
+                    status: 'BELUM',
+                    notes: '',
+                    done: false,
+                  })
+                }
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Tambah Tugas Checklist
+              </button>
+            </div>
+
+            {/* Phase Timeline Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setSelectedPhase('ALL')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all ${
+                  selectedPhase === 'ALL'
+                    ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                Semua Fase ({state.tasks.length})
+              </button>
+              {TIMELINE_PHASES.map((phase) => {
+                const count = state.tasks.filter((t) => t.timelinePhase === phase).length;
+                return (
+                  <button
+                    key={phase}
+                    type="button"
+                    onClick={() => setSelectedPhase(phase)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all ${
+                      selectedPhase === phase
+                        ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {phase} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Filters Bar */}
+            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={taskSearch}
+                  onChange={(e) => setTaskSearch(e.target.value)}
+                  placeholder="Cari tugas, dokumen, SKCK, izin kawin..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                />
+              </div>
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value as TaskCategory | 'ALL')}
+                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+              >
+                <option value="ALL">Semua Kategori Domain</option>
+                {TASK_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    Kategori: {c}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
+                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+              >
+                <option value="ALL">Semua Status (Belum / Proses / Selesai)</option>
+                <option value="BELUM">Status: Belum Dimulai</option>
+                <option value="PROSES">Status: Sedang Proses</option>
+                <option value="SELESAI">Status: Selesai</option>
+              </select>
+
+              <select
+                value={selectedOwner}
+                onChange={(e) => setSelectedOwner(e.target.value as TaskOwner | 'ALL')}
+                className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+              >
+                <option value="ALL">Semua PIC (Saya / Calon / Bersama / WO)</option>
+                <option value="Saya">PIC: Saya (Mempelai Pria)</option>
+                <option value="Calon">PIC: Calon (Mempelai Wanita)</option>
+                <option value="Bersama">PIC: Bersama</option>
+                <option value="Keluarga">PIC: Keluarga</option>
+                <option value="WO / Panitia">PIC: WO / Panitia</option>
+              </select>
+            </div>
+
+            {/* Checklist Items List */}
+            <div className="space-y-2.5">
+              {filteredTasks.map((task) => {
+                const effectiveStatus: TaskStatus = task.done
+                  ? 'SELESAI'
+                  : task.status || 'BELUM';
+                return (
+                  <div
+                    key={task.id}
+                    className={`rounded-2xl p-4 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      effectiveStatus === 'SELESAI'
+                        ? 'bg-emerald-50/40 border-emerald-200'
+                        : effectiveStatus === 'PROSES'
+                        ? 'bg-amber-50/50 border-amber-300'
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCycleTaskStatus(task)}
+                        className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center border shrink-0 transition-all ${
+                          effectiveStatus === 'SELESAI'
+                            ? 'bg-emerald-600 border-emerald-600 text-white'
+                            : effectiveStatus === 'PROSES'
+                            ? 'bg-amber-500 border-amber-500 text-slate-950'
+                            : 'bg-white border-slate-300 hover:border-[#0A192F]'
+                        }`}
+                        title="Klik untuk ubah status (Belum -> Proses -> Selesai)"
+                      >
+                        {effectiveStatus === 'SELESAI' ? (
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        ) : effectiveStatus === 'PROSES' ? (
+                          <Clock className="w-3.5 h-3.5" />
+                        ) : null}
+                      </button>
+
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">
+                            {task.id}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#0A192F] text-amber-300 text-[10px] font-bold">
+                            {task.category}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-semibold">
+                            {task.timelinePhase}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                              task.priority === 'Tinggi'
+                                ? 'bg-rose-100 text-rose-800'
+                                : task.priority === 'Sedang'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            Prioritas {task.priority}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[10px] font-bold">
+                            PIC: {task.owner}
+                          </span>
+                        </div>
+
+                        <h4
+                          className={`font-bold text-sm ${
+                            effectiveStatus === 'SELESAI'
+                              ? 'line-through text-slate-500'
+                              : 'text-slate-900'
+                          }`}
+                        >
+                          {task.title}
+                        </h4>
+
+                        {task.notes && (
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Catatan: {task.notes}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
+                          <span>Tenggat: {task.due}</span>
+                          {task.doneAt && <span>&bull; Selesai: {task.doneAt}</span>}
+                          {task.updatedBy && <span>&bull; Oleh: {task.updatedBy}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleCycleTaskStatus(task)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                          effectiveStatus === 'SELESAI'
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : effectiveStatus === 'PROSES'
+                            ? 'bg-amber-500 text-slate-950 border-amber-500'
+                            : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                        }`}
+                      >
+                        {effectiveStatus}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditingTask(task)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+                        title="Edit Tugas"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await onDeleteTask(task.id);
+                          showToast(`Tugas "${task.title}" dihapus.`);
+                        }}
+                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                        title="Hapus Tugas"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================================
+            MODUL 3: BUDGET & VENDOR TRACKER
+           ===================================================================== */}
+        {activeTab === 'budget' && (
+          <div className="space-y-5">
+            {/* Top Summary Banner */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
+                  Budget &amp; Vendor Tracker Semarang
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Pencatatan estimasi biaya vs realisasi, status DP/Lunas vendor katering, gedung, dekor, MUA, dokumentasi &amp; seserahan
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingBudget({
+                    category: 'Katering & Jamuan',
+                    itemName: '',
+                    vendorName: '',
+                    vendorContact: '',
+                    pic: 'Bersama',
+                    estimatedCost: 10000000,
+                    actualCost: 10000000,
+                    paidAmount: 0,
+                    paymentStatus: 'BELUM_DP',
+                    dueDate: '2026-12-01',
+                    notes: '',
+                  })
+                }
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm transition-all shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Tambah Vendor / Biaya
+              </button>
+            </div>
+
+            {/* 4 Financial Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                <p className="text-[11px] font-bold uppercase text-slate-500">
+                  Total Estimasi Pagu
+                </p>
+                <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-1">
+                  {formatRupiah(metrics.totalEstimated)}
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                <p className="text-[11px] font-bold uppercase text-slate-500">
+                  Total Realisasi Kontrak
+                </p>
+                <p className="text-lg sm:text-2xl font-extrabold text-indigo-900 mt-1">
+                  {formatRupiah(metrics.totalActual)}
+                </p>
+              </div>
+              <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200">
+                <p className="text-[11px] font-bold uppercase text-emerald-800">
+                  Sudah Dibayar (DP / Lunas)
+                </p>
+                <p className="text-lg sm:text-2xl font-extrabold text-emerald-700 mt-1">
+                  {formatRupiah(metrics.totalPaid)}
+                </p>
+              </div>
+              <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200">
+                <p className="text-[11px] font-bold uppercase text-rose-800">
+                  Sisa Harus Dilunasi
+                </p>
+                <p className="text-lg sm:text-2xl font-extrabold text-rose-700 mt-1">
+                  {formatRupiah(metrics.totalRemaining)}
+                </p>
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setBudgetCategoryFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
+                  budgetCategoryFilter === 'ALL'
+                    ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                    : 'bg-white text-slate-700 border-slate-200'
+                }`}
+              >
+                Semua Vendor ({state.budgetItems.length})
+              </button>
+              {VENDOR_CATEGORIES.map((vc) => {
+                const count = state.budgetItems.filter((b) => b.category === vc).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={vc}
+                    type="button"
+                    onClick={() => setBudgetCategoryFilter(vc)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border ${
+                      budgetCategoryFilter === vc
+                        ? 'bg-[#0A192F] text-amber-300 border-[#0A192F]'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    {vc} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Vendor List Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredBudgetItems.map((item) => {
+                const effectiveTotal =
+                  item.actualCost > 0 ? item.actualCost : item.estimatedCost;
+                const remaining = Math.max(0, effectiveTotal - item.paidAmount);
+                const paidPct =
+                  effectiveTotal > 0
+                    ? Math.min(100, Math.round((item.paidAmount / effectiveTotal) * 100))
+                    : 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-[#0A192F] text-amber-300 text-[10px] font-bold">
+                          {item.category}
+                        </span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            item.paymentStatus === 'LUNAS'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : item.paymentStatus === 'DP_TERBAYAR' ||
+                                item.paymentStatus === 'CICILAN'
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-rose-100 text-rose-800 border border-rose-300'
+                          }`}
+                        >
+                          {item.paymentStatus.replace('_', ' ')} ({paidPct}%)
+                        </span>
+                      </div>
+
+                      <h3 className="font-bold text-base text-slate-900">{item.itemName}</h3>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Vendor: {item.vendorName || '-'} &bull; Kontak: {item.vendorContact || '-'}
+                      </p>
+                      {item.notes && (
+                        <p className="text-xs text-slate-500 leading-relaxed">{item.notes}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl">
+                        <div>
+                          <p className="text-[10px] text-slate-500">Estimasi / Kontrak</p>
+                          <p className="font-bold text-slate-900">
+                            {formatRupiah(effectiveTotal)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500">Sudah Dibayar</p>
+                          <p className="font-bold text-emerald-700">
+                            {formatRupiah(item.paidAmount)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500">Sisa Pelunasan</p>
+                          <p className="font-bold text-rose-600">{formatRupiah(remaining)}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-slate-500">
+                          Jatuh Tempo: <strong className="text-slate-800">{item.dueDate}</strong>{' '}
+                          &bull; PIC: <strong>{item.pic}</strong>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditingBudget(item)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await onDeleteBudget(item.id);
+                              showToast(`Vendor "${item.itemName}" dihapus.`);
+                            }}
+                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================================
+            MODUL 4: MANAJEMEN TAMU, BUKU TAMU & GENERATOR UNDANGAN WA 1-KLIK
+           ===================================================================== */}
+        {activeTab === 'guests' && (
+          <div className="space-y-5">
+            {/* Top Banner & Sub-tab Switcher */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
+                  Manajemen Tamu &amp; Generator Undangan WhatsApp
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Daftar tamu VIP/Pejabat Polri, Keluarga &amp; Rekan lengkap dengan 1-Klik Kirim WA bernama otomatis
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="bg-slate-100 p-1 rounded-xl flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setGuestSubTab('list')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      guestSubTab === 'list'
+                        ? 'bg-[#0A192F] text-amber-300 shadow-2xs'
+                        : 'text-slate-600'
+                    }`}
+                  >
+                    Daftar Tamu ({state.guests.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGuestSubTab('wishes')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      guestSubTab === 'wishes'
+                        ? 'bg-[#0A192F] text-amber-300 shadow-2xs'
+                        : 'text-slate-600'
+                    }`}
+                  >
+                    Buku Tamu &amp; Doa ({state.wishes.length})
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingGuest({
+                      guestName: '',
+                      guestType: 'Pejabat/VIP',
+                      side: 'Mempelai Pria',
+                      institution: '',
+                      invitationFormat: 'Cetak Tebal',
+                      priority: 'P1 - VIP',
+                      cardQty: 1,
+                      pax: 2,
+                      phone: '',
+                      address: '',
+                      deliveryStatus: 'Belum Disiapkan',
+                      rsvpStatus: 'Belum Konfirmasi',
+                      attendanceStatus: 'Belum Dicek',
+                      notes: '',
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tambah Tamu
+                </button>
+              </div>
+            </div>
+
+            {guestSubTab === 'list' ? (
+              <>
+                {/* Guest Filters */}
+                <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={guestSearch}
+                      onChange={(e) => setGuestSearch(e.target.value)}
+                      placeholder="Cari nama tamu, pangkat, satker, kode INV..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    />
+                  </div>
+
+                  <select
+                    value={guestTypeFilter}
+                    onChange={(e) => setGuestTypeFilter(e.target.value as GuestType | 'ALL')}
+                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  >
+                    <option value="ALL">Semua Kategori Tamu</option>
+                    <option value="Pejabat/VIP">Pejabat / VIP</option>
+                    <option value="Keluarga">Keluarga</option>
+                    <option value="Rekan Kerja/Polri">Rekan Kerja / Polri</option>
+                    <option value="Teman/Sahabat">Teman / Sahabat</option>
+                    <option value="Tetangga/Gereja">Tetangga / Gereja</option>
+                  </select>
+
+                  <select
+                    value={guestPriorityFilter}
+                    onChange={(e) =>
+                      setGuestPriorityFilter(e.target.value as GuestPriority | 'ALL')
+                    }
+                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  >
+                    <option value="ALL">Semua Prioritas (P1 / P2 / P3)</option>
+                    <option value="P1 - VIP">P1 - VIP Utama</option>
+                    <option value="P2 - Utama">P2 - Utama</option>
+                    <option value="P3 - Reguler">P3 - Reguler</option>
+                  </select>
+
+                  <select
+                    value={guestRsvpFilter}
+                    onChange={(e) => setGuestRsvpFilter(e.target.value as RsvpStatus | 'ALL')}
+                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  >
+                    <option value="ALL">Semua Status RSVP</option>
+                    <option value="Hadir">RSVP: Hadir</option>
+                    <option value="Belum Konfirmasi">RSVP: Belum Konfirmasi</option>
+                    <option value="Masih Ragu">RSVP: Masih Ragu</option>
+                    <option value="Tidak Hadir">RSVP: Tidak Hadir</option>
+                  </select>
+                </div>
+
+                {/* Guests List */}
+                <div className="space-y-3">
+                  {filteredGuests.map((guest) => {
+                    const waData = generateWhatsAppMessage(guest, state.settings);
+                    const isLinkCopied = copiedGuestLinkId === guest.id;
+
+                    return (
+                      <div
+                        key={guest.id}
+                        className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                              {guest.invitationCode}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                guest.priority === 'P1 - VIP'
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {guest.priority}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 text-[10px] font-bold">
+                              {guest.guestType} &bull; {guest.side}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                guest.rsvpStatus === 'Hadir'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : guest.rsvpStatus === 'Tidak Hadir'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              RSVP: {guest.rsvpStatus} ({guest.pax} Pax)
+                            </span>
+                          </div>
+
+                          <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                            {guest.guestName}
+                          </h3>
+
+                          {guest.institution && (
+                            <p className="text-xs font-semibold text-amber-800">
+                              {guest.institution}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                            <span>Format: {guest.invitationFormat}</span>
+                            {guest.address && <span>&bull; Lokasi: {guest.address}</span>}
+                            {guest.phone && <span>&bull; Kontak/WA: {guest.phone}</span>}
+                            <span>&bull; Distribusi: {guest.deliveryStatus}</span>
+                          </div>
+
+                          {guest.notes && (
+                            <p className="text-xs text-slate-500 italic">
+                              Catatan: {guest.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Action Buttons: 1-Click WA, Copy Link, Preview as Guest, Edit, Delete */}
+                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          <a
+                            href={waData.waHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              if (guest.deliveryStatus === 'Belum Disiapkan') {
+                                onUpsertGuest({
+                                  ...guest,
+                                  deliveryStatus: 'Sudah Dikirim',
+                                });
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Kirim WA
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={() => setWaPreviewGuest(guest)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs border border-amber-300 transition-all"
+                          >
+                            Teks WA
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(waData.inviteUrl);
+                              setCopiedGuestLinkId(guest.id);
+                              setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                              showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs"
+                          >
+                            {isLinkCopied ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" /> Disalin
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" /> Salin Link
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onSwitchToPublicPreview(guest)}
+                            className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
+                            title="Buka Preview Undangan atas nama tamu ini"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEditingGuest(guest)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+                            title="Edit Data Tamu"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await onDeleteGuest(guest.id);
+                              showToast(`Tamu "${guest.guestName}" dihapus.`);
+                            }}
+                            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                            title="Hapus Tamu"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              /* SUB-TAB BUKU TAMU & MODERASI UCAPAN DOA */
+              <div className="space-y-3">
+                {state.wishes.map((w) => (
+                  <div
+                    key={w.id}
+                    className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-base text-slate-900">{w.guestName}</h4>
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            {w.rsvpStatus} ({w.pax} Pax)
+                          </span>
+                          {w.isPinned && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                              Disematkan
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500">{w.institution || w.relation}</p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await onTogglePinWish(w.id);
+                            showToast('Status sematan ucapan diperbarui.');
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 ${
+                            w.isPinned
+                              ? 'bg-amber-400 text-slate-950'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          <Pin className="w-3.5 h-3.5" />
+                          {w.isPinned ? 'Unpin' : 'Pin'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplyingWishId(w.id);
+                            setReplyText(w.replyFromCouple || '');
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
+                        >
+                          <Reply className="w-3.5 h-3.5" /> Balas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await onDeleteWish(w.id);
+                            showToast('Ucapan dihapus.');
+                          }}
+                          className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                      &ldquo;{w.message}&rdquo;
+                    </p>
+
+                    {w.replyFromCouple && (
+                      <div className="pl-3 border-l-2 border-amber-500 text-xs text-slate-600">
+                        <strong className="text-slate-900">Balasan Mempelai:</strong>{' '}
+                        {w.replyFromCouple}
+                      </div>
+                    )}
+
+                    {replyingWishId === w.id && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <input
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Tulis balasan terima kasih dari mempelai..."
+                          className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await onReplyWish(w.id, replyText);
+                            setReplyingWishId(null);
+                            showToast('Balasan berhasil disimpan!');
+                          }}
+                          className="px-4 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold text-xs"
+                        >
+                          Simpan Balasan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =====================================================================
+            MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
+           ===================================================================== */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            {/* Database Sync & Backup / Export Panel */}
+            <div className="bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-6 shadow-md border border-amber-400/30 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-amber-300">
+                    Persistensi Data &amp; Integrasi Cloud
+                  </span>
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-white">
+                    Sinkronisasi Google Sheets &amp; Backup Database (JSON / CSV Excel)
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Terhubung ke Google Spreadsheet DB:{' '}
+                    <code className="text-amber-300 font-mono">
+                      {state.settings.googleSheetId}
+                    </code>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleTriggerSyncSheets}
+                    disabled={isSyncingSheets}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
+                    />
+                    {isSyncingSheets
+                      ? 'Menyinkronkan...'
+                      : 'Tarik Data Terbaru dari Google Sheets'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerFileDownload(
+                      `wedding_backup_${new Date().toISOString().slice(0, 10)}.json`,
+                      JSON.stringify(state, null, 2),
+                      'application/json'
+                    );
+                    showToast('Backup JSON lengkap berhasil diunduh!');
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <FileJson className="w-4 h-4 text-amber-300" />
+                  Export Full JSON
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerFileDownload(
+                      'DB_Wedding_Tasks.csv',
+                      exportTasksToCsv(state.tasks),
+                      'text/csv;charset=utf-8;'
+                    );
+                    showToast('Sheet Tasks.csv berhasil diunduh!');
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                  Export Tasks (CSV)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerFileDownload(
+                      'DB_Wedding_Guests.csv',
+                      exportGuestsToCsv(state.guests),
+                      'text/csv;charset=utf-8;'
+                    );
+                    showToast('Sheet Guests.csv berhasil diunduh!');
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                  Export Guests (CSV)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerFileDownload(
+                      'DB_Wedding_Budget.csv',
+                      exportBudgetToCsv(state.budgetItems),
+                      'text/csv;charset=utf-8;'
+                    );
+                    showToast('Sheet Budget.csv berhasil diunduh!');
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4 text-sky-300" />
+                  Export Budget (CSV)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-400/40 text-xs font-bold flex items-center justify-center gap-2 text-emerald-200"
+                >
+                  <Upload className="w-4 h-4" />
+                  Import Backup JSON
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportJsonFile}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Pengaturan Konten Undangan Form */}
+            <form
+              onSubmit={handleSaveSettingsForm}
+              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 text-xs sm:text-sm"
+            >
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-slate-900">
+                    Pengaturan Konten Undangan Digital &amp; Jadwal Hari-H
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Perubahan di bawah akan langsung memperbarui tampilan Undangan Digital Tamu secara real-time
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-sm"
+                >
+                  <Save className="w-4 h-4" />
+                  Simpan Perubahan
+                </button>
+              </div>
+
+              {/* Profil Mempelai Pria & Wanita */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
+                    Profil Mempelai Pria
+                  </h4>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Nama Lengkap &amp; Gelar
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomFullName}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nama Panggilan
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomNickname}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, groomNickname: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Pangkat / Jabatan
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.groomRankAndTitle}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            groomRankAndTitle: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Keterangan Orang Tua Mempelai Pria
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomParents}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomParents: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      URL Foto Mempelai Pria
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.groomPhotoUrl}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, groomPhotoUrl: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">
+                    Profil Mempelai Wanita
+                  </h4>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Nama Lengkap &amp; Gelar
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.brideFullName}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nama Panggilan
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.brideNickname}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, brideNickname: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Gelar / Asal
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.brideTitle}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Keterangan Orang Tua Mempelai Wanita
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.brideParents}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, brideParents: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      URL Foto Mempelai Wanita
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.bridePhotoUrl}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, bridePhotoUrl: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Jadwal & Lokasi 3 Acara */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <h4 className="font-bold text-xs uppercase text-amber-800">
+                    Acara 1 (Biston - 18 Des 2026)
+                  </h4>
+                  <input
+                    type="text"
+                    value={settingsForm.event1Title}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event1Title: e.target.value })
+                    }
+                    placeholder="Judul Acara 1"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event1DateLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event1DateLabel: e.target.value })
+                    }
+                    placeholder="Hari & Tanggal"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event1TimeLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event1TimeLabel: e.target.value })
+                    }
+                    placeholder="Jam Pelaksanaan"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event1Venue}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event1Venue: e.target.value })
+                    }
+                    placeholder="Nama Tempat / Gedung"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event1MapsUrl}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event1MapsUrl: e.target.value })
+                    }
+                    placeholder="Link Google Maps"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <h4 className="font-bold text-xs uppercase text-amber-800">
+                    Acara 2 (Pemberkatan - 19 Des 2026)
+                  </h4>
+                  <input
+                    type="text"
+                    value={settingsForm.event2Title}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event2Title: e.target.value })
+                    }
+                    placeholder="Judul Acara 2"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event2DateLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event2DateLabel: e.target.value })
+                    }
+                    placeholder="Hari & Tanggal"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event2TimeLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event2TimeLabel: e.target.value })
+                    }
+                    placeholder="Jam Pelaksanaan"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event2Venue}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event2Venue: e.target.value })
+                    }
+                    placeholder="Nama Gereja / Tempat"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event2MapsUrl}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event2MapsUrl: e.target.value })
+                    }
+                    placeholder="Link Google Maps"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <h4 className="font-bold text-xs uppercase text-amber-800">
+                    Acara 3 (Resepsi - 19 Des 2026)
+                  </h4>
+                  <input
+                    type="text"
+                    value={settingsForm.event3Title}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event3Title: e.target.value })
+                    }
+                    placeholder="Judul Acara 3"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event3DateLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event3DateLabel: e.target.value })
+                    }
+                    placeholder="Hari & Tanggal"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event3TimeLabel}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event3TimeLabel: e.target.value })
+                    }
+                    placeholder="Jam Pelaksanaan"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event3Venue}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event3Venue: e.target.value })
+                    }
+                    placeholder="Nama Gedung Ballroom"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={settingsForm.event3MapsUrl}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, event3MapsUrl: e.target.value })
+                    }
+                    placeholder="Link Google Maps"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Reset Data Default Button */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await onResetDefault();
+                    showToast('Data dikembalikan ke seed awal Google Sheet DB Wedding.');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset ke Data Awal (Seed Google Sheet)
+                </button>
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-md"
+                >
+                  <Save className="w-4 h-4" />
+                  Simpan Seluruh Pengaturan Undangan
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </main>
+
+      {/* =======================================================================
+          MODAL 1: TAMBAH / EDIT TUGAS CHECKLIST
+         ======================================================================= */}
+      {editingTask && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-lg font-bold text-slate-900">
+                {editingTask.id ? 'Edit Tugas Checklist' : 'Tambah Tugas Checklist Baru'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingTask(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Judul Tugas</label>
+                <input
+                  type="text"
+                  value={editingTask.title || ''}
+                  onChange={(e) =>
+                    setEditingTask({ ...editingTask, title: e.target.value })
+                  }
+                  placeholder="Contoh: Finalisasi berkas Surat Izin Kawin..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kategori Domain</label>
+                  <select
+                    value={editingTask.category || 'Polri'}
+                    onChange={(e) =>
+                      setEditingTask({
+                        ...editingTask,
+                        category: e.target.value as TaskCategory,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    {TASK_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Fase Timeline</label>
+                  <select
+                    value={editingTask.timelinePhase || 'H-1 Bulan'}
+                    onChange={(e) =>
+                      setEditingTask({
+                        ...editingTask,
+                        timelinePhase: e.target.value as TimelinePhase,
+                      })
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    {TIMELINE_PHASES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Tenggat (Due)</label>
+                  <input
+                    type="date"
+                    value={editingTask.due || '2026-12-01'}
+                    onChange={(e) =>
+                      setEditingTask({ ...editingTask, due: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Prioritas</label>
+                  <select
+                    value={editingTask.priority || 'Tinggi'}
+                    onChange={(e) =>
+                      setEditingTask({
+                        ...editingTask,
+                        priority: e.target.value as TaskPriority,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Tinggi">Tinggi</option>
+                    <option value="Sedang">Sedang</option>
+                    <option value="Rendah">Rendah</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">PIC / Owner</label>
+                  <select
+                    value={editingTask.owner || 'Bersama'}
+                    onChange={(e) =>
+                      setEditingTask({
+                        ...editingTask,
+                        owner: e.target.value as TaskOwner,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Saya">Saya</option>
+                    <option value="Calon">Calon</option>
+                    <option value="Bersama">Bersama</option>
+                    <option value="Keluarga">Keluarga</option>
+                    <option value="WO / Panitia">WO / Panitia</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Catatan</label>
+                <textarea
+                  rows={3}
+                  value={editingTask.notes || ''}
+                  onChange={(e) =>
+                    setEditingTask({ ...editingTask, notes: e.target.value })
+                  }
+                  placeholder="Catatan detail berkas atau koordinasi..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingTask(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!editingTask.title?.trim()) return;
+                  await onUpsertTask({
+                    ...editingTask,
+                    title: editingTask.title.trim(),
+                    updatedBy: adminUser.email,
+                  });
+                  setEditingTask(null);
+                  showToast('Tugas checklist berhasil disimpan!');
+                }}
+                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+              >
+                Simpan Tugas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL 2: TAMBAH / EDIT VENDOR & BUDGET
+         ======================================================================= */}
+      {editingBudget && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-lg font-bold text-slate-900">
+                {editingBudget.id ? 'Edit Data Vendor & Biaya' : 'Tambah Vendor & Biaya Baru'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingBudget(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Nama Kebutuhan / Paket
+                </label>
+                <input
+                  type="text"
+                  value={editingBudget.itemName || ''}
+                  onChange={(e) =>
+                    setEditingBudget({ ...editingBudget, itemName: e.target.value })
+                  }
+                  placeholder="Contoh: Katering Resepsi 350 Pax"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kategori</label>
+                  <select
+                    value={editingBudget.category || 'Katering & Jamuan'}
+                    onChange={(e) =>
+                      setEditingBudget({
+                        ...editingBudget,
+                        category: e.target.value as VendorCategory,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    {VENDOR_CATEGORIES.map((vc) => (
+                      <option key={vc} value={vc}>
+                        {vc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Nama Vendor</label>
+                  <input
+                    type="text"
+                    value={editingBudget.vendorName || ''}
+                    onChange={(e) =>
+                      setEditingBudget({ ...editingBudget, vendorName: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Estimasi (Rp)</label>
+                  <input
+                    type="number"
+                    value={editingBudget.estimatedCost ?? 0}
+                    onChange={(e) =>
+                      setEditingBudget({
+                        ...editingBudget,
+                        estimatedCost: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Realisasi (Rp)</label>
+                  <input
+                    type="number"
+                    value={editingBudget.actualCost ?? 0}
+                    onChange={(e) =>
+                      setEditingBudget({
+                        ...editingBudget,
+                        actualCost: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Sudah Bayar (Rp)</label>
+                  <input
+                    type="number"
+                    value={editingBudget.paidAmount ?? 0}
+                    onChange={(e) =>
+                      setEditingBudget({
+                        ...editingBudget,
+                        paidAmount: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Status Bayar</label>
+                  <select
+                    value={editingBudget.paymentStatus || 'DP_TERBAYAR'}
+                    onChange={(e) =>
+                      setEditingBudget({
+                        ...editingBudget,
+                        paymentStatus: e.target.value as VendorPaymentStatus,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="BELUM_DP">BELUM DP</option>
+                    <option value="DP_TERBAYAR">DP TERBAYAR</option>
+                    <option value="CICILAN">CICILAN</option>
+                    <option value="LUNAS">LUNAS</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Jatuh Tempo</label>
+                  <input
+                    type="date"
+                    value={editingBudget.dueDate || '2026-12-01'}
+                    onChange={(e) =>
+                      setEditingBudget({ ...editingBudget, dueDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kontak Vendor</label>
+                  <input
+                    type="text"
+                    value={editingBudget.vendorContact || ''}
+                    onChange={(e) =>
+                      setEditingBudget({ ...editingBudget, vendorContact: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Catatan Kontrak</label>
+                <textarea
+                  rows={2}
+                  value={editingBudget.notes || ''}
+                  onChange={(e) =>
+                    setEditingBudget({ ...editingBudget, notes: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingBudget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!editingBudget.itemName?.trim()) return;
+                  await onUpsertBudget({
+                    ...editingBudget,
+                    itemName: editingBudget.itemName.trim(),
+                  });
+                  setEditingBudget(null);
+                  showToast('Data vendor & budget berhasil disimpan!');
+                }}
+                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+              >
+                Simpan Vendor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL 3: TAMBAH / EDIT TAMU UNDANGAN
+         ======================================================================= */}
+      {editingGuest && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs sm:text-sm max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-lg font-bold text-slate-900">
+                {editingGuest.id ? 'Edit Data Tamu Undangan' : 'Tambah Tamu Undangan Baru'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingGuest(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Nama Lengkap &amp; Pangkat / Gelar
+                </label>
+                <input
+                  type="text"
+                  value={editingGuest.guestName || ''}
+                  onChange={(e) =>
+                    setEditingGuest({ ...editingGuest, guestName: e.target.value })
+                  }
+                  placeholder="Contoh: KOMJEN POL ASEP SAFRUDIN, S.I.K., M.H."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Jabatan / Instansi / Satker
+                  </label>
+                  <input
+                    type="text"
+                    value={editingGuest.institution || ''}
+                    onChange={(e) =>
+                      setEditingGuest({ ...editingGuest, institution: e.target.value })
+                    }
+                    placeholder="KABARESKRIM POLRI"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    No. WhatsApp / Kontak Spri
+                  </label>
+                  <input
+                    type="text"
+                    value={editingGuest.phone || ''}
+                    onChange={(e) =>
+                      setEditingGuest({ ...editingGuest, phone: e.target.value })
+                    }
+                    placeholder="0812xxxx / Hub Spri"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kategori</label>
+                  <select
+                    value={editingGuest.guestType || 'Pejabat/VIP'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        guestType: e.target.value as GuestType,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Pejabat/VIP">Pejabat/VIP</option>
+                    <option value="Keluarga">Keluarga</option>
+                    <option value="Rekan Kerja/Polri">Rekan Kerja/Polri</option>
+                    <option value="Teman/Sahabat">Teman/Sahabat</option>
+                    <option value="Tetangga/Gereja">Tetangga/Gereja</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Prioritas</label>
+                  <select
+                    value={editingGuest.priority || 'P1 - VIP'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        priority: e.target.value as GuestPriority,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="P1 - VIP">P1 - VIP</option>
+                    <option value="P2 - Utama">P2 - Utama</option>
+                    <option value="P3 - Reguler">P3 - Reguler</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Pihak</label>
+                  <select
+                    value={editingGuest.side || 'Mempelai Pria'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        side: e.target.value as GuestSide,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Mempelai Pria">Mempelai Pria</option>
+                    <option value="Mempelai Wanita">Mempelai Wanita</option>
+                    <option value="Bersama">Bersama</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Format Undangan</label>
+                  <select
+                    value={editingGuest.invitationFormat || 'Cetak Tebal'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        invitationFormat: e.target.value as InvitationFormat,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Cetak Tebal">Cetak Tebal</option>
+                    <option value="Cetak Reguler">Cetak Reguler</option>
+                    <option value="Digital WA">Digital WA</option>
+                    <option value="Cetak & Digital">Cetak &amp; Digital</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Kuota Pax</label>
+                  <input
+                    type="number"
+                    value={editingGuest.pax ?? 2}
+                    onChange={(e) =>
+                      setEditingGuest({ ...editingGuest, pax: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Status RSVP</label>
+                  <select
+                    value={editingGuest.rsvpStatus || 'Belum Konfirmasi'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        rsvpStatus: e.target.value as RsvpStatus,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Belum Konfirmasi">Belum Konfirmasi</option>
+                    <option value="Hadir">Hadir</option>
+                    <option value="Masih Ragu">Masih Ragu</option>
+                    <option value="Tidak Hadir">Tidak Hadir</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Alamat / Lantai Ruangan
+                  </label>
+                  <input
+                    type="text"
+                    value={editingGuest.address || ''}
+                    onChange={(e) =>
+                      setEditingGuest({ ...editingGuest, address: e.target.value })
+                    }
+                    placeholder="Lt. 17 Gedung Bareskrim"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Status Pengiriman
+                  </label>
+                  <select
+                    value={editingGuest.deliveryStatus || 'Belum Disiapkan'}
+                    onChange={(e) =>
+                      setEditingGuest({
+                        ...editingGuest,
+                        deliveryStatus: e.target.value as DeliveryStatus,
+                      })
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    <option value="Belum Disiapkan">Belum Disiapkan</option>
+                    <option value="Siap Kirim">Siap Kirim</option>
+                    <option value="Sudah Dikirim">Sudah Dikirim</option>
+                    <option value="Sudah Diterima">Sudah Diterima</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Catatan</label>
+                <input
+                  type="text"
+                  value={editingGuest.notes || ''}
+                  onChange={(e) =>
+                    setEditingGuest({ ...editingGuest, notes: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingGuest(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!editingGuest.guestName?.trim()) return;
+                  await onUpsertGuest({
+                    ...editingGuest,
+                    guestName: editingGuest.guestName.trim(),
+                    updatedBy: adminUser.email,
+                  });
+                  setEditingGuest(null);
+                  showToast('Data tamu berhasil disimpan!');
+                }}
+                className="px-5 py-2 rounded-xl bg-[#0A192F] text-amber-300 font-bold"
+              >
+                Simpan Tamu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL 4: GENERATOR TEKS & LINK UNDANGAN WA
+         ======================================================================= */}
+      {waPreviewGuest && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          {(() => {
+            const generated = generateWhatsAppMessage(waPreviewGuest, state.settings);
+            return (
+              <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-amber-300 space-y-4 text-xs sm:text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                      Generator Undangan WhatsApp Otomatis
+                    </span>
+                    <h3 className="font-serif text-lg font-bold text-slate-900">
+                      {waPreviewGuest.guestName}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setWaPreviewGuest(null)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+                  <p className="text-[11px] font-bold text-amber-900">
+                    Link Undangan Khusus Tamu Ini:
+                  </p>
+                  <p className="font-mono text-xs text-slate-800 break-all">
+                    {generated.inviteUrl}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Preview Pesan Pengantar WhatsApp:
+                  </label>
+                  <textarea
+                    readOnly
+                    rows={10}
+                    value={generated.messageText}
+                    className="w-full p-3.5 rounded-2xl border border-slate-300 bg-slate-50 font-sans text-xs leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generated.messageText);
+                      showToast('Seluruh teks undangan WA berhasil disalin!');
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Salin Teks WA
+                  </button>
+                  <a
+                    href={generated.waHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Kirim Langsung ke WhatsApp
+                  </a>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+};
