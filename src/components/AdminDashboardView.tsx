@@ -959,92 +959,92 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               } gap-4 items-stretch`}
             >
               {/* Card 1: Overall Readiness % */}
-              <div className="h-full bg-gradient-to-br from-[#0A192F] to-[#112240] text-white rounded-3xl p-5 shadow-md border border-amber-400/30 flex flex-col justify-between">
+              <div className="h-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E3C3] text-stone-900 rounded-3xl p-5 shadow-sm border border-[#D4AF37]/50 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8B6914]">
                     Kesiapan Pernikahan
                   </span>
-                  <CheckSquare className="w-5 h-5 text-amber-400" />
+                  <CheckSquare className="w-5 h-5 text-[#B68D40]" />
                 </div>
                 <div className="my-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-white">
+                    <span className="text-4xl font-extrabold text-stone-900">
                       {metrics.readinessPercent}%
                     </span>
-                    <span className="text-xs text-emerald-300 font-semibold">
+                    <span className="text-xs text-emerald-700 font-bold">
                       ({metrics.completedTasks}/{metrics.totalTasks} Selesai)
                     </span>
                   </div>
-                  <div className="w-full h-2.5 bg-white/15 rounded-full overflow-hidden mt-2">
+                  <div className="w-full h-2.5 bg-white/80 border border-[#D4AF37]/30 rounded-full overflow-hidden mt-2">
                     <div
-                      className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-emerald-500 rounded-full transition-all duration-500"
                       style={{ width: `${metrics.readinessPercent}%` }}
                     />
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-300 pt-2 border-t border-white/10">
+                <p className="text-[11px] text-[#8B6914] font-medium pt-2 border-t border-[#D4AF37]/25">
                   {metrics.inProgressTasks} sedang diproses &bull; {metrics.pendingTasks} belum dimulai
                 </p>
               </div>
 
               {/* Card 2: Countdown Hari-H */}
-              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Countdown Hari-H
                   </span>
-                  <Calendar className="w-5 h-5 text-amber-600" />
+                  <Calendar className="w-5 h-5 text-[#B68D40]" />
                 </div>
                 <div className="my-3 grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
-                    <p className="text-[10px] font-bold uppercase text-amber-800 truncate">
+                  <div className="p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-200">
+                    <p className="text-[10px] font-bold uppercase text-stone-600 truncate">
                       {state.settings.event1Title || 'Acara 1'}
                     </p>
-                    <p className="text-2xl font-extrabold text-slate-900">
+                    <p className="text-2xl font-extrabold text-stone-900">
                       H-{metrics.daysToBiston}
                     </p>
                   </div>
-                  <div className="p-2.5 rounded-2xl bg-slate-900 text-white">
-                    <p className="text-[10px] font-bold uppercase text-amber-300 truncate">
+                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 text-[#8B6914]">
+                    <p className="text-[10px] font-bold uppercase text-[#8B6914] truncate">
                       {state.settings.event2Title || 'Pemberkatan'}
                     </p>
-                    <p className="text-2xl font-extrabold text-amber-300">
+                    <p className="text-2xl font-extrabold text-[#8B6914]">
                       H-{metrics.daysToWedding}
                     </p>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100 truncate">
+                <p className="text-[11px] text-stone-500 font-medium pt-2 border-t border-stone-100 truncate">
                   {state.settings.event2DateLabel} &bull; {state.settings.groomOrigin}
                 </p>
               </div>
 
               {/* Card 3: Ringkasan Budget & Revisi (Hidden for Panitia) */}
               {!isPanitia && (
-                <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                       Anggaran &amp; Realisasi
                     </span>
                     <Wallet className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div className="my-3">
-                    <p className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                    <p className="text-xl sm:text-2xl font-extrabold text-stone-900">
                       {formatRupiah(metrics.totalActual)}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-stone-500 mt-0.5">
                       Pagu Target:{' '}
-                      <span className="font-bold text-slate-800">
+                      <span className="font-bold text-stone-800">
                         {formatRupiah(
                           state.settings.totalBudgetCap || metrics.totalEstimated
                         )}
                       </span>
                     </p>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-stone-100">
                     <span className="text-emerald-700 font-bold">
                       Dibayar: {formatRupiah(metrics.totalPaid)}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold">
                       {state.budgetItems.length} Pos Biaya
                     </span>
                   </div>
@@ -1052,35 +1052,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               )}
 
               {/* Card 4: Statistik RSVP & Tamu VIP */}
-              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-3xl p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Statistik Tamu &amp; RSVP
                   </span>
-                  <Users className="w-5 h-5 text-indigo-600" />
+                  <Users className="w-5 h-5 text-[#B68D40]" />
                 </div>
                 <div className="my-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-stone-900">
                       {metrics.totalGuests} Undangan
                     </span>
-                    <span className="text-xs font-bold text-indigo-700">
+                    <span className="text-xs font-bold text-[#8B6914]">
                       ({metrics.totalPaxQuota} Kuota Pax)
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1">
+                  <p className="text-xs text-stone-600 mt-1">
                     Konfirmasi Hadir:{' '}
                     <span className="font-bold text-emerald-700">
                       {metrics.hadirGuestsCount} Tamu ({metrics.hadirPax} Pax)
                     </span>
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100">
-                  <span className="inline-flex items-center gap-1 font-bold text-amber-800">
-                    <Award className="w-3.5 h-3.5 text-amber-600" />
+                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-stone-100">
+                  <span className="inline-flex items-center gap-1 font-bold text-[#8B6914]">
+                    <Award className="w-3.5 h-3.5 text-[#B68D40]" />
                     {metrics.vipGuestsCount} Pejabat / VIP
                   </span>
-                  <span className="text-slate-500">
+                  <span className="text-stone-500">
                     {metrics.belumKonfirmasiCount} Belum Konfirmasi
                   </span>
                 </div>
@@ -1090,20 +1090,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* Breakdown Progress by Timeline & Domain Category (Symmetrical Equal-Height 2-Column Grid) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
               {/* Left: Progress per Kategori */}
-              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
                   <div>
-                    <h3 className="font-bold text-base text-slate-900">
+                    <h3 className="font-bold text-base text-stone-900">
                       Kesiapan per Domain (DB Wedding)
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-500">
                       Progres administrasi Polri, Gereja, Kependudukan, Kesehatan &amp; Acara
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setActiveTab('checklist')}
-                    className="text-xs font-bold text-[#0A192F] hover:underline shrink-0"
+                    className="text-xs font-bold text-[#8B6914] hover:text-[#B68D40] hover:underline shrink-0"
                   >
                     Buka Checklist &rarr;
                   </button>
@@ -1120,19 +1120,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     return (
                       <div key={cat} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-800">{cat}</span>
-                          <span className="font-mono font-bold text-slate-600">
+                          <span className="font-bold text-stone-800">{cat}</span>
+                          <span className="font-mono font-bold text-stone-600">
                             {doneCount}/{catTasks.length} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
                               pct === 100
                                 ? 'bg-emerald-500'
                                 : pct >= 60
-                                ? 'bg-amber-500'
-                                : 'bg-indigo-600'
+                                ? 'bg-[#D4AF37]'
+                                : 'bg-[#B68D40]'
                             }`}
                             style={{ width: `${pct}%` }}
                           />
@@ -1142,7 +1142,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   })}
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+                <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500 shrink-0">
                   <span>Total Tugas Terdata: {metrics.totalTasks} Tugas</span>
                   <span className="font-bold text-emerald-700">
                     {metrics.completedTasks} Selesai
@@ -1151,18 +1151,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* Right: Urgent / Pending Priority Tasks */}
-              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="h-full lg:h-[460px] bg-white rounded-3xl p-6 shadow-sm border border-stone-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-stone-100 shrink-0">
                   <div>
-                    <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <h3 className="font-bold text-base text-stone-900 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#B68D40]" />
                       Fokus Penyelesaian Berikutnya
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-500">
                       Daftar tugas yang masih berstatus Proses / Belum Selesai
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                  <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold">
                     {metrics.pendingTasks + metrics.inProgressTasks} Aktif
                   </span>
                 </div>
@@ -1174,14 +1174,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     .map((task) => (
                       <div
                         key={task.id}
-                        className="p-3.5 rounded-2xl border border-slate-200 hover:border-amber-400 bg-slate-50/70 flex items-start justify-between gap-3 transition-all"
+                        className="p-3.5 rounded-2xl border border-stone-200 hover:border-[#D4AF37] bg-[#FAF8F5] flex items-start justify-between gap-3 transition-all"
                       >
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2 py-0.5 rounded-md bg-[#0A192F] text-amber-300 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold">
                               {task.category}
                             </span>
-                            <span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 text-[10px] font-semibold">
+                            <span className="px-2 py-0.5 rounded-md bg-stone-200/80 text-stone-700 text-[10px] font-semibold">
                               {task.timelinePhase}
                             </span>
                             <span
@@ -1194,13 +1194,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               Prioritas {task.priority}
                             </span>
                           </div>
-                          <p className="font-bold text-xs sm:text-sm text-slate-900">
+                          <p className="font-bold text-xs sm:text-sm text-stone-900">
                             {task.title}
                           </p>
                           {task.notes && (
-                            <p className="text-xs text-slate-500">{task.notes}</p>
+                            <p className="text-xs text-stone-500">{task.notes}</p>
                           )}
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-stone-500">
                             Target: <span className="font-semibold">{task.due}</span> &bull; PIC:{' '}
                             <span className="font-semibold">{task.owner}</span>
                           </p>
@@ -1217,9 +1217,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     ))}
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+                <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500 shrink-0">
                   <span>Klik &ldquo;Selesaikan&rdquo; untuk memperbarui progres secara instan</span>
-                  <span className="font-bold text-amber-700">
+                  <span className="font-bold text-[#8B6914]">
                     {metrics.inProgressTasks} Sedang Proses
                   </span>
                 </div>
@@ -1234,15 +1234,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'checklist' && (
           <div className="space-y-4">
             {/* Phase Timeline Pills & Filters */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
+            <div className="bg-white rounded-2xl p-4 shadow-xs border border-stone-200 space-y-3">
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                 <button
                   type="button"
                   onClick={() => setSelectedPhase('ALL')}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
                     selectedPhase === 'ALL'
-                      ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                      : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                   }`}
                 >
                   Semua Fase ({state.tasks.length})
@@ -1256,8 +1256,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onClick={() => setSelectedPhase(phase)}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
                         selectedPhase === phase
-                          ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                          : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                       }`}
                     >
                       {phase} ({count})
@@ -1268,20 +1268,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                 <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={taskSearch}
                     onChange={(e) => setTaskSearch(e.target.value)}
                     placeholder="Cari tugas, dokumen, SKCK, izin kawin..."
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5]"
                   />
                 </div>
 
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value as TaskCategory | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                 >
                   <option value="ALL">Semua Kategori Domain</option>
                   {TASK_CATEGORIES.map((c) => (
@@ -1294,7 +1294,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                 >
                   <option value="ALL">Semua Status (Belum / Proses / Selesai)</option>
                   <option value="BELUM">Status: Belum Dimulai</option>
@@ -1305,7 +1305,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <select
                   value={selectedOwner}
                   onChange={(e) => setSelectedOwner(e.target.value as TaskOwner | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                 >
                   <option value="ALL">Semua PIC (Saya / Calon / Bersama / WO)</option>
                   <option value="Saya">PIC: Saya (Mempelai Pria)</option>
@@ -1318,14 +1318,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* LinkedIn-Style Checklist Section Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Card Header: Title (Count) on left + Plus & Edit Icons on right */}
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                  <h2 className="text-lg sm:text-xl font-bold text-stone-900">
                     Checklist Kesiapan ({filteredTasks.length})
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     Klik tombol + untuk menambah tugas baru atau ikon pensil untuk mengedit rincian tugas
                   </p>
                 </div>
@@ -1345,7 +1345,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         done: false,
                       })
                     }
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                     title="Tambahkan tugas checklist"
                   >
                     <Plus className="w-5 h-5" />
@@ -1354,7 +1354,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setEditingTask(filteredTasks[0])}
-                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                       title="Edit tugas checklist"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -1364,7 +1364,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* Card Body: Clean LinkedIn-Style Divider Rows */}
-              <div className="divide-y divide-slate-200 px-6">
+              <div className="divide-y divide-stone-200 px-6">
                 {(showAllTasks ? filteredTasks : filteredTasks.slice(0, 8)).map((task) => {
                   const effectiveStatus: TaskStatus = task.done
                     ? 'SELESAI'
@@ -1382,8 +1382,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             effectiveStatus === 'SELESAI'
                               ? 'bg-emerald-600 border-emerald-600 text-white'
                               : effectiveStatus === 'PROSES'
-                              ? 'bg-amber-500 border-amber-500 text-slate-950'
-                              : 'bg-white border-slate-400 hover:border-[#0A66C2]'
+                              ? 'bg-amber-500 border-amber-500 text-stone-950'
+                              : 'bg-white border-stone-400 hover:border-[#B68D40]'
                           }`}
                           title="Klik untuk ubah status (Belum -> Proses -> Selesai)"
                         >
@@ -1398,16 +1398,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <h4
                             className={`font-bold text-sm sm:text-base ${
                               effectiveStatus === 'SELESAI'
-                                ? 'line-through text-slate-400'
-                                : 'text-slate-900'
+                                ? 'line-through text-stone-400'
+                                : 'text-stone-900'
                             }`}
                           >
                             {task.title}
                           </h4>
 
-                          <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
-                            <span className="inline-flex items-center gap-1 font-semibold text-slate-800">
-                              <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <div className="flex items-center gap-2 text-xs text-stone-600 flex-wrap">
+                            <span className="inline-flex items-center gap-1 font-semibold text-stone-800">
+                              <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                               {task.category} &bull; {task.timelinePhase}
                             </span>
                             <span>&bull; PIC: {task.owner}</span>
@@ -1417,8 +1417,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 effectiveStatus === 'SELESAI'
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : effectiveStatus === 'PROSES'
-                                  ? 'bg-amber-100 text-amber-900'
-                                  : 'bg-slate-100 text-slate-700'
+                                  ? 'bg-[#FAF3E3] text-[#8B6914]'
+                                  : 'bg-stone-100 text-stone-700'
                               }`}
                             >
                               {effectiveStatus}
@@ -1426,7 +1426,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </div>
 
                           {task.notes && (
-                            <p className="text-xs text-slate-500">{task.notes}</p>
+                            <p className="text-xs text-stone-500">{task.notes}</p>
                           )}
                         </div>
                       </div>
@@ -1435,7 +1435,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => setEditingTask(task)}
-                          className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                          className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                           title="Edit Tugas"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -1446,7 +1446,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             await onDeleteTask(task.id);
                             showToast(`Tugas "${task.title}" dihapus.`);
                           }}
-                          className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                          className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                           title="Hapus Tugas"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1462,7 +1462,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAllTasks(!showAllTasks)}
-                  className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full py-3.5 border-t border-stone-200 hover:bg-[#FAF8F5] text-sm font-bold text-[#8B6914] flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <span>
                     {showAllTasks
@@ -1482,39 +1482,39 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="space-y-4">
             {/* 4 Symmetrical Financial Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-              <div className="h-full bg-white rounded-2xl p-4 border border-slate-200 flex flex-col justify-between">
+              <div className="h-full bg-white rounded-2xl p-4 border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase text-slate-500">
+                  <p className="text-[11px] font-bold uppercase text-stone-500">
                     Target Pagu Anggaran
                   </p>
                   <button
                     type="button"
                     onClick={() => openSettingsPopup('budget_cap')}
-                    className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                    className="w-7 h-7 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                     title="Edit / Revisi Target Pagu Anggaran"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <p className="text-lg sm:text-2xl font-extrabold text-slate-900 mt-1">
+                <p className="text-lg sm:text-2xl font-extrabold text-stone-900 mt-1">
                   {formatRupiah(
                     state.settings.totalBudgetCap > 0
                       ? state.settings.totalBudgetCap
                       : metrics.totalEstimated
                   )}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-stone-400 mt-1">
                   Total Estimasi Item: {formatRupiah(metrics.totalEstimated)}
                 </p>
               </div>
-              <div className="h-full bg-white rounded-2xl p-4 border border-slate-200 flex flex-col justify-between">
-                <p className="text-[11px] font-bold uppercase text-slate-500">
+              <div className="h-full bg-[#FAF8F5] rounded-2xl p-4 border border-[#D4AF37]/40 flex flex-col justify-between">
+                <p className="text-[11px] font-bold uppercase text-[#8B6914]">
                   Total Realisasi / Revisi
                 </p>
-                <p className="text-lg sm:text-2xl font-extrabold text-indigo-900 mt-1">
+                <p className="text-lg sm:text-2xl font-extrabold text-[#8B6914] mt-1">
                   {formatRupiah(metrics.totalActual)}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-stone-500 mt-1">
                   Dari {state.budgetItems.length} pos anggaran aktif
                 </p>
               </div>
@@ -1543,14 +1543,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {/* LinkedIn-Style Budget & Vendor Section Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Header with + and Edit icons on top-right */}
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                  <h2 className="text-lg sm:text-xl font-bold text-stone-900">
                     Pos Anggaran &amp; Revisi Vendor ({filteredBudgetItems.length})
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     Klik + untuk menambah pos pengeluaran baru atau ikon pensil untuk merevisi anggaran
                   </p>
                 </div>
@@ -1573,7 +1573,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         revisionNote: '',
                       })
                     }
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                     title="Tambahkan pos anggaran / vendor"
                   >
                     <Plus className="w-5 h-5" />
@@ -1587,7 +1587,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         openSettingsPopup('budget_cap');
                       }
                     }}
-                    className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                    className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                     title="Edit / Revisi Anggaran"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -1597,10 +1597,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               {filteredBudgetItems.length === 0 ? (
                 <div className="p-8 text-center space-y-3">
-                  <p className="text-sm font-semibold text-slate-700">
+                  <p className="text-sm font-semibold text-stone-700">
                     Belum ada pos anggaran atau vendor yang tercatat.
                   </p>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  <p className="text-xs text-stone-500 max-w-md mx-auto">
                     Klik tombol <strong>+</strong> di sudut kanan atas kartu ini untuk mulai menambahkan pos biaya dan vendor pernikahan Anda.
                   </p>
                   <button
@@ -1621,7 +1621,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         revisionNote: '',
                       })
                     }
-                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-xs shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                   >
                     <Plus className="w-4 h-4" />
                     Tambahkan Pos Anggaran
@@ -1629,7 +1629,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="divide-y divide-slate-200 px-6">
+                  <div className="divide-y divide-stone-200 px-6">
                     {(showAllBudget ? filteredBudgetItems : filteredBudgetItems.slice(0, 6)).map(
                       (item) => {
                         const effectiveTotal =
@@ -1642,11 +1642,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           >
                             <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                                <h3 className="font-bold text-sm sm:text-base text-stone-900">
                                   {item.itemName}
                                 </h3>
                                 {(item.revisionCount || 0) > 0 && (
-                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold">
+                                  <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
                                     Revisi ke-{item.revisionCount}
                                   </span>
                                 )}
@@ -1660,15 +1660,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   {item.paymentStatus.replace('_', ' ')}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
-                                <Wallet className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <p className="text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                                <Wallet className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                                 <span>
                                   {item.category} &bull; Vendor: {item.vendorName || '-'}
                                 </span>
                                 <span>
                                   &bull; Estimasi: {formatRupiah(item.estimatedCost)}
                                 </span>
-                                <span className="font-bold text-slate-900">
+                                <span className="font-bold text-stone-900">
                                   &bull; Realisasi/Revisi: {formatRupiah(effectiveTotal)}
                                 </span>
                                 <span className="text-emerald-700 font-semibold">
@@ -1681,12 +1681,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 )}
                               </p>
                               {item.revisionNote && (
-                                <p className="text-xs text-indigo-800">
+                                <p className="text-xs text-[#8B6914] font-medium">
                                   Catatan Revisi: {item.revisionNote}
                                 </p>
                               )}
                               {item.notes && (
-                                <p className="text-xs text-slate-500">{item.notes}</p>
+                                <p className="text-xs text-stone-500">{item.notes}</p>
                               )}
                             </div>
 
@@ -1694,7 +1694,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setEditingBudget(item)}
-                                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                                 title="Edit / Revisi Pos Anggaran"
                               >
                                 <Edit3 className="w-4 h-4" />
@@ -1705,7 +1705,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   await onDeleteBudget(item.id);
                                   showToast(`Pos "${item.itemName}" dihapus.`);
                                 }}
-                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                                className="w-9 h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                                 title="Hapus Pos Anggaran"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1721,7 +1721,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowAllBudget(!showAllBudget)}
-                      className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full py-3.5 border-t border-stone-200 hover:bg-[#FAF8F5] text-sm font-bold text-[#8B6914] flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <span>
                         {showAllBudget
@@ -1742,7 +1742,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'guests' && (
           <div className="space-y-4">
             {/* Sub-tab & Filter Bar */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
+            <div className="bg-white rounded-2xl p-4 shadow-xs border border-stone-200 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <button
@@ -1750,8 +1750,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onClick={() => setGuestSubTab('list')}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
                       guestSubTab === 'list'
-                        ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                        : 'bg-white text-slate-700 border-slate-300'
+                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                        : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                     }`}
                   >
                     Daftar Tamu ({state.guests.length})
@@ -1761,8 +1761,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onClick={() => setGuestSubTab('wishes')}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
                       guestSubTab === 'wishes'
-                        ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                        : 'bg-white text-slate-700 border-slate-300'
+                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                        : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                     }`}
                   >
                     Buku Tamu &amp; Doa ({state.wishes.length})
@@ -1773,20 +1773,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {guestSubTab === 'list' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={guestSearch}
                       onChange={(e) => setGuestSearch(e.target.value)}
                       placeholder="Cari nama tamu, pangkat, satker, kode INV..."
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5]"
                     />
                   </div>
 
                   <select
                     value={guestTypeFilter}
                     onChange={(e) => setGuestTypeFilter(e.target.value as GuestType | 'ALL')}
-                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                    className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                   >
                     <option value="ALL">Semua Kategori Tamu</option>
                     <option value="Pejabat/VIP">Pejabat / VIP</option>
@@ -1801,7 +1801,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onChange={(e) =>
                       setGuestPriorityFilter(e.target.value as GuestPriority | 'ALL')
                     }
-                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                    className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                   >
                     <option value="ALL">Semua Prioritas (P1 / P2 / P3)</option>
                     <option value="P1 - VIP">P1 - VIP Utama</option>
@@ -1812,7 +1812,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <select
                     value={guestRsvpFilter}
                     onChange={(e) => setGuestRsvpFilter(e.target.value as RsvpStatus | 'ALL')}
-                    className="px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold"
+                    className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
                   >
                     <option value="ALL">Semua Status RSVP</option>
                     <option value="Hadir">RSVP: Hadir</option>
@@ -1825,14 +1825,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             {guestSubTab === 'list' ? (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
                 {/* LinkedIn-Style Header with + and Edit icons */}
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                    <h2 className="text-lg sm:text-xl font-bold text-stone-900">
                       Tamu Undangan ({filteredGuests.length})
                     </h2>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-500">
                       Klik + untuk menambah tamu baru atau ikon pensil pada tiap baris untuk mengedit tamu
                     </p>
                   </div>
@@ -1857,7 +1857,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           notes: '',
                         })
                       }
-                      className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                      className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                       title="Tambahkan tamu undangan"
                     >
                       <Plus className="w-5 h-5" />
@@ -1866,7 +1866,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingGuest(filteredGuests[0])}
-                        className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+                        className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                         title="Edit tamu undangan"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -1875,7 +1875,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-200 px-6">
+                <div className="divide-y divide-stone-200 px-6">
                   {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
                     const waData = generateWhatsAppMessage(guest, state.settings);
                     const isLinkCopied = copiedGuestLinkId === guest.id;
@@ -1886,18 +1886,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                            <h3 className="font-bold text-sm sm:text-base text-stone-900">
                               {guest.guestName}
                             </h3>
-                            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-amber-300">
+                            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914]">
                               {guest.invitationCode}
                             </span>
                             <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                               {guest.priority}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
-                            <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <p className="text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                            <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                             <span>
                               {guest.institution || guest.guestType} &bull; {guest.side}
                             </span>
@@ -1907,7 +1907,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             {guest.address && <span>&bull; {guest.address}</span>}
                           </p>
                           {guest.notes && (
-                            <p className="text-xs text-slate-500">{guest.notes}</p>
+                            <p className="text-xs text-stone-500">{guest.notes}</p>
                           )}
                         </div>
 
@@ -1923,7 +1923,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             type="button"
                             onClick={() => setWaPreviewGuest(guest)}
-                            className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200"
+                            className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40"
                           >
                             Teks WA
                           </button>
@@ -1935,7 +1935,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setTimeout(() => setCopiedGuestLinkId(null), 2000);
                               showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
                             }}
-                            className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1"
+                            className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1"
                           >
                             {isLinkCopied ? (
                               <>
@@ -1950,7 +1950,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onSwitchToPublicPreview(guest)}
-                            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                            className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                             title="Preview Undangan"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -1958,7 +1958,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             type="button"
                             onClick={() => setEditingGuest(guest)}
-                            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                            className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                             title="Edit Tamu"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -1969,7 +1969,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               await onDeleteGuest(guest.id);
                               showToast(`Tamu "${guest.guestName}" dihapus.`);
                             }}
-                            className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                            className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                             title="Hapus Tamu"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1984,7 +1984,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowAllGuests(!showAllGuests)}
-                    className="w-full py-3.5 border-t border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                    className="w-full py-3.5 border-t border-stone-200 hover:bg-[#FAF8F5] text-sm font-bold text-[#8B6914] flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <span>
                       {showAllGuests
@@ -1996,36 +1996,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             ) : (
               /* SUB-TAB BUKU TAMU & MODERASI UCAPAN DOA */
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+                <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">
+                    <h2 className="text-lg font-bold text-stone-900">
                       Buku Tamu &amp; Ucapan Doa ({state.wishes.length})
                     </h2>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-500">
                       Daftar ucapan doa yang dikirim langsung oleh tamu melalui halaman undangan
                     </p>
                   </div>
                 </div>
                 {state.wishes.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500">
+                  <div className="p-8 text-center text-xs text-stone-500">
                     Belum ada ucapan doa yang masuk dari tamu.
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-200 px-6">
+                  <div className="divide-y divide-stone-200 px-6">
                     {state.wishes.map((w) => (
                       <div key={w.id} className="py-4 space-y-2">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-sm text-slate-900">
+                              <h4 className="font-bold text-sm text-stone-900">
                                 {w.guestName}
                               </h4>
                               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                                 {w.rsvpStatus} ({w.pax} Pax)
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-stone-500">
                               {w.institution || w.relation}
                             </p>
                           </div>
@@ -2036,7 +2036,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 await onTogglePinWish(w.id);
                                 showToast('Status sematan ucapan diperbarui.');
                               }}
-                              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] text-xs font-bold flex items-center gap-1 border border-[#D4AF37]/30"
                             >
                               <Pin className="w-3 h-3" /> {w.isPinned ? 'Unpin' : 'Pin'}
                             </button>
@@ -2046,7 +2046,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setReplyingWishId(w.id);
                                 setReplyText(w.replyFromCouple || '');
                               }}
-                              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                               title="Balas Ucapan"
                             >
                               <Reply className="w-4 h-4" />
@@ -2057,16 +2057,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 await onDeleteWish(w.id);
                                 showToast('Ucapan dihapus.');
                               }}
-                              className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
+                              className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                               title="Hapus Ucapan"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-700">&ldquo;{w.message}&rdquo;</p>
+                        <p className="text-xs sm:text-sm text-stone-700">&ldquo;{w.message}&rdquo;</p>
                         {w.replyFromCouple && (
-                          <p className="text-xs text-amber-800 pl-3 border-l-2 border-amber-500">
+                          <p className="text-xs text-[#8B6914] pl-3 border-l-2 border-[#D4AF37]">
                             <strong>Balasan:</strong> {w.replyFromCouple}
                           </p>
                         )}
@@ -2077,7 +2077,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}
                               placeholder="Tulis balasan terima kasih..."
-                              className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs"
+                              className="flex-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs"
                             />
                             <button
                               type="button"
@@ -2086,7 +2086,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setReplyingWishId(null);
                                 showToast('Balasan berhasil disimpan!');
                               }}
-                              className="px-4 py-1.5 rounded-full bg-[#0A66C2] text-white font-bold text-xs"
+                              className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
                             >
                               Simpan
                             </button>
@@ -2106,17 +2106,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'settings' && (
           <div className="max-w-5xl mx-auto space-y-5">
-            {/* WIRA SATYA 96 STYLE TOP HEADER BANNER */}
-            <div className="bg-white rounded-2xl border border-slate-200 px-6 py-4 shadow-2xs flex items-center justify-between gap-4">
+            {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-6 py-4 shadow-2xs flex items-center justify-between gap-4">
               <div className="flex items-center gap-3.5 min-w-0">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
                   <WeddingRingsIcon className="w-6 h-6" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
+                  <h2 className="text-base sm:text-lg font-extrabold text-stone-900 leading-tight">
                     Pengaturan
                   </h2>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                  <p className="text-xs text-[#9A742B] font-medium truncate mt-0.5">
                     {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
                     {state.settings.groomNickname} &amp; {state.settings.brideNickname}
                   </p>
@@ -2127,10 +2127,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchToPublicPreview()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
                   title="Buka tampilan undangan publik"
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-3.5 h-3.5 text-[#B68D40]" />
                   <span className="hidden sm:inline">Pratinjau Undangan</span>
                 </button>
               </div>
@@ -2139,7 +2139,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden divide-y divide-slate-100">
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden divide-y divide-stone-100">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -2183,21 +2183,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setSettingsMenuTab(menu.id)}
                         className={`w-full px-5 py-3.5 flex items-center justify-between text-left transition-all ${
                           isActive
-                            ? 'bg-[#FDF2F2] text-[#8B1E1E] font-bold border-l-4 border-[#8B1E1E]'
-                            : 'bg-white hover:bg-slate-50 text-slate-700 font-medium'
+                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-l-4 border-[#B68D40]'
+                            : 'bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <IconComp
                             className={`w-4 h-4 ${
-                              isActive ? 'text-[#8B1E1E]' : 'text-slate-400'
+                              isActive ? 'text-[#B68D40]' : 'text-stone-400'
                             }`}
                           />
                           <span className="text-xs sm:text-sm">{menu.label}</span>
                         </div>
                         <ChevronRight
                           className={`w-4 h-4 ${
-                            isActive ? 'text-[#8B1E1E]' : 'text-slate-400'
+                            isActive ? 'text-[#B68D40]' : 'text-stone-400'
                           }`}
                         />
                       </button>
@@ -2206,7 +2206,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-6 shadow-2xs space-y-5">
                 {/* ===============================================================
                     MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
                    =============================================================== */}
@@ -2214,21 +2214,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <div className="space-y-5">
                     {/* Panel Title */}
                     <div className="flex items-center gap-2.5">
-                      <Shield className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                      <Shield className="w-4 h-4 text-[#B68D40]" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                         Pengaturan Visibilitas &amp; Konten Seksi Undangan
                       </h3>
                     </div>
 
-                    {/* Wira Satya 96 Segmented Blue Pill Sub-Tabs */}
-                    <div className="p-1.5 rounded-xl bg-slate-100 grid grid-cols-2 gap-1.5">
+                    {/* Segmented Champagne Gold Pill Sub-Tabs */}
+                    <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
                         onClick={() => setVisibilitasSubTab('semua')}
                         className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                           visibilitasSubTab === 'semua'
-                            ? 'bg-[#1D63DC] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -2242,8 +2242,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }}
                         className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                           visibilitasSubTab === 'media'
-                            ? 'bg-[#1D63DC] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
                         <ImageIcon className="w-3.5 h-3.5" />
@@ -2330,17 +2330,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       return (
                         <>
-                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                            <span className="text-xs text-slate-500">
+                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                            <span className="text-xs text-stone-500">
                               Aktifkan switch dan klik <strong>Atur Isi</strong> untuk mengubah apa yang ditampilkan di setiap seksi
                             </span>
-                            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px] shrink-0">
+                            <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0">
                               &bull; Aktif ({activeCount}/9 Seksi)
                             </span>
                           </div>
 
                           {/* Rows List (Wira Satya 96 Row + Switch + Inline Content Editor) */}
-                          <div className="divide-y divide-slate-100">
+                          <div className="divide-y divide-stone-100">
                             {displayedSections.map((sec) => {
                               const SecIcon = sec.icon;
                               const isShown = state.settings[sec.key] !== false;
@@ -2354,17 +2354,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       <div
                                         className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
                                           isShown
-                                            ? 'bg-emerald-50/70 border-emerald-200 text-emerald-700'
-                                            : 'bg-slate-50 border-slate-200 text-slate-400'
+                                            ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                            : 'bg-stone-50 border-stone-200 text-stone-400'
                                         }`}
                                       >
                                         <SecIcon className="w-4 h-4" />
                                       </div>
                                       <div className="min-w-0">
-                                        <p className="font-bold text-xs sm:text-sm text-slate-900">
+                                        <p className="font-bold text-xs sm:text-sm text-stone-900">
                                           {sec.title}
                                         </p>
-                                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                                        <p className="text-[11px] text-stone-500 line-clamp-2 mt-0.5">
                                           {sec.preview}
                                         </p>
                                       </div>
@@ -2396,7 +2396,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             : 'Klik untuk menampilkan di undangan'
                                         }
                                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                          isShown ? 'bg-emerald-600' : 'bg-slate-300'
+                                          isShown ? 'bg-emerald-600' : 'bg-stone-300'
                                         }`}
                                       >
                                         <span
@@ -2417,8 +2417,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         }}
                                         className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                           isExpanded
-                                            ? 'bg-[#1D63DC] text-white border-[#1D63DC]'
-                                            : 'bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] border-blue-200'
+                                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                            : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
                                         }`}
                                       >
                                         {isExpanded ? 'Tutup Isi' : 'Atur Isi'}
@@ -2430,7 +2430,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       INLINE CONTENT EDITOR ("APA YANG DITAMPILKAN DIMUAT DI SINI")
                                      ========================================================= */}
                                   {isExpanded && (
-                                    <div className="mt-3.5 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3.5 text-xs">
+                                    <div className="mt-3.5 p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3.5 text-xs">
                                       {/* 1. EDITOR KUTIPAN AYAT SUCI & KALIMAT */}
                                       {sec.key === 'showQuoteSection' && (
                                         <form
@@ -2438,14 +2438,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           className="space-y-3"
                                         >
                                           <div className="flex items-center justify-between">
-                                            <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                            <span className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
                                               Pengaturan Isi Kutipan Ayat &amp; Sambutan yang Ditampilkan
                                             </span>
                                           </div>
 
                                           {/* Quick Verse Pills */}
                                           <div className="space-y-1.5">
-                                            <span className="text-[11px] text-slate-500 font-medium">
+                                            <span className="text-[11px] text-stone-500 font-medium">
                                               Pilih Cepat Contoh Kutipan Ayat:
                                             </span>
                                             <div className="flex flex-wrap gap-1.5">
@@ -2481,7 +2481,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       quoteVerse: q.verse,
                                                     })
                                                   }
-                                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-[11px]"
                                                 >
                                                   <span>{q.source}</span>
                                                   <Plus className="w-3 h-3" />
@@ -2492,7 +2492,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             <div>
-                                              <label className="block font-bold text-slate-700 mb-1">
+                                              <label className="block font-bold text-stone-700 mb-1">
                                                 Sumber Ayat / Kutipan
                                               </label>
                                               <input
@@ -2505,11 +2505,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Contoh: Kolose 3 : 14"
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold"
+                                                className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white font-semibold"
                                               />
                                             </div>
                                             <div className="sm:col-span-2">
-                                              <label className="block font-bold text-slate-700 mb-1">
+                                              <label className="block font-bold text-stone-700 mb-1">
                                                 Isi Kutipan Ayat yang Ditampilkan di Undangan
                                               </label>
                                               <textarea
@@ -2521,14 +2521,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     quoteVerse: e.target.value,
                                                   })
                                                 }
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                                className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                                               />
                                             </div>
                                           </div>
 
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
-                                              <label className="block font-bold text-slate-700 mb-1">
+                                              <label className="block font-bold text-stone-700 mb-1">
                                                 Kalimat Pembuka Undangan
                                               </label>
                                               <textarea
@@ -2540,11 +2540,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     invitationOpeningText: e.target.value,
                                                   })
                                                 }
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                                className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                                               />
                                             </div>
                                             <div>
-                                              <label className="block font-bold text-slate-700 mb-1">
+                                              <label className="block font-bold text-stone-700 mb-1">
                                                 Kalimat Penutup Undangan
                                               </label>
                                               <textarea
@@ -2556,7 +2556,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     invitationClosingText: e.target.value,
                                                   })
                                                 }
-                                                className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                                                className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                                               />
                                             </div>
                                           </div>
@@ -2564,7 +2564,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <div className="flex justify-end pt-1">
                                             <button
                                               type="submit"
-                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                              className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                                             >
                                               Simpan Kutipan &amp; Kalimat
                                             </button>
@@ -2580,12 +2580,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         >
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Pria */}
-                                            <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2.5">
-                                              <p className="font-bold text-slate-900 uppercase text-[11px]">
+                                            <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
+                                              <p className="font-bold text-[#8B6914] uppercase text-[11px]">
                                                 Profil Mempelai Pria
                                               </p>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   Nama Lengkap &amp; Gelar
                                                 </label>
                                                 <input
@@ -2597,12 +2597,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       groomFullName: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
                                                 />
                                               </div>
                                               <div className="grid grid-cols-2 gap-2">
                                                 <div>
-                                                  <label className="block text-slate-600 mb-0.5">
+                                                  <label className="block text-stone-600 mb-0.5">
                                                     Panggilan
                                                   </label>
                                                   <input
@@ -2614,11 +2614,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                         groomNickname: e.target.value,
                                                       })
                                                     }
-                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
                                                 <div>
-                                                  <label className="block text-slate-600 mb-0.5">
+                                                  <label className="block text-stone-600 mb-0.5">
                                                     Pangkat / Label
                                                   </label>
                                                   <input
@@ -2630,12 +2630,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                         groomRankAndTitle: e.target.value,
                                                       })
                                                     }
-                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
                                               </div>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   Orang Tua Mempelai Pria
                                                 </label>
                                                 <input
@@ -2647,11 +2647,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       groomParents: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   URL Foto Mempelai Pria
                                                 </label>
                                                 <input
@@ -2663,18 +2663,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       groomPhotoUrl: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                             </div>
 
                                             {/* Wanita */}
-                                            <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2.5">
-                                              <p className="font-bold text-slate-900 uppercase text-[11px]">
+                                            <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
+                                              <p className="font-bold text-[#8B6914] uppercase text-[11px]">
                                                 Profil Mempelai Wanita
                                               </p>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   Nama Lengkap &amp; Gelar
                                                 </label>
                                                 <input
@@ -2686,12 +2686,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       brideFullName: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
                                                 />
                                               </div>
                                               <div className="grid grid-cols-2 gap-2">
                                                 <div>
-                                                  <label className="block text-slate-600 mb-0.5">
+                                                  <label className="block text-stone-600 mb-0.5">
                                                     Panggilan
                                                   </label>
                                                   <input
@@ -2703,11 +2703,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                         brideNickname: e.target.value,
                                                       })
                                                     }
-                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
                                                 <div>
-                                                  <label className="block text-slate-600 mb-0.5">
+                                                  <label className="block text-stone-600 mb-0.5">
                                                     Gelar / Label
                                                   </label>
                                                   <input
@@ -2719,12 +2719,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                         brideTitle: e.target.value,
                                                       })
                                                     }
-                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300"
+                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
                                               </div>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   Orang Tua Mempelai Wanita
                                                 </label>
                                                 <input
@@ -2736,11 +2736,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       brideParents: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                               <div>
-                                                <label className="block text-slate-600 mb-0.5">
+                                                <label className="block text-stone-600 mb-0.5">
                                                   URL Foto Mempelai Wanita
                                                 </label>
                                                 <input
@@ -2752,7 +2752,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       bridePhotoUrl: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                             </div>
@@ -2761,7 +2761,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <div className="flex justify-end">
                                             <button
                                               type="submit"
-                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                              className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                                             >
                                               Simpan Profil Mempelai
                                             </button>
@@ -2797,7 +2797,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               <>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Nama / Judul Acara
                                                     </label>
                                                     <input
@@ -2809,11 +2809,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [titleKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
                                                     />
                                                   </div>
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Subjudul Acara
                                                     </label>
                                                     <input
@@ -2825,14 +2825,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [subKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Hari &amp; Tanggal (Teks)
                                                     </label>
                                                     <input
@@ -2844,11 +2844,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [dateKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Jam Pelaksanaan
                                                     </label>
                                                     <input
@@ -2860,14 +2860,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [timeKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Nama Tempat / Gedung / Gereja
                                                     </label>
                                                     <input
@@ -2879,11 +2879,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [venueKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Alamat Lengkap
                                                     </label>
                                                     <input
@@ -2895,14 +2895,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [addrKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Dresscode
                                                     </label>
                                                     <input
@@ -2914,11 +2914,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [dressKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                   <div>
-                                                    <label className="block font-bold text-slate-700 mb-0.5">
+                                                    <label className="block font-bold text-stone-700 mb-0.5">
                                                       Link Google Maps
                                                     </label>
                                                     <input
@@ -2930,7 +2930,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           [mapsKey]: e.target.value,
                                                         })
                                                       }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
                                                 </div>
@@ -2941,7 +2941,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <div className="flex justify-end">
                                             <button
                                               type="submit"
-                                              className="px-5 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                                              className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                                             >
                                               Simpan Detail Acara
                                             </button>
@@ -2952,13 +2952,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 6. EDITOR KISAH KASIH (LOVE STORY TIMELINE) */}
                                       {sec.key === 'showLoveStorySection' && (
                                         <div className="space-y-3">
-                                          <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                          <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
                                             Daftar Momen Kisah Kasih yang Ditampilkan ({(state.settings.loveStory || []).length})
                                           </p>
 
                                           {/* Existing Love Story List */}
                                           {(state.settings.loveStory || []).length === 0 ? (
-                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                            <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
                                               Belum ada cerita perjalanan cinta. Tambahkan momen di bawah agar tampil pada seksi Kisah Kasih di undangan.
                                             </p>
                                           ) : (
@@ -2966,16 +2966,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               {(state.settings.loveStory || []).map((st) => (
                                                 <div
                                                   key={st.id}
-                                                  className="p-3 rounded-lg bg-white border border-slate-200 flex items-start justify-between gap-3"
+                                                  className="p-3 rounded-lg bg-white border border-stone-200 flex items-start justify-between gap-3"
                                                 >
                                                   <div>
-                                                    <p className="font-bold text-slate-900">
+                                                    <p className="font-bold text-stone-900">
                                                       {st.dateLabel} — {st.title}{' '}
-                                                      <span className="text-slate-400 font-normal">
+                                                      <span className="text-stone-400 font-normal">
                                                         ({st.location})
                                                       </span>
                                                     </p>
-                                                    <p className="text-slate-600 mt-0.5">
+                                                    <p className="text-stone-600 mt-0.5">
                                                       {st.description}
                                                     </p>
                                                   </div>
@@ -3022,7 +3022,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 key={sug.title}
                                                 type="button"
                                                 onClick={() => setNewStoryForm(sug)}
-                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-[11px]"
                                               >
                                                 <span>{sug.title}</span>
                                                 <Plus className="w-3 h-3" />
@@ -3031,7 +3031,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           </div>
 
                                           {/* Add New Love Story Form */}
-                                          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                          <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2.5">
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                               <input
                                                 type="text"
@@ -3043,7 +3043,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Tahun / Tanggal (misal: 2023)"
-                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                                className="px-3 py-1.5 rounded-lg border border-stone-300"
                                               />
                                               <input
                                                 type="text"
@@ -3055,7 +3055,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Judul Momen (misal: Pertemuan Pertama)"
-                                                className="px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                className="px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
                                               />
                                               <input
                                                 type="text"
@@ -3067,7 +3067,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Kota / Lokasi"
-                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                                className="px-3 py-1.5 rounded-lg border border-stone-300"
                                               />
                                             </div>
                                             <textarea
@@ -3080,13 +3080,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 })
                                               }
                                               placeholder="Ceritakan secara singkat momen indah tersebut..."
-                                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                              className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                             />
                                             <div className="flex justify-end">
                                               <button
                                                 type="button"
                                                 onClick={handleAddLoveStoryItem}
-                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                               >
                                                 <Plus className="w-3.5 h-3.5" />
                                                 Tambahkan ke Kisah Kasih
@@ -3099,12 +3099,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 7. EDITOR GALERI FOTO PREWEDDING */}
                                       {sec.key === 'showGallerySection' && (
                                         <div className="space-y-3">
-                                          <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                          <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
                                             Daftar Foto Galeri yang Ditampilkan ({(state.settings.galleryPhotos || []).length})
                                           </p>
 
                                           {(state.settings.galleryPhotos || []).length === 0 ? (
-                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                            <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
                                               Belum ada foto di galeri prewedding. Tambahkan URL foto di bawah untuk menampilkan galeri pada undangan.
                                             </p>
                                           ) : (
@@ -3113,19 +3113,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 (ph) => (
                                                   <div
                                                     key={ph.id}
-                                                    className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-2.5"
+                                                    className="p-2.5 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2.5"
                                                   >
                                                     <div className="flex items-center gap-2.5 min-w-0">
                                                       <img
                                                         src={ph.imageUrl}
                                                         alt={ph.title}
-                                                        className="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0"
+                                                        className="w-11 h-11 rounded-lg object-cover border border-stone-200 shrink-0"
                                                       />
                                                       <div className="min-w-0">
-                                                        <p className="font-bold text-slate-900 truncate">
+                                                        <p className="font-bold text-stone-900 truncate">
                                                           {ph.title}
                                                         </p>
-                                                        <p className="text-[11px] text-slate-500 truncate">
+                                                        <p className="text-[11px] text-stone-500 truncate">
                                                           {ph.caption}
                                                         </p>
                                                       </div>
@@ -3159,7 +3159,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     category: 'Prewedding',
                                                   })
                                                 }
-                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-slate-300 text-slate-700 font-semibold text-[11px]"
+                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-[11px]"
                                               >
                                                 <span>{preset.label}</span>
                                                 <Plus className="w-3 h-3" />
@@ -3168,7 +3168,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           </div>
 
                                           {/* Add Photo Form */}
-                                          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                                          <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2.5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                               <input
                                                 type="text"
@@ -3180,7 +3180,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Judul Foto"
-                                                className="px-3 py-1.5 rounded-lg border border-slate-300 font-semibold"
+                                                className="px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
                                               />
                                               <input
                                                 type="text"
@@ -3192,7 +3192,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   })
                                                 }
                                                 placeholder="Caption Singkat"
-                                                className="px-3 py-1.5 rounded-lg border border-slate-300"
+                                                className="px-3 py-1.5 rounded-lg border border-stone-300"
                                               />
                                             </div>
                                             <input
@@ -3205,13 +3205,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 })
                                               }
                                               placeholder="URL Gambar Foto (https://...)"
-                                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                              className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                             />
                                             <div className="flex justify-end">
                                               <button
                                                 type="button"
                                                 onClick={handleAddGalleryPhotoItem}
-                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                               >
                                                 <Plus className="w-3.5 h-3.5" />
                                                 Tambahkan Foto ke Galeri
@@ -3223,19 +3223,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                       {/* 8. EDITOR FORM RSVP & BUKU TAMU */}
                                       {sec.key === 'showRsvpSection' && (
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-stone-200">
                                           <div>
-                                            <p className="font-bold text-slate-900">
+                                            <p className="font-bold text-stone-900">
                                               Status Form RSVP &amp; Buku Tamu Digital
                                             </p>
-                                            <p className="text-slate-500 mt-0.5">
+                                            <p className="text-stone-500 mt-0.5">
                                               Saat ini tercatat <strong>{state.guests.length} tamu undangan</strong> dan <strong>{state.wishes.length} ucapan doa</strong> yang tampil di buku tamu.
                                             </p>
                                           </div>
                                           <button
                                             type="button"
                                             onClick={() => setActiveTab('guests')}
-                                            className="px-4 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shrink-0"
+                                            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shrink-0"
                                           >
                                             Kelola Tamu &amp; Ucapan ({state.wishes.length})
                                           </button>
@@ -3246,7 +3246,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {sec.key === 'showGiftSection' && (
                                         <div className="space-y-3">
                                           <div className="flex items-center justify-between">
-                                            <p className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
                                               Daftar Rekening &amp; Alamat Kado ({(state.settings.bankAccounts || []).length} Rekening)
                                             </p>
                                             <button
@@ -3264,7 +3264,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 });
                                                 setActiveSettingsModal('bank_account');
                                               }}
-                                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                             >
                                               <Plus className="w-3.5 h-3.5" />
                                               Tambah Rekening
@@ -3272,7 +3272,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           </div>
 
                                           {(state.settings.bankAccounts || []).length === 0 ? (
-                                            <p className="text-xs text-slate-500 italic bg-white p-3 rounded-lg border border-slate-200">
+                                            <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
                                               Belum ada rekening bank/e-wallet. Klik &ldquo;Tambah Rekening&rdquo; untuk menampilkan amplop digital di undangan.
                                             </p>
                                           ) : (
@@ -3281,16 +3281,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 (acc, idx) => (
                                                   <div
                                                     key={acc.id || idx}
-                                                    className="p-3 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-2"
+                                                    className="p-3 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
                                                   >
                                                     <div>
-                                                      <p className="font-bold text-slate-900">
+                                                      <p className="font-bold text-stone-900">
                                                         {acc.bankName} —{' '}
                                                         <span className="font-mono">
                                                           {acc.accountNumber}
                                                         </span>
                                                       </p>
-                                                      <p className="text-slate-500">
+                                                      <p className="text-stone-500">
                                                         a.n. {acc.accountHolder} &bull;{' '}
                                                         {acc.branchOrNote}
                                                       </p>
@@ -3310,7 +3310,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           });
                                                           setActiveSettingsModal('bank_account');
                                                         }}
-                                                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
+                                                        className="p-1.5 rounded-lg hover:bg-[#FAF3E3] text-stone-600 hover:text-[#8B6914]"
                                                       >
                                                         <Edit3 className="w-4 h-4" />
                                                       </button>
@@ -3332,11 +3332,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                           <form
                                             onSubmit={handleSaveSettingsModal}
-                                            className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5"
+                                            className="p-3 rounded-xl bg-white border border-stone-200 space-y-2.5"
                                           >
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                               <div>
-                                                <label className="block font-bold text-slate-700 mb-0.5">
+                                                <label className="block font-bold text-stone-700 mb-0.5">
                                                   Nama Penerima Kado Fisik
                                                 </label>
                                                 <input
@@ -3348,11 +3348,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       giftRecipientName: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                               <div>
-                                                <label className="block font-bold text-slate-700 mb-0.5">
+                                                <label className="block font-bold text-stone-700 mb-0.5">
                                                   Alamat Pengiriman Kado Fisik
                                                 </label>
                                                 <input
@@ -3364,14 +3364,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       giftShippingAddress: e.target.value,
                                                     })
                                                   }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                             </div>
                                             <div className="flex justify-end">
                                               <button
                                                 type="submit"
-                                                className="px-4 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                                                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                               >
                                                 Simpan Alamat Kado
                                               </button>
@@ -3396,21 +3396,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'background' && (
                   <form onSubmit={handleSaveSettingsModal} className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <Sparkles className="w-4 h-4 text-blue-600" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        <Sparkles className="w-4 h-4 text-[#B68D40]" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                           Pengaturan Tema Cerah, Siluet Foto &amp; Efek Transparansi
                         </h3>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                      <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
                         &bull; Pearl Veil {settingsForm.bgOverlayOpacity ?? 88}%
                       </span>
                     </div>
 
                     {/* Quick Preset Selector */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                      <p className="font-bold text-xs text-slate-800">
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                      <p className="font-bold text-xs text-stone-800">
                         Pilih Cepat Preset Background Tema Cerah / Siluet Prewedding:
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -3426,18 +3426,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 pageBgUrl: preset.url,
                               })
                             }
-                            className="p-2.5 rounded-xl bg-white hover:bg-blue-50/50 border border-slate-200 hover:border-blue-400 text-left transition-all flex items-center gap-3"
+                            className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-3"
                           >
                             <img
                               src={preset.url}
                               alt={preset.label}
-                              className="w-11 h-11 rounded-lg object-cover border border-slate-200 shrink-0"
+                              className="w-11 h-11 rounded-lg object-cover border border-[#D4AF37]/30 shrink-0"
                             />
                             <div className="min-w-0">
-                              <p className="font-bold text-xs text-slate-900 truncate">
+                              <p className="font-bold text-xs text-stone-900 truncate">
                                 {preset.label}
                               </p>
-                              <p className="text-[11px] text-blue-600 font-semibold">
+                              <p className="text-[11px] text-[#8B6914] font-semibold">
                                 Gunakan Tema Ini +
                               </p>
                             </div>
@@ -3449,7 +3449,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* 3 URL Inputs */}
                     <div className="space-y-3">
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-stone-700 mb-1">
                           URL Background Sampul Pembuka (Cover)
                         </label>
                         <input
@@ -3458,11 +3458,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onChange={(e) =>
                             setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
                           }
-                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                         />
                       </div>
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-stone-700 mb-1">
                           URL Banner Utama / Siluet Foto Prewedding
                         </label>
                         <input
@@ -3471,11 +3471,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onChange={(e) =>
                             setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
                           }
-                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                         />
                       </div>
                       <div>
-                        <label className="block font-bold text-slate-700 mb-1">
+                        <label className="block font-bold text-stone-700 mb-1">
                           URL Wallpaper Latar Halaman Undangan
                         </label>
                         <input
@@ -3484,19 +3484,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onChange={(e) =>
                             setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
                           }
-                          className="w-full px-3.5 py-2 rounded-lg border border-slate-300"
+                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                         />
                       </div>
                     </div>
 
                     {/* Opacity & Blur */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30">
                         <div className="flex items-center justify-between mb-1">
-                          <label className="font-bold text-slate-800 text-xs">
+                          <label className="font-bold text-stone-800 text-xs">
                             Tingkat Transparansi Putih (Pearl Veil)
                           </label>
-                          <span className="font-mono font-bold text-blue-700 text-xs">
+                          <span className="font-mono font-bold text-[#8B6914] text-xs">
                             {settingsForm.bgOverlayOpacity ?? 88}%
                           </span>
                         </div>
@@ -3511,12 +3511,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               bgOverlayOpacity: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-[#1D63DC]"
+                          className="w-full accent-[#B68D40]"
                         />
                       </div>
 
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                        <label className="block font-bold text-slate-800 text-xs mb-1">
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30">
+                        <label className="block font-bold text-stone-800 text-xs mb-1">
                           Efek Blur Kaca (Glassmorphism)
                         </label>
                         <select
@@ -3527,7 +3527,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
                             })
                           }
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                          className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
                         >
                           <option value="none">Tanpa Blur (Foto Tajam)</option>
                           <option value="sm">Blur Halus (Rekomendasi)</option>
@@ -3537,10 +3537,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-2 border-t border-slate-100">
+                    <div className="flex justify-end pt-2 border-t border-stone-100">
                       <button
                         type="submit"
-                        className="px-6 py-2 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs shadow-xs"
+                        className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                       >
                         Simpan Tema &amp; Background
                       </button>
@@ -3553,34 +3553,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'jadwal' && (
                   <div className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <Calendar className="w-4 h-4 text-blue-600" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        <Calendar className="w-4 h-4 text-[#B68D40]" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                           Pengaturan Waktu Countdown &amp; Rangkaian Acara Mandiri
                         </h3>
                       </div>
                       <button
                         type="button"
                         onClick={() => openSettingsPopup('countdown')}
-                        className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#1D63DC] border border-blue-200 font-bold text-xs"
+                        className="px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-xs"
                       >
                         Ubah Countdown
                       </button>
                     </div>
 
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-stone-100">
                       {/* Row Countdown Utama */}
                       <div className="py-3.5 flex items-center justify-between gap-4">
                         <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <Clock className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900">
+                            <p className="font-bold text-stone-900">
                               Target Waktu Countdown Hari-H &amp; Biston
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-stone-500">
                               Pemberkatan: <span className="font-mono font-semibold">{(state.settings.weddingDatetime || '').slice(0, 16).replace('T', ' ')}</span> &bull; Acara 1: <span className="font-mono font-semibold">{(state.settings.bistonDatetime || '').slice(0, 16).replace('T', ' ')}</span>
                             </p>
                           </div>
@@ -3588,7 +3588,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => openSettingsPopup('countdown')}
-                          className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs shrink-0"
+                          className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
                         >
                           Edit Waktu
                         </button>
@@ -3631,17 +3631,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-[#FAF8F5] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
                                 <Calendar className="w-4 h-4" />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="font-bold text-slate-900">{ev.title}</p>
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
+                                  <p className="font-bold text-stone-900">{ev.title}</p>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
                                     {ev.badge}
                                   </span>
                                 </div>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-stone-500">
                                   {ev.date} &bull; {ev.time} &bull; {ev.venue}
                                 </p>
                               </div>
@@ -3665,7 +3665,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   handleToggleSectionSwitch(ev.showKey, ev.title)
                                 }
                                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                  isShown ? 'bg-emerald-600' : 'bg-slate-300'
+                                  isShown ? 'bg-[#B68D40]' : 'bg-stone-300'
                                 }`}
                               >
                                 <span
@@ -3677,7 +3677,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => openSettingsPopup(ev.modal)}
-                                className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                                className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
                               >
                                 Edit Jadwal
                               </button>
@@ -3695,21 +3695,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {settingsMenuTab === 'keamanan' && !isPanitia && (
                   <div className="space-y-5 text-xs sm:text-sm">
                     <div className="flex items-center gap-2.5">
-                      <Shield className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                      <Shield className="w-4 h-4 text-[#B68D40]" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                         Pengaturan Profil &amp; Keamanan Akun Sistem
                       </h3>
                     </div>
 
-                    {/* Wira Satya 96 Blue Pill Sub-Tabs */}
-                    <div className="p-1.5 rounded-xl bg-slate-100 grid grid-cols-2 gap-1.5">
+                    {/* Champagne Gold Pill Sub-Tabs */}
+                    <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
                         onClick={() => setKeamananSubTab('utama')}
                         className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                           keamananSubTab === 'utama'
-                            ? 'bg-[#1D63DC] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
                         <KeyRound className="w-3.5 h-3.5" />
@@ -3720,8 +3720,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setKeamananSubTab('panitia')}
                         className={`py-2.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                           keamananSubTab === 'panitia'
-                            ? 'bg-[#1D63DC] text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
                         }`}
                       >
                         <Users className="w-3.5 h-3.5" />
@@ -3732,16 +3732,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* SUB-TAB 1: 4 AKUN UTAMA */}
                     {keamananSubTab === 'utama' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                          <span className="text-xs text-slate-500">
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                          <span className="text-xs text-stone-500">
                             Status proteksi otorisasi perubahan kredensial akun utama
                           </span>
-                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px]">
+                          <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
                             &bull; Terproteksi Superadmin
                           </span>
                         </div>
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-stone-100">
                           {defaultSystemUsers.map((u) => (
                             <div
                               key={u.id}
@@ -3752,13 +3752,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   <KeyRound className="w-4 h-4" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-900">
+                                  <p className="font-bold text-stone-900">
                                     {u.nama}{' '}
-                                    <span className="font-mono text-xs text-slate-500 font-normal">
+                                    <span className="font-mono text-xs text-stone-500 font-normal">
                                       (@{u.username})
                                     </span>
                                   </p>
-                                  <p className="text-[11px] text-slate-500 truncate">
+                                  <p className="text-[11px] text-stone-500 truncate">
                                     {u.jabatan} &bull; Hak Akses Penuh (Termasuk Budgeting)
                                   </p>
                                 </div>
@@ -3771,7 +3771,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleSelectDefaultUserForEdit(u)}
-                                  className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                                  className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
                                 >
                                   Ubah Password
                                 </button>
@@ -3785,8 +3785,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* SUB-TAB 2: AKUN PANITIA / WO */}
                     {keamananSubTab === 'panitia' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                          <span className="text-xs text-slate-500">
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                          <span className="text-xs text-stone-500">
                             Akun panitia otomatis terkunci dari tab Anggaran &amp; Revisi Vendor
                           </span>
                           <button
@@ -3799,7 +3799,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setPanitiaPassword('');
                               setActiveSettingsModal('panitia_user');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1D63DC] hover:bg-blue-700 text-white font-bold text-xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Tambah Panitia
@@ -3807,28 +3807,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
 
                         {panitiaUsers.length === 0 ? (
-                          <div className="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                          <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
                             Belum ada akun Panitia / WO tambahan. Klik <strong>+ Tambah Panitia</strong> di kanan atas untuk membuat akun panitia.
                           </div>
                         ) : (
-                          <div className="divide-y divide-slate-100">
+                          <div className="divide-y divide-stone-100">
                             {panitiaUsers.map((pu) => (
                               <div
                                 key={pu.id}
                                 className="py-3.5 flex items-center justify-between gap-4"
                               >
                                 <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                                  <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
                                     <UserPlus className="w-4 h-4" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="font-bold text-slate-900">
+                                    <p className="font-bold text-stone-900">
                                       {pu.nama}{' '}
-                                      <span className="font-mono text-xs text-slate-500 font-normal">
+                                      <span className="font-mono text-xs text-stone-500 font-normal">
                                         (@{pu.username})
                                       </span>
                                     </p>
-                                    <p className="text-[11px] text-slate-500">
+                                    <p className="text-[11px] text-stone-500">
                                       {pu.jabatan} &bull;{' '}
                                       <span className="text-rose-600 font-semibold">
                                         Non-Budgeting
@@ -3851,7 +3851,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       setPanitiaPassword('');
                                       setActiveSettingsModal('panitia_user');
                                     }}
-                                    className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
                                   >
                                     Edit
                                   </button>
@@ -3879,10 +3879,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'database' && (
                   <div className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        <FileSpreadsheet className="w-4 h-4 text-[#B68D40]" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
                           Database Lokal, Sinkronisasi &amp; Backup Data
                         </h3>
                       </div>
@@ -3891,18 +3891,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-stone-100">
                       {/* Backup JSON */}
                       <div className="py-3.5 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <FileJson className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900">
+                            <p className="font-bold text-stone-900">
                               Backup &amp; Restore Database Lengkap (.JSON)
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-stone-500">
                               Unduh seluruh data aplikasi atau pulihkan dari file JSON
                             </p>
                           </div>
@@ -3918,14 +3918,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               );
                               showToast('Backup JSON lengkap berhasil diunduh!');
                             }}
-                            className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs"
+                            className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
                           >
                             Export JSON
                           </button>
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                            className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                           >
                             Import JSON
                           </button>
@@ -3946,10 +3946,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <FileSpreadsheet className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900">
+                            <p className="font-bold text-stone-900">
                               Ekspor Tabel ke Spreadsheet (.CSV Excel)
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-stone-500">
                               Unduh data Checklist, Daftar Tamu, atau Anggaran dalam format CSV
                             </p>
                           </div>
@@ -3965,7 +3965,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               );
                               showToast('Tasks.csv berhasil diunduh!');
                             }}
-                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                            className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
                           >
                             CSV Checklist
                           </button>
@@ -3979,7 +3979,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               );
                               showToast('Guests.csv berhasil diunduh!');
                             }}
-                            className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                            className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
                           >
                             CSV Tamu
                           </button>
@@ -3994,7 +3994,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 );
                                 showToast('Budget.csv berhasil diunduh!');
                               }}
-                              className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                              className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
                             >
                               CSV Anggaran
                             </button>
@@ -4005,16 +4005,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       {/* Sinkronisasi Arsip Spreadsheet */}
                       <div className="py-3.5 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <RefreshCw
                               className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
                             />
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900">
+                            <p className="font-bold text-stone-900">
                               Sinkronisasi Arsip Google Sheets ke DB Lokal
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-stone-500">
                               Tarik ulang pembaruan dari arsip spreadsheet ke database lokal
                             </p>
                           </div>
@@ -4023,7 +4023,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           type="button"
                           onClick={handleTriggerSyncSheets}
                           disabled={isSyncingSheets}
-                          className="px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#1D63DC] font-bold text-xs shrink-0 disabled:opacity-50"
+                          className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
                         >
                           {isSyncingSheets ? 'Menyinkronkan...' : 'Tarik Data'}
                         </button>
@@ -4037,10 +4037,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <RotateCcw className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900">
+                              <p className="font-bold text-stone-900">
                                 Reset ke Data Awal (Seed Default)
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-stone-500">
                                 Kembalikan pengaturan ke kondisi awal sistem
                               </p>
                             </div>
@@ -4067,31 +4067,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       </main>
 
       {/* =======================================================================
-          MODAL 1 (LINKEDIN STYLE): TAMBAH / EDIT TUGAS CHECKLIST
+          MODAL 1: TAMBAH / EDIT TUGAS CHECKLIST
          ======================================================================= */}
       {editingTask && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
-            {/* LinkedIn Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+              <h3 className="text-lg font-bold text-stone-900">
                 {editingTask.id ? 'Edit Tugas Kesiapan' : 'Tambahkan Tugas Kesiapan'}
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingTask(null)}
-                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* LinkedIn Modal Body */}
+            {/* Modal Body */}
             <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-              <p className="text-xs text-slate-500">* Wajib diisi</p>
+              <p className="text-xs text-stone-500">* Wajib diisi</p>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-stone-700 mb-1">
                   Judul Tugas Kesiapan*
                 </label>
                 <input
@@ -4101,14 +4101,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setEditingTask({ ...editingTask, title: e.target.value })
                   }
                   placeholder="Misal: Pelunasan Katering / Gladi Bersih Pemberkatan"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none text-slate-900"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:border-[#B68D40] focus:outline-none text-stone-900"
                 />
               </div>
 
-              {/* LinkedIn-style "Disarankan berdasarkan..." pill box */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+              {/* Suggestion Pill Box */}
+              <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-xs text-slate-800">
+                  <p className="font-bold text-xs text-stone-800">
                     Disarankan berdasarkan jadwal pernikahan Anda
                   </p>
                 </div>
@@ -4131,10 +4131,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           timelinePhase: sug.phase,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs transition-all"
                     >
                       <span>{sug.title}</span>
-                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                      <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                     </button>
                   ))}
                 </div>
@@ -4142,7 +4142,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Kategori Domain*
                   </label>
                   <select
@@ -4153,7 +4153,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         category: e.target.value as TaskCategory,
                       })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-stone-300 bg-white"
                   >
                     {TASK_CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -4164,7 +4164,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Fase Timeline*
                   </label>
                   <select
@@ -4175,7 +4175,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         timelinePhase: e.target.value as TimelinePhase,
                       })
                     }
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2.5 rounded-lg border border-stone-300 bg-white"
                   >
                     {TIMELINE_PHASES.map((p) => (
                       <option key={p} value={p}>
@@ -4188,18 +4188,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Tenggat Waktu</label>
+                  <label className="block font-medium text-stone-700 mb-1">Tenggat Waktu</label>
                   <input
                     type="date"
                     value={editingTask.due || '2026-12-01'}
                     onChange={(e) =>
                       setEditingTask({ ...editingTask, due: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Prioritas</label>
+                  <label className="block font-medium text-stone-700 mb-1">Prioritas</label>
                   <select
                     value={editingTask.priority || 'Tinggi'}
                     onChange={(e) =>
@@ -4208,7 +4208,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         priority: e.target.value as TaskPriority,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Tinggi">Tinggi</option>
                     <option value="Sedang">Sedang</option>
@@ -4216,7 +4216,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">PIC / Penanggung Jawab</label>
+                  <label className="block font-medium text-stone-700 mb-1">PIC / Penanggung Jawab</label>
                   <select
                     value={editingTask.owner || 'Bersama'}
                     onChange={(e) =>
@@ -4225,7 +4225,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         owner: e.target.value as TaskOwner,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Saya">Saya</option>
                     <option value="Calon">Calon</option>
@@ -4237,7 +4237,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">Catatan Tambahan</label>
+                <label className="block font-medium text-stone-700 mb-1">Catatan Tambahan</label>
                 <textarea
                   rows={2}
                   value={editingTask.notes || ''}
@@ -4245,13 +4245,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setEditingTask({ ...editingTask, notes: e.target.value })
                   }
                   placeholder="Catatan detail berkas atau koordinasi..."
-                  className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                  className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                 />
               </div>
             </div>
 
-            {/* LinkedIn Modal Footer */}
-            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -4264,7 +4264,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setEditingTask(null);
                   showToast('Tugas kesiapan berhasil disimpan!');
                 }}
-                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
               >
                 Simpan
               </button>
@@ -4274,13 +4274,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 2 (LINKEDIN STYLE): TAMBAH / EDIT VENDOR & REVISI ANGGARAN
+          MODAL 2: TAMBAH / EDIT VENDOR & REVISI ANGGARAN
          ======================================================================= */}
       {editingBudget && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+            <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+              <h3 className="text-lg font-bold text-stone-900">
                 {editingBudget.id
                   ? 'Edit & Revisi Anggaran Vendor'
                   : 'Tambahkan Pos Anggaran / Vendor'}
@@ -4288,17 +4288,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setEditingBudget(null)}
-                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-              <p className="text-xs text-slate-500">* Wajib diisi</p>
+              <p className="text-xs text-stone-500">* Wajib diisi</p>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-stone-700 mb-1">
                   Nama Kebutuhan / Paket Vendor*
                 </label>
                 <input
@@ -4308,13 +4308,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setEditingBudget({ ...editingBudget, itemName: e.target.value })
                   }
                   placeholder="Misal: Katering Resepsi Utama 500 Pax"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:border-[#B68D40] focus:outline-none"
                 />
               </div>
 
               {/* Quick Suggestions Box */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                <p className="font-bold text-xs text-slate-800">
+              <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                <p className="font-bold text-xs text-stone-800">
                   Disarankan berdasarkan komponen anggaran pernikahan
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -4338,10 +4338,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           actualCost: editingBudget.actualCost || sug.est,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs transition-all"
                     >
                       <span>{sug.itemName}</span>
-                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                      <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                     </button>
                   ))}
                 </div>
@@ -4349,7 +4349,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Kategori*</label>
+                  <label className="block font-medium text-stone-700 mb-1">Kategori*</label>
                   <select
                     value={editingBudget.category || 'Katering & Jamuan'}
                     onChange={(e) =>
@@ -4358,7 +4358,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         category: e.target.value as VendorCategory,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     {VENDOR_CATEGORIES.map((vc) => (
                       <option key={vc} value={vc}>
@@ -4368,7 +4368,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Nama Vendor</label>
+                  <label className="block font-medium text-stone-700 mb-1">Nama Vendor</label>
                   <input
                     type="text"
                     value={editingBudget.vendorName || ''}
@@ -4376,14 +4376,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setEditingBudget({ ...editingBudget, vendorName: e.target.value })
                     }
                     placeholder="Misal: PT Katering Nusantara"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Estimasi Awal (Rp)*</label>
+                  <label className="block font-medium text-stone-700 mb-1">Estimasi Awal (Rp)*</label>
                   <input
                     type="number"
                     value={editingBudget.estimatedCost ?? 0}
@@ -4393,11 +4393,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         estimatedCost: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Realisasi / Revisi (Rp)*
                   </label>
                   <input
@@ -4409,11 +4409,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         actualCost: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Sudah Dibayar (Rp)</label>
+                  <label className="block font-medium text-stone-700 mb-1">Sudah Dibayar (Rp)</label>
                   <input
                     type="number"
                     value={editingBudget.paidAmount ?? 0}
@@ -4423,14 +4423,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         paidAmount: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Status Pembayaran</label>
+                  <label className="block font-medium text-stone-700 mb-1">Status Pembayaran</label>
                   <select
                     value={editingBudget.paymentStatus || 'BELUM_DP'}
                     onChange={(e) =>
@@ -4439,7 +4439,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         paymentStatus: e.target.value as VendorPaymentStatus,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="BELUM_DP">BELUM DP</option>
                     <option value="DP_TERBAYAR">DP TERBAYAR</option>
@@ -4448,18 +4448,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Jatuh Tempo</label>
+                  <label className="block font-medium text-stone-700 mb-1">Jatuh Tempo</label>
                   <input
                     type="date"
                     value={editingBudget.dueDate || '2026-12-01'}
                     onChange={(e) =>
                       setEditingBudget({ ...editingBudget, dueDate: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Kontak Vendor</label>
+                  <label className="block font-medium text-stone-700 mb-1">Kontak Vendor</label>
                   <input
                     type="text"
                     value={editingBudget.vendorContact || ''}
@@ -4467,13 +4467,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setEditingBudget({ ...editingBudget, vendorContact: e.target.value })
                     }
                     placeholder="0812xxxx"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-stone-700 mb-1">
                   Catatan Revisi Anggaran (Alasan Perubahan)
                 </label>
                 <input
@@ -4483,12 +4483,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setEditingBudget({ ...editingBudget, revisionNote: e.target.value })
                   }
                   placeholder="Misal: Penambahan 100 porsi pondokan / diskon vendor"
-                  className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                  className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
+            <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -4500,7 +4500,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setEditingBudget(null);
                   showToast('Data anggaran & revisi vendor berhasil disimpan!');
                 }}
-                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
               >
                 Simpan
               </button>
@@ -4510,29 +4510,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 3 (LINKEDIN STYLE): TAMBAH / EDIT TAMU UNDANGAN
+          MODAL 3: TAMBAH / EDIT TAMU UNDANGAN
          ======================================================================= */}
       {editingGuest && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+            <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+              <h3 className="text-lg font-bold text-stone-900">
                 {editingGuest.id ? 'Edit Data Tamu Undangan' : 'Tambahkan Tamu Undangan'}
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingGuest(null)}
-                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-              <p className="text-xs text-slate-500">* Wajib diisi</p>
+              <p className="text-xs text-stone-500">* Wajib diisi</p>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-stone-700 mb-1">
                   Nama Lengkap &amp; Gelar / Pangkat*
                 </label>
                 <input
@@ -4542,13 +4542,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setEditingGuest({ ...editingGuest, guestName: e.target.value })
                   }
                   placeholder="Contoh: Bpk. Ir. Budi Santoso & Ibu"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 focus:border-slate-900 focus:outline-none font-semibold"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:border-[#B68D40] focus:outline-none font-semibold"
                 />
               </div>
 
-              {/* LinkedIn-style Quick Preset Chips for Guest Category & Priority */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                <p className="font-bold text-xs text-slate-800">
+              {/* Quick Preset Chips for Guest Category & Priority */}
+              <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                <p className="font-bold text-xs text-stone-800">
                   Disarankan berdasarkan kategori tamu undangan
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -4570,10 +4570,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           invitationFormat: preset.format,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs transition-all"
                     >
                       <span>{preset.label}</span>
-                      <Plus className="w-3.5 h-3.5 text-slate-600" />
+                      <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                     </button>
                   ))}
                 </div>
@@ -4581,7 +4581,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Jabatan / Instansi / Satker
                   </label>
                   <input
@@ -4591,11 +4591,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setEditingGuest({ ...editingGuest, institution: e.target.value })
                     }
                     placeholder="Misal: Bareskrim Polri / Keluarga Besar"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     No. WhatsApp / Kontak
                   </label>
                   <input
@@ -4605,14 +4605,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setEditingGuest({ ...editingGuest, phone: e.target.value })
                     }
                     placeholder="0812xxxx"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Kategori*</label>
+                  <label className="block font-medium text-stone-700 mb-1">Kategori*</label>
                   <select
                     value={editingGuest.guestType || 'Pejabat/VIP'}
                     onChange={(e) =>
@@ -4621,7 +4621,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         guestType: e.target.value as GuestType,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Pejabat/VIP">Pejabat/VIP</option>
                     <option value="Keluarga">Keluarga</option>
@@ -4631,7 +4631,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Prioritas</label>
+                  <label className="block font-medium text-stone-700 mb-1">Prioritas</label>
                   <select
                     value={editingGuest.priority || 'P1 - VIP'}
                     onChange={(e) =>
@@ -4640,7 +4640,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         priority: e.target.value as GuestPriority,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="P1 - VIP">P1 - VIP</option>
                     <option value="P2 - Utama">P2 - Utama</option>
@@ -4648,7 +4648,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Pihak Pengundang</label>
+                  <label className="block font-medium text-stone-700 mb-1">Pihak Pengundang</label>
                   <select
                     value={editingGuest.side || 'Mempelai Pria'}
                     onChange={(e) =>
@@ -4657,7 +4657,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         side: e.target.value as GuestSide,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Mempelai Pria">Mempelai Pria</option>
                     <option value="Mempelai Wanita">Mempelai Wanita</option>
@@ -4668,7 +4668,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Format Undangan</label>
+                  <label className="block font-medium text-stone-700 mb-1">Format Undangan</label>
                   <select
                     value={editingGuest.invitationFormat || 'Cetak Tebal'}
                     onChange={(e) =>
@@ -4677,7 +4677,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         invitationFormat: e.target.value as InvitationFormat,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Cetak Tebal">Cetak Tebal</option>
                     <option value="Cetak Reguler">Cetak Reguler</option>
@@ -4686,18 +4686,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Kuota Pax</label>
+                  <label className="block font-medium text-stone-700 mb-1">Kuota Pax</label>
                   <input
                     type="number"
                     value={editingGuest.pax ?? 2}
                     onChange={(e) =>
                       setEditingGuest({ ...editingGuest, pax: Number(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">Status RSVP</label>
+                  <label className="block font-medium text-stone-700 mb-1">Status RSVP</label>
                   <select
                     value={editingGuest.rsvpStatus || 'Belum Konfirmasi'}
                     onChange={(e) =>
@@ -4706,7 +4706,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         rsvpStatus: e.target.value as RsvpStatus,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Belum Konfirmasi">Belum Konfirmasi</option>
                     <option value="Hadir">Hadir</option>
@@ -4718,7 +4718,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Alamat / Ruangan
                   </label>
                   <input
@@ -4728,11 +4728,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setEditingGuest({ ...editingGuest, address: e.target.value })
                     }
                     placeholder="Alamat pengiriman undangan cetak"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-stone-700 mb-1">
                     Status Distribusi
                   </label>
                   <select
@@ -4743,7 +4743,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         deliveryStatus: e.target.value as DeliveryStatus,
                       })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg border border-slate-400 bg-white"
+                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
                   >
                     <option value="Belum Disiapkan">Belum Disiapkan</option>
                     <option value="Siap Kirim">Siap Kirim</option>
@@ -4754,7 +4754,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
+            <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -4767,7 +4767,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setEditingGuest(null);
                   showToast('Data tamu berhasil disimpan!');
                 }}
-                className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
               >
                 Simpan
               </button>
@@ -4780,58 +4780,58 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           MODAL 4: GENERATOR TEKS & LINK UNDANGAN WA
          ======================================================================= */}
       {waPreviewGuest && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
           {(() => {
             const generated = generateWhatsAppMessage(waPreviewGuest, state.settings);
             return (
-              <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
-                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
+                <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">
+                    <h3 className="text-lg font-bold text-stone-900">
                       Bagikan Undangan WhatsApp
                     </h3>
-                    <p className="text-xs text-slate-500">{waPreviewGuest.guestName}</p>
+                    <p className="text-xs text-stone-500">{waPreviewGuest.guestName}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setWaPreviewGuest(null)}
-                    className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                    className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <div className="p-6 space-y-4">
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                    <p className="text-[11px] font-bold text-slate-700">
+                  <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-1">
+                    <p className="text-[11px] font-bold text-stone-700">
                       Link Undangan Khusus Tamu Ini:
                     </p>
-                    <p className="font-mono text-xs text-[#0A66C2] break-all">
+                    <p className="font-mono text-xs text-[#8B6914] font-semibold break-all">
                       {generated.inviteUrl}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Preview Pesan Pengantar WhatsApp:
                     </label>
                     <textarea
                       readOnly
                       rows={9}
                       value={generated.messageText}
-                      className="w-full p-3.5 rounded-xl border border-slate-300 bg-slate-50 font-sans text-xs leading-relaxed"
+                      className="w-full p-3.5 rounded-xl border border-stone-300 bg-[#FAF8F5] font-sans text-xs leading-relaxed"
                     />
                   </div>
                 </div>
 
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-2">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(generated.messageText);
                       showToast('Seluruh teks undangan WA berhasil disalin!');
                     }}
-                    className="px-4 py-2 rounded-full border border-slate-400 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     Salin Teks
@@ -4840,7 +4840,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     href={generated.waHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" />
                     Kirim ke WhatsApp
@@ -4853,14 +4853,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 5 (LINKEDIN STYLE): POPUP PENGATURAN UNDANGAN, AKUN & PAGU BUDGET
+          MODAL 5: POPUP PENGATURAN UNDANGAN, AKUN & PAGU BUDGET
          ======================================================================= */}
       {activeSettingsModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden text-xs sm:text-sm">
+        <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">
+            <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+              <h3 className="text-lg font-bold text-stone-900">
                 {activeSettingsModal === 'background' && 'Edit Background & Transparansi'}
                 {activeSettingsModal === 'visibility' && 'Atur Bagian Undangan yang Ditampilkan'}
                 {activeSettingsModal === 'countdown' && 'Edit Waktu Countdown & Subjudul'}
@@ -4883,7 +4883,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveSettingsModal(null)}
-                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -4893,13 +4893,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'background' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     * Gunakan URL gambar dari mana saja atau klik saran tema di bawah
                   </p>
 
-                  {/* LinkedIn Suggestion Box for Background Presets */}
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <p className="font-bold text-xs text-slate-800">
+                  {/* Suggestion Box for Background Presets */}
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
                       Disarankan berdasarkan tema undangan cerah &amp; elegan
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -4915,17 +4915,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               pageBgUrl: preset.url,
                             })
                           }
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs transition-all"
                         >
                           <span>{preset.label}</span>
-                          <Plus className="w-3.5 h-3.5 text-slate-600" />
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       URL Background Sampul Pembuka (Cover)*
                     </label>
                     <input
@@ -4935,12 +4935,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
                       }
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       URL Banner Utama / Foto Siluet Prewedding*
                     </label>
                     <input
@@ -4950,12 +4950,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
                       }
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       URL Wallpaper Halaman Undangan*
                     </label>
                     <input
@@ -4965,17 +4965,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
                       }
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="font-medium text-slate-700">
+                        <label className="font-medium text-stone-700">
                           Kecerahan Transparan (Veil)
                         </label>
-                        <span className="font-mono font-bold text-slate-900">
+                        <span className="font-mono font-bold text-[#8B6914]">
                           {settingsForm.bgOverlayOpacity ?? 88}%
                         </span>
                       </div>
@@ -4990,12 +4990,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             bgOverlayOpacity: Number(e.target.value),
                           })
                         }
-                        className="w-full accent-[#0A66C2]"
+                        className="w-full accent-[#B68D40]"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Efek Blur Kaca (Glassmorphism)
                       </label>
                       <select
@@ -5006,7 +5006,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
                           })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400 bg-white"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
                       >
                         <option value="none">Tanpa Blur (Foto Tajam)</option>
                         <option value="sm">Blur Halus (Rekomendasi)</option>
@@ -5017,10 +5017,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5032,10 +5032,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'visibility' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-3 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     Centang seksi yang ingin ditampilkan pada undangan digital tamu:
                   </p>
-                  <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="divide-y divide-stone-200 border border-[#D4AF37]/30 rounded-xl overflow-hidden">
                     {[
                       { key: 'showQuoteSection' as const, label: 'Kutipan Ayat Suci / Doa Pernikahan' },
                       { key: 'showCoupleSection' as const, label: 'Profil Kedua Mempelai & Orang Tua' },
@@ -5051,9 +5051,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       return (
                         <label
                           key={item.key}
-                          className="px-4 py-3 flex items-center justify-between gap-3 bg-white hover:bg-slate-50 cursor-pointer"
+                          className="px-4 py-3 flex items-center justify-between gap-3 bg-white hover:bg-[#FAF8F5] cursor-pointer"
                         >
-                          <span className="font-semibold text-slate-800">{item.label}</span>
+                          <span className="font-semibold text-stone-800">{item.label}</span>
                           <input
                             type="checkbox"
                             checked={checked}
@@ -5063,17 +5063,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [item.key]: e.target.checked,
                               })
                             }
-                            className="w-4 h-4 accent-[#0A66C2] rounded"
+                            className="w-4 h-4 accent-[#B68D40] rounded"
                           />
                         </label>
                       );
                     })}
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5085,9 +5085,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'countdown' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Waktu Countdown Utama (Hari-H Pemberkatan / Akad)*
                     </label>
                     <input
@@ -5099,11 +5099,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           weddingDatetime: `${e.target.value}:00+07:00`,
                         })
                       }
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Waktu Countdown Acara 1 (Keluarga / Biston)
                     </label>
                     <input
@@ -5115,11 +5115,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           bistonDatetime: `${e.target.value}:00+07:00`,
                         })
                       }
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Subjudul Ringkas (Tampil di Header &amp; Sampul)*
                     </label>
                     <input
@@ -5128,14 +5128,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, subtitle: e.target.value })
                       }
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5168,8 +5168,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   return (
                     <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-slate-500">* Wajib diisi</p>
-                        <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                        <p className="text-xs text-stone-500">* Wajib diisi</p>
+                        <label className="inline-flex items-center gap-2 text-xs font-bold text-stone-800 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={settingsForm[showKey] !== false}
@@ -5179,15 +5179,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [showKey]: e.target.checked,
                               })
                             }
-                            className="w-4 h-4 accent-[#0A66C2] rounded"
+                            className="w-4 h-4 accent-[#B68D40] rounded"
                           />
                           Tampilkan Acara Ini di Undangan
                         </label>
                       </div>
 
                       {/* Quick Suggestions for Event Titles */}
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                        <p className="font-bold text-xs text-slate-800">
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
+                        <p className="font-bold text-xs text-stone-800">
                           Disarankan untuk nama acara pernikahan
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -5204,10 +5204,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               onClick={() =>
                                 setSettingsForm({ ...settingsForm, [titleKey]: t })
                               }
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
                             >
                               <span>{t}</span>
-                              <Plus className="w-3.5 h-3.5" />
+                              <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                             </button>
                           ))}
                         </div>
@@ -5215,7 +5215,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Judul Acara*
                           </label>
                           <input
@@ -5227,11 +5227,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [titleKey]: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400 font-semibold"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300 font-semibold"
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Subjudul Acara
                           </label>
                           <input
@@ -5243,14 +5243,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [subKey]: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Hari &amp; Tanggal (Teks Tampilan)*
                           </label>
                           <input
@@ -5263,11 +5263,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               })
                             }
                             placeholder="Sabtu, 19 Desember 2026"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300"
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Waktu / Jam Pelaksanaan*
                           </label>
                           <input
@@ -5280,13 +5280,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               })
                             }
                             placeholder="09.00 - 11.00 WIB"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block font-medium text-slate-700 mb-1">
+                        <label className="block font-medium text-stone-700 mb-1">
                           Nama Gedung / Gereja / Venue*
                         </label>
                         <input
@@ -5298,12 +5298,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               [venueKey]: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          className="w-full px-3 py-2 rounded-lg border border-stone-300"
                         />
                       </div>
 
                       <div>
-                        <label className="block font-medium text-slate-700 mb-1">
+                        <label className="block font-medium text-stone-700 mb-1">
                           Alamat Lengkap Lokasi*
                         </label>
                         <input
@@ -5315,13 +5315,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               [addrKey]: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                          className="w-full px-3 py-2 rounded-lg border border-stone-300"
                         />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Dresscode Tamu
                           </label>
                           <input
@@ -5333,11 +5333,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [dressKey]: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300"
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-slate-700 mb-1">
+                          <label className="block font-medium text-stone-700 mb-1">
                             Link Google Maps
                           </label>
                           <input
@@ -5349,17 +5349,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 [mapsKey]: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                            className="w-full px-3 py-2 rounded-lg border border-stone-300"
                           />
                         </div>
                       </div>
                     </div>
                   );
                 })()}
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5371,9 +5371,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'couple_groom' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Nama Lengkap &amp; Gelar Mempelai Pria*
                     </label>
                     <input
@@ -5382,12 +5382,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, groomFullName: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Nama Panggilan*
                       </label>
                       <input
@@ -5396,11 +5396,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onChange={(e) =>
                           setSettingsForm({ ...settingsForm, groomNickname: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Pangkat / Gelar / Label
                       </label>
                       <input
@@ -5412,13 +5412,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             groomRankAndTitle: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Instansi / Profesi
                       </label>
                       <input
@@ -5427,23 +5427,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onChange={(e) =>
                           setSettingsForm({ ...settingsForm, groomUnit: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">Kota Asal</label>
+                      <label className="block font-medium text-stone-700 mb-1">Kota Asal</label>
                       <input
                         type="text"
                         value={settingsForm.groomOrigin || ''}
                         onChange={(e) =>
                           setSettingsForm({ ...settingsForm, groomOrigin: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Keterangan Orang Tua Mempelai Pria*
                     </label>
                     <input
@@ -5452,11 +5452,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, groomParents: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       URL Foto Mempelai Pria
                     </label>
                     <input
@@ -5465,14 +5465,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, groomPhotoUrl: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5484,9 +5484,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'couple_bride' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Nama Lengkap &amp; Gelar Mempelai Wanita*
                     </label>
                     <input
@@ -5495,12 +5495,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, brideFullName: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Nama Panggilan*
                       </label>
                       <input
@@ -5509,11 +5509,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onChange={(e) =>
                           setSettingsForm({ ...settingsForm, brideNickname: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Gelar / Label
                       </label>
                       <input
@@ -5522,23 +5522,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onChange={(e) =>
                           setSettingsForm({ ...settingsForm, brideTitle: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">Kota Asal</label>
+                    <label className="block font-medium text-stone-700 mb-1">Kota Asal</label>
                     <input
                       type="text"
                       value={settingsForm.brideOrigin || ''}
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, brideOrigin: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Keterangan Orang Tua Mempelai Wanita*
                     </label>
                     <input
@@ -5547,11 +5547,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, brideParents: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       URL Foto Mempelai Wanita
                     </label>
                     <input
@@ -5560,14 +5560,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, bridePhotoUrl: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5580,8 +5580,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
                   {/* Quick Suggestions for Quotes */}
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <p className="font-bold text-xs text-slate-800">
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
                       Disarankan berdasarkan kutipan ayat pernikahan populer
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -5617,17 +5617,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               quoteVerse: q.verse,
                             })
                           }
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs transition-all"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs transition-all"
                         >
                           <span>{q.source}</span>
-                          <Plus className="w-3.5 h-3.5 text-slate-600" />
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Sumber Ayat / Kutipan*
                     </label>
                     <input
@@ -5636,11 +5636,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Isi Kutipan Ayat Pernikahan*
                     </label>
                     <textarea
@@ -5649,11 +5649,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Kalimat Pembuka Undangan
                     </label>
                     <textarea
@@ -5665,11 +5665,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           invitationOpeningText: e.target.value,
                         })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Kalimat Penutup Undangan
                     </label>
                     <textarea
@@ -5681,14 +5681,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           invitationClosingText: e.target.value,
                         })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5700,10 +5700,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'bank_account' && (
               <form onSubmit={handleSaveBankAccountModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
 
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <p className="font-bold text-xs text-slate-800">
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
                       Disarankan berdasarkan bank &amp; dompet digital
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -5720,17 +5720,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onClick={() =>
                             setBankForm({ ...bankForm, bankName: b.name, type: b.type })
                           }
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
                         >
                           <span>{b.name}</span>
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Nama Bank / E-Wallet*
                     </label>
                     <input
@@ -5741,11 +5741,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         setBankForm({ ...bankForm, bankName: e.target.value })
                       }
                       placeholder="Contoh: BANK BCA"
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-semibold"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Nomor Rekening / Nomor Akun*
                     </label>
                     <input
@@ -5756,11 +5756,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         setBankForm({ ...bankForm, accountNumber: e.target.value })
                       }
                       placeholder="Contoh: 1234567890"
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Atas Nama Pemilik Rekening*
                     </label>
                     <input
@@ -5770,11 +5770,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setBankForm({ ...bankForm, accountHolder: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Keterangan / Cabang
                     </label>
                     <input
@@ -5783,14 +5783,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setBankForm({ ...bankForm, branchOrNote: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5802,9 +5802,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'gift_address' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Nama Penerima Kado Fisik*
                     </label>
                     <input
@@ -5816,11 +5816,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           giftRecipientName: e.target.value,
                         })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Alamat Lengkap Pengiriman Kado*
                     </label>
                     <textarea
@@ -5832,14 +5832,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           giftShippingAddress: e.target.value,
                         })
                       }
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5851,10 +5851,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'budget_cap' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4">
-                  <p className="text-xs text-slate-500">* Wajib diisi</p>
+                  <p className="text-xs text-stone-500">* Wajib diisi</p>
 
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <p className="font-bold text-xs text-slate-800">
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
                       Disarankan berdasarkan skala resepsi pernikahan
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -5870,17 +5870,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onClick={() =>
                             setSettingsForm({ ...settingsForm, totalBudgetCap: opt.val })
                           }
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
                         >
                           <span>{opt.label}</span>
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Target Pagu Anggaran Utama (Rp)*
                     </label>
                     <input
@@ -5894,14 +5894,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           totalBudgetCap: Number(e.target.value),
                         })
                       }
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-400 font-mono font-bold text-base"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 font-mono font-bold text-base"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
                   >
                     Simpan
                   </button>
@@ -5913,13 +5913,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'default_user' && (
               <form onSubmit={handleUpdateDefaultUserForm}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     * Perubahan username/password akun utama wajib konfirmasi pemilik aplikasi
                   </p>
 
                   {/* Pilih Akun Utama */}
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                    <p className="font-bold text-xs text-slate-800">
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
+                    <p className="font-bold text-xs text-stone-800">
                       Pilih akun utama yang ingin diperbarui:
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -5930,8 +5930,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           onClick={() => handleSelectDefaultUserForEdit(u)}
                           className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border font-semibold text-xs transition-all ${
                             selectedDefaultUserId === u.id
-                              ? 'bg-[#0A66C2] text-white border-[#0A66C2]'
-                              : 'bg-white hover:bg-slate-100 border-slate-400 text-slate-700'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                              : 'bg-white hover:bg-[#FAF3E3] border-[#D4AF37]/40 text-[#8B6914]'
                           }`}
                         >
                           <span>@{u.username}</span>
@@ -5942,7 +5942,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Username Baru*
                       </label>
                       <input
@@ -5950,11 +5950,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         required
                         value={secUsername}
                         onChange={(e) => setSecUsername(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Nama Tampilan Akun*
                       </label>
                       <input
@@ -5962,13 +5962,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         required
                         value={secName}
                         onChange={(e) => setSecName(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-stone-700 mb-1">
                       Password Baru (Kosongkan jika hanya mengubah nama/username)
                     </label>
                     <input
@@ -5976,12 +5976,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       value={secNewPassword}
                       onChange={(e) => setSecNewPassword(e.target.value)}
                       placeholder="Minimal 6 karakter"
-                      className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-medium text-amber-900 mb-1">
+                    <label className="block font-medium text-[#8B6914] mb-1">
                       Identitas Konfirmasi Superadmin (Pemilik Aplikasi)*
                     </label>
                     <input
@@ -5990,15 +5990,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       value={secSuperadminConfirm}
                       onChange={(e) => setSecSuperadminConfirm(e.target.value)}
                       placeholder="Masukkan identitas superadmin pemilik aplikasi"
-                      className="w-full px-3.5 py-2 rounded-lg border border-amber-400 bg-amber-50/40 font-mono"
+                      className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
                     />
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
                     disabled={isUpdatingSecurity}
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
                   >
                     {isUpdatingSecurity ? 'Memverifikasi...' : 'Simpan'}
                   </button>
@@ -6010,12 +6010,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'panitia_user' && (
               <form onSubmit={handleUpsertPanitiaForm}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-stone-500">
                     * Akun panitia dapat mengelola Checklist, Tamu &amp; Undangan, namun terkunci dari menu Anggaran (Budgeting).
                   </p>
 
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <p className="font-bold text-xs text-slate-800">
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
                       Disarankan berdasarkan peran kepanitiaan / WO
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -6033,10 +6033,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             setPanitiaNama(role.n);
                             setPanitiaJabatan(role.j);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-400 text-slate-700 font-semibold text-xs"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
                         >
                           <span>{role.n}</span>
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                         </button>
                       ))}
                     </div>
@@ -6044,7 +6044,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Username Login Panitia*
                       </label>
                       <input
@@ -6053,11 +6053,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         value={panitiaUsername}
                         onChange={(e) => setPanitiaUsername(e.target.value)}
                         placeholder="Contoh: panitia_wo"
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Nama Lengkap / Tim*
                       </label>
                       <input
@@ -6066,25 +6066,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         value={panitiaNama}
                         onChange={(e) => setPanitiaNama(e.target.value)}
                         placeholder="Contoh: Koordinator WO"
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Jabatan Kepanitiaan
                       </label>
                       <input
                         type="text"
                         value={panitiaJabatan}
                         onChange={(e) => setPanitiaJabatan(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                       />
                     </div>
                     <div>
-                      <label className="block font-medium text-slate-700 mb-1">
+                      <label className="block font-medium text-stone-700 mb-1">
                         Password Login Panitia {panitiaEditId ? '(Opsional)' : '*'}
                       </label>
                       <input
@@ -6093,16 +6093,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         value={panitiaPassword}
                         onChange={(e) => setPanitiaPassword(e.target.value)}
                         placeholder="Minimal 6 karakter"
-                        className="w-full px-3.5 py-2 rounded-lg border border-slate-400 font-mono"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                       />
                     </div>
                   </div>
                 </div>
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex justify-end">
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
                     type="submit"
                     disabled={isSavingPanitia}
-                    className="px-6 py-2 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
                   >
                     {isSavingPanitia ? 'Menyimpan...' : 'Simpan'}
                   </button>
