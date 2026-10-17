@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
+import { verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, payload } = body;
+
+    // Only SUBMIT_RSVP is public; all other actions require a verified Admin Session
+    if (action !== 'SUBMIT_RSVP') {
+      const adminSession = verifyAdminRequest(req);
+      if (!adminSession) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Akses ditolak (401 Unauthorized). Silakan login sebagai Admin terlebih dahulu.',
+          },
+          { status: 401 }
+        );
+      }
+    }
 
     switch (action) {
       case 'UPSERT_TASK': {

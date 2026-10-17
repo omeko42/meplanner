@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
+import { verifyAdminRequest } from '@/lib/auth';
 import { inferTimelinePhase } from '@/data/seedData';
 import {
   TaskCategory,
@@ -65,6 +66,17 @@ function parseCsvRows(csvText: string): string[][] {
 
 export async function POST(req: NextRequest) {
   try {
+    const adminSession = verifyAdminRequest(req);
+    if (!adminSession) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Akses ditolak (401 Unauthorized). Silakan login sebagai Admin terlebih dahulu.',
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const sheetId =
       body.sheetId ||

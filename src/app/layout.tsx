@@ -6,9 +6,9 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title:
-    'The Wedding of Eko Agung & Jessica — Undangan Digital & Wedding Readiness Tracker (18–19 Des 2026 Semarang)',
+    'My Wedding Manager — All-in-One Wedding Planner & Digital Invitation',
   description:
-    'All-in-One Wedding Planner, Readiness Tracker & Undangan Pernikahan Digital Resmi Briptu Eko Agung Krisdianto, S.Kom. & Jessica Anastasia, S.E. — Biston 18 Desember 2026 & Pemberkatan 19 Desember 2026 di Semarang.',
+    'Aplikasi Manajemen Kesiapan Pernikahan Terpadu (Readiness Tracker, Checklist Bertahap, Budget & Vendor, Generator Undangan WA) & Undangan Digital Online.',
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${inter.className} min-h-screen antialiased`}>
+      <body className={`${inter.className} min-h-screen antialiased bg-[#FAF8F5] text-stone-800`}>
         {children}
       </body>
     </html>

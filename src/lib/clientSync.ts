@@ -15,8 +15,8 @@ import {
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
 
-const STORAGE_KEY = 'my_wedding_manager_state_v1';
-const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v1';
+const STORAGE_KEY = 'my_wedding_manager_state_v2';
+const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
 
 export function getInitialClientState(): WeddingDatabaseSchema {
   if (typeof window !== 'undefined') {

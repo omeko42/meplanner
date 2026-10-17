@@ -1,6 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
-  <rect width="120" height="120" rx="28" fill="#0A192F"/>
-  <circle cx="60" cy="60" r="46" stroke="#C5A059" stroke-width="3" stroke-dasharray="4 3"/>
-  <path d="M60 30C55 24 45 25 45 33C45 41 60 49 60 49C60 49 75 41 75 33C75 25 65 24 60 30Z" fill="#C5A059"/>
-  <text x="60" y="82" text-anchor="middle" fill="#FAF8F5" font-family="Georgia, serif" font-weight="bold" font-size="30">E&amp;J</text>
+  <defs>
+    <linearGradient id="bgPearl" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFDF9" />
+      <stop offset="100%" stop-color="#F5EFE6" />
+    </linearGradient>
+    <linearGradient id="goldRing1" x1="20" y1="35" x2="80" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E5C158" />
+      <stop offset="50%" stop-color="#C5A059" />
+      <stop offset="100%" stop-color="#9A7B38" />
+    </linearGradient>
+    <linearGradient id="goldRing2" x1="45" y1="30" x2="105" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F3D77D" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#A68236" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#bgPearl)" stroke="#D4AF37" stroke-width="3" stroke-opacity="0.45" />
+  <!-- Left Wedding Ring -->
+  <circle cx="48" cy="66" r="22" stroke="url(#goldRing1)" stroke-width="7" fill="none" />
+  <!-- Right Interlocking Wedding Ring -->
+  <circle cx="72" cy="60" r="22" stroke="url(#goldRing2)" stroke-width="7" fill="none" />
+  <!-- Diamond Crown on Right Ring -->
+  <polygon points="72,22 79,30 72,36 65,30" fill="#D4AF37" />
+  <!-- Subtle Sparkle Rays -->
+  <path d="M72 13V18M60 20L63 23M84 20L81 23" stroke="#C5A059" stroke-width="2.5" stroke-linecap="round" />
 </svg>

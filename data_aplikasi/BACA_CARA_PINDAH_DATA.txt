@@ -1,5 +1,5 @@
 ================================================================================
-PETUNJUK DATABASE LOKAL & BACKUP DATA - MY WEDDING MANAGER (EKO & JESSICA)
+PETUNJUK DATABASE LOKAL & BACKUP DATA - MY WEDDING MANAGER
 ================================================================================
 
 Seluruh data dari Google Spreadsheet ("DB Wedding" - Tasks, Guests, Settings)

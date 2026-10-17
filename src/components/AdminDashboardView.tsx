@@ -35,7 +35,9 @@ import {
   RotateCcw,
   X,
   Save,
+  KeyRound,
 } from 'lucide-react';
+import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -339,10 +341,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   }, [state.guests, guestTypeFilter, guestPriorityFilter, guestRsvpFilter, guestSearch]);
 
   // ============================================================================
-  // SETTINGS & BACKUP MODULE STATE
+  // SETTINGS, SECURITY & BACKUP MODULE STATE
   // ============================================================================
   const [settingsForm, setSettingsForm] = useState<WeddingSettings>(state.settings);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [secUsername, setSecUsername] = useState(adminUser.username || 'admin');
+  const [secEmail, setSecEmail] = useState(adminUser.email || 'admin@wedding.id');
+  const [secName, setSecName] = useState(adminUser.nama || 'Administrator Utama');
+  const [secCurrentPassword, setSecCurrentPassword] = useState('');
+  const [secNewPassword, setSecNewPassword] = useState('');
+  const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
 
   const handleSaveSettingsForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,6 +360,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       updatedBy: adminUser.email,
     });
     showToast('Pengaturan konten undangan & sistem berhasil disimpan!');
+  };
+
+  const handleUpdateSecurityForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingSecurity(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: secCurrentPassword,
+          newPassword: secNewPassword,
+          newUsername: secUsername,
+          newEmail: secEmail,
+          newName: secName,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Gagal memperbarui kredensial keamanan Admin.');
+        return;
+      }
+      setSecCurrentPassword('');
+      setSecNewPassword('');
+      showToast(json.message || 'Password & profil keamanan Admin berhasil diperbarui!');
+    } catch {
+      showToast('Terjadi kesalahan saat menghubungi server otentikasi.');
+    } finally {
+      setIsUpdatingSecurity(false);
+    }
   };
 
   const handleTriggerSyncSheets = async () => {
@@ -382,34 +421,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 pb-24">
+    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-24">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-20 sm:bottom-6 right-4 z-50 bg-[#0A192F] text-amber-300 border border-amber-400/50 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold max-w-md animate-bounce">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed bottom-20 sm:bottom-6 right-4 z-50 bg-white text-stone-900 border-2 border-[#D4AF37] px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold max-w-md animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* TOP STICKY HEADER BAR */}
-      <header className="sticky top-0 z-30 bg-[#0A192F] text-white border-b border-amber-400/30 shadow-md">
+      {/* TOP STICKY HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
-            {/* Brand Title */}
+            {/* Brand Title with Neutral Wedding Rings Icon */}
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-serif font-extrabold text-sm shadow-md shrink-0">
-                E&amp;J
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0">
+                <WeddingRingsIcon className="w-6 h-6" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-bold text-sm sm:text-base text-white truncate">
+                  <h1 className="font-serif font-bold text-sm sm:text-base text-stone-900 truncate">
                     {state.settings.siteTitle}
                   </h1>
-                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold">
+                  <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold">
                     <Sparkles className="w-3 h-3" /> All-in-One Planner
                   </span>
                 </div>
-                <p className="text-[11px] text-amber-300/90 truncate">
+                <p className="text-[11px] text-[#9A742B] font-medium truncate">
+                  {state.settings.groomNickname} &amp; {state.settings.brideNickname} &bull;{' '}
                   {state.settings.subtitle}
                 </p>
               </div>
@@ -418,10 +458,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* Right Actions: Local DB Status, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-2 shrink-0">
               <div
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-[11px] font-bold text-emerald-300"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700"
                 title="Database berjalan 100% di Lokal (database/wedding_db.json)"
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="hidden lg:inline">DB Lokal Aktif (wedding_db.json)</span>
                 <span className="lg:hidden">DB Lokal</span>
               </div>
@@ -429,26 +469,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => onSwitchToPublicPreview()}
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-sm transition-all"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs transition-all"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>Lihat Undangan</span>
               </button>
 
-              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-white/15">
+              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
                 <div className="text-right leading-tight">
-                  <p className="text-xs font-bold text-white truncate max-w-[150px]">
+                  <p className="text-xs font-bold text-stone-800 truncate max-w-[150px]">
                     {adminUser.nama}
                   </p>
-                  <p className="text-[10px] text-amber-300">{adminUser.role}</p>
+                  <p className="text-[10px] text-[#9A742B] font-semibold">
+                    {adminUser.email}
+                  </p>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={onLogoutAdmin}
-                className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 transition-colors"
-                title="Keluar dari Mode Admin"
+                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition-colors"
+                title="Keluar dari Sesi Admin"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -456,7 +498,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
 
           {/* MODULE NAVIGATION TABS (Desktop & Mobile Horizontal Scroll) */}
-          <div className="flex items-center gap-1 overflow-x-auto py-2 no-scrollbar border-t border-white/10">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar border-t border-stone-200/70">
             {[
               {
                 id: 'readiness' as AdminModuleTab,
@@ -474,7 +516,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 id: 'budget' as AdminModuleTab,
                 label: 'Budget & Vendor',
                 icon: Wallet,
-                badge: `${ state.budgetItems.length } Item`,
+                badge: `${state.budgetItems.length} Item`,
               },
               {
                 id: 'guests' as AdminModuleTab,
@@ -484,7 +526,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               },
               {
                 id: 'settings' as AdminModuleTab,
-                label: 'Pengaturan & Backup DB',
+                label: 'Pengaturan & Keamanan',
                 icon: Settings,
               },
             ].map((tab) => {
@@ -497,8 +539,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                     active
-                      ? 'bg-amber-400 text-slate-950 shadow-xs'
-                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                      : 'text-stone-600 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -507,8 +549,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span
                       className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
                         active
-                          ? 'bg-slate-950 text-amber-300'
-                          : 'bg-white/10 text-amber-300'
+                          ? 'bg-white/25 text-white'
+                          : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30'
                       }`}
                     >
                       {tab.badge}
@@ -1915,6 +1957,55 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
+              {/* Background Siluet Prewedding & Ayat Kutipan */}
+              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-[#8B6914]">
+                  Tema Visual: Foto Background Siluet Prewedding &amp; Kutipan Ayat
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      URL Foto Background Siluet Prewedding (Hero &amp; Transparansi)
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.heroPrewedUrl || ''}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                      }
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Sumber Kutipan / Ayat
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsForm.quoteSource}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, quoteSource: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Isi Kutipan / Ayat Pernikahan
+                  </label>
+                  <input
+                    type="text"
+                    value={settingsForm.quoteVerse}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, quoteVerse: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
+                  />
+                </div>
+              </div>
+
               {/* Jadwal & Lokasi 3 Acara */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
@@ -2077,20 +2168,124 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   type="button"
                   onClick={async () => {
                     await onResetDefault();
-                    showToast('Data dikembalikan ke seed awal Google Sheet DB Wedding.');
+                    showToast('Data dikembalikan ke seed awal Database Lokal.');
                   }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Reset ke Data Awal (Seed Google Sheet)
+                  Reset ke Data Awal (Seed Default)
                 </button>
 
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-md"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md"
                 >
                   <Save className="w-4 h-4" />
                   Simpan Seluruh Pengaturan Undangan
+                </button>
+              </div>
+            </form>
+
+            {/* Pengaturan Keamanan & Kredensial Login Admin (Server-Side Auth) */}
+            <form
+              onSubmit={handleUpdateSecurityForm}
+              className="bg-white rounded-3xl p-6 shadow-sm border border-[#D4AF37]/40 space-y-5 text-xs sm:text-sm"
+            >
+              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#8B6914]">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
+                      Keamanan Akun &amp; Kredensial Login Admin
+                    </h3>
+                    <p className="text-xs text-stone-500">
+                      Kata sandi dienkripsi dengan algoritma <code className="font-mono">scrypt + HMAC-SHA256</code> dan disimpan di server
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    Username Login
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={secUsername}
+                    onChange={(e) => setSecUsername(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    Email Admin
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={secEmail}
+                    onChange={(e) => setSecEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    Nama Tampilan Admin
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={secName}
+                    onChange={(e) => setSecName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    Kata Sandi Saat Ini (Wajib untuk Konfirmasi) *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={secCurrentPassword}
+                    onChange={(e) => setSecCurrentPassword(e.target.value)}
+                    placeholder="Masukkan kata sandi saat ini"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-stone-700 mb-1">
+                    Kata Sandi Baru (Kosongkan jika tidak ingin ganti sandi)
+                  </label>
+                  <input
+                    type="password"
+                    value={secNewPassword}
+                    onChange={(e) => setSecNewPassword(e.target.value)}
+                    placeholder="Minimal 8 karakter"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={isUpdatingSecurity}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs sm:text-sm shadow-sm disabled:opacity-50"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>
+                    {isUpdatingSecurity
+                      ? 'Memperbarui Kredensial...'
+                      : 'Perbarui Kredensial & Password Admin'}
+                  </span>
                 </button>
               </div>
             </form>

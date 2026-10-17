@@ -17,7 +17,6 @@ import {
 import {
   getInitialClientState,
   saveClientState,
-  getStoredAdminUser,
   saveStoredAdminUser,
 } from '@/lib/clientSync';
 
@@ -37,19 +36,36 @@ function WeddingAppContent() {
     null
   );
 
-  // Hydrate stored admin session & server state on mount
+  // Verify server-side HttpOnly Admin Session & load database state on mount
   useEffect(() => {
-    const storedAdmin = getStoredAdminUser();
-    if (storedAdmin) {
-      setAdminUser(storedAdmin);
-      if (urlMode === 'admin') {
-        setViewMode('ADMIN');
-      }
-    } else if (urlMode === 'admin') {
-      setIsLoginModalOpen(true);
-    }
+    fetch('/api/auth', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) {
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          if (urlMode === 'admin') {
+            setIsLoginModalOpen(true);
+          }
+          return;
+        }
+        const authData = await res.json();
+        if (authData.authenticated && authData.user) {
+          setAdminUser(authData.user);
+          saveStoredAdminUser(authData.user);
+          if (urlMode === 'admin') {
+            setViewMode('ADMIN');
+          }
+        } else if (urlMode === 'admin') {
+          setIsLoginModalOpen(true);
+        }
+      })
+      .catch(() => {
+        if (urlMode === 'admin') {
+          setIsLoginModalOpen(true);
+        }
+      });
 
-    fetch('/api/wedding')
+    fetch('/api/wedding', { cache: 'no-store' })
       .then((res) => res.json())
       .then((resData) => {
         if (resData.success && resData.data) {
@@ -70,6 +86,15 @@ function WeddingAppContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, payload }),
         });
+
+        if (res.status === 401 && action !== 'SUBMIT_RSVP') {
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          setViewMode('PUBLIC');
+          setIsLoginModalOpen(true);
+          return null;
+        }
+
         const json = await res.json();
         if (json.success && json.data) {
           setState(json.data);
@@ -99,7 +124,16 @@ function WeddingAppContent() {
     setViewMode('ADMIN');
   };
 
-  const handleLogoutAdmin = () => {
+  const handleLogoutAdmin = async () => {
+    try {
+      await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'LOGOUT' }),
+      });
+    } catch {
+      // Proceed with local cleanup
+    }
     setAdminUser(null);
     saveStoredAdminUser(null);
     setViewMode('PUBLIC');
@@ -182,11 +216,11 @@ function WeddingAppContent() {
       if (json.success && json.data) {
         setState(json.data);
         saveClientState(json.data);
-        return json.message || 'Sinkronisasi Google Sheets berhasil!';
+        return json.message || 'Sinkronisasi berhasil!';
       }
-      return json.error || 'Gagal melakukan sinkronisasi Google Sheets.';
+      return json.error || 'Gagal melakukan sinkronisasi.';
     } catch {
-      return 'Koneksi ke Google Sheets terputus, menggunakan data tersimpan lokal.';
+      return 'Menggunakan database lokal aktif.';
     }
   };
 
@@ -238,7 +272,6 @@ function WeddingAppContent() {
 
       <AdminLoginModal
         isOpen={isLoginModalOpen}
-        adminUsers={state.adminUsers}
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
@@ -250,7 +283,7 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0A192F] text-amber-300 flex items-center justify-center text-sm font-bold">
+        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex items-center justify-center text-sm font-bold">
           Memuat Undangan &amp; Wedding Readiness System...
         </div>
       }

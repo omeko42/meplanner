@@ -8,6 +8,7 @@ import {
   GuestWish,
   BudgetVendorItem,
   RsvpStatus,
+  AdminUser,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -133,6 +134,20 @@ function getStore(): WeddingDatabaseSchema {
   return globalThis.__weddingGlobalStore;
 }
 
+function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSchema {
+  return {
+    ...store,
+    adminUsers: store.adminUsers.map((u) => ({
+      id: u.id,
+      username: u.username,
+      nama: u.nama,
+      role: u.role,
+      jabatan: u.jabatan,
+      email: u.email,
+    })),
+  };
+}
+
 function formatDateSlash(date: Date = new Date()): string {
   const d = String(date.getDate()).padStart(2, '0');
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -142,7 +157,37 @@ function formatDateSlash(date: Date = new Date()): string {
 
 export const serverStore = {
   getFullState: (): WeddingDatabaseSchema => {
-    return getStore();
+    return sanitizeStoreForClient(getStore());
+  },
+
+  getAdminUsers: (): AdminUser[] => {
+    return getStore().adminUsers;
+  },
+
+  updateAdminUser: (id: string, partial: Partial<AdminUser>): AdminUser => {
+    const store = getStore();
+    const idx = store.adminUsers.findIndex((u) => u.id === id);
+    if (idx >= 0) {
+      store.adminUsers[idx] = {
+        ...store.adminUsers[idx],
+        ...partial,
+      };
+      persistStore(store);
+      return store.adminUsers[idx];
+    }
+    const fallback: AdminUser = {
+      id: id || 'adm-1',
+      username: partial.username || 'admin',
+      nama: partial.nama || 'Administrator Utama',
+      role: partial.role || 'MEMPELAI_PRIA',
+      jabatan: partial.jabatan || 'Superadmin',
+      email: partial.email || 'admin@wedding.id',
+      password: partial.password,
+      passwordHash: partial.passwordHash,
+    };
+    store.adminUsers.unshift(fallback);
+    persistStore(store);
+    return fallback;
   },
 
   getSettings: (): WeddingSettings => {

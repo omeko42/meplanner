@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  ShieldCheck,
   Lock,
   User,
   Eye,
@@ -10,81 +9,91 @@ import {
   X,
   KeyRound,
   AlertCircle,
-  Sparkles,
+  Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 import { AdminUser } from '@/types';
+import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
-  adminUsers: AdminUser[];
   onClose: () => void;
   onLoginSuccess: (user: AdminUser) => void;
 }
 
 export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   isOpen,
-  adminUsers,
   onClose,
   onLoginSuccess,
 }) => {
-  const [identifier, setIdentifier] = useState('agungkrisdianto98@gmail.com');
-  const [password, setPassword] = useState('Nikah2026!');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isLocalDev = process.env.NEXT_PUBLIC_APP_ENV !== 'production';
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanId = identifier.trim().toLowerCase();
-    const cleanPw = password.trim();
+    setErrorMsg('');
+    setIsSubmitting(true);
 
-    const matched = adminUsers.find(
-      (u) =>
-        (u.username.toLowerCase() === cleanId ||
-          u.email.toLowerCase() === cleanId ||
-          u.nama.toLowerCase().includes(cleanId)) &&
-        u.password === cleanPw
-    );
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'LOGIN',
+          identifier: identifier.trim(),
+          password,
+        }),
+      });
 
-    if (!matched) {
-      setErrorMsg(
-        'Username/Email atau Password tidak sesuai. Gunakan akun preset di bawah atau password default: Nikah2026!'
-      );
-      return;
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.user) {
+        setErrorMsg(
+          json.error || 'Email/Username atau Kata Sandi tidak valid. Akses ditolak.'
+        );
+        return;
+      }
+
+      setIdentifier('');
+      setPassword('');
+      onLoginSuccess(json.user as AdminUser);
+    } catch {
+      setErrorMsg('Gagal menghubungi server otentikasi. Periksa koneksi Anda.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setErrorMsg('');
-    onLoginSuccess(matched);
-  };
-
-  const handleQuickLogin = (user: AdminUser) => {
-    setErrorMsg('');
-    onLoginSuccess(user);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-amber-300/70">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#0A192F] via-[#112240] to-[#0A192F] text-white p-6 relative">
+    <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-white/95 backdrop-blur-2xl rounded-3xl max-w-md w-full overflow-hidden shadow-[0_25px_70px_rgba(140,115,75,0.25)] border border-[#D4AF37]/40 text-stone-800">
+        {/* Bright Pearl & Champagne Header */}
+        <div className="bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D8] p-6 relative border-b border-[#D4AF37]/25">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white text-stone-500 hover:text-stone-800 border border-stone-200/80 transition-colors"
+            aria-label="Tutup"
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
-              <ShieldCheck className="w-6 h-6" />
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F7E7CE] to-[#E6C994] border border-[#D4AF37]/50 flex items-center justify-center text-[#8B6914] shadow-xs shrink-0">
+              <WeddingRingsIcon className="w-7 h-7" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Portal Khusus Pengantin &amp; Keluarga
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" /> Otentikasi Terenkripsi
               </span>
-              <h3 className="font-serif text-xl font-bold text-white">
-                Login Wedding Planner
+              <h3 className="font-serif text-xl font-bold text-stone-900">
+                Portal Admin Wedding Planner
               </h3>
             </div>
           </div>
@@ -93,83 +102,93 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs sm:text-sm">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2 text-xs">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2.5 text-xs font-medium">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">
-              Email / Username Admin
+            <label className="block font-bold text-stone-700 mb-1.5">
+              Email atau Username Admin
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 required
+                autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="agungkrisdianto98@gmail.com / admin"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#0A192F] focus:outline-none bg-slate-50 font-medium text-slate-900"
+                placeholder="Masukkan email atau username admin"
+                className="w-full pl-10 pr-3.5 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-stone-900"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Kata Sandi Admin</label>
+            <label className="block font-bold text-stone-700 mb-1.5">
+              Kata Sandi Admin
+            </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi..."
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:border-[#0A192F] focus:outline-none bg-slate-50 font-medium text-slate-900"
+                className="w-full pl-10 pr-10 py-3 rounded-2xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-stone-900"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#0A192F] hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+            disabled={isSubmitting}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-60"
           >
-            <KeyRound className="w-4 h-4" />
-            Masuk ke Dashboard Manajemen Pernikahan
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Memverifikasi Sesi...
+              </>
+            ) : (
+              <>
+                <KeyRound className="w-4 h-4" />
+                Masuk ke Dashboard Manajemen
+              </>
+            )}
           </button>
 
-          {/* 1-Click Quick Access for Bride/Groom & Family */}
-          <div className="pt-3 border-t border-slate-200 space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Akses Cepat (1-Klik Login Pengantin &amp; Panitia):
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              {adminUsers.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(u)}
-                  className="w-full text-left px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/60 flex items-center justify-between gap-2 transition-all"
-                >
-                  <div className="min-w-0">
-                    <p className="font-bold text-xs text-slate-900 truncate">{u.nama}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{u.jabatan}</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-[#0A192F] text-amber-300 text-[10px] font-bold shrink-0">
-                    Masuk
-                  </span>
-                </button>
-              ))}
+          {isLocalDev && (
+            <div className="pt-3 border-t border-stone-200/80 text-[11px] text-stone-500 bg-[#FAF8F5] p-3 rounded-2xl border border-stone-200/60">
+              <p className="font-bold text-stone-700 mb-0.5">
+                Mode Testing Lokal (`.env.local`):
+              </p>
+              <p>
+                User: <code className="font-mono text-stone-800">admin@wedding.id</code>{' '}
+                (atau <code className="font-mono text-stone-800">admin</code>) &bull; Sandi:{' '}
+                <code className="font-mono text-stone-800">WeddingAdmin#2026</code>
+              </p>
+              <p className="text-[10px] text-stone-400 mt-1">
+                Catatan: Kotak info ini hanya muncul di environment lokal dan otomatis disembunyikan pada mode produksi (`NEXT_PUBLIC_APP_ENV=production`).
+              </p>
             </div>
-          </div>
+          )}
         </form>
       </div>
     </div>

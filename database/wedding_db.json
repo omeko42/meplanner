@@ -8,21 +8,22 @@
     "autoRefreshSeconds": 120,
     "googleSheetId": "1aajOKFxFktd56tkE--34gDWcoCWDDF_rOK8Q8_JpnlU",
     "googleSiteUrl": "https://sites.google.com/d/1rgGH3cU_u-eqI3MiDvlc_WZRStWTG1NA/p/1Um8Tc_AAZRuZZ5BdxbqCqWds4qY9QUh3/edit",
-    "groomFullName": "Eko Agung Krisdianto, S.Kom.",
-    "groomNickname": "Eko Agung",
-    "groomRankAndTitle": "Briptu • Personel Bareskrim Polri",
-    "groomUnit": "Bareskrim Polri — Mabes Polri",
-    "groomParents": "Putra Kasih dari Bapak & Ibu Keluarga Besar di Semarang",
+    "groomFullName": "John Doe",
+    "groomNickname": "John",
+    "groomRankAndTitle": "Mempelai Pria",
+    "groomUnit": "Jakarta — Semarang",
+    "groomParents": "Putra Kasih dari Bapak H. Hendra Doe & Ibu Maria",
     "groomOrigin": "Semarang, Jawa Tengah",
-    "groomInstagram": "@omeko11",
+    "groomInstagram": "@johndoe",
     "groomPhotoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
-    "brideFullName": "Jessica Anastasia, S.E.",
-    "brideNickname": "Jessica",
-    "brideTitle": "Sarjana Ekonomi • Jakarta Timur",
-    "brideParents": "Putri Kasih dari Bapak (Alm.) & Ibu Keluarga Besar di Jakarta Timur",
+    "brideFullName": "Jane Doe",
+    "brideNickname": "Jane",
+    "brideTitle": "Mempelai Wanita",
+    "brideParents": "Putri Kasih dari Bapak Robert Doe & Ibu Elena",
     "brideOrigin": "Jakarta Timur, DKI Jakarta",
-    "brideInstagram": "@jessica.anastasia",
+    "brideInstagram": "@janedoe",
     "bridePhotoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    "heroPrewedUrl": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85",
     "event1Title": "Ibadah Biston & Pertemuan Keluarga Besar",
     "event1Subtitle": "Ungkapan Syukur, Ramah Tamah & Doa Persiapan Pernikahan",
     "event1DateLabel": "Jumat, 18 Desember 2026",
@@ -30,7 +31,7 @@
     "event1Venue": "Kediaman Keluarga / Hall Pertemuan Semarang",
     "event1Address": "Jl. Pemuda / Kawasan Simpang Lima, Kota Semarang, Jawa Tengah",
     "event1MapsUrl": "https://maps.google.com/?q=Simpang+Lima+Semarang",
-    "event1Dresscode": "Batik Formal / Busana Rapi Sopan Nuansa Navy & Gold",
+    "event1Dresscode": "Batik Formal / Busana Rapi Sopan Nuansa Putih & Champagne",
     "event2Title": "Ibadah Pemberkatan Nikah Kudus",
     "event2Subtitle": "Peneguhan & Pemberkatan Janji Suci Pernikahan",
     "event2DateLabel": "Sabtu, 19 Desember 2026",
@@ -38,43 +39,43 @@
     "event2Venue": "Gereja Kristen / Katedral Semarang",
     "event2Address": "Jl. Letjen Suprapto No. 32, Kota Lama, Semarang, Jawa Tengah",
     "event2MapsUrl": "https://maps.google.com/?q=Gereja+Blenduk+Kota+Lama+Semarang",
-    "event2Dresscode": "Jas Formal / Kebaya & Batik Nuansa Putih / Champagne",
+    "event2Dresscode": "Jas Formal / Kebaya & Batik Nuansa Putih / Ivory / Champagne",
     "event3Title": "Resepsi Kehormatan & Ramah Tamah",
-    "event3Subtitle": "Perayaan Kasih & Jamuan Kehormatan Keluarga serta Rekan Sejawat",
+    "event3Subtitle": "Perayaan Kasih & Jamuan Kehormatan Keluarga serta Sahabat",
     "event3DateLabel": "Sabtu, 19 Desember 2026",
     "event3TimeLabel": "18.30 WIB – 21.30 WIB",
     "event3Venue": "Grand Ballroom Hotel Padma / Gumaya Tower Semarang",
     "event3Address": "Jl. Sultan Agung / Jl. Gajahmada, Kota Semarang, Jawa Tengah",
     "event3MapsUrl": "https://maps.google.com/?q=Padma+Hotel+Semarang",
-    "event3Dresscode": "PDU / PSR / Jas Lengkap / Batik Berlengan Panjang / Gaun Malam",
+    "event3Dresscode": "Jas Lengkap / Batik Berlengan Panjang / Gaun Formal",
     "quoteVerse": "Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.",
     "quoteSource": "Kolose 3 : 14",
-    "invitationOpeningText": "Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, kami mengundang Bapak/Ibu/Saudara/i serta Komandan dan Rekan Sejawat untuk hadir memberikan doa restu pada rangkaian acara pernikahan kami.",
+    "invitationOpeningText": "Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, kami mengundang Bapak/Ibu/Saudara/i untuk hadir memberikan doa restu pada rangkaian acara pernikahan kami.",
     "invitationClosingText": "Merupakan suatu kehormatan dan kebahagiaan yang mendalam bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.",
-    "giftRecipientName": "Eko Agung Krisdianto, S.Kom.",
-    "giftShippingAddress": "Kediaman Keluarga Besar Eko Agung Krisdianto, Kota Semarang, Jawa Tengah (Konfirmasi via WA)",
+    "giftRecipientName": "John Doe & Jane Doe",
+    "giftShippingAddress": "Kediaman Keluarga Besar di Kota Semarang, Jawa Tengah (Konfirmasi via WhatsApp)",
     "bankAccounts": [
       {
         "id": "bank-1",
         "bankName": "Bank Rakyat Indonesia (BRI)",
-        "accountNumber": "008301098010710",
-        "accountHolder": "EKO AGUNG KRISDIANTO",
-        "branchOrNote": "KC Mabes Polri / Trunojoyo Jakarta Selatan",
+        "accountNumber": "008301000123456",
+        "accountHolder": "JOHN DOE",
+        "branchOrNote": "Rekening Utama Mempelai Pria",
         "type": "BANK"
       },
       {
         "id": "bank-2",
         "bankName": "Bank Central Asia (BCA)",
-        "accountNumber": "5420981234",
-        "accountHolder": "JESSICA ANASTASIA",
-        "branchOrNote": "KCP Jakarta Timur",
+        "accountNumber": "5420123456",
+        "accountHolder": "JANE DOE",
+        "branchOrNote": "Rekening Utama Mempelai Wanita",
         "type": "BANK"
       },
       {
         "id": "bank-3",
         "bankName": "Bank Mandiri",
-        "accountNumber": "1350019801071",
-        "accountHolder": "EKO AGUNG KRISDIANTO",
+        "accountNumber": "1350012345678",
+        "accountHolder": "JOHN DOE",
         "branchOrNote": "KCP Semarang Pemuda",
         "type": "BANK"
       }
@@ -85,28 +86,28 @@
         "dateLabel": "Awal Pertemuan • Jakarta",
         "title": "Perkenalan & Langkah Pertama",
         "location": "Jakarta",
-        "description": "Berawal dari pertemuan sederhana di tengah kesibukan tugas kedinasan di Jakarta, percakapan hangat menumbuhkan keyakinan bahwa Tuhan mempertemukan kami di waktu yang tepat."
+        "description": "Berawal dari pertemuan sederhana di tengah kesibukan aktivitas di Jakarta, percakapan hangat menumbuhkan keyakinan bahwa Tuhan mempertemukan kami di waktu yang tepat."
       },
       {
         "id": "story-2",
         "dateLabel": "Juli 2026 • Jakarta & Semarang",
         "title": "Komitmen Keluarga & Persiapan Berkas",
         "location": "Jakarta Timur & Semarang",
-        "description": "Kedua keluarga besar saling menguatkan komitmen. Kami mulai menata seluruh persiapan administrasi gereja, kependudukan, serta berkas izin kawin di lingkungan Mabes Polri."
+        "description": "Kedua keluarga besar saling menguatkan komitmen. Kami mulai menata seluruh persiapan administrasi gereja, kependudukan, serta berkas persyaratan pernikahan."
       },
       {
         "id": "story-3",
-        "dateLabel": "Oktober 2026 • Mabes Polri",
-        "title": "Pembinaan & Sidang Perkawinan Polri",
-        "location": "Bareskrim Polri, Jakarta",
-        "description": "Mengikuti rangkaian konseling pranikah gereja serta pembinaan dan sidang perkawinan kedinasan Polri sebagai bekal membangun keluarga Bhayangkara yang rukun dan diberkati."
+        "dateLabel": "Oktober 2026 • Konseling Pranikah",
+        "title": "Pembinaan & Persiapan Pernikahan",
+        "location": "Jakarta & Semarang",
+        "description": "Mengikuti rangkaian konseling pranikah serta bimbingan perkawinan sebagai bekal membangun keluarga yang rukun, harmonis, dan diberkati."
       },
       {
         "id": "story-4",
         "dateLabel": "18 – 19 Desember 2026 • Semarang",
         "title": "Biston & Pemberkatan Nikah Kudus",
         "location": "Kota Semarang, Jawa Tengah",
-        "description": "Saat yang dinantikan tiba: mengikat janji suci pernikahan di hadapan Tuhan, keluarga besar, pimpinan, dan seluruh sahabat tercinta di Kota Semarang."
+        "description": "Saat yang dinantikan tiba: mengikat janji suci pernikahan di hadapan Tuhan, keluarga besar, dan seluruh sahabat tercinta di Kota Semarang."
       }
     ],
     "galleryPhotos": [
@@ -127,7 +128,7 @@
       {
         "id": "gal-3",
         "title": "Two Hearts, One Journey",
-        "caption": "Dari Jakarta Timur hingga Semarang, dipersatukan dalam doa.",
+        "caption": "Dari Jakarta hingga Semarang, dipersatukan dalam doa.",
         "imageUrl": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1000&q=80",
         "category": "Momen Bersama"
       },
@@ -155,8 +156,8 @@
     ],
     "musicTitle": "Canon in D & Eternal Blessing (Instrumental Piano)",
     "musicArtist": "Wedding Chamber Orchestra",
-    "updatedAt": "2026-10-17T22:15:00+07:00",
-    "updatedBy": "agungkrisdianto98@gmail.com"
+    "updatedAt": "2026-10-17T23:00:00+07:00",
+    "updatedBy": "admin@wedding.id"
   },
   "tasks": [
     {
@@ -712,12 +713,12 @@
       "priority": "Tinggi",
       "owner": "Bersama",
       "status": "PROSES",
-      "notes": "Grafir nama Eko Agung & Jessica (19.12.2026) serta dekorasi baki hantaran.",
+      "notes": "Grafir nama kedua mempelai (19.12.2026) serta dekorasi baki hantaran.",
       "done": false,
       "doneAt": "",
       "createdAt": "01/10/2026",
       "updatedAt": "17/10/2026",
-      "updatedBy": "agungkrisdianto98@gmail.com"
+      "updatedBy": "admin@wedding.id"
     },
     {
       "id": "v3",
@@ -1097,24 +1098,24 @@
       "invitationCode": "INV-0004",
       "guestName": "Kombes Pol Burhanuddin, S.I.K., M.H.",
       "institution": "Robinopsnal Bareskrim Polri",
-      "relation": "Pimpinan / Rekan Kedinasan Polri",
+      "relation": "Pimpinan / Rekan Kedinasan",
       "rsvpStatus": "Hadir",
       "pax": 2,
-      "message": "Selamat menempuh hidup baru untuk Briptu Eko Agung Krisdianto, S.Kom. dan calon istri. Semoga seluruh persiapan hingga Biston 18 Desember dan Pemberkatan 19 Desember 2026 di Semarang berjalan lancar, serta menjadi keluarga yang selalu diberkati Tuhan YME.",
+      "message": "Selamat menempuh hidup baru untuk kedua mempelai. Semoga seluruh persiapan hingga Biston 18 Desember dan Pemberkatan 19 Desember 2026 di Semarang berjalan lancar, serta menjadi keluarga yang selalu diberkati Tuhan YME.",
       "createdAt": "2026-10-16T19:30:00+07:00",
       "isPinned": true,
-      "replyFromCouple": "Terima kasih banyak Komandan atas doa restu, bimbingan, dan perhatiannya. Mohon doa restu selalu, Komandan."
+      "replyFromCouple": "Terima kasih banyak Komandan atas doa restu, bimbingan, dan perhatiannya. Mohon doa restu selalu."
     },
     {
       "id": "wish-2",
       "guestId": "guest-0007",
       "invitationCode": "INV-0007",
-      "guestName": "Keluarga Besar Staf Robinopsnal Bareskrim Polri",
-      "institution": "Bareskrim Polri",
-      "relation": "Rekan Sejawat Bareskrim",
+      "guestName": "Rekan-Rekan Staf & Sahabat",
+      "institution": "Jakarta & Semarang",
+      "relation": "Rekan Sejawat",
       "rsvpStatus": "Hadir",
       "pax": 8,
-      "message": "Selamat Bro Eko Agung & Kak Jessica! Semoga lancar pemberkatan dan resepsinya di Semarang tanggal 19 Desember 2026. Kami siap hadir meramaikan di Semarang!",
+      "message": "Selamat menempuh hidup baru! Semoga lancar pemberkatan dan resepsinya di Semarang tanggal 19 Desember 2026. Kami siap hadir meramaikan di Semarang!",
       "createdAt": "2026-10-17T10:15:00+07:00",
       "isPinned": true
     },
@@ -1122,12 +1123,12 @@
       "id": "wish-3",
       "guestId": "guest-0005",
       "invitationCode": "INV-0005",
-      "guestName": "Keluarga Besar di Semarang & Jakarta Timur",
+      "guestName": "Keluarga Besar di Semarang & Jakarta",
       "institution": "Keluarga Inti Kedua Mempelai",
       "relation": "Keluarga Besar",
       "rsvpStatus": "Hadir",
       "pax": 15,
-      "message": "Tuhan Yesus memberkati setiap langkah persiapan Eko & Jessica. Kiranya kasih Kristus senantiasa menjadi fondasi rumah tangga kalian berdua selamanya.",
+      "message": "Tuhan memberkati setiap langkah persiapan kedua mempelai. Kiranya kasih senantiasa menjadi fondasi rumah tangga kalian berdua selamanya.",
       "createdAt": "2026-10-17T14:40:00+07:00",
       "isPinned": false
     }
@@ -1175,7 +1176,7 @@
       "paidAmount": 15000000,
       "paymentStatus": "DP_TERBAYAR",
       "dueDate": "2026-12-05",
-      "notes": "Tema Royal Navy, White Lily & Gold Accent.",
+      "notes": "Tema Pearl White, Ivory Lily & Champagne Gold Accent.",
       "updatedAt": "2026-10-17"
     },
     {
@@ -1235,13 +1236,13 @@
       "paidAmount": 8200000,
       "paymentStatus": "LUNAS",
       "dueDate": "2026-11-01",
-      "notes": "Undangan Cetak Tebal untuk Pejabat Utama Bareskrim Polri + 300 pcs souvenir.",
+      "notes": "Undangan Cetak Tebal VIP + 300 pcs souvenir.",
       "updatedAt": "2026-10-17"
     },
     {
       "id": "bgt-8",
       "category": "Akomodasi & Transportasi",
-      "itemName": "Hotel Keluarga Besar Jakarta Timur (3 Malam di Semarang) & Transportasi",
+      "itemName": "Hotel Keluarga Besar (3 Malam di Semarang) & Transportasi",
       "vendorName": "Hotel Santika / Padma Semarang",
       "vendorContact": "024-8413115",
       "pic": "Saya",
@@ -1250,7 +1251,7 @@
       "paidAmount": 7500000,
       "paymentStatus": "DP_TERBAYAR",
       "dueDate": "2026-12-01",
-      "notes": "5 Kamar Keluarga Jakarta Timur (Check-in 17 Des – Check-out 20 Des 2026).",
+      "notes": "5 Kamar Keluarga (Check-in 17 Des – Check-out 20 Des 2026).",
       "updatedAt": "2026-10-17"
     },
     {
@@ -1273,30 +1274,21 @@
     {
       "id": "adm-1",
       "username": "admin",
-      "nama": "Eko Agung Krisdianto, S.Kom.",
+      "nama": "Administrator Utama (Mempelai)",
       "role": "MEMPELAI_PRIA",
-      "jabatan": "Mempelai Pria • Superadmin (Bareskrim Polri)",
-      "email": "agungkrisdianto98@gmail.com",
-      "password": "Nikah2026!"
+      "jabatan": "Superadmin • Mempelai & Keluarga",
+      "email": "admin@wedding.id",
+      "password": "WeddingAdmin#2026"
     },
     {
       "id": "adm-2",
-      "username": "mempelai",
-      "nama": "Jessica Anastasia, S.E.",
-      "role": "MEMPELAI_WANITA",
-      "jabatan": "Mempelai Wanita • Co-Admin",
-      "email": "calon.mempelai@wedding.id",
-      "password": "Nikah2026!"
-    },
-    {
-      "id": "adm-3",
-      "username": "keluarga",
-      "nama": "Koordinator Keluarga & Panitia WO",
+      "username": "panitia",
+      "nama": "Koordinator Keluarga & WO",
       "role": "KOORDINATOR_WO",
-      "jabatan": "Panitia Keluarga & Wedding Organizer Semarang",
+      "jabatan": "Koordinator Acara & Wedding Organizer",
       "email": "panitia@wedding.id",
-      "password": "Nikah2026!"
+      "password": "Panitia#2026"
     }
   ],
-  "lastSyncedAt": "2026-10-17T15:54:03.254Z"
+  "lastSyncedAt": "2026-10-17T16:21:36.906Z"
 }

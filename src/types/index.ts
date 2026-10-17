@@ -242,6 +242,9 @@ export interface WeddingSettings {
   loveStory: LoveStoryItem[];
   galleryPhotos: GalleryPhotoItem[];
 
+  // Hero Prewedding Background Photo
+  heroPrewedUrl?: string;
+
   // Music
   musicTitle: string;
   musicArtist: string;
@@ -263,7 +266,8 @@ export interface AdminUser {
   role: AdminRole;
   jabatan: string;
   email: string;
-  password: string;
+  password?: string;
+  passwordHash?: string;
 }
 
 export interface WeddingDatabaseSchema {
@@ -275,3 +279,4 @@ export interface WeddingDatabaseSchema {
   adminUsers: AdminUser[];
   lastSyncedAt: string;
 }
+
