@@ -19,10 +19,10 @@ import {
 } from '@/data/seedData';
 import { queueSaveStateToSupabase } from '@/lib/supabaseCloud';
 
-const STORAGE_KEY = 'my_wedding_manager_state_v2';
+const STORAGE_KEY = 'my_wedding_manager_state_v3';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
 const VIEW_MODE_KEY = 'my_wedding_manager_view_mode_v2';
-const IDB_NAME = 'my_wedding_manager_idb_v2';
+const IDB_NAME = 'my_wedding_manager_idb_v3';
 const IDB_STORE = 'wedding_state_store';
 const IDB_KEY = 'current_wedding_db';
 
@@ -50,6 +50,17 @@ function normalizeParsedState(
 export function getInitialClientState(): WeddingDatabaseSchema {
   if (typeof window !== 'undefined') {
     try {
+      // Purge legacy v1/v2 cache that contained old seed tasks & guests
+      localStorage.removeItem('my_wedding_manager_state_v1');
+      localStorage.removeItem('my_wedding_manager_state_v2');
+      if ('indexedDB' in window) {
+        try {
+          window.indexedDB.deleteDatabase('my_wedding_manager_idb_v2');
+        } catch {
+          // Ignore
+        }
+      }
+
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<WeddingDatabaseSchema>;
