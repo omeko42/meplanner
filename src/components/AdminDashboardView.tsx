@@ -181,7 +181,7 @@ interface AdminDashboardViewProps {
   onDeleteWish: (id: string) => Promise<void>;
   onUpsertBudget: (item: Partial<BudgetVendorItem> & { itemName: string }) => Promise<void>;
   onDeleteBudget: (id: string) => Promise<void>;
-  onUpdateSettings: (partial: Partial<WeddingSettings>) => Promise<void>;
+  onUpdateSettings: (partial: Partial<WeddingSettings>, silentAutoSave?: boolean) => Promise<void> | void;
   onSyncGoogleSheets: () => Promise<string>;
   onImportBackup: (payload: Partial<WeddingDatabaseSchema>) => Promise<void>;
   onResetDefault: () => Promise<void>;
@@ -618,7 +618,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   }, [state.settings]);
 
-  // Wrapper around setSettingsForm that auto-saves changes after 350ms so Hard Refresh never loses typed work
+  // Wrapper around setSettingsForm that auto-saves changes after 900ms so Hard Refresh never loses typed work
   const setSettingsForm = (
     updater: WeddingSettings | ((prev: WeddingSettings) => WeddingSettings)
   ) => {
@@ -631,11 +631,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         }
         autoSaveTimerRef.current = window.setTimeout(() => {
           isEditingSettingsRef.current = false;
-          void onUpdateSettings({
-            ...next,
-            updatedBy: adminUser.username,
-          });
-        }, 350);
+          void onUpdateSettings({ ...next, updatedBy: adminUser.username }, true);
+        }, 900);
       }
       return next;
     });
@@ -1546,8 +1543,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Compress uploaded image file via HTML5 canvas so large phone/camera photos save cleanly & fast
   const compressImageFileToDataUrl = (
     file: File,
-    maxDimension = 1600,
-    quality = 0.82
+    maxDimension = 1280,
+    quality = 0.78
   ): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -3559,7 +3556,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="space-y-3 text-xs overflow-y-auto">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-stone-700">
-                    SQL Setup Tabel (Jalankan di SQL Editor Supabase):
+                    SQL Setup Multi-Tabel (8 Tabel Relasional + Anti-Timeout 30 Detik):
                   </span>
                   <button
                     type="button"
@@ -3575,6 +3572,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span>{copiedSql ? 'Tersalin!' : 'Copy SQL'}</span>
                   </button>
                 </div>
+                <p className="text-[11px] text-stone-600 leading-relaxed bg-[#FAF8F5] border border-stone-200 rounded-xl p-2.5">
+                  Jalankan SQL ini di <strong>SQL Editor Supabase</strong> untuk membuat 8 tabel terpisah di Schema Visualizer (<code className="font-mono text-[#8B6914]">wedding_settings</code>, <code className="font-mono text-[#8B6914]">wedding_media</code>, <code className="font-mono text-[#8B6914]">wedding_tasks</code>, <code className="font-mono text-[#8B6914]">wedding_guests</code>, <code className="font-mono text-[#8B6914]">wedding_wishes</code>, <code className="font-mono text-[#8B6914]">wedding_budgets</code>, <code className="font-mono text-[#8B6914]">wedding_users</code>, <code className="font-mono text-[#8B6914]">wedding_state</code>) sekaligus menaikkan batas <code className="font-mono text-[#8B6914]">statement_timeout</code> menjadi <strong>30 detik</strong>.
+                </p>
                 <pre className="p-3 rounded-xl bg-stone-900 text-emerald-300 font-mono text-[11px] overflow-x-auto leading-relaxed select-all">
                   {SUPABASE_SETUP_SQL}
                 </pre>

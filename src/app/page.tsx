@@ -44,6 +44,7 @@ function mergePreservingLocalMedia(
 ): WeddingDatabaseSchema {
   const localPlaylist = localState.settings?.musicPlaylist || [];
   const serverPlaylist = serverState.settings?.musicPlaylist;
+  const localOriginalPhotos = localState.settings?.originalPhotos;
 
   const mergedPlaylist = Array.isArray(serverPlaylist)
     ? serverPlaylist.map((track) => {
@@ -62,6 +63,14 @@ function mergePreservingLocalMedia(
     settings: {
       ...serverState.settings,
       ...(mergedPlaylist ? { musicPlaylist: mergedPlaylist } : {}),
+      ...(localOriginalPhotos
+        ? {
+            originalPhotos: {
+              ...localOriginalPhotos,
+              ...(serverState.settings?.originalPhotos || {}),
+            },
+          }
+        : {}),
     },
   };
 }
@@ -161,13 +170,18 @@ function WeddingAppContent() {
       });
 
     (async () => {
-      // 1. Load local cache only for instant initial render before Supabase responds
+      // 1. Load local cache for instant initial render before Supabase responds
       const lsState = getInitialClientState();
       const idbState = await loadClientStateFromIndexedDB();
 
       const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
       const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
       const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
+      const localTime = Math.max(lsTime, idbTime);
+
+      if (isMounted && bestLocal) {
+        setState(bestLocal);
+      }
 
       // 2. Fetch from Supabase Cloud (Primary 100% Main Database)
       const cloudResult = await loadStateFromSupabase();
@@ -176,10 +190,23 @@ function WeddingAppContent() {
       const cloudState = cloudResult.state;
 
       if (cloudState) {
-        // Supabase row exists -> Supabase is 100% the source of truth
-        const merged = mergePreservingLocalMedia(cloudState, bestLocal);
-        setState(merged);
-        saveClientState(merged, false);
+        const cloudTime = new Date(cloudState.lastSyncedAt || 0).getTime() || 0;
+        const isLocalSeedOnly =
+          !bestLocal.lastSyncedAt ||
+          bestLocal.lastSyncedAt === '2026-01-01T00:00:00.000Z';
+
+        if (!isLocalSeedOnly && localTime > cloudTime + 1500) {
+          // Local has a very recent edit that hadn't finished uploading before refresh -> push to Supabase!
+          const merged = mergePreservingLocalMedia(bestLocal, cloudState);
+          setState(merged);
+          saveClientState(merged, false);
+          void saveStateToSupabase(merged);
+        } else {
+          // Supabase is 100% the source of truth
+          const merged = mergePreservingLocalMedia(cloudState, bestLocal);
+          setState(merged);
+          saveClientState(merged, false);
+        }
       } else if (cloudResult.tableExists) {
         // Table exists in Supabase but no 'main' row yet -> initialize Supabase with current clean state
         setState(bestLocal);
@@ -693,7 +720,7 @@ function WeddingAppContent() {
   };
 
   const handleUpdateSettings = useCallback(
-    async (partial: Partial<WeddingSettings>) => {
+    async (partial: Partial<WeddingSettings>, silentAutoSave?: boolean) => {
       setState((prev) => {
         const nextSettings: WeddingSettings = {
           ...prev.settings,
@@ -702,17 +729,19 @@ function WeddingAppContent() {
         };
         return saveClientState({ ...prev, settings: nextSettings }, true);
       });
-      const changedKeys = Object.keys(partial).filter(
-        (k) => k !== 'updatedAt' && k !== 'updatedBy'
-      );
-      appendAuditLog({
-        actor: partial.updatedBy || adminUser?.username || 'admin',
-        module: 'MEMPELAI',
-        action: 'SIMPAN',
-        status: 'SUCCESS',
-        summary: 'Menyimpan perubahan pengaturan & konten undangan ke Supabase',
-        detail: `Field: ${changedKeys.slice(0, 8).join(', ')}`,
-      });
+      if (!silentAutoSave) {
+        const changedKeys = Object.keys(partial).filter(
+          (k) => k !== 'updatedAt' && k !== 'updatedBy'
+        );
+        appendAuditLog({
+          actor: partial.updatedBy || adminUser?.username || 'admin',
+          module: 'MEMPELAI',
+          action: 'SIMPAN',
+          status: 'SUCCESS',
+          summary: 'Menyimpan perubahan pengaturan & konten undangan ke Supabase',
+          detail: `Field: ${changedKeys.slice(0, 8).join(', ')}`,
+        });
+      }
       await mutateServer('UPDATE_SETTINGS', partial);
     },
     [mutateServer, adminUser]

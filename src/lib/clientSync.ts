@@ -172,18 +172,34 @@ export function saveClientState(
   // 1. Always save full state (including high-res photos & uploaded MP3 audio) to IndexedDB (500MB+ capacity)
   void saveClientStateToIndexedDB(syncedState);
 
-  // 2. Also save to localStorage for instant synchronous hydration
+  // 2. Also save to localStorage for instant synchronous hydration (without duplicate originalPhotos)
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(syncedState));
+    const lsSettings: WeddingSettings = {
+      ...syncedState.settings,
+      originalPhotos: undefined,
+      galleryPhotos: (syncedState.settings.galleryPhotos || []).map((g) => ({
+        ...g,
+        originalImageUrl: undefined,
+      })),
+    };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...syncedState, settings: lsSettings })
+    );
   } catch {
     // If localStorage hits 5MB limit due to large base64 audio/images, save a compact copy to localStorage
-    // while IndexedDB holds the complete media payload
+    // while IndexedDB & Supabase Cloud hold the complete media payload
     try {
       const compactSettings: WeddingSettings = {
         ...syncedState.settings,
+        originalPhotos: undefined,
         musicPlaylist: (syncedState.settings.musicPlaylist || []).map((m) =>
-          m.url.startsWith('data:audio/') ? { ...m, url: 'synth:canon-in-d' } : m
+          m.url.startsWith('data:audio/') ? { ...m, url: '/musik/beautiful-in-white.mp3' } : m
         ),
+        galleryPhotos: (syncedState.settings.galleryPhotos || []).map((g) => ({
+          ...g,
+          originalImageUrl: undefined,
+        })),
       };
       localStorage.setItem(
         STORAGE_KEY,
@@ -193,13 +209,13 @@ export function saveClientState(
         })
       );
     } catch {
-      // Ignore secondary quota errors; IndexedDB has the full copy
+      // Ignore secondary quota errors; Supabase & IndexedDB have the full copy
     }
   }
 
-  // 3. When user modifies state (touchTimestamp=true), sync to Supabase Cloud immediately
+  // 3. When user modifies state (touchTimestamp=true), sync to Supabase Cloud with safe debounce
   if (touchTimestamp) {
-    queueSaveStateToSupabase(syncedState, 80);
+    queueSaveStateToSupabase(syncedState, 380);
   }
 
   return syncedState;
@@ -1340,8 +1356,8 @@ export async function exportCroppedPhotoDataUrl(
   imageUrl: string,
   adj: PhotoAdjustment,
   shape: 'circle' | 'banner' | 'portrait' | 'gallery',
-  maxOutputDimension = 1500,
-  quality = 0.88
+  maxOutputDimension = shape === 'circle' ? 640 : shape === 'gallery' ? 920 : 980,
+  quality = shape === 'circle' ? 0.78 : 0.75
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();

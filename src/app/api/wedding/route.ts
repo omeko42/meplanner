@@ -27,9 +27,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await serverStore.reconcileWithSupabase();
     const body = await req.json();
     const { action, payload } = body;
+
+    if (action === 'SUBMIT_RSVP') {
+      await serverStore.reconcileWithSupabase();
+    }
 
     const adminSession = verifyAdminRequest(req);
 

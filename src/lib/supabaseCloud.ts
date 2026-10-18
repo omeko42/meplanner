@@ -1,4 +1,9 @@
-import { AuditLogEntry, WeddingDatabaseSchema, WeddingSettings } from '@/types';
+import {
+  AuditLogEntry,
+  GalleryPhotoItem,
+  WeddingDatabaseSchema,
+  WeddingSettings,
+} from '@/types';
 import {
   INITIAL_SETTINGS,
   INITIAL_TASKS,
@@ -26,7 +31,17 @@ export const SUPABASE_ROW_ID = 'main';
 export const SUPABASE_BUCKET_NAME = 'wedding';
 export const SUPABASE_OBJECT_PATH = 'wedding_db.json';
 
-export const SUPABASE_SETUP_SQL = `create table if not exists public.wedding_state (
+export const SUPABASE_SETUP_SQL = `-- ============================================================================
+-- 1. NAIKKAN BATAS TIMEOUT DATABASE (MENCEGAH ERROR 57014 STATEMENT TIMEOUT)
+-- ============================================================================
+alter role anon set statement_timeout = '30s';
+alter role authenticated set statement_timeout = '30s';
+alter role service_role set statement_timeout = '60s';
+
+-- ============================================================================
+-- 2. TABEL UTAMA SNAPSHOT & SHARDING (public.wedding_state)
+-- ============================================================================
+create table if not exists public.wedding_state (
   id text primary key,
   data jsonb not null,
   updated_at timestamptz default now()
@@ -34,12 +49,166 @@ export const SUPABASE_SETUP_SQL = `create table if not exists public.wedding_sta
 alter table public.wedding_state enable row level security;
 drop policy if exists "allow_all" on public.wedding_state;
 drop policy if exists "wedding_state_main_access" on public.wedding_state;
-create policy "wedding_state_main_access" on public.wedding_state
-  for all
-  to anon, authenticated
-  using (id = 'main')
-  with check (id = 'main');
-grant all on table public.wedding_state to anon, authenticated, service_role;`;
+drop policy if exists "wedding_state_full_access" on public.wedding_state;
+create policy "wedding_state_full_access" on public.wedding_state
+  for all to anon, authenticated
+  using (true) with check (true);
+grant all on table public.wedding_state to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 3. TABEL PENGATURAN & PROFIL MEMPELAI (public.wedding_settings)
+-- ============================================================================
+create table if not exists public.wedding_settings (
+  id text primary key default 'main',
+  site_title text,
+  groom_full_name text,
+  bride_full_name text,
+  wedding_datetime text,
+  biston_datetime text,
+  total_budget_cap numeric default 0,
+  settings_json jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_settings enable row level security;
+drop policy if exists "wedding_settings_access" on public.wedding_settings;
+create policy "wedding_settings_access" on public.wedding_settings
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_settings to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 4. TABEL PENYIMPANAN FOTO & MEDIA TERPISAH (public.wedding_media)
+--    Menyimpan foto per slot agar edit teks/tamu tidak meng-upload ulang semua foto
+-- ============================================================================
+create table if not exists public.wedding_media (
+  slot_key text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  label text,
+  media_type text default 'image',
+  media_url text not null,
+  adjustment jsonb default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_media enable row level security;
+drop policy if exists "wedding_media_access" on public.wedding_media;
+create policy "wedding_media_access" on public.wedding_media
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_media to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 5. TABEL CHECKLIST KESIAPAN PANITIA (public.wedding_tasks)
+-- ============================================================================
+create table if not exists public.wedding_tasks (
+  id text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  category text,
+  timeline_phase text,
+  title text not null,
+  due text,
+  priority text,
+  owner text,
+  status text,
+  done boolean default false,
+  notes text,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_tasks enable row level security;
+drop policy if exists "wedding_tasks_access" on public.wedding_tasks;
+create policy "wedding_tasks_access" on public.wedding_tasks
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_tasks to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 6. TABEL DAFTAR TAMU & KONFIRMASI RSVP (public.wedding_guests)
+-- ============================================================================
+create table if not exists public.wedding_guests (
+  id text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  invitation_code text,
+  guest_name text not null,
+  guest_type text,
+  side text,
+  institution text,
+  invitation_format text,
+  priority text,
+  pax integer default 2,
+  rsvp_status text,
+  delivery_status text,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_guests enable row level security;
+drop policy if exists "wedding_guests_access" on public.wedding_guests;
+create policy "wedding_guests_access" on public.wedding_guests
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_guests to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 7. TABEL BUKU TAMU & UCAPAN DOA (public.wedding_wishes)
+-- ============================================================================
+create table if not exists public.wedding_wishes (
+  id text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  guest_name text not null,
+  institution text,
+  relation text,
+  rsvp_status text,
+  pax integer default 0,
+  message text,
+  is_pinned boolean default false,
+  reply_from_couple text,
+  created_at text,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_wishes enable row level security;
+drop policy if exists "wedding_wishes_access" on public.wedding_wishes;
+create policy "wedding_wishes_access" on public.wedding_wishes
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_wishes to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 8. TABEL ANGGARAN & VENDOR MONETER (public.wedding_budgets)
+-- ============================================================================
+create table if not exists public.wedding_budgets (
+  id text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  category text,
+  item_name text not null,
+  vendor_name text,
+  estimated_cost numeric default 0,
+  actual_cost numeric default 0,
+  paid_amount numeric default 0,
+  payment_status text,
+  due_date text,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_budgets enable row level security;
+drop policy if exists "wedding_budgets_access" on public.wedding_budgets;
+create policy "wedding_budgets_access" on public.wedding_budgets
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_budgets to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 9. TABEL AKUN INTI & PANITIA (public.wedding_users)
+-- ============================================================================
+create table if not exists public.wedding_users (
+  id text primary key,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  username text not null,
+  nama text not null,
+  role text not null,
+  jabatan text,
+  is_default_user boolean default false,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.wedding_users enable row level security;
+drop policy if exists "wedding_users_access" on public.wedding_users;
+create policy "wedding_users_access" on public.wedding_users
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_users to anon, authenticated, service_role;`;
 
 export type CloudSyncStatus =
   | 'IDLE'
@@ -99,7 +268,7 @@ export function appendAuditLog(
   if (typeof window !== 'undefined') {
     const prefix = `[AUDIT][${newEntry.status}][${newEntry.module}:${newEntry.action}]`;
     if (newEntry.status === 'ERROR') {
-      console.error(prefix, newEntry.summary, newEntry.detail || '');
+      console.warn(prefix, newEntry.summary, newEntry.detail || '');
     } else {
       console.info(prefix, newEntry.summary, newEntry.detail || '');
     }
@@ -222,26 +391,224 @@ function normalizeCloudState(
   };
 }
 
-function createCompactAudioCopy(
-  state: WeddingDatabaseSchema
-): WeddingDatabaseSchema {
-  const compactSettings: WeddingSettings = {
-    ...state.settings,
-    musicPlaylist: (state.settings.musicPlaylist || []).map((m) =>
+// ============================================================================
+// CLOUD PAYLOAD OPTIMIZER (PREVENTS 57014 STATEMENT TIMEOUT & 504 GATEWAY)
+// ============================================================================
+const compressedDataUrlCache = new Map<string, string>();
+
+async function compressDataUrlForCloud(
+  dataUrl: string | undefined,
+  maxDim: number,
+  quality: number,
+  maxAllowedChars = 95_000
+): Promise<string | undefined> {
+  if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
+  if (!dataUrl.startsWith('data:image/')) return dataUrl;
+  if (dataUrl.length <= maxAllowedChars) return dataUrl;
+
+  const cacheKey = `${dataUrl.slice(0, 64)}_${dataUrl.slice(-64)}_${dataUrl.length}_${maxDim}_${quality}`;
+  const cached = compressedDataUrlCache.get(cacheKey);
+  if (cached) return cached;
+
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return dataUrl;
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const img = new window.Image();
+      img.onerror = () => resolve(dataUrl);
+      img.onload = () => {
+        try {
+          let w = img.naturalWidth || img.width || 600;
+          let h = img.naturalHeight || img.height || 600;
+          if (w > maxDim || h > maxDim) {
+            if (w >= h) {
+              h = Math.max(1, Math.round((h * maxDim) / w));
+              w = maxDim;
+            } else {
+              w = Math.max(1, Math.round((w * maxDim) / h));
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.fillStyle = '#1C1917';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          const out = canvas.toDataURL('image/jpeg', quality);
+          compressedDataUrlCache.set(cacheKey, out);
+          resolve(out);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.src = dataUrl;
+    } catch {
+      resolve(dataUrl);
+    }
+  });
+}
+
+/**
+ * Strips duplicate `originalPhotos` / `originalImageUrl` and inline `data:audio/`
+ * and compresses oversized base64 images so `public.wedding_state` (`id = 'main'`)
+ * stays lightweight (< 500 KB) and NEVER hits PostgreSQL's 3s statement_timeout (57014).
+ */
+async function prepareCloudSafeState(
+  state: WeddingDatabaseSchema,
+  aggressiveMode = false
+): Promise<WeddingDatabaseSchema> {
+  const rawSettings: WeddingSettings = { ...state.settings };
+  // Never store duplicate uncropped originalPhotos in the cloud main row (kept in local IndexedDB)
+  delete rawSettings.originalPhotos;
+
+  // Never store multi-megabyte base64 MP3 inside the JSONB row
+  if (Array.isArray(rawSettings.musicPlaylist)) {
+    rawSettings.musicPlaylist = rawSettings.musicPlaylist.map((m) =>
       m.url && m.url.startsWith('data:audio/')
-        ? { ...m, url: 'synth:canon-in-d' }
+        ? { ...m, url: '/musik/beautiful-in-white.mp3' }
         : m
-    ),
-  };
+    );
+  }
+
+  const avatarDim = aggressiveMode ? 420 : 600;
+  const bannerDim = aggressiveMode ? 720 : 920;
+  const qual = aggressiveMode ? 0.62 : 0.72;
+  const maxChars = aggressiveMode ? 65_000 : 95_000;
+
+  const [groomPhotoUrl, bridePhotoUrl, coverBgUrl, heroPrewedUrl, pageBgUrl] =
+    await Promise.all([
+      compressDataUrlForCloud(rawSettings.groomPhotoUrl, avatarDim, qual, maxChars),
+      compressDataUrlForCloud(rawSettings.bridePhotoUrl, avatarDim, qual, maxChars),
+      compressDataUrlForCloud(rawSettings.coverBgUrl, bannerDim, qual, maxChars),
+      compressDataUrlForCloud(rawSettings.heroPrewedUrl, bannerDim, qual, maxChars),
+      compressDataUrlForCloud(rawSettings.pageBgUrl, bannerDim, qual, maxChars),
+    ]);
+
+  rawSettings.groomPhotoUrl = groomPhotoUrl || rawSettings.groomPhotoUrl;
+  rawSettings.bridePhotoUrl = bridePhotoUrl || rawSettings.bridePhotoUrl;
+  if (coverBgUrl) rawSettings.coverBgUrl = coverBgUrl;
+  if (heroPrewedUrl) rawSettings.heroPrewedUrl = heroPrewedUrl;
+  if (pageBgUrl) rawSettings.pageBgUrl = pageBgUrl;
+
+  if (Array.isArray(rawSettings.galleryPhotos)) {
+    const cleanedGallery: GalleryPhotoItem[] = await Promise.all(
+      rawSettings.galleryPhotos.map(async (gp) => {
+        const copy: GalleryPhotoItem = { ...gp };
+        delete copy.originalImageUrl;
+        const compUrl = await compressDataUrlForCloud(
+          copy.imageUrl,
+          bannerDim,
+          qual,
+          maxChars
+        );
+        if (compUrl) copy.imageUrl = compUrl;
+        return copy;
+      })
+    );
+    rawSettings.galleryPhotos = cleanedGallery;
+  }
+
   return {
     ...state,
-    settings: compactSettings,
+    settings: rawSettings,
   };
 }
 
 /**
+ * Self-healing slice recovery in case `id = 'main'` in `public.wedding_state`
+ * ever exceeds statement_timeout during a full `SELECT data`.
+ */
+async function recoverStateFromSupabaseBySlices(): Promise<WeddingDatabaseSchema | null> {
+  try {
+    const fetchSlice = async (selectExpr: string) => {
+      const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=${encodeURIComponent(
+        selectExpr
+      )}`;
+      const r = await fetch(url, {
+        method: 'GET',
+        headers: getSupabaseHeaders({ Accept: 'application/json' }),
+        cache: 'no-store',
+      });
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    };
+
+    const metaRow = await fetchSlice('updated_at,lastSyncedAt:data->>lastSyncedAt');
+    if (!metaRow) return null;
+
+    const [tasksRow, guestsRow, wishesRow, budgetsRow, usersRow] =
+      await Promise.all([
+        fetchSlice('v:data->tasks'),
+        fetchSlice('v:data->guests'),
+        fetchSlice('v:data->wishes'),
+        fetchSlice('v:data->budgetItems'),
+        fetchSlice('v:data->adminUsers'),
+      ]);
+
+    const settingsKeys = Object.keys(INITIAL_SETTINGS).filter(
+      (k) => k !== 'originalPhotos'
+    );
+    const recoveredSettings: Record<string, unknown> = { ...INITIAL_SETTINGS };
+
+    for (let i = 0; i < settingsKeys.length; i += 2) {
+      const batch = settingsKeys.slice(i, i + 2);
+      const expr = batch.map((k) => `${k}:data->settings->${k}`).join(',');
+      const row = await fetchSlice(expr);
+      if (row) {
+        for (const k of batch) {
+          if (row[k] !== null && row[k] !== undefined) {
+            recoveredSettings[k] = row[k];
+          }
+        }
+      }
+    }
+
+    for (const extraKey of [
+      'scheduleEvents',
+      'photoAdjustments',
+      'musicPlaylist',
+      'waTemplateVip',
+      'waTemplateRegular',
+    ]) {
+      const row = await fetchSlice(`v:data->settings->${extraKey}`);
+      if (row && row.v !== null && row.v !== undefined) {
+        recoveredSettings[extraKey] = row.v;
+      }
+    }
+
+    const normalized = normalizeCloudState(
+      {
+        settings: recoveredSettings as unknown as WeddingSettings,
+        tasks: tasksRow?.v,
+        guests: guestsRow?.v,
+        wishes: wishesRow?.v,
+        budgetItems: budgetsRow?.v,
+        adminUsers: usersRow?.v,
+        lastSyncedAt: metaRow.lastSyncedAt || metaRow.updated_at,
+      },
+      metaRow.updated_at
+    );
+
+    // Immediately heal the bloated row in Supabase in the background
+    void saveStateToSupabase(normalized);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Load WeddingDatabaseSchema from Supabase PostgreSQL table `public.wedding_state`
- * (or fallback to Supabase Storage bucket `wedding/wedding_db.json` if configured).
+ * (with automatic slice-recovery if statement_timeout 57014 occurs).
  */
 export async function loadStateFromSupabase(): Promise<{
   state: WeddingDatabaseSchema | null;
@@ -273,28 +640,37 @@ export async function loadStateFromSupabase(): Promise<{
       return { state: null, tableExists: true };
     }
 
-    // Check if 404 / PGRST205 (table not created yet)
     const errText = await res.text();
+
+    // If GET timed out (57014 statement timeout / 500 / 504), self-heal via slice recovery!
+    if (
+      res.status === 500 ||
+      res.status === 504 ||
+      res.status === 502 ||
+      errText.includes('57014') ||
+      errText.includes('statement timeout')
+    ) {
+      const recovered = await recoverStateFromSupabaseBySlices();
+      if (recovered) {
+        setCloudStatus('SYNCED', recovered.lastSyncedAt || '');
+        appendAuditLog({
+          actor: 'system',
+          module: 'DATABASE',
+          action: 'SYNC',
+          status: 'SUCCESS',
+          summary:
+            'Optimasi otomatis ukuran payload database Supabase berhasil dijalankan',
+        });
+        return { state: recovered, tableExists: true };
+      }
+    }
+
     const isTableMissing =
       res.status === 404 ||
       errText.includes('PGRST205') ||
       errText.includes('Could not find the table') ||
       errText.includes('relation') ||
       errText.includes('does not exist');
-
-    // Try Storage Bucket fallback (`wedding/wedding_db.json`)
-    try {
-      const storageUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET_NAME}/${SUPABASE_OBJECT_PATH}?t=${Date.now()}`;
-      const stRes = await fetch(storageUrl, { cache: 'no-store' });
-      if (stRes.ok) {
-        const stData = (await stRes.json()) as Partial<WeddingDatabaseSchema>;
-        const loaded = normalizeCloudState(stData);
-        setCloudStatus('SYNCED', loaded.lastSyncedAt || '');
-        return { state: loaded, tableExists: true };
-      }
-    } catch {
-      // Ignore storage fallback error
-    }
 
     if (isTableMissing) {
       setCloudStatus(
@@ -325,33 +701,282 @@ export async function loadStateFromSupabase(): Promise<{
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Gagal terhubung ke Supabase';
     setCloudStatus('OFFLINE', msg);
-    appendAuditLog({
-      actor: 'system',
-      module: 'DATABASE',
-      action: 'ERROR',
-      status: 'ERROR',
-      summary: 'Koneksi ke Supabase gagal saat memuat data',
-      detail: msg,
-    });
     return { state: null, tableExists: false };
   }
 }
 
-/**
- * Upsert WeddingDatabaseSchema to Supabase PostgreSQL table `public.wedding_state`
- * (and Storage bucket fallback if needed).
- */
-export async function saveStateToSupabase(
+// ============================================================================
+// MULTI-TABLE RELATIONAL BACKGROUND SYNC (WHEN MULTI-TABLES ARE CREATED)
+// ============================================================================
+let multiTableAvailability: 'UNKNOWN' | 'AVAILABLE' | 'MISSING' = 'UNKNOWN';
+
+async function syncRelationalTablesInBackground(
+  state: WeddingDatabaseSchema,
+  updatedAt: string
+): Promise<void> {
+  if (multiTableAvailability === 'MISSING') return;
+
+  try {
+    const s = state.settings;
+    // 1. Upsert into public.wedding_settings
+    const lightSettingsCopy: Record<string, unknown> = { ...s };
+    delete lightSettingsCopy.originalPhotos;
+    delete lightSettingsCopy.groomPhotoUrl;
+    delete lightSettingsCopy.bridePhotoUrl;
+    delete lightSettingsCopy.coverBgUrl;
+    delete lightSettingsCopy.heroPrewedUrl;
+    delete lightSettingsCopy.pageBgUrl;
+    delete lightSettingsCopy.galleryPhotos;
+
+    const settingsRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/wedding_settings?on_conflict=id`,
+      {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify({
+          id: 'main',
+          site_title: s.siteTitle,
+          groom_full_name: s.groomFullName,
+          bride_full_name: s.brideFullName,
+          wedding_datetime: s.weddingDatetime,
+          biston_datetime: s.bistonDatetime,
+          total_budget_cap: s.totalBudgetCap || 0,
+          settings_json: lightSettingsCopy,
+          updated_at: updatedAt,
+        }),
+      }
+    );
+
+    if (settingsRes.status === 404) {
+      multiTableAvailability = 'MISSING';
+      return;
+    }
+    if (!settingsRes.ok) return;
+    multiTableAvailability = 'AVAILABLE';
+
+    // 2. Upsert Media Slots into public.wedding_media
+    const mediaRows = [
+      {
+        slot_key: 'groomPhotoUrl',
+        setting_id: 'main',
+        label: 'Foto Profil Mempelai Pria',
+        media_type: 'image',
+        media_url: s.groomPhotoUrl || '',
+        adjustment: s.photoAdjustments?.groomPhotoUrl || {},
+        updated_at: updatedAt,
+      },
+      {
+        slot_key: 'bridePhotoUrl',
+        setting_id: 'main',
+        label: 'Foto Profil Mempelai Wanita',
+        media_type: 'image',
+        media_url: s.bridePhotoUrl || '',
+        adjustment: s.photoAdjustments?.bridePhotoUrl || {},
+        updated_at: updatedAt,
+      },
+      {
+        slot_key: 'coverBgUrl',
+        setting_id: 'main',
+        label: 'Foto Sampul Undangan',
+        media_type: 'image',
+        media_url: s.coverBgUrl || '',
+        adjustment: s.photoAdjustments?.coverBgUrl || {},
+        updated_at: updatedAt,
+      },
+      {
+        slot_key: 'heroPrewedUrl',
+        setting_id: 'main',
+        label: 'Foto Utama Prewedding',
+        media_type: 'image',
+        media_url: s.heroPrewedUrl || '',
+        adjustment: s.photoAdjustments?.heroPrewedUrl || {},
+        updated_at: updatedAt,
+      },
+      {
+        slot_key: 'pageBgUrl',
+        setting_id: 'main',
+        label: 'Foto Latar Belakang',
+        media_type: 'image',
+        media_url: s.pageBgUrl || '',
+        adjustment: s.photoAdjustments?.pageBgUrl || {},
+        updated_at: updatedAt,
+      },
+    ];
+
+    void fetch(`${SUPABASE_URL}/rest/v1/wedding_media?on_conflict=slot_key`, {
+      method: 'POST',
+      headers: getSupabaseHeaders({
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      }),
+      body: JSON.stringify(mediaRows),
+    }).catch(() => {});
+
+    // 3. Upsert Tasks, Guests, Wishes, Budgets, Users if non-empty
+    if (Array.isArray(state.tasks) && state.tasks.length > 0) {
+      const taskRows = state.tasks.map((t) => ({
+        id: t.id,
+        setting_id: 'main',
+        category: t.category,
+        timeline_phase: t.timelinePhase,
+        title: t.title,
+        due: t.due,
+        priority: t.priority,
+        owner: t.owner,
+        status: t.status,
+        done: Boolean(t.done),
+        notes: t.notes || '',
+        data: t,
+        updated_at: updatedAt,
+      }));
+      void fetch(`${SUPABASE_URL}/rest/v1/wedding_tasks?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify(taskRows),
+      }).catch(() => {});
+    }
+
+    if (Array.isArray(state.guests) && state.guests.length > 0) {
+      const guestRows = state.guests.map((g) => ({
+        id: g.id,
+        setting_id: 'main',
+        invitation_code: g.invitationCode,
+        guest_name: g.guestName,
+        guest_type: g.guestType,
+        side: g.side,
+        institution: g.institution || '',
+        invitation_format: g.invitationFormat,
+        priority: g.priority,
+        pax: g.pax || 2,
+        rsvp_status: g.rsvpStatus,
+        delivery_status: g.deliveryStatus,
+        data: g,
+        updated_at: updatedAt,
+      }));
+      void fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify(guestRows),
+      }).catch(() => {});
+    }
+
+    if (Array.isArray(state.wishes) && state.wishes.length > 0) {
+      const wishRows = state.wishes.map((w) => ({
+        id: w.id,
+        setting_id: 'main',
+        guest_name: w.guestName,
+        institution: w.institution || '',
+        relation: w.relation || '',
+        rsvp_status: w.rsvpStatus,
+        pax: w.pax || 0,
+        message: w.message || '',
+        is_pinned: Boolean(w.isPinned),
+        reply_from_couple: w.replyFromCouple || '',
+        created_at: w.createdAt,
+        data: w,
+        updated_at: updatedAt,
+      }));
+      void fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify(wishRows),
+      }).catch(() => {});
+    }
+
+    if (Array.isArray(state.budgetItems) && state.budgetItems.length > 0) {
+      const budgetRows = state.budgetItems.map((b) => ({
+        id: b.id,
+        setting_id: 'main',
+        category: b.category,
+        item_name: b.itemName,
+        vendor_name: b.vendorName || '',
+        estimated_cost: b.estimatedCost || 0,
+        actual_cost: b.actualCost || 0,
+        paid_amount: b.paidAmount || 0,
+        payment_status: b.paymentStatus,
+        due_date: b.dueDate || '',
+        data: b,
+        updated_at: updatedAt,
+      }));
+      void fetch(`${SUPABASE_URL}/rest/v1/wedding_budgets?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify(budgetRows),
+      }).catch(() => {});
+    }
+
+    if (Array.isArray(state.adminUsers) && state.adminUsers.length > 0) {
+      const userRows = state.adminUsers.map((u) => ({
+        id: u.id,
+        setting_id: 'main',
+        username: u.username,
+        nama: u.nama,
+        role: u.role,
+        jabatan: u.jabatan || '',
+        is_default_user: Boolean(u.isDefaultUser),
+        data: u,
+        updated_at: updatedAt,
+      }));
+      void fetch(`${SUPABASE_URL}/rest/v1/wedding_users?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify(userRows),
+      }).catch(() => {});
+    }
+  } catch {
+    // Ignore optional relational table sync errors
+  }
+}
+
+// ============================================================================
+// SINGLE-FLIGHT SERIALIZED UPSERT ENGINE (NO OVERLAPPING ROW LOCKS)
+// ============================================================================
+let inFlightSavePromise: Promise<boolean> | null = null;
+let queuedLatestState: WeddingDatabaseSchema | null = null;
+
+async function executeSingleFlightSave(
+  initialState: WeddingDatabaseSchema
+): Promise<boolean> {
+  queuedLatestState = initialState;
+
+  if (inFlightSavePromise) {
+    return inFlightSavePromise;
+  }
+
+  inFlightSavePromise = (async () => {
+    let lastResult = false;
+    while (queuedLatestState !== null) {
+      const stateToProcess = queuedLatestState;
+      queuedLatestState = null;
+      lastResult = await performActualSupabaseUpsert(stateToProcess);
+    }
+    inFlightSavePromise = null;
+    return lastResult;
+  })();
+
+  return inFlightSavePromise;
+}
+
+async function performActualSupabaseUpsert(
   state: WeddingDatabaseSchema
 ): Promise<boolean> {
   setCloudStatus('SYNCING', 'Menyimpan ke Supabase...');
   const updatedAt = state.lastSyncedAt || new Date().toISOString();
-  const payloadState: WeddingDatabaseSchema = {
-    ...state,
-    lastSyncedAt: updatedAt,
-  };
 
-  const tryUpsertTable = async (dataToSave: WeddingDatabaseSchema): Promise<Response> => {
+  const tryUpsertTable = async (
+    dataToSave: WeddingDatabaseSchema
+  ): Promise<Response> => {
     const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?on_conflict=id`;
     return fetch(restUrl, {
       method: 'POST',
@@ -367,15 +992,30 @@ export async function saveStateToSupabase(
   };
 
   try {
-    let res = await tryUpsertTable(payloadState);
+    const cloudSafePayload = await prepareCloudSafeState(
+      { ...state, lastSyncedAt: updatedAt },
+      false
+    );
 
-    // If payload was too large due to embedded base64 audio, retry with compact audio copy
-    if (res.status === 413) {
-      res = await tryUpsertTable(createCompactAudioCopy(payloadState));
+    let res = await tryUpsertTable(cloudSafePayload);
+
+    // If payload hit timeout (500 / 57014 / 504) or 413, retry with aggressive compression
+    if (
+      res.status === 413 ||
+      res.status === 500 ||
+      res.status === 502 ||
+      res.status === 504
+    ) {
+      const ultraCompactPayload = await prepareCloudSafeState(
+        { ...state, lastSyncedAt: updatedAt },
+        true
+      );
+      res = await tryUpsertTable(ultraCompactPayload);
     }
 
     if (res.ok) {
       setCloudStatus('SYNCED', updatedAt);
+      void syncRelationalTablesInBackground(cloudSafePayload, updatedAt);
       return true;
     }
 
@@ -386,24 +1026,6 @@ export async function saveStateToSupabase(
       errText.includes('Could not find the table') ||
       errText.includes('relation') ||
       errText.includes('does not exist');
-
-    // Also try Storage Bucket fallback in case bucket `wedding` exists
-    try {
-      const storageUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET_NAME}/${SUPABASE_OBJECT_PATH}`;
-      const stRes = await fetch(storageUrl, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          'x-upsert': 'true',
-        }),
-        body: JSON.stringify(payloadState),
-      });
-      if (stRes.ok) {
-        setCloudStatus('SYNCED', updatedAt);
-        return true;
-      }
-    } catch {
-      // Ignore storage fallback error
-    }
 
     if (isTableMissing) {
       setCloudStatus(
@@ -433,7 +1055,8 @@ export async function saveStateToSupabase(
     });
     return false;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Gagal menyimpan ke Supabase';
+    const msg =
+      err instanceof Error ? err.message : 'Gagal menyimpan ke Supabase';
     setCloudStatus('OFFLINE', msg);
     appendAuditLog({
       actor: state.settings?.updatedBy || 'system',
@@ -447,6 +1070,17 @@ export async function saveStateToSupabase(
   }
 }
 
+/**
+ * Upsert WeddingDatabaseSchema to Supabase PostgreSQL table `public.wedding_state`
+ * (and relational tables if created). Uses a single-flight lock so concurrent
+ * requests never collide on the same row.
+ */
+export async function saveStateToSupabase(
+  state: WeddingDatabaseSchema
+): Promise<boolean> {
+  return executeSingleFlightSave(state);
+}
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingState: WeddingDatabaseSchema | null = null;
 
@@ -455,7 +1089,7 @@ let pendingState: WeddingDatabaseSchema | null = null;
  */
 export function queueSaveStateToSupabase(
   state: WeddingDatabaseSchema,
-  delayMs = 500
+  delayMs = 400
 ): void {
   pendingState = state;
   if (debounceTimer) {

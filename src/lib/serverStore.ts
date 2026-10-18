@@ -106,7 +106,7 @@ function readDbFromDisk(): WeddingDatabaseSchema {
 function persistStore(
   store: WeddingDatabaseSchema,
   updateTimestamp = true,
-  syncCloud = true
+  syncCloud = false
 ): void {
   if (updateTimestamp || !store.lastSyncedAt) {
     store.lastSyncedAt = new Date().toISOString();
