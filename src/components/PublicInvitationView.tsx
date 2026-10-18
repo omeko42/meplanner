@@ -196,11 +196,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     matchedGuest?.guestName ||
     (guestParamName ? guestParamName.trim() : 'Bapak/Ibu/Saudara/i Tamu Kehormatan');
 
-  const isVipGuest =
-    matchedGuest?.priority === 'P1 - VIP' ||
-    matchedGuest?.guestType === 'Pejabat/VIP' ||
-    /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(resolvedGuestDisplayName);
-
   const allScheduleEvents = useMemo(
     () => getEffectiveScheduleEvents(settings),
     [settings]
@@ -741,12 +736,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
                 Kepada Yth.
               </p>
-
-              {isVipGuest && (
-                <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider mb-2">
-                  <Award className="w-3 h-3" /> Tamu Kehormatan VIP
-                </div>
-              )}
 
               <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
                 {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
