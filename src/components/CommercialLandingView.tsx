@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Sparkles,
   Shield,
@@ -78,6 +78,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  // Ensure international mode ('EN') only uses global payment methods
+  useEffect(() => {
+    if (
+      lang === 'EN' &&
+      (selectedPaymentMethod === 'QRIS' ||
+        selectedPaymentMethod === 'BANK_TRANSFER')
+    ) {
+      setSelectedPaymentMethod('PAYPAL');
+    }
+  }, [lang, selectedPaymentMethod]);
+
   const [guestCodeInput, setGuestCodeInput] = useState('');
   const [selectedLookupClientId, setSelectedLookupClientId] =
     useState<string>('client-utama');
@@ -130,21 +141,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   const bankTransferInfo =
     primarySettings.commercialBankTransferInfo?.trim() ||
-    (lang === 'ID'
-      ? 'BCA / Mandiri / BNI / BRI — Silakan transfer sesuai nominal paket atau klik WA untuk nomor rekening aktif'
-      : 'BCA / Mandiri / BNI / BRI — Transfer according to package price or click WA for active bank account');
+    'BCA / Mandiri / BNI / BRI — Silakan transfer sesuai nominal paket atau klik WA untuk nomor rekening aktif';
 
   const commercialQrisImageUrl =
-    primarySettings.commercialQrisImageUrl?.trim() || '/paypal-qr-mwm.png';
+    primarySettings.commercialQrisImageUrl?.trim() || '';
 
   const creditCardUrl =
-    primarySettings.commercialCreditCardUrl?.trim() ||
-    'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
+    primarySettings.commercialCreditCardUrl?.trim() || '';
 
   const rawPaypalConfig = primarySettings.commercialPaypalUrl?.trim() || '';
   const paypalHref = /^https?:\/\//i.test(rawPaypalConfig)
     ? rawPaypalConfig
-    : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
+    : 'https://paypal.me/omeko11';
 
   const cryptoNetwork =
     primarySettings.commercialCryptoNetwork?.trim() ||
@@ -155,7 +163,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     rawCryptoWalletAddress ||
     (lang === 'ID'
       ? 'Hubungi WA Admin untuk Alamat Deposit USDT Resmi'
-      : 'Contact Admin WA for Official USDT Deposit Address');
+      : 'Select Crypto USDT & submit your email below to receive official USDT TRC20/BEP20 deposit address');
 
   const handleSelectPackageForCheckout = (
     tier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
@@ -331,8 +339,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href="#paket"
               title={
                 lang === 'ID'
-                  ? 'Paket Langganan Komersial (IDR, Kartu Kredit, QRIS, PayPal & Crypto USDT)'
-                  : 'Commercial Pricing Plans (IDR, Credit Card, QRIS, PayPal & Crypto USDT)'
+                  ? 'Paket Langganan Komersial (QRIS, Transfer Bank, Kartu Kredit, PayPal & Crypto)'
+                  : 'Commercial Pricing Plans (Credit Card, PayPal & Crypto USDT)'
               }
               className="text-[11px] font-bold whitespace-nowrap px-2.5 py-1.5 rounded-xl hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] inline-flex items-center gap-1.5 transition-all"
             >
@@ -347,7 +355,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
-              title="Ganti Bahasa & Mata Uang Pasar (Indonesia IDR / Global English USD-USDT)"
+              title={
+                lang === 'ID'
+                  ? 'Ganti Bahasa (ID / EN)'
+                  : 'Switch Language (EN / ID)'
+              }
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-stone-100 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 hover:text-[#8B6914] text-[11px] font-extrabold whitespace-nowrap transition-all"
             >
               <Globe className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
@@ -457,8 +469,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <strong>Vendor Budget &amp; Contracts</strong>,{' '}
                   <strong>1-Click VIP WhatsApp Invitations</strong>, and{' '}
                   <strong>Interactive Real-Time Digital Invitations</strong>{' '}
-                  with multi-currency Digital Envelopes (IDR, PayPal &amp;
-                  Crypto USDT).
+                  with Digital Envelopes (Bank, PayPal &amp; Crypto USDT).
                 </>
               )}
             </p>
@@ -836,7 +847,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     },
                     {
                       icon: Wallet,
-                      title: '3. Moneter, Vendor & Amplop Multi-Currency',
+                      title: '3. Moneter, Vendor & Amplop Digital',
                       desc: 'Kontrol anggaran vs realisasi kontrak vendor, pelacakan DP/Lunas, serta amplop digital Bank, QRIS, PayPal & Crypto USDT.',
                     },
                     {
@@ -868,8 +879,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     },
                     {
                       icon: Wallet,
-                      title: '3. Vendor Budget & Multi-Currency Gift',
-                      desc: 'Track estimated vs actual vendor contracts, DP/paid status, plus Digital Envelopes via Bank, QRIS, PayPal & Crypto USDT.',
+                      title: '3. Vendor Budget & Digital Envelope',
+                      desc: 'Track estimated vs actual vendor contracts, DP/paid status, plus Digital Envelopes via Bank, PayPal & Crypto USDT.',
                     },
                     {
                       icon: Send,
@@ -918,8 +929,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           <div className="text-center max-w-3xl mx-auto mb-10">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
               {lang === 'ID'
-                ? 'Lisensi & Layanan Komersial (IDR • Visa/Mastercard • QRIS • PayPal • Crypto USDT)'
-                : 'Commercial Plans & Licensing (IDR • Visa/Mastercard • QRIS • PayPal • Crypto USDT)'}
+                ? 'Lisensi & Layanan Komersial (QRIS • Transfer Bank • Kartu Kredit • PayPal • Crypto)'
+                : 'Commercial Plans & Licensing (Credit Card • PayPal • Crypto USDT)'}
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
               {lang === 'ID'
@@ -928,8 +939,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </h3>
             <p className="text-xs sm:text-sm text-stone-500 mt-1">
               {lang === 'ID'
-                ? 'Pilih paket sesuai kebutuhan Anda, lakukan pembayaran via metode lokal/global di bawah, lalu konfirmasi email Anda untuk pengiriman akses maksimal H+3.'
-                : 'Select your preferred tier, complete payment via local or global methods below, and submit your email to receive your credentials within 3 days (D+3).'}
+                ? 'Pilih paket sesuai kebutuhan Anda, lakukan pembayaran di bawah, lalu konfirmasi email Anda untuk pengiriman akses maksimal H+3.'
+                : 'Select your preferred tier, complete payment via global payment methods below, and submit your email to receive your credentials within 3 days (D+3).'}
             </p>
           </div>
 
@@ -941,13 +952,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   badge:
                     lang === 'ID' ? 'STARTER • HEMAT' : 'STARTER • ENTRY',
                   name: 'Starter Digital Invitation',
-                  priceMain:
-                    lang === 'ID' ? 'Rp 50.000' : '$10 USD / 10 USDT',
+                  priceMain: lang === 'ID' ? 'Rp 50.000' : '$10 USD',
                   priceStrike: lang === 'ID' ? 'Rp 150.000' : '$25 USD',
                   priceSubBadge:
                     lang === 'ID'
-                      ? 'Global: $10 USD / 10 USDT (Min. Transfer Crypto)'
-                      : 'Indonesia Promo: Rp 50.000 (*Min. Crypto Transfer 10 USDT)',
+                      ? 'Promo Spesial • Sekali Bayar Aktif Selamanya'
+                      : 'One-Time License • Or 10 USDT (Crypto)',
                   styleVariant: 'starter' as const,
                   features:
                     lang === 'ID'
@@ -975,13 +985,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       ? '★ PALING POPULER • EXCLUSIVE'
                       : '★ MOST POPULAR • EXCLUSIVE',
                   name: 'Exclusive Planner & Gallery',
-                  priceMain:
-                    lang === 'ID' ? 'Rp 149.000' : '$25 USD / 25 USDT',
+                  priceMain: lang === 'ID' ? 'Rp 149.000' : '$25 USD',
                   priceStrike: lang === 'ID' ? 'Rp 350.000' : '$59 USD',
                   priceSubBadge:
                     lang === 'ID'
-                      ? 'Global: $25 USD / 25 USDT'
-                      : 'Indonesia: Rp 149.000',
+                      ? 'Paket Paling Populer • Sekali Bayar'
+                      : 'Most Popular • Or 25 USDT (Crypto)',
                   styleVariant: 'exclusive' as const,
                   features:
                     lang === 'ID'
@@ -1007,13 +1016,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       ? '👑 PAKET TERLENGKAP • ROYAL VIP'
                       : '👑 ALL-INCLUSIVE FLAGSHIP • ROYAL VIP',
                   name: 'Royal VIP Flagship Suite',
-                  priceMain:
-                    lang === 'ID' ? 'Rp 299.000' : '$49 USD / 49 USDT',
+                  priceMain: lang === 'ID' ? 'Rp 299.000' : '$49 USD',
                   priceStrike: lang === 'ID' ? 'Rp 650.000' : '$99 USD',
                   priceSubBadge:
                     lang === 'ID'
-                      ? 'Global: $49 USD / 49 USDT'
-                      : 'Indonesia: Rp 299.000',
+                      ? 'Paket Terlengkap Tanpa Batas • Sekali Bayar'
+                      : 'All-Inclusive Flagship • Or 49 USDT (Crypto)',
                   styleVariant: 'royal' as const,
                   features:
                     lang === 'ID'
@@ -1076,7 +1084,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       )}
                     </div>
 
-                    {/* Title & Pricing Block */}
+                    {/* Title & Strictly Separated Pricing Block */}
                     <div>
                       <h4
                         className={`font-serif text-xl font-extrabold ${
@@ -1170,7 +1178,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             })}
           </div>
 
-          {/* OFFICIAL LOCAL & GLOBAL PAYMENT METHODS + POST-PAYMENT EMAIL CONFIRMATION FLOW */}
+          {/* OFFICIAL PAYMENT METHODS + POST-PAYMENT EMAIL CONFIRMATION FLOW */}
           <div
             id="checkout-pembayaran"
             className="mt-8 rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-6 shadow-[0_12px_36px_rgba(182,141,64,0.1)]"
@@ -1181,14 +1189,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <Wallet className="w-4 h-4 text-[#B68D40]" />
                   <span>
                     {lang === 'ID'
-                      ? 'Metode Pembayaran Resmi (Lokal Indonesia & Global International)'
-                      : 'Supported Payment Methods (Indonesia Local & Global International)'}
+                      ? 'Metode Pembayaran Resmi (QRIS, Transfer Bank, Kartu Kredit, PayPal & Crypto)'
+                      : 'Supported Global Payment Methods (Credit Card, PayPal & Crypto USDT)'}
                   </span>
                 </h4>
                 <p className="text-xs text-stone-500 mt-0.5">
                   {lang === 'ID'
                     ? 'Langkah 1: Lakukan pembayaran sesuai paket pilihan Anda melalui salah satu metode resmi di bawah ini.'
-                    : 'Step 1: Complete your payment for your selected plan using any of the official payment methods below.'}
+                    : 'Step 1: Complete your payment for your selected plan using any of the global payment methods below.'}
                 </p>
               </div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider self-start lg:self-auto">
@@ -1201,125 +1209,112 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </span>
             </div>
 
-            {/* 5 Official Payment Method Cards */}
+            {/* Payment Method Cards: 5 cards in ID mode, 3 global cards in EN mode */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* 1. Transfer Bank (BCA, Mandiri, BNI, BRI) */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
-                      <Building2 className="w-3 h-3" /> BANK TRANSFER (IDR)
-                    </span>
-                    <span className="text-[11px] font-extrabold text-[#8B6914]">
-                      {lang === 'ID' ? 'Mulai Rp 50.000' : 'From Rp 50.000'}
-                    </span>
+              {/* 1. Transfer Bank (BCA, Mandiri, BNI, BRI) — SHOWN ONLY IN ID MODE */}
+              {lang === 'ID' && (
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
+                        <Building2 className="w-3 h-3" /> BANK TRANSFER (IDR)
+                      </span>
+                      <span className="text-[11px] font-extrabold text-[#8B6914]">
+                        Mulai Rp 50.000
+                      </span>
+                    </div>
+                    <h5 className="text-xs font-extrabold text-stone-900">
+                      Transfer Bank (BCA, Mandiri, BNI, BRI)
+                    </h5>
+                    <div className="p-2 rounded-xl bg-white border border-stone-200/90 text-[11px] font-semibold text-stone-700 leading-snug">
+                      {bankTransferInfo}
+                    </div>
                   </div>
-                  <h5 className="text-xs font-extrabold text-stone-900">
-                    {lang === 'ID'
-                      ? 'Transfer Bank (BCA, Mandiri, BNI, BRI)'
-                      : 'Indonesian Bank Transfer (BCA, Mandiri, BNI, BRI)'}
-                  </h5>
-                  <div className="p-2 rounded-xl bg-white border border-stone-200/90 text-[11px] font-semibold text-stone-700 leading-snug">
-                    {bankTransferInfo}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPaymentMethod('BANK_TRANSFER');
+                        handleCopyPaymentValue('bank', bankTransferInfo);
+                      }}
+                      className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      {copiedPaymentKey === 'bank' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Salin Info Bank</span>
+                        </>
+                      )}
+                    </button>
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 px-3 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-stone-900 font-extrabold text-[11px] inline-flex items-center justify-center gap-1 transition-all"
+                      title="Tanya Nomor Rekening via WhatsApp"
+                    >
+                      <span>WA</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPaymentMethod('BANK_TRANSFER');
-                      handleCopyPaymentValue('bank', bankTransferInfo);
-                    }}
-                    className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    {copiedPaymentKey === 'bank' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>
-                          {lang === 'ID' ? 'Tersalin!' : 'Copied!'}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>
-                          {lang === 'ID' ? 'Salin Info Bank' : 'Copy Bank Info'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 px-3 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-stone-900 font-extrabold text-[11px] inline-flex items-center justify-center gap-1 transition-all"
-                    title="Tanya Nomor Rekening via WhatsApp"
-                  >
-                    <span>WA</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
+              )}
 
-              {/* 2. QRIS Nasional (All Bank & E-Wallet Indonesia) */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-800 inline-flex items-center gap-1">
-                      <QrCode className="w-3 h-3" /> QRIS NASIONAL (IDR)
-                    </span>
-                    <span className="text-[11px] font-extrabold text-rose-800">
-                      All E-Wallet &amp; M-Banking
-                    </span>
+              {/* 2. QRIS Nasional (All Bank & E-Wallet Indonesia) — SHOWN ONLY IN ID MODE */}
+              {lang === 'ID' && (
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-800 inline-flex items-center gap-1">
+                        <QrCode className="w-3 h-3" /> QRIS NASIONAL (IDR)
+                      </span>
+                      <span className="text-[11px] font-extrabold text-rose-800">
+                        All E-Wallet &amp; M-Banking
+                      </span>
+                    </div>
+                    <h5 className="text-xs font-extrabold text-stone-900">
+                      QRIS Nasional (All Bank &amp; E-Wallet Indonesia)
+                    </h5>
+                    <p className="text-[11px] text-stone-600 leading-relaxed">
+                      Scan QRIS instan dari aplikasi M-Banking, GoPay, OVO,
+                      DANA, ShopeePay, atau LinkAja.
+                    </p>
                   </div>
-                  <h5 className="text-xs font-extrabold text-stone-900">
-                    {lang === 'ID'
-                      ? 'QRIS Nasional (All Bank & E-Wallet Indonesia)'
-                      : 'National QRIS (GoPay, OVO, Dana, ShopeePay, M-Banking)'}
-                  </h5>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">
-                    {lang === 'ID'
-                      ? 'Scan QRIS instan dari aplikasi M-Banking, GoPay, OVO, DANA, ShopeePay, atau LinkAja.'
-                      : 'Instant QR scan from any Indonesian Mobile Banking or E-Wallet app.'}
-                  </p>
-                </div>
-                {commercialQrisImageUrl ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPaymentMethod('QRIS');
-                      setShowCommercialQrisModal((prev) => !prev);
-                    }}
-                    className="w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    <span>
-                      {showCommercialQrisModal
-                        ? lang === 'ID'
+                  {commercialQrisImageUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPaymentMethod('QRIS');
+                        setShowCommercialQrisModal((prev) => !prev);
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>
+                        {showCommercialQrisModal
                           ? 'Tutup Barcode QRIS'
-                          : 'Hide QRIS Barcode'
-                        : lang === 'ID'
-                          ? 'Lihat & Scan Barcode QRIS'
-                          : 'View & Scan QRIS Barcode'}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPaymentMethod('QRIS')}
-                    className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <QrCode className="w-3.5 h-3.5" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Pilih Pembayaran QRIS Nasional'
-                        : 'Select National QRIS Payment'}
-                    </span>
-                  </button>
-                )}
-              </div>
+                          : 'Lihat & Scan Barcode QRIS'}
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentMethod('QRIS')}
+                      className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Pilih Pembayaran QRIS Nasional</span>
+                    </button>
+                  )}
+                </div>
+              )}
 
-              {/* 3. Kartu Kredit / Debit Internasional (Visa / Mastercard) */}
+              {/* 3. Kartu Kredit / Debit (Visa / Mastercard) */}
               <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
@@ -1327,18 +1322,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <CreditCard className="w-3 h-3" /> VISA / MASTERCARD
                     </span>
                     <span className="text-[11px] font-extrabold text-indigo-900">
-                      Global Card
+                      {lang === 'ID' ? 'Kartu Kredit / Debit' : 'From $10 USD'}
                     </span>
                   </div>
                   <h5 className="text-xs font-extrabold text-stone-900">
                     {lang === 'ID'
-                      ? 'Kartu Kredit / Debit Internasional (Visa / Mastercard)'
-                      : 'International Credit / Debit Card (Visa / Mastercard)'}
+                      ? 'Kartu Kredit / Debit (Visa / Mastercard)'
+                      : 'International Credit / Debit Card (Visa / Mastercard / Apple Pay)'}
                   </h5>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     {lang === 'ID'
-                      ? 'Mendukung pembayaran Kartu Kredit & Debit Visa, Mastercard, JCB, atau Amex untuk klien lokal maupun internasional.'
-                      : 'Supports Visa, Mastercard, JCB & Amex credit or debit cards for global and domestic clients.'}
+                      ? 'Mendukung pembayaran Kartu Kredit & Debit berlogo Visa, Mastercard, atau JCB.'
+                      : 'Supports Visa, Mastercard, JCB, Amex & Apple Pay for instant international checkout.'}
                   </p>
                 </div>
                 {creditCardUrl ? (
@@ -1373,70 +1368,63 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 )}
               </div>
 
-              {/* 4. PayPal International (USD — Mulai $10 USD) */}
+              {/* 4. PayPal */}
               <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between gap-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 inline-flex items-center gap-1">
-                      <Globe className="w-3 h-3" /> PAYPAL INTERNATIONAL (USD)
+                      <Globe className="w-3 h-3" /> PAYPAL
                     </span>
                     <span className="text-[11px] font-extrabold text-sky-800">
-                      {lang === 'ID' ? 'Mulai $10 USD' : 'From $10 USD'}
+                      {lang === 'ID'
+                        ? 'Mulai Rp 50.000 (Ekuivalen USD)'
+                        : 'From $10 USD'}
                     </span>
                   </div>
                   <h5 className="text-xs font-extrabold text-stone-900">
-                    PayPal International (USD — Mulai $10 USD)
+                    {lang === 'ID'
+                      ? 'PayPal Checkout'
+                      : 'PayPal International (USD — From $10 USD)'}
                   </h5>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     {lang === 'ID'
-                      ? 'Pembayaran global cepat & aman menggunakan PayPal International ($10 / $25 / $49 USD).'
+                      ? 'Pembayaran praktis menggunakan saldo akun PayPal atau kartu yang terhubung.'
                       : 'Fast & secure global checkout via PayPal International ($10 / $25 / $49 USD).'}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={paypalHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setSelectedPaymentMethod('PAYPAL')}
-                    className="flex-1 py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs"
-                  >
-                    <span>
-                      {lang === 'ID'
-                        ? 'Bayar via PayPal'
-                        : 'Pay via PayPal'}
-                    </span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPaymentMethod('PAYPAL');
-                      setShowCommercialQrisModal((prev) => !prev);
-                    }}
-                    className="py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    <span>
-                      {lang === 'ID' ? 'Scan QR PayPal' : 'Scan PayPal QR'}
-                    </span>
-                  </button>
-                </div>
+                <a
+                  href={paypalHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setSelectedPaymentMethod('PAYPAL')}
+                  className="w-full py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                >
+                  <span>
+                    {lang === 'ID'
+                      ? 'Bayar via PayPal'
+                      : 'Pay via PayPal International'}
+                  </span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
 
               {/* 5. Crypto / USDT Wallet (TRC20 / BEP20 / ERC20 — Min. 10 USDT) */}
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/45 flex flex-col justify-between gap-3 md:col-span-2 lg:col-span-2">
+              <div
+                className={`p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/45 flex flex-col justify-between gap-3 ${
+                  lang === 'ID' ? 'md:col-span-2 lg:col-span-2' : ''
+                }`}
+              >
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 inline-flex items-center gap-1">
-                      <Coins className="w-3 h-3" /> CRYPTO / USDT WALLET (GLOBAL WEB3)
+                      <Coins className="w-3 h-3" /> CRYPTO / USDT
                     </span>
                     <span className="text-[11px] font-extrabold text-[#8B6914]">
-                      Min. Transfer 10 USDT (TRC20 / BEP20 / ERC20)
+                      Min. 10 USDT
                     </span>
                   </div>
                   <h5 className="text-xs font-extrabold text-stone-900">
-                    Crypto / USDT Wallet (Min. 10 USDT — TRC20 / BEP20 / ERC20)
+                    Crypto / USDT Wallet (TRC20 / BEP20 / ERC20)
                   </h5>
                   <p className="text-[10px] font-bold text-[#8B6914]">
                     {cryptoNetwork}
@@ -1450,7 +1438,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     type="button"
                     onClick={() => {
                       setSelectedPaymentMethod('CRYPTO_USDT');
-                      handleCopyCryptoWallet();
+                      if (rawCryptoWalletAddress) {
+                        handleCopyCryptoWallet();
+                      }
                     }}
                     className="flex-1 py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
                   >
@@ -1463,7 +1453,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : 'USDT Address Copied!'}
                         </span>
                       </>
-                    ) : (
+                    ) : rawCryptoWalletAddress ? (
                       <>
                         <Copy className="w-3.5 h-3.5" />
                         <span>
@@ -1472,45 +1462,51 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : 'Copy USDT Address'}
                         </span>
                       </>
+                    ) : (
+                      <>
+                        <Coins className="w-3.5 h-3.5" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Pilih Pembayaran Crypto USDT'
+                            : 'Select Crypto USDT Payment'}
+                        </span>
+                      </>
                     )}
                   </button>
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 px-3 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <span>
-                      {lang === 'ID'
-                        ? 'Tanya via WhatsApp'
-                        : 'Ask via WhatsApp'}
-                    </span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {lang === 'ID' && (
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 px-3 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <span>Tanya via WA</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Inline Preview of Commercial QRIS if toggled */}
-            {showCommercialQrisModal && commercialQrisImageUrl && (
-              <div className="mt-4 p-4 rounded-2xl bg-[#FAF3E3]/50 border border-[#D4AF37]/45 flex flex-col items-center text-center space-y-2">
-                <p className="text-xs font-extrabold text-stone-900">
-                  {lang === 'ID'
-                    ? 'Scan Barcode QRIS Resmi My Wedding Manager'
-                    : 'Scan Official My Wedding Manager QRIS Barcode'}
-                </p>
-                <img
-                  src={commercialQrisImageUrl}
-                  alt="Commercial QRIS Barcode"
-                  className="max-h-64 w-auto rounded-2xl border border-[#D4AF37]/40 shadow-md bg-white p-2"
-                />
-                <p className="text-[11px] text-stone-600">
-                  {lang === 'ID'
-                    ? 'Setelah melakukan pembayaran QRIS, lengkapi form Konfirmasi Sudah Bayar di bawah ini.'
-                    : 'After completing QRIS payment, fill out the Payment Confirmation form below.'}
-                </p>
-              </div>
-            )}
+            {/* Inline Preview of Commercial QRIS if toggled (ID mode) */}
+            {lang === 'ID' &&
+              showCommercialQrisModal &&
+              commercialQrisImageUrl && (
+                <div className="mt-4 p-4 rounded-2xl bg-[#FAF3E3]/50 border border-[#D4AF37]/45 flex flex-col items-center text-center space-y-2">
+                  <p className="text-xs font-extrabold text-stone-900">
+                    Scan Barcode QRIS Resmi My Wedding Manager
+                  </p>
+                  <img
+                    src={commercialQrisImageUrl}
+                    alt="Commercial QRIS Barcode"
+                    className="max-h-64 w-auto rounded-2xl border border-[#D4AF37]/40 shadow-md bg-white p-2"
+                  />
+                  <p className="text-[11px] text-stone-600">
+                    Setelah melakukan pembayaran QRIS, lengkapi form Konfirmasi
+                    Sudah Bayar di bawah ini.
+                  </p>
+                </div>
+              )}
 
             {/* STEP 2: KONFIRMASI SUDAH BAYAR & MASUKKAN EMAIL ANDA (UNLOCKS OFFICIAL POST-PAYMENT EMAIL & H+3 SLA) */}
             <div className="mt-6 pt-6 border-t border-[#D4AF37]/35">
@@ -1560,15 +1556,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       }
                       className="w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 focus:border-[#B68D40] focus:outline-none"
                     >
-                      <option value="STARTER">
-                        STARTER (Rp 50.000 / $10 USDT)
-                      </option>
-                      <option value="EXCLUSIVE">
-                        EXCLUSIVE (Rp 149.000 / $25 USDT)
-                      </option>
-                      <option value="ROYAL VIP">
-                        ROYAL VIP (Rp 299.000 / $49 USDT)
-                      </option>
+                      {lang === 'ID' ? (
+                        <>
+                          <option value="STARTER">STARTER (Rp 50.000)</option>
+                          <option value="EXCLUSIVE">
+                            EXCLUSIVE (Rp 149.000)
+                          </option>
+                          <option value="ROYAL VIP">
+                            ROYAL VIP (Rp 299.000)
+                          </option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="STARTER">
+                            STARTER ($10 USD / 10 USDT)
+                          </option>
+                          <option value="EXCLUSIVE">
+                            EXCLUSIVE ($25 USD / 25 USDT)
+                          </option>
+                          <option value="ROYAL VIP">
+                            ROYAL VIP ($49 USD / 49 USDT)
+                          </option>
+                        </>
+                      )}
                     </select>
                   </div>
 
@@ -1590,17 +1600,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       }
                       className="w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 focus:border-[#B68D40] focus:outline-none"
                     >
-                      <option value="QRIS">QRIS Nasional (IDR)</option>
-                      <option value="BANK_TRANSFER">
-                        Transfer Bank (BCA/Mandiri/BNI/BRI)
-                      </option>
-                      <option value="CREDIT_CARD">
-                        Kartu Kredit / Debit (Visa / Mastercard)
-                      </option>
-                      <option value="PAYPAL">PayPal International (USD)</option>
-                      <option value="CRYPTO_USDT">
-                        Crypto / USDT (TRC20/BEP20/ERC20)
-                      </option>
+                      {lang === 'ID' ? (
+                        <>
+                          <option value="QRIS">
+                            QRIS Nasional (All Bank &amp; E-Wallet)
+                          </option>
+                          <option value="BANK_TRANSFER">
+                            Transfer Bank (BCA / Mandiri / BNI / BRI)
+                          </option>
+                          <option value="CREDIT_CARD">
+                            Kartu Kredit / Debit (Visa / Mastercard)
+                          </option>
+                          <option value="PAYPAL">PayPal</option>
+                          <option value="CRYPTO_USDT">
+                            Crypto / USDT (TRC20 / BEP20 / ERC20)
+                          </option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="CREDIT_CARD">
+                            Credit / Debit Card (Visa / Mastercard / Apple Pay)
+                          </option>
+                          <option value="PAYPAL">
+                            PayPal International (USD)
+                          </option>
+                          <option value="CRYPTO_USDT">
+                            Crypto / USDT Wallet (TRC20 / BEP20 / ERC20)
+                          </option>
+                        </>
+                      )}
                     </select>
                   </div>
 

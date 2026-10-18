@@ -26,31 +26,39 @@
 6. **Sistem Multi-bahasa Instan (ID / EN)**
    - Mendukung pergantian bahasa **Bahasa Indonesia** dan **English** secara langsung untuk memfasilitasi tamu maupun klien internasional.
 
+### 💎 Pilihan Paket Layanan (Khusus Klien Indonesia — IDR)
+
+Kami menyediakan **3 Pilihan Paket Berlangganan Resmi** yang dapat disesuaikan dengan kebutuhan acara pernikahan Anda:
+
+| Paket Layanan | Harga Resmi (IDR) | Fitur & Fasilitas Utama |
+| :--- | :---: | :--- |
+| **🥉 STARTER** | **Rp 50.000** | • Undangan Digital Eksklusif Aktif<br>• Kuota hingga **150 Tamu Undangan**<br>• Galeri Foto & Musik Latar Standar<br>• RSVP & Buku Tamu Doa Restu Real-Time<br>• Masa Aktif **3 Bulan** |
+| **🥈 EXCLUSIVE** *(Best Seller)* | **Rp 149.000** | • **Seluruh Fitur Paket STARTER**<br>• Kuota hingga **500 Tamu Undangan + Generator WA 1-Klik**<br>• Dashboard Checklist Kesiapan & Manajemen Anggaran/Vendor<br>• Amplop Digital Rekening & **QRIS Wedding Gift**<br>• **4 Akun Inti Mempelai/Keluarga + Akun Panitia/WO**<br>• Masa Aktif **6 Bulan** |
+| **👑 ROYAL VIP** *(Full Suite)* | **Rp 299.000** | • **Seluruh Fitur Paket EXCLUSIVE Tanpa Batas (Unlimited Tamu)**<br>• **Mode Privasi Kode VIP (`INV-xxxx`)** & Moderasi Tayangan Penuh<br>• Studio Foto Ultra-HD & Custom Playlist Audio Eksklusif<br>• Prioritas Dukungan Teknis & Pendampingan Setup<br>• Masa Aktif **12 Bulan (1 Tahun Penuh)** |
+
 ---
 
-## 🇬🇧 Product Overview (English)
+## 🇬🇧 Product Overview (English — Global & International Edition)
 
 **My Wedding Manager (MWM)** is an **All-in-One Enterprise Wedding Readiness Tracker & Interactive Digital Invitation Suite** crafted for modern couples, families, and professional Wedding Organizers (WO). MWM combines a luxury digital invitation experience with a comprehensive back-office wedding planning dashboard.
 
 ### ✨ Key Highlights
-- **Personalized VIP Digital Invitations**: Automatic guest name greeting, unique invitation code verification (`INV-xxxx`), interactive *Love Story* timeline, Ultra-HD photo gallery, background music player, and Digital Wedding Gift / QRIS integration.
+- **Personalized VIP Digital Invitations**: Automatic guest name greeting, unique invitation code verification (`INV-xxxx`), interactive *Love Story* timeline, Ultra-HD photo gallery, background music player, and Digital Wedding Gift integration.
 - **Real-Time RSVP & Wishes Wall**: Instant attendance confirmation, guest headcount (*Pax*) tracking, and live wedding wishes with official couple replies.
 - **360° Wedding Readiness & Checklist Dashboard**: Track preparation progress across all milestones, ceremony domains, and committee PIC assignments.
 - **Smart Budget & Vendor Contract Tracker**: Manage estimated vs. actual wedding expenses and vendor payment milestones securely.
 - **1-Click WhatsApp Invitation Dispatcher**: Generate and send personalized invitation links effortlessly.
 - **Full Bilingual Experience (ID / EN)**: Seamless language switching for domestic and international guests.
 
----
+### 💎 Global & International Pricing Tiers (USD / USDT)
 
-## 💎 Paket Layanan Komersial / Commercial Pricing Tiers
+Choose from **3 Official Commercial Subscription Tiers** tailored to your wedding scale:
 
-Kami menyediakan **3 Pilihan Paket Berlangganan Resmi** yang dapat disesuaikan dengan kebutuhan acara pernikahan Anda:
-
-| Paket / Tier | Harga (IDR) | International (USDT) | Fitur & Fasilitas Utama / Key Inclusions |
-| :--- | :---: | :---: | :--- |
-| **🥉 STARTER** | **Rp 50.000** | **$10 USDT** | • Undangan Digital Eksklusif Aktif<br>• Kuota hingga **150 Tamu Undangan**<br>• Galeri Foto & Musik Latar Standar<br>• RSVP & Buku Tamu Doa Restu Real-Time<br>• Masa Aktif **3 Bulan** |
-| **🥈 EXCLUSIVE** *(Best Seller)* | **Rp 149.000** | **$25 USDT** | • **Seluruh Fitur Paket STARTER**<br>• Kuota hingga **500 Tamu Undangan + Generator WA 1-Klik**<br>• Dashboard Checklist Kesiapan & Manajemen Anggaran/Vendor<br>• Amplop Digital Rekening & **QRIS Wedding Gift**<br>• **4 Akun Inti Mempelai/Keluarga + Akun Panitia/WO**<br>• Masa Aktif **6 Bulan** |
-| **👑 ROYAL VIP** *(Full Suite)* | **Rp 299.000** | **$49 USDT** | • **Seluruh Fitur Paket EXCLUSIVE Tanpa Batas (Unlimited Tamu)**<br>• **Mode Privasi Kode VIP (`INV-xxxx`)** & Moderasi Tayangan Penuh<br>• Studio Foto Ultra-HD & Custom Playlist Audio Eksklusif<br>• Prioritas Dukungan Teknis & Pendampingan Setup<br>• Masa Aktif **12 Bulan (1 Tahun Penuh)** |
+| Tier / Package | International Price (USD / USDT) | Key Inclusions & Capabilities |
+| :--- | :---: | :--- |
+| **🥉 STARTER** | **$10 USD / 10 USDT** | • Active Exclusive Digital Wedding Invitation<br>• Up to **150 Invited Guests**<br>• Standard Photo Gallery & Background Music Player<br>• Real-Time RSVP & Guest Wishes Wall<br>• **3 Months** Active Subscription |
+| **🥈 EXCLUSIVE** *(Best Seller)* | **$25 USD / 25 USDT** | • **Everything in STARTER**<br>• Up to **500 Invited Guests + 1-Click WhatsApp Link Dispatcher**<br>• Full Wedding Readiness Checklist & Budget/Vendor Tracker<br>• Digital Wedding Gift / Cashless Envelope Integration<br>• **4 Core Couple/Family Accounts + Committee/WO Accounts**<br>• **6 Months** Active Subscription |
+| **👑 ROYAL VIP** *(Full Suite)* | **$49 USD / 49 USDT** | • **Everything in EXCLUSIVE with Unlimited Guests**<br>• **Private VIP Code Gate (`INV-xxxx`)** & Live Moderation Controls<br>• Ultra-HD Photo Studio & Custom Audio Playlist Engine<br>• Priority Onboarding & Dedicated Concierge Support<br>• **12 Months (1 Full Year)** Active Subscription |
 
 ---
 
