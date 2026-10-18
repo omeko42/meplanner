@@ -552,24 +552,23 @@ export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [
     isDefault: true,
   },
   {
+    id: 'track-denny-cundamani',
+    title: 'Cundamani',
+    artist: 'Denny Caknan',
+    url: '/musik/cundamani.mp3',
+    isDefault: true,
+  },
+  {
     id: 'track-ilham-jalaraning-tresna',
     title: 'Jalaraning Tresna',
     artist: 'Ilham Pradana',
     url: '/musik/jalaraning-tresna.mp3',
     isDefault: true,
   },
-  {
-    id: 'track-canon-in-d',
-    title: 'Canon in D (Romantic Piano)',
-    artist: 'Johann Pachelbel (Instrumental)',
-    url: 'synth:canon-in-d',
-    isDefault: true,
-  },
 ];
 
 export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrackItem[] {
   if (Array.isArray(settings.musicPlaylist)) {
-    // If cached playlist only has the old 3 synth tracks, auto-upgrade to include the 3 real MP3 tracks
     const isLegacySynthOnly =
       settings.musicPlaylist.length > 0 &&
       settings.musicPlaylist.every((t) => t.url.startsWith('synth:'));
