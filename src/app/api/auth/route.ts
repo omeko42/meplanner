@@ -10,6 +10,7 @@ import {
   SESSION_COOKIE_NAME,
   verifyAdminRequest,
   verifySuperadminIdentity,
+  verifySuperadminPassword,
 } from '@/lib/auth';
 import { serverStore } from '@/lib/serverStore';
 
@@ -231,14 +232,18 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // 3. Ubah Username / Password Akun Default (WAJIB Konfirmasi Superadmin / Pemilik Aplikasi)
+    // 3. Ubah Username / Password Akun Default (WAJIB Konfirmasi Email & Password Superadmin / Pemilik Aplikasi)
     const superadminConfirmation = String(body.superadminConfirmation || '').trim();
-    if (!verifySuperadminIdentity(superadminConfirmation)) {
+    const superadminPassword = String(body.superadminPassword || '').trim();
+    if (
+      !verifySuperadminIdentity(superadminConfirmation) ||
+      !verifySuperadminPassword(superadminPassword)
+    ) {
       return NextResponse.json(
         {
           success: false,
           error:
-            'Konfirmasi Superadmin (Pemilik Aplikasi) tidak valid. Perubahan username/password akun utama wajib dikonfirmasi oleh Superadmin.',
+            'Email atau Password Superadmin (Pemilik Aplikasi) tidak valid. Perubahan username/password akun utama wajib diotorisasi oleh Superadmin.',
         },
         { status: 403 }
       );

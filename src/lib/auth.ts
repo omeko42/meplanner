@@ -6,10 +6,12 @@ import { serverStore } from '@/lib/serverStore';
 export const SESSION_COOKIE_NAME = 'wedding_admin_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-// One-way scrypt hash of the out-of-system Superadmin (App Owner) identifier.
+// One-way scrypt hash of the out-of-system Superadmin (App Owner) identifier & password.
 // Plaintext never appears in code, UI, or git history.
 const SUPERADMIN_ID_HASH =
   'scrypt$wedplan_2026_slt$f76d362f8a76b3d58327773d95012588f521905bf7b608af85fc600e89022cebe14d87b89e6e54993c32b65acbf5f2e6192d09d93db854439e9533cb90d3a4aa';
+const SUPERADMIN_PW_HASH =
+  'scrypt$wedplan_2026_slt$9c1f8ee1209324d79ce7a003be6aae62261f930bedab3ce9b604c64d783370463ef76a6a857459c6504f2392984d759f0c63bb2293736d206bdabecc9883330a';
 
 interface SessionPayload {
   sub: string;
@@ -99,6 +101,22 @@ export function verifySuperadminIdentity(inputIdentifier: string): boolean {
   }
 
   return verifyPasswordTimingSafe(clean, undefined, SUPERADMIN_ID_HASH);
+}
+
+/**
+ * Verifies whether the provided password matches the out-of-system
+ * Superadmin (App Owner) password without storing it in plaintext.
+ */
+export function verifySuperadminPassword(inputPassword: string): boolean {
+  const clean = inputPassword.trim();
+  if (!clean) return false;
+
+  const envSuperadminPw = process.env.SUPERADMIN_PASSWORD?.trim();
+  if (envSuperadminPw && verifyPasswordTimingSafe(clean, envSuperadminPw)) {
+    return true;
+  }
+
+  return verifyPasswordTimingSafe(clean, undefined, SUPERADMIN_PW_HASH);
 }
 
 export function isPrivilegedDefaultOrSuperUser(user: AdminUser | null): boolean {
@@ -248,24 +266,17 @@ export function authenticateAdminCredentials(
     }
   }
 
-  // 2. Check Out-of-System Superadmin Owner (if logging in with Superadmin email + any Default User password or env password)
-  if (verifySuperadminIdentity(cleanId)) {
-    const envPw = process.env.ADMIN_PASSWORD?.trim();
-    const matchesEnvPw = envPw ? verifyPasswordTimingSafe(cleanPw, envPw) : false;
-    const matchesDefaultPw = dbAdmins.some(
-      (u) => u.isDefaultUser && verifyPasswordTimingSafe(cleanPw, u.password, u.passwordHash)
-    );
-    if (matchesEnvPw || matchesDefaultPw) {
-      return {
-        id: 'superadmin-owner',
-        username: 'superadmin',
-        nama: 'Pemilik Aplikasi (Superadmin)',
-        role: 'SUPERADMIN',
-        jabatan: 'Superadmin • Pemilik Sistem',
-        email: 'owner@system.local',
-        isDefaultUser: true,
-      };
-    }
+  // 2. Check Out-of-System Superadmin Owner (Superadmin Email + Superadmin Password)
+  if (verifySuperadminIdentity(cleanId) && verifySuperadminPassword(cleanPw)) {
+    return {
+      id: 'superadmin-owner',
+      username: 'superadmin',
+      nama: 'Pemilik Aplikasi (Superadmin)',
+      role: 'SUPERADMIN',
+      jabatan: 'Superadmin • Pemilik Sistem',
+      email: 'owner@system.local',
+      isDefaultUser: true,
+    };
   }
 
   return null;

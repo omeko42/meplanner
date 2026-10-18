@@ -471,6 +471,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [secName, setSecName] = useState(adminUser.nama || '');
   const [secNewPassword, setSecNewPassword] = useState('');
   const [secSuperadminConfirm, setSecSuperadminConfirm] = useState('');
+  const [secSuperadminPassword, setSecSuperadminPassword] = useState('');
   const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
 
   // State for adding/editing a Panitia User (No Superadmin confirmation needed)
@@ -612,6 +613,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setSecName(u.nama);
     setSecNewPassword('');
     setSecSuperadminConfirm('');
+    setSecSuperadminPassword('');
     setActiveSettingsModal('default_user');
   };
 
@@ -685,6 +687,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           newName: secName,
           newPassword: secNewPassword,
           superadminConfirmation: secSuperadminConfirm,
+          superadminPassword: secSuperadminPassword,
         }),
       });
       const json = await res.json();
@@ -694,6 +697,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
       setSecNewPassword('');
       setSecSuperadminConfirm('');
+      setSecSuperadminPassword('');
       setActiveSettingsModal(null);
       if (onSyncStateAndUser) {
         onSyncStateAndUser(json.data, json.user);
@@ -5981,18 +5985,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     />
                   </div>
 
-                  <div>
-                    <label className="block font-medium text-[#8B6914] mb-1">
-                      Identitas Konfirmasi Superadmin (Pemilik Aplikasi)*
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={secSuperadminConfirm}
-                      onChange={(e) => setSecSuperadminConfirm(e.target.value)}
-                      placeholder="Masukkan identitas superadmin pemilik aplikasi"
-                      className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[#D4AF37]/25">
+                    <div>
+                      <label className="block font-medium text-[#8B6914] mb-1">
+                        Email / Identitas Superadmin*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoComplete="off"
+                        value={secSuperadminConfirm}
+                        onChange={(e) => setSecSuperadminConfirm(e.target.value)}
+                        placeholder="Email superadmin pemilik aplikasi"
+                        className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-[#8B6914] mb-1">
+                        Password Superadmin*
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        autoComplete="off"
+                        value={secSuperadminPassword}
+                        onChange={(e) => setSecSuperadminPassword(e.target.value)}
+                        placeholder="Password superadmin pemilik aplikasi"
+                        className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
