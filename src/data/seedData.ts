@@ -44,8 +44,8 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   showEvent1: true,
   showEvent2: true,
   showEvent3: true,
-  showLoveStorySection: false,
-  showGallerySection: false,
+  showLoveStorySection: true,
+  showGallerySection: true,
   showRsvpSection: true,
   showGiftSection: true,
 

@@ -8,6 +8,8 @@ import {
   AdminUser,
   PhotoAdjustment,
   MusicTrackItem,
+  LoveStoryItem,
+  GalleryPhotoItem,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -1123,4 +1125,81 @@ export function getPhotoAdjustStyle(adj?: PhotoAdjustment):
     transform: `translate(${x * 0.4}%, ${y * 0.4}%) scale(${zoom})`,
   };
 }
+
+export const DEFAULT_LOVE_STORY_ITEMS: LoveStoryItem[] = [
+  {
+    id: 'story-default-1',
+    dateLabel: '2022',
+    title: 'Pertemuan Pertama',
+    location: 'Semarang',
+    description:
+      'Awal mula perkenalan yang membawa kami saling mengenal lebih dekat dalam doa dan pengharapan.',
+  },
+  {
+    id: 'story-default-2',
+    dateLabel: '2024',
+    title: 'Komitmen Bersama',
+    location: 'Jakarta',
+    description:
+      'Menjalani suka duka bersama, saling menguatkan, dan memantapkan hati untuk melangkah ke jenjang serius.',
+  },
+  {
+    id: 'story-default-3',
+    dateLabel: 'Desember 2026',
+    title: 'Ikatan Suci Pernikahan',
+    location: 'Semarang',
+    description:
+      'Dengan berkat Tuhan serta doa restu kedua orang tua dan keluarga besar, kami mengikat janji suci pernikahan.',
+  },
+];
+
+export const DEFAULT_GALLERY_PHOTOS: GalleryPhotoItem[] = [
+  {
+    id: 'gal-default-1',
+    title: 'Golden Sunset Silhouette',
+    caption: 'Momen keemasan yang abadi dalam bingkai kasih dan doa.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
+    category: 'Prewedding',
+  },
+  {
+    id: 'gal-default-2',
+    title: 'Sacred Promises',
+    caption: 'Melangkah berdua menuju hari bahagia yang telah dinantikan.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85',
+    category: 'Momen Bersama',
+  },
+  {
+    id: 'gal-default-3',
+    title: 'Timeless Elegance',
+    caption: 'Setiap detik bersama adalah anugerah terindah.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=85',
+    category: 'Prewedding',
+  },
+  {
+    id: 'gal-default-4',
+    title: 'Forever Begins Here',
+    caption: 'Menyatukan dua hati dalam satu ikatan suci selamanya.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
+    category: 'Momen Bersama',
+  },
+];
+
+export function getEffectiveLoveStory(settings: WeddingSettings): LoveStoryItem[] {
+  if (Array.isArray(settings.loveStory) && settings.loveStory.length > 0) {
+    return settings.loveStory;
+  }
+  return DEFAULT_LOVE_STORY_ITEMS;
+}
+
+export function getEffectiveGalleryPhotos(settings: WeddingSettings): GalleryPhotoItem[] {
+  if (Array.isArray(settings.galleryPhotos) && settings.galleryPhotos.length > 0) {
+    return settings.galleryPhotos;
+  }
+  return DEFAULT_GALLERY_PHOTOS;
+}
+
 

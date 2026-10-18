@@ -101,6 +101,8 @@ import {
   weddingMusicPlayer,
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
+  getEffectiveLoveStory,
+  getEffectiveGalleryPhotos,
 } from '@/lib/clientSync';
 import {
   CloudSyncStatus,
@@ -677,6 +679,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     [settingsForm]
   );
 
+  const effectiveLoveStory = useMemo(
+    () => getEffectiveLoveStory(state.settings),
+    [state.settings]
+  );
+
+  const effectiveGalleryPhotos = useMemo(
+    () => getEffectiveGalleryPhotos(state.settings),
+    [state.settings]
+  );
+
   useEffect(() => {
     weddingMusicPlayer.syncFromSettings(settingsForm);
     const syncPlayer = () => {
@@ -1182,9 +1194,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleAddLoveStoryItem = async () => {
-    if (!newStoryForm.title.trim() || !newStoryForm.description.trim()) return;
+    if (!newStoryForm.title.trim() || !newStoryForm.description.trim()) {
+      showToast('Isi Judul Momen dan cerita singkat terlebih dahulu.');
+      return;
+    }
     const nextStory: LoveStoryItem[] = [
-      ...(state.settings.loveStory || []),
+      ...effectiveLoveStory,
       {
         id: `story_${Date.now().toString(36)}`,
         dateLabel: newStoryForm.dateLabel.trim() || '2026',
@@ -1212,7 +1227,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleDeleteLoveStoryItem = async (storyId: string) => {
-    const nextStory = (state.settings.loveStory || []).filter((s) => s.id !== storyId);
+    const nextStory = effectiveLoveStory.filter((s) => s.id !== storyId);
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
@@ -1408,7 +1423,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
 
     if (photoAdjustTarget.kind === 'gallery_item') {
-      const nextPhotos = (state.settings.galleryPhotos || []).map((p) =>
+      const nextPhotos = effectiveGalleryPhotos.map((p) =>
         p.id === photoAdjustTarget.photoId ? { ...p, adjustment: cleanAdj } : p
       );
       const nextSettings: WeddingSettings = {
@@ -1538,9 +1553,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleAddGalleryPhotoItem = async () => {
-    if (!newPhotoForm.imageUrl.trim()) return;
+    if (!newPhotoForm.imageUrl.trim()) {
+      showToast('Pilih preset atau upload foto terlebih dahulu.');
+      return;
+    }
     const nextPhotos: GalleryPhotoItem[] = [
-      ...(state.settings.galleryPhotos || []),
+      ...effectiveGalleryPhotos,
       {
         id: `photo_${Date.now().toString(36)}`,
         title: newPhotoForm.title.trim() || 'Momen Bahagia',
@@ -1570,7 +1588,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleDeleteGalleryPhotoItem = async (photoId: string) => {
-    const nextPhotos = (state.settings.galleryPhotos || []).filter((p) => p.id !== photoId);
+    const nextPhotos = effectiveGalleryPhotos.filter((p) => p.id !== photoId);
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
@@ -4054,14 +4072,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         {
                           key: 'showLoveStorySection' as const,
                           title: 'Kisah Kasih',
-                          preview: `${(state.settings.loveStory || []).length} Momen Perjalanan Cinta`,
+                          preview: `${effectiveLoveStory.length} Momen Perjalanan Cinta`,
                           icon: Heart,
                           group: 'media',
                         },
                         {
                           key: 'showGallerySection' as const,
                           title: 'Galeri Prewedding',
-                          preview: `${(state.settings.galleryPhotos || []).length} Foto Prewedding`,
+                          preview: `${effectiveGalleryPhotos.length} Foto Prewedding (Auto-Slide)`,
                           icon: ImageIcon,
                           group: 'media',
                         },
@@ -4870,19 +4888,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         <div className="space-y-3">
                                           <div className="flex items-center gap-1">
                                             <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                              Timeline Kisah Kasih ({(state.settings.loveStory || []).length})
+                                              Timeline Kisah Kasih ({effectiveLoveStory.length})
                                             </p>
                                             <InfoTooltip text="Tambahkan momen perjalanan cinta yang akan ditampilkan secara berurutan pada seksi Kisah Kasih di undangan." />
                                           </div>
 
                                           {/* Existing Love Story List */}
-                                          {(state.settings.loveStory || []).length === 0 ? (
+                                          {effectiveLoveStory.length === 0 ? (
                                             <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
                                               Belum ada cerita perjalanan cinta.
                                             </p>
                                           ) : (
                                             <div className="space-y-2">
-                                              {(state.settings.loveStory || []).map((st) => (
+                                              {effectiveLoveStory.map((st) => (
                                                 <div
                                                   key={st.id}
                                                   className="p-3 rounded-lg bg-white border border-stone-200 flex items-start justify-between gap-3"
@@ -5020,18 +5038,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         <div className="space-y-3">
                                           <div className="flex items-center gap-1">
                                             <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                              Galeri Foto ({(state.settings.galleryPhotos || []).length})
+                                              Galeri Foto ({effectiveGalleryPhotos.length})
                                             </p>
                                             <InfoTooltip text="Tambahkan foto prewedding dari preset atau upload sendiri, lalu klik Atur untuk menyesuaikan zoom & posisi." />
                                           </div>
 
-                                          {(state.settings.galleryPhotos || []).length === 0 ? (
+                                          {effectiveGalleryPhotos.length === 0 ? (
                                             <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
                                               Belum ada foto di galeri prewedding.
                                             </p>
                                           ) : (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                              {(state.settings.galleryPhotos || []).map(
+                                              {effectiveGalleryPhotos.map(
                                                 (ph) => (
                                                   <div
                                                     key={ph.id}
