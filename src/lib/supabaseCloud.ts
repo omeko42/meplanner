@@ -13,6 +13,10 @@ import {
   INITIAL_BUDGET_ITEMS,
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
+import {
+  unwrapSvgEmbeddedRasterUrl,
+  wrapRasterDataUrlInSvg,
+} from './clientSync';
 
 export const SUPABASE_PROJECT_REF = 'gwoyalvivfemaeacbyvi';
 export const SUPABASE_URL =
@@ -693,9 +697,9 @@ export async function uploadImageToSupabaseStorage(
     const shortHash = cacheSig
       .replace(/[^a-zA-Z0-9_-]/g, '')
       .slice(-16);
-    const objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
+    let objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
 
-    const upRes = await fetch(
+    let upRes = await fetch(
       `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
       {
         method: 'POST',
@@ -708,6 +712,29 @@ export async function uploadImageToSupabaseStorage(
         body: bodyBlob,
       }
     );
+
+    if (!upRes.ok && ext === 'svg' && typeof fileOrDataUrl === 'string') {
+      const innerRaster = unwrapSvgEmbeddedRasterUrl(fileOrDataUrl);
+      if (innerRaster !== fileOrDataUrl && innerRaster.startsWith('data:image/')) {
+        const innerRes = await fetch(innerRaster);
+        const innerBlob = await innerRes.blob();
+        objectPath = `photos/${safeSlot}_${shortHash}.webp`;
+        upRes = await fetch(
+          `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': innerBlob.type || 'image/webp',
+              'x-upsert': 'true',
+            },
+            body: innerBlob,
+          }
+        );
+      }
+    }
+
     if (!upRes.ok) return null;
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
     if (cacheSig) {
@@ -994,8 +1021,14 @@ async function compressDataUrlForCloud(
 ): Promise<string | undefined> {
   if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
   if (!dataUrl.startsWith('data:image/')) return dataUrl;
-  if (dataUrl.startsWith('data:image/svg+xml')) return dataUrl;
   if (dataUrl.length <= maxAllowedChars) return dataUrl;
+
+  let sourceToCompress = dataUrl;
+  if (dataUrl.startsWith('data:image/svg+xml')) {
+    const inner = unwrapSvgEmbeddedRasterUrl(dataUrl);
+    if (inner === dataUrl) return dataUrl;
+    sourceToCompress = inner;
+  }
 
   const cacheKey = `${dataUrl.slice(0, 64)}_${dataUrl.slice(-64)}_${dataUrl.length}_${maxDim}_${quality}`;
   const cached = compressedDataUrlCache.get(cacheKey);
@@ -1037,13 +1070,14 @@ async function compressDataUrlForCloud(
           if (!out.startsWith('data:image/webp')) {
             out = canvas.toDataURL('image/jpeg', quality);
           }
-          compressedDataUrlCache.set(cacheKey, out);
-          resolve(out);
+          const svgWrapped = wrapRasterDataUrlInSvg(out, w, h);
+          compressedDataUrlCache.set(cacheKey, svgWrapped);
+          resolve(svgWrapped);
         } catch {
           resolve(dataUrl);
         }
       };
-      img.src = dataUrl;
+      img.src = sourceToCompress;
     } catch {
       resolve(dataUrl);
     }

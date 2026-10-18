@@ -115,6 +115,9 @@ import {
   resolveStageAspectRatio,
   drawStagePhotoOnContext,
   exportCroppedPhotoDataUrl,
+  wrapRasterDataUrlInSvg,
+  unwrapSvgEmbeddedRasterUrl,
+  extractEmbeddedJpegFromRawBuffer,
   weddingMusicPlayer,
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
@@ -1814,83 +1817,180 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   };
 
-  // Auto-convert & optimize uploaded image file (Ultra HD WebP / SVG vector, guaranteed <= 10 MB & anti-pecah)
-  const compressImageFileToDataUrl = (
+  const isSupportedPhotoFile = (file: File): boolean => {
+    if (file.type && file.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|svg|gif|bmp|avif|heic|heif|tiff?|dng|cr2|cr3|nef|arw|rw2|orf|raf)$/i.test(
+      file.name
+    );
+  };
+
+  // Auto-compress & convert uploaded image of ANY size (28 MB, 50 MB, 100 MB+ / Camera RAW) into lightweight Ultra-HD .SVG DataURL
+  const compressImageFileToDataUrl = async (
     file: File,
-    maxDimension = 2400,
-    quality = 0.92
+    maxDimension = 1800,
+    quality = 0.86
   ): Promise<string> => {
-    const MAX_TARGET_BYTES = 10 * 1024 * 1024; // 10 MB strict max limit
-    return new Promise((resolve, reject) => {
-      if (file.size > 50 * 1024 * 1024) {
-        reject(
-          new Error(
-            'Ukuran file mentah maksimal 50 MB (akan dikonversi otomatis ke < 10 MB).'
-          )
-        );
-        return;
-      }
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
-      reader.onload = () => {
-        const resultStr = String(reader.result || '');
-        // Preserve SVG vector files directly so vector graphics never rasterize
-        if (file.type === 'image/svg+xml' || resultStr.startsWith('data:image/svg+xml')) {
-          resolve(resultStr);
-          return;
+    // 1. Preserve lightweight native SVG vector files directly
+    if (
+      (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)) &&
+      file.size <= 512 * 1024
+    ) {
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Gagal membaca file SVG.'));
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const MAX_BASE64_CHARS = 550_000; // ~380 KB binary for instant cloud sync & zero memory bloat
+
+    const renderSourceToSvgDataUrl = (
+      source: CanvasImageSource,
+      srcWidth: number,
+      srcHeight: number
+    ): string => {
+      let width = Math.max(1, Math.round(srcWidth || 1600));
+      let height = Math.max(1, Math.round(srcHeight || 1600));
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.max(1, Math.round((height * maxDimension) / width));
+          width = maxDimension;
+        } else {
+          width = Math.max(1, Math.round((width * maxDimension) / height));
+          height = maxDimension;
         }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        canvas.width = 0;
+        canvas.height = 0;
+        throw new Error('Gagal menginisialisasi kanvas kompresi gambar.');
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(source, 0, 0, width, height);
+
+      let currentQuality = quality;
+      let converted = canvas.toDataURL('image/webp', currentQuality);
+      const useWebp = converted.startsWith('data:image/webp');
+      if (!useWebp) {
+        converted = canvas.toDataURL('image/jpeg', currentQuality);
+      }
+
+      while (converted.length > MAX_BASE64_CHARS && currentQuality > 0.45) {
+        currentQuality = Number((currentQuality - 0.07).toFixed(2));
+        converted = canvas.toDataURL(
+          useWebp ? 'image/webp' : 'image/jpeg',
+          currentQuality
+        );
+      }
+
+      let finalW = width;
+      let finalH = height;
+
+      // Secondary proportional downscale if an ultra-dense image still exceeds target
+      if (converted.length > MAX_BASE64_CHARS) {
+        finalW = Math.max(1, Math.round(width * 0.78));
+        finalH = Math.max(1, Math.round(height * 0.78));
+        const scaledCanvas = document.createElement('canvas');
+        scaledCanvas.width = finalW;
+        scaledCanvas.height = finalH;
+        const scaledCtx = scaledCanvas.getContext('2d');
+        if (scaledCtx) {
+          scaledCtx.imageSmoothingEnabled = true;
+          scaledCtx.imageSmoothingQuality = 'high';
+          scaledCtx.drawImage(canvas, 0, 0, finalW, finalH);
+          converted = scaledCanvas.toDataURL(
+            useWebp ? 'image/webp' : 'image/jpeg',
+            0.76
+          );
+        }
+        scaledCanvas.width = 0;
+        scaledCanvas.height = 0;
+      }
+
+      canvas.width = 0;
+      canvas.height = 0;
+
+      return wrapRasterDataUrlInSvg(converted, finalW, finalH);
+    };
+
+    const decodeBlobViaObjectUrl = (blob: Blob): Promise<string> =>
+      new Promise<string>((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(blob);
         const img = new window.Image();
-        img.onerror = () => resolve(resultStr);
+        img.decoding = 'async';
         img.onload = () => {
           try {
-            let width = img.naturalWidth || img.width || 1600;
-            let height = img.naturalHeight || img.height || 1600;
-            if (width > maxDimension || height > maxDimension) {
-              if (width >= height) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
-              } else {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
-              }
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve(resultStr);
-              return;
-            }
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, width, height);
-
-            let currentQuality = quality;
-            let converted = canvas.toDataURL('image/webp', currentQuality);
-            const useWebp = converted.startsWith('data:image/webp');
-            if (!useWebp) {
-              converted = canvas.toDataURL('image/jpeg', currentQuality);
-            }
-
-            // Guarantee final converted size is strictly <= 10 MB
-            const maxBase64Length = Math.floor((MAX_TARGET_BYTES * 4) / 3);
-            while (converted.length > maxBase64Length && currentQuality > 0.5) {
-              currentQuality = Number((currentQuality - 0.08).toFixed(2));
-              converted = canvas.toDataURL(
-                useWebp ? 'image/webp' : 'image/jpeg',
-                currentQuality
-              );
-            }
-            resolve(converted);
-          } catch {
-            resolve(resultStr);
+            const w = img.naturalWidth || img.width || 1600;
+            const h = img.naturalHeight || img.height || 1600;
+            const svgDataUrl = renderSourceToSvgDataUrl(img, w, h);
+            URL.revokeObjectURL(objectUrl);
+            resolve(svgDataUrl);
+          } catch (err) {
+            URL.revokeObjectURL(objectUrl);
+            reject(err);
           }
         };
-        img.src = resultStr;
-      };
-      reader.readAsDataURL(file);
-    });
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Gagal mendekode blob gambar.'));
+        };
+        img.src = objectUrl;
+      });
+
+    // Fast Path 1: Hardware-accelerated zero-copy createImageBitmap(file)
+    if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        try {
+          return renderSourceToSvgDataUrl(bitmap, bitmap.width, bitmap.height);
+        } finally {
+          bitmap.close();
+        }
+      } catch {
+        // Proceed to Fast Path 2 or RAW extractor
+      }
+    }
+
+    // Fast Path 2: Zero-copy URL.createObjectURL(file) + HTMLImageElement
+    try {
+      return await decodeBlobViaObjectUrl(file);
+    } catch {
+      // Proceed to Fast Path 3 (Camera RAW embedded JPEG extraction)
+    }
+
+    // Fast Path 3: Extract embedded full-res JPEG from Camera RAW (.CR2, .CR3, .NEF, .ARW, .DNG, .RW2, .ORF, .RAF)
+    try {
+      const buffer = await file.arrayBuffer();
+      const embeddedJpegBlob = extractEmbeddedJpegFromRawBuffer(buffer);
+      if (embeddedJpegBlob) {
+        if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
+          try {
+            const bitmap = await createImageBitmap(embeddedJpegBlob);
+            try {
+              return renderSourceToSvgDataUrl(bitmap, bitmap.width, bitmap.height);
+            } finally {
+              bitmap.close();
+            }
+          } catch {
+            // Fallback to ObjectURL on the extracted JPEG blob
+          }
+        }
+        return await decodeBlobViaObjectUrl(embeddedJpegBlob);
+      }
+    } catch {
+      // Ignore and throw unified error below
+    }
+
+    throw new Error(
+      'Format gambar tidak dapat didekode oleh browser. Gunakan JPG, PNG, WEBP, SVG, atau file RAW kamera standar.'
+    );
   };
 
   // State & Handlers for Interactive Photo Crop, Zoom, Pan, Rotate & Fit Studio
@@ -1964,23 +2064,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       return;
     }
     let cancelled = false;
+    const renderableUrl = unwrapSvgEmbeddedRasterUrl(photoAdjustUrl);
     const img = new window.Image();
-    if (!photoAdjustUrl.startsWith('data:')) {
+    if (!renderableUrl.startsWith('data:')) {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => {
       if (!cancelled) setLoadedPreviewImg(img);
     };
     img.onerror = () => {
-      if (!photoAdjustUrl.startsWith('data:')) {
+      if (!renderableUrl.startsWith('data:')) {
         const fallbackImg = new window.Image();
         fallbackImg.onload = () => {
           if (!cancelled) setLoadedPreviewImg(fallbackImg);
         };
-        fallbackImg.src = photoAdjustUrl;
+        fallbackImg.src = renderableUrl;
       }
     };
-    img.src = photoAdjustUrl;
+    img.src = renderableUrl;
     return () => {
       cancelled = true;
     };
@@ -2303,16 +2404,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
-      showToast('Pilih file berformat gambar (JPG, PNG, WEBP, SVG).');
+    if (!isSupportedPhotoFile(file)) {
+      showToast(
+        'Pilih file gambar atau kamera RAW (JPG, PNG, WEBP, SVG, HEIC, CR2, CR3, NEF, ARW, DNG).'
+      );
       return;
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast(`Mengonversi foto ke Ultra-HD tajam (Maks 10 MB)...`);
+      const origSizeLabel =
+        file.size >= 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${origKb} KB`;
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(
+          `Memproses file besar (${origSizeLabel}) — kompresi otomatis & konversi ke .SVG HD...`
+        );
+      } else {
+        showToast(
+          `Mengompresi & mengonversi foto (${origSizeLabel}) ke .SVG HD...`
+        );
+      }
       const maxDim =
-        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1400 : 2400;
-      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.92);
+        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1400 : 1800;
+      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.86);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
 
@@ -2386,10 +2501,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'FOTO_TEMA',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Upload & konversi foto Ultra-HD (${target}: ${origKb}KB -> ${finalKb}KB)`,
+        summary: `Upload & konversi foto ke .SVG HD (${target}: ${origSizeLabel} -> ${finalKb}KB .svg)`,
       });
       showToast(
-        `✓ Foto Ultra-HD tajam siap (${origKb} KB → ${finalKb} KB, maks 10 MB)! Silakan atur Crop & Posisi.`
+        `✓ Foto berhasil dikompres & dikonversi ke .SVG HD (${origSizeLabel} → ${finalKb} KB)! Silakan atur Crop & Posisi.`
       );
 
       // Automatically open the Crop, Zoom & Pan Studio so user can adjust framing right away
@@ -2413,7 +2528,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         summary: `Gagal meng-upload gambar (${target})`,
         detail: err instanceof Error ? err.message : String(err),
       });
-      showToast('Gagal meng-upload gambar.');
+      showToast(
+        err instanceof Error ? err.message : 'Gagal meng-upload gambar.'
+      );
     }
   };
 
@@ -2423,14 +2540,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+    if (!isSupportedPhotoFile(file)) {
       showToast('Pilih file berformat gambar QRIS (JPG, PNG, WEBP, SVG).');
       return;
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast('Mengonversi gambar Barcode QRIS (Ultra-HD tajam, Maks 10 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 2000, 0.92);
+      const origSizeLabel =
+        file.size >= 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${origKb} KB`;
+      showToast(
+        `Mengompresi & mengonversi gambar Barcode QRIS (${origSizeLabel}) ke .SVG HD...`
+      );
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.88);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       void deleteMediaFromSupabaseStorage(
@@ -2449,13 +2572,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'AMPLOP_DIGITAL',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Meng-upload gambar Barcode QRIS (${origKb} KB → ${finalKb} KB)`,
+        summary: `Meng-upload & konversi gambar Barcode QRIS ke .SVG (${origSizeLabel} → ${finalKb} KB)`,
       });
       showToast(
-        `✓ Barcode QRIS berhasil disimpan ke Supabase (${origKb} KB → ${finalKb} KB)!`
+        `✓ Barcode QRIS berhasil dikompres & dikonversi ke .SVG (${origSizeLabel} → ${finalKb} KB)!`
       );
-    } catch {
-      showToast('Gagal meng-upload gambar Barcode QRIS.');
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'Gagal meng-upload gambar Barcode QRIS.'
+      );
     }
   };
 
@@ -2465,14 +2592,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+    if (!isSupportedPhotoFile(file)) {
       showToast('Pilih file berformat gambar QRIS (JPG, PNG, WEBP, SVG).');
       return;
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast('Mengonversi gambar QRIS Komersial (Ultra-HD tajam, Maks 10 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 2000, 0.92);
+      const origSizeLabel =
+        file.size >= 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${origKb} KB`;
+      showToast(
+        `Mengompresi & mengonversi QRIS Komersial (${origSizeLabel}) ke .SVG HD...`
+      );
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.88);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       void deleteMediaFromSupabaseStorage(
@@ -2490,13 +2623,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'SUPERADMIN_BRANDING',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Meng-upload gambar QRIS Komersial MWM (${origKb} KB → ${finalKb} KB)`,
+        summary: `Meng-upload & konversi QRIS Komersial MWM ke .SVG (${origSizeLabel} → ${finalKb} KB)`,
       });
       showToast(
-        `✓ QRIS Komersial MWM berhasil disimpan ke Supabase (${origKb} KB → ${finalKb} KB)!`
+        `✓ QRIS Komersial MWM berhasil dikompres & dikonversi ke .SVG (${origSizeLabel} → ${finalKb} KB)!`
       );
-    } catch {
-      showToast('Gagal meng-upload gambar QRIS Komersial.');
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'Gagal meng-upload gambar QRIS Komersial.'
+      );
     }
   };
 
@@ -2506,14 +2643,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
-      showToast('Pilih file berformat gambar (JPG, PNG, WEBP, SVG).');
+    if (!isSupportedPhotoFile(file)) {
+      showToast(
+        'Pilih file gambar atau kamera RAW (JPG, PNG, WEBP, SVG, HEIC, CR2, CR3, NEF, ARW, DNG).'
+      );
       return;
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast('Mengonversi foto galeri ke Ultra-HD tajam (Maks 10 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 2400, 0.92);
+      const origSizeLabel =
+        file.size >= 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${origKb} KB`;
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(
+          `Memproses foto galeri besar (${origSizeLabel}) — kompresi otomatis & konversi ke .SVG HD...`
+        );
+      } else {
+        showToast(
+          `Mengompresi & mengonversi foto galeri (${origSizeLabel}) ke .SVG HD...`
+        );
+      }
+      const dataUrl = await compressImageFileToDataUrl(file, 1800, 0.86);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       const baseName = file.name.replace(/\.[^/.]+$/, '');
@@ -2537,10 +2688,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }));
       openNewGalleryPhotoAdjust(dataUrl);
       showToast(
-        `✓ Foto Ultra-HD tajam siap (${origKb} KB → ${finalKb} KB, maks 10 MB)! Silakan Crop lalu klik Tambah Foto.`
+        `✓ Foto galeri berhasil dikompres & dikonversi ke .SVG HD (${origSizeLabel} → ${finalKb} KB)! Silakan Crop lalu klik Tambah Foto.`
       );
-    } catch {
-      showToast('Gagal memproses file foto.');
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Gagal memproses file foto.'
+      );
     }
   };
 
@@ -2644,13 +2797,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+    if (!isSupportedPhotoFile(file)) {
+      showToast(
+        'Pilih file gambar atau kamera RAW (JPG, PNG, WEBP, SVG, HEIC, CR2, CR3, NEF, ARW, DNG).'
+      );
       return;
     }
     try {
-      showToast('Mengonversi & mengganti foto ke Ultra-HD (Maks 10 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 2400, 0.92);
+      const origKb = Math.max(1, Math.round(file.size / 1024));
+      const origSizeLabel =
+        file.size >= 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${origKb} KB`;
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(
+          `Memproses pergantian foto besar (${origSizeLabel}) — kompresi otomatis & konversi ke .SVG HD...`
+        );
+      } else {
+        showToast(
+          `Mengompresi & mengganti foto (${origSizeLabel}) ke .SVG HD...`
+        );
+      }
+      const dataUrl = await compressImageFileToDataUrl(file, 1800, 0.86);
+      const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
+      const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       const defaultAdj: PhotoAdjustment = {
         zoom: 1,
         x: 0,
@@ -2692,9 +2862,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'GALERI_FOTO',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Mengganti file foto pada galeri "${(updatedPhoto as GalleryPhotoItem | null)?.title || photoId}"`,
+        summary: `Mengganti & mengonversi file foto galeri ke .SVG HD "${(updatedPhoto as GalleryPhotoItem | null)?.title || photoId}" (${origSizeLabel} -> ${finalKb}KB)`,
       });
-      showToast('✓ Foto berhasil diganti (Ultra-HD)! Silakan atur Crop, Zoom & Posisi.');
+      showToast(
+        `✓ Foto berhasil diganti & dikonversi ke .SVG HD (${origSizeLabel} → ${finalKb} KB)! Silakan atur Crop, Zoom & Posisi.`
+      );
     } catch (err) {
       appendAuditLog({
         actor: adminUser.username,
@@ -2704,7 +2876,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         summary: `Gagal mengganti file foto galeri (${photoId})`,
         detail: err instanceof Error ? err.message : String(err),
       });
-      showToast('Gagal mengganti file foto.');
+      showToast(
+        err instanceof Error ? err.message : 'Gagal mengganti file foto.'
+      );
     }
   };
 
@@ -6619,7 +6793,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       <span>Upload</span>
                                                       <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                                         onChange={(e) =>
                                                           handleUploadThemeImage(
                                                             e,
@@ -6785,7 +6959,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       <span>Upload</span>
                                                       <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                                         onChange={(e) =>
                                                           handleUploadThemeImage(
                                                             e,
@@ -7555,7 +7729,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             <span>Ganti Foto</span>
                                                             <input
                                                               type="file"
-                                                              accept="image/*,.svg"
+                                                              accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                                               className="hidden"
                                                               onChange={(e) =>
                                                                 handleReplaceGalleryPhotoFile(
@@ -7846,7 +8020,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 <span>Upload Foto</span>
                                                 <input
                                                   type="file"
-                                                  accept="image/*,.svg"
+                                                  accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                                   className="hidden"
                                                   onChange={handleUploadGalleryFile}
                                                 />
@@ -8156,7 +8330,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       <span>Upload Gambar QRIS</span>
                                                       <input
                                                         type="file"
-                                                        accept="image/*,.svg"
+                                                        accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                                         className="hidden"
                                                         onChange={handleUploadQrisFile}
                                                       />
@@ -8364,7 +8538,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <span>Upload Semua</span>
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                             className="hidden"
                             onChange={(e) => handleUploadThemeImage(e, 'all_bg')}
                           />
@@ -8433,7 +8607,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <span>Upload</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                 className="hidden"
                                 onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
                               />
@@ -8513,7 +8687,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <span>Upload</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                 className="hidden"
                                 onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
                               />
@@ -8593,7 +8767,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <span>Upload</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                 className="hidden"
                                 onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
                               />
@@ -10638,32 +10812,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <span>Upload Gambar QR</span>
                                           <input
                                             type="file"
-                                            accept="image/*,.svg"
+                                            accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                                             className="hidden"
                                             onChange={async (e) => {
                                               const file = e.target.files?.[0];
                                               e.target.value = '';
                                               if (!file) return;
+                                              if (!isSupportedPhotoFile(file)) {
+                                                showToast(
+                                                  'Pilih file gambar QR (JPG, PNG, WEBP, SVG).'
+                                                );
+                                                return;
+                                              }
                                               try {
                                                 showToast(
-                                                  'Mengonversi gambar QR Wallet...'
+                                                  'Mengompresi & mengonversi gambar QR Wallet ke .SVG HD...'
                                                 );
                                                 const dataUrl =
                                                   await compressImageFileToDataUrl(
                                                     file,
-                                                    1800,
-                                                    0.92
+                                                    1600,
+                                                    0.88
                                                   );
                                                 setChannelForm((prev) => ({
                                                   ...prev,
                                                   qrCodeImageUrl: dataUrl,
                                                 }));
                                                 showToast(
-                                                  '✓ Gambar QR berhasil dimuat ke form wallet!'
+                                                  '✓ Gambar QR berhasil dikompres & dikonversi ke .SVG di form wallet!'
                                                 );
-                                              } catch {
+                                              } catch (err) {
                                                 showToast(
-                                                  'Gagal memuat file gambar QR.'
+                                                  err instanceof Error
+                                                    ? err.message
+                                                    : 'Gagal memuat file gambar QR.'
                                                 );
                                               }
                                             }}
@@ -13000,7 +13182,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             />
                           </div>
                           <p className="text-[11px] text-stone-500 leading-relaxed">
-                            Batas unggah foto dinaikkan hingga <strong>10 MB per foto (Ultra-HD)</strong>. Agar kuota {quotaMb} MB awet bertahun-tahun, setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
+                            Mendukung unggah foto <strong>tanpa batas ukuran mentah (28 MB, 50 MB+, &amp; Kamera RAW)</strong> yang otomatis dikompres &amp; dikonversi ke format <strong>.SVG Ultra-HD ringan</strong>. Setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
                           </p>
                         </div>
                       );
@@ -14926,7 +15108,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <span>Upload Semua</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                           className="hidden"
                           onChange={(e) => handleUploadThemeImage(e, 'all_bg')}
                         />
@@ -14964,7 +15146,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <span>Upload</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                           className="hidden"
                           onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
                         />
@@ -14991,7 +15173,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <span>Upload</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                           className="hidden"
                           onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
                         />
@@ -15018,7 +15200,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <span>Upload</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                           className="hidden"
                           onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
                         />
@@ -16167,7 +16349,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <span>Upload Gambar QRIS</span>
                             <input
                               type="file"
-                              accept="image/*,.svg"
+                              accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                               className="hidden"
                               onChange={handleUploadQrisFile}
                             />

@@ -1632,6 +1632,110 @@ export function drawStagePhotoOnContext(
   ctx.restore();
 }
 
+export function wrapRasterDataUrlInSvg(
+  rasterDataUrl: string,
+  width: number,
+  height: number
+): string {
+  if (!rasterDataUrl || rasterDataUrl.startsWith('data:image/svg+xml')) {
+    return rasterDataUrl;
+  }
+  const w = Math.max(1, Math.round(width || 1200));
+  const h = Math.max(1, Math.round(height || 1200));
+  const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><image width="${w}" height="${h}" preserveAspectRatio="none" href="${rasterDataUrl}" xlink:href="${rasterDataUrl}"/></svg>`;
+  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+    try {
+      return `data:image/svg+xml;base64,${window.btoa(svgMarkup)}`;
+    } catch {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svgMarkup)}`;
+    }
+  }
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svgMarkup)}`;
+}
+
+export function unwrapSvgEmbeddedRasterUrl(url: string): string {
+  if (!url || typeof url !== 'string') return url;
+  if (url.startsWith('data:image/svg+xml')) {
+    try {
+      const commaIdx = url.indexOf(',');
+      if (commaIdx === -1) return url;
+      const header = url.slice(0, commaIdx).toLowerCase();
+      const body = url.slice(commaIdx + 1);
+      const decodedSvg =
+        header.includes(';base64') &&
+        typeof window !== 'undefined' &&
+        typeof window.atob === 'function'
+          ? window.atob(body)
+          : decodeURIComponent(body);
+      const match = decodedSvg.match(
+        /href=["'](data:image\/(?:webp|jpeg|jpg|png|avif);base64,[^"']+)["']/i
+      );
+      if (match && match[1]) {
+        return match[1];
+      }
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
+export function extractEmbeddedJpegFromRawBuffer(
+  buffer: ArrayBuffer
+): Blob | null {
+  try {
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.length;
+    if (len < 16384) return null;
+
+    let bestStart = -1;
+    let bestEnd = -1;
+    let bestLen = 0;
+
+    for (let i = 0; i < len - 3; i++) {
+      // Look for JPEG SOI marker (0xFF 0xD8 0xFF) followed by standard APP/DQT/SOF markers (0xE0..0xEF, 0xDB, 0xC0, 0xC4)
+      if (
+        bytes[i] === 0xff &&
+        bytes[i + 1] === 0xd8 &&
+        bytes[i + 2] === 0xff &&
+        ((bytes[i + 3] >= 0xe0 && bytes[i + 3] <= 0xef) ||
+          bytes[i + 3] === 0xdb ||
+          bytes[i + 3] === 0xc0 ||
+          bytes[i + 3] === 0xc4)
+      ) {
+        const startIdx = i;
+        let endIdx = -1;
+        // Scan forward for EOI marker (0xFF 0xD9)
+        for (let j = i + 4; j < len - 1; j++) {
+          if (bytes[j] === 0xff && bytes[j + 1] === 0xd9) {
+            endIdx = j + 2;
+            const segLen = endIdx - startIdx;
+            if (segLen > 16384 && segLen > bestLen) {
+              bestStart = startIdx;
+              bestEnd = endIdx;
+              bestLen = segLen;
+            }
+          }
+          // Stop scanning a single candidate if it exceeds 18 MB
+          if (j - startIdx > 18 * 1024 * 1024) break;
+        }
+        if (endIdx > startIdx + 65536) {
+          i = endIdx - 1;
+        }
+      }
+    }
+
+    if (bestStart >= 0 && bestEnd > bestStart && bestLen > 16384) {
+      return new Blob([bytes.subarray(bestStart, bestEnd)], {
+        type: 'image/jpeg',
+      });
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function exportCroppedPhotoDataUrl(
   imageUrl: string,
   adj: PhotoAdjustment,
@@ -1640,8 +1744,9 @@ export async function exportCroppedPhotoDataUrl(
   quality = 0.88
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    const effectiveSourceUrl = unwrapSvgEmbeddedRasterUrl(imageUrl);
     const img = new window.Image();
-    if (!imageUrl.startsWith('data:')) {
+    if (!effectiveSourceUrl.startsWith('data:')) {
       img.crossOrigin = 'anonymous';
     }
     img.onerror = () => reject(new Error('Gagal memuat gambar untuk dipotong (crop).'));
@@ -1703,16 +1808,27 @@ export async function exportCroppedPhotoDataUrl(
           offsetY
         );
 
-        let croppedDataUrl = canvas.toDataURL('image/webp', quality);
-        if (!croppedDataUrl.startsWith('data:image/webp')) {
-          croppedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        let q = quality;
+        let croppedDataUrl = canvas.toDataURL('image/webp', q);
+        const useWebp = croppedDataUrl.startsWith('data:image/webp');
+        if (!useWebp) {
+          croppedDataUrl = canvas.toDataURL('image/jpeg', q);
         }
-        resolve(croppedDataUrl);
+
+        while (croppedDataUrl.length > 520_000 && q > 0.52) {
+          q = Math.max(0.52, Number((q - 0.08).toFixed(2)));
+          croppedDataUrl = canvas.toDataURL(
+            useWebp ? 'image/webp' : 'image/jpeg',
+            q
+          );
+        }
+
+        resolve(wrapRasterDataUrlInSvg(croppedDataUrl, outW, outH));
       } catch (err) {
         reject(err);
       }
     };
-    img.src = imageUrl;
+    img.src = effectiveSourceUrl;
   });
 }
 
