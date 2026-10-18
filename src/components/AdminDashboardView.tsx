@@ -4067,10 +4067,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       omeko11
                     </a>
                   </span>
-                  <span className="mx-1 text-stone-300">&bull;</span>
-                  <span>
-                    {state.settings.groomNickname} &amp;{' '}
-                    {state.settings.brideNickname}
+                  <span className="hidden md:inline">
+                    <span className="mx-1 text-stone-300">&bull;</span>
+                    <span>
+                      {state.settings.groomNickname} &amp;{' '}
+                      {state.settings.brideNickname}
+                    </span>
                   </span>
                   <span className="hidden sm:inline">
                     {' '}
@@ -4116,22 +4118,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </>
                 ) : errorAuditCount > 0 ? (
                   <>
-                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Log ({errorAuditCount} Error)</span>
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span className="hidden sm:inline">Log ({errorAuditCount} Error)</span>
+                    <span className="sm:hidden text-[10px]">{errorAuditCount}</span>
                   </>
                 ) : (
                   <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <span className="hidden sm:inline">
                       {cloudSyncStatus === 'SYNCED' ? 'Supabase OK' : 'Auto-Save'} &bull; Log ({auditLogs.length})
                     </span>
-                    <span className="sm:hidden">Log ({auditLogs.length})</span>
+                    <span className="sm:hidden text-[10px]">{auditLogs.length}</span>
                   </>
                 )}
               </button>
 
               {!isPanitia && (
-                <div className="inline-flex items-center rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden">
+                <>
                   <button
                     type="button"
                     onClick={() => {
@@ -4156,22 +4159,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       });
                       showToast('File Backup (.JSON) berhasil diunduh!');
                     }}
-                    className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-[11px] font-bold text-[#8B6914] hover:bg-[#FAF3E3] transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[11px] font-bold text-[#8B6914] transition-colors"
                     title="Export / Unduh seluruh data ke file Backup .JSON"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#B68D40]" />
-                    <span className="hidden sm:inline">Backup</span>
+                    <Download className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                    <span className="hidden md:inline">Backup</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 border-l border-[#D4AF37]/30 text-[11px] font-bold text-stone-700 hover:bg-[#FAF3E3] hover:text-[#8B6914] transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-colors"
                     title="Import / Pulihkan data dari file Backup .JSON"
                   >
-                    <Upload className="w-3.5 h-3.5 text-[#B68D40]" />
-                    <span className="hidden sm:inline">Restore</span>
+                    <Upload className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                    <span className="hidden md:inline">Restore</span>
                   </button>
-                </div>
+                </>
               )}
 
               {(!adminUser.clientId || adminUser.clientId === 'client-utama') &&
@@ -4192,7 +4195,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       );
                     }}
                     title="Pilih Workspace Klien Aktif (Superadmin Multi-Client Switcher)"
-                    className="max-w-[125px] sm:max-w-[180px] px-2.5 py-1.5 rounded-xl bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-bold truncate cursor-pointer focus:outline-none"
+                    className="max-w-[96px] sm:max-w-[175px] px-2.5 py-1.5 rounded-xl bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-bold truncate cursor-pointer focus:outline-none"
                   >
                     {effectiveClientGroups.map((cg) => (
                       <option key={cg.id} value={cg.id}>
@@ -4206,21 +4209,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenLandingPage}
-                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-all"
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-all"
                   title="Buka Halaman Depan Komersial My Wedding Manager (MWM)"
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>Katalog MWM</span>
+                  <span className="hidden lg:inline">Katalog MWM</span>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={() => onSwitchToPublicPreview()}
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
+                title="Buka Pratinjau Undangan Publik"
               >
                 <Eye className="w-3.5 h-3.5 shrink-0" />
-                <span>Undangan</span>
+                <span className="hidden sm:inline">Undangan</span>
               </button>
 
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
@@ -6202,8 +6206,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-              {/* LEFT SIDEBAR MENU (2-Column Grid on Mobile, Vertical List on Desktop) */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-1.5 p-2 lg:p-0 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
+              <div className="lg:col-span-4 lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -6247,8 +6251,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setSettingsMenuTab(menu.id)}
                         className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
                           isActive
-                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border border-[#D4AF37]/50 lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
-                            : 'bg-[#FAF8F5] lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-stone-200/70 lg:border-0'
+                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-2 border-[#B68D40] shadow-xs lg:shadow-none lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
+                            : 'bg-white lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-[#D4AF37]/35 shadow-2xs lg:shadow-none lg:border-0'
                         }`}
                       >
                         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
@@ -9667,7 +9671,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs transition-all"
                 >
                   <Plus className="w-3.5 h-3.5 shrink-0" />
-                  <span>+ Grup Client Baru</span>
+                  <span className="hidden sm:inline">+ Grup Client Baru</span>
+                  <span className="sm:hidden">Klien</span>
                 </button>
                 <button
                   type="button"
@@ -9684,7 +9689,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-1.5 p-2 lg:p-0 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-4 lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {(
                   [
                     {
@@ -9739,8 +9744,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onClick={() => setSuperadminMenuTab(menu.id)}
                       className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
                         isActive
-                          ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border border-[#D4AF37]/50 lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
-                          : 'bg-[#FAF8F5] lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-stone-200/70 lg:border-0'
+                          ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-2 border-[#B68D40] shadow-xs lg:shadow-none lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
+                          : 'bg-white lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-[#D4AF37]/35 shadow-2xs lg:shadow-none lg:border-0'
                       }`}
                     >
                       <div className="flex items-center gap-2 lg:gap-3 min-w-0">

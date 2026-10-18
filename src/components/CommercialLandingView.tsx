@@ -1035,15 +1035,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-stone-800 flex flex-col justify-between selection:bg-[#D4AF37]/30">
-      {/* TOP STICKY NAVBAR (Enlarged & Proportional) */}
+      {/* TOP STICKY NAVBAR (Separate Individual Cards + Automatic Icon-Only on HP) */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-[#D4AF37]/30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-          {/* Brand Logo & Title (Clean without Commercial SaaS Suite pill) */}
-          <div className="flex items-center gap-3 min-w-0 shrink-0">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-3">
+          {/* Brand Logo & Title */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center shadow-2xs shrink-0 hover:scale-105 transition-transform"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center shadow-2xs shrink-0 hover:scale-105 transition-transform"
               title="My Wedding Manager Home"
             >
               <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -1053,13 +1053,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
-                  className="font-serif font-extrabold text-base sm:text-lg lg:text-xl text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
+                  className="font-serif font-extrabold text-sm sm:text-lg lg:text-xl text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
                 >
                   <span className="sm:hidden tracking-wider">MWM</span>
                   <span className="hidden sm:inline">My Wedding Manager</span>
                 </button>
               </div>
-              <p className="text-[11px] sm:text-xs font-bold text-[#8B6914] leading-tight whitespace-nowrap">
+              <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight whitespace-nowrap">
                 by{' '}
                 <a
                   href={developerUrl}
@@ -1080,38 +1080,43 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </div>
 
-          {/* Center Enlarged Pill Nav Links with Icons + Tooltips */}
-          <nav className="hidden md:flex items-center gap-1.5 bg-[#FAF8F5] border border-[#D4AF37]/35 p-1.5 rounded-2xl shadow-2xs shrink-0">
+          {/* Center Navigation Links — Separate Individual Cards (Masing-Masing) + Automatic Icon-Only on HP */}
+          <nav className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <a
               href="#showcase"
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Lihat Katalog Undangan Klien Aktif & Showcase Live'
-                  : 'View Active Client Invitation Catalog & Live Showcase'
+                  ? `Katalog Undangan Klien Aktif (${clientGroups.length})`
+                  : `Active Client Invitation Catalog (${clientGroups.length})`
               }
-              className="text-xs lg:text-sm font-extrabold whitespace-nowrap px-3.5 lg:px-4 py-2 rounded-xl hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] inline-flex items-center gap-2 transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Eye className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span>
-                {lang === 'ID'
-                  ? `Katalog (${clientGroups.length})`
-                  : `Catalog (${clientGroups.length})`}
+              <span className="hidden md:inline">
+                {lang === 'ID' ? 'Katalog' : 'Catalog'}
+              </span>
+              <span className="hidden lg:inline-block px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30">
+                {clientGroups.length}
               </span>
             </a>
+
             <a
               href="#fitur"
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? '8 Modul Manajemen Persiapan Pernikahan & Undangan Digital Terpadu'
-                  : '8 Integrated Wedding Readiness & Digital Invitation Modules'
+                  ? 'Fitur & 6 Modul Manajemen Persiapan Pernikahan'
+                  : 'Features & 6 Wedding Readiness Modules'
               }
-              className="text-xs lg:text-sm font-extrabold whitespace-nowrap px-3.5 lg:px-4 py-2 rounded-xl hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] inline-flex items-center gap-2 transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <LayoutDashboard className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span>{lang === 'ID' ? 'Fitur' : 'Features'}</span>
+              <span className="hidden md:inline">
+                {lang === 'ID' ? 'Fitur' : 'Features'}
+              </span>
             </a>
+
             <a
               href="#paket"
               onClick={() => setIsCheckoutPageOpen(false)}
@@ -1120,15 +1125,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Paket Langganan Komersial (QRIS, Transfer Bank, Kartu Kredit, PayPal & Crypto)'
                   : 'Commercial Pricing Plans (Credit Card, PayPal & Crypto USDT)'
               }
-              className="text-xs lg:text-sm font-extrabold whitespace-nowrap px-3.5 lg:px-4 py-2 rounded-xl hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] inline-flex items-center gap-2 transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span>{lang === 'ID' ? 'Paket' : 'Pricing'}</span>
+              <span className="hidden md:inline">
+                {lang === 'ID' ? 'Paket' : 'Pricing'}
+              </span>
             </a>
           </nav>
 
-          {/* Right Action Buttons + Bilingual Switcher (Enlarged & Proportional) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Right Action Buttons — Separate Individual Cards + Compact Icon-Only on HP */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Bilingual Language & Market Switcher */}
             <button
               type="button"
@@ -1138,12 +1145,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Ganti Bahasa (ID / EN)'
                   : 'Switch Language (EN / ID)'
               }
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-100 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Globe className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+              <span className="hidden sm:inline">
+                {lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}
+              </span>
+              <span className="sm:hidden text-[10px]">{lang}</span>
             </button>
 
+            {/* Live Demo Individual Button */}
             <button
               type="button"
               onClick={() => onSelectClientInvitation('client-utama')}
@@ -1152,12 +1163,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Buka Contoh Undangan Digital Interaktif (Live Demo)'
                   : 'Open Interactive Digital Invitation Showcase (Live Demo)'
               }
-              className="hidden sm:inline-flex items-center gap-2 px-3.5 lg:px-4 py-2 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Eye className="w-4 h-4 shrink-0" />
-              <span>Live Demo</span>
+              <Sparkles className="w-4 h-4 shrink-0" />
+              <span className="hidden lg:inline">Live Demo</span>
             </button>
 
+            {/* Login Klien / Dashboard Individual Button */}
             <button
               type="button"
               onClick={onOpenAdminPortal}
@@ -1170,19 +1182,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? 'Masuk ke Portal Klien Mempelai, Panitia WO, atau Superadmin'
                     : 'Login to Couple, Wedding Organizer, or Superadmin Portal'
               }
-              className="inline-flex items-center gap-2 px-4 lg:px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
             >
               {isAdminLoggedIn ? (
                 <>
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
-                  <span>
-                    Dashboard{adminUserName ? ` (${adminUserName})` : ''}
-                  </span>
+                  <span className="hidden sm:inline">Dashboard</span>
+                  {adminUserName && (
+                    <span className="hidden xl:inline">({adminUserName})</span>
+                  )}
                 </>
               ) : (
                 <>
                   <KeyRound className="w-4 h-4 shrink-0" />
-                  <span>{lang === 'ID' ? 'Login Klien' : 'Client Login'}</span>
+                  <span className="hidden sm:inline">
+                    {lang === 'ID' ? 'Login Klien' : 'Client Login'}
+                  </span>
                 </>
               )}
             </button>
@@ -1195,12 +1210,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         {isCheckoutPageOpen ? (
           /* DEDICATED 2-COLUMN FULL-AUTO 3-STEP PAYMENT GATEWAY WIZARD */
           <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            {/* Top Back Bar & Clickable 3-Step Wizard Progress Pills */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-[#D4AF37]/40 shadow-2xs">
+            {/* Top Back Button & 3 Separate Step Cards (Masing-Masing) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-extrabold text-xs sm:text-sm transition-all self-start sm:self-auto"
+                className="rounded-2xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 px-3.5 py-2.5 text-[#8B6914] font-extrabold text-xs sm:text-sm shadow-2xs inline-flex items-center gap-2 self-start md:self-auto transition-all"
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" />
                 <span>
@@ -1210,22 +1225,27 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </span>
               </button>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
+              <div className="grid grid-cols-3 gap-2 w-full md:w-auto">
                 <button
                   type="button"
                   onClick={() => setCheckoutWizardStep(1)}
-                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 1
-                      ? 'bg-stone-900 text-[#D4AF37] shadow-xs ring-2 ring-[#D4AF37]/50'
-                      : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 hover:bg-[#F3E5C8]'
+                      ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
+                      : 'bg-white text-[#8B6914] border-[#D4AF37]/40 hover:bg-[#FAF3E3]'
                   }`}
                 >
-                  1.{' '}
-                  {lang === 'ID'
-                    ? `Identitas & Metode (${selectedCheckoutTier})`
-                    : `Identity & Method (${selectedCheckoutTier})`}
+                  <span className="sm:hidden">
+                    1. {lang === 'ID' ? 'Metode' : 'Method'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    1.{' '}
+                    {lang === 'ID'
+                      ? `Identitas & Metode (${selectedCheckoutTier})`
+                      : `Identity & Method (${selectedCheckoutTier})`}
+                  </span>
                 </button>
-                <span className="text-stone-400">&rarr;</span>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1233,20 +1253,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       setCheckoutWizardStep(2);
                     }
                   }}
-                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 2
-                      ? 'bg-stone-900 text-[#D4AF37] shadow-xs ring-2 ring-[#D4AF37]/50'
+                      ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
                       : buyerCoupleName.trim() && buyerEmail.includes('@')
-                        ? 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 hover:bg-[#F3E5C8]'
-                        : 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
+                        ? 'bg-white text-[#8B6914] border-[#D4AF37]/40 hover:bg-[#FAF3E3]'
+                        : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                   }`}
                 >
-                  2.{' '}
-                  {lang === 'ID'
-                    ? 'Pembayaran Otomatis'
-                    : 'Automated Payment'}
+                  <span className="sm:hidden">
+                    2. {lang === 'ID' ? 'Bayar' : 'Pay'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    2.{' '}
+                    {lang === 'ID'
+                      ? 'Pembayaran Otomatis'
+                      : 'Automated Payment'}
+                  </span>
                 </button>
-                <span className="text-stone-400">&rarr;</span>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1254,18 +1279,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       setCheckoutWizardStep(3);
                     }
                   }}
-                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 3
-                      ? 'bg-emerald-800 text-[#E6C76B] shadow-xs ring-2 ring-[#D4AF37]'
+                      ? 'bg-emerald-800 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]'
                       : hasCompletedPayment
-                        ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                        : 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
+                        ? 'bg-emerald-700 text-white border-emerald-600 hover:bg-emerald-800'
+                        : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                   }`}
                 >
-                  3.{' '}
-                  {lang === 'ID'
-                    ? 'Sertifikat & Lisensi'
-                    : 'Certificate & License'}
+                  <span className="sm:hidden">
+                    3. {lang === 'ID' ? 'Lisensi' : 'License'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    3.{' '}
+                    {lang === 'ID'
+                      ? 'Sertifikat & Lisensi'
+                      : 'Certificate & License'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1275,24 +1305,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               {/* LEFT COLUMN (lg:col-span-5): INVOICE SUMMARY, PACKAGE SWITCHER & IDEMPOTENCY PROTECTION */}
               <div className="lg:col-span-5 space-y-5">
                 <div className="rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] p-6 shadow-[0_20px_50px_rgba(182,141,64,0.22)] space-y-5">
-                  {/* Quick Tier Switcher Tabs */}
+                  {/* Quick Tier Switcher Tabs (Separate Individual Cards) */}
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
                       {lang === 'ID'
                         ? 'Pilih / Ganti Paket Lisensi:'
                         : 'Select / Switch License Plan:'}
                     </p>
-                    <div className="grid grid-cols-3 gap-1.5 bg-white/5 p-1.5 rounded-2xl border border-white/10">
+                    <div className="grid grid-cols-3 gap-2">
                       {(['STARTER', 'EXCLUSIVE', 'ROYAL VIP'] as const).map(
                         (t) => (
                           <button
                             key={t}
                             type="button"
                             onClick={() => setSelectedCheckoutTier(t)}
-                            className={`py-2 px-2 rounded-xl text-[11px] font-extrabold transition-all ${
+                            className={`py-2 px-2 rounded-xl border border-[#D4AF37]/40 text-[11px] font-extrabold transition-all ${
                               selectedCheckoutTier === t
                                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-sm'
-                                : 'text-[#FAF3E3]/80 hover:bg-white/10 hover:text-white'
+                                : 'bg-white/5 text-[#FAF3E3]/80 hover:bg-white/10 hover:text-white'
                             }`}
                           >
                             {t}
@@ -2343,9 +2373,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onSelectClientInvitation('client-utama')}
-                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all"
+                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all"
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4 shrink-0" />
                     <span>
                       {lang === 'ID'
                         ? `Buka Live Showcase (${primarySettings.groomNickname} & ${primarySettings.brideNickname})`
@@ -2356,9 +2386,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <button
                     type="button"
                     onClick={onOpenAdminPortal}
-                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 font-extrabold text-xs sm:text-sm shadow-sm transition-all"
+                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 font-extrabold text-xs sm:text-sm shadow-sm transition-all"
                   >
-                    <KeyRound className="w-4 h-4 text-[#D4AF37]" />
+                    <KeyRound className="w-4 h-4 text-[#D4AF37] shrink-0" />
                     <span>
                       {isAdminLoggedIn
                         ? lang === 'ID'
@@ -2383,9 +2413,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </span>
                     </p>
                     <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30">
-                      {lang === 'ID'
-                        ? `Pilih Mempelai & Masukkan Nama / Kode VIP (${activeLookupClientGuests.length} Tamu Terdaftar)`
-                        : `Select Couple & Enter Guest Name / VIP Code (${activeLookupClientGuests.length} Registered Guests)`}
+                      <span className="sm:hidden">
+                        {activeLookupClientGuests.length}{' '}
+                        {lang === 'ID' ? 'Tamu Terdaftar' : 'Registered Guests'}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {lang === 'ID'
+                          ? `Pilih Mempelai & Masukkan Nama / Kode VIP (${activeLookupClientGuests.length} Tamu Terdaftar)`
+                          : `Select Couple & Enter Guest Name / VIP Code (${activeLookupClientGuests.length} Registered Guests)`}
+                      </span>
                     </span>
                   </div>
                   <form
