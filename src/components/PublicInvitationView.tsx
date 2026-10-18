@@ -492,8 +492,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Popover: Playlist, Play/Pause, Next/Prev & Volume Control */}
             {isMusicPopoverOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-white/98 backdrop-blur-2xl border border-[#D4AF37]/45 shadow-2xl p-3.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/80">
+              <div
+                className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-white border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(0,0,0,0.28)] p-3.5 z-50 text-left"
+                style={{ backgroundColor: '#FFFFFF' }}
+              >
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200 bg-white">
                   <div className="min-w-0">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
                       Pemutar Musik &amp; Playlist
@@ -508,14 +511,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsMusicPopoverOpen(false)}
-                    className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                    className="p-1.5 rounded-lg bg-stone-100 text-stone-500 hover:text-stone-800 hover:bg-stone-200 shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Transport Controls: Prev / Play-Pause / Next */}
-                <div className="flex items-center justify-center gap-3 py-2.5">
+                <div className="flex items-center justify-center gap-3 py-2.5 bg-white">
                   <button
                     type="button"
                     onClick={() => weddingMusicPlayer.prevTrack()}
@@ -552,7 +555,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 {/* Volume Control */}
-                <div className="bg-[#FAF8F5] rounded-xl p-2.5 border border-stone-200/80 mb-2.5">
+                <div className="bg-[#FAF8F5] rounded-xl p-2.5 border border-stone-200 mb-2.5">
                   <div className="flex items-center justify-between text-[11px] font-bold text-stone-700 mb-1">
                     <button
                       type="button"
@@ -584,8 +587,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 {/* Track List */}
-                <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1">
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 bg-white">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 px-1">
                     Daftar Lagu ({playlist.length})
                   </p>
                   {playlist.map((track, idx) => {
@@ -595,18 +598,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         key={track.id}
                         type="button"
                         onClick={() => weddingMusicPlayer.playTrack(track.id)}
-                        className={`w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 transition-all ${
+                        className={`w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 transition-all border ${
                           isCurrent
-                            ? 'bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-bold'
-                            : 'hover:bg-stone-100 text-stone-700'
+                            ? 'bg-[#FAF3E3] border-[#D4AF37] text-[#8B6914] font-bold shadow-2xs'
+                            : 'bg-[#FAF8F5] border-stone-200/80 hover:bg-[#FAF3E3]/60 text-stone-800'
                         }`}
                       >
                         <div className="min-w-0 flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-stone-400 w-4 shrink-0">
+                          <span className="text-[10px] font-mono text-stone-500 w-4 shrink-0">
                             {idx + 1}.
                           </span>
                           <div className="min-w-0">
-                            <p className="text-xs truncate">{track.title}</p>
+                            <p className="text-xs font-semibold truncate">{track.title}</p>
                             <p className="text-[10px] text-stone-500 truncate">
                               {track.artist}
                             </p>
@@ -615,7 +618,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         {isCurrent && isPlayingMusic ? (
                           <Music className="w-3.5 h-3.5 text-[#B68D40] animate-pulse shrink-0" />
                         ) : (
-                          <Play className="w-3 h-3 text-stone-400 shrink-0" />
+                          <Play className="w-3 h-3 text-stone-500 shrink-0" />
                         )}
                       </button>
                     );
