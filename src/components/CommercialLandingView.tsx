@@ -1034,12 +1034,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-stone-800 flex flex-col justify-between selection:bg-[#D4AF37]/30">
-      {/* TOP STICKY NAVBAR (Separate Individual Cards + Automatic Icon-Only on HP) */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-[#D4AF37]/30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-3">
+    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#FAF8F5] text-stone-800 flex flex-col justify-between selection:bg-[#D4AF37]/30">
+      {/* TOP FIXED NAVBAR (Locked at Top + Separate Individual Cards + Automatic Icon-Only on HP) */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#D4AF37]/30 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
@@ -1049,7 +1049,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
@@ -1059,7 +1059,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <span className="hidden sm:inline">My Wedding Manager</span>
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight whitespace-nowrap">
+              <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight truncate">
                 by{' '}
                 <a
                   href={developerUrl}
@@ -1081,7 +1081,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           </div>
 
           {/* Center Navigation Links — Separate Individual Cards (Masing-Masing) + Automatic Icon-Only on HP */}
-          <nav className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
             <a
               href="#showcase"
               onClick={() => setIsCheckoutPageOpen(false)}
@@ -1090,7 +1090,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? `Katalog Undangan Klien Aktif (${clientGroups.length})`
                   : `Active Client Invitation Catalog (${clientGroups.length})`
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Eye className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline">
@@ -1109,7 +1109,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Fitur & 6 Modul Manajemen Persiapan Pernikahan'
                   : 'Features & 6 Wedding Readiness Modules'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <LayoutDashboard className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline">
@@ -1125,7 +1125,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Paket Langganan Komersial (QRIS, Transfer Bank, Kartu Kredit, PayPal & Crypto)'
                   : 'Commercial Pricing Plans (Credit Card, PayPal & Crypto USDT)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline">
@@ -1135,7 +1135,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           </nav>
 
           {/* Right Action Buttons — Separate Individual Cards + Compact Icon-Only on HP */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Bilingual Language & Market Switcher */}
             <button
               type="button"
@@ -1145,7 +1145,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Ganti Bahasa (ID / EN)'
                   : 'Switch Language (EN / ID)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Globe className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden sm:inline">
@@ -1163,7 +1163,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Buka Contoh Undangan Digital Interaktif (Live Demo)'
                   : 'Open Interactive Digital Invitation Showcase (Live Demo)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap shadow-2xs transition-all"
             >
               <Sparkles className="w-4 h-4 shrink-0" />
               <span className="hidden lg:inline">Live Demo</span>
@@ -1206,39 +1206,39 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       </header>
 
       {/* MAIN CONTENT: EITHER FULL-AUTO 3-STEP PAYMENT WIZARD OR MAIN LANDING PAGE */}
-      <main className="flex-1">
+      <main className="flex-1 min-w-0">
         {isCheckoutPageOpen ? (
           /* DEDICATED 2-COLUMN FULL-AUTO 3-STEP PAYMENT GATEWAY WIZARD */
-          <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 min-w-0">
             {/* Top Back Button & 3 Separate Step Cards (Masing-Masing) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="rounded-2xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 px-3.5 py-2.5 text-[#8B6914] font-extrabold text-xs sm:text-sm shadow-2xs inline-flex items-center gap-2 self-start md:self-auto transition-all"
+                className="max-w-full rounded-2xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 px-3.5 py-2.5 text-[#8B6914] font-extrabold text-xs sm:text-sm shadow-2xs inline-flex items-center gap-2 self-start md:self-auto transition-all"
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" />
-                <span>
+                <span className="truncate">
                   {lang === 'ID'
                     ? 'Kembali ke Halaman Paket & Katalog'
                     : 'Back to Pricing Plans & Catalog'}
                 </span>
               </button>
 
-              <div className="grid grid-cols-3 gap-2 w-full md:w-auto">
+              <div className="grid grid-cols-3 gap-2 w-full md:w-auto min-w-0">
                 <button
                   type="button"
                   onClick={() => setCheckoutWizardStep(1)}
-                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+                  className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 1
                       ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
                       : 'bg-white text-[#8B6914] border-[#D4AF37]/40 hover:bg-[#FAF3E3]'
                   }`}
                 >
-                  <span className="sm:hidden">
+                  <span className="sm:hidden truncate">
                     1. {lang === 'ID' ? 'Metode' : 'Method'}
                   </span>
-                  <span className="hidden sm:inline">
+                  <span className="hidden sm:inline truncate">
                     1.{' '}
                     {lang === 'ID'
                       ? `Identitas & Metode (${selectedCheckoutTier})`
@@ -1253,7 +1253,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       setCheckoutWizardStep(2);
                     }
                   }}
-                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+                  className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 2
                       ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
                       : buyerCoupleName.trim() && buyerEmail.includes('@')
@@ -1261,10 +1261,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                   }`}
                 >
-                  <span className="sm:hidden">
+                  <span className="sm:hidden truncate">
                     2. {lang === 'ID' ? 'Bayar' : 'Pay'}
                   </span>
-                  <span className="hidden sm:inline">
+                  <span className="hidden sm:inline truncate">
                     2.{' '}
                     {lang === 'ID'
                       ? 'Pembayaran Otomatis'
@@ -1279,7 +1279,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       setCheckoutWizardStep(3);
                     }
                   }}
-                  className={`px-2.5 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+                  className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 3
                       ? 'bg-emerald-800 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]'
                       : hasCompletedPayment
@@ -1287,10 +1287,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                   }`}
                 >
-                  <span className="sm:hidden">
+                  <span className="sm:hidden truncate">
                     3. {lang === 'ID' ? 'Lisensi' : 'License'}
                   </span>
-                  <span className="hidden sm:inline">
+                  <span className="hidden sm:inline truncate">
                     3.{' '}
                     {lang === 'ID'
                       ? 'Sertifikat & Lisensi'
@@ -1301,25 +1301,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
 
             {/* 2-COLUMN EXECUTIVE PAYMENT GATEWAY GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start min-w-0">
               {/* LEFT COLUMN (lg:col-span-5): INVOICE SUMMARY, PACKAGE SWITCHER & IDEMPOTENCY PROTECTION */}
-              <div className="lg:col-span-5 space-y-5">
-                <div className="rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] p-6 shadow-[0_20px_50px_rgba(182,141,64,0.22)] space-y-5">
+              <div className="lg:col-span-5 lg:sticky lg:top-24 min-w-0 space-y-5">
+                <div className="rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] p-5 sm:p-6 shadow-[0_20px_50px_rgba(182,141,64,0.22)] space-y-5 min-w-0 overflow-hidden">
                   {/* Quick Tier Switcher Tabs (Separate Individual Cards) */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0">
                     <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
                       {lang === 'ID'
                         ? 'Pilih / Ganti Paket Lisensi:'
                         : 'Select / Switch License Plan:'}
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2 min-w-0">
                       {(['STARTER', 'EXCLUSIVE', 'ROYAL VIP'] as const).map(
                         (t) => (
                           <button
                             key={t}
                             type="button"
                             onClick={() => setSelectedCheckoutTier(t)}
-                            className={`py-2 px-2 rounded-xl border border-[#D4AF37]/40 text-[11px] font-extrabold transition-all ${
+                            className={`min-w-0 truncate py-2 px-1.5 sm:px-2 rounded-xl border border-[#D4AF37]/40 text-[10px] sm:text-[11px] font-extrabold transition-all ${
                               selectedCheckoutTier === t
                                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-sm'
                                 : 'bg-white/5 text-[#FAF3E3]/80 hover:bg-white/10 hover:text-white'
@@ -1333,7 +1333,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
 
                   {/* Selected Package Details & Strictly Separated Market Price */}
-                  <div className="space-y-3 pt-2 border-t border-white/15">
+                  <div className="space-y-3 pt-2 border-t border-white/15 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#E6C76B] text-[10px] font-extrabold uppercase tracking-wider">
                         {activeSelectedPackage.badge}
@@ -1384,10 +1384,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
 
                   {/* Strict Idempotency Database Protection Box */}
-                  <div className="p-4 rounded-2xl bg-stone-950/80 border border-[#D4AF37]/35 space-y-2 text-xs">
-                    <div className="flex items-center justify-between gap-2">
+                  <div className="p-4 rounded-2xl bg-stone-950/80 border border-[#D4AF37]/35 space-y-2 text-xs min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-extrabold text-[#E6C76B] flex items-center gap-1.5">
-                        <Shield className="w-4 h-4 text-[#D4AF37]" />
+                        <Shield className="w-4 h-4 text-[#D4AF37] shrink-0" />
                         <span>
                           {lang === 'ID'
                             ? 'Proteksi Transaksi Idempoten'
@@ -1398,7 +1398,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         ANTI-DUPLICATE
                       </span>
                     </div>
-                    <div className="font-mono text-[10px] text-stone-300 space-y-0.5 bg-black/40 p-2.5 rounded-xl border border-white/10">
+                    <div className="font-mono text-[10px] text-stone-300 space-y-0.5 bg-black/40 p-2.5 rounded-xl border border-white/10 min-w-0 overflow-hidden">
                       <p className="truncate">
                         <span className="text-stone-400">Order ID:</span>{' '}
                         <strong className="text-white">
@@ -1425,17 +1425,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
 
               {/* RIGHT COLUMN (lg:col-span-7): AUTOMATIC 3-STEP WIZARD SCREENS (ONLY CURRENT STEP RENDERED) */}
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-7 min-w-0">
                 {/* ===================================================================== */}
                 {/* SCREEN 1: IDENTITAS KLIEN & PILIH METODE PEMBAYARAN AMAN              */}
                 {/* ===================================================================== */}
                 {checkoutWizardStep === 1 && (
                   <form
                     onSubmit={handleProceedToStep2}
-                    className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-6"
+                    className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-6 min-w-0 overflow-hidden"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-stone-200/80">
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                           {lang === 'ID'
                             ? 'Langkah 1 dari 3 • Identitas Klien & Pilih Metode Pembayaran Aman'
@@ -1447,7 +1447,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : 'Buyer Details & Official Payment Channel'}
                         </h3>
                       </div>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider self-start sm:self-auto">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider self-start sm:self-auto shrink-0">
                         <Lock className="w-3.5 h-3.5" />
                         <span>
                           {lang === 'ID' ? 'Enkripsi SSL/Web3' : 'SSL/Web3 Secured'}
@@ -1518,8 +1518,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Selectable Wallet / Gateway Cards */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-3 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
                         <label className="text-[11px] font-extrabold uppercase tracking-wider text-stone-700">
                           {lang === 'ID'
                             ? `Pilih Metode Pembayaran Resmi (${activeMarketChannels.length} Kanal Aktif)`
@@ -1530,7 +1530,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
                         {activeMarketChannels.map((ch) => {
                           const Icon = getCategoryIcon(ch.category);
                           const isActive = selectedChannel?.id === ch.id;
@@ -1539,7 +1539,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               key={ch.id}
                               type="button"
                               onClick={() => setSelectedChannelId(ch.id)}
-                              className={`p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-2.5 ${
+                              className={`min-w-0 overflow-hidden p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-2.5 ${
                                 isActive
                                   ? 'bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8]/70 border-2 border-[#B68D40] shadow-sm'
                                   : 'bg-[#FAF8F5] hover:bg-[#FAF3E3]/50 border-stone-200/90'
@@ -1559,7 +1559,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/90 border border-[#D4AF37]/30 text-[#8B6914] mb-1">
                                     {ch.category.replace('_', ' ')}
                                   </span>
-                                  <p className="text-xs font-extrabold text-stone-900 leading-snug">
+                                  <p className="text-xs font-extrabold text-stone-900 leading-snug break-words">
                                     {ch.providerName}
                                   </p>
                                   {ch.networkOrBranch && (
@@ -1592,9 +1592,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                     <button
                       type="submit"
-                      className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                      className="w-full max-w-full py-3.5 sm:py-4 px-4 sm:px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all text-center leading-snug"
                     >
-                      <span>
+                      <span className="min-w-0 break-words">
                         {lang === 'ID'
                           ? 'Buat Invoice Idempoten & Lanjut ke Pembayaran Otomatis (Langkah 2)'
                           : 'Create Idempotent Invoice & Proceed to Auto-Payment (Step 2)'}
@@ -1608,25 +1608,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* SCREEN 2: EKSEKUSI PEMBAYARAN OTOMATIS & VERIFIKASI SECURITY          */}
                 {/* ===================================================================== */}
                 {checkoutWizardStep === 2 && selectedChannel && (
-                  <div className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-5">
+                  <div className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-5 min-w-0 overflow-hidden">
                     {/* Top Bar inside Step 2 Card */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-stone-200/80">
                       <button
                         type="button"
                         onClick={() => setCheckoutWizardStep(1)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] text-xs font-extrabold transition-all"
+                        className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] text-xs font-extrabold transition-all"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        <span>
+                        <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">
                           {lang === 'ID'
                             ? 'Ubah Data / Metode (Langkah 1)'
                             : 'Edit Details / Method (Step 1)'}
                         </span>
                       </button>
 
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold">
-                        <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-                        <span>
+                      <span className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold">
+                        <Clock className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                        <span className="truncate">
                           {lang === 'ID'
                             ? `⏱️ Batas Waktu Kunci Harga: ${formatCountdown(countdownSeconds)}`
                             : `⏱️ Price Lock Timer: ${formatCountdown(countdownSeconds)}`}
@@ -1634,16 +1634,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </span>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                         {lang === 'ID'
                           ? 'Langkah 2 dari 3 • Eksekusi Pembayaran Otomatis & Verifikasi Security'
                           : 'Step 2 of 3 • Automated Payment Execution & Security Verification'}
                       </span>
-                      <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900 mt-0.5">
+                      <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900 mt-0.5 break-words">
                         {selectedChannel.providerName}
                       </h3>
-                      <p className="text-xs text-stone-500 mt-0.5">
+                      <p className="text-xs text-stone-500 mt-0.5 break-words">
                         {lang === 'ID'
                           ? `Pemesan: ${buyerCoupleName} (${buyerEmail}) • Order ID: ${currentOrderId}`
                           : `Buyer: ${buyerCoupleName} (${buyerEmail}) • Order ID: ${currentOrderId}`}
@@ -1651,15 +1651,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Locked Amount & Target Wallet/Account Summary */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      <div className="sm:col-span-5 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
-                        <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 min-w-0">
+                      <div className="sm:col-span-5 min-w-0 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
+                        <div className="min-w-0">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
                             {lang === 'ID'
                               ? 'Nominal Terkunci'
                               : 'Locked Exact Amount'}
                           </p>
-                          <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914] mt-0.5">
+                          <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914] mt-0.5 break-words">
                             {activeCheckoutAmountDisplay}
                           </p>
                         </div>
@@ -1671,12 +1671,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               String(activeSelectedPackage.amountNumeric)
                             )
                           }
-                          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                          className="w-full max-w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
                         >
                           {copiedPaymentKey === 'amount' ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>
+                              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span className="truncate">
                                 {lang === 'ID'
                                   ? 'Nominal Tersalin!'
                                   : 'Amount Copied!'}
@@ -1684,8 +1684,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>
+                              <Copy className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
                                 {lang === 'ID'
                                   ? 'Salin Nominal'
                                   : 'Copy Exact Amount'}
@@ -1695,9 +1695,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </button>
                       </div>
 
-                      <div className="sm:col-span-7 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
-                        <div>
-                          <div className="flex items-center justify-between gap-2">
+                      <div className="sm:col-span-7 min-w-0 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
                               {selectedChannel.category === 'CRYPTO'
                                 ? lang === 'ID'
@@ -1737,12 +1737,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               selectedChannel.accountOrWalletAddress
                             )
                           }
-                          className="w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                          className="w-full max-w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
                         >
                           {copiedPaymentKey === 'target-wallet' ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>
+                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="truncate">
                                 {lang === 'ID'
                                   ? 'Alamat / Rekening Tersalin!'
                                   : 'Address / Account Copied!'}
@@ -1750,8 +1750,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>
+                              <Copy className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
                                 {selectedChannel.category === 'CRYPTO'
                                   ? lang === 'ID'
                                     ? 'Salin Alamat Wallet Crypto'
@@ -1770,10 +1770,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {/* PLUGIN 1: CRYPTO WEB3 AUTO-PAY + ON-CHAIN BLOCKCHAIN VERIFIER   */}
                     {/* =============================================================== */}
                     {selectedChannel.category === 'CRYPTO' && (
-                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-[#FAF3E3]/60 border-2 border-[#D4AF37]/60 space-y-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-[#FAF3E3]/60 border-2 border-[#D4AF37]/60 space-y-4 min-w-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
-                            <Coins className="w-4 h-4 text-[#B68D40]" />
+                            <Coins className="w-4 h-4 text-[#B68D40] shrink-0" />
                             <span>
                               {lang === 'ID'
                                 ? 'Plugin Web3 Wallet & On-Chain Blockchain Verifier'
@@ -1792,10 +1792,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           type="button"
                           disabled={isConnectingWeb3}
                           onClick={() => void handleConnectAndPayWeb3()}
-                          className="w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                          className="w-full max-w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all text-center leading-snug"
                         >
-                          <Coins className="w-4 h-4 text-[#D4AF37]" />
-                          <span>
+                          <Coins className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          <span className="min-w-0 break-words">
                             {isConnectingWeb3
                               ? lang === 'ID'
                                 ? 'Menghubungkan Web3 Wallet...'
@@ -1828,10 +1828,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {/* =============================================================== */}
                     {(selectedChannel.category === 'PAYPAL' ||
                       selectedChannel.category === 'CREDIT_CARD') && (
-                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/40 border-2 border-sky-300/80 space-y-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/40 border-2 border-sky-300/80 space-y-4 min-w-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-950 flex items-center gap-1.5">
-                            <Globe className="w-4 h-4 text-[#0070BA]" />
+                            <Globe className="w-4 h-4 text-[#0070BA] shrink-0" />
                             <span>
                               {lang === 'ID'
                                 ? 'PayPal & Visa/Mastercard Smart Checkout Popup'
@@ -1846,15 +1846,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <button
                           type="button"
                           onClick={handleOpenPaypalSmartPopup}
-                          className="w-full py-3.5 px-4 rounded-2xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                          className="w-full max-w-full py-3.5 px-4 rounded-2xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all text-center leading-snug"
                         >
-                          <CreditCard className="w-4 h-4" />
-                          <span>
+                          <CreditCard className="w-4 h-4 shrink-0" />
+                          <span className="min-w-0 break-words">
                             {lang === 'ID'
                               ? '🌐 Buka Popup Pembayaran Resmi PayPal / Visa / Mastercard'
                               : '🌐 Open Official PayPal / Visa / Mastercard Checkout Popup'}
                           </span>
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         </button>
 
                         <div className="p-3.5 rounded-2xl bg-white border border-sky-200/80 flex flex-col items-center text-center space-y-2">
@@ -1881,10 +1881,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {(selectedChannel.category === 'QRIS' ||
                       selectedChannel.category === 'BANK_TRANSFER' ||
                       selectedChannel.category === 'EWALLET') && (
-                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF3E3]/70 via-white to-emerald-50/40 border-2 border-[#D4AF37]/55 space-y-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF3E3]/70 via-white to-emerald-50/40 border-2 border-[#D4AF37]/55 space-y-4 min-w-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[11px] font-extrabold uppercase tracking-wider text-stone-900 flex items-center gap-1.5">
-                            <QrCode className="w-4 h-4 text-[#8B6914]" />
+                            <QrCode className="w-4 h-4 text-[#8B6914] shrink-0" />
                             <span>
                               Pembayaran Instan Nasional (QRIS / BI-FAST / E-Wallet)
                             </span>
@@ -1925,17 +1925,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                     {/* Idempotent Timeout Recovery Banner inside Step 2 */}
                     {activeTransaction?.status === 'FAILED_TIMEOUT' && (
-                      <div className="p-4 rounded-2xl bg-amber-950 text-amber-50 border-2 border-amber-400 shadow-md space-y-3">
-                        <div className="flex items-start gap-3">
+                      <div className="p-4 rounded-2xl bg-amber-950 text-amber-50 border-2 border-amber-400 shadow-md space-y-3 min-w-0">
+                        <div className="flex items-start gap-3 min-w-0">
                           <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
-                          <div className="space-y-1 text-xs leading-relaxed">
+                          <div className="space-y-1 text-xs leading-relaxed min-w-0">
                             <p className="font-extrabold text-amber-300 uppercase tracking-wider">
                               {lang === 'ID'
                                 ? `Peringatan Timeout / Koneksi Terputus (Retry #${activeTransaction.retryCount || 0})`
                                 : `Payment Verification Timeout / Network Interrupted (Retry #${activeTransaction.retryCount || 0})`}
                             </p>
                             <p>{activeTransaction.lastErrorOrTimeoutReason}</p>
-                            <p className="font-mono text-[10px] text-amber-200/90">
+                            <p className="font-mono text-[10px] text-amber-200/90 break-all">
                               Idempotency Key:{' '}
                               {activeTransaction.idempotencyKey}
                             </p>
@@ -1947,14 +1947,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           onClick={() =>
                             void executeIdempotentPaymentSubmission()
                           }
-                          className="w-full py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 transition-all"
+                          className="w-full max-w-full py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 transition-all text-center leading-snug"
                         >
                           <RefreshCw
-                            className={`w-4 h-4 ${
+                            className={`w-4 h-4 shrink-0 ${
                               isSubmittingPayment ? 'animate-spin' : ''
                             }`}
                           />
-                          <span>
+                          <span className="min-w-0 break-words">
                             {lang === 'ID'
                               ? '↻ Retry Verifikasi (Idempoten — Tidak Akan Duplikat)'
                               : '↻ Retry Verification Safely (Idempotent — No Duplicate Order)'}
@@ -1966,9 +1966,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {/* Automatic Security Verification Form (Advances to Step 3) */}
                     <form
                       onSubmit={handleConfirmPaymentSubmit}
-                      className="space-y-3 pt-2 border-t border-stone-200/80"
+                      className="space-y-3 pt-2 border-t border-stone-200/80 min-w-0"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                           <label className="text-[11px] font-extrabold uppercase tracking-wider text-stone-700">
                             {selectedChannel.category === 'CRYPTO'
@@ -1988,7 +1988,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               onClick={() =>
                                 setPaymentReference(`INV-${currentOrderId}`)
                               }
-                              className="text-[10px] font-extrabold text-[#8B6914] hover:underline"
+                              className="text-[10px] font-extrabold text-[#8B6914] hover:underline text-left"
                             >
                               {lang === 'ID'
                                 ? `+ Gunakan ID Invoice Otomatis (INV-${currentOrderId})`
@@ -2019,8 +2019,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80">
-                        <span className="font-mono text-[10px]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80 min-w-0 overflow-hidden">
+                        <span className="font-mono text-[10px] truncate max-w-full">
                           Key: {currentIdempotencyKey}
                         </span>
                         <label className="inline-flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-bold text-stone-500 hover:text-stone-800">
@@ -2043,12 +2043,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <button
                         type="submit"
                         disabled={isSubmittingPayment}
-                        className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] disabled:opacity-60 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                        className="w-full max-w-full py-3.5 sm:py-4 px-4 sm:px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] disabled:opacity-60 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all text-center leading-snug"
                       >
                         {isSubmittingPayment ? (
                           <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>
+                            <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+                            <span className="min-w-0 break-words">
                               {lang === 'ID'
                                 ? 'Memverifikasi Pembayaran & Security...'
                                 : 'Verifying Payment & Security...'}
@@ -2056,8 +2056,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span className="min-w-0 break-words">
                               {selectedChannel.category === 'CRYPTO'
                                 ? lang === 'ID'
                                   ? '⛓️ Verifikasi Otomatis di Blockchain & Selesaikan Order →'
@@ -2080,16 +2080,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* SCREEN 3: SERTIFIKAT KEAMANAN, BUKTI PEMBAYARAN & KONTAK PRIORITAS    */}
                 {/* ===================================================================== */}
                 {checkoutWizardStep === 3 && (
-                  <div className="rounded-3xl bg-emerald-950 text-emerald-50 border-2 border-[#D4AF37] p-6 sm:p-7 shadow-[0_20px_50px_rgba(6,78,59,0.28)] space-y-5 animate-fadeIn">
+                  <div className="rounded-3xl bg-emerald-950 text-emerald-50 border-2 border-[#D4AF37] p-5 sm:p-7 shadow-[0_20px_50px_rgba(6,78,59,0.28)] space-y-5 animate-fadeIn min-w-0 overflow-hidden">
                     <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-emerald-800/80">
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
                           {lang === 'ID'
                             ? 'Langkah 3 dari 3 • Pembayaran Tercatat & Sertifikat Keamanan'
                             : 'Step 3 of 3 • Payment Recorded & Security Certificate'}
                         </span>
                         <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-white mt-0.5 flex items-center gap-2">
-                          <FileCheck2 className="w-6 h-6 text-[#D4AF37]" />
+                          <FileCheck2 className="w-6 h-6 text-[#D4AF37] shrink-0" />
                           <span>
                             {lang === 'ID'
                               ? 'Sertifikat Konfirmasi Pembayaran Idempoten'
@@ -2119,16 +2119,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Digital Certificate Details */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-black/30 p-4 rounded-2xl border border-emerald-800/70 font-mono">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-black/30 p-4 rounded-2xl border border-emerald-800/70 font-mono min-w-0">
+                      <div className="min-w-0">
                         <span className="text-emerald-300/80 text-[10px] block">
                           Order ID:
                         </span>
-                        <strong className="text-white">
+                        <strong className="text-white break-all">
                           {activeTransaction?.orderId || currentOrderId}
                         </strong>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-emerald-300/80 text-[10px] block">
                           Idempotency Key:
                         </span>
@@ -2137,13 +2137,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             currentIdempotencyKey}
                         </strong>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-emerald-300/80 text-[10px] block">
                           {lang === 'ID'
                             ? 'Paket & Nominal:'
                             : 'Plan & Amount:'}
                         </span>
-                        <strong className="text-white">
+                        <strong className="text-white break-words">
                           {activeTransaction?.packageTier ||
                             selectedCheckoutTier}{' '}
                           •{' '}
@@ -2151,7 +2151,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             activeCheckoutAmountDisplay}
                         </strong>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-emerald-300/80 text-[10px] block">
                           {lang === 'ID'
                             ? 'Metode & Referensi:'
@@ -2171,25 +2171,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {/* Optional Blockchain Explorer Proof & Provisioned Client Badges */}
                     {(activeTransaction?.blockchainExplorerUrl ||
                       activeTransaction?.provisionedClientId) && (
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         {activeTransaction?.blockchainExplorerUrl && (
                           <a
                             href={activeTransaction.blockchainExplorerUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-[#D4AF37] text-[#E6C76B] text-xs font-extrabold transition-all"
+                            className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-[#D4AF37] text-[#E6C76B] text-xs font-extrabold transition-all"
                           >
-                            <Coins className="w-3.5 h-3.5" />
-                            <span>
+                            <Coins className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">
                               {lang === 'ID'
                                 ? '⛓️ Lihat Bukti di Blockchain Explorer'
                                 : '⛓️ View Proof on Blockchain Explorer'}
                             </span>
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           </a>
                         )}
                         {activeTransaction?.provisionedClientId && (
-                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-extrabold">
+                          <span className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-extrabold break-all">
                             🚀 Workspace Klien Otomatis Siap (
                             {activeTransaction.provisionedClientId})
                           </span>
@@ -2198,11 +2198,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     )}
 
                     {/* Exact SLA Message & Priority Email Contact */}
-                    <div className="p-4 rounded-2xl bg-emerald-900/60 border border-[#D4AF37]/45 flex items-start gap-3">
+                    <div className="p-4 rounded-2xl bg-emerald-900/60 border border-[#D4AF37]/45 flex items-start gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-xl bg-[#D4AF37] text-stone-950 flex items-center justify-center shrink-0 mt-0.5">
                         <Clock className="w-5 h-5" />
                       </div>
-                      <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed">
+                      <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed min-w-0">
                         {lang === 'ID' ? (
                           <p>
                             Terima kasih! Pembayaran Anda telah tercatat. Tim
@@ -2215,7 +2215,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             prioritas, silakan hubungi:{' '}
                             <a
                               href={mailtoPostPaymentUrl}
-                              className="font-extrabold text-[#E6C76B] underline hover:text-white"
+                              className="font-extrabold text-[#E6C76B] underline hover:text-white break-all"
                             >
                               {businessEmail}
                             </a>
@@ -2234,7 +2234,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             confirmation, please contact:{' '}
                             <a
                               href={mailtoPostPaymentUrl}
-                              className="font-extrabold text-[#E6C76B] underline hover:text-white"
+                              className="font-extrabold text-[#E6C76B] underline hover:text-white break-all"
                             >
                               {businessEmail}
                             </a>
@@ -2245,14 +2245,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Action Buttons on Step 3 */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/80">
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/80 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <a
                           href={mailtoPostPaymentUrl}
-                          className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all"
+                          className="max-w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-sm hover:opacity-95 transition-all text-center leading-snug"
                         >
-                          <Mail className="w-4 h-4" />
-                          <span>
+                          <Mail className="w-4 h-4 shrink-0" />
+                          <span className="min-w-0 break-words">
                             {lang === 'ID'
                               ? `Kirim Bukti Bayar Prioritas ke ${businessEmail}`
                               : `Send Priority Payment Receipt to ${businessEmail}`}
@@ -2266,11 +2266,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               businessEmail
                             )
                           }
-                          className="py-2.5 px-3.5 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 border border-[#D4AF37]/40 font-bold text-xs inline-flex items-center gap-1.5 transition-all"
+                          className="max-w-full py-2.5 px-3.5 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 border border-[#D4AF37]/40 font-bold text-xs inline-flex items-center gap-1.5 transition-all"
                         >
                           {copiedPaymentKey === 'official-email' ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-[#E6C76B]" />
+                              <Check className="w-3.5 h-3.5 text-[#E6C76B] shrink-0" />
                               <span>
                                 {lang === 'ID'
                                   ? 'Email Tersalin!'
@@ -2279,7 +2279,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-[#E6C76B]" />
+                              <Copy className="w-3.5 h-3.5 text-[#E6C76B] shrink-0" />
                               <span>
                                 {lang === 'ID'
                                   ? 'Salin Email Resmi'
@@ -2293,7 +2293,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setCheckoutWizardStep(2)}
-                        className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-bold transition-all"
+                        className="max-w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-bold transition-all"
                       >
                         {lang === 'ID'
                           ? '← Lihat Detail Pembayaran'
@@ -2573,7 +2573,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
                 {clientGroups.map((cg, idx) => {
                   const wsSettings =
                     cg.id === 'client-utama'
@@ -2597,12 +2597,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   return (
                     <div
                       key={cg.id}
-                      className="rounded-3xl bg-white border border-[#D4AF37]/40 shadow-[0_12px_32px_rgba(28,25,23,0.06)] overflow-hidden flex flex-col justify-between transition-all hover:shadow-[0_16px_44px_rgba(182,141,64,0.16)] hover:-translate-y-0.5"
+                      className="min-w-0 rounded-3xl bg-white border border-[#D4AF37]/40 shadow-[0_12px_32px_rgba(28,25,23,0.06)] overflow-hidden flex flex-col justify-between transition-all hover:shadow-[0_16px_44px_rgba(182,141,64,0.16)] hover:-translate-y-0.5"
                     >
-                      <div>
+                      <div className="min-w-0">
                         {/* Top Card Banner */}
                         <div className="p-5 bg-gradient-to-br from-[#FAF3E3] via-[#FFFDF9] to-[#F3E5C8] border-b border-[#D4AF37]/30">
-                          <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
                               {idx === 0
                                 ? '★ FEATURED SHOWCASE'
@@ -2613,7 +2613,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div className="w-12 h-12 rounded-2xl bg-white border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shadow-2xs shrink-0">
                               <WeddingRingsIcon className="w-6 h-6" />
                             </div>
@@ -2629,12 +2629,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Card Details */}
-                        <div className="p-5 space-y-3 text-xs">
+                        <div className="p-5 space-y-3 text-xs min-w-0">
                           <p className="text-stone-600 line-clamp-2 leading-relaxed">
                             {subtitleText}
                           </p>
 
-                          <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex items-center justify-between gap-2">
+                          <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex items-center justify-between gap-2 min-w-0">
                             <div className="min-w-0">
                               <p className="text-[10px] text-stone-400 font-semibold">
                                 {lang === 'ID'
@@ -2671,14 +2671,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       {/* Card Footer Buttons */}
-                      <div className="px-5 py-3.5 bg-[#FAF8F5] border-t border-stone-200/70 flex items-center justify-between gap-2">
+                      <div className="px-5 py-3.5 bg-[#FAF8F5] border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2 min-w-0">
                         <button
                           type="button"
                           onClick={() => onSelectClientInvitation(cg.id)}
-                          className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all"
+                          className="flex-1 min-w-[140px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all"
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>
+                          <Eye className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
                             {lang === 'ID'
                               ? 'Buka Undangan Live'
                               : 'Open Live Invitation'}
@@ -2687,14 +2687,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <button
                           type="button"
                           onClick={onOpenAdminPortal}
-                          className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold text-xs inline-flex items-center gap-1"
+                          className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold text-xs inline-flex items-center justify-center gap-1"
                           title={
                             lang === 'ID'
                               ? 'Login ke Workspace Klien Ini'
                               : 'Login to This Client Workspace'
                           }
                         >
-                          <KeyRound className="w-3.5 h-3.5" />
+                          <KeyRound className="w-3.5 h-3.5 shrink-0" />
                           <span>Login</span>
                         </button>
                       </div>
@@ -2738,7 +2738,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 min-w-0">
                   {(lang === 'ID'
                     ? [
                         {
@@ -2809,7 +2809,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     return (
                       <div
                         key={feat.title}
-                        className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5"
+                        className="min-w-0 p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5"
                       >
                         <div className="w-10 h-10 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center">
                           <Icon className="w-5 h-5" />
@@ -2850,7 +2850,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch min-w-0">
                 {commercialPackages.map((pkg) => {
                   const isRoyal = pkg.styleVariant === 'royal';
                   const isExclusive = pkg.styleVariant === 'exclusive';
@@ -2858,7 +2858,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   return (
                     <div
                       key={pkg.tier}
-                      className={`rounded-3xl p-6 flex flex-col justify-between transition-all ${
+                      className={`min-w-0 overflow-hidden rounded-3xl p-6 flex flex-col justify-between transition-all ${
                         isRoyal
                           ? 'bg-gradient-to-b from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(182,141,64,0.28)] relative'
                           : isExclusive
@@ -2866,9 +2866,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : 'bg-white text-stone-800 border border-[#D4AF37]/35 shadow-xs'
                       }`}
                     >
-                      <div className="space-y-4">
+                      <div className="space-y-4 min-w-0">
                         {/* Package Badge */}
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <span
                             className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                               isRoyal
@@ -2883,7 +2883,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Title & Strictly Separated Pricing Block */}
-                        <div>
+                        <div className="min-w-0">
                           <h4
                             className={`font-serif text-xl font-extrabold ${
                               isRoyal ? 'text-white' : 'text-stone-900'
@@ -2951,13 +2951,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       {/* CTA Button: Opens Dedicated Separate Checkout Page */}
-                      <div className="pt-6 mt-6 border-t border-[#D4AF37]/25">
+                      <div className="pt-6 mt-6 border-t border-[#D4AF37]/25 min-w-0">
                         <button
                           type="button"
                           onClick={() =>
                             handleSelectPackageForCheckout(pkg.tier)
                           }
-                          className={`w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all ${
+                          className={`w-full max-w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all ${
                             isRoyal
                               ? 'bg-gradient-to-r from-[#D4AF37] via-[#E6C76B] to-[#B68D40] text-stone-950 hover:from-[#C5A059] hover:to-[#9A742B] shadow-md'
                               : isExclusive
@@ -2965,8 +2965,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45'
                           }`}
                         >
-                          <Wallet className="w-4 h-4" />
-                          <span>
+                          <Wallet className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
                             {lang === 'ID'
                               ? `Pilih Paket ${pkg.tier} & Bayar`
                               : `Select ${pkg.tier} & Checkout`}

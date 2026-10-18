@@ -818,7 +818,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // ============================================================================
   if (settings.invitationModerationMode === 'MAINTENANCE') {
     return (
-      <div className="min-h-[100dvh] relative flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
+      <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <img
             src={coverBgUrl}
@@ -833,26 +833,28 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
         />
-        <div className="relative z-10 flex items-center justify-between gap-2 px-3.5 sm:px-8 pt-4 sm:pt-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-2xs">
-            <Shield className="w-3.5 h-3.5 text-[#B68D40]" />
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8B6914]">
-              Moderasi Undangan Aktif
-            </span>
+        <header className="fixed top-0 inset-x-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 px-3.5 sm:px-8 py-2.5 sm:py-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-2xs min-w-0">
+              <Shield className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8B6914] truncate">
+                Moderasi Undangan Aktif
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                weddingMusicPlayer.stop();
+                setIsPlayingMusic(false);
+                onOpenAdminPortal();
+              }}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:text-[#8B6914] shadow-2xs shrink-0"
+            >
+              <Lock className="w-3 h-3 text-[#B68D40]" />
+              <span>{isAdminLoggedIn ? 'Kembali ke Dashboard' : 'Portal Admin'}</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              weddingMusicPlayer.stop();
-              setIsPlayingMusic(false);
-              onOpenAdminPortal();
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:text-[#8B6914] shadow-2xs"
-          >
-            <Lock className="w-3 h-3 text-[#B68D40]" />
-            <span>{isAdminLoggedIn ? 'Kembali ke Dashboard' : 'Portal Admin'}</span>
-          </button>
-        </div>
+        </header>
 
         <div className="relative z-10 max-w-xl mx-auto px-4 py-6 text-center my-auto w-full">
           <div className="w-full rounded-3xl bg-white/85 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 space-y-4">
@@ -882,7 +884,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // ============================================================================
   if (!isOpened) {
     return (
-      <div className="min-h-[100dvh] relative flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
+      <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <img
@@ -901,41 +903,43 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.20)_0%,rgba(250,248,245,0.80)_100%)] pointer-events-none" />
 
         {/* Subtle Top Bar */}
-        <div className="relative z-10 flex items-center justify-between gap-2 px-3.5 sm:px-8 pt-4 sm:pt-5">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
-            <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
-            <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
-              The Wedding Celebration
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
-              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/85 hover:bg-[#FAF3E3] backdrop-blur-md border border-[#D4AF37]/45 text-[10px] sm:text-[11px] font-bold text-[#8B6914] transition-all shadow-2xs"
-              title="Switch Language (Bahasa Indonesia / English)"
-            >
-              <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                weddingMusicPlayer.stop();
-                setIsPlayingMusic(false);
-                onOpenAdminPortal();
-              }}
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
-              title="Login Portal Manajemen Pernikahan"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span className="hidden sm:inline">
-                {isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}
+        <header className="fixed top-0 inset-x-0 z-40 bg-white/75 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 px-3.5 sm:px-8 py-2.5 sm:py-3">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
+              <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
+                The Wedding Celebration
               </span>
-            </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
+                className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/85 hover:bg-[#FAF3E3] backdrop-blur-md border border-[#D4AF37]/45 text-[10px] sm:text-[11px] font-bold text-[#8B6914] transition-all shadow-2xs"
+                title="Switch Language (Bahasa Indonesia / English)"
+              >
+                <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  weddingMusicPlayer.stop();
+                  setIsPlayingMusic(false);
+                  onOpenAdminPortal();
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
+                title="Login Portal Manajemen Pernikahan"
+              >
+                <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
+                <span className="hidden sm:inline">
+                  {isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* Center Cover Invitation Frosted Glass Card */}
         <div className="relative z-10 max-w-xl mx-auto px-3.5 sm:px-5 py-4 sm:py-6 text-center flex flex-col items-center my-auto w-full">
@@ -1082,7 +1086,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // 2. MAIN OPENED INVITATION VIEW (SYMMETRICAL CARDS & CUSTOMIZABLE BG)
   // ============================================================================
   return (
-    <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pb-28 sm:pb-24 overflow-x-hidden selection:bg-[#D4AF37]/25 selection:text-stone-900">
+    <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pt-14 sm:pt-16 pb-28 sm:pb-24 overflow-x-clip selection:bg-[#D4AF37]/25 selection:text-stone-900">
       {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <img
@@ -1100,7 +1104,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       </div>
 
       {/* TOP FLOATING GLASS NAVIGATION */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
+      <header className="fixed top-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
@@ -1460,7 +1464,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Groom Card */}
-            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <div className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
                 <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
                   <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
@@ -1492,7 +1496,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
 
             {/* Bride Card */}
-            <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <div className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
                 <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
                   <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
@@ -1556,7 +1560,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {visibleEvents.map((ev, idx) => (
               <div
                 key={idx}
-                className={`h-full rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
+                className={`h-full min-w-0 overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
                   ev.highlight
                     ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
                     : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
@@ -1673,7 +1677,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {effectiveLoveStory.map((story, i) => (
                     <div
                       key={story.id || i}
-                      className="h-full rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
+                      className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -1858,17 +1862,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {/* Left Card: RSVP Form (Exact same width & height as Right Card) */}
             <form
               onSubmit={handleRsvpFormSubmit}
-              className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
+              className="h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
             >
               <div className="space-y-3.5 sm:space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-stone-200/80">
-                  <div className="flex items-center gap-2.5">
-                    <Users className="w-5 h-5 text-[#B68D40]" />
-                    <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
+                <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-200/80 flex-wrap">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Users className="w-5 h-5 text-[#B68D40] shrink-0" />
+                    <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
                       {lang === 'ID' ? 'Form RSVP Kehadiran' : 'RSVP Attendance Form'}
                     </h3>
                   </div>
-                  <span className="text-[11px] text-[#9A742B] font-semibold">
+                  <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
                     {lang === 'ID' ? 'Konfirmasi Online' : 'Online RSVP'}
                   </span>
                 </div>
@@ -2099,8 +2103,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   disabled={isSubmittingRsvp || Boolean(settings.disableRsvpSubmission)}
                   className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>
+                  <Send className="w-4 h-4 shrink-0" />
+                  <span className="truncate">
                     {settings.disableRsvpSubmission
                       ? lang === 'ID'
                         ? 'Konfirmasi RSVP Telah Ditutup'
@@ -2118,18 +2122,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </form>
 
             {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
-            <div className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-200/80 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
-                  <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
+            <div className="h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-200/80 shrink-0 flex-wrap">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <MessageSquareHeart className="w-5 h-5 text-[#B68D40] shrink-0" />
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
                     {lang === 'ID'
                       ? 'Buku Tamu & Doa Restu'
                       : 'Wedding Guestbook & Wishes'}{' '}
                     ({publicVisibleWishes.length})
                   </h3>
                 </div>
-                <span className="text-[11px] text-[#9A742B] font-semibold">
+                <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
                   Real-Time Feed
                 </span>
               </div>
@@ -2318,7 +2322,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: AMPLOP DIGITAL & TANDA KASIH (CUSTOMIZABLE + CRYPTO / PAYPAL / BANK / E-WALLET / PHYSICAL GIFT) */}
       {settings.showGiftSection !== false && (
         <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+          <div className="min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
             <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B]">
               <Gift className="w-6 h-6" />
             </div>
@@ -2372,7 +2376,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   return (
                     <div
                       key={acc.id}
-                      className={`h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs border transition-all ${
+                      className={`h-full min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs border transition-all ${
                         isCrypto
                           ? 'bg-gradient-to-b from-[#FAF8F5] to-amber-50/60 border-amber-300/70'
                           : isPaypal
@@ -2452,8 +2456,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         >
                           {isCopied ? (
                             <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>
+                              <Check className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
                                 {isCrypto
                                   ? lang === 'ID'
                                     ? 'Alamat Wallet Tersalin'
@@ -2465,8 +2469,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>
+                              <Copy className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
                                 {isCrypto
                                   ? lang === 'ID'
                                     ? 'Salin Alamat Wallet Crypto'
@@ -2494,10 +2498,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             rel="noopener noreferrer"
                             className="w-full py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                           >
-                            <span>
+                            <span className="truncate">
                               {lang === 'ID' ? 'Buka PayPal.Me' : 'Open PayPal.Me'}
                             </span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3 h-3 shrink-0" />
                           </a>
                         )}
                       </div>
@@ -2525,7 +2529,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       }}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all"
                     >
-                      <QrCode className="w-4 h-4" />
+                      <QrCode className="w-4 h-4 shrink-0" />
                       <span>
                         {lang === 'ID'
                           ? 'Tampilkan Barcode QRIS'
@@ -2537,7 +2541,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {settings.showPhysicalGiftAddress !== false &&
                   Boolean(settings.giftShippingAddress?.trim()) && (
-                    <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="max-w-2xl mx-auto min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
@@ -2576,7 +2580,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             }${settings.giftShippingAddress}`
                           )
                         }
-                        className={`shrink-0 py-2.5 px-4 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
+                        className={`w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
                           copiedAccountId === 'physical-gift-address'
                             ? 'bg-emerald-600 text-white'
                             : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
@@ -2584,14 +2588,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       >
                         {copiedAccountId === 'physical-gift-address' ? (
                           <>
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-3.5 h-3.5 shrink-0" />
                             <span>
                               {lang === 'ID' ? 'Alamat Tersalin!' : 'Address Copied!'}
                             </span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3.5 h-3.5 shrink-0" />
                             <span>
                               {lang === 'ID'
                                 ? 'Salin Alamat Kado'

@@ -3596,7 +3596,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 flex-wrap max-w-full">
             <button
               type="button"
               onClick={handleResetDefaultMusicPlaylist}
@@ -3924,7 +3924,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-28 sm:pb-24">
+    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24">
       {/* Global Hidden JSON Backup File Input (Accessible from Header & Settings) */}
       <input
         ref={fileInputRef}
@@ -4026,8 +4026,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* TOP STICKY HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
+      {/* TOP FIXED HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
+      <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Neutral Wedding Rings Icon */}
@@ -5945,7 +5945,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                        <div className="flex items-center gap-1.5 flex-wrap max-w-full pt-1 lg:pt-0">
                           <a
                             href={waData.waHref}
                             target="_blank"
@@ -6207,7 +6207,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
-              <div className="lg:col-span-4 lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-4 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -6274,7 +6274,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5">
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===============================================================
                     MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
                    =============================================================== */}
@@ -7678,9 +7678,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   return (
                                                     <div
                                                       key={ph.id}
-                                                      className="p-2.5 rounded-lg bg-white border border-stone-200 space-y-2"
+                                                      className="p-2.5 sm:p-3 rounded-xl bg-white border border-stone-200 flex flex-col gap-2.5 shadow-2xs min-w-0 overflow-hidden"
                                                     >
-                                                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
+                                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
                                                         <div className="flex items-center gap-2.5 min-w-0">
                                                           <button
                                                             type="button"
@@ -7723,7 +7723,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             </p>
                                                           </div>
                                                         </div>
-                                                        <div className="flex items-center flex-wrap gap-1 shrink-0">
+                                                        <div className="flex items-center flex-wrap gap-1.5 w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-stone-100">
                                                           {/* 1-Click Replace Photo Only (Keep Title & Caption) */}
                                                           <label
                                                             title="Ganti fotonya saja tanpa mengubah judul & tulisan"
@@ -8098,7 +8098,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 9. EDITOR AMPLOP DIGITAL & REKENING */}
                                       {sec.key === 'showGiftSection' && (
                                         <div className="space-y-3">
-                                          <div className="flex items-center justify-between">
+                                          <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
                                                 Rekening, E-Wallet, Crypto &amp; PayPal ({(state.settings.bankAccounts || []).length})
@@ -8165,7 +8165,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   return (
                                                     <div
                                                       key={acc.id || idx}
-                                                      className="p-3 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
+                                                      className="p-3 rounded-lg bg-white border border-stone-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 min-w-0 overflow-hidden"
                                                     >
                                                       <div className="min-w-0">
                                                         <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
@@ -8193,7 +8193,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             : ''}
                                                         </p>
                                                       </div>
-                                                      <div className="flex items-center gap-1 shrink-0">
+                                                      <div className="flex items-center gap-1 flex-wrap max-w-full">
                                                         <button
                                                           type="button"
                                                           onClick={() => {
@@ -8891,7 +8891,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'jadwal' && (
                   <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-100">
+                    <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-stone-100">
                       <div className="flex items-center gap-2 min-w-0">
                         <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
@@ -8981,7 +8981,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           return (
                             <div
                               key={ev.id}
-                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
                             >
                               <div className="flex items-start gap-3 min-w-0">
                                 <div
@@ -9010,7 +9010,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap justify-end">
+                              <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full justify-end">
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                                     isCountdownOn
@@ -9083,7 +9083,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </h3>
                         <InfoTooltip text="User Default dikelompokkan berdasarkan Grup Client agar 1 Dashboard dapat mengelola banyak klien komersial oleh Superadmin." />
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap max-w-full">
                         <button
                           type="button"
                           onClick={() => setIsAddClientModalOpen(true)}
@@ -9244,7 +9244,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     {groupUsers.map((u) => (
                                       <div
                                         key={u.id}
-                                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
                                       >
                                         <div className="flex items-center gap-3 min-w-0">
                                           <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
@@ -9266,7 +9266,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                        <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
                                           <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                                             User Default
                                           </span>
@@ -9293,7 +9293,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* SUB-TAB 2: AKUN PANITIA / WO */}
                     {keamananSubTab === 'panitia' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                        <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-stone-100">
                           <span className="text-xs text-stone-500">
                             Akses Non-Moneter (Dikelompokkan per Klien)
                           </span>
@@ -9340,7 +9340,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               .map((pu) => (
                                 <div
                                   key={pu.id}
-                                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
                                 >
                                   <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
@@ -9366,7 +9366,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                  <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
                                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                                       Aktif
                                     </span>
@@ -9689,7 +9689,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-4 lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-4 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {(
                   [
                     {
@@ -9776,7 +9776,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5">
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===========================================================
                     1. MANAJEMEN KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
                    =========================================================== */}
@@ -17986,7 +17986,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   setActiveTab(tab.id);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all ${
+                className={`py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all ${
                   active
                     ? 'bg-gradient-to-b from-[#FAF3E3] to-[#F3E3C3] text-[#8B6914] font-extrabold border border-[#D4AF37]/45 shadow-2xs'
                     : 'text-stone-500 hover:text-[#8B6914] font-semibold'
@@ -17997,7 +17997,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     active ? 'text-[#B68D40]' : 'text-stone-400'
                   }`}
                 />
-                <span className="text-[10px] leading-tight truncate max-w-full">
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight truncate max-w-full px-0.5">
                   {tab.label}
                 </span>
               </button>
