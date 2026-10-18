@@ -130,6 +130,7 @@ import {
   appendAuditLog,
   uploadAudioToSupabaseStorage,
   deleteAudioFromSupabaseStorage,
+  deleteMediaFromSupabaseStorage,
 } from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
@@ -1595,16 +1596,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   };
 
-  // Auto-convert & optimize uploaded image file (Full HD WebP / SVG vector, guaranteed <= 2 MB & anti-pecah)
+  // Auto-convert & optimize uploaded image file (Ultra HD WebP / SVG vector, guaranteed <= 10 MB & anti-pecah)
   const compressImageFileToDataUrl = (
     file: File,
-    maxDimension = 1800,
-    quality = 0.88
+    maxDimension = 2400,
+    quality = 0.92
   ): Promise<string> => {
-    const MAX_TARGET_BYTES = 2 * 1024 * 1024; // 2 MB strict max limit
+    const MAX_TARGET_BYTES = 10 * 1024 * 1024; // 10 MB strict max limit
     return new Promise((resolve, reject) => {
-      if (file.size > 25 * 1024 * 1024) {
-        reject(new Error('Ukuran file mentah maksimal 25 MB (akan dikonversi otomatis ke < 2 MB).'));
+      if (file.size > 50 * 1024 * 1024) {
+        reject(
+          new Error(
+            'Ukuran file mentah maksimal 50 MB (akan dikonversi otomatis ke < 10 MB).'
+          )
+        );
         return;
       }
       const reader = new FileReader();
@@ -1620,8 +1625,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         img.onerror = () => resolve(resultStr);
         img.onload = () => {
           try {
-            let width = img.naturalWidth || img.width || 1200;
-            let height = img.naturalHeight || img.height || 1200;
+            let width = img.naturalWidth || img.width || 1600;
+            let height = img.naturalHeight || img.height || 1600;
             if (width > maxDimension || height > maxDimension) {
               if (width >= height) {
                 height = Math.round((height * maxDimension) / width);
@@ -1650,7 +1655,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               converted = canvas.toDataURL('image/jpeg', currentQuality);
             }
 
-            // Guarantee final converted size is strictly <= 2 MB (~2.7M base64 chars)
+            // Guarantee final converted size is strictly <= 10 MB
             const maxBase64Length = Math.floor((MAX_TARGET_BYTES * 4) / 3);
             while (converted.length > maxBase64Length && currentQuality > 0.5) {
               currentQuality = Number((currentQuality - 0.08).toFixed(2));
@@ -1951,15 +1956,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         },
       };
 
-      // Bake the exact cropped & positioned canvas into a high-resolution JPEG Data URL
+      // Bake the exact cropped & positioned canvas into a high-resolution WebP/JPEG Data URL
       const maxOutDim =
-        photoAdjustTarget.shape === 'circle' ? 900 : 1600;
+        photoAdjustTarget.shape === 'circle' ? 1200 : 2400;
       const croppedDataUrl = await exportCroppedPhotoDataUrl(
         photoAdjustUrl,
         cleanAdj,
         photoAdjustTarget.shape,
         maxOutDim,
-        0.88
+        0.92
       );
       const savedAdj: PhotoAdjustment = {
         ...cleanAdj,
@@ -1968,6 +1973,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
       if (photoAdjustTarget.kind === 'setting') {
         const field = photoAdjustTarget.field;
+        const prevUrl = settingsForm[field] || state.settings[field];
+        if (prevUrl && prevUrl !== photoAdjustUrl) {
+          void deleteMediaFromSupabaseStorage(prevUrl);
+        }
         const nextOriginalPhotos = {
           ...(state.settings.originalPhotos || {}),
           ...(settingsForm.originalPhotos || {}),
@@ -2002,22 +2011,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
 
       if (photoAdjustTarget.kind === 'gallery_item') {
-        const nextPhotos = effectiveGalleryPhotos.map((p) =>
-          p.id === photoAdjustTarget.photoId
-            ? {
-                ...p,
-                category: photoStudioMetaDraft.category.trim(),
-                title:
-                  photoStudioMetaDraft.title.trim() ||
-                  p.title ||
-                  'Momen Bahagia',
-                caption: photoStudioMetaDraft.caption.trim(),
-                imageUrl: croppedDataUrl || photoAdjustUrl,
-                originalImageUrl: p.originalImageUrl || photoAdjustUrl,
-                adjustment: savedAdj,
-              }
-            : p
-        );
+        const nextPhotos = effectiveGalleryPhotos.map((p) => {
+          if (p.id === photoAdjustTarget.photoId) {
+            if (p.imageUrl && p.imageUrl !== (p.originalImageUrl || photoAdjustUrl)) {
+              void deleteMediaFromSupabaseStorage(p.imageUrl);
+            }
+            return {
+              ...p,
+              category: photoStudioMetaDraft.category.trim(),
+              title:
+                photoStudioMetaDraft.title.trim() ||
+                p.title ||
+                'Momen Bahagia',
+              caption: photoStudioMetaDraft.caption.trim(),
+              imageUrl: croppedDataUrl || photoAdjustUrl,
+              originalImageUrl: p.originalImageUrl || photoAdjustUrl,
+              adjustment: savedAdj,
+            };
+          }
+          return p;
+        });
         const nextSettings: WeddingSettings = {
           ...state.settings,
           ...settingsForm,
@@ -2078,12 +2091,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast(`Mengonversi foto ke HD tajam (Maks 2 MB)...`);
+      showToast(`Mengonversi foto ke Ultra-HD tajam (Maks 10 MB)...`);
       const maxDim =
-        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1100 : 1800;
-      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.88);
+        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1400 : 2400;
+      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.92);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
+
+      // Purge old Storage file(s) from Supabase Storage before replacing
+      if (target === 'all_bg') {
+        void deleteMediaFromSupabaseStorage(settingsForm.coverBgUrl || state.settings.coverBgUrl);
+        void deleteMediaFromSupabaseStorage(settingsForm.heroPrewedUrl || state.settings.heroPrewedUrl);
+        void deleteMediaFromSupabaseStorage(settingsForm.pageBgUrl || state.settings.pageBgUrl);
+      } else {
+        void deleteMediaFromSupabaseStorage(settingsForm[target] || state.settings[target]);
+      }
+
       const defaultAdj: PhotoAdjustment = {
         zoom: 1,
         x: 0,
@@ -2145,10 +2168,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'FOTO_TEMA',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Upload & konversi foto HD (${target}: ${origKb}KB -> ${finalKb}KB)`,
+        summary: `Upload & konversi foto Ultra-HD (${target}: ${origKb}KB -> ${finalKb}KB)`,
       });
       showToast(
-        `✓ Foto HD tajam siap (${origKb} KB → ${finalKb} KB, maks 2 MB)! Silakan atur Crop & Posisi.`
+        `✓ Foto Ultra-HD tajam siap (${origKb} KB → ${finalKb} KB, maks 10 MB)! Silakan atur Crop & Posisi.`
       );
 
       // Automatically open the Crop, Zoom & Pan Studio so user can adjust framing right away
@@ -2188,10 +2211,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast('Mengonversi gambar Barcode QRIS (HD tajam, Maks 2 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.90);
+      showToast('Mengonversi gambar Barcode QRIS (Ultra-HD tajam, Maks 10 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 2000, 0.92);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
+      void deleteMediaFromSupabaseStorage(
+        settingsForm.qrisImageUrl || state.settings.qrisImageUrl
+      );
       const nextSettings: WeddingSettings = {
         ...state.settings,
         ...settingsForm,
@@ -2227,8 +2253,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     try {
       const origKb = Math.max(1, Math.round(file.size / 1024));
-      showToast('Mengonversi foto galeri ke HD tajam (Maks 2 MB)...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.88);
+      showToast('Mengonversi foto galeri ke Ultra-HD tajam (Maks 10 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 2400, 0.92);
       const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
       const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       const baseName = file.name.replace(/\.[^/.]+$/, '');
@@ -2252,7 +2278,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }));
       openNewGalleryPhotoAdjust(dataUrl);
       showToast(
-        `✓ Foto HD tajam siap (${origKb} KB → ${finalKb} KB, maks 2 MB)! Silakan Crop lalu klik Tambah Foto.`
+        `✓ Foto Ultra-HD tajam siap (${origKb} KB → ${finalKb} KB, maks 10 MB)! Silakan Crop lalu klik Tambah Foto.`
       );
     } catch {
       showToast('Gagal memproses file foto.');
@@ -2364,8 +2390,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       return;
     }
     try {
-      showToast('Mengompres & mengganti foto...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.86);
+      showToast('Mengonversi & mengganti foto ke Ultra-HD (Maks 10 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 2400, 0.92);
       const defaultAdj: PhotoAdjustment = {
         zoom: 1,
         x: 0,
@@ -2380,6 +2406,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       let updatedPhoto: GalleryPhotoItem | null = null;
       const nextPhotos = effectiveGalleryPhotos.map((p) => {
         if (p.id === photoId) {
+          void deleteMediaFromSupabaseStorage(p.imageUrl);
+          void deleteMediaFromSupabaseStorage(p.originalImageUrl);
           updatedPhoto = {
             ...p,
             imageUrl: dataUrl,
@@ -2407,7 +2435,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         status: 'SUCCESS',
         summary: `Mengganti file foto pada galeri "${(updatedPhoto as GalleryPhotoItem | null)?.title || photoId}"`,
       });
-      showToast('✓ Foto berhasil diganti! Silakan atur Crop, Zoom & Posisi.');
+      showToast('✓ Foto berhasil diganti (Ultra-HD)! Silakan atur Crop, Zoom & Posisi.');
     } catch (err) {
       appendAuditLog({
         actor: adminUser.username,
@@ -2448,10 +2476,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const titleLabel = target?.title || photoId;
     requestConfirm({
       title: 'Hapus Foto dari Galeri?',
-      message: `Apakah Anda yakin ingin menghapus foto "${titleLabel}" dari Galeri Prewedding?`,
-      confirmLabel: 'Ya, Hapus Foto',
+      message: `Apakah Anda yakin ingin menghapus foto "${titleLabel}" secara permanen dari Galeri Prewedding & Storage Supabase?`,
+      confirmLabel: 'Ya, Hapus Permanen',
       variant: 'danger',
       onConfirm: async () => {
+        if (target?.imageUrl) {
+          void deleteMediaFromSupabaseStorage(target.imageUrl);
+        }
+        if (target?.originalImageUrl) {
+          void deleteMediaFromSupabaseStorage(target.originalImageUrl);
+        }
         const nextPhotos = effectiveGalleryPhotos.filter((p) => p.id !== photoId);
         const nextSettings: WeddingSettings = {
           ...state.settings,
@@ -2468,9 +2502,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           module: 'GALERI_FOTO',
           action: 'HAPUS',
           status: 'SUCCESS',
-          summary: `Menghapus foto galeri "${titleLabel}"`,
+          summary: `Menghapus permanen foto galeri "${titleLabel}" dari database & Storage`,
         });
-        showToast(`Foto "${titleLabel}" dihapus dari Galeri.`);
+        showToast(`Foto "${titleLabel}" dihapus permanen tanpa jejak dari Galeri & Supabase.`);
       },
     });
   };
@@ -7402,12 +7436,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       settingsForm.qrisImageUrl.trim() !== '' && (
                                                         <button
                                                           type="button"
-                                                          onClick={() =>
-                                                            setSettingsForm({
+                                                          onClick={async () => {
+                                                            const oldUrl =
+                                                              settingsForm.qrisImageUrl ||
+                                                              state.settings.qrisImageUrl;
+                                                            if (oldUrl) {
+                                                              void deleteMediaFromSupabaseStorage(
+                                                                oldUrl
+                                                              );
+                                                            }
+                                                            const nextSettings: WeddingSettings = {
+                                                              ...state.settings,
                                                               ...settingsForm,
                                                               qrisImageUrl: '',
-                                                            })
-                                                          }
+                                                              updatedBy: adminUser.username,
+                                                            };
+                                                            await commitImmediateSettings(
+                                                              nextSettings
+                                                            );
+                                                            showToast(
+                                                              'Gambar Barcode QRIS dihapus permanen dari database & Storage Supabase.'
+                                                            );
+                                                          }}
                                                           className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs transition-colors"
                                                         >
                                                           Hapus Gambar QRIS

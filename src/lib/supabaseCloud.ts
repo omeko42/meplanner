@@ -512,12 +512,15 @@ export async function uploadAudioToSupabaseStorage(
   }
 }
 
-export async function deleteAudioFromSupabaseStorage(audioUrl: string): Promise<void> {
+export async function deleteMediaFromSupabaseStorage(
+  mediaUrl?: string
+): Promise<void> {
+  if (!mediaUrl || typeof mediaUrl !== 'string') return;
   try {
     const marker = '/storage/v1/object/public/wedding-media/';
-    const idx = audioUrl.indexOf(marker);
+    const idx = mediaUrl.indexOf(marker);
     if (idx === -1) return;
-    const objectPath = audioUrl.slice(idx + marker.length).split('?')[0];
+    const objectPath = mediaUrl.slice(idx + marker.length).split('?')[0];
     if (!objectPath) return;
     await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`, {
       method: 'DELETE',
@@ -528,6 +531,168 @@ export async function deleteAudioFromSupabaseStorage(audioUrl: string): Promise<
     });
   } catch {
     // Ignore storage delete errors
+  }
+}
+
+export const deleteAudioFromSupabaseStorage = deleteMediaFromSupabaseStorage;
+
+const uploadedImageUrlCache = new Map<string, string>();
+
+export async function uploadImageToSupabaseStorage(
+  fileOrDataUrl: File | string | undefined,
+  slotKey: string
+): Promise<string | null> {
+  if (!fileOrDataUrl) return null;
+  if (typeof fileOrDataUrl === 'string' && !fileOrDataUrl.startsWith('data:')) {
+    return fileOrDataUrl;
+  }
+
+  try {
+    let bodyBlob: Blob | File;
+    let contentType = 'image/webp';
+    let ext = 'webp';
+    let cacheSig = '';
+
+    if (typeof fileOrDataUrl === 'string') {
+      cacheSig = `${slotKey}_${fileOrDataUrl.length}_${fileOrDataUrl
+        .slice(-48)
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(0, 14)}`;
+      const cachedUrl = uploadedImageUrlCache.get(cacheSig);
+      if (cachedUrl) return cachedUrl;
+
+      const mimeMatch = fileOrDataUrl.match(/^data:([^;,]+)[;,]/i);
+      if (mimeMatch && mimeMatch[1]) {
+        contentType = mimeMatch[1];
+        if (contentType.includes('svg')) ext = 'svg';
+        else if (contentType.includes('png')) ext = 'png';
+        else if (contentType.includes('jpeg') || contentType.includes('jpg'))
+          ext = 'jpg';
+        else if (contentType.includes('webp')) ext = 'webp';
+      }
+      const res = await fetch(fileOrDataUrl);
+      bodyBlob = await res.blob();
+    } else {
+      bodyBlob = fileOrDataUrl;
+      contentType = fileOrDataUrl.type || 'image/webp';
+      if (contentType.includes('svg')) ext = 'svg';
+      else if (contentType.includes('png')) ext = 'png';
+      else if (contentType.includes('jpeg') || contentType.includes('jpg'))
+        ext = 'jpg';
+      cacheSig = `${slotKey}_${fileOrDataUrl.size}_${Date.now().toString(36)}`;
+    }
+
+    const safeSlot = slotKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const shortHash = cacheSig
+      .replace(/[^a-zA-Z0-9_-]/g, '')
+      .slice(-16);
+    const objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
+
+    const upRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': contentType,
+          'x-upsert': 'true',
+        },
+        body: bodyBlob,
+      }
+    );
+    if (!upRes.ok) return null;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+    if (cacheSig) {
+      uploadedImageUrlCache.set(cacheSig, publicUrl);
+    }
+    return publicUrl;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Automatic Zero-Trace Garbage Collector for Supabase Storage (`wedding-media`).
+ * Deletes any file in `photos/` or `music/` that is no longer referenced by the current settings.
+ */
+export async function cleanupOrphanedStorageMedia(
+  settings: WeddingSettings
+): Promise<void> {
+  try {
+    const marker = '/storage/v1/object/public/wedding-media/';
+    const activeObjectPaths = new Set<string>();
+    const registerUrl = (u?: string) => {
+      if (!u || typeof u !== 'string') return;
+      const idx = u.indexOf(marker);
+      if (idx === -1) return;
+      const p = u.slice(idx + marker.length).split('?')[0];
+      if (p) activeObjectPaths.add(p);
+    };
+
+    registerUrl(settings.groomPhotoUrl);
+    registerUrl(settings.bridePhotoUrl);
+    registerUrl(settings.coverBgUrl);
+    registerUrl(settings.heroPrewedUrl);
+    registerUrl(settings.pageBgUrl);
+    registerUrl(settings.qrisImageUrl);
+
+    if (settings.originalPhotos) {
+      Object.values(settings.originalPhotos).forEach((u) => registerUrl(u));
+    }
+    if (Array.isArray(settings.galleryPhotos)) {
+      settings.galleryPhotos.forEach((gp) => {
+        registerUrl(gp.imageUrl);
+        registerUrl(gp.originalImageUrl);
+      });
+    }
+    if (Array.isArray(settings.musicPlaylist)) {
+      settings.musicPlaylist.forEach((m) => registerUrl(m.url));
+    }
+
+    for (const folder of ['photos', 'music']) {
+      const listRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prefix: folder,
+            limit: 300,
+            offset: 0,
+          }),
+        }
+      );
+      if (!listRes.ok) continue;
+      const items = (await listRes.json()) as Array<{
+        name: string;
+        id?: string | null;
+      }>;
+      if (!Array.isArray(items)) continue;
+
+      for (const item of items) {
+        if (!item.name || item.name === '.emptyFolderPlaceholder') continue;
+        const fullObjectPath = `${folder}/${item.name}`;
+        if (!activeObjectPaths.has(fullObjectPath)) {
+          await fetch(
+            `${SUPABASE_URL}/storage/v1/object/wedding-media/${fullObjectPath}`,
+            {
+              method: 'DELETE',
+              headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+            }
+          ).catch(() => {});
+        }
+      }
+    }
+  } catch {
+    // Ignore background storage cleanup errors
   }
 }
 
@@ -562,7 +727,7 @@ function normalizeCloudState(
 }
 
 // ============================================================================
-// CLOUD PAYLOAD OPTIMIZER (PREVENTS 57014 STATEMENT TIMEOUT & 504 GATEWAY)
+// CLOUD PAYLOAD OPTIMIZER (SUPABASE STORAGE BUCKET + ANTI-TIMEOUT)
 // ============================================================================
 const compressedDataUrlCache = new Map<string, string>();
 
@@ -570,7 +735,7 @@ async function compressDataUrlForCloud(
   dataUrl: string | undefined,
   maxDim: number,
   quality: number,
-  maxAllowedChars = 190_000
+  maxAllowedChars = 250_000
 ): Promise<string | undefined> {
   if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
   if (!dataUrl.startsWith('data:image/')) return dataUrl;
@@ -630,10 +795,31 @@ async function compressDataUrlForCloud(
   });
 }
 
+async function resolveCloudImageSlot(
+  rawUrl: string | undefined,
+  slotKey: string,
+  fallbackDim: number,
+  fallbackQual: number,
+  fallbackMaxChars: number
+): Promise<string | undefined> {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  if (rawUrl.startsWith('data:image/')) {
+    const storageUrl = await uploadImageToSupabaseStorage(rawUrl, slotKey);
+    if (storageUrl) return storageUrl;
+    return compressDataUrlForCloud(
+      rawUrl,
+      fallbackDim,
+      fallbackQual,
+      fallbackMaxChars
+    );
+  }
+  return rawUrl;
+}
+
 /**
- * Strips duplicate `originalPhotos` / `originalImageUrl` and inline `data:audio/`
- * and converts oversized base64 images to Full HD WebP (1600px) so photos stay
- * razor-sharp (anti-pecah) while `public.wedding_state` (`id = 'main'`) never hits timeout.
+ * Uploads inline `data:image/` photos (up to 10 MB Ultra-HD) and `data:audio/` MP3s
+ * directly to Supabase Storage bucket `wedding-media` so photos stay 100% sharp
+ * while `public.wedding_state` (`id = 'main'`) stays ultra-light (~25 KB) and never hits timeout.
  */
 async function prepareCloudSafeState(
   state: WeddingDatabaseSchema,
@@ -660,20 +846,62 @@ async function prepareCloudSafeState(
     );
   }
 
-  const avatarDim = aggressiveMode ? 800 : 1080;
-  const bannerDim = aggressiveMode ? 1280 : 1600;
-  const qual = aggressiveMode ? 0.78 : 0.86;
-  const maxChars = aggressiveMode ? 110_000 : 190_000;
+  const avatarDim = aggressiveMode ? 900 : 1400;
+  const bannerDim = aggressiveMode ? 1400 : 2400;
+  const qual = aggressiveMode ? 0.8 : 0.9;
+  const maxChars = aggressiveMode ? 120_000 : 250_000;
 
-  const [groomPhotoUrl, bridePhotoUrl, coverBgUrl, heroPrewedUrl, pageBgUrl, qrisImageUrl] =
-    await Promise.all([
-      compressDataUrlForCloud(rawSettings.groomPhotoUrl, avatarDim, qual, maxChars),
-      compressDataUrlForCloud(rawSettings.bridePhotoUrl, avatarDim, qual, maxChars),
-      compressDataUrlForCloud(rawSettings.coverBgUrl, bannerDim, qual, maxChars),
-      compressDataUrlForCloud(rawSettings.heroPrewedUrl, bannerDim, qual, maxChars),
-      compressDataUrlForCloud(rawSettings.pageBgUrl, bannerDim, qual, maxChars),
-      compressDataUrlForCloud(rawSettings.qrisImageUrl, avatarDim, qual, maxChars),
-    ]);
+  const [
+    groomPhotoUrl,
+    bridePhotoUrl,
+    coverBgUrl,
+    heroPrewedUrl,
+    pageBgUrl,
+    qrisImageUrl,
+  ] = await Promise.all([
+    resolveCloudImageSlot(
+      rawSettings.groomPhotoUrl,
+      'groomPhotoUrl',
+      avatarDim,
+      qual,
+      maxChars
+    ),
+    resolveCloudImageSlot(
+      rawSettings.bridePhotoUrl,
+      'bridePhotoUrl',
+      avatarDim,
+      qual,
+      maxChars
+    ),
+    resolveCloudImageSlot(
+      rawSettings.coverBgUrl,
+      'coverBgUrl',
+      bannerDim,
+      qual,
+      maxChars
+    ),
+    resolveCloudImageSlot(
+      rawSettings.heroPrewedUrl,
+      'heroPrewedUrl',
+      bannerDim,
+      qual,
+      maxChars
+    ),
+    resolveCloudImageSlot(
+      rawSettings.pageBgUrl,
+      'pageBgUrl',
+      bannerDim,
+      qual,
+      maxChars
+    ),
+    resolveCloudImageSlot(
+      rawSettings.qrisImageUrl,
+      'qrisImageUrl',
+      avatarDim,
+      qual,
+      maxChars
+    ),
+  ]);
 
   rawSettings.groomPhotoUrl = groomPhotoUrl || rawSettings.groomPhotoUrl;
   rawSettings.bridePhotoUrl = bridePhotoUrl || rawSettings.bridePhotoUrl;
@@ -684,21 +912,28 @@ async function prepareCloudSafeState(
 
   if (Array.isArray(rawSettings.galleryPhotos)) {
     const cleanedGallery: GalleryPhotoItem[] = await Promise.all(
-      rawSettings.galleryPhotos.map(async (gp) => {
+      rawSettings.galleryPhotos.map(async (gp, idx) => {
         const copy: GalleryPhotoItem = { ...gp };
         delete copy.originalImageUrl;
-        const compUrl = await compressDataUrlForCloud(
+        const resolvedUrl = await resolveCloudImageSlot(
           copy.imageUrl,
+          `gallery_${copy.id || idx}`,
           bannerDim,
           qual,
           maxChars
         );
-        if (compUrl) copy.imageUrl = compUrl;
+        if (resolvedUrl) copy.imageUrl = resolvedUrl;
         return copy;
       })
     );
     rawSettings.galleryPhotos = cleanedGallery;
   }
+
+  // Trigger background Zero-Trace Storage Garbage Collector to purge any replaced/deleted files
+  void cleanupOrphanedStorageMedia({
+    ...rawSettings,
+    originalPhotos: state.settings.originalPhotos,
+  });
 
   return {
     ...state,
@@ -894,6 +1129,30 @@ export async function loadStateFromSupabase(): Promise<{
 // ============================================================================
 let multiTableAvailability: 'UNKNOWN' | 'AVAILABLE' | 'MISSING' = 'UNKNOWN';
 
+async function pruneDeletedRelationalRows(
+  tableName: string,
+  pkColumn: string,
+  activeKeys: string[]
+): Promise<void> {
+  try {
+    const cleanKeys = activeKeys
+      .map((k) => String(k || '').trim())
+      .filter(Boolean);
+    const filterExpr =
+      cleanKeys.length > 0
+        ? `${pkColumn}=not.in.(${cleanKeys
+            .map((k) => `"${k.replace(/"/g, '')}"`)
+            .join(',')})`
+        : `${pkColumn}=neq.__none__`;
+    await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?${filterExpr}`, {
+      method: 'DELETE',
+      headers: getSupabaseHeaders(),
+    });
+  } catch {
+    // Ignore optional prune errors
+  }
+}
+
 async function syncRelationalTablesInBackground(
   state: WeddingDatabaseSchema,
   updatedAt: string
@@ -940,7 +1199,7 @@ async function syncRelationalTablesInBackground(
     if (!settingsRes.ok) return;
     multiTableAvailability = 'AVAILABLE';
 
-    // 2. Upsert Media Slots into public.wedding_media
+    // 2. Upsert Media Slots into public.wedding_media & hard-delete removed slots
     const mediaRows = [
       {
         slot_key: 'groomPhotoUrl',
@@ -987,6 +1246,30 @@ async function syncRelationalTablesInBackground(
         adjustment: s.photoAdjustments?.pageBgUrl || {},
         updated_at: updatedAt,
       },
+      ...(s.qrisImageUrl
+        ? [
+            {
+              slot_key: 'qrisImageUrl',
+              setting_id: 'main',
+              label: 'Barcode QRIS Amplop Digital',
+              media_type: 'image',
+              media_url: s.qrisImageUrl,
+              adjustment: {},
+              updated_at: updatedAt,
+            },
+          ]
+        : []),
+      ...(Array.isArray(s.galleryPhotos)
+        ? s.galleryPhotos.map((gp) => ({
+            slot_key: `gallery_${gp.id}`,
+            setting_id: 'main',
+            label: gp.title || 'Foto Galeri',
+            media_type: 'image',
+            media_url: gp.imageUrl || '',
+            adjustment: gp.adjustment || {},
+            updated_at: updatedAt,
+          }))
+        : []),
     ];
 
     void fetch(`${SUPABASE_URL}/rest/v1/wedding_media?on_conflict=slot_key`, {
@@ -996,10 +1279,16 @@ async function syncRelationalTablesInBackground(
       }),
       body: JSON.stringify(mediaRows),
     }).catch(() => {});
+    void pruneDeletedRelationalRows(
+      'wedding_media',
+      'slot_key',
+      mediaRows.map((m) => m.slot_key)
+    );
 
-    // 3. Upsert Tasks, Guests, Wishes, Budgets, Users if non-empty
-    if (Array.isArray(state.tasks) && state.tasks.length > 0) {
-      const taskRows = state.tasks.map((t) => ({
+    // 3. Upsert & hard-delete removed rows in Tasks, Guests, Wishes, Budgets, Users
+    const tasksList = Array.isArray(state.tasks) ? state.tasks : [];
+    if (tasksList.length > 0) {
+      const taskRows = tasksList.map((t) => ({
         id: t.id,
         setting_id: 'main',
         category: t.category,
@@ -1022,9 +1311,15 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(taskRows),
       }).catch(() => {});
     }
+    void pruneDeletedRelationalRows(
+      'wedding_tasks',
+      'id',
+      tasksList.map((t) => t.id)
+    );
 
-    if (Array.isArray(state.guests) && state.guests.length > 0) {
-      const guestRows = state.guests.map((g) => ({
+    const guestsList = Array.isArray(state.guests) ? state.guests : [];
+    if (guestsList.length > 0) {
+      const guestRows = guestsList.map((g) => ({
         id: g.id,
         setting_id: 'main',
         invitation_code: g.invitationCode,
@@ -1048,9 +1343,15 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(guestRows),
       }).catch(() => {});
     }
+    void pruneDeletedRelationalRows(
+      'wedding_guests',
+      'id',
+      guestsList.map((g) => g.id)
+    );
 
-    if (Array.isArray(state.wishes) && state.wishes.length > 0) {
-      const wishRows = state.wishes.map((w) => ({
+    const wishesList = Array.isArray(state.wishes) ? state.wishes : [];
+    if (wishesList.length > 0) {
+      const wishRows = wishesList.map((w) => ({
         id: w.id,
         setting_id: 'main',
         guest_name: w.guestName,
@@ -1073,9 +1374,17 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(wishRows),
       }).catch(() => {});
     }
+    void pruneDeletedRelationalRows(
+      'wedding_wishes',
+      'id',
+      wishesList.map((w) => w.id)
+    );
 
-    if (Array.isArray(state.budgetItems) && state.budgetItems.length > 0) {
-      const budgetRows = state.budgetItems.map((b) => ({
+    const budgetsList = Array.isArray(state.budgetItems)
+      ? state.budgetItems
+      : [];
+    if (budgetsList.length > 0) {
+      const budgetRows = budgetsList.map((b) => ({
         id: b.id,
         setting_id: 'main',
         category: b.category,
@@ -1097,9 +1406,15 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(budgetRows),
       }).catch(() => {});
     }
+    void pruneDeletedRelationalRows(
+      'wedding_budgets',
+      'id',
+      budgetsList.map((b) => b.id)
+    );
 
-    if (Array.isArray(state.adminUsers) && state.adminUsers.length > 0) {
-      const userRows = state.adminUsers.map((u) => ({
+    const usersList = Array.isArray(state.adminUsers) ? state.adminUsers : [];
+    if (usersList.length > 0) {
+      const userRows = usersList.map((u) => ({
         id: u.id,
         setting_id: 'main',
         username: u.username,
@@ -1118,6 +1433,11 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(userRows),
       }).catch(() => {});
     }
+    void pruneDeletedRelationalRows(
+      'wedding_users',
+      'id',
+      usersList.map((u) => u.id)
+    );
   } catch {
     // Ignore optional relational table sync errors
   }
