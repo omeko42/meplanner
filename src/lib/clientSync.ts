@@ -527,30 +527,44 @@ export function triggerFileDownload(filename: string, content: string, mimeType:
 
 export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [
   {
+    id: 'track-shane-beautiful-in-white',
+    title: 'Beautiful In White',
+    artist: 'Shane Filan',
+    url: '/musik/beautiful-in-white.mp3',
+    isDefault: true,
+  },
+  {
+    id: 'track-mltr-paint-my-love',
+    title: 'Paint My Love',
+    artist: 'Michael Learns To Rock',
+    url: '/musik/paint-my-love.mp3',
+    isDefault: true,
+  },
+  {
+    id: 'track-ilham-jalaraning-tresna',
+    title: 'Jalaraning Tresna',
+    artist: 'Ilham Pradana',
+    url: '/musik/jalaraning-tresna.mp3',
+    isDefault: true,
+  },
+  {
     id: 'track-canon-in-d',
     title: 'Canon in D (Romantic Piano)',
-    artist: 'Johann Pachelbel',
+    artist: 'Johann Pachelbel (Instrumental)',
     url: 'synth:canon-in-d',
-    isDefault: true,
-  },
-  {
-    id: 'track-thousand-years',
-    title: 'A Thousand Years (Acoustic Chime)',
-    artist: 'Romantic Ballad',
-    url: 'synth:thousand-years',
-    isDefault: true,
-  },
-  {
-    id: 'track-beautiful-in-white',
-    title: 'Beautiful in White (Soft Music Box)',
-    artist: 'Wedding Instrumental',
-    url: 'synth:beautiful-in-white',
     isDefault: true,
   },
 ];
 
 export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrackItem[] {
   if (Array.isArray(settings.musicPlaylist)) {
+    // If cached playlist only has the old 3 synth tracks, auto-upgrade to include the 3 real MP3 tracks
+    const isLegacySynthOnly =
+      settings.musicPlaylist.length > 0 &&
+      settings.musicPlaylist.every((t) => t.url.startsWith('synth:'));
+    if (isLegacySynthOnly) {
+      return DEFAULT_MUSIC_PLAYLIST;
+    }
     return settings.musicPlaylist;
   }
   return DEFAULT_MUSIC_PLAYLIST;

@@ -120,8 +120,10 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   loveStory: [],
   galleryPhotos: [],
 
-  musicTitle: 'Instrumental Wedding Piano',
-  musicArtist: 'Chamber Instrumental',
+  musicTitle: 'Beautiful In White',
+  musicArtist: 'Shane Filan',
+  activeMusicTrackId: 'track-shane-beautiful-in-white',
+  musicVolume: 75,
   updatedAt: '2026-10-17T23:30:00+07:00',
   updatedBy: 'mempelai_pria',
 };
