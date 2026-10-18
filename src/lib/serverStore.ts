@@ -150,6 +150,7 @@ function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSc
       jabatan: u.jabatan,
       email: u.email,
       isDefaultUser: u.isDefaultUser,
+      passwordHash: u.passwordHash,
     })),
   };
 }
@@ -167,16 +168,10 @@ export const serverStore = {
     try {
       const { state: cloudState, tableExists } = await loadStateFromSupabase();
       if (cloudState) {
-        const localTime = new Date(localStore.lastSyncedAt || 0).getTime() || 0;
-        const cloudTime = new Date(cloudState.lastSyncedAt || 0).getTime() || 0;
-        if (cloudTime > localTime) {
-          persistStore(cloudState, false, false);
-          return cloudState;
-        } else if (localTime > cloudTime && tableExists) {
-          void saveStateToSupabase(localStore);
-        }
+        persistStore(cloudState, false, false);
+        return cloudState;
       } else if (tableExists) {
-        void saveStateToSupabase(localStore);
+        await saveStateToSupabase(localStore);
       }
     } catch {
       // Fallback to localStore

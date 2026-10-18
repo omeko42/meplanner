@@ -13,6 +13,7 @@ import {
   verifySuperadminPassword,
 } from '@/lib/auth';
 import { serverStore } from '@/lib/serverStore';
+import { saveStateToSupabase } from '@/lib/supabaseCloud';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await serverStore.reconcileWithSupabase();
     const body = await request.json();
     const action = String(body.action || 'LOGIN').toUpperCase();
 
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  await serverStore.reconcileWithSupabase();
   const sessionUser = verifyAdminRequest(request);
   if (!sessionUser) {
     return NextResponse.json(
@@ -189,6 +192,9 @@ export async function PUT(request: NextRequest) {
         ...(newPassword ? { passwordHash: hashPassword(newPassword) } : {}),
       });
 
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
+
       return NextResponse.json({
         success: true,
         message: id
@@ -202,7 +208,7 @@ export async function PUT(request: NextRequest) {
           jabatan: panitiaUser.jabatan,
           isDefaultUser: false,
         },
-        data: serverStore.getFullState(false),
+        data: fullState,
       });
     }
 
@@ -225,10 +231,12 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
       return NextResponse.json({
         success: true,
         message: 'Akun Panitia berhasil dihapus.',
-        data: serverStore.getFullState(false),
+        data: fullState,
       });
     }
 
@@ -314,6 +322,9 @@ export async function PUT(request: NextRequest) {
         : {}),
     });
 
+    const fullState = serverStore.getFullState(false);
+    await saveStateToSupabase(fullState);
+
     const isSelfUpdate =
       targetAdmin.id === sessionUser.id ||
       targetAdmin.username.toLowerCase() === sessionUser.username.toLowerCase();
@@ -334,7 +345,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: `Kredensial akun "${updatedAdmin.username}" berhasil diperbarui dengan verifikasi Superadmin.`,
       user: responseUser,
-      data: serverStore.getFullState(false),
+      data: fullState,
     });
 
     if (isSelfUpdate) {

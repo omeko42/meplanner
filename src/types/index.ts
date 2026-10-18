@@ -347,6 +347,37 @@ export interface AdminUser {
   passwordHash?: string;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  module:
+    | 'MEMPELAI'
+    | 'CHECKLIST'
+    | 'TAMU'
+    | 'DOA_RSVP'
+    | 'MONETER'
+    | 'KEAMANAN'
+    | 'DATABASE'
+    | 'MUSIK_PLAYLIST'
+    | 'JADWAL_ACARA'
+    | 'VISIBILITAS'
+    | 'KISAH_KASIH'
+    | 'FOTO_TEMA'
+    | 'GALERI_FOTO'
+    | 'AMPLOP_DIGITAL'
+    | 'KEAMANAN_AKUN'
+    | 'AKUN_PANITIA'
+    | 'GOOGLE_SHEETS'
+    | 'BACKUP_JSON'
+    | 'KONFIRMASI_AKSI'
+    | string;
+  action: 'TAMBAH' | 'EDIT' | 'HAPUS' | 'SIMPAN' | 'SYNC' | 'RESET' | 'ERROR';
+  status: 'SUCCESS' | 'ERROR' | 'WARNING';
+  summary: string;
+  detail?: string;
+}
+
 export interface WeddingDatabaseSchema {
   settings: WeddingSettings;
   tasks: WeddingTask[];
@@ -356,3 +387,4 @@ export interface WeddingDatabaseSchema {
   adminUsers: AdminUser[];
   lastSyncedAt: string;
 }
+

@@ -1,4 +1,4 @@
-import { WeddingDatabaseSchema, WeddingSettings } from '@/types';
+import { AuditLogEntry, WeddingDatabaseSchema, WeddingSettings } from '@/types';
 import {
   INITIAL_SETTINGS,
   INITIAL_TASKS,
@@ -53,6 +53,106 @@ type StatusListener = (status: CloudSyncStatus, lastDetail?: string) => void;
 let currentCloudStatus: CloudSyncStatus = 'IDLE';
 let currentCloudDetail = '';
 const statusListeners = new Set<StatusListener>();
+
+// ============================================================================
+// REAL-TIME AUDIT & ERROR LOG SYSTEM
+// ============================================================================
+const AUDIT_LOG_STORAGE_KEY = 'my_wedding_manager_audit_logs_v1';
+const MAX_AUDIT_LOGS = 250;
+type AuditLogListener = (logs: AuditLogEntry[]) => void;
+const auditListeners = new Set<AuditLogListener>();
+let memoryAuditLogs: AuditLogEntry[] | null = null;
+
+export function getAuditLogs(): AuditLogEntry[] {
+  if (typeof window === 'undefined') return memoryAuditLogs || [];
+  if (memoryAuditLogs !== null) return memoryAuditLogs;
+  try {
+    const raw = localStorage.getItem(AUDIT_LOG_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memoryAuditLogs = parsed;
+        return memoryAuditLogs;
+      }
+    }
+  } catch {
+    // Ignore storage read error
+  }
+  memoryAuditLogs = [];
+  return memoryAuditLogs;
+}
+
+export function appendAuditLog(
+  entry: Omit<AuditLogEntry, 'id' | 'timestamp'> & { timestamp?: string }
+): AuditLogEntry {
+  const newEntry: AuditLogEntry = {
+    id: `log_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    timestamp: entry.timestamp || new Date().toISOString(),
+    actor: entry.actor || 'admin',
+    module: entry.module,
+    action: entry.action,
+    status: entry.status,
+    summary: entry.summary,
+    detail: entry.detail,
+  };
+
+  if (typeof window !== 'undefined') {
+    const prefix = `[AUDIT][${newEntry.status}][${newEntry.module}:${newEntry.action}]`;
+    if (newEntry.status === 'ERROR') {
+      console.error(prefix, newEntry.summary, newEntry.detail || '');
+    } else {
+      console.info(prefix, newEntry.summary, newEntry.detail || '');
+    }
+  }
+
+  const current = getAuditLogs();
+  const next = [newEntry, ...current].slice(0, MAX_AUDIT_LOGS);
+  memoryAuditLogs = next;
+
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(AUDIT_LOG_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore quota exceeded
+    }
+  }
+
+  auditListeners.forEach((fn) => {
+    try {
+      fn(next);
+    } catch {
+      // Ignore listener error
+    }
+  });
+
+  return newEntry;
+}
+
+export function clearAuditLogs(): void {
+  memoryAuditLogs = [];
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(AUDIT_LOG_STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
+  auditListeners.forEach((fn) => {
+    try {
+      fn([]);
+    } catch {
+      // Ignore
+    }
+  });
+}
+
+export function subscribeAuditLogs(listener: AuditLogListener): () => void {
+  auditListeners.add(listener);
+  listener(getAuditLogs());
+  return () => {
+    auditListeners.delete(listener);
+  };
+}
 
 export function getCloudSyncStatus(): {
   status: CloudSyncStatus;
@@ -201,16 +301,38 @@ export async function loadStateFromSupabase(): Promise<{
         'NEEDS_TABLE_SETUP',
         'Tabel public.wedding_state belum dibuat di SQL Editor Supabase'
       );
+      appendAuditLog({
+        actor: 'system',
+        module: 'DATABASE',
+        action: 'ERROR',
+        status: 'WARNING',
+        summary: 'Tabel public.wedding_state belum ditemukan di Supabase',
+        detail: `HTTP ${res.status}: ${errText.slice(0, 200)}`,
+      });
       return { state: null, tableExists: false };
     }
 
     setCloudStatus('OFFLINE', `HTTP ${res.status}`);
+    appendAuditLog({
+      actor: 'system',
+      module: 'DATABASE',
+      action: 'ERROR',
+      status: 'ERROR',
+      summary: `Gagal memuat data dari Supabase (HTTP ${res.status})`,
+      detail: errText.slice(0, 250),
+    });
     return { state: null, tableExists: false };
   } catch (err) {
-    setCloudStatus(
-      'OFFLINE',
-      err instanceof Error ? err.message : 'Gagal terhubung ke Supabase'
-    );
+    const msg = err instanceof Error ? err.message : 'Gagal terhubung ke Supabase';
+    setCloudStatus('OFFLINE', msg);
+    appendAuditLog({
+      actor: 'system',
+      module: 'DATABASE',
+      action: 'ERROR',
+      status: 'ERROR',
+      summary: 'Koneksi ke Supabase gagal saat memuat data',
+      detail: msg,
+    });
     return { state: null, tableExists: false };
   }
 }
@@ -288,16 +410,39 @@ export async function saveStateToSupabase(
         'NEEDS_TABLE_SETUP',
         'Tabel public.wedding_state belum dibuat di SQL Editor Supabase'
       );
+      appendAuditLog({
+        actor: state.settings?.updatedBy || 'system',
+        module: 'DATABASE',
+        action: 'ERROR',
+        status: 'WARNING',
+        summary: 'Gagal simpan ke Supabase: Tabel public.wedding_state belum dibuat',
+        detail: `HTTP ${res.status}: ${errText.slice(0, 200)}`,
+      });
       return false;
     }
 
-    setCloudStatus('OFFLINE', `HTTP ${res.status}: ${errText.slice(0, 120)}`);
+    const errMsg = `HTTP ${res.status}: ${errText.slice(0, 120)}`;
+    setCloudStatus('OFFLINE', errMsg);
+    appendAuditLog({
+      actor: state.settings?.updatedBy || 'system',
+      module: 'DATABASE',
+      action: 'ERROR',
+      status: 'ERROR',
+      summary: `Gagal menyimpan data ke Supabase (HTTP ${res.status})`,
+      detail: errText.slice(0, 300),
+    });
     return false;
   } catch (err) {
-    setCloudStatus(
-      'OFFLINE',
-      err instanceof Error ? err.message : 'Gagal menyimpan ke Supabase'
-    );
+    const msg = err instanceof Error ? err.message : 'Gagal menyimpan ke Supabase';
+    setCloudStatus('OFFLINE', msg);
+    appendAuditLog({
+      actor: state.settings?.updatedBy || 'system',
+      module: 'DATABASE',
+      action: 'ERROR',
+      status: 'ERROR',
+      summary: 'Terjadi kesalahan jaringan saat menyimpan ke Supabase',
+      detail: msg,
+    });
     return false;
   }
 }

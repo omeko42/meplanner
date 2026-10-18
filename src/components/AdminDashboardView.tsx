@@ -83,6 +83,7 @@ import {
   WeddingScheduleEvent,
   PhotoAdjustment,
   MusicTrackItem,
+  AuditLogEntry,
 } from '@/types';
 import {
   formatRupiah,
@@ -114,6 +115,10 @@ import {
   saveStateToSupabase,
   SUPABASE_SETUP_SQL,
   SUPABASE_PROJECT_REF,
+  getAuditLogs,
+  subscribeAuditLogs,
+  clearAuditLogs,
+  appendAuditLog,
 } from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
@@ -508,8 +513,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         waTemplateRegularDraft.trim() || DEFAULT_WA_TEMPLATE_REGULAR,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'WA_TEMPLATE',
+      action: 'SIMPAN',
+      status: 'SUCCESS',
+      summary: 'Menyimpan Template Global Pengantar WhatsApp (VIP & Reguler)',
+    });
     if (waPreviewGuest) {
       const refreshed = generateWhatsAppMessage(waPreviewGuest, nextSettings);
       setWaCustomMessage(refreshed.messageText);
@@ -518,7 +529,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setIsWaGlobalModalOpen(false);
     }
     showToast(
-      'Teks Default Pengantar WhatsApp Global berhasil disimpan untuk semua tamu!'
+      '✓ Tersimpan: Template Pengantar WhatsApp Global berhasil disimpan untuk semua tamu!'
     );
   };
 
@@ -623,7 +634,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   // ============================================================================
-  // SUPABASE CLOUD SYNC STATUS & MODAL
+  // SUPABASE CLOUD SYNC STATUS, AUDIT LOG & CONFIRMATION MODAL
   // ============================================================================
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>(
     () => getCloudSyncStatus().status
@@ -632,14 +643,79 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     () => getCloudSyncStatus().detail
   );
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [cloudModalTab, setCloudModalTab] = useState<'audit' | 'sql'>('audit');
   const [copiedSql, setCopiedSql] = useState(false);
 
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() =>
+    getAuditLogs()
+  );
+  const [auditFilter, setAuditFilter] = useState<
+    'ALL' | 'ERROR' | 'SAVE' | 'DELETE'
+  >('ALL');
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'primary';
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+  const [isConfirmExecuting, setIsConfirmExecuting] = useState(false);
+
+  const requestConfirm = (opts: {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'primary';
+    onConfirm: () => Promise<void> | void;
+  }) => {
+    setConfirmDialog(opts);
+  };
+
   useEffect(() => {
-    return subscribeCloudSyncStatus((st, det) => {
+    const unsubSync = subscribeCloudSyncStatus((st, det) => {
       setCloudSyncStatus(st);
       setCloudSyncDetail(det || '');
     });
+    const unsubAudit = subscribeAuditLogs((entries) => {
+      setAuditLogs(entries);
+    });
+    return () => {
+      unsubSync();
+      unsubAudit();
+    };
   }, []);
+
+  const errorAuditCount = useMemo(
+    () =>
+      auditLogs.filter(
+        (l) => l.status === 'ERROR' || l.status === 'WARNING'
+      ).length,
+    [auditLogs]
+  );
+
+  const filteredAuditLogs = useMemo(() => {
+    if (auditFilter === 'ERROR') {
+      return auditLogs.filter(
+        (l) => l.status === 'ERROR' || l.status === 'WARNING'
+      );
+    }
+    if (auditFilter === 'SAVE') {
+      return auditLogs.filter(
+        (l) =>
+          l.action === 'TAMBAH' ||
+          l.action === 'EDIT' ||
+          l.action === 'SIMPAN' ||
+          l.action === 'SYNC'
+      );
+    }
+    if (auditFilter === 'DELETE') {
+      return auditLogs.filter(
+        (l) => l.action === 'HAPUS' || l.action === 'RESET'
+      );
+    }
+    return auditLogs;
+  }, [auditLogs, auditFilter]);
 
   const handleForceCloudSyncNow = async () => {
     const payloadToSave: WeddingDatabaseSchema = {
@@ -652,10 +728,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     };
     const ok = await saveStateToSupabase(payloadToSave);
     if (ok) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'CLOUD_SUPABASE',
+        action: 'SYNC',
+        status: 'SUCCESS',
+        summary: 'Sinkronisasi manual ke Supabase Cloud berhasil',
+      });
       showToast('Data berhasil disimpan & disinkronkan ke Supabase Cloud!');
-      setIsCloudModalOpen(false);
     } else {
-      showToast('Tabel wedding_state belum aktif di Supabase. Silakan jalankan SQL 4 baris di bawah.');
+      showToast('Tabel wedding_state belum aktif di Supabase. Silakan jalankan SQL di tab Setup SQL.');
     }
   };
 
@@ -690,13 +772,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
 
   const effectiveLoveStory = useMemo(
-    () => getEffectiveLoveStory(state.settings),
-    [state.settings]
+    () => getEffectiveLoveStory(settingsForm),
+    [settingsForm]
   );
 
   const effectiveGalleryPhotos = useMemo(
-    () => getEffectiveGalleryPhotos(state.settings),
-    [state.settings]
+    () => getEffectiveGalleryPhotos(settingsForm),
+    [settingsForm]
   );
 
   useEffect(() => {
@@ -722,6 +804,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     reader.onload = async () => {
       const dataUrl = String(reader.result || '');
       if (!dataUrl.startsWith('data:audio/') && !dataUrl.startsWith('data:video/') && !dataUrl.startsWith('data:application/octet-stream')) {
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'MUSIK_PLAYLIST',
+          action: 'ERROR',
+          status: 'ERROR',
+          summary: `Gagal upload musik "${file.name}": format tidak didukung`,
+        });
         showToast('Pilih file audio yang valid (.mp3, .m4a, .wav, .ogg).');
         return;
       }
@@ -744,12 +833,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         musicPlaylist: nextList,
         updatedBy: adminUser.username,
       };
-      setSettingsFormInternal(nextSettings);
-      await onUpdateSettings(nextSettings);
+      await commitImmediateSettings(nextSettings);
       weddingMusicPlayer.syncFromSettings(nextSettings);
       weddingMusicPlayer.playTrack(newTrack.id);
       setNewMusicTitle('');
       setNewMusicArtist('');
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'MUSIK_PLAYLIST',
+        action: 'TAMBAH',
+        status: 'SUCCESS',
+        summary: `Upload lagu "${newTrack.title}" ke playlist`,
+      });
       showToast(`Musik "${newTrack.title}" ditambahkan & sedang diputar (klik Pilih untuk jadikan Lagu Utama)!`);
     };
     reader.readAsDataURL(file);
@@ -775,38 +870,58 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       musicPlaylist: nextList,
       updatedBy: adminUser.username,
     };
-    setSettingsFormInternal(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     weddingMusicPlayer.syncFromSettings(nextSettings);
     weddingMusicPlayer.playTrack(newTrack.id);
     setNewMusicTitle('');
     setNewMusicArtist('');
     setNewMusicUrl('');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'MUSIK_PLAYLIST',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `Tambah lagu URL "${newTrack.title}" ke playlist`,
+    });
     showToast(`Lagu "${newTrack.title}" ditambahkan ke Playlist!`);
   };
 
-  const handleDeleteMusicTrack = async (trackId: string, title: string) => {
-    const nextList = effectivePlaylist.filter((t) => t.id !== trackId);
-    const nextActive =
-      settingsForm.activeMusicTrackId === trackId
-        ? nextList[0]?.id || ''
-        : settingsForm.activeMusicTrackId || nextList[0]?.id || '';
-    const activeTrackObj =
-      nextList.find((t) => t.id === nextActive) || nextList[0];
+  const handleDeleteMusicTrack = (trackId: string, title: string) => {
+    requestConfirm({
+      title: 'Hapus Lagu dari Playlist?',
+      message: `Apakah Anda yakin ingin menghapus lagu "${title}" dari playlist undangan?`,
+      confirmLabel: 'Ya, Hapus Lagu',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextList = effectivePlaylist.filter((t) => t.id !== trackId);
+        const nextActive =
+          settingsForm.activeMusicTrackId === trackId
+            ? nextList[0]?.id || ''
+            : settingsForm.activeMusicTrackId || nextList[0]?.id || '';
+        const activeTrackObj =
+          nextList.find((t) => t.id === nextActive) || nextList[0];
 
-    const nextSettings: WeddingSettings = {
-      ...state.settings,
-      ...settingsForm,
-      musicPlaylist: nextList,
-      activeMusicTrackId: nextActive,
-      musicTitle: activeTrackObj?.title || 'Tidak ada musik',
-      musicArtist: activeTrackObj?.artist || '-',
-      updatedBy: adminUser.username,
-    };
-    setSettingsFormInternal(nextSettings);
-    await onUpdateSettings(nextSettings);
-    weddingMusicPlayer.syncFromSettings(nextSettings);
-    showToast(`Lagu "${title}" dihapus dari Playlist.`);
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          musicPlaylist: nextList,
+          activeMusicTrackId: nextActive,
+          musicTitle: activeTrackObj?.title || 'Tidak ada musik',
+          musicArtist: activeTrackObj?.artist || '-',
+          updatedBy: adminUser.username,
+        };
+        await commitImmediateSettings(nextSettings);
+        weddingMusicPlayer.syncFromSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'MUSIK_PLAYLIST',
+          action: 'HAPUS',
+          status: 'SUCCESS',
+          summary: `Menghapus lagu "${title}" dari playlist`,
+        });
+        showToast(`Lagu "${title}" dihapus dari Playlist.`);
+      },
+    });
   };
 
   // Preview / Play / Pause a track WITHOUT changing the selected default song (Pilih)
@@ -829,9 +944,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       musicArtist: track.artist,
       updatedBy: adminUser.username,
     };
-    setSettingsFormInternal(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     weddingMusicPlayer.syncFromSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'MUSIK_PLAYLIST',
+      action: 'SIMPAN',
+      status: 'SUCCESS',
+      summary: `Memilih "${track.title}" sebagai Lagu Utama undangan`,
+    });
     showToast(`Lagu "${track.title}" dipilih sebagai Lagu Utama undangan!`);
   };
 
@@ -848,9 +969,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       musicArtist: first.artist,
       updatedBy: adminUser.username,
     };
-    setSettingsFormInternal(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     weddingMusicPlayer.syncFromSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'MUSIK_PLAYLIST',
+      action: 'RESET',
+      status: 'SUCCESS',
+      summary: 'Memulihkan 3 lagu romantis bawaan ke playlist',
+    });
     showToast('3 Lagu Romantis Bawaan berhasil dipulihkan ke Playlist!');
   };
 
@@ -964,8 +1091,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   // Dynamic Schedule Events (Add/Edit/Delete like Panitia + Countdown Switch ON/OFF)
   const scheduleEvents = useMemo(
-    () => getEffectiveScheduleEvents(state.settings),
-    [state.settings]
+    () => getEffectiveScheduleEvents(settingsForm),
+    [settingsForm]
   );
   const activeCountdownEvents = useMemo(
     () => scheduleEvents.filter((ev) => ev.enableCountdown),
@@ -1078,7 +1205,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const openSettingsPopup = (
     modalType: NonNullable<typeof activeSettingsModal>
   ) => {
-    setSettingsForm(state.settings);
+    setSettingsFormInternal(state.settings);
     setActiveSettingsModal(modalType);
   };
 
@@ -1141,30 +1268,53 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       },
       currentList
     );
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     setActiveSettingsModal(null);
     setEditingScheduleEventId(null);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'JADWAL_ACARA',
+      action: existingIdx >= 0 ? 'EDIT' : 'TAMBAH',
+      status: 'SUCCESS',
+      summary:
+        existingIdx >= 0
+          ? `Memperbarui jadwal acara "${cleanEvent.title}"`
+          : `Menambahkan jadwal acara "${cleanEvent.title}"`,
+    });
     showToast(
       existingIdx >= 0
-        ? `Jadwal "${cleanEvent.title}" berhasil diperbarui!`
-        : `Acara baru "${cleanEvent.title}" berhasil ditambahkan!`
+        ? `✓ Tersimpan: Jadwal "${cleanEvent.title}" berhasil diperbarui!`
+        : `✓ Tersimpan: Acara baru "${cleanEvent.title}" berhasil ditambahkan!`
     );
   };
 
-  const handleDeleteScheduleEvent = async (id: string, title: string) => {
-    const nextList = scheduleEvents.filter((item) => item.id !== id);
-    const nextSettings = syncScheduleEventsToSettings(
-      {
-        ...state.settings,
-        ...settingsForm,
-        updatedBy: adminUser.username,
+  const handleDeleteScheduleEvent = (id: string, title: string) => {
+    requestConfirm({
+      title: 'Hapus Jadwal Acara?',
+      message: `Apakah Anda yakin ingin menghapus acara "${title}" dari daftar jadwal pernikahan?`,
+      confirmLabel: 'Ya, Hapus Acara',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextList = scheduleEvents.filter((item) => item.id !== id);
+        const nextSettings = syncScheduleEventsToSettings(
+          {
+            ...state.settings,
+            ...settingsForm,
+            updatedBy: adminUser.username,
+          },
+          nextList
+        );
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'JADWAL_ACARA',
+          action: 'HAPUS',
+          status: 'SUCCESS',
+          summary: `Menghapus jadwal acara "${title}"`,
+        });
+        showToast(`Acara "${title}" berhasil dihapus.`);
       },
-      nextList
-    );
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
-    showToast(`Acara "${title}" berhasil dihapus.`);
+    });
   };
 
   const handleToggleEventCountdownSwitch = async (id: string, title: string) => {
@@ -1182,8 +1332,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       },
       nextList
     );
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'JADWAL_ACARA',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Countdown "${title}" diubah menjadi ${toggled?.enableCountdown ? 'ON' : 'OFF'}`,
+    });
     showToast(
       `Countdown untuk "${title}" ${
         toggled?.enableCountdown ? 'diaktifkan (ON)' : 'dinonaktifkan (OFF)'
@@ -1205,7 +1361,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       | 'showGiftSection',
     label: string
   ) => {
-    const currentVal = state.settings[key] !== false;
+    const currentVal = settingsForm[key] !== false;
     const nextVal = !currentVal;
     const nextSettings: WeddingSettings = {
       ...state.settings,
@@ -1213,11 +1369,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       [key]: nextVal,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     if (nextVal) {
       setExpandedSectionKey(key);
     }
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'VISIBILITAS',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Visibilitas seksi "${label}" diubah menjadi ${nextVal ? 'ON' : 'OFF'}`,
+    });
     showToast(
       `Seksi "${label}" ${nextVal ? 'diaktifkan (ditampilkan)' : 'dinonaktifkan (disembunyikan)'}.`
     );
@@ -1238,12 +1400,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showToast('Isi Judul Momen dan cerita singkat terlebih dahulu.');
       return;
     }
+    const cleanTitle = newStoryForm.title.trim();
     const nextStory: LoveStoryItem[] = [
       ...effectiveLoveStory,
       {
         id: `story_${Date.now().toString(36)}`,
         dateLabel: newStoryForm.dateLabel.trim() || '2026',
-        title: newStoryForm.title.trim(),
+        title: cleanTitle,
         location: newStoryForm.location.trim() || 'Semarang',
         description: newStoryForm.description.trim(),
       },
@@ -1262,7 +1425,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       location: 'Semarang',
       description: '',
     });
-    showToast('Momen Kisah Kasih berhasil ditambahkan & ditampilkan!');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'KISAH_KASIH',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `Menambahkan momen Kisah Kasih "${cleanTitle}"`,
+    });
+    showToast(`✓ Tersimpan: Momen "${cleanTitle}" berhasil ditambahkan!`);
   };
 
   const handleStartEditLoveStoryItem = (st: LoveStoryItem) => {
@@ -1281,12 +1451,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showToast('Judul Momen dan cerita singkat wajib diisi.');
       return;
     }
+    const cleanTitle = editingStoryDraft.title.trim();
     const nextStory = effectiveLoveStory.map((s) =>
       s.id === editingStoryId
         ? {
             ...s,
             dateLabel: editingStoryDraft.dateLabel.trim() || '2026',
-            title: editingStoryDraft.title.trim(),
+            title: cleanTitle,
             location: editingStoryDraft.location?.trim() || '',
             description: editingStoryDraft.description.trim(),
           }
@@ -1300,7 +1471,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     };
     setEditingStoryId(null);
     await commitImmediateSettings(nextSettings);
-    showToast('Momen Kisah Kasih berhasil diperbarui!');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'KISAH_KASIH',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Memperbarui momen Kisah Kasih "${cleanTitle}"`,
+    });
+    showToast(`✓ Tersimpan: Momen "${cleanTitle}" berhasil diperbarui!`);
   };
 
   const handleLoadDefaultLoveStory = async () => {
@@ -1315,22 +1493,46 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       updatedBy: adminUser.username,
     };
     await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'KISAH_KASIH',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: 'Memuat 3 template contoh Kisah Kasih',
+    });
     showToast('3 Template Kisah Kasih dimuat! Klik Edit untuk mengubah isinya.');
   };
 
-  const handleDeleteLoveStoryItem = async (storyId: string) => {
-    const nextStory = effectiveLoveStory.filter((s) => s.id !== storyId);
-    const nextSettings: WeddingSettings = {
-      ...state.settings,
-      ...settingsForm,
-      loveStory: nextStory,
-      updatedBy: adminUser.username,
-    };
-    if (editingStoryId === storyId) {
-      setEditingStoryId(null);
-    }
-    await commitImmediateSettings(nextSettings);
-    showToast('Momen Kisah Kasih dihapus.');
+  const handleDeleteLoveStoryItem = (storyId: string) => {
+    const target = effectiveLoveStory.find((s) => s.id === storyId);
+    const titleLabel = target?.title || storyId;
+    requestConfirm({
+      title: 'Hapus Momen Kisah Kasih?',
+      message: `Apakah Anda yakin ingin menghapus momen "${titleLabel}" dari Kisah Kasih?`,
+      confirmLabel: 'Ya, Hapus Momen',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextStory = effectiveLoveStory.filter((s) => s.id !== storyId);
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          loveStory: nextStory,
+          updatedBy: adminUser.username,
+        };
+        if (editingStoryId === storyId) {
+          setEditingStoryId(null);
+        }
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'KISAH_KASIH',
+          action: 'HAPUS',
+          status: 'SUCCESS',
+          summary: `Menghapus momen Kisah Kasih "${titleLabel}"`,
+        });
+        showToast(`Momen "${titleLabel}" dihapus.`);
+      },
+    });
   };
 
   // Compress uploaded image file via HTML5 canvas so large phone/camera photos save cleanly & fast
@@ -1509,10 +1711,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         photoAdjustments: nextAdjustments,
         updatedBy: adminUser.username,
       };
-      setSettingsForm(nextSettings);
-      await onUpdateSettings(nextSettings);
+      await commitImmediateSettings(nextSettings);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'FOTO_TEMA',
+        action: 'SIMPAN',
+        status: 'SUCCESS',
+        summary: `Menyimpan posisi & zoom "${photoAdjustTarget.label}" (zoom ${Math.round(cleanAdj.zoom * 100)}%)`,
+      });
       setPhotoAdjustTarget(null);
-      showToast(`Posisi & Zoom "${photoAdjustTarget.label}" disimpan!`);
+      showToast(`✓ Tersimpan: Posisi & Zoom "${photoAdjustTarget.label}" disimpan!`);
       return;
     }
 
@@ -1526,10 +1734,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         galleryPhotos: nextPhotos,
         updatedBy: adminUser.username,
       };
-      setSettingsForm(nextSettings);
-      await onUpdateSettings(nextSettings);
+      await commitImmediateSettings(nextSettings);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'GALERI_FOTO',
+        action: 'SIMPAN',
+        status: 'SUCCESS',
+        summary: `Menyimpan posisi & zoom "${photoAdjustTarget.label}"`,
+      });
       setPhotoAdjustTarget(null);
-      showToast('Posisi & Zoom foto galeri disimpan!');
+      showToast('✓ Tersimpan: Posisi & Zoom foto galeri disimpan!');
       return;
     }
 
@@ -1597,9 +1811,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         ...patch,
         updatedBy: adminUser.username,
       };
-      setSettingsForm(nextSettings);
-      await onUpdateSettings(nextSettings);
-      showToast('Gambar berhasil di-upload! Silakan atur Zoom & Posisi jika perlu.');
+      await commitImmediateSettings(nextSettings);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'FOTO_TEMA',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Upload & ganti foto tema (${target})`,
+      });
+      showToast('✓ Gambar berhasil di-upload! Silakan atur Zoom & Posisi jika perlu.');
 
       // Automatically open the Zoom & Pan editor so user can adjust framing right away
       if (target === 'groomPhotoUrl') {
@@ -1613,7 +1833,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       } else if (target === 'pageBgUrl') {
         openSettingPhotoAdjust('pageBgUrl', 'Wallpaper Latar', 'portrait', dataUrl, defaultAdj);
       }
-    } catch {
+    } catch (err) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'FOTO_TEMA',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: `Gagal meng-upload gambar (${target})`,
+        detail: err instanceof Error ? err.message : String(err),
+      });
       showToast('Gagal meng-upload gambar.');
     }
   };
@@ -1651,11 +1879,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showToast('Pilih preset atau upload foto terlebih dahulu.');
       return;
     }
+    const cleanTitle = newPhotoForm.title.trim() || 'Momen Bahagia';
     const nextPhotos: GalleryPhotoItem[] = [
       ...effectiveGalleryPhotos,
       {
         id: `photo_${Date.now().toString(36)}`,
-        title: newPhotoForm.title.trim() || 'Momen Bahagia',
+        title: cleanTitle,
         caption: newPhotoForm.caption.trim() || 'Prewedding',
         imageUrl: newPhotoForm.imageUrl.trim(),
         category: newPhotoForm.category,
@@ -1677,7 +1906,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       category: 'Prewedding',
       adjustment: undefined,
     });
-    showToast('Foto Galeri berhasil ditambahkan & ditampilkan!');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'GALERI_FOTO',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `Menambahkan foto galeri "${cleanTitle}"`,
+    });
+    showToast(`✓ Tersimpan: Foto "${cleanTitle}" berhasil ditambahkan ke Galeri!`);
   };
 
   const handleStartEditGalleryPhotoItem = (ph: GalleryPhotoItem) => {
@@ -1697,11 +1933,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showToast('URL foto tidak boleh kosong.');
       return;
     }
+    const cleanTitle = editingPhotoDraft.title.trim() || 'Momen Bahagia';
     const nextPhotos = effectiveGalleryPhotos.map((p) =>
       p.id === editingPhotoId
         ? {
             ...p,
-            title: editingPhotoDraft.title.trim() || 'Momen Bahagia',
+            title: cleanTitle,
             caption: editingPhotoDraft.caption.trim(),
             imageUrl: editingPhotoDraft.imageUrl.trim(),
             category: editingPhotoDraft.category,
@@ -1716,7 +1953,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     };
     setEditingPhotoId(null);
     await commitImmediateSettings(nextSettings);
-    showToast('Konten foto galeri berhasil diperbarui!');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'GALERI_FOTO',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Memperbarui konten foto galeri "${cleanTitle}"`,
+    });
+    showToast(`✓ Tersimpan: Konten foto "${cleanTitle}" berhasil diperbarui!`);
   };
 
   const handleReplaceGalleryPhotoFile = async (
@@ -1756,8 +2000,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       if (updatedPhoto) {
         openGalleryPhotoAdjust(updatedPhoto);
       }
-      showToast('Foto berhasil diganti! Silakan atur Zoom & Posisi jika perlu.');
-    } catch {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'GALERI_FOTO',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Mengganti file foto pada galeri "${(updatedPhoto as GalleryPhotoItem | null)?.title || photoId}"`,
+      });
+      showToast('✓ Foto berhasil diganti! Silakan atur Zoom & Posisi jika perlu.');
+    } catch (err) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'GALERI_FOTO',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: `Gagal mengganti file foto galeri (${photoId})`,
+        detail: err instanceof Error ? err.message : String(err),
+      });
       showToast('Gagal mengganti file foto.');
     }
   };
@@ -1774,22 +2033,46 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       updatedBy: adminUser.username,
     };
     await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'GALERI_FOTO',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: 'Memuat 4 foto template default ke galeri',
+    });
     showToast('4 Foto Template dimuat! Klik "Ganti Foto" atau "Edit" untuk menyesuaikan.');
   };
 
-  const handleDeleteGalleryPhotoItem = async (photoId: string) => {
-    const nextPhotos = effectiveGalleryPhotos.filter((p) => p.id !== photoId);
-    const nextSettings: WeddingSettings = {
-      ...state.settings,
-      ...settingsForm,
-      galleryPhotos: nextPhotos,
-      updatedBy: adminUser.username,
-    };
-    if (editingPhotoId === photoId) {
-      setEditingPhotoId(null);
-    }
-    await commitImmediateSettings(nextSettings);
-    showToast('Foto Galeri dihapus.');
+  const handleDeleteGalleryPhotoItem = (photoId: string) => {
+    const target = effectiveGalleryPhotos.find((p) => p.id === photoId);
+    const titleLabel = target?.title || photoId;
+    requestConfirm({
+      title: 'Hapus Foto dari Galeri?',
+      message: `Apakah Anda yakin ingin menghapus foto "${titleLabel}" dari Galeri Prewedding?`,
+      confirmLabel: 'Ya, Hapus Foto',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextPhotos = effectiveGalleryPhotos.filter((p) => p.id !== photoId);
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          galleryPhotos: nextPhotos,
+          updatedBy: adminUser.username,
+        };
+        if (editingPhotoId === photoId) {
+          setEditingPhotoId(null);
+        }
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'GALERI_FOTO',
+          action: 'HAPUS',
+          status: 'SUCCESS',
+          summary: `Menghapus foto galeri "${titleLabel}"`,
+        });
+        showToast(`Foto "${titleLabel}" dihapus dari Galeri.`);
+      },
+    });
   };
 
   const handleSelectDefaultUserForEdit = (u: AdminUser) => {
@@ -1804,18 +2087,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const handleSaveSettingsModal = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    await onUpdateSettings({
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
       ...settingsForm,
       updatedBy: adminUser.username,
-    });
+    };
+    await commitImmediateSettings(nextSettings);
     setActiveSettingsModal(null);
-    showToast('Perubahan berhasil disimpan!');
+    showToast('✓ Tersimpan: Perubahan pengaturan berhasil disimpan ke Supabase!');
   };
 
   const handleSaveBankAccountModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bankForm.bankName.trim() || !bankForm.accountNumber.trim()) return;
-    const currentAccounts = [...(state.settings.bankAccounts || [])];
+    const currentAccounts = [...(settingsForm.bankAccounts || state.settings.bankAccounts || [])];
+    const isEdit = editingBankIndex !== null && Boolean(currentAccounts[editingBankIndex]);
     if (editingBankIndex !== null && currentAccounts[editingBankIndex]) {
       currentAccounts[editingBankIndex] = {
         ...bankForm,
@@ -1832,30 +2118,53 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         accountHolder: bankForm.accountHolder.trim(),
       });
     }
-    const nextSettings = {
+    const nextSettings: WeddingSettings = {
       ...state.settings,
+      ...settingsForm,
       bankAccounts: currentAccounts,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     setActiveSettingsModal(null);
     setEditingBankIndex(null);
-    showToast('Rekening amplop digital berhasil disimpan!');
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'AMPLOP_DIGITAL',
+      action: isEdit ? 'EDIT' : 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} rekening ${bankForm.bankName.trim()} (${bankForm.accountNumber.trim()})`,
+    });
+    showToast('✓ Tersimpan: Rekening amplop digital berhasil disimpan!');
   };
 
-  const handleDeleteBankAccount = async (bankId: string) => {
-    const nextAccounts = (state.settings.bankAccounts || []).filter(
-      (b) => b.id !== bankId
-    );
-    const nextSettings = {
-      ...state.settings,
-      bankAccounts: nextAccounts,
-      updatedBy: adminUser.username,
-    };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
-    showToast('Rekening berhasil dihapus.');
+  const handleDeleteBankAccount = (bankId: string) => {
+    const currentList = settingsForm.bankAccounts || state.settings.bankAccounts || [];
+    const target = currentList.find((b) => b.id === bankId);
+    const label = target ? `${target.bankName} (${target.accountNumber})` : bankId;
+    requestConfirm({
+      title: 'Hapus Rekening Amplop Digital?',
+      message: `Apakah Anda yakin ingin menghapus rekening "${label}"?`,
+      confirmLabel: 'Ya, Hapus Rekening',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextAccounts = currentList.filter((b) => b.id !== bankId);
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          bankAccounts: nextAccounts,
+          updatedBy: adminUser.username,
+        };
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'AMPLOP_DIGITAL',
+          action: 'HAPUS',
+          status: 'SUCCESS',
+          summary: `Menghapus rekening ${label}`,
+        });
+        showToast(`Rekening "${label}" berhasil dihapus.`);
+      },
+    });
   };
 
   const handleUpdateDefaultUserForm = async (e: React.FormEvent) => {
@@ -1877,6 +2186,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'KEAMANAN_AKUN',
+          action: 'ERROR',
+          status: 'ERROR',
+          summary: `Gagal memperbarui akun utama (@${secUsername})`,
+          detail: json.error || `HTTP ${res.status}`,
+        });
         showToast(json.error || 'Gagal memperbarui akun utama.');
         return;
       }
@@ -1887,8 +2204,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       if (onSyncStateAndUser) {
         onSyncStateAndUser(json.data, json.user);
       }
-      showToast(json.message || 'Akun utama berhasil diperbarui!');
-    } catch {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'KEAMANAN_AKUN',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Memperbarui kredensial akun utama (@${secUsername})`,
+      });
+      showToast(json.message || '✓ Tersimpan: Akun utama berhasil diperbarui!');
+    } catch (err) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'KEAMANAN_AKUN',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: 'Kesalahan jaringan saat memperbarui akun utama',
+        detail: err instanceof Error ? err.message : String(err),
+      });
       showToast('Terjadi kesalahan saat menghubungi server otentikasi.');
     } finally {
       setIsUpdatingSecurity(false);
@@ -1913,9 +2245,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'AKUN_PANITIA',
+          action: 'ERROR',
+          status: 'ERROR',
+          summary: `Gagal menyimpan akun Panitia (@${panitiaUsername})`,
+          detail: json.error || `HTTP ${res.status}`,
+        });
         showToast(json.error || 'Gagal menyimpan akun Panitia.');
         return;
       }
+      const isEdit = Boolean(panitiaEditId);
+      const savedUsername = panitiaUsername;
       setPanitiaEditId(undefined);
       setPanitiaUsername('');
       setPanitiaNama('');
@@ -1925,43 +2267,106 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       if (onSyncStateAndUser && json.data) {
         onSyncStateAndUser(json.data);
       }
-      showToast(json.message || 'Akun Panitia berhasil disimpan!');
-    } catch {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'AKUN_PANITIA',
+        action: isEdit ? 'EDIT' : 'TAMBAH',
+        status: 'SUCCESS',
+        summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} akun Panitia (@${savedUsername})`,
+      });
+      showToast(json.message || '✓ Tersimpan: Akun Panitia berhasil disimpan!');
+    } catch (err) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'AKUN_PANITIA',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: 'Gagal menghubungi server saat menyimpan akun Panitia',
+        detail: err instanceof Error ? err.message : String(err),
+      });
       showToast('Gagal menghubungi server.');
     } finally {
       setIsSavingPanitia(false);
     }
   };
 
-  const handleDeletePanitiaAccount = async (id: string, username: string) => {
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'DELETE_PANITIA',
-          id,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        showToast(json.error || 'Gagal menghapus akun Panitia.');
-        return;
-      }
-      if (onSyncStateAndUser && json.data) {
-        onSyncStateAndUser(json.data);
-      }
-      showToast(`Akun Panitia "${username}" berhasil dihapus.`);
-    } catch {
-      showToast('Gagal menghubungi server.');
-    }
+  const handleDeletePanitiaAccount = (id: string, username: string) => {
+    requestConfirm({
+      title: 'Hapus Akun Panitia?',
+      message: `Apakah Anda yakin ingin menghapus akun Panitia "@${username}"?`,
+      confirmLabel: 'Ya, Hapus Akun',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/auth', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'DELETE_PANITIA',
+              id,
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            appendAuditLog({
+              actor: adminUser.username,
+              module: 'AKUN_PANITIA',
+              action: 'ERROR',
+              status: 'ERROR',
+              summary: `Gagal menghapus akun Panitia (@${username})`,
+              detail: json.error || `HTTP ${res.status}`,
+            });
+            showToast(json.error || 'Gagal menghapus akun Panitia.');
+            return;
+          }
+          if (onSyncStateAndUser && json.data) {
+            onSyncStateAndUser(json.data);
+          }
+          appendAuditLog({
+            actor: adminUser.username,
+            module: 'AKUN_PANITIA',
+            action: 'HAPUS',
+            status: 'SUCCESS',
+            summary: `Menghapus akun Panitia (@${username})`,
+          });
+          showToast(`Akun Panitia "${username}" berhasil dihapus.`);
+        } catch (err) {
+          appendAuditLog({
+            actor: adminUser.username,
+            module: 'AKUN_PANITIA',
+            action: 'ERROR',
+            status: 'ERROR',
+            summary: `Kesalahan jaringan saat menghapus akun Panitia (@${username})`,
+            detail: err instanceof Error ? err.message : String(err),
+          });
+          showToast('Gagal menghubungi server.');
+        }
+      },
+    });
   };
 
   const handleTriggerSyncSheets = async () => {
     setIsSyncingSheets(true);
     try {
       const msg = await onSyncGoogleSheets();
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'GOOGLE_SHEETS',
+        action: 'SYNC',
+        status: 'SUCCESS',
+        summary: 'Sinkronisasi dari Google Sheets selesai',
+        detail: msg,
+      });
       showToast(msg);
+    } catch (err) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'GOOGLE_SHEETS',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: 'Gagal sinkronisasi Google Sheets',
+        detail: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setIsSyncingSheets(false);
     }
@@ -1970,14 +2375,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const handleImportJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const fileName = file.name;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(String(ev.target?.result || '{}'));
         const payload = parsed.data || parsed;
-        await onImportBackup(payload);
-        showToast('Backup JSON berhasil di-import dan dipulihkan!');
-      } catch {
+        requestConfirm({
+          title: 'Pulihkan Database dari File Backup?',
+          message: `Apakah Anda yakin ingin memulihkan seluruh data dari file "${fileName}"? Data saat ini di Supabase akan diperbarui sesuai isi backup.`,
+          confirmLabel: 'Ya, Pulihkan Backup',
+          variant: 'primary',
+          onConfirm: async () => {
+            await onImportBackup(payload);
+            showToast('✓ Backup JSON berhasil di-import dan dipulihkan ke Supabase!');
+          },
+        });
+      } catch (err) {
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'BACKUP_JSON',
+          action: 'ERROR',
+          status: 'ERROR',
+          summary: `Gagal membaca file backup "${fileName}": JSON tidak valid`,
+          detail: err instanceof Error ? err.message : String(err),
+        });
         showToast('Format file JSON tidak valid.');
       }
     };
@@ -2364,6 +2786,90 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
+      {/* Global Confirmation Dialog for Save / Delete / Restore / Reset Actions */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-[60] bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  confirmDialog.variant === 'danger'
+                    ? 'bg-rose-50 border-rose-200 text-rose-600'
+                    : 'bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
+                }`}
+              >
+                {confirmDialog.variant === 'danger' ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900">
+                  {confirmDialog.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed">
+                  {confirmDialog.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                disabled={isConfirmExecuting}
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 font-bold text-xs transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isConfirmExecuting}
+                onClick={async () => {
+                  setIsConfirmExecuting(true);
+                  try {
+                    await confirmDialog.onConfirm();
+                  } catch (err) {
+                    appendAuditLog({
+                      actor: adminUser.username,
+                      module: 'KONFIRMASI_AKSI',
+                      action: 'ERROR',
+                      status: 'ERROR',
+                      summary: `Gagal menjalankan aksi "${confirmDialog.title}"`,
+                      detail: err instanceof Error ? err.message : String(err),
+                    });
+                    showToast('Terjadi kesalahan saat memproses aksi. Cek Log Audit.');
+                  } finally {
+                    setIsConfirmExecuting(false);
+                    setConfirmDialog(null);
+                  }
+                }}
+                className={`px-5 py-2 rounded-full font-bold text-xs text-white shadow-xs transition-all disabled:opacity-50 inline-flex items-center gap-1.5 ${
+                  confirmDialog.variant === 'danger'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B]'
+                }`}
+              >
+                {isConfirmExecuting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <span>
+                    {confirmDialog.confirmLabel ||
+                      (confirmDialog.variant === 'danger'
+                        ? 'Ya, Hapus'
+                        : 'Ya, Lanjutkan')}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TOP STICKY HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -2389,13 +2895,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Supabase Cloud Status, Quick Export/Import JSON, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Supabase Cloud Status & Audit Log, Quick Export/Import JSON, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setIsCloudModalOpen(true)}
+                onClick={() => {
+                  setCloudModalTab(
+                    cloudSyncStatus === 'NEEDS_TABLE_SETUP' ? 'sql' : 'audit'
+                  );
+                  setIsCloudModalOpen(true);
+                }}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-                  cloudSyncStatus === 'SYNCED'
+                  errorAuditCount > 0
+                    ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
+                    : cloudSyncStatus === 'SYNCED'
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                     : cloudSyncStatus === 'SYNCING'
                     ? 'bg-amber-50 border-amber-200 text-amber-700'
@@ -2403,10 +2916,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 animate-pulse'
                     : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                 }`}
-                title={
-                  cloudSyncDetail ||
-                  'Klik untuk melihat status penyimpanan Supabase Cloud & Auto-Save'
-                }
+                title="Klik untuk membuka Log Audit & Error serta status sinkronisasi Supabase Cloud"
               >
                 {cloudSyncStatus === 'SYNCING' ? (
                   <>
@@ -2419,12 +2929,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span className="hidden sm:inline">Setup Supabase</span>
                     <span className="sm:hidden">SQL</span>
                   </>
+                ) : errorAuditCount > 0 ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Log ({errorAuditCount} Error)</span>
+                  </>
                 ) : (
                   <>
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="hidden sm:inline">
-                      {cloudSyncStatus === 'SYNCED' ? 'Supabase OK' : 'Auto-Save'}
+                      {cloudSyncStatus === 'SYNCED' ? 'Supabase OK' : 'Auto-Save'} &bull; Log ({auditLogs.length})
                     </span>
+                    <span className="sm:hidden">Log ({auditLogs.length})</span>
                   </>
                 )}
               </button>
@@ -2446,6 +2962,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         JSON.stringify(exportPayload, null, 2),
                         'application/json'
                       );
+                      appendAuditLog({
+                        actor: adminUser.username,
+                        module: 'BACKUP_JSON',
+                        action: 'SIMPAN',
+                        status: 'SUCCESS',
+                        summary: 'Mengunduh file Backup Database (.JSON)',
+                      });
                       showToast('File Backup (.JSON) berhasil diunduh!');
                     }}
                     className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-[11px] font-bold text-[#8B6914] hover:bg-[#FAF3E3] transition-colors"
@@ -2567,17 +3090,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       </header>
 
-      {/* SUPABASE CLOUD SYNC & 1-CLICK SQL SETUP MODAL */}
+      {/* SUPABASE CLOUD SYNC & AUDIT / ERROR LOG MODAL */}
       {isCloudModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl max-w-lg w-full p-4 sm:p-6 space-y-4">
-            <div className="flex items-start justify-between gap-3">
+          <div className="bg-white rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl max-w-2xl w-full p-4 sm:p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-start justify-between gap-3 shrink-0">
               <div>
                 <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900">
-                  ☁️ Supabase Cloud &amp; Penyimpanan Permanen
+                  ☁️ Pusat Sinkronisasi Supabase &amp; Log Audit Sistem
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  Project ID: <code className="font-mono font-bold text-[#8B6914]">{SUPABASE_PROJECT_REF}</code>
+                  Project ID: <code className="font-mono font-bold text-[#8B6914]">{SUPABASE_PROJECT_REF}</code> &bull; Mencatat seluruh aksi Tambah, Edit, Simpan, Hapus &amp; Error
                 </p>
               </div>
               <button
@@ -2589,8 +3112,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </button>
             </div>
 
+            {/* Cloud Connection Banner */}
             <div
-              className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 ${
+              className={`p-3 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 ${
                 cloudSyncStatus === 'SYNCED'
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -2598,64 +3122,241 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             >
               <div>
                 <p className="font-bold">
-                  Status:{' '}
+                  Status Database:{' '}
                   {cloudSyncStatus === 'SYNCED'
-                    ? '✅ Terhubung & Tersimpan di Supabase Cloud'
+                    ? '✅ Terhubung & Tersimpan di Supabase Cloud (public.wedding_state)'
                     : cloudSyncStatus === 'SYNCING'
                     ? '⏳ Sedang Menyimpan ke Supabase...'
                     : cloudSyncStatus === 'NEEDS_TABLE_SETUP'
                     ? '⚠️ Tabel public.wedding_state Belum Dibuat (1x Klik Setup)'
-                    : '💾 Tersimpan di Browser (IndexedDB) — Siap Sinkron ke Supabase'}
+                    : '💾 Tersimpan di Browser — Siap Sinkron ke Supabase'}
                 </p>
                 {cloudSyncDetail && (
                   <p className="text-[11px] opacity-80 mt-0.5">{cloudSyncDetail}</p>
                 )}
               </div>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-stone-700">
-                  SQL Setup Tabel (Cukup Jalankan 1 Kali di SQL Editor Supabase):
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
-                    setCopiedSql(true);
-                    showToast('SQL berhasil disalin! Paste di SQL Editor Supabase lalu klik Run.');
-                    setTimeout(() => setCopiedSql(false), 3000);
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[11px]"
-                >
-                  {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedSql ? 'Tersalin!' : 'Copy SQL'}</span>
-                </button>
-              </div>
-              <pre className="p-3 rounded-xl bg-stone-900 text-emerald-300 font-mono text-[11px] overflow-x-auto leading-relaxed select-all">
-                {SUPABASE_SETUP_SQL}
-              </pre>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-              <a
-                href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D4AF37]/60 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Buka SQL Editor Supabase</span>
-              </a>
               <button
                 type="button"
                 onClick={handleForceCloudSyncNow}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-sm"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-2xs shrink-0"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Simpan &amp; Tes Koneksi Sekarang</span>
+                <RefreshCw className="w-3 h-3" />
+                <span>Tes &amp; Sync Sekarang</span>
               </button>
             </div>
+
+            {/* Tab Switcher: Log Audit & Error vs Setup SQL */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#FAF8F5] border border-stone-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setCloudModalTab('audit')}
+                className={`py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  cloudModalTab === 'audit'
+                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                    : 'text-stone-600 hover:text-[#8B6914]'
+                }`}
+              >
+                <span>📋 Log Audit &amp; Error ({auditLogs.length})</span>
+                {errorAuditCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px]">
+                    {errorAuditCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCloudModalTab('sql')}
+                className={`py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  cloudModalTab === 'sql'
+                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                    : 'text-stone-600 hover:text-[#8B6914]'
+                }`}
+              >
+                <span>⚙️ SQL Setup Supabase</span>
+              </button>
+            </div>
+
+            {cloudModalTab === 'audit' ? (
+              <div className="flex-1 min-h-0 flex flex-col space-y-3 text-xs">
+                {/* Filter & Actions Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1">
+                    {[
+                      { id: 'ALL' as const, label: `Semua (${auditLogs.length})` },
+                      {
+                        id: 'ERROR' as const,
+                        label: `Error / Warning (${errorAuditCount})`,
+                      },
+                      { id: 'SAVE' as const, label: 'Tambah / Edit / Simpan' },
+                      { id: 'DELETE' as const, label: 'Hapus / Reset' },
+                    ].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setAuditFilter(f.id)}
+                        className={`px-2.5 py-1 rounded-full font-bold text-[11px] border transition-colors ${
+                          auditFilter === f.id
+                            ? 'bg-[#FAF3E3] text-[#8B6914] border-[#B68D40]'
+                            : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerFileDownload(
+                          `wedding_audit_logs_${new Date().toISOString().slice(0, 10)}.json`,
+                          JSON.stringify(auditLogs, null, 2),
+                          'application/json'
+                        );
+                        showToast('File Log Audit (.JSON) berhasil diunduh!');
+                      }}
+                      className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px] inline-flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Unduh Log</span>
+                    </button>
+                    {auditLogs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          requestConfirm({
+                            title: 'Bersihkan Riwayat Log Audit?',
+                            message:
+                              'Apakah Anda yakin ingin menghapus catatan riwayat log di perangkat ini?',
+                            confirmLabel: 'Ya, Bersihkan Log',
+                            variant: 'danger',
+                            onConfirm: () => {
+                              clearAuditLogs();
+                              showToast('Riwayat Log Audit berhasil dibersihkan.');
+                            },
+                          })
+                        }
+                        className="px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px]"
+                      >
+                        Bersihkan
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scrollable Audit Log Entries */}
+                <div className="flex-1 min-h-[220px] max-h-[360px] overflow-y-auto rounded-2xl border border-stone-200 bg-[#FAF8F5] divide-y divide-stone-200/80">
+                  {filteredAuditLogs.length === 0 ? (
+                    <div className="p-8 text-center text-stone-500">
+                      Belum ada catatan aktivitas atau error pada kategori ini.
+                    </div>
+                  ) : (
+                    filteredAuditLogs.map((entry) => {
+                      const timeStr = new Date(entry.timestamp).toLocaleString(
+                        'id-ID',
+                        {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        }
+                      );
+                      const isErr = entry.status === 'ERROR';
+                      const isWarn = entry.status === 'WARNING';
+                      return (
+                        <div
+                          key={entry.id}
+                          className={`p-3 space-y-1 ${
+                            isErr
+                              ? 'bg-rose-50/80'
+                              : isWarn
+                              ? 'bg-amber-50/70'
+                              : 'bg-white hover:bg-stone-50/80'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                                  isErr
+                                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                    : isWarn
+                                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                    : entry.action === 'HAPUS' ||
+                                      entry.action === 'RESET'
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                }`}
+                              >
+                                {entry.status === 'ERROR'
+                                  ? '❌ ERROR'
+                                  : entry.status === 'WARNING'
+                                  ? '⚠️ WARNING'
+                                  : `✓ ${entry.action}`}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-mono text-[10px] font-bold">
+                                {entry.module}
+                              </span>
+                              <span className="text-[11px] text-stone-500 font-semibold">
+                                oleh @{entry.actor}
+                              </span>
+                            </div>
+                            <span className="font-mono text-[10px] text-stone-400">
+                              {timeStr}
+                            </span>
+                          </div>
+                          <p className="font-bold text-stone-900 text-xs">
+                            {entry.summary}
+                          </p>
+                          {entry.detail && (
+                            <pre className="mt-1 p-2 rounded-lg bg-stone-900 text-amber-200 font-mono text-[10px] overflow-x-auto whitespace-pre-wrap break-all">
+                              {entry.detail}
+                            </pre>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs overflow-y-auto">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-stone-700">
+                    SQL Setup Tabel (Jalankan di SQL Editor Supabase):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
+                      setCopiedSql(true);
+                      showToast('SQL berhasil disalin! Paste di SQL Editor Supabase lalu klik Run.');
+                      setTimeout(() => setCopiedSql(false), 3000);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[11px]"
+                  >
+                    {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedSql ? 'Tersalin!' : 'Copy SQL'}</span>
+                  </button>
+                </div>
+                <pre className="p-3 rounded-xl bg-stone-900 text-emerald-300 font-mono text-[11px] overflow-x-auto leading-relaxed select-all">
+                  {SUPABASE_SETUP_SQL}
+                </pre>
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                  <a
+                    href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D4AF37]/60 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Buka SQL Editor Supabase</span>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -3293,10 +3994,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={async () => {
-                            await onDeleteTask(task.id);
-                            showToast(`Tugas "${task.title}" dihapus.`);
-                          }}
+                          onClick={() =>
+                            requestConfirm({
+                              title: 'Hapus Tugas Kesiapan?',
+                              message: `Tugas "${task.title}" akan dihapus secara permanen dari database Supabase.`,
+                              confirmLabel: 'Ya, Hapus Tugas',
+                              variant: 'danger',
+                              onConfirm: async () => {
+                                await onDeleteTask(task.id);
+                                showToast(`Tugas "${task.title}" berhasil dihapus dari Supabase.`);
+                              },
+                            })
+                          }
                           className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                           title="Hapus Tugas"
                         >
@@ -3545,10 +4254,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </button>
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  await onDeleteBudget(item.id);
-                                  showToast(`Pos "${item.itemName}" dihapus.`);
-                                }}
+                                onClick={() =>
+                                  requestConfirm({
+                                    title: 'Hapus Pos Anggaran / Vendor?',
+                                    message: `Pos anggaran "${item.itemName}" (${formatRupiah(effectiveTotal)}) akan dihapus permanen dari Supabase.`,
+                                    confirmLabel: 'Ya, Hapus Pos',
+                                    variant: 'danger',
+                                    onConfirm: async () => {
+                                      await onDeleteBudget(item.id);
+                                      showToast(`Pos "${item.itemName}" berhasil dihapus dari Supabase.`);
+                                    },
+                                  })
+                                }
                                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                                 title="Hapus Pos Anggaran"
                               >
@@ -4035,10 +4752,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={async () => {
-                              await onDeleteGuest(guest.id);
-                              showToast(`Tamu "${guest.guestName}" dihapus.`);
-                            }}
+                            onClick={() =>
+                              requestConfirm({
+                                title: 'Hapus Tamu Undangan?',
+                                message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
+                                confirmLabel: 'Ya, Hapus Tamu',
+                                variant: 'danger',
+                                onConfirm: async () => {
+                                  await onDeleteGuest(guest.id);
+                                  showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
+                                },
+                              })
+                            }
                             className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                             title="Hapus Tamu"
                           >
@@ -4121,7 +4846,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               type="button"
                               onClick={async () => {
                                 await onTogglePinWish(w.id);
-                                showToast('Status sematan ucapan diperbarui.');
+                                showToast('Status sematan ucapan diperbarui di Supabase.');
                               }}
                               className="px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] text-xs font-bold flex items-center gap-1 border border-[#D4AF37]/30"
                             >
@@ -4129,10 +4854,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={async () => {
-                                await onDeleteWish(w.id);
-                                showToast('Ucapan dihapus.');
-                              }}
+                              onClick={() =>
+                                requestConfirm({
+                                  title: 'Hapus Ucapan & Konfirmasi Tamu?',
+                                  message: `Ucapan dari "${w.guestName}" akan dihapus permanen dari Buku Tamu di database Supabase.`,
+                                  confirmLabel: 'Ya, Hapus Ucapan',
+                                  variant: 'danger',
+                                  onConfirm: async () => {
+                                    await onDeleteWish(w.id);
+                                    showToast(`Ucapan dari "${w.guestName}" berhasil dihapus dari Supabase.`);
+                                  },
+                                })
+                              }
                               className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
                               title="Hapus Ucapan"
                             >
@@ -6786,7 +7519,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               Sinkronisasi Google Sheets
                             </p>
                             <p className="text-[11px] text-stone-500">
-                              Tarik data dari spreadsheet ke lokal
+                              Tarik data dari spreadsheet ke lokal &amp; Supabase
                             </p>
                           </div>
                         </div>
@@ -6797,6 +7530,41 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
                         >
                           {isSyncingSheets ? 'Sinkron...' : 'Tarik Data'}
+                        </button>
+                      </div>
+
+                      {/* Log Audit & Error Sistem */}
+                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                            <Shield className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-stone-900 flex items-center gap-1.5">
+                              <span>Log Audit &amp; Error Sistem</span>
+                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
+                                {auditLogs.length} Catatan
+                              </span>
+                              {auditLogs.some((l) => l.status === 'ERROR') && (
+                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">
+                                  {auditLogs.filter((l) => l.status === 'ERROR').length} Error
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-stone-500">
+                              Pantau riwayat tambah, edit, hapus, simpan &amp; lacak penyebab error
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCloudModalTab('audit');
+                            setIsCloudModalOpen(true);
+                          }}
+                          className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
+                        >
+                          Buka Log Audit
                         </button>
                       </div>
 
@@ -6812,16 +7580,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 Reset Data Awal
                               </p>
                               <p className="text-[11px] text-stone-500">
-                                Kembalikan ke kondisi default
+                                Kembalikan seluruh database ke kondisi default
                               </p>
                             </div>
                           </div>
                           <button
                             type="button"
-                            onClick={async () => {
-                              await onResetDefault();
-                              showToast('Data dikembalikan ke seed awal Database Lokal.');
-                            }}
+                            onClick={() =>
+                              requestConfirm({
+                                title: 'Reset Seluruh Database ke Kondisi Default?',
+                                message:
+                                  'PERINGATAN: Seluruh tugas, anggaran, daftar tamu, dan pengaturan akan dikembalikan ke data awal (seed default) dan langsung menimpa database Supabase.',
+                                confirmLabel: 'Ya, Reset Database',
+                                variant: 'danger',
+                                onConfirm: async () => {
+                                  await onResetDefault();
+                                  showToast('Database berhasil dikembalikan ke kondisi default & disinkronkan ke Supabase.');
+                                },
+                              })
+                            }
                             className="self-end sm:self-center px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0"
                           >
                             Reset

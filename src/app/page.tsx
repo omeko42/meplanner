@@ -13,7 +13,16 @@ import {
   WeddingSettings,
   AdminUser,
   RsvpStatus,
+  GuestWish,
 } from '@/types';
+import {
+  INITIAL_SETTINGS,
+  INITIAL_TASKS,
+  INITIAL_GUESTS,
+  INITIAL_WISHES,
+  INITIAL_BUDGET_ITEMS,
+  INITIAL_ADMIN_USERS,
+} from '@/data/seedData';
 import {
   getInitialClientState,
   loadClientStateFromIndexedDB,
@@ -26,6 +35,7 @@ import {
 import {
   loadStateFromSupabase,
   saveStateToSupabase,
+  appendAuditLog,
 } from '@/lib/supabaseCloud';
 
 function mergePreservingLocalMedia(
@@ -237,6 +247,13 @@ function WeddingAppContent() {
     saveStoredAdminUser(user);
     setIsLoginModalOpen(false);
     changeViewMode('ADMIN');
+    appendAuditLog({
+      actor: user.username,
+      module: 'KEAMANAN',
+      action: 'SIMPAN',
+      status: 'SUCCESS',
+      summary: `Login sesi Admin berhasil (${user.nama})`,
+    });
   };
 
   const handleSyncStateAndUser = (
@@ -244,8 +261,16 @@ function WeddingAppContent() {
     nextUser?: AdminUser
   ) => {
     if (nextState) {
-      const saved = saveClientState(nextState, true);
-      setState(saved);
+      setState((prev) => {
+        const merged: WeddingDatabaseSchema = {
+          ...prev,
+          adminUsers:
+            Array.isArray(nextState.adminUsers) && nextState.adminUsers.length > 0
+              ? nextState.adminUsers
+              : prev.adminUsers,
+        };
+        return saveClientState(merged, true);
+      });
     }
     if (nextUser) {
       setAdminUser(nextUser);
@@ -254,6 +279,7 @@ function WeddingAppContent() {
   };
 
   const handleLogoutAdmin = async () => {
+    const actorName = adminUser?.username || 'admin';
     try {
       await fetch('/api/auth', {
         method: 'POST',
@@ -263,6 +289,13 @@ function WeddingAppContent() {
     } catch {
       // Proceed with local cleanup
     }
+    appendAuditLog({
+      actor: actorName,
+      module: 'KEAMANAN',
+      action: 'SIMPAN',
+      status: 'SUCCESS',
+      summary: `Logout dari sesi Admin (${actorName})`,
+    });
     setAdminUser(null);
     saveStoredAdminUser(null);
     changeViewMode('PUBLIC');
@@ -275,8 +308,9 @@ function WeddingAppContent() {
     changeViewMode('PUBLIC');
   };
 
-  // Optimistic Local-First CRUD Handlers (saves to IndexedDB + localStorage immediately before network call)
+  // Optimistic Local-First + Direct Supabase Cloud CRUD Handlers
   const handleUpsertTask = async (task: Partial<WeddingTask> & { title: string }) => {
+    const isEdit = Boolean(task.id && state.tasks.some((t) => t.id === task.id));
     setState((prev) => {
       const exists = task.id && prev.tasks.some((t) => t.id === task.id);
       const nextTasks = exists
@@ -314,22 +348,39 @@ function WeddingAppContent() {
           ];
       return saveClientState({ ...prev, tasks: nextTasks }, true);
     });
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'CHECKLIST',
+      action: isEdit ? 'EDIT' : 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} tugas checklist: "${task.title}"`,
+      detail: `Kategori: ${task.category || 'Acara'} • Status: ${task.status || 'BELUM'}`,
+    });
     await mutateServer('UPSERT_TASK', task);
   };
 
   const handleDeleteTask = async (id: string) => {
+    const target = state.tasks.find((t) => t.id === id);
     setState((prev) =>
       saveClientState(
         { ...prev, tasks: prev.tasks.filter((t) => t.id !== id) },
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'CHECKLIST',
+      action: 'HAPUS',
+      status: 'SUCCESS',
+      summary: `Menghapus tugas checklist: "${target?.title || id}"`,
+    });
     await mutateServer('DELETE_TASK', { id });
   };
 
   const handleUpsertGuest = async (
     guest: Partial<WeddingGuest> & { guestName: string }
   ) => {
+    const isEdit = Boolean(guest.id && state.guests.some((g) => g.id === guest.id));
     setState((prev) => {
       const exists = guest.id && prev.guests.some((g) => g.id === guest.id);
       const nextGuests = exists
@@ -364,16 +415,32 @@ function WeddingAppContent() {
           ];
       return saveClientState({ ...prev, guests: nextGuests }, true);
     });
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'TAMU',
+      action: isEdit ? 'EDIT' : 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} data tamu: "${guest.guestName}"`,
+      detail: `Format: ${guest.invitationFormat || 'Cetak Tebal'} • RSVP: ${guest.rsvpStatus || 'Belum Konfirmasi'}`,
+    });
     await mutateServer('UPSERT_GUEST', guest);
   };
 
   const handleDeleteGuest = async (id: string) => {
+    const target = state.guests.find((g) => g.id === id);
     setState((prev) =>
       saveClientState(
         { ...prev, guests: prev.guests.filter((g) => g.id !== id) },
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'TAMU',
+      action: 'HAPUS',
+      status: 'SUCCESS',
+      summary: `Menghapus tamu undangan: "${target?.guestName || id}"`,
+    });
     await mutateServer('DELETE_GUEST', { id });
   };
 
@@ -388,13 +455,119 @@ function WeddingAppContent() {
     sessionChoice?: WeddingGuest['sessionChoice'];
     message?: string;
   }) => {
-    const serverUpdated = await mutateServer('SUBMIT_RSVP', payload);
-    if (serverUpdated) {
-      saveClientState(serverUpdated, true);
-    }
+    const cleanName = payload.guestName.trim() || 'Tamu Kehormatan';
+    const submittedPax = Math.max(0, Number(payload.pax) || 0);
+    const nowIso = new Date().toISOString();
+    const nowDate = nowIso.slice(0, 10);
+
+    setState((prev) => {
+      const nextGuests = [...prev.guests];
+      let targetIdx = -1;
+      if (payload.invitationCode) {
+        targetIdx = nextGuests.findIndex(
+          (g) =>
+            g.invitationCode.toLowerCase() ===
+            payload.invitationCode!.trim().toLowerCase()
+        );
+      }
+      if (targetIdx < 0) {
+        targetIdx = nextGuests.findIndex(
+          (g) => g.guestName.toLowerCase() === cleanName.toLowerCase()
+        );
+      }
+
+      let targetGuest: WeddingGuest;
+      if (targetIdx >= 0) {
+        const existing = nextGuests[targetIdx];
+        targetGuest = {
+          ...existing,
+          rsvpStatus: payload.rsvpStatus,
+          confirmedPax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
+          pax: submittedPax > 0 ? submittedPax : existing.pax,
+          phone: payload.phone || existing.phone,
+          institution: payload.institution || existing.institution,
+          sessionChoice: payload.sessionChoice || existing.sessionChoice,
+          wishes: payload.message || existing.wishes,
+          updatedAt: nowDate,
+          updatedBy: 'Public RSVP Online',
+        };
+        nextGuests[targetIdx] = targetGuest;
+      } else {
+        targetGuest = {
+          id: `guest_rsvp_${Date.now().toString(36)}`,
+          invitationCode:
+            payload.invitationCode ||
+            `INV-${String(nextGuests.length + 1).padStart(4, '0')}`,
+          guestName: cleanName,
+          guestType: 'Teman/Sahabat',
+          side: 'Bersama',
+          institution:
+            payload.institution || payload.relation || 'Tamu Undangan Digital',
+          invitationFormat: 'Online',
+          priority: 'P2 - Utama',
+          cardQty: 0,
+          pax: submittedPax || 2,
+          confirmedPax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
+          phone: payload.phone || '',
+          address: '',
+          deliveryStatus: 'Sudah Diterima',
+          rsvpStatus: payload.rsvpStatus,
+          attendanceStatus: 'Belum Dicek',
+          notes: 'Konfirmasi mandiri melalui halaman Undangan Digital',
+          wishes: payload.message || '',
+          sessionChoice: payload.sessionChoice || 'Pemberkatan & Resepsi',
+          createdAt: nowDate,
+          updatedAt: nowDate,
+          updatedBy: 'Public RSVP Online',
+        };
+        nextGuests.push(targetGuest);
+      }
+
+      const effectiveMessage =
+        payload.message && payload.message.trim()
+          ? payload.message.trim()
+          : payload.rsvpStatus === 'Hadir'
+          ? `Konfirmasi hadir (${submittedPax} Pax) pada sesi ${
+              payload.sessionChoice || 'Pemberkatan & Resepsi'
+            }.`
+          : `Konfirmasi kehadiran: ${payload.rsvpStatus}.`;
+
+      const createdWish: GuestWish = {
+        id: `wish_${Date.now().toString(36)}`,
+        guestId: targetGuest.id,
+        invitationCode: targetGuest.invitationCode,
+        guestName: cleanName,
+        institution: payload.institution || targetGuest.institution || '',
+        relation: payload.relation || targetGuest.guestType || 'Tamu Kehormatan',
+        rsvpStatus: payload.rsvpStatus,
+        pax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
+        message: effectiveMessage,
+        createdAt: nowIso,
+        isPinned: false,
+      };
+
+      const nextState: WeddingDatabaseSchema = {
+        ...prev,
+        guests: nextGuests,
+        wishes: [createdWish, ...prev.wishes],
+      };
+      return saveClientState(nextState, true);
+    });
+
+    appendAuditLog({
+      actor: cleanName,
+      module: 'DOA_RSVP',
+      action: 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `Konfirmasi RSVP & Doa masuk dari "${cleanName}" (${payload.rsvpStatus})`,
+      detail: `Pax: ${submittedPax} • Pesan: ${(payload.message || '').slice(0, 120)}`,
+    });
+
+    await mutateServer('SUBMIT_RSVP', payload);
   };
 
   const handleTogglePinWish = async (id: string) => {
+    const target = state.wishes.find((w) => w.id === id);
     setState((prev) =>
       saveClientState(
         {
@@ -406,10 +579,18 @@ function WeddingAppContent() {
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'DOA_RSVP',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `${target?.isPinned ? 'Melepas sematan' : 'Menyematkan'} ucapan doa dari "${target?.guestName || id}"`,
+    });
     await mutateServer('TOGGLE_PIN_WISH', { id });
   };
 
   const handleReplyWish = async (id: string, replyFromCouple: string) => {
+    const target = state.wishes.find((w) => w.id === id);
     setState((prev) =>
       saveClientState(
         {
@@ -421,22 +602,41 @@ function WeddingAppContent() {
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'DOA_RSVP',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Membalas ucapan doa dari "${target?.guestName || id}"`,
+      detail: replyFromCouple.slice(0, 140),
+    });
     await mutateServer('REPLY_WISH', { id, replyFromCouple });
   };
 
   const handleDeleteWish = async (id: string) => {
+    const target = state.wishes.find((w) => w.id === id);
     setState((prev) =>
       saveClientState(
         { ...prev, wishes: prev.wishes.filter((w) => w.id !== id) },
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'DOA_RSVP',
+      action: 'HAPUS',
+      status: 'SUCCESS',
+      summary: `Menghapus ucapan doa dari "${target?.guestName || id}"`,
+    });
     await mutateServer('DELETE_WISH', { id });
   };
 
   const handleUpsertBudget = async (
     item: Partial<BudgetVendorItem> & { itemName: string }
   ) => {
+    const isEdit = Boolean(
+      item.id && state.budgetItems.some((b) => b.id === item.id)
+    );
     setState((prev) => {
       const exists = item.id && prev.budgetItems.some((b) => b.id === item.id);
       const nextBudget = exists
@@ -463,16 +663,32 @@ function WeddingAppContent() {
           ];
       return saveClientState({ ...prev, budgetItems: nextBudget }, true);
     });
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'MONETER',
+      action: isEdit ? 'EDIT' : 'TAMBAH',
+      status: 'SUCCESS',
+      summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} pos anggaran/vendor: "${item.itemName}"`,
+      detail: `Kategori: ${item.category || '-'} • Status: ${item.paymentStatus || 'BELUM_DP'}`,
+    });
     await mutateServer('UPSERT_BUDGET', item);
   };
 
   const handleDeleteBudget = async (id: string) => {
+    const target = state.budgetItems.find((b) => b.id === id);
     setState((prev) =>
       saveClientState(
         { ...prev, budgetItems: prev.budgetItems.filter((b) => b.id !== id) },
         true
       )
     );
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'MONETER',
+      action: 'HAPUS',
+      status: 'SUCCESS',
+      summary: `Menghapus pos anggaran/vendor: "${target?.itemName || id}"`,
+    });
     await mutateServer('DELETE_BUDGET', { id });
   };
 
@@ -486,9 +702,20 @@ function WeddingAppContent() {
         };
         return saveClientState({ ...prev, settings: nextSettings }, true);
       });
+      const changedKeys = Object.keys(partial).filter(
+        (k) => k !== 'updatedAt' && k !== 'updatedBy'
+      );
+      appendAuditLog({
+        actor: partial.updatedBy || adminUser?.username || 'admin',
+        module: 'MEMPELAI',
+        action: 'SIMPAN',
+        status: 'SUCCESS',
+        summary: 'Menyimpan perubahan pengaturan & konten undangan ke Supabase',
+        detail: `Field: ${changedKeys.slice(0, 8).join(', ')}`,
+      });
       await mutateServer('UPDATE_SETTINGS', partial);
     },
-    [mutateServer]
+    [mutateServer, adminUser]
   );
 
   const handleSyncGoogleSheets = async (): Promise<string> => {
@@ -506,7 +733,7 @@ function WeddingAppContent() {
       }
       return json.error || 'Gagal melakukan sinkronisasi.';
     } catch {
-      return 'Menggunakan database lokal aktif.';
+      return 'Menggunakan database Supabase Cloud aktif.';
     }
   };
 
@@ -526,10 +753,36 @@ function WeddingAppContent() {
       };
       return saveClientState(next, true);
     });
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'DATABASE',
+      action: 'SIMPAN',
+      status: 'SUCCESS',
+      summary: 'Memulihkan (Import) data dari file Backup JSON ke Supabase',
+    });
     await mutateServer('IMPORT_BACKUP', payload);
   };
 
   const handleResetDefault = async () => {
+    setState((prev) => {
+      const fresh: WeddingDatabaseSchema = {
+        settings: { ...INITIAL_SETTINGS, updatedAt: new Date().toISOString() },
+        tasks: [...INITIAL_TASKS],
+        guests: [...INITIAL_GUESTS],
+        wishes: [...INITIAL_WISHES],
+        budgetItems: [...INITIAL_BUDGET_ITEMS],
+        adminUsers: prev.adminUsers?.length ? prev.adminUsers : [...INITIAL_ADMIN_USERS],
+        lastSyncedAt: new Date().toISOString(),
+      };
+      return saveClientState(fresh, true);
+    });
+    appendAuditLog({
+      actor: adminUser?.username || 'admin',
+      module: 'DATABASE',
+      action: 'HAPUS',
+      status: 'WARNING',
+      summary: 'Mereset seluruh database kembali ke pengaturan awal kosong',
+    });
     await mutateServer('RESET_DEFAULT', {});
   };
 
