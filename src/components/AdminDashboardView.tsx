@@ -89,6 +89,7 @@ import {
   PhotoAdjustment,
   MusicTrackItem,
   AuditLogEntry,
+  ClientGroupItem,
 } from '@/types';
 import {
   formatRupiah,
@@ -131,6 +132,9 @@ import {
   uploadAudioToSupabaseStorage,
   deleteAudioFromSupabaseStorage,
   deleteMediaFromSupabaseStorage,
+  fetchSupabaseStorageCapacity,
+  cleanupOrphanedStorageMedia,
+  SupabaseStorageCapacityReport,
 } from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
@@ -138,7 +142,8 @@ export type AdminModuleTab =
   | 'checklist'
   | 'budget'
   | 'guests'
-  | 'settings';
+  | 'settings'
+  | 'superadmin';
 
 function InfoTooltip({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
@@ -276,7 +281,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         savedTab === 'checklist' ||
         savedTab === 'budget' ||
         savedTab === 'guests' ||
-        savedTab === 'settings'
+        savedTab === 'settings' ||
+        (savedTab === 'superadmin' && !isPanitia)
       ) {
         return savedTab;
       }
@@ -1234,12 +1240,95 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     [state.adminUsers]
   );
 
+  // Multi-Client Commercial Groups (for grouping Default Users & Panitia per Client)
+  const effectiveClientGroups = useMemo<ClientGroupItem[]>(() => {
+    const baseGroup: ClientGroupItem = {
+      id: 'client-utama',
+      clientCode: 'UTAMA',
+      clientName: `Client Utama • ${state.settings.groomNickname || 'Eko'} & ${
+        state.settings.brideNickname || 'Selo'
+      }`,
+      coupleLabel: `${state.settings.groomNickname || 'Eko'} & ${
+        state.settings.brideNickname || 'Selo'
+      }`,
+      packageTier: 'ROYAL_VIP',
+      status: 'ACTIVE',
+      eventDate: '2026-12-19',
+      notes: 'Grup Klien Utama (Mempelai & Keluarga Inti)',
+      createdAt: '2026-10-18T00:00:00.000Z',
+    };
+    const configured = Array.isArray(settingsForm.clientGroups)
+      ? settingsForm.clientGroups
+      : Array.isArray(state.settings.clientGroups)
+      ? state.settings.clientGroups
+      : [];
+    const map = new Map<string, ClientGroupItem>();
+    map.set(baseGroup.id, baseGroup);
+    for (const g of configured) {
+      if (g && g.id) {
+        map.set(g.id, g.id === 'client-utama' ? { ...baseGroup, ...g } : g);
+      }
+    }
+    for (const u of state.adminUsers || []) {
+      const cid = u.clientId || 'client-utama';
+      if (!map.has(cid)) {
+        map.set(cid, {
+          id: cid,
+          clientCode: cid.replace(/^client-/i, '').toUpperCase(),
+          clientName: u.clientName || `Client ${cid}`,
+          coupleLabel: u.clientName || cid,
+          packageTier: 'EXCLUSIVE',
+          status: 'ACTIVE',
+          createdAt: '2026-10-18T00:00:00.000Z',
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [
+    settingsForm.clientGroups,
+    state.settings.clientGroups,
+    state.settings.groomNickname,
+    state.settings.brideNickname,
+    state.adminUsers,
+  ]);
+
+  const [selectedClientGroupFilter, setSelectedClientGroupFilter] =
+    useState<string>('ALL');
+
+  // Superadmin DB Capacity & Storage Monitor State
+  const [storageCapacityReport, setStorageCapacityReport] =
+    useState<SupabaseStorageCapacityReport | null>(null);
+  const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
+  const [isCleaningOrphans, setIsCleaningOrphans] = useState(false);
+
+  // Superadmin Add New Client Group Modal State
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [isCreatingClientGroup, setIsCreatingClientGroup] = useState(false);
+  const [newClientForm, setNewClientForm] = useState<{
+    clientCode: string;
+    coupleLabel: string;
+    packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL_VIP';
+    eventDate: string;
+    notes: string;
+    initialPassword: string;
+  }>({
+    clientCode: '',
+    coupleLabel: '',
+    packageTier: 'ROYAL_VIP',
+    eventDate: '2026-12-19',
+    notes: 'Paket All-in-One Wedding Planner & Digital Invitation',
+    initialPassword: '',
+  });
+
   // State for editing a Default User (Requires Superadmin Confirmation)
   const [selectedDefaultUserId, setSelectedDefaultUserId] = useState<string>(
     adminUser.isDefaultUser ? adminUser.id : 'usr-default-1'
   );
   const [secUsername, setSecUsername] = useState(adminUser.username || '');
   const [secName, setSecName] = useState(adminUser.nama || '');
+  const [secClientId, setSecClientId] = useState(
+    adminUser.clientId || 'client-utama'
+  );
   const [secNewPassword, setSecNewPassword] = useState('');
   const [secSuperadminConfirm, setSecSuperadminConfirm] = useState('');
   const [secSuperadminPassword, setSecSuperadminPassword] = useState('');
@@ -1250,6 +1339,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [panitiaUsername, setPanitiaUsername] = useState('');
   const [panitiaNama, setPanitiaNama] = useState('');
   const [panitiaJabatan, setPanitiaJabatan] = useState('Panitia / WO (Akses Non-Budgeting)');
+  const [panitiaClientId, setPanitiaClientId] = useState('client-utama');
   const [panitiaPassword, setPanitiaPassword] = useState('');
   const [isSavingPanitia, setIsSavingPanitia] = useState(false);
 
@@ -2513,10 +2603,237 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setSelectedDefaultUserId(u.id);
     setSecUsername(u.username);
     setSecName(u.nama);
+    setSecClientId(u.clientId || 'client-utama');
     setSecNewPassword('');
     setSecSuperadminConfirm('');
     setSecSuperadminPassword('');
     setActiveSettingsModal('default_user');
+  };
+
+  const handleRefreshStorageCapacity = async (silent?: boolean) => {
+    setIsLoadingCapacity(true);
+    try {
+      const report = await fetchSupabaseStorageCapacity({
+        ...state.settings,
+        ...settingsForm,
+      });
+      setStorageCapacityReport(report);
+      if (!silent) {
+        showToast('✓ Kapasitas DB & Supabase Storage berhasil diperbarui!');
+      }
+    } catch (err) {
+      if (!silent) {
+        showToast(
+          `Gagal membaca kapasitas Storage: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
+    } finally {
+      setIsLoadingCapacity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'superadmin' && !storageCapacityReport && !isLoadingCapacity) {
+      void handleRefreshStorageCapacity(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const handleRunZeroTraceCleanupNow = async () => {
+    setIsCleaningOrphans(true);
+    try {
+      const currentSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+      };
+      await cleanupOrphanedStorageMedia(currentSettings);
+      await handleRefreshStorageCapacity(true);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'SUPERADMIN_STORAGE',
+        action: 'HAPUS',
+        status: 'SUCCESS',
+        summary:
+          'Menjalankan Zero-Trace Garbage Collector pada bucket wedding-media (photos & music)',
+      });
+      showToast(
+        '✓ Pembersihan Zero-Trace selesai! Seluruh file yatim (orphan) telah dihapus permanen dari Supabase Storage.'
+      );
+    } catch (err) {
+      showToast(
+        `Gagal menjalankan Zero-Trace Cleanup: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    } finally {
+      setIsCleaningOrphans(false);
+    }
+  };
+
+  const handleCreateNewClientGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const rawCode = newClientForm.clientCode
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '');
+    const coupleLabel = newClientForm.coupleLabel.trim();
+    if (!rawCode || !coupleLabel) {
+      showToast('Kode grup client dan nama pasangan wajib diisi.');
+      return;
+    }
+    const clientId = rawCode.startsWith('client-') ? rawCode : `client-${rawCode}`;
+    const clientName = `Client ${rawCode.toUpperCase()} • ${coupleLabel}`;
+
+    setIsCreatingClientGroup(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE_CLIENT_GROUP_USERS',
+          clientId,
+          clientCode: rawCode,
+          clientName,
+          coupleLabel,
+          initialPassword: newClientForm.initialPassword.trim() || `${rawCode}12345`,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Gagal membuat grup client & 4 akun default.');
+        return;
+      }
+
+      const newGroupItem: ClientGroupItem = {
+        id: clientId,
+        clientCode: rawCode.toUpperCase(),
+        clientName,
+        coupleLabel,
+        packageTier: newClientForm.packageTier,
+        status: 'ACTIVE',
+        eventDate: newClientForm.eventDate || '2026-12-19',
+        notes: newClientForm.notes.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const mergedGroups = [
+        ...effectiveClientGroups.filter((g) => g.id !== clientId),
+        newGroupItem,
+      ];
+
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        clientGroups: mergedGroups,
+        updatedBy: adminUser.username,
+      };
+
+      if (onSyncStateAndUser && json.data) {
+        onSyncStateAndUser({
+          ...json.data,
+          settings: nextSettings,
+        });
+      }
+      await commitImmediateSettings(nextSettings);
+
+      setIsAddClientModalOpen(false);
+      setSelectedClientGroupFilter(clientId);
+      setNewClientForm({
+        clientCode: '',
+        coupleLabel: '',
+        packageTier: 'ROYAL_VIP',
+        eventDate: '2026-12-19',
+        notes: 'Paket All-in-One Wedding Planner & Digital Invitation',
+        initialPassword: '',
+      });
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'SUPERADMIN_CLIENT',
+        action: 'TAMBAH',
+        status: 'SUCCESS',
+        summary: `Membuat Grup Client komersial baru "${clientName}" beserta 4 User Default otomatis`,
+      });
+      showToast(
+        json.message ||
+          `✓ Grup Client "${clientName}" & 4 Akun Default berhasil dibuat!`
+      );
+    } catch (err) {
+      showToast(
+        `Gagal membuat grup client: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    } finally {
+      setIsCreatingClientGroup(false);
+    }
+  };
+
+  const handleDeleteClientGroup = (group: ClientGroupItem) => {
+    if (group.id === 'client-utama') {
+      showToast('Grup Client Utama tidak dapat dihapus.');
+      return;
+    }
+    requestConfirm({
+      title: `Hapus Grup Client "${group.clientName}"?`,
+      message: `Seluruh akun User Default & Panitia yang tergabung dalam grup "${group.clientName}" (${group.clientCode}) akan dihapus permanen dari sistem.`,
+      confirmLabel: 'Ya, Hapus Grup Client',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/auth', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'DELETE_CLIENT_GROUP',
+              clientId: group.id,
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            showToast(json.error || 'Gagal menghapus grup client.');
+            return;
+          }
+          const nextGroups = effectiveClientGroups.filter(
+            (g) => g.id !== group.id
+          );
+          const nextSettings: WeddingSettings = {
+            ...state.settings,
+            ...settingsForm,
+            clientGroups: nextGroups,
+            activeClientId:
+              (settingsForm.activeClientId || state.settings.activeClientId) ===
+              group.id
+                ? 'client-utama'
+                : settingsForm.activeClientId || state.settings.activeClientId,
+            updatedBy: adminUser.username,
+          };
+          if (onSyncStateAndUser && json.data) {
+            onSyncStateAndUser({
+              ...json.data,
+              settings: nextSettings,
+            });
+          }
+          await commitImmediateSettings(nextSettings);
+          if (selectedClientGroupFilter === group.id) {
+            setSelectedClientGroupFilter('ALL');
+          }
+          appendAuditLog({
+            actor: adminUser.username,
+            module: 'SUPERADMIN_CLIENT',
+            action: 'HAPUS',
+            status: 'SUCCESS',
+            summary: `Menghapus Grup Client "${group.clientName}" beserta seluruh akunnya`,
+          });
+          showToast(
+            json.message || `Grup Client "${group.clientName}" berhasil dihapus.`
+          );
+        } catch {
+          showToast('Gagal menghubungi server saat menghapus grup client.');
+        }
+      },
+    });
   };
 
   const handleSaveSettingsModal = async (e?: React.FormEvent) => {
@@ -2605,6 +2922,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     e.preventDefault();
     setIsUpdatingSecurity(true);
     try {
+      const targetGroup = effectiveClientGroups.find(
+        (g) => g.id === secClientId
+      );
       const res = await fetch('/api/auth', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -2614,6 +2934,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           newUsername: secUsername,
           newName: secName,
           newPassword: secNewPassword,
+          clientId: secClientId || 'client-utama',
+          clientName:
+            targetGroup?.clientName || 'Client Utama • Eko & Selo',
           superadminConfirmation: secSuperadminConfirm,
           superadminPassword: secSuperadminPassword,
         }),
@@ -2665,6 +2988,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     e.preventDefault();
     setIsSavingPanitia(true);
     try {
+      const targetGroup = effectiveClientGroups.find(
+        (g) => g.id === panitiaClientId
+      );
       const res = await fetch('/api/auth', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -2675,6 +3001,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           nama: panitiaNama,
           jabatan: panitiaJabatan,
           password: panitiaPassword,
+          clientId: panitiaClientId || 'client-utama',
+          clientName:
+            targetGroup?.clientName || 'Client Utama • Eko & Selo',
         }),
       });
       const json = await res.json();
@@ -3492,6 +3821,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Pengaturan',
                 icon: Settings,
               },
+              ...(!isPanitia
+                ? [
+                    {
+                      id: 'superadmin' as AdminModuleTab,
+                      label: 'Superadmin',
+                      icon: Shield,
+                      badge: `${effectiveClientGroups.length} Klien`,
+                    },
+                  ]
+                : []),
             ].map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -8118,12 +8457,86 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'keamanan' && !isPanitia && (
                   <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
-                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                        Akun &amp; Akses
-                      </h3>
-                      <InfoTooltip text="Kelola password 4 akun inti (akses penuh) atau tambah akun Panitia/WO (tanpa akses Moneter)." />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                          Akun &amp; Grouping Multi-Client
+                        </h3>
+                        <InfoTooltip text="User Default dikelompokkan berdasarkan Grup Client agar 1 Dashboard dapat mengelola banyak klien komersial oleh Superadmin." />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddClientModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Grup Client Baru</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('superadmin')}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px]"
+                        >
+                          <Shield className="w-3 h-3" />
+                          <span>Modul Superadmin</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Client Group Filter Pills */}
+                    <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
+                          Filter Grouping Client ({effectiveClientGroups.length} Klien)
+                        </span>
+                        <span className="text-[10px] text-stone-500">
+                          Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClientGroupFilter('ALL')}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                            selectedClientGroupFilter === 'ALL'
+                              ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
+                              : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
+                          }`}
+                        >
+                          Semua Grup ({effectiveClientGroups.length})
+                        </button>
+                        {effectiveClientGroups.map((cg) => {
+                          const countDefault = defaultSystemUsers.filter(
+                            (u) => (u.clientId || 'client-utama') === cg.id
+                          ).length;
+                          const isSelected = selectedClientGroupFilter === cg.id;
+                          return (
+                            <button
+                              key={cg.id}
+                              type="button"
+                              onClick={() => setSelectedClientGroupFilter(cg.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                                  : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
+                              }`}
+                            >
+                              <span>{cg.coupleLabel || cg.clientName}</span>
+                              <span
+                                className={`px-1.5 py-0.2 rounded-full text-[9px] ${
+                                  isSelected
+                                    ? 'bg-white/25 text-white'
+                                    : 'bg-[#FAF3E3] text-[#8B6914]'
+                                }`}
+                              >
+                                {countDefault} Inti
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Champagne Gold Pill Sub-Tabs */}
@@ -8138,7 +8551,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         <KeyRound className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Akun Inti (4)</span>
+                        <span className="truncate">
+                          Grup User Default ({defaultSystemUsers.length})
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -8154,56 +8569,106 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </button>
                     </div>
 
-                    {/* SUB-TAB 1: 4 AKUN UTAMA */}
+                    {/* SUB-TAB 1: GROUPED AKUN UTAMA (USER DEFAULT PER CLIENT) */}
                     {keamananSubTab === 'utama' && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
-                          <span className="text-xs text-stone-500">
-                            4 Akun Utama (Akses Penuh)
-                          </span>
-                          <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0 whitespace-nowrap">
-                            &bull; Superadmin
-                          </span>
-                        </div>
-
-                        <div className="divide-y divide-stone-100">
-                          {defaultSystemUsers.map((u) => (
-                            <div
-                              key={u.id}
-                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                            >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
-                                  <KeyRound className="w-4 h-4" />
+                        {effectiveClientGroups
+                          .filter(
+                            (cg) =>
+                              selectedClientGroupFilter === 'ALL' ||
+                              cg.id === selectedClientGroupFilter
+                          )
+                          .map((cg) => {
+                            const groupUsers = defaultSystemUsers.filter(
+                              (u) => (u.clientId || 'client-utama') === cg.id
+                            );
+                            return (
+                              <div
+                                key={cg.id}
+                                className="rounded-2xl border border-[#D4AF37]/35 bg-[#FAF8F5]/70 overflow-hidden"
+                              >
+                                <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
+                                        {cg.clientCode}
+                                      </span>
+                                      <p className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
+                                        {cg.clientName}
+                                      </p>
+                                      <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
+                                        {cg.packageTier}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-stone-500 mt-0.5">
+                                      {groupUsers.length} Akun Default Inti (Mempelai &amp; Orang Tua) &bull; Dikelola Superadmin
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {cg.id !== 'client-utama' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteClientGroup(cg)}
+                                        className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold"
+                                      >
+                                        Hapus Grup
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="font-bold text-stone-900">
-                                    {u.nama}{' '}
-                                    <span className="font-mono text-xs text-stone-500 font-normal">
-                                      (@{u.username})
-                                    </span>
-                                  </p>
-                                  <p className="text-[11px] text-stone-500 truncate">
-                                    {u.jabatan} &bull; Akses Penuh
-                                  </p>
-                                </div>
-                              </div>
 
-                              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                  Aktif
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSelectDefaultUserForEdit(u)}
-                                  className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
-                                >
-                                  Password
-                                </button>
+                                {groupUsers.length === 0 ? (
+                                  <div className="p-4 text-center text-xs text-stone-500">
+                                    Belum ada User Default pada grup ini.
+                                  </div>
+                                ) : (
+                                  <div className="divide-y divide-stone-200/60 bg-white px-4">
+                                    {groupUsers.map((u) => (
+                                      <div
+                                        key={u.id}
+                                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                      >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                          <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                                            <KeyRound className="w-4 h-4" />
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-stone-900">
+                                              {u.nama}{' '}
+                                              <span className="font-mono text-xs text-stone-500 font-normal">
+                                                (@{u.username})
+                                              </span>
+                                            </p>
+                                            <p className="text-[11px] text-stone-500 truncate">
+                                              {u.jabatan} &bull;{' '}
+                                              <span className="text-[#8B6914] font-semibold">
+                                                {cg.coupleLabel || cg.clientName}
+                                              </span>
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                            User Default
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleSelectDefaultUserForEdit(u)
+                                            }
+                                            className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                          >
+                                            Kelola / Password
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            );
+                          })}
                       </div>
                     )}
 
@@ -8212,7 +8677,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="space-y-4">
                         <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
                           <span className="text-xs text-stone-500">
-                            Akses Non-Moneter
+                            Akses Non-Moneter (Dikelompokkan per Klien)
                           </span>
                           <button
                             type="button"
@@ -8221,6 +8686,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setPanitiaUsername('');
                               setPanitiaNama('');
                               setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
+                              setPanitiaClientId(
+                                selectedClientGroupFilter !== 'ALL'
+                                  ? selectedClientGroupFilter
+                                  : 'client-utama'
+                              );
                               setPanitiaPassword('');
                               setActiveSettingsModal('panitia_user');
                             }}
@@ -8231,67 +8701,86 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </button>
                         </div>
 
-                        {panitiaUsers.length === 0 ? (
+                        {panitiaUsers.filter(
+                          (pu) =>
+                            selectedClientGroupFilter === 'ALL' ||
+                            (pu.clientId || 'client-utama') ===
+                              selectedClientGroupFilter
+                        ).length === 0 ? (
                           <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
-                            Belum ada akun Panitia / WO. Klik <strong>+ Tambah Panitia</strong> untuk membuat akun.
+                            Belum ada akun Panitia / WO pada grup klien ini. Klik <strong>+ Tambah Panitia</strong> untuk membuat akun.
                           </div>
                         ) : (
                           <div className="divide-y divide-stone-100">
-                            {panitiaUsers.map((pu) => (
-                              <div
-                                key={pu.id}
-                                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
-                                    <UserPlus className="w-4 h-4" />
+                            {panitiaUsers
+                              .filter(
+                                (pu) =>
+                                  selectedClientGroupFilter === 'ALL' ||
+                                  (pu.clientId || 'client-utama') ===
+                                    selectedClientGroupFilter
+                              )
+                              .map((pu) => (
+                                <div
+                                  key={pu.id}
+                                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
+                                      <UserPlus className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-stone-900">
+                                        {pu.nama}{' '}
+                                        <span className="font-mono text-xs text-stone-500 font-normal">
+                                          (@{pu.username})
+                                        </span>
+                                      </p>
+                                      <p className="text-[11px] text-stone-500">
+                                        {pu.jabatan} &bull;{' '}
+                                        <span className="text-[#8B6914] font-semibold">
+                                          {pu.clientName || 'Client Utama • Eko & Selo'}
+                                        </span>{' '}
+                                        &bull;{' '}
+                                        <span className="text-rose-600 font-semibold">
+                                          Non-Moneter
+                                        </span>
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-stone-900">
-                                      {pu.nama}{' '}
-                                      <span className="font-mono text-xs text-stone-500 font-normal">
-                                        (@{pu.username})
-                                      </span>
-                                    </p>
-                                    <p className="text-[11px] text-stone-500">
-                                      {pu.jabatan} &bull;{' '}
-                                      <span className="text-rose-600 font-semibold">
-                                        Non-Moneter
-                                      </span>
-                                    </p>
-                                  </div>
-                                </div>
 
-                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                    Aktif
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPanitiaEditId(pu.id);
-                                      setPanitiaUsername(pu.username);
-                                      setPanitiaNama(pu.nama);
-                                      setPanitiaJabatan(pu.jabatan);
-                                      setPanitiaPassword('');
-                                      setActiveSettingsModal('panitia_user');
-                                    }}
-                                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDeletePanitiaAccount(pu.id, pu.username)
-                                    }
-                                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
-                                  >
-                                    Hapus
-                                  </button>
+                                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                      Aktif
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPanitiaEditId(pu.id);
+                                        setPanitiaUsername(pu.username);
+                                        setPanitiaNama(pu.nama);
+                                        setPanitiaJabatan(pu.jabatan);
+                                        setPanitiaClientId(
+                                          pu.clientId || 'client-utama'
+                                        );
+                                        setPanitiaPassword('');
+                                        setActiveSettingsModal('panitia_user');
+                                      }}
+                                      className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDeletePanitiaAccount(pu.id, pu.username)
+                                      }
+                                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                    >
+                                      Hapus
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         )}
                       </div>
@@ -8534,6 +9023,904 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
         )}
+
+        {/* ===================================================================
+            TAB 6: MODUL KHUSUS SUPERADMIN (DB CAPACITY, MODERASI VIEW, MULTI-CLIENT SAAS)
+           =================================================================== */}
+        {activeTab === 'superadmin' && !isPanitia && (
+          <div className="space-y-6">
+            {/* Superadmin Hero Header */}
+            <div className="rounded-2xl bg-gradient-to-r from-[#1C1613] via-[#2A2019] to-[#1C1613] border border-[#D4AF37]/50 p-5 sm:p-6 text-[#FAF3E3] shadow-lg">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#E6C76B] text-[11px] font-extrabold uppercase tracking-wider">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Superadmin Commercial &amp; System Control Center</span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+                    Manajemen Multi-Client, Kapasitas DB 500 MB &amp; Moderasi Undangan
+                  </h2>
+                  <p className="text-xs text-[#E8DFD1]/80 max-w-3xl leading-relaxed">
+                    Pusat kendali komersial <strong>My Wedding Manager by omeko11</strong> untuk memantau kuota penyimpanan Supabase (Zero-Trace Storage), memoderasi akses tampilan undangan publik secara <em>real-time</em>, dan mengelola grouping <strong>User Default</strong> banyak klien dalam 1 dashboard.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddClientModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs shadow-sm transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Grup Client Baru</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRefreshStorageCapacity(false)}
+                    disabled={isLoadingCapacity}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-[#D4AF37]/40 text-[#FAF3E3] font-bold text-xs transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${
+                        isLoadingCapacity ? 'animate-spin' : ''
+                      }`}
+                    />
+                    <span>
+                      {isLoadingCapacity ? 'Memindai DB...' : 'Cek Kapasitas DB'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSwitchToPublicPreview()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#E6C76B]" />
+                    <span>Preview Undangan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick KPI Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
+                    Total Grup Client
+                  </p>
+                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                    {effectiveClientGroups.length} Klien Aktif
+                  </p>
+                  <p className="text-[11px] text-[#E8DFD1]/70">
+                    {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
+                    Status Moderasi View
+                  </p>
+                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                    {(settingsForm.invitationModerationMode ||
+                      state.settings.invitationModerationMode ||
+                      'LIVE') === 'LIVE'
+                      ? '🟢 LIVE PUBLIK'
+                      : (settingsForm.invitationModerationMode ||
+                          state.settings.invitationModerationMode) ===
+                        'VIP_CODE_ONLY'
+                      ? '🔐 KHUSUS KODE VIP'
+                      : '🛠️ MAINTENANCE'}
+                  </p>
+                  <p className="text-[11px] text-[#E8DFD1]/70">
+                    RSVP:{' '}
+                    {settingsForm.disableRsvpSubmission ??
+                    state.settings.disableRsvpSubmission
+                      ? 'Dikunci'
+                      : 'Terbuka'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
+                    Pemakaian Supabase (500 MB)
+                  </p>
+                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                    {storageCapacityReport
+                      ? `${(
+                          (storageCapacityReport.totalStorageBytes +
+                            JSON.stringify(state).length) /
+                          (1024 * 1024)
+                        ).toFixed(2)} MB`
+                      : 'Memuat...'}
+                  </p>
+                  <p className="text-[11px] text-[#E8DFD1]/70">
+                    {storageCapacityReport
+                      ? `Sisa ${(
+                          ((settingsForm.storageQuotaLimitMb ||
+                            state.settings.storageQuotaLimitMb ||
+                            500) *
+                            1024 *
+                            1024 -
+                            (storageCapacityReport.totalStorageBytes +
+                              JSON.stringify(state).length)) /
+                          (1024 * 1024)
+                        ).toFixed(1)} MB dari ${
+                          settingsForm.storageQuotaLimitMb ||
+                          state.settings.storageQuotaLimitMb ||
+                          500
+                        } MB`
+                      : 'Bucket wedding-media + 8 Tabel DB'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
+                    Zero-Trace Garbage Collector
+                  </p>
+                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                    {storageCapacityReport
+                      ? storageCapacityReport.orphanCount === 0
+                        ? '✨ 0 File Sampah'
+                        : `${storageCapacityReport.orphanCount} File Yatim`
+                      : 'Siap Pindai'}
+                  </p>
+                  <p className="text-[11px] text-[#E8DFD1]/70">
+                    Maks Foto 10 MB &bull; Auto-Delete Aktif
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* GRID 2 KOLOM: KAPASITAS DB & MODERASI VIEW UNDANGAN */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* PANEL 1: DB & SUPABASE STORAGE CAPACITY MONITOR (500 MB) */}
+              <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                        Kapasitas DB &amp; Supabase Storage (500 MB)
+                      </h3>
+                      <p className="text-[11px] text-stone-500">
+                        Monitoring real-time 8 Tabel PostgreSQL &amp; Bucket CDN{' '}
+                        <code className="font-mono text-[#8B6914]">wedding-media</code>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleRefreshStorageCapacity(false)}
+                    disabled={isLoadingCapacity}
+                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
+                  >
+                    {isLoadingCapacity ? 'Memindai...' : 'Refresh'}
+                  </button>
+                </div>
+
+                {/* Progress Bar 500 MB */}
+                {(() => {
+                  const dbJsonBytes = JSON.stringify(state).length;
+                  const usedBytes = storageCapacityReport
+                    ? storageCapacityReport.totalStorageBytes + dbJsonBytes
+                    : dbJsonBytes;
+                  const quotaMb =
+                    settingsForm.storageQuotaLimitMb ||
+                    state.settings.storageQuotaLimitMb ||
+                    500;
+                  const quotaBytes = quotaMb * 1024 * 1024;
+                  const usedMb = usedBytes / (1024 * 1024);
+                  const pct = Math.min(
+                    100,
+                    Number(((usedBytes / quotaBytes) * 100).toFixed(2))
+                  );
+                  return (
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-stone-800">
+                          Total Terpakai: {usedMb.toFixed(2)} MB dari {quotaMb} MB
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                            pct > 85
+                              ? 'bg-rose-100 text-rose-700'
+                              : pct > 60
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-700'
+                          }`}
+                        >
+                          {pct}% Terpakai
+                        </span>
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-stone-200 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            pct > 85
+                              ? 'bg-rose-600'
+                              : pct > 60
+                              ? 'bg-amber-500'
+                              : 'bg-gradient-to-r from-[#C5A059] to-emerald-600'
+                          }`}
+                          style={{ width: `${Math.max(pct, 1.5)}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-stone-500 leading-relaxed">
+                        Batas unggah foto dinaikkan hingga <strong>10 MB per foto (Ultra-HD)</strong>. Agar kuota 500 MB awet bertahun-tahun, setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Rincian Komponen Storage & Tabel */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                    <div className="flex items-center justify-between text-stone-500 mb-1">
+                      <span className="font-semibold">Foto Ultra-HD</span>
+                      <ImageIcon className="w-3.5 h-3.5 text-[#B68D40]" />
+                    </div>
+                    <p className="text-sm font-extrabold text-stone-900">
+                      {storageCapacityReport
+                        ? `${(
+                            storageCapacityReport.photoBytes /
+                            (1024 * 1024)
+                          ).toFixed(2)} MB`
+                        : '—'}
+                    </p>
+                    <p className="text-[11px] text-stone-500">
+                      {storageCapacityReport
+                        ? `${storageCapacityReport.photoCount} file di /photos`
+                        : 'Folder wedding-media/photos'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                    <div className="flex items-center justify-between text-stone-500 mb-1">
+                      <span className="font-semibold">Musik &amp; Audio</span>
+                      <Music className="w-3.5 h-3.5 text-[#B68D40]" />
+                    </div>
+                    <p className="text-sm font-extrabold text-stone-900">
+                      {storageCapacityReport
+                        ? `${(
+                            storageCapacityReport.musicBytes /
+                            (1024 * 1024)
+                          ).toFixed(2)} MB`
+                        : '—'}
+                    </p>
+                    <p className="text-[11px] text-stone-500">
+                      {storageCapacityReport
+                        ? `${storageCapacityReport.musicCount} file di /music`
+                        : 'Folder wedding-media/music'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                    <div className="flex items-center justify-between text-stone-500 mb-1">
+                      <span className="font-semibold">8 Tabel PostgreSQL</span>
+                      <FileJson className="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-extrabold text-stone-900">
+                      {`${(JSON.stringify(state).length / 1024).toFixed(1)} KB`}
+                    </p>
+                    <p className="text-[11px] text-stone-500">
+                      {state.tasks.length} Tugas &bull; {state.guests.length} Tamu &bull;{' '}
+                      {state.wishes.length} Doa
+                    </p>
+                  </div>
+                </div>
+
+                {/* Zero-Trace Orphan Garbage Collector Box */}
+                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        Zero-Trace Storage Cleaner (Pembersih File Tanpa Jejak)
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-emerald-800">
+                      {storageCapacityReport &&
+                      storageCapacityReport.orphanCount > 0
+                        ? `Ditemukan ${
+                            storageCapacityReport.orphanCount
+                          } file yatim (${(
+                            storageCapacityReport.orphanBytes /
+                            (1024 * 1024)
+                          ).toFixed(
+                            2
+                          )} MB) yang sudah tidak dipakai di undangan.`
+                        : 'Seluruh file di Supabase Storage sinkron dengan database aktif (0 file sampah).'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleRunZeroTraceCleanupNow()}
+                    disabled={isCleaningOrphans}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 shadow-2xs disabled:opacity-50"
+                  >
+                    {isCleaningOrphans
+                      ? 'Membersihkan...'
+                      : 'Bersihkan File Yatim Sekarang'}
+                  </button>
+                </div>
+              </div>
+
+              {/* PANEL 2: MODERASI VIEW UNDANGAN PUBLIK & KONTROL AKSES */}
+              <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                        Moderasi View Undangan Publik
+                      </h3>
+                      <p className="text-[11px] text-stone-500">
+                        Atur mode akses gerbang sampul, kunci RSVP, dan visibilitas sesi undangan
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
+                    Real-Time Sync
+                  </span>
+                </div>
+
+                {/* Pilihan Mode Penayangan Undangan */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-stone-800">
+                    Mode Penayangan Undangan Publik:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      {
+                        mode: 'LIVE' as const,
+                        title: '🟢 LIVE Publik',
+                        desc: 'Terbuka normal untuk seluruh tamu undangan',
+                      },
+                      {
+                        mode: 'VIP_CODE_ONLY' as const,
+                        title: '🔐 Khusus Kode VIP',
+                        desc: 'Wajib memasukkan Kode Undangan (INV-xxxx)',
+                      },
+                      {
+                        mode: 'MAINTENANCE' as const,
+                        title: '🛠️ Mode Maintenance',
+                        desc: 'Kunci sementara tampilan undangan publik',
+                      },
+                    ].map((item) => {
+                      const currentMode =
+                        settingsForm.invitationModerationMode ||
+                        state.settings.invitationModerationMode ||
+                        'LIVE';
+                      const active = currentMode === item.mode;
+                      return (
+                        <button
+                          key={item.mode}
+                          type="button"
+                          onClick={async () => {
+                            const nextSettings: WeddingSettings = {
+                              ...state.settings,
+                              ...settingsForm,
+                              invitationModerationMode: item.mode,
+                              updatedBy: adminUser.username,
+                            };
+                            setSettingsFormInternal(nextSettings);
+                            await commitImmediateSettings(nextSettings);
+                            appendAuditLog({
+                              actor: adminUser.username,
+                              module: 'MODERASI_UNDANGAN',
+                              action: 'EDIT',
+                              status: 'SUCCESS',
+                              summary: `Mengubah mode moderasi undangan publik menjadi ${item.mode}`,
+                            });
+                            showToast(
+                              `✓ Mode undangan publik diubah ke: ${item.title}`
+                            );
+                          }}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            active
+                              ? 'bg-gradient-to-br from-[#FAF3E3] to-[#F5E6C8] border-[#B68D40] ring-1 ring-[#B68D40]/40'
+                              : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/50'
+                          }`}
+                        >
+                          <p className="text-xs font-extrabold text-stone-900">
+                            {item.title}
+                          </p>
+                          <p className="text-[10px] text-stone-500 mt-0.5 leading-snug">
+                            {item.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pesan Maintenance */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Pesan Layar Maintenance / Moderasi Superadmin:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={
+                        settingsForm.invitationMaintenanceMessage ??
+                        state.settings.invitationMaintenanceMessage ??
+                        ''
+                      }
+                      onChange={(e) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          invitationMaintenanceMessage: e.target.value,
+                        }))
+                      }
+                      placeholder="Pesan ketika undangan berada dalam mode Maintenance..."
+                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveSettingsModal()}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shrink-0"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                </div>
+
+                {/* Saklar Moderasi Sesi & Credit Footer */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {[
+                    {
+                      key: 'disableRsvpSubmission' as const,
+                      label: 'Kunci Pengiriman Form RSVP Baru',
+                      invertBadge: true,
+                    },
+                    {
+                      key: 'showFooterCredit' as const,
+                      label: 'Tampilkan Credit & Contact Us di Footer',
+                      defaultTrue: true,
+                    },
+                    {
+                      key: 'showLoveStorySection' as const,
+                      label: 'Tampilkan Sesi Kisah Cinta',
+                      defaultTrue: true,
+                    },
+                    {
+                      key: 'showGallerySection' as const,
+                      label: 'Tampilkan Sesi Galeri Foto',
+                      defaultTrue: true,
+                    },
+                    {
+                      key: 'showGiftSection' as const,
+                      label: 'Tampilkan Sesi Amplop Digital & QRIS',
+                      defaultTrue: true,
+                    },
+                    {
+                      key: 'showRsvpSection' as const,
+                      label: 'Tampilkan Sesi RSVP & Ucapan Tamu',
+                      defaultTrue: true,
+                    },
+                  ].map((toggle) => {
+                    const rawVal =
+                      settingsForm[toggle.key] ?? state.settings[toggle.key];
+                    const checked = toggle.defaultTrue
+                      ? rawVal !== false
+                      : Boolean(rawVal);
+                    return (
+                      <label
+                        key={toggle.key}
+                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50"
+                      >
+                        <span className="text-[11px] font-semibold text-stone-800">
+                          {toggle.label}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={async (e) => {
+                            const nextVal = e.target.checked;
+                            const nextSettings: WeddingSettings = {
+                              ...state.settings,
+                              ...settingsForm,
+                              [toggle.key]: nextVal,
+                              updatedBy: adminUser.username,
+                            };
+                            setSettingsFormInternal(nextSettings);
+                            await commitImmediateSettings(nextSettings);
+                            showToast(`✓ Pengaturan "${toggle.label}" diperbarui!`);
+                          }}
+                          className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* PANEL 3: MANAJEMEN KOMERSIAL MULTI-CLIENT & GROUPING USER DEFAULT */}
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                      Grouping User Default &amp; Manajemen Multi-Client (SaaS)
+                    </h3>
+                    <p className="text-[11px] text-stone-500">
+                      Setiap Grup Client memiliki <strong>4 Akun Default Inti</strong> (Mempelai Pria, Mempelai Wanita, Orang Tua Pria, Orang Tua Wanita) + Akun Panitia masing-masing.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddClientModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Grup Client Baru (Otomatis 4 User Default)</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {effectiveClientGroups.map((cg) => {
+                  const groupDefaultUsers = defaultSystemUsers.filter(
+                    (u) => (u.clientId || 'client-utama') === cg.id
+                  );
+                  const groupPanitiaUsers = panitiaUsers.filter(
+                    (u) => (u.clientId || 'client-utama') === cg.id
+                  );
+                  return (
+                    <div
+                      key={cg.id}
+                      className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
+                                {cg.clientCode}
+                              </span>
+                              <h4 className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
+                                {cg.clientName}
+                              </h4>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                {cg.packageTier}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-stone-500 mt-0.5">
+                              {cg.notes || 'Paket Komersial My Wedding Manager'} &bull;{' '}
+                              {cg.eventDate || '2026-12-19'}
+                            </p>
+                          </div>
+                          {cg.id !== 'client-utama' && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClientGroup(cg)}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
+                              title="Hapus Grup Client"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="p-4 space-y-2.5">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-stone-600">
+                            <span>
+                              4 User Default ({groupDefaultUsers.length} Akun Inti):
+                            </span>
+                            <span className="text-[#8B6914]">
+                              {groupPanitiaUsers.length} Panitia/WO
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {groupDefaultUsers.map((u) => (
+                              <div
+                                key={u.id}
+                                className="p-2.5 rounded-xl bg-white border border-stone-200/90 flex items-center justify-between gap-2"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-stone-900 truncate">
+                                    {u.nama}
+                                  </p>
+                                  <p className="text-[10px] font-mono text-[#8B6914] truncate">
+                                    @{u.username}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleSelectDefaultUserForEdit(u)
+                                  }
+                                  className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold shrink-0"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-4 py-2.5 bg-white border-t border-stone-200/70 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedClientGroupFilter(cg.id);
+                            setActiveTab('settings');
+                            setSettingsMenuTab('keamanan');
+                          }}
+                          className="text-[11px] font-bold text-[#8B6914] hover:underline"
+                        >
+                          Lihat Semua Akun Klien Ini &rarr;
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPanitiaEditId(undefined);
+                            setPanitiaUsername(
+                              `${cg.clientCode.toLowerCase()}_wo`
+                            );
+                            setPanitiaNama(`Tim WO ${cg.coupleLabel}`);
+                            setPanitiaJabatan(
+                              'Panitia / WO (Akses Non-Budgeting)'
+                            );
+                            setPanitiaClientId(cg.id);
+                            setPanitiaPassword('');
+                            setActiveSettingsModal('panitia_user');
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 text-[11px] font-bold"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Panitia Klien</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================================================================
+            MODAL TAMBAH GRUP CLIENT KOMERSIAL BARU (OTOMATIS 4 USER DEFAULT)
+           =================================================================== */}
+        {isAddClientModalOpen && (
+          <div className="fixed inset-0 z-50 bg-stone-950/55 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
+              <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-[#B68D40]" />
+                  <h3 className="text-base font-extrabold text-stone-900">
+                    Buat Grup Client Komersial Baru
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddClientModalOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateNewClientGroup} className="p-6 space-y-4">
+                <div className="p-3.5 rounded-xl bg-[#FAF3E3]/70 border border-[#D4AF37]/40 text-[11px] text-[#8B6914] leading-relaxed">
+                  Sistem akan otomatis men-generate <strong>4 User Default</strong> untuk klien ini:
+                  <span className="font-mono font-bold block mt-1">
+                    &bull; {'<kode>_pria'} &bull; {'<kode>_wanita'} &bull; {'<kode>_kel_pria'} &bull; {'<kode>_kel_wanita'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Kode Unik Client*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newClientForm.clientCode}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          clientCode: e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9_]/g, ''),
+                        }))
+                      }
+                      placeholder="Contoh: rian_dina"
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Nama Pasangan Klien*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newClientForm.coupleLabel}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          coupleLabel: e.target.value,
+                        }))
+                      }
+                      placeholder="Contoh: Rian & Dina"
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Tier Paket Komersial
+                    </label>
+                    <select
+                      value={newClientForm.packageTier}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          packageTier: e.target.value as
+                            | 'STARTER'
+                            | 'EXCLUSIVE'
+                            | 'ROYAL_VIP',
+                        }))
+                      }
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white"
+                    >
+                      <option value="ROYAL_VIP">ROYAL VIP (Full Suite)</option>
+                      <option value="EXCLUSIVE">EXCLUSIVE</option>
+                      <option value="STARTER">STARTER</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Password Awal 4 Akun*
+                    </label>
+                    <input
+                      type="text"
+                      value={newClientForm.initialPassword}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          initialPassword: e.target.value,
+                        }))
+                      }
+                      placeholder="Default: <kode>12345"
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Tanggal Acara
+                    </label>
+                    <input
+                      type="date"
+                      value={newClientForm.eventDate}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          eventDate: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">
+                      Catatan Klien
+                    </label>
+                    <input
+                      type="text"
+                      value={newClientForm.notes}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          notes: e.target.value,
+                        }))
+                      }
+                      placeholder="Catatan paket klien..."
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddClientModalOpen(false)}
+                    className="px-4 py-2 rounded-full border border-stone-300 text-stone-700 font-bold text-xs"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingClientGroup}
+                    className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shadow-xs disabled:opacity-50"
+                  >
+                    {isCreatingClientGroup
+                      ? 'Membuat 4 Akun...'
+                      : 'Buat Grup & 4 User Default'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ===================================================================
+            FOOTER CREDIT & CONTACT US (ADMIN DASHBOARD)
+           =================================================================== */}
+        <footer className="mt-8 pt-4 pb-2">
+          <div className="rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FAF3E3]/80 to-[#FFFDF9] border border-[#D4AF37]/35 px-4 py-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-center sm:text-left">
+              <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-2xs">
+                <WeddingRingsIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-stone-900 tracking-wide">
+                  My Wedding Manager by{' '}
+                  <span className="text-[#8B6914]">omeko11</span> &copy; 2026
+                </p>
+                <p className="text-[10px] text-stone-500">
+                  Enterprise Multi-Client Wedding Planner &amp; Digital Invitation Suite
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
+                Contact Us:
+              </span>
+              <a
+                href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Call Center & Layanan Komersial My Wedding Manager"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-[11px] font-bold transition-all shadow-2xs"
+              >
+                <svg
+                  className="w-3.5 h-3.5 text-[#8B6914]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <span>Call Center</span>
+              </a>
+
+              <a
+                href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Profil LinkedIn Resmi Eko Agung Krisdianto"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-[11px] font-bold transition-all shadow-2xs"
+              >
+                <svg
+                  className="w-3.5 h-3.5 fill-current"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                </svg>
+                <span>LinkedIn Eko Agung K.</span>
+              </a>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* =======================================================================
@@ -10914,24 +12301,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {/* Pilih Akun Utama */}
                   <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
                     <p className="font-bold text-xs text-stone-800">
-                      Pilih Akun Inti:
+                      Pilih Akun Inti (User Default):
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {defaultSystemUsers.map((u) => (
-                        <button
-                          key={u.id}
-                          type="button"
-                          onClick={() => handleSelectDefaultUserForEdit(u)}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border font-semibold text-xs transition-all ${
-                            selectedDefaultUserId === u.id
-                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
-                              : 'bg-white hover:bg-[#FAF3E3] border-[#D4AF37]/40 text-[#8B6914]'
-                          }`}
-                        >
-                          <span>@{u.username}</span>
-                        </button>
-                      ))}
+                      {defaultSystemUsers
+                        .filter(
+                          (u) =>
+                            (u.clientId || 'client-utama') ===
+                            (secClientId || 'client-utama')
+                        )
+                        .map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => handleSelectDefaultUserForEdit(u)}
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border font-semibold text-xs transition-all ${
+                              selectedDefaultUserId === u.id
+                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                : 'bg-white hover:bg-[#FAF3E3] border-[#D4AF37]/40 text-[#8B6914]'
+                            }`}
+                          >
+                            <span>@{u.username}</span>
+                          </button>
+                        ))}
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1 truncate">
+                      Grup Client Komersial
+                    </label>
+                    <select
+                      value={secClientId}
+                      onChange={(e) => setSecClientId(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
+                    >
+                      {effectiveClientGroups.map((cg) => (
+                        <option key={cg.id} value={cg.id}>
+                          [{cg.clientCode}] {cg.clientName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -11050,6 +12460,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1 truncate">
+                      Grup Client Komersial*
+                    </label>
+                    <select
+                      value={panitiaClientId}
+                      onChange={(e) => setPanitiaClientId(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
+                    >
+                      {effectiveClientGroups.map((cg) => (
+                        <option key={cg.id} value={cg.id}>
+                          [{cg.clientCode}] {cg.clientName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -12297,7 +13724,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       >
         <div
           className={`grid ${
-            isPanitia ? 'grid-cols-4' : 'grid-cols-5'
+            isPanitia ? 'grid-cols-4' : 'grid-cols-6'
           } gap-1 items-stretch`}
         >
           {[
@@ -12330,6 +13757,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Pengaturan',
               icon: Settings,
             },
+            ...(!isPanitia
+              ? [
+                  {
+                    id: 'superadmin' as AdminModuleTab,
+                    label: 'Superadmin',
+                    icon: Shield,
+                  },
+                ]
+              : []),
           ].map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;

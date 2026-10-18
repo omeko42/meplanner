@@ -175,6 +175,28 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   musicArtist: 'Michael Learns To Rock',
   activeMusicTrackId: 'track-mltr-paint-my-love',
   musicVolume: 100,
+
+  clientGroups: [
+    {
+      id: 'client-utama',
+      clientCode: 'UTAMA',
+      clientName: 'Client Utama • Eko & Selo',
+      coupleLabel: 'Eko & Selo',
+      packageTier: 'ROYAL_VIP',
+      status: 'ACTIVE',
+      eventDate: '2026-12-19',
+      notes: 'Grup Klien Utama (Mempelai & Keluarga Inti)',
+      createdAt: '2026-10-18T16:05:00+07:00',
+    },
+  ],
+  activeClientId: 'client-utama',
+  invitationModerationMode: 'LIVE',
+  invitationMaintenanceMessage:
+    'Mohon maaf, halaman undangan digital sedang dalam penyesuaian data oleh mempelai & tim pengelola. Silakan kunjungi kembali beberapa saat lagi.',
+  disableRsvpSubmission: false,
+  storageQuotaLimitMb: 500,
+  showFooterCredit: true,
+
   updatedAt: '2026-10-18T16:05:00+07:00',
   updatedBy: 'superadmin',
 };
@@ -198,6 +220,8 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     jabatan: 'User Default • Mempelai Pria',
     email: 'mempelai_pria@wedding.local',
     isDefaultUser: true,
+    clientId: 'client-utama',
+    clientName: 'Client Utama • Eko & Selo',
     passwordHash:
       'scrypt$wedplan_2026_slt$218c070ec61d36ec110c06778fb79a6d4150a790506d0f2a1724fb8b142839c8e1c9f5e57ed4395bfc6bbc327ac324f28298d051626c878e830c303cd3860392',
   },
@@ -209,6 +233,8 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     jabatan: 'User Default • Mempelai Wanita',
     email: 'mempelai_wanita@wedding.local',
     isDefaultUser: true,
+    clientId: 'client-utama',
+    clientName: 'Client Utama • Eko & Selo',
     passwordHash:
       'scrypt$wedplan_2026_slt$8a317d2515d28a2a3fd8fc07d6c960b96d557ddb6b7be519fc282d05761f7994fb8579318fa64d240155ede56619468e6684a2147892373398273cf7765b8d50',
   },
@@ -220,6 +246,8 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     jabatan: 'User Default • Keluarga Pria',
     email: 'kel_pria@wedding.local',
     isDefaultUser: true,
+    clientId: 'client-utama',
+    clientName: 'Client Utama • Eko & Selo',
     passwordHash:
       'scrypt$wedplan_2026_slt$779a9c88fd83423f53b6524a62d5638c595d9db23fea0488ff0caa494a65bef085b53c9d6a65e442dc4cab4144bb4cc2c56ef233748c704c41f77c0c8f39360a',
   },
@@ -231,6 +259,8 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     jabatan: 'User Default • Keluarga Wanita',
     email: 'kel_wanita@wedding.local',
     isDefaultUser: true,
+    clientId: 'client-utama',
+    clientName: 'Client Utama • Eko & Selo',
     passwordHash:
       'scrypt$wedplan_2026_slt$dea17346944d14569df48b071716c213ad601ad9881eb94a4d26328f0b4aef4bb4a1ff149036887c2eea95e8947794d5dbe458006c927a9f676c8056ea98e6ca',
   },

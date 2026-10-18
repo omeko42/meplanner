@@ -151,6 +151,8 @@ export async function PUT(request: NextRequest) {
       const username = String(body.username || '').trim().toLowerCase();
       const nama = String(body.nama || '').trim();
       const jabatan = String(body.jabatan || 'Panitia / WO').trim();
+      const clientId = String(body.clientId || 'client-utama').trim();
+      const clientName = String(body.clientName || 'Client Utama • Eko & Selo').trim();
       const newPassword = String(body.password || '').trim();
 
       if (!username || !nama) {
@@ -189,6 +191,8 @@ export async function PUT(request: NextRequest) {
         username,
         nama,
         jabatan,
+        clientId,
+        clientName,
         ...(newPassword ? { passwordHash: hashPassword(newPassword) } : {}),
       });
 
@@ -206,6 +210,8 @@ export async function PUT(request: NextRequest) {
           nama: panitiaUser.nama,
           role: panitiaUser.role,
           jabatan: panitiaUser.jabatan,
+          clientId: panitiaUser.clientId,
+          clientName: panitiaUser.clientName,
           isDefaultUser: false,
         },
         data: fullState,
@@ -240,12 +246,104 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // 3. Ubah Username / Password Akun Default (WAJIB Konfirmasi Email & Password Superadmin / Pemilik Aplikasi)
+    // 2B. Buat Grup Client Baru + 4 User Default Khusus Client (Superadmin / Komersialisasi)
+    if (action === 'CREATE_CLIENT_GROUP_USERS') {
+      const clientCode = String(body.clientCode || '')
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9_-]/g, '');
+      const coupleLabel = String(body.coupleLabel || '').trim();
+      const clientName =
+        String(body.clientName || '').trim() ||
+        `Client ${clientCode} • ${coupleLabel}`;
+      const packageTier = (
+        ['STARTER', 'EXCLUSIVE', 'ROYAL_VIP'].includes(String(body.packageTier))
+          ? body.packageTier
+          : 'EXCLUSIVE'
+      ) as 'STARTER' | 'EXCLUSIVE' | 'ROYAL_VIP';
+      const eventDate = String(body.eventDate || '2026-12-19').trim();
+      const notes = String(body.notes || '').trim();
+      const initialPassword = String(body.initialPassword || '').trim();
+
+      if (!clientCode || !coupleLabel) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Kode Client dan Nama Pasangan Client wajib diisi.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (!initialPassword || initialPassword.length < 6) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Password awal untuk 4 User Default Client minimal 6 karakter.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const clientId = `client-${clientCode.toLowerCase()}`;
+      const createdUsers = serverStore.createClientDefaultUsersGroup({
+        clientId,
+        clientCode,
+        clientName,
+        coupleLabel,
+        packageTier,
+        eventDate,
+        notes,
+        passwordHash: hashPassword(initialPassword),
+      });
+
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
+
+      return NextResponse.json({
+        success: true,
+        message: `Grup "${clientName}" beserta ${createdUsers.length} User Default berhasil dibuat!`,
+        createdUsers,
+        data: fullState,
+      });
+    }
+
+    // 2C. Hapus Grup Client Sekunder & Seluruh User-nya (Hard Delete)
+    if (action === 'DELETE_CLIENT_GROUP') {
+      const clientId = String(body.clientId || '').trim();
+      if (!clientId || clientId === 'client-utama') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Grup Client Utama sistem tidak dapat dihapus.',
+          },
+          { status: 400 }
+        );
+      }
+      const ok = serverStore.deleteClientGroupAndUsers(clientId);
+      if (!ok) {
+        return NextResponse.json(
+          { success: false, error: 'Gagal menghapus grup client.' },
+          { status: 400 }
+        );
+      }
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
+      return NextResponse.json({
+        success: true,
+        message: 'Grup Client beserta seluruh akun di dalamnya berhasil dihapus bersih.',
+        data: fullState,
+      });
+    }
+
+    // 3. Ubah Username / Password Akun Default (WAJIB Konfirmasi Email & Password Superadmin kecuali sudah login sebagai SUPERADMIN)
     const superadminConfirmation = String(body.superadminConfirmation || '').trim();
     const superadminPassword = String(body.superadminPassword || '').trim();
+    const isAlreadySuperadminSession = sessionUser.role === 'SUPERADMIN';
     if (
-      !verifySuperadminIdentity(superadminConfirmation) ||
-      !verifySuperadminPassword(superadminPassword)
+      !isAlreadySuperadminSession &&
+      (!verifySuperadminIdentity(superadminConfirmation) ||
+        !verifySuperadminPassword(superadminPassword))
     ) {
       return NextResponse.json(
         {
@@ -314,6 +412,8 @@ export async function PUT(request: NextRequest) {
     const updatedAdmin = serverStore.updateAdminUser(targetAdmin.id, {
       nama: newName,
       username: newUsername,
+      ...(body.clientId ? { clientId: String(body.clientId).trim() } : {}),
+      ...(body.clientName ? { clientName: String(body.clientName).trim() } : {}),
       ...(newPassword
         ? {
             passwordHash: hashPassword(newPassword),
@@ -338,6 +438,8 @@ export async function PUT(request: NextRequest) {
           jabatan: updatedAdmin.jabatan,
           email: updatedAdmin.email,
           isDefaultUser: updatedAdmin.isDefaultUser,
+          clientId: updatedAdmin.clientId,
+          clientName: updatedAdmin.clientName,
         }
       : sessionUser;
 

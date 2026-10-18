@@ -30,6 +30,8 @@ import {
   Pin,
   X,
   Sparkles,
+  Shield,
+  KeyRound,
 } from 'lucide-react';
 import {
   WeddingSettings,
@@ -280,11 +282,118 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       }));
   }, [allScheduleEvents]);
 
+  const [vipCodeInput, setVipCodeInput] = useState('');
+  const [vipCodeError, setVipCodeError] = useState('');
+  const [verifiedGuestByCode, setVerifiedGuestByCode] = useState<WeddingGuest | null>(
+    null
+  );
+
+  const effectiveMatchedGuest = verifiedGuestByCode || matchedGuest;
+  const requiresVipCodeGate =
+    settings.invitationModerationMode === 'VIP_CODE_ONLY' && !effectiveMatchedGuest;
+
   const handleOpenInvitation = () => {
+    if (requiresVipCodeGate) {
+      const cleanCode = vipCodeInput.trim().toUpperCase();
+      if (!cleanCode) {
+        setVipCodeError(
+          'Masukkan Kode Undangan resmi Anda (contoh: INV-0001) untuk membuka undangan.'
+        );
+        return;
+      }
+      const found = guests.find(
+        (g) => (g.invitationCode || '').trim().toUpperCase() === cleanCode
+      );
+      if (!found && guests.length > 0) {
+        setVipCodeError(
+          'Kode Undangan tidak ditemukan dalam daftar tamu terdaftar. Periksa kembali kode Anda.'
+        );
+        return;
+      }
+      if (found) {
+        setVerifiedGuestByCode(found);
+        setRsvpName(found.guestName);
+        setRsvpInstitution(found.institution || '');
+      }
+      setVipCodeError('');
+    }
     setIsOpened(true);
     weddingMusicPlayer.start();
     setIsPlayingMusic(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderDeveloperCreditBar = (compact = false) => {
+    if (settings.showFooterCredit === false) return null;
+    return (
+      <div
+        className={`${
+          compact ? 'mt-3 pt-3' : 'mt-5 pt-4 border-t border-[#D4AF37]/25'
+        } flex flex-col items-center justify-center gap-2 text-center`}
+      >
+        <p className="text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
+          My Wedding Manager by{' '}
+          <a
+            href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold"
+          >
+            omeko11
+          </a>{' '}
+          &copy; 2026
+        </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest text-stone-500">
+            Contact Us:
+          </span>
+
+          {/* Call Center / Layanan Platform Icon Pill */}
+          <a
+            href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Hubungi Call Center & Layanan My Wedding Manager (Eko Agung Krisdianto)"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
+          >
+            {/* Call Center Headset + Phone SVG Icon */}
+            <svg
+              className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
+              <path d="M21 16v2a4 4 0 0 1-4 4h-5" />
+            </svg>
+            <span>Call Center</span>
+          </a>
+
+          {/* LinkedIn Official Profile Badge Link */}
+          <a
+            href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Profil LinkedIn Resmi Eko Agung Krisdianto (omeko11)"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
+          >
+            {/* LinkedIn Official SVG Icon */}
+            <svg
+              className="w-3.5 h-3.5 fill-current shrink-0"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+            </svg>
+            <span>Eko Agung Krisdianto</span>
+          </a>
+        </div>
+      </div>
+    );
   };
 
   const handleToggleMusic = () => {
@@ -300,14 +409,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const handleRsvpFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (settings.disableRsvpSubmission) return;
     if (!rsvpName.trim()) return;
     setIsSubmittingRsvp(true);
     try {
       await onSubmitRsvp({
         guestName: rsvpName.trim(),
-        invitationCode: matchedGuest?.invitationCode || guestParamCode || undefined,
+        invitationCode:
+          effectiveMatchedGuest?.invitationCode || guestParamCode || undefined,
         institution: rsvpInstitution.trim(),
-        relation: matchedGuest?.guestType || 'Tamu Undangan',
+        relation: effectiveMatchedGuest?.guestType || 'Tamu Undangan',
         phone: rsvpPhone.trim(),
         rsvpStatus,
         pax: rsvpStatus === 'Hadir' ? Number(rsvpPax) || 1 : 0,
@@ -320,6 +431,66 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       setIsSubmittingRsvp(false);
     }
   };
+
+  // ============================================================================
+  // 0. SUPERADMIN MODERATION: MAINTENANCE / PAUSED VIEW MODE
+  // ============================================================================
+  if (settings.invitationModerationMode === 'MAINTENANCE') {
+    return (
+      <div className="min-h-[100dvh] relative flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <img
+            src={coverBgUrl}
+            alt="Background"
+            className="w-full h-full object-cover object-center"
+            style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
+          />
+        </div>
+        <div
+          className={`fixed inset-0 pointer-events-none ${blurClass}`}
+          style={{
+            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+          }}
+        />
+        <div className="relative z-10 flex items-center justify-between gap-2 px-3.5 sm:px-8 pt-4 sm:pt-5">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-2xs">
+            <Shield className="w-3.5 h-3.5 text-[#B68D40]" />
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8B6914]">
+              Moderasi Undangan Aktif
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenAdminPortal}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:text-[#8B6914] shadow-2xs"
+          >
+            <Lock className="w-3 h-3 text-[#B68D40]" />
+            <span>{isAdminLoggedIn ? 'Kembali ke Dashboard' : 'Portal Admin'}</span>
+          </button>
+        </div>
+
+        <div className="relative z-10 max-w-xl mx-auto px-4 py-6 text-center my-auto w-full">
+          <div className="w-full rounded-3xl bg-white/85 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FAF3E3] border-2 border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B]">
+              <WeddingRingsIcon className="w-9 h-9" />
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
+              <Clock className="w-3.5 h-3.5" /> Mode Penyesuaian / Segera Hadir
+            </span>
+            <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900">
+              {settings.groomNickname || 'Eko'} &amp; {settings.brideNickname || 'Selo'}
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-md mx-auto">
+              {settings.invitationMaintenanceMessage ||
+                'Mohon maaf, halaman undangan digital sedang dalam penyesuaian data oleh mempelai & tim pengelola. Silakan kunjungi kembali beberapa saat lagi.'}
+            </p>
+            {renderDeveloperCreditBar(false)}
+          </div>
+        </div>
+        <div className="h-4" />
+      </div>
+    );
+  }
 
   // ============================================================================
   // 1. COVER PEMBUKA (BRIGHT PREWEDDING SILHOUETTE & FROSTED GLASS GATE)
@@ -406,12 +577,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               )}
 
               <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
-                {resolvedGuestDisplayName}
+                {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
               </h2>
 
-              {matchedGuest?.institution && (
+              {(effectiveMatchedGuest?.institution || matchedGuest?.institution) && (
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1 break-words">
-                  {matchedGuest.institution}
+                  {effectiveMatchedGuest?.institution || matchedGuest?.institution}
                 </p>
               )}
 
@@ -419,6 +590,31 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 *Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar
               </p>
             </div>
+
+            {/* Optional Superadmin VIP Code Gate Input */}
+            {requiresVipCodeGate && (
+              <div className="w-full rounded-2xl bg-[#FAF8F5]/95 border border-[#D4AF37]/50 p-3.5 sm:p-4 mb-4 text-left space-y-2">
+                <label className="text-[11px] font-bold text-[#8B6914] flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-[#B68D40]" />
+                  <span>Mode Undangan Privat VIP — Masukkan Kode Undangan:</span>
+                </label>
+                <input
+                  type="text"
+                  value={vipCodeInput}
+                  onChange={(e) => {
+                    setVipCodeInput(e.target.value);
+                    setVipCodeError('');
+                  }}
+                  placeholder="Contoh: INV-0001"
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D4AF37]/50 font-mono text-xs sm:text-sm font-bold text-stone-900 uppercase focus:outline-none focus:border-[#8B6914]"
+                />
+                {vipCodeError && (
+                  <p className="text-[11px] font-semibold text-rose-600">
+                    {vipCodeError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Open Invitation Button */}
             <button
@@ -432,11 +628,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
         </div>
 
-        {/* Bottom Footer Note */}
+        {/* Bottom Footer Note + Developer Credit */}
         <div className="relative z-10 text-center pb-4 sm:pb-5 px-4">
           <p className="text-[11px] text-stone-500 font-medium">
             {settings.subtitle}
           </p>
+          {renderDeveloperCreditBar(true)}
         </div>
       </div>
     );
@@ -1304,12 +1501,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="pt-4 mt-auto">
                 <button
                   type="submit"
-                  disabled={isSubmittingRsvp}
+                  disabled={isSubmittingRsvp || Boolean(settings.disableRsvpSubmission)}
                   className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                   <span>
-                    {isSubmittingRsvp
+                    {settings.disableRsvpSubmission
+                      ? 'Konfirmasi RSVP Telah Ditutup'
+                      : isSubmittingRsvp
                       ? 'Menyimpan Konfirmasi...'
                       : 'Kirim Konfirmasi & Ucapan'}
                   </span>
@@ -1560,6 +1759,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80">
             All-in-One Wedding Planner &amp; Digital Invitation
           </p>
+
+          {renderDeveloperCreditBar(false)}
         </div>
       </footer>
 

@@ -1,44 +1,98 @@
-# 💍 My Wedding Manager — All-in-One Wedding Planner & Digital Invitation
+# 💍 My Wedding Manager — Enterprise Wedding Planner & Digital Invitation Suite
 
-Sistem Informasi Terpadu **Manajemen Kesiapan Pernikahan (Wedding Readiness Tracker)** dan **Undangan Digital Online Interaktif** yang dibangun dengan standar arsitektur **Next.js 14 App Router, TypeScript Ketat, Tailwind CSS, dan Lucide Icons**, siap ter-deploy ke **Vercel** serta terintegrasi dengan **Google Sheets Database (`DB Wedding`)**.
+> **My Wedding Manager by omeko11 © 2026**  
+> Sistem Informasi Terpadu **Manajemen Kesiapan Pernikahan (Wedding Readiness Tracker)**, **Undangan Digital Interaktif Real-Time**, dan **Manajemen Multi-Client Komersial (SaaS)** dengan arsitektur terpisah antara **Frontend (Vercel Edge)**, **Backend Service Layer (Next.js API Routes)**, serta **Cloud Database & Object Storage CDN (Supabase PostgreSQL 8 Tabel Relasional + Supabase Storage)**.
+
+---
+
+## 🏗️ Arsitektur Sistem (Layered Cloud Architecture)
+
+Aplikasi ini dirancang secara modular dengan pemisahan jelas antara **Presentation Layer (FE)**, **Application/API Layer (BE)**, dan **Persistence & CDN Layer (DB + Storage)**:
+
+| Layer | Teknologi & Infrastruktur | Fungsi Utama |
+| :--- | :--- | :--- |
+| **1. Frontend (FE)** | **Next.js 14 App Router**, React 18, TypeScript, Tailwind CSS, Lucide Icons *(Deployed on Vercel)* | Antarmuka Undangan Publik (`PublicInvitationView.tsx`), Dashboard Admin & Superadmin (`AdminDashboardView.tsx`), Interactive Photo Cropper, serta Audio Engine (`weddingMusicPlayer`). |
+| **2. Backend (BE)** | **Next.js Serverless API Routes** (`/api/auth`, `/api/wedding`, `/api/sync-sheets`) + Service Layer (`supabaseCloud.ts`, `serverStore.ts`, `clientSync.ts`) | Otentikasi kriptografi `scrypt`, RBAC Multi-Client, sinkronisasi real-time lintas perangkat, serta **Zero-Trace Garbage Collector** untuk menjaga kuota penyimpanan tetap hemat. |
+| **3. Database (DB)** | **Supabase PostgreSQL** *(8 Tabel Relasional Terpisah)* + **IndexedDB Local Cache** | Menyimpan state utama & relasional (`wedding_state`, `wedding_settings`, `wedding_media`, `wedding_tasks`, `wedding_guests`, `wedding_wishes`, `wedding_budgets`, `wedding_users`). |
+| **4. Media CDN** | **Supabase Storage Bucket** (`wedding-media/photos` & `wedding-media/music`) | Menyimpan foto **Ultra-HD (hingga 10 MB per foto)** dan file musik **MP3/WAV/AAC** sebagai URL CDN publik sehingga tabel database tetap ringan dan bebas timeout. |
 
 ---
 
 ## ✨ Fitur Utama
 
-### 1. Pemisahan Hak Akses (Role-Based Access & Public View)
-- **Tampilan Tamu / Publik (`/` atau `/?to=Nama+Tamu` atau `/?code=INV-0001`)**:
-  - **Cover Pembuka Fullscreen**: Menampilkan nama tamu otomatis dari parameter URL (`Kepada Yth. Bapak/Ibu/Saudara/i [Nama Tamu]`), deteksi lencana **Tamu Kehormatan / VIP**, serta tombol **"Buka Undangan"** dengan musik latar instrumental romantis opsional.
-  - **Profil Kedua Mempelai & Countdown Hari-H**: Hitung mundur menuju **Biston (18 Desember 2026)** & **Pemberkatan / Resepsi (19 Desember 2026)** di Kota Semarang.
-  - **Detail Rangkaian Acara & Google Maps**: Informasi waktu, gedung/gereja, panduan busana (*dresscode*), dan tombol integrasi petunjuk arah Google Maps.
-  - **Kisah Cinta (Love Story) & Galeri Foto Lightbox**.
-  - **Form Konfirmasi Kehadiran (RSVP) & Buku Tamu Real-Time**: Konfirmasi kehadiran (*Hadir / Masih Ragu / Tidak Hadir*), kuota jumlah orang (*Pax*), dan ucapan doa yang langsung tersimpan ke dashboard Admin secara *real-time*.
-  - **Amplop Digital / Wedding Gift**: Daftar rekening bank (BRI, BCA, Mandiri) dengan tombol **1-Klik Salin Nomor Rekening** serta tampilan **QRIS Wedding Gift**.
+### 1. Tampilan Undangan Digital Publik (`/` atau `/?to=Nama+Tamu&code=INV-0001`)
+- **Gerbang Sampul (Cover Gate) Personalisasi Otomatis**:
+  - Membaca parameter `?to=` dan `?code=` secara akurat (mencocokkan Kode Undangan `INV-xxxx` di database tamu meskipun nama tamu memiliki gelar/pangkat panjang).
+  - Menampilkan badge **Tamu Kehormatan / VIP** secara otomatis untuk tamu prioritas `P1 - VIP`.
+- **Sinkronisasi Penuh dengan Database Pengaturan (100% Editable)**:
+  - Seluruh teks pembuka, nama & gelar kedua mempelai, profil orang tua, kutipan ayat suci, rangkaian acara (*Acara Biston, Pemberkatan, Resepsi, maupun Acara Kustom*), **Kisah Cinta (Love Story)**, **Galeri Foto Lightbox**, **Amplop Digital & QRIS**, hingga **Kalimat Penutup (Closing Card)** tersinkron langsung dari database.
+- **Pemutar Musik Latar Pintar (Smart Audio Engine)**:
+  - Mendukung *playlist* kustom dari Supabase Storage CDN, lengkap dengan deteksi otomatis file musik duplikat/salah unggah dan pemutaran lintas sesi.
+- **RSVP & Buku Tamu Doa Restu Real-Time**:
+  - Konfirmasi kehadiran (*Hadir / Masih Ragu / Tidak Hadir*), kuota jumlah hadir (*Pax*), serta pengiriman ucapan doa dan balasan resmi mempelai secara langsung ke Supabase.
 
-- **Tampilan Admin / Pengantin & Keluarga (`/?mode=admin` atau `/admin`)**:
-  - **Readiness Tracker (Executive Dashboard)**: Persentase kesiapan pernikahan secara keseluruhan, countdown ganda (*Biston 18 Des & Pemberkatan 19 Des 2026*), progres per domain (*Polri, Gereja, Kependudukan, Kesehatan & Dokumen, Vendor, Acara, Setelah Menikah*), ringkasan budget, dan statistik RSVP tamu.
-  - **Checklist Kesiapan Bertahap**: Filter berdasarkan Fase Timeline (*H-6 Bulan, H-3 Bulan, H-1 Bulan, H-7, Hari-H, Setelah Menikah*), Kategori Domain, Status (*Belum / Proses / Selesai*), dan PIC (*Saya / Calon / Bersama / Keluarga / WO*).
-  - **Budget & Vendor Tracker**: Pencatatan estimasi biaya vs realisasi kontrak, pembayaran DP/Cicilan/Lunas, serta sisa tagihan vendor di Semarang.
-  - **Manajemen Tamu & Generator Undangan WA 1-Klik**: Mendukung skema 19 kolom `DB Wedding` (termasuk kode undangan `INV-0001`, prioritas `P1 - VIP`, format `Cetak Tebal / Digital WA`) dan otomatis men-generate link undangan bernama beserta template pesan WhatsApp khusus untuk **Pejabat Tinggi / VIP Polri** maupun **Keluarga & Sahabat**.
-  - **Pengaturan Konten Undangan & Sinkronisasi Cloud**: Edit nama mempelai, jadwal, lokasi, dan rekening langsung dari dashboard + tombol **1-Klik Sinkronisasi Google Sheets (`1aajOKFxFktd56tkE--34gDWcoCWDDF_rOK8Q8_JpnlU`)** serta **Export/Import Backup JSON & CSV Excel**.
+---
+
+### 2. Dashboard Admin, Mempelai & Panitia (`/?mode=admin`)
+- **Tracker Kesiapan (Executive Dashboard)**:
+  - Persentase kesiapan pernikahan, hitung mundur menuju Hari-H, progres per domain (*Polri, Gereja, Kependudukan, Kesehatan & Dokumen, Vendor, Acara, Setelah Menikah*), ringkasan anggaran, dan statistik kehadiran tamu.
+- **Checklist Kesiapan Bertahap**:
+  - Manajemen tugas berdasarkan Fase Timeline (*H-6 Bulan s/d Setelah Menikah*), Kategori Domain, Status, dan Penanggung Jawab (PIC).
+- **Manajemen Moneter, Vendor & Amplop Digital (Khusus Akun Utama)**:
+  - Pencatatan estimasi vs realisasi kontrak vendor, status pembayaran (*DP, Cicilan, Lunas*), pengelolaan rekening bank amplop digital, serta unggah gambar **QRIS Wedding Gift**.
+- **Manajemen Tamu & Generator WhatsApp 1-Klik**:
+  - Dukungan penuh kode undangan (`INV-0001`), prioritas VIP, filter grup keluarga, serta pengiriman pesan WhatsApp otomatis dengan link undangan personal.
+- **Studio Foto Ultra-HD (Maks 10 MB) & Zero-Trace Delete**:
+  - Unggah foto profil mempelai, sampul, kisah cinta, galeri, dan QRIS hingga **10 MB per foto** dengan fitur *Interactive Crop & Zoom*.
+  - Setiap penghapusan atau pergantian foto/musik langsung menghapus file fisik lama di Supabase Storage (**Zero-Trace Hard Delete**) agar kuota **500 MB Supabase** tetap awet dan bebas sampah.
+
+---
+
+### 3. Modul Khusus Superadmin & Multi-Client Commercial System (SaaS)
+Dirancang agar **1 Dashboard** dapat dikomersialkan untuk mengelola banyak klien sekaligus oleh Superadmin:
+- **Grouping User Default per Klien (`ClientGroupItem`)**:
+  - Setiap klien komersial memiliki grup tersendiri dengan **4 Akun User Default otomatis** (`<kode>_pria`, `<kode>_wanita`, `<kode>_kel_pria`, `<kode>_kel_wanita`) serta akun **Panitia / WO** masing-masing.
+- **Monitor Kapasitas DB & Supabase Storage (Kuota 500 MB)**:
+  - Pemantauan *real-time* pemakaian MB pada folder `wedding-media/photos`, `wedding-media/music`, dan estimasi ukuran 8 tabel PostgreSQL.
+  - Dilengkapi tombol **1-Klik Zero-Trace Garbage Collector** untuk memindai dan membersihkan *orphaned files* di Supabase Storage.
+- **Moderasi View Undangan Publik Real-Time**:
+  - Kendali instan mode tayangan undangan publik:
+    - `🟢 LIVE Publik`: Terbuka normal untuk seluruh tamu undangan.
+    - `🔐 Khusus Kode VIP`: Mewajibkan verifikasi Kode Undangan (`INV-xxxx`) untuk membuka sampul undangan.
+    - `🛠️ Mode Maintenance`: Menampilkan layar pemeliharaan khusus dan mengunci undangan sementara.
+  - Saklar cepat untuk mengunci pengiriman RSVP baru serta mengatur visibilitas tiap seksi undangan.
 
 ---
 
 ## 🔐 Keamanan Otentikasi & Role-Based Access Control (RBAC)
-- Seluruh kredensial akun dan password dienkripsi menggunakan **One-Way Cryptographic Hash (`scrypt`)** dan diverifikasi di sisi server (`/api/auth` & `/api/wedding`).
-- Tidak ada informasi akun maupun password sensitif yang ditampilkan pada antarmuka publik/login maupun disimpan secara *plaintext* di repositori.
-- Mendukung pemisahan hak akses antara **User Default (Mempelai & Keluarga Inti)** serta **Akun Panitia / WO** (di mana akun Panitia dibatasi secara ketat dari mengakses modul *Budgeting & Revisi Anggaran*).
+- Seluruh password akun dienkripsi menggunakan **One-Way Cryptographic Hash (`scrypt`)** dan diverifikasi di sisi server (`/api/auth`).
+- Pemisahan hak akses tegas antara:
+  - **Superadmin**: Kendali penuh atas modul Superadmin, kapasitas DB, moderasi undangan, serta pembuatan/penghapusan Grup Client komersial.
+  - **User Default (4 Akun Inti per Klien)**: Akses penuh ke kesiapan pernikahan, moneter/anggaran, daftar tamu, dan pengaturan undangan.
+  - **Akun Panitia / WO**: Akses operasional checklist dan tamu, **tanpa** akses ke modul Moneter/Budgeting maupun Superadmin.
 
 ---
 
 ## 🚀 Menjalankan Secara Lokal
 
 ```bash
+# 1. Instal dependensi
 npm install
-npm run dev
-```
 
-Verifikasi TypeScript (Zero Error Check):
-```bash
+# 2. Jalankan server pengembangan (http://localhost:3000)
+npm run dev
+
+# 3. Verifikasi TypeScript (Zero Error Check)
 npx tsc --noEmit
 ```
+
+---
+
+## 👨‍💻 Credit & Contact Us
+
+**My Wedding Manager by omeko11 © 2026**  
+All-in-One Enterprise Wedding Readiness Tracker & Digital Invitation Platform.
+
+- **Developer / Architect**: **Eko Agung Krisdianto (`omeko11`)**
+- **Call Center & Commercial Inquiry**: [Hubungi Layanan Klien & Komersial](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+- **Official LinkedIn Profile**: [www.linkedin.com/in/eko-agung-krisdianto-408955130](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)

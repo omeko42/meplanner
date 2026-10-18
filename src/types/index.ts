@@ -340,8 +340,29 @@ export interface WeddingSettings {
   musicVolume?: number; // 0 to 100 (default 75)
   musicAutoplay?: boolean; // default true
 
+  // Superadmin & Multi-Client SaaS Commercial Settings
+  clientGroups?: ClientGroupItem[];
+  activeClientId?: string;
+  invitationModerationMode?: 'LIVE' | 'MAINTENANCE' | 'VIP_CODE_ONLY';
+  invitationMaintenanceMessage?: string;
+  disableRsvpSubmission?: boolean;
+  storageQuotaLimitMb?: number; // default 500 MB
+  showFooterCredit?: boolean; // default true
+
   updatedAt: string;
   updatedBy: string;
+}
+
+export interface ClientGroupItem {
+  id: string;
+  clientCode: string;
+  clientName: string;
+  coupleLabel: string;
+  packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL_VIP';
+  status: 'ACTIVE' | 'PREVIEW' | 'SUSPENDED';
+  eventDate?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export interface MusicTrackItem {
@@ -368,6 +389,8 @@ export interface AdminUser {
   jabatan: string;
   email: string;
   isDefaultUser?: boolean;
+  clientId?: string;
+  clientName?: string;
   password?: string;
   passwordHash?: string;
 }

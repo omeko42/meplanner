@@ -696,6 +696,149 @@ export async function cleanupOrphanedStorageMedia(
   }
 }
 
+export interface SupabaseStorageFileEntry {
+  folder: 'photos' | 'music';
+  name: string;
+  objectPath: string;
+  sizeBytes: number;
+  mimeType: string;
+  publicUrl: string;
+  isReferenced: boolean;
+}
+
+export interface SupabaseStorageCapacityReport {
+  photoCount: number;
+  photoBytes: number;
+  musicCount: number;
+  musicBytes: number;
+  totalStorageBytes: number;
+  orphanCount: number;
+  orphanBytes: number;
+  files: SupabaseStorageFileEntry[];
+  fetchedAt: string;
+}
+
+export async function fetchSupabaseStorageCapacity(
+  settings: WeddingSettings
+): Promise<SupabaseStorageCapacityReport> {
+  const marker = '/storage/v1/object/public/wedding-media/';
+  const activeObjectPaths = new Set<string>();
+  const registerUrl = (u?: string) => {
+    if (!u || typeof u !== 'string') return;
+    const idx = u.indexOf(marker);
+    if (idx === -1) return;
+    const p = u.slice(idx + marker.length).split('?')[0];
+    if (p) activeObjectPaths.add(p);
+  };
+
+  registerUrl(settings.groomPhotoUrl);
+  registerUrl(settings.bridePhotoUrl);
+  registerUrl(settings.coverBgUrl);
+  registerUrl(settings.heroPrewedUrl);
+  registerUrl(settings.pageBgUrl);
+  registerUrl(settings.qrisImageUrl);
+
+  if (settings.originalPhotos) {
+    Object.values(settings.originalPhotos).forEach((u) => registerUrl(u));
+  }
+  if (Array.isArray(settings.galleryPhotos)) {
+    settings.galleryPhotos.forEach((gp) => {
+      registerUrl(gp.imageUrl);
+      registerUrl(gp.originalImageUrl);
+    });
+  }
+  if (Array.isArray(settings.musicPlaylist)) {
+    settings.musicPlaylist.forEach((m) => registerUrl(m.url));
+  }
+
+  let photoCount = 0;
+  let photoBytes = 0;
+  let musicCount = 0;
+  let musicBytes = 0;
+  let orphanCount = 0;
+  let orphanBytes = 0;
+  const files: SupabaseStorageFileEntry[] = [];
+
+  for (const folder of ['photos', 'music'] as const) {
+    try {
+      const listRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prefix: folder,
+            limit: 300,
+            offset: 0,
+          }),
+        }
+      );
+      if (!listRes.ok) continue;
+      const items = (await listRes.json()) as Array<{
+        name: string;
+        id?: string | null;
+        metadata?: {
+          size?: number;
+          mimetype?: string;
+        };
+      }>;
+      if (!Array.isArray(items)) continue;
+
+      for (const item of items) {
+        if (!item.name || item.name === '.emptyFolderPlaceholder') continue;
+        const objectPath = `${folder}/${item.name}`;
+        const sizeBytes = Number(item.metadata?.size || 0);
+        const mimeType =
+          item.metadata?.mimetype ||
+          (folder === 'photos' ? 'image/webp' : 'audio/mpeg');
+        const isReferenced = activeObjectPaths.has(objectPath);
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+
+        if (folder === 'photos') {
+          photoCount += 1;
+          photoBytes += sizeBytes;
+        } else {
+          musicCount += 1;
+          musicBytes += sizeBytes;
+        }
+
+        if (!isReferenced) {
+          orphanCount += 1;
+          orphanBytes += sizeBytes;
+        }
+
+        files.push({
+          folder,
+          name: item.name,
+          objectPath,
+          sizeBytes,
+          mimeType,
+          publicUrl,
+          isReferenced,
+        });
+      }
+    } catch {
+      // Ignore folder fetch error
+    }
+  }
+
+  return {
+    photoCount,
+    photoBytes,
+    musicCount,
+    musicBytes,
+    totalStorageBytes: photoBytes + musicBytes,
+    orphanCount,
+    orphanBytes,
+    files,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
 function normalizeCloudState(
   parsed: Partial<WeddingDatabaseSchema>,
   fallbackTimestamp?: string

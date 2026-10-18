@@ -150,6 +150,8 @@ function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSc
       jabatan: u.jabatan,
       email: u.email,
       isDefaultUser: u.isDefaultUser,
+      clientId: u.clientId || 'client-utama',
+      clientName: u.clientName || 'Client Utama • Eko & Selo',
       passwordHash: u.passwordHash,
     })),
   };
@@ -217,6 +219,8 @@ export const serverStore = {
       jabatan: partial.jabatan || 'Panitia',
       email: partial.email || '',
       isDefaultUser: Boolean(partial.isDefaultUser),
+      clientId: partial.clientId || 'client-utama',
+      clientName: partial.clientName || 'Client Utama • Eko & Selo',
       passwordHash: partial.passwordHash,
     };
     store.adminUsers.push(fallback);
@@ -229,6 +233,8 @@ export const serverStore = {
     username: string;
     nama: string;
     jabatan?: string;
+    clientId?: string;
+    clientName?: string;
     passwordHash?: string;
   }): AdminUser => {
     const store = getStore();
@@ -246,6 +252,8 @@ export const serverStore = {
         username: cleanUsername,
         nama: input.nama.trim(),
         jabatan: input.jabatan || prev.jabatan || 'Panitia Operasional',
+        clientId: input.clientId || prev.clientId || 'client-utama',
+        clientName: input.clientName || prev.clientName || 'Client Utama • Eko & Selo',
         ...(input.passwordHash ? { passwordHash: input.passwordHash, password: '' } : {}),
       };
       store.adminUsers[existingIdx] = updated;
@@ -261,6 +269,8 @@ export const serverStore = {
       jabatan: input.jabatan || 'Panitia / WO (Akses Non-Budgeting)',
       email: `${cleanUsername}@wedding.local`,
       isDefaultUser: false,
+      clientId: input.clientId || 'client-utama',
+      clientName: input.clientName || 'Client Utama • Eko & Selo',
       passwordHash: input.passwordHash,
     };
     store.adminUsers.push(newPanitia);
@@ -272,9 +282,130 @@ export const serverStore = {
     const store = getStore();
     const target = store.adminUsers.find((u) => u.id === id);
     if (!target || target.isDefaultUser) {
-      return false; // Cannot delete the 4 default users
+      return false; // Cannot delete default users via panitia delete
     }
     store.adminUsers = store.adminUsers.filter((u) => u.id !== id);
+    persistStore(store);
+    return true;
+  },
+
+  createClientDefaultUsersGroup: (input: {
+    clientId: string;
+    clientCode: string;
+    clientName: string;
+    coupleLabel: string;
+    packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL_VIP';
+    eventDate?: string;
+    notes?: string;
+    passwordHash: string;
+  }): AdminUser[] => {
+    const store = getStore();
+    const prefix = input.clientCode
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/^_+|_+$/g, '') || `client_${Date.now().toString(36).slice(-4)}`;
+
+    const templates: Array<{
+      suffix: string;
+      nama: string;
+      role: AdminUser['role'];
+      jabatan: string;
+    }> = [
+      {
+        suffix: 'pria',
+        nama: `Mempelai Pria (${input.coupleLabel})`,
+        role: 'MEMPELAI_PRIA',
+        jabatan: `User Default • Mempelai Pria (${input.clientCode})`,
+      },
+      {
+        suffix: 'wanita',
+        nama: `Mempelai Wanita (${input.coupleLabel})`,
+        role: 'MEMPELAI_WANITA',
+        jabatan: `User Default • Mempelai Wanita (${input.clientCode})`,
+      },
+      {
+        suffix: 'kel_pria',
+        nama: `Keluarga Pria (${input.coupleLabel})`,
+        role: 'KELUARGA_PRIA',
+        jabatan: `User Default • Keluarga Pria (${input.clientCode})`,
+      },
+      {
+        suffix: 'kel_wanita',
+        nama: `Keluarga Wanita (${input.coupleLabel})`,
+        role: 'KELUARGA_WANITA',
+        jabatan: `User Default • Keluarga Wanita (${input.clientCode})`,
+      },
+    ];
+
+    const createdUsers: AdminUser[] = [];
+    for (const tpl of templates) {
+      const candidateUsername = `${prefix}_${tpl.suffix}`;
+      const existing = store.adminUsers.find(
+        (u) => u.username.toLowerCase() === candidateUsername
+      );
+      if (existing) {
+        createdUsers.push(existing);
+        continue;
+      }
+      const newUser: AdminUser = {
+        id: `usr_${prefix}_${tpl.suffix}_${Date.now().toString(36).slice(-4)}`,
+        username: candidateUsername,
+        nama: tpl.nama,
+        role: tpl.role,
+        jabatan: tpl.jabatan,
+        email: `${candidateUsername}@wedding.local`,
+        isDefaultUser: true,
+        clientId: input.clientId,
+        clientName: input.clientName,
+        passwordHash: input.passwordHash,
+      };
+      store.adminUsers.push(newUser);
+      createdUsers.push(newUser);
+    }
+
+    const existingGroups = Array.isArray(store.settings.clientGroups)
+      ? [...store.settings.clientGroups]
+      : [];
+    if (!existingGroups.some((g) => g.id === input.clientId)) {
+      existingGroups.push({
+        id: input.clientId,
+        clientCode: input.clientCode.toUpperCase(),
+        clientName: input.clientName,
+        coupleLabel: input.coupleLabel,
+        packageTier: input.packageTier,
+        status: 'ACTIVE',
+        eventDate: input.eventDate || '2026-12-19',
+        notes: input.notes || '',
+        createdAt: new Date().toISOString(),
+      });
+      store.settings = {
+        ...store.settings,
+        clientGroups: existingGroups,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    persistStore(store);
+    return createdUsers;
+  },
+
+  deleteClientGroupAndUsers: (clientId: string): boolean => {
+    if (!clientId || clientId === 'client-utama') return false;
+    const store = getStore();
+    store.adminUsers = store.adminUsers.filter(
+      (u) => (u.clientId || 'client-utama') !== clientId
+    );
+    if (Array.isArray(store.settings.clientGroups)) {
+      store.settings = {
+        ...store.settings,
+        clientGroups: store.settings.clientGroups.filter((g) => g.id !== clientId),
+        activeClientId:
+          store.settings.activeClientId === clientId
+            ? 'client-utama'
+            : store.settings.activeClientId,
+        updatedAt: new Date().toISOString(),
+      };
+    }
     persistStore(store);
     return true;
   },
