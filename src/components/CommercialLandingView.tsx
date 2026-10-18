@@ -135,7 +135,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       : 'BCA / Mandiri / BNI / BRI — Transfer according to package price or click WA for active bank account');
 
   const commercialQrisImageUrl =
-    primarySettings.commercialQrisImageUrl?.trim() || '';
+    primarySettings.commercialQrisImageUrl?.trim() || '/paypal-qr-mwm.png';
 
   const creditCardUrl =
     primarySettings.commercialCreditCardUrl?.trim() ||
@@ -1393,20 +1393,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       : 'Fast & secure global checkout via PayPal International ($10 / $25 / $49 USD).'}
                   </p>
                 </div>
-                <a
-                  href={paypalHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setSelectedPaymentMethod('PAYPAL')}
-                  className="w-full py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs"
-                >
-                  <span>
-                    {lang === 'ID'
-                      ? 'Bayar via PayPal International'
-                      : 'Pay via PayPal International'}
-                  </span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={paypalHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setSelectedPaymentMethod('PAYPAL')}
+                    className="flex-1 py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <span>
+                      {lang === 'ID'
+                        ? 'Bayar via PayPal'
+                        : 'Pay via PayPal'}
+                    </span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaymentMethod('PAYPAL');
+                      setShowCommercialQrisModal((prev) => !prev);
+                    }}
+                    className="py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>
+                      {lang === 'ID' ? 'Scan QR PayPal' : 'Scan PayPal QR'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* 5. Crypto / USDT Wallet (TRC20 / BEP20 / ERC20 — Min. 10 USDT) */}

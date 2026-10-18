@@ -207,7 +207,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   contactBusinessEmail: 'e98.bisnis@gmail.com',
   defaultLanguage: 'ID',
   commercialBankTransferInfo: 'BCA / Mandiri / BRI / BNI (Konfirmasi via WA / Email)',
-  commercialQrisImageUrl: '',
+  commercialQrisImageUrl: '/paypal-qr-mwm.png',
   commercialCreditCardUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
   commercialPaypalUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
   commercialCryptoWalletAddress: '',

@@ -11194,23 +11194,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </label>
                         <div className="flex flex-col sm:flex-row items-center gap-3">
                           <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[#D4AF37]/60 bg-[#FAF8F5] flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
-                            {(
-                              settingsForm.commercialQrisImageUrl ??
-                              state.settings.commercialQrisImageUrl
-                            )?.trim() ? (
-                              <img
-                                src={
+                            <img
+                              src={
+                                (
                                   settingsForm.commercialQrisImageUrl ??
                                   state.settings.commercialQrisImageUrl
-                                }
-                                alt="Preview QRIS Komersial"
-                                className="w-full h-full object-contain rounded-lg"
-                              />
-                            ) : (
-                              <span className="text-[10px] font-bold text-stone-400 text-center">
-                                Belum Ada QRIS
-                              </span>
-                            )}
+                                )?.trim() || '/paypal-qr-mwm.png'
+                              }
+                              alt="Preview QRIS Komersial"
+                              className="w-full h-full object-contain rounded-lg"
+                            />
                           </div>
                           <div className="flex-1 w-full space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
