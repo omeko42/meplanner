@@ -198,6 +198,9 @@ interface AdminDashboardViewProps {
     nextState?: WeddingDatabaseSchema,
     nextUser?: AdminUser
   ) => void;
+  activeWorkspaceClientId?: string;
+  onSwitchWorkspaceClient?: (clientId: string) => void;
+  onOpenLandingPage?: () => void;
 }
 
 const TIMELINE_PHASES: TimelinePhase[] = [
@@ -271,6 +274,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onImportBackup,
   onResetDefault,
   onSyncStateAndUser,
+  activeWorkspaceClientId = 'client-utama',
+  onSwitchWorkspaceClient,
+  onOpenLandingPage,
 }) => {
   const isPanitia = adminUser.role === 'PANITIA';
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
@@ -2723,10 +2729,56 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         newGroupItem,
       ];
 
+      const coupleParts = coupleLabel.split('&').map((p) => p.trim());
+      const groomNamePart = coupleParts[0] || `Mempelai Pria (${rawCode.toUpperCase()})`;
+      const brideNamePart = coupleParts[1] || `Mempelai Wanita (${rawCode.toUpperCase()})`;
+
+      const existingWorkspaces = {
+        ...(state.settings.clientWorkspaces || {}),
+        ...(settingsForm.clientWorkspaces || {}),
+      };
+
+      if (!existingWorkspaces[clientId]) {
+        existingWorkspaces[clientId] = {
+          clientId,
+          settings: {
+            ...state.settings,
+            siteTitle: 'My Wedding Manager',
+            activeClientId: clientId,
+            groomFullName: groomNamePart,
+            groomNickname: groomNamePart.split(' ')[0] || groomNamePart,
+            groomRankAndTitle: 'Putra Pertama',
+            groomUnit: '',
+            groomParents: `Keluarga Besar Bapak & Ibu (${groomNamePart})`,
+            brideFullName: brideNamePart,
+            brideNickname: brideNamePart.split(' ')[0] || brideNamePart,
+            brideTitle: 'Putri Pertama',
+            brideParents: `Keluarga Besar Bapak & Ibu (${brideNamePart})`,
+            subtitle: `Pernikahan ${groomNamePart} & ${brideNamePart} • ${
+              newClientForm.eventDate || '2026-12-19'
+            }`,
+            updatedAt: new Date().toISOString(),
+            updatedBy: adminUser.username,
+          },
+          tasks: state.tasks.map((t, idx) => ({
+            ...t,
+            id: `tsk_${rawCode}_${idx + 1}`,
+            done: false,
+            status: 'BELUM',
+            doneAt: '',
+          })),
+          guests: [],
+          wishes: [],
+          budgetItems: [],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
       const nextSettings: WeddingSettings = {
         ...state.settings,
         ...settingsForm,
         clientGroups: mergedGroups,
+        clientWorkspaces: existingWorkspaces,
         updatedBy: adminUser.username,
       };
 
@@ -3768,6 +3820,46 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span className="hidden sm:inline">Restore</span>
                   </button>
                 </div>
+              )}
+
+              {(!adminUser.clientId || adminUser.clientId === 'client-utama') &&
+                onSwitchWorkspaceClient &&
+                effectiveClientGroups.length > 0 && (
+                  <select
+                    value={activeWorkspaceClientId}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      onSwitchWorkspaceClient(nextId);
+                      const grp = effectiveClientGroups.find(
+                        (g) => g.id === nextId
+                      );
+                      showToast(
+                        `✓ Beralih ke Workspace Klien: ${
+                          grp?.coupleLabel || grp?.clientName || nextId
+                        }`
+                      );
+                    }}
+                    title="Pilih Workspace Klien Aktif (Superadmin Multi-Client Switcher)"
+                    className="max-w-[125px] sm:max-w-[180px] px-2.5 py-1.5 rounded-xl bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-bold truncate cursor-pointer focus:outline-none"
+                  >
+                    {effectiveClientGroups.map((cg) => (
+                      <option key={cg.id} value={cg.id}>
+                        💍 {cg.coupleLabel || cg.clientName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+              {onOpenLandingPage && (
+                <button
+                  type="button"
+                  onClick={onOpenLandingPage}
+                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-all"
+                  title="Buka Halaman Depan Komersial My Wedding Manager (MWM)"
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>Katalog MWM</span>
+                </button>
               )}
 
               <button
@@ -9660,18 +9752,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       </div>
 
-                      <div className="px-4 py-2.5 bg-white border-t border-stone-200/70 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedClientGroupFilter(cg.id);
-                            setActiveTab('settings');
-                            setSettingsMenuTab('keamanan');
-                          }}
-                          className="text-[11px] font-bold text-[#8B6914] hover:underline"
-                        >
-                          Lihat Semua Akun Klien Ini &rarr;
-                        </button>
+                      <div className="px-4 py-2.5 bg-white border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {onSwitchWorkspaceClient && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onSwitchWorkspaceClient(cg.id);
+                                showToast(
+                                  `✓ Beralih ke Workspace Klien: ${
+                                    cg.coupleLabel || cg.clientName
+                                  }`
+                                );
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all ${
+                                activeWorkspaceClientId === cg.id
+                                  ? 'bg-emerald-600 text-white shadow-2xs'
+                                  : 'bg-stone-900 hover:bg-stone-800 text-[#D4AF37]'
+                              }`}
+                            >
+                              {activeWorkspaceClientId === cg.id
+                                ? '✓ Workspace Sedang Aktif'
+                                : 'Buka Workspace Klien Ini'}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedClientGroupFilter(cg.id);
+                              setActiveTab('settings');
+                              setSettingsMenuTab('keamanan');
+                            }}
+                            className="text-[11px] font-bold text-[#8B6914] hover:underline"
+                          >
+                            Kelola Akun &rarr;
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {

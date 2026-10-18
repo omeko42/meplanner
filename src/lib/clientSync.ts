@@ -355,12 +355,20 @@ export function formatRupiah(amount: number): string {
 
 export function buildGuestInvitationUrl(
   guest: Pick<WeddingGuest, 'guestName' | 'invitationCode'>,
-  originUrl?: string
+  originUrl?: string,
+  clientSlug?: string
 ): string {
   const base =
     originUrl ||
     (typeof window !== 'undefined' ? window.location.origin : 'https://my-wedding-manager.vercel.app');
   const params = new URLSearchParams();
+  if (
+    clientSlug &&
+    clientSlug !== 'client-utama' &&
+    clientSlug.toLowerCase() !== 'utama'
+  ) {
+    params.set('client', clientSlug.replace(/^client-/i, '').toLowerCase());
+  }
   params.set('to', guest.guestName);
   if (guest.invitationCode) {
     params.set('code', guest.invitationCode);
@@ -437,7 +445,11 @@ export function generateWhatsAppMessage(
   settings: WeddingSettings,
   originUrl?: string
 ): { inviteUrl: string; messageText: string; waHref: string; isVipPolri: boolean } {
-  const inviteUrl = buildGuestInvitationUrl(guest, originUrl);
+  const inviteUrl = buildGuestInvitationUrl(
+    guest,
+    originUrl,
+    settings.activeClientId
+  );
   const isVipPolri =
     guest.guestType === 'Pejabat/VIP' ||
     guest.priority === 'P1 - VIP' ||

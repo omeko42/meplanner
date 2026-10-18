@@ -343,6 +343,7 @@ export interface WeddingSettings {
   // Superadmin & Multi-Client SaaS Commercial Settings
   clientGroups?: ClientGroupItem[];
   activeClientId?: string;
+  clientWorkspaces?: Record<string, ClientWorkspaceData>;
   invitationModerationMode?: 'LIVE' | 'MAINTENANCE' | 'VIP_CODE_ONLY';
   invitationMaintenanceMessage?: string;
   disableRsvpSubmission?: boolean;
@@ -351,6 +352,16 @@ export interface WeddingSettings {
 
   updatedAt: string;
   updatedBy: string;
+}
+
+export interface ClientWorkspaceData {
+  clientId: string;
+  settings: WeddingSettings;
+  tasks: WeddingTask[];
+  guests: WeddingGuest[];
+  wishes: GuestWish[];
+  budgetItems: BudgetVendorItem[];
+  updatedAt: string;
 }
 
 export interface ClientGroupItem {

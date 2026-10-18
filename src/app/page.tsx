@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 import { AdminDashboardView } from '@/components/AdminDashboardView';
 import { AdminLoginModal } from '@/components/AdminLoginModal';
+import { CommercialLandingView } from '@/components/CommercialLandingView';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -14,6 +15,8 @@ import {
   AdminUser,
   RsvpStatus,
   GuestWish,
+  ClientGroupItem,
+  ClientWorkspaceData,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -92,8 +95,160 @@ function stripLargeAudioForServerPayload(payload: unknown): unknown {
   }
 }
 
+function buildEffectiveClientGroups(state: WeddingDatabaseSchema): ClientGroupItem[] {
+  const baseGroup: ClientGroupItem = {
+    id: 'client-utama',
+    clientCode: 'UTAMA',
+    clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
+      state.settings.brideNickname || 'Selo'
+    }`,
+    coupleLabel: `${state.settings.groomNickname || 'Agung'} & ${
+      state.settings.brideNickname || 'Selo'
+    }`,
+    packageTier: 'ROYAL_VIP',
+    status: 'ACTIVE',
+    eventDate: '2026-12-19',
+    notes: 'Grup Klien Utama (Mempelai & Keluarga Inti)',
+    createdAt: '2026-10-18T00:00:00.000Z',
+  };
+  const configured = Array.isArray(state.settings.clientGroups)
+    ? state.settings.clientGroups
+    : [];
+  const map = new Map<string, ClientGroupItem>();
+  map.set(baseGroup.id, baseGroup);
+  for (const g of configured) {
+    if (g && g.id) {
+      map.set(g.id, g.id === 'client-utama' ? { ...baseGroup, ...g } : g);
+    }
+  }
+  for (const u of state.adminUsers || []) {
+    const cid = u.clientId || 'client-utama';
+    if (!map.has(cid)) {
+      map.set(cid, {
+        id: cid,
+        clientCode: cid.replace(/^client-/i, '').toUpperCase(),
+        clientName: u.clientName || `Client ${cid}`,
+        coupleLabel: u.clientName || cid,
+        packageTier: 'EXCLUSIVE',
+        status: 'ACTIVE',
+        createdAt: '2026-10-18T00:00:00.000Z',
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function resolveClientIdFromParam(
+  rawParam: string,
+  groups: ClientGroupItem[]
+): string {
+  const clean = rawParam.trim().toLowerCase();
+  if (
+    !clean ||
+    clean === 'utama' ||
+    clean === 'client-utama' ||
+    clean === 'agung_selo' ||
+    clean === 'eko_selo'
+  ) {
+    return 'client-utama';
+  }
+  const exactMatch = groups.find(
+    (g) =>
+      g.id.toLowerCase() === clean ||
+      g.clientCode.toLowerCase() === clean ||
+      g.id.toLowerCase() === `client-${clean}`
+  );
+  if (exactMatch) return exactMatch.id;
+  return clean.startsWith('client-') ? clean : `client-${clean}`;
+}
+
+function getOrCreateWorkspaceForClient(
+  rootState: WeddingDatabaseSchema,
+  clientId: string,
+  groups: ClientGroupItem[]
+): ClientWorkspaceData {
+  const existing = rootState.settings.clientWorkspaces?.[clientId];
+  if (existing) {
+    return existing;
+  }
+  const grp = groups.find((g) => g.id === clientId);
+  const coupleLabel = grp?.coupleLabel || clientId.replace(/^client-/i, '');
+  const parts = coupleLabel.split('&').map((p) => p.trim());
+  const groomPart = parts[0] || 'Mempelai Pria';
+  const bridePart = parts[1] || 'Mempelai Wanita';
+  const rawCode = (grp?.clientCode || clientId.replace(/^client-/i, '')).toLowerCase();
+
+  const baseSettings: WeddingSettings = {
+    ...INITIAL_SETTINGS,
+    siteTitle: 'My Wedding Manager',
+    activeClientId: clientId,
+    groomFullName: groomPart,
+    groomNickname: groomPart.split(' ')[0] || groomPart,
+    groomRankAndTitle: 'Putra Pertama',
+    groomUnit: '',
+    groomParents: `Keluarga Besar Bapak & Ibu (${groomPart})`,
+    brideFullName: bridePart,
+    brideNickname: bridePart.split(' ')[0] || bridePart,
+    brideTitle: 'Putri Pertama',
+    brideParents: `Keluarga Besar Bapak & Ibu (${bridePart})`,
+    subtitle: `Pernikahan ${groomPart} & ${bridePart} • ${
+      grp?.eventDate || '2026-12-19'
+    }`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  };
+
+  return {
+    clientId,
+    settings: baseSettings,
+    tasks: INITIAL_TASKS.map((t, idx) => ({
+      ...t,
+      id: `tsk_${rawCode}_${idx + 1}`,
+      done: false,
+      status: 'BELUM',
+      doneAt: '',
+    })),
+    guests: [],
+    wishes: [],
+    budgetItems: [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function projectStateForClient(
+  rootState: WeddingDatabaseSchema,
+  clientId: string,
+  groups: ClientGroupItem[]
+): WeddingDatabaseSchema {
+  if (!clientId || clientId === 'client-utama') {
+    return {
+      ...rootState,
+      settings: {
+        ...rootState.settings,
+        activeClientId: 'client-utama',
+      },
+    };
+  }
+  const ws = getOrCreateWorkspaceForClient(rootState, clientId, groups);
+  return {
+    ...rootState,
+    settings: {
+      ...ws.settings,
+      activeClientId: clientId,
+      clientGroups: rootState.settings.clientGroups,
+      clientWorkspaces: rootState.settings.clientWorkspaces,
+      storageQuotaLimitMb: rootState.settings.storageQuotaLimitMb,
+    },
+    tasks: ws.tasks || [],
+    guests: ws.guests || [],
+    wishes: ws.wishes || [],
+    budgetItems: ws.budgetItems || [],
+  };
+}
+
 function WeddingAppContent() {
   const searchParams = useSearchParams();
+  const urlClientParam = searchParams.get('client') || '';
   const urlGuestTo = searchParams.get('to') || '';
   const urlGuestCode = searchParams.get('code') || '';
   const urlMode = searchParams.get('mode') || '';
@@ -114,6 +269,51 @@ function WeddingAppContent() {
   const [previewOverrideGuest, setPreviewOverrideGuest] = useState<WeddingGuest | null>(
     null
   );
+
+  const clientGroups = useMemo(() => buildEffectiveClientGroups(state), [state]);
+
+  // Active workspace in Admin Dashboard (locked to user's clientId for non-utama clients)
+  const [selectedAdminWorkspaceId, setSelectedAdminWorkspaceId] =
+    useState<string>(() => {
+      const storedUser = getStoredAdminUser();
+      return storedUser?.clientId || 'client-utama';
+    });
+
+  const activeWorkspaceClientId = useMemo(() => {
+    if (
+      adminUser?.clientId &&
+      adminUser.clientId !== 'client-utama'
+    ) {
+      return adminUser.clientId;
+    }
+    return selectedAdminWorkspaceId || 'client-utama';
+  }, [adminUser, selectedAdminWorkspaceId]);
+
+  // Public view routing: null = show Commercial Landing Page (/); string = show PublicInvitationView for that clientId
+  const [publicSelectedClientId, setPublicSelectedClientId] = useState<
+    string | null
+  >(() => {
+    if (urlClientParam || urlGuestTo || urlGuestCode) {
+      return urlClientParam
+        ? resolveClientIdFromParam(urlClientParam, [])
+        : 'client-utama';
+    }
+    return null;
+  });
+
+  const [manualGuestLookup, setManualGuestLookup] = useState<{
+    to?: string;
+    code?: string;
+  }>({});
+
+  useEffect(() => {
+    if (urlClientParam || urlGuestTo || urlGuestCode) {
+      const resolved = urlClientParam
+        ? resolveClientIdFromParam(urlClientParam, clientGroups)
+        : 'client-utama';
+      setPublicSelectedClientId(resolved);
+    }
+  }, [urlClientParam, urlGuestTo, urlGuestCode, clientGroups]);
 
   const changeViewMode = useCallback((mode: 'PUBLIC' | 'ADMIN') => {
     setViewMode(mode);
@@ -141,6 +341,9 @@ function WeddingAppContent() {
         if (authData.authenticated && authData.user) {
           setAdminUser(authData.user);
           saveStoredAdminUser(authData.user);
+          if (authData.user.clientId) {
+            setSelectedAdminWorkspaceId(authData.user.clientId);
+          }
           if (urlMode === 'admin' || getStoredViewMode() === 'ADMIN') {
             changeViewMode('ADMIN');
           }
@@ -162,7 +365,6 @@ function WeddingAppContent() {
       const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
       const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
       const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
-      const localTime = Math.max(lsTime, idbTime);
 
       if (isMounted && bestLocal) {
         setState(bestLocal);
@@ -175,17 +377,14 @@ function WeddingAppContent() {
       const cloudState = cloudResult.state;
 
       if (cloudState) {
-        // Supabase Cloud is 100% the single source of truth
         const merged = mergePreservingLocalMedia(cloudState, bestLocal);
         setState(merged);
         saveClientState(merged, false);
       } else if (cloudResult.tableExists) {
-        // Table exists in Supabase but no 'main' row yet -> initialize Supabase with current clean state
         setState(bestLocal);
         saveClientState(bestLocal, false);
         void saveStateToSupabase(bestLocal);
       } else {
-        // Offline / table not created yet fallback
         setState(bestLocal);
       }
     })();
@@ -211,8 +410,6 @@ function WeddingAppContent() {
 
         const json = await res.json();
         if (json.success && json.data) {
-          // Only update client state from server response for public SUBMIT_RSVP;
-          // for all Admin actions, client state is already updated and synced directly to Supabase.
           if (action === 'SUBMIT_RSVP') {
             setState((prev) => {
               const merged = mergePreservingLocalMedia(
@@ -233,6 +430,63 @@ function WeddingAppContent() {
     []
   );
 
+  // Helper to apply state updates to the active client workspace (either 'client-utama' or secondary workspace)
+  const updateClientScopedState = useCallback(
+    (
+      targetClientId: string,
+      updater: (scoped: WeddingDatabaseSchema) => WeddingDatabaseSchema
+    ) => {
+      setState((prevRoot) => {
+        const groups = buildEffectiveClientGroups(prevRoot);
+        if (!targetClientId || targetClientId === 'client-utama') {
+          const updatedRoot = updater(prevRoot);
+          return saveClientState(updatedRoot, true);
+        }
+
+        const projected = projectStateForClient(
+          prevRoot,
+          targetClientId,
+          groups
+        );
+        const updatedProjected = updater(projected);
+
+        const nextWorkspace: ClientWorkspaceData = {
+          clientId: targetClientId,
+          settings: {
+            ...updatedProjected.settings,
+            activeClientId: targetClientId,
+          },
+          tasks: updatedProjected.tasks,
+          guests: updatedProjected.guests,
+          wishes: updatedProjected.wishes,
+          budgetItems: updatedProjected.budgetItems,
+          updatedAt: new Date().toISOString(),
+        };
+        // Avoid nested recursive clientWorkspaces inside a secondary workspace's settings
+        delete nextWorkspace.settings.clientWorkspaces;
+
+        const nextRoot: WeddingDatabaseSchema = {
+          ...prevRoot,
+          adminUsers: updatedProjected.adminUsers || prevRoot.adminUsers,
+          settings: {
+            ...prevRoot.settings,
+            clientGroups:
+              updatedProjected.settings.clientGroups ||
+              prevRoot.settings.clientGroups,
+            clientWorkspaces: {
+              ...(prevRoot.settings.clientWorkspaces || {}),
+              ...(updatedProjected.settings.clientWorkspaces || {}),
+              [targetClientId]: nextWorkspace,
+            },
+            updatedAt: new Date().toISOString(),
+          },
+        };
+        return saveClientState(nextRoot, true);
+      });
+    },
+    []
+  );
+
   const handleOpenAdminPortal = () => {
     if (adminUser) {
       changeViewMode('ADMIN');
@@ -244,6 +498,7 @@ function WeddingAppContent() {
   const handleLoginSuccess = (user: AdminUser) => {
     setAdminUser(user);
     saveStoredAdminUser(user);
+    setSelectedAdminWorkspaceId(user.clientId || 'client-utama');
     setIsLoginModalOpen(false);
     changeViewMode('ADMIN');
     appendAuditLog({
@@ -267,6 +522,16 @@ function WeddingAppContent() {
             Array.isArray(nextState.adminUsers) && nextState.adminUsers.length > 0
               ? nextState.adminUsers
               : prev.adminUsers,
+          settings: nextState.settings
+            ? {
+                ...prev.settings,
+                clientGroups:
+                  nextState.settings.clientGroups || prev.settings.clientGroups,
+                clientWorkspaces:
+                  nextState.settings.clientWorkspaces ||
+                  prev.settings.clientWorkspaces,
+              }
+            : prev.settings,
         };
         return saveClientState(merged, true);
       });
@@ -304,13 +569,62 @@ function WeddingAppContent() {
     if (guest) {
       setPreviewOverrideGuest(guest);
     }
+    setPublicSelectedClientId(activeWorkspaceClientId);
     changeViewMode('PUBLIC');
   };
 
-  // Optimistic Local-First + Direct Supabase Cloud CRUD Handlers
+  const handleOpenLandingPage = () => {
+    setPreviewOverrideGuest(null);
+    setManualGuestLookup({});
+    setPublicSelectedClientId(null);
+    changeViewMode('PUBLIC');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  const handleSelectClientInvitationFromLanding = (
+    clientId: string,
+    guestTo?: string,
+    guestCode?: string
+  ) => {
+    setPreviewOverrideGuest(null);
+    setManualGuestLookup({ to: guestTo, code: guestCode });
+    setPublicSelectedClientId(clientId);
+    changeViewMode('PUBLIC');
+    if (typeof window !== 'undefined') {
+      const grp = clientGroups.find((g) => g.id === clientId);
+      const slug =
+        clientId === 'client-utama'
+          ? 'agung_selo'
+          : (grp?.clientCode || clientId.replace(/^client-/i, '')).toLowerCase();
+      const params = new URLSearchParams();
+      params.set('client', slug);
+      if (guestTo) params.set('to', guestTo);
+      if (guestCode) params.set('code', guestCode);
+      window.history.pushState({}, '', `/?${params.toString()}`);
+    }
+  };
+
+  // Projected state for the active Admin Workspace
+  const activeAdminState = useMemo(
+    () => projectStateForClient(state, activeWorkspaceClientId, clientGroups),
+    [state, activeWorkspaceClientId, clientGroups]
+  );
+
+  // Projected state for the active Public Invitation
+  const activePublicClientId = publicSelectedClientId || 'client-utama';
+  const activePublicState = useMemo(
+    () => projectStateForClient(state, activePublicClientId, clientGroups),
+    [state, activePublicClientId, clientGroups]
+  );
+
+  // Optimistic Local-First + Direct Supabase Cloud CRUD Handlers (Workspace-Scoped)
   const handleUpsertTask = async (task: Partial<WeddingTask> & { title: string }) => {
-    const isEdit = Boolean(task.id && state.tasks.some((t) => t.id === task.id));
-    setState((prev) => {
+    const isEdit = Boolean(
+      task.id && activeAdminState.tasks.some((t) => t.id === task.id)
+    );
+    updateClientScopedState(activeWorkspaceClientId, (prev) => {
       const exists = task.id && prev.tasks.some((t) => t.id === task.id);
       const nextTasks = exists
         ? prev.tasks.map((t) =>
@@ -345,7 +659,7 @@ function WeddingAppContent() {
               updatedBy: adminUser?.username || 'admin',
             } as WeddingTask,
           ];
-      return saveClientState({ ...prev, tasks: nextTasks }, true);
+      return { ...prev, tasks: nextTasks };
     });
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -355,17 +669,17 @@ function WeddingAppContent() {
       summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} tugas checklist: "${task.title}"`,
       detail: `Kategori: ${task.category || 'Acara'} • Status: ${task.status || 'BELUM'}`,
     });
-    await mutateServer('UPSERT_TASK', task);
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('UPSERT_TASK', task);
+    }
   };
 
   const handleDeleteTask = async (id: string) => {
-    const target = state.tasks.find((t) => t.id === id);
-    setState((prev) =>
-      saveClientState(
-        { ...prev, tasks: prev.tasks.filter((t) => t.id !== id) },
-        true
-      )
-    );
+    const target = activeAdminState.tasks.find((t) => t.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((t) => t.id !== id),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'CHECKLIST',
@@ -373,14 +687,18 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: `Menghapus tugas checklist: "${target?.title || id}"`,
     });
-    await mutateServer('DELETE_TASK', { id });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('DELETE_TASK', { id });
+    }
   };
 
   const handleUpsertGuest = async (
     guest: Partial<WeddingGuest> & { guestName: string }
   ) => {
-    const isEdit = Boolean(guest.id && state.guests.some((g) => g.id === guest.id));
-    setState((prev) => {
+    const isEdit = Boolean(
+      guest.id && activeAdminState.guests.some((g) => g.id === guest.id)
+    );
+    updateClientScopedState(activeWorkspaceClientId, (prev) => {
       const exists = guest.id && prev.guests.some((g) => g.id === guest.id);
       const nextGuests = exists
         ? prev.guests.map((g) =>
@@ -412,7 +730,7 @@ function WeddingAppContent() {
               updatedBy: adminUser?.username || 'admin',
             } as WeddingGuest,
           ];
-      return saveClientState({ ...prev, guests: nextGuests }, true);
+      return { ...prev, guests: nextGuests };
     });
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -422,17 +740,17 @@ function WeddingAppContent() {
       summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} data tamu: "${guest.guestName}"`,
       detail: `Format: ${guest.invitationFormat || 'Cetak Tebal'} • RSVP: ${guest.rsvpStatus || 'Belum Konfirmasi'}`,
     });
-    await mutateServer('UPSERT_GUEST', guest);
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('UPSERT_GUEST', guest);
+    }
   };
 
   const handleDeleteGuest = async (id: string) => {
-    const target = state.guests.find((g) => g.id === id);
-    setState((prev) =>
-      saveClientState(
-        { ...prev, guests: prev.guests.filter((g) => g.id !== id) },
-        true
-      )
-    );
+    const target = activeAdminState.guests.find((g) => g.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      guests: prev.guests.filter((g) => g.id !== id),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'TAMU',
@@ -440,7 +758,9 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: `Menghapus tamu undangan: "${target?.guestName || id}"`,
     });
-    await mutateServer('DELETE_GUEST', { id });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('DELETE_GUEST', { id });
+    }
   };
 
   const handleSubmitPublicRsvp = async (payload: {
@@ -459,7 +779,7 @@ function WeddingAppContent() {
     const nowIso = new Date().toISOString();
     const nowDate = nowIso.slice(0, 10);
 
-    setState((prev) => {
+    updateClientScopedState(activePublicClientId, (prev) => {
       const nextGuests = [...prev.guests];
       let targetIdx = -1;
       if (payload.invitationCode) {
@@ -545,12 +865,11 @@ function WeddingAppContent() {
         isPinned: false,
       };
 
-      const nextState: WeddingDatabaseSchema = {
+      return {
         ...prev,
         guests: nextGuests,
         wishes: [createdWish, ...prev.wishes],
       };
-      return saveClientState(nextState, true);
     });
 
     appendAuditLog({
@@ -562,22 +881,19 @@ function WeddingAppContent() {
       detail: `Pax: ${submittedPax} • Pesan: ${(payload.message || '').slice(0, 120)}`,
     });
 
-    await mutateServer('SUBMIT_RSVP', payload);
+    if (activePublicClientId === 'client-utama') {
+      await mutateServer('SUBMIT_RSVP', payload);
+    }
   };
 
   const handleTogglePinWish = async (id: string) => {
-    const target = state.wishes.find((w) => w.id === id);
-    setState((prev) =>
-      saveClientState(
-        {
-          ...prev,
-          wishes: prev.wishes.map((w) =>
-            w.id === id ? { ...w, isPinned: !w.isPinned } : w
-          ),
-        },
-        true
-      )
-    );
+    const target = activeAdminState.wishes.find((w) => w.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      wishes: prev.wishes.map((w) =>
+        w.id === id ? { ...w, isPinned: !w.isPinned } : w
+      ),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DOA_RSVP',
@@ -585,22 +901,19 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: `${target?.isPinned ? 'Melepas sematan' : 'Menyematkan'} ucapan doa dari "${target?.guestName || id}"`,
     });
-    await mutateServer('TOGGLE_PIN_WISH', { id });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('TOGGLE_PIN_WISH', { id });
+    }
   };
 
   const handleReplyWish = async (id: string, replyFromCouple: string) => {
-    const target = state.wishes.find((w) => w.id === id);
-    setState((prev) =>
-      saveClientState(
-        {
-          ...prev,
-          wishes: prev.wishes.map((w) =>
-            w.id === id ? { ...w, replyFromCouple } : w
-          ),
-        },
-        true
-      )
-    );
+    const target = activeAdminState.wishes.find((w) => w.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      wishes: prev.wishes.map((w) =>
+        w.id === id ? { ...w, replyFromCouple } : w
+      ),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DOA_RSVP',
@@ -609,17 +922,17 @@ function WeddingAppContent() {
       summary: `Membalas ucapan doa dari "${target?.guestName || id}"`,
       detail: replyFromCouple.slice(0, 140),
     });
-    await mutateServer('REPLY_WISH', { id, replyFromCouple });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('REPLY_WISH', { id, replyFromCouple });
+    }
   };
 
   const handleDeleteWish = async (id: string) => {
-    const target = state.wishes.find((w) => w.id === id);
-    setState((prev) =>
-      saveClientState(
-        { ...prev, wishes: prev.wishes.filter((w) => w.id !== id) },
-        true
-      )
-    );
+    const target = activeAdminState.wishes.find((w) => w.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      wishes: prev.wishes.filter((w) => w.id !== id),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DOA_RSVP',
@@ -627,16 +940,18 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: `Menghapus ucapan doa dari "${target?.guestName || id}"`,
     });
-    await mutateServer('DELETE_WISH', { id });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('DELETE_WISH', { id });
+    }
   };
 
   const handleUpsertBudget = async (
     item: Partial<BudgetVendorItem> & { itemName: string }
   ) => {
     const isEdit = Boolean(
-      item.id && state.budgetItems.some((b) => b.id === item.id)
+      item.id && activeAdminState.budgetItems.some((b) => b.id === item.id)
     );
-    setState((prev) => {
+    updateClientScopedState(activeWorkspaceClientId, (prev) => {
       const exists = item.id && prev.budgetItems.some((b) => b.id === item.id);
       const nextBudget = exists
         ? prev.budgetItems.map((b) =>
@@ -660,7 +975,7 @@ function WeddingAppContent() {
               updatedAt: new Date().toISOString().slice(0, 10),
             } as BudgetVendorItem,
           ];
-      return saveClientState({ ...prev, budgetItems: nextBudget }, true);
+      return { ...prev, budgetItems: nextBudget };
     });
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -670,17 +985,17 @@ function WeddingAppContent() {
       summary: `${isEdit ? 'Memperbarui' : 'Menambahkan'} pos anggaran/vendor: "${item.itemName}"`,
       detail: `Kategori: ${item.category || '-'} • Status: ${item.paymentStatus || 'BELUM_DP'}`,
     });
-    await mutateServer('UPSERT_BUDGET', item);
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('UPSERT_BUDGET', item);
+    }
   };
 
   const handleDeleteBudget = async (id: string) => {
-    const target = state.budgetItems.find((b) => b.id === id);
-    setState((prev) =>
-      saveClientState(
-        { ...prev, budgetItems: prev.budgetItems.filter((b) => b.id !== id) },
-        true
-      )
-    );
+    const target = activeAdminState.budgetItems.find((b) => b.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      budgetItems: prev.budgetItems.filter((b) => b.id !== id),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'MONETER',
@@ -688,19 +1003,21 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: `Menghapus pos anggaran/vendor: "${target?.itemName || id}"`,
     });
-    await mutateServer('DELETE_BUDGET', { id });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('DELETE_BUDGET', { id });
+    }
   };
 
   const handleUpdateSettings = useCallback(
     async (partial: Partial<WeddingSettings>, silentAutoSave?: boolean) => {
-      setState((prev) => {
-        const nextSettings: WeddingSettings = {
+      updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+        ...prev,
+        settings: {
           ...prev.settings,
           ...partial,
           updatedAt: new Date().toISOString(),
-        };
-        return saveClientState({ ...prev, settings: nextSettings }, true);
-      });
+        },
+      }));
       if (!silentAutoSave) {
         const changedKeys = Object.keys(partial).filter(
           (k) => k !== 'updatedAt' && k !== 'updatedBy'
@@ -714,9 +1031,11 @@ function WeddingAppContent() {
           detail: `Field: ${changedKeys.slice(0, 8).join(', ')}`,
         });
       }
-      await mutateServer('UPDATE_SETTINGS', partial);
+      if (activeWorkspaceClientId === 'client-utama') {
+        await mutateServer('UPDATE_SETTINGS', partial);
+      }
     },
-    [mutateServer, adminUser]
+    [mutateServer, adminUser, activeWorkspaceClientId, updateClientScopedState]
   );
 
   const handleSyncGoogleSheets = async (): Promise<string> => {
@@ -724,7 +1043,7 @@ function WeddingAppContent() {
       const res = await fetch('/api/sync-sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sheetId: state.settings.googleSheetId }),
+        body: JSON.stringify({ sheetId: activeAdminState.settings.googleSheetId }),
       });
       const json = await res.json();
       if (json.success && json.data) {
@@ -739,21 +1058,18 @@ function WeddingAppContent() {
   };
 
   const handleImportBackup = async (payload: Partial<WeddingDatabaseSchema>) => {
-    setState((prev) => {
-      const next: WeddingDatabaseSchema = {
-        ...prev,
-        ...(payload.settings
-          ? { settings: { ...prev.settings, ...payload.settings } }
-          : {}),
-        ...(Array.isArray(payload.tasks) ? { tasks: payload.tasks } : {}),
-        ...(Array.isArray(payload.guests) ? { guests: payload.guests } : {}),
-        ...(Array.isArray(payload.wishes) ? { wishes: payload.wishes } : {}),
-        ...(Array.isArray(payload.budgetItems)
-          ? { budgetItems: payload.budgetItems }
-          : {}),
-      };
-      return saveClientState(next, true);
-    });
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      ...(payload.settings
+        ? { settings: { ...prev.settings, ...payload.settings } }
+        : {}),
+      ...(Array.isArray(payload.tasks) ? { tasks: payload.tasks } : {}),
+      ...(Array.isArray(payload.guests) ? { guests: payload.guests } : {}),
+      ...(Array.isArray(payload.wishes) ? { wishes: payload.wishes } : {}),
+      ...(Array.isArray(payload.budgetItems)
+        ? { budgetItems: payload.budgetItems }
+        : {}),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DATABASE',
@@ -761,22 +1077,21 @@ function WeddingAppContent() {
       status: 'SUCCESS',
       summary: 'Memulihkan (Import) data dari file Backup JSON ke Supabase',
     });
-    await mutateServer('IMPORT_BACKUP', payload);
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('IMPORT_BACKUP', payload);
+    }
   };
 
   const handleResetDefault = async () => {
-    setState((prev) => {
-      const fresh: WeddingDatabaseSchema = {
-        settings: { ...INITIAL_SETTINGS, updatedAt: new Date().toISOString() },
-        tasks: [...INITIAL_TASKS],
-        guests: [...INITIAL_GUESTS],
-        wishes: [...INITIAL_WISHES],
-        budgetItems: [...INITIAL_BUDGET_ITEMS],
-        adminUsers: prev.adminUsers?.length ? prev.adminUsers : [...INITIAL_ADMIN_USERS],
-        lastSyncedAt: new Date().toISOString(),
-      };
-      return saveClientState(fresh, true);
-    });
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      settings: { ...INITIAL_SETTINGS, updatedAt: new Date().toISOString() },
+      tasks: [...INITIAL_TASKS],
+      guests: [...INITIAL_GUESTS],
+      wishes: [...INITIAL_WISHES],
+      budgetItems: [...INITIAL_BUDGET_ITEMS],
+      adminUsers: prev.adminUsers?.length ? prev.adminUsers : [...INITIAL_ADMIN_USERS],
+      lastSyncedAt: new Date().toISOString(),
+    }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DATABASE',
@@ -784,17 +1099,23 @@ function WeddingAppContent() {
       status: 'WARNING',
       summary: 'Mereset seluruh database kembali ke pengaturan awal kosong',
     });
-    await mutateServer('RESET_DEFAULT', {});
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('RESET_DEFAULT', {});
+    }
   };
 
-  const effectiveGuestName = previewOverrideGuest?.guestName || urlGuestTo;
-  const effectiveGuestCode = previewOverrideGuest?.invitationCode || urlGuestCode;
+  const effectiveGuestName =
+    previewOverrideGuest?.guestName || manualGuestLookup.to || urlGuestTo;
+  const effectiveGuestCode =
+    previewOverrideGuest?.invitationCode ||
+    manualGuestLookup.code ||
+    urlGuestCode;
 
   return (
     <>
       {viewMode === 'ADMIN' && adminUser ? (
         <AdminDashboardView
-          state={state}
+          state={activeAdminState}
           adminUser={adminUser}
           onSwitchToPublicPreview={handleSwitchToPublicPreview}
           onLogoutAdmin={handleLogoutAdmin}
@@ -812,18 +1133,44 @@ function WeddingAppContent() {
           onImportBackup={handleImportBackup}
           onResetDefault={handleResetDefault}
           onSyncStateAndUser={handleSyncStateAndUser}
+          activeWorkspaceClientId={activeWorkspaceClientId}
+          onSwitchWorkspaceClient={setSelectedAdminWorkspaceId}
+          onOpenLandingPage={handleOpenLandingPage}
+        />
+      ) : publicSelectedClientId === null ? (
+        <CommercialLandingView
+          primarySettings={state.settings}
+          clientGroups={clientGroups}
+          clientWorkspaces={state.settings.clientWorkspaces}
+          isAdminLoggedIn={Boolean(adminUser)}
+          adminUserName={adminUser?.nama}
+          onOpenAdminPortal={handleOpenAdminPortal}
+          onSelectClientInvitation={handleSelectClientInvitationFromLanding}
         />
       ) : (
-        <PublicInvitationView
-          settings={state.settings}
-          guests={state.guests}
-          wishes={state.wishes}
-          guestParamName={effectiveGuestName}
-          guestParamCode={effectiveGuestCode}
-          isAdminLoggedIn={Boolean(adminUser)}
-          onOpenAdminPortal={handleOpenAdminPortal}
-          onSubmitRsvp={handleSubmitPublicRsvp}
-        />
+        <div className="relative">
+          {/* Floating Button to return to MWM Commercial Catalog when viewing without personal guest params */}
+          {!urlGuestTo && !urlGuestCode && (
+            <button
+              type="button"
+              onClick={handleOpenLandingPage}
+              className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900/90 hover:bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-extrabold shadow-lg backdrop-blur-md transition-all"
+              title="Kembali ke Halaman Depan My Wedding Manager (MWM)"
+            >
+              <span>&larr; Katalog MWM</span>
+            </button>
+          )}
+          <PublicInvitationView
+            settings={activePublicState.settings}
+            guests={activePublicState.guests}
+            wishes={activePublicState.wishes}
+            guestParamName={effectiveGuestName}
+            guestParamCode={effectiveGuestCode}
+            isAdminLoggedIn={Boolean(adminUser)}
+            onOpenAdminPortal={handleOpenAdminPortal}
+            onSubmitRsvp={handleSubmitPublicRsvp}
+          />
+        </div>
       )}
 
       <AdminLoginModal

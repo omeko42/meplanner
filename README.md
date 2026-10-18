@@ -20,12 +20,17 @@ Aplikasi ini dirancang secara modular dengan pemisahan jelas antara **Presentati
 
 ## ✨ Fitur Utama
 
-### 1. Tampilan Undangan Digital Publik (`/` atau `/?to=Nama+Tamu&code=INV-0001`)
+### 1. Landing Page Komersial (`/`) & Undangan Digital Per Klien (`/?client=<kode>&to=Nama+Tamu&code=INV-0001`)
+- **Landing Page Komersial Resmi (`CommercialLandingView.tsx`)**:
+  - Ketika domain utama (`/`) diakses tanpa parameter undangan tamu, sistem menampilkan **Halaman Depan Komersial My Wedding Manager (`MWM`) by omeko11** yang memuat:
+    - **Katalog & Live Showcase Undangan Klien Aktif** (termasuk *Featured Showcase* `Agung & Selo` maupun klien-klien lainnya).
+    - **Pencarian Cepat Tamu Undangan VIP** (pilih pasangan mempelai & masukkan kode `INV-0001` atau nama tamu).
+    - **Informasi 6 Modul Terintegrasi & Pilihan Paket Komersial (`STARTER`, `EXCLUSIVE`, `ROYAL VIP`)**.
 - **Gerbang Sampul (Cover Gate) Personalisasi Otomatis**:
-  - Membaca parameter `?to=` dan `?code=` secara akurat (mencocokkan Kode Undangan `INV-xxxx` di database tamu meskipun nama tamu memiliki gelar/pangkat panjang).
+  - Ketika diakses melalui tautan undangan (`/?client=agung_selo`, `/?client=<kode_klien>`, atau langsung `/?to=Nama+Tamu&code=INV-0001`), sistem langsung membuka undangan pasangan terkait tanpa melewati landing page.
   - Menampilkan badge **Tamu Kehormatan / VIP** secara otomatis untuk tamu prioritas `P1 - VIP`.
 - **Sinkronisasi Penuh dengan Database Pengaturan (100% Editable)**:
-  - Seluruh teks pembuka, nama & gelar kedua mempelai, profil orang tua, kutipan ayat suci, rangkaian acara (*Acara Biston, Pemberkatan, Resepsi, maupun Acara Kustom*), **Kisah Cinta (Love Story)**, **Galeri Foto Lightbox**, **Amplop Digital & QRIS**, hingga **Kalimat Penutup (Closing Card)** tersinkron langsung dari database.
+  - Seluruh teks pembuka, nama & gelar kedua mempelai, profil orang tua, kutipan ayat suci, rangkaian acara (*Acara Biston, Pemberkatan, Resepsi, maupun Acara Kustom*), **Kisah Cinta (Love Story)**, **Galeri Foto Lightbox**, **Amplop Digital & QRIS**, hingga **Kalimat Penutup (Closing Card)** tersinkron langsung dari database masing-masing klien.
 - **Pemutar Musik Latar Pintar (Smart Audio Engine)**:
   - Mendukung *playlist* kustom dari Supabase Storage CDN, lengkap dengan deteksi otomatis file musik duplikat/salah unggah dan pemutaran lintas sesi.
 - **RSVP & Buku Tamu Doa Restu Real-Time**:
@@ -41,17 +46,19 @@ Aplikasi ini dirancang secara modular dengan pemisahan jelas antara **Presentati
 - **Manajemen Moneter, Vendor & Amplop Digital (Khusus Akun Utama)**:
   - Pencatatan estimasi vs realisasi kontrak vendor, status pembayaran (*DP, Cicilan, Lunas*), pengelolaan rekening bank amplop digital, serta unggah gambar **QRIS Wedding Gift**.
 - **Manajemen Tamu & Generator WhatsApp 1-Klik**:
-  - Dukungan penuh kode undangan (`INV-0001`), prioritas VIP, filter grup keluarga, serta pengiriman pesan WhatsApp otomatis dengan link undangan personal.
+  - Dukungan penuh kode undangan (`INV-0001`), prioritas VIP, filter grup keluarga, serta pengiriman pesan WhatsApp otomatis dengan link undangan personal per klien (`/?client=<kode>&to=...&code=...`).
 - **Studio Foto Ultra-HD (Maks 10 MB) & Zero-Trace Delete**:
   - Unggah foto profil mempelai, sampul, kisah cinta, galeri, dan QRIS hingga **10 MB per foto** dengan fitur *Interactive Crop & Zoom*.
   - Setiap penghapusan atau pergantian foto/musik langsung menghapus file fisik lama di Supabase Storage (**Zero-Trace Hard Delete**) agar kuota **500 MB Supabase** tetap awet dan bebas sampah.
 
 ---
 
-### 3. Modul Khusus Superadmin & Multi-Client Commercial System (SaaS)
-Dirancang agar **1 Dashboard** dapat dikomersialkan untuk mengelola banyak klien sekaligus oleh Superadmin:
-- **Grouping User Default per Klien (`ClientGroupItem`)**:
+### 3. Modul Khusus Superadmin & Multi-Workspace Commercial System (SaaS)
+Dirancang agar **1 Dashboard** dapat dikomersialkan untuk mengelola banyak klien sekaligus oleh Superadmin dengan **Isolasi Data Penuh (Multi-Workspace)**:
+- **Isolasi Workspace per Klien (`ClientWorkspaceData`) & Grouping User Default (`ClientGroupItem`)**:
   - Setiap klien komersial memiliki grup tersendiri dengan **4 Akun User Default otomatis** (`<kode>_pria`, `<kode>_wanita`, `<kode>_kel_pria`, `<kode>_kel_wanita`) serta akun **Panitia / WO** masing-masing.
+  - Saat akun klien (misal `@rian_dina_pria`) login, ia hanya melihat dan mengelola **Data Mempelai, Foto, Musik, Checklist, Moneter, Tamu, dan Doa Restu miliknya sendiri** (terpisah penuh dari data klien lain).
+  - **Superadmin** memiliki **Global Workspace Switcher** di bagian atas dashboard untuk berpindah antar-workspace klien dengan 1 klik.
 - **Monitor Kapasitas DB & Supabase Storage (Kuota 500 MB)**:
   - Pemantauan *real-time* pemakaian MB pada folder `wedding-media/photos`, `wedding-media/music`, dan estimasi ukuran 8 tabel PostgreSQL.
   - Dilengkapi tombol **1-Klik Zero-Trace Garbage Collector** untuk memindai dan membersihkan *orphaned files* di Supabase Storage.
