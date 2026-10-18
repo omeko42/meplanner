@@ -1024,18 +1024,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 title="Database berjalan 100% di Lokal (database/wedding_db.json)"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden lg:inline">DB Lokal Aktif (wedding_db.json)</span>
-                <span className="lg:hidden">DB Lokal</span>
+                <span>DB Lokal</span>
               </div>
 
               <button
                 type="button"
                 onClick={() => onSwitchToPublicPreview()}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
               >
                 <Eye className="w-3.5 h-3.5 shrink-0" />
-                <span className="sm:hidden">Undangan</span>
-                <span className="hidden sm:inline">Lihat Undangan</span>
+                <span>Undangan</span>
               </button>
 
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
@@ -1065,13 +1063,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {[
               {
                 id: 'readiness' as AdminModuleTab,
-                label: 'Readiness Tracker',
+                label: 'Tracker',
                 icon: LayoutDashboard,
                 badge: `${metrics.readinessPercent}%`,
               },
               {
                 id: 'checklist' as AdminModuleTab,
-                label: 'Checklist Bertahap',
+                label: 'Checklist',
                 icon: CheckSquare,
                 badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
               },
@@ -1079,7 +1077,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 ? [
                     {
                       id: 'budget' as AdminModuleTab,
-                      label: 'Anggaran & Revisi',
+                      label: 'Moneter',
                       icon: Wallet,
                       badge: `${state.budgetItems.length} Item`,
                     },
@@ -1087,15 +1085,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 : []),
               {
                 id: 'guests' as AdminModuleTab,
-                label: 'Tamu & Generator WA',
+                label: 'Tamu',
                 icon: Users,
-                badge: `${metrics.totalGuests} Tamu`,
+                badge: `${metrics.totalGuests} (${metrics.totalPaxQuota} Pax)`,
               },
               {
                 id: 'settings' as AdminModuleTab,
-                label: isPanitia
-                  ? 'Pengaturan Undangan'
-                  : 'Pengaturan Undangan & Akun',
+                label: 'Pengaturan',
                 icon: Settings,
               },
             ].map((tab) => {
@@ -1980,6 +1976,65 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'guests' && (
           <div className="space-y-4">
+            {/* Ringkasan Kuota Pax & Konfirmasi Kehadiran (Terhitung Otomatis) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+              <div className="bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-stone-500">
+                  Total Kuota Pax
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-lg sm:text-2xl font-extrabold text-stone-900">
+                    {metrics.totalPaxQuota} Pax
+                  </span>
+                  <span className="text-[11px] font-bold text-[#8B6914]">
+                    ({metrics.totalGuests} Tamu)
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/80 rounded-2xl p-3 sm:p-4 border border-emerald-200 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-emerald-800">
+                  Pax Konfirmasi Hadir
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-lg sm:text-2xl font-extrabold text-emerald-700">
+                    {metrics.hadirPax} Pax
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-800">
+                    ({metrics.hadirGuestsCount} Tamu)
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF8F5] rounded-2xl p-3 sm:p-4 border border-[#D4AF37]/40 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-[#8B6914]">
+                  Belum Konfirmasi
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-lg sm:text-2xl font-extrabold text-[#8B6914]">
+                    {state.guests
+                      .filter((g) => g.rsvpStatus === 'Belum Konfirmasi')
+                      .reduce((s, g) => s + (Number(g.pax) || 0), 0)}{' '}
+                    Pax
+                  </span>
+                  <span className="text-[11px] font-bold text-stone-600">
+                    ({metrics.belumKonfirmasiCount} Tamu)
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 flex flex-col justify-between">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase text-stone-500">
+                  Cetak vs Online
+                </p>
+                <p className="text-xs sm:text-sm font-extrabold text-stone-800 mt-1">
+                  🖨️ {guestFormatCounts.cetakTebal} Tebal &bull; ✉️{' '}
+                  {guestFormatCounts.cetakBiasa} Biasa &bull; 🌐{' '}
+                  {guestFormatCounts.online} Online
+                </p>
+              </div>
+            </div>
+
             {/* Sub-tab & Filter Bar */}
             <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-stone-200 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -2012,7 +2067,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {guestSubTab === 'list' && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] font-bold text-stone-500 mr-1">
-                      Penanda Undangan:
+                      Penanda:
                     </span>
                     {[
                       {
@@ -2112,10 +2167,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between gap-2">
                   <div>
                     <h2 className="text-base sm:text-xl font-bold text-stone-900">
-                      Tamu Undangan ({filteredGuests.length})
+                      Tamu Undangan ({filteredGuests.length} Tamu &bull;{' '}
+                      {filteredGuests.reduce((s, g) => s + (Number(g.pax) || 0), 0)} Pax)
                     </h2>
                     <p className="text-[11px] sm:text-xs text-stone-500">
-                      Pilih penanda <strong>Cetak Tebal</strong>, <strong>Cetak Biasa</strong>, atau <strong>Online</strong> pada tiap tamu. Untuk tamu Online, langsung salin/kirim link masing-masing.
+                      Pilih penanda (<strong>Cetak Tebal</strong>, <strong>Cetak Biasa</strong>, <strong>Online</strong>), status RSVP, dan jumlah Pax langsung pada baris tamu.
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -2170,7 +2226,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                       >
                         <div className="space-y-1.5 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             <h3 className="font-bold text-xs sm:text-base text-stone-900">
                               {guest.guestName}
                             </h3>
@@ -2208,15 +2264,68 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <option value="Cetak Biasa">✉️ Cetak Biasa</option>
                               <option value="Online">🌐 Online (Link)</option>
                             </select>
+
+                            {/* Status RSVP & Pax Langsung di Baris Tamu */}
+                            <select
+                              aria-label={`Status RSVP ${guest.guestName}`}
+                              value={guest.rsvpStatus}
+                              onChange={async (e) => {
+                                const nextRsvp = e.target.value as RsvpStatus;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  rsvpStatus: nextRsvp,
+                                  confirmedPax:
+                                    nextRsvp === 'Tidak Hadir' ? 0 : guest.pax,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
+                                );
+                              }}
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border cursor-pointer ${
+                                guest.rsvpStatus === 'Hadir'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : guest.rsvpStatus === 'Tidak Hadir'
+                                  ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                  : 'bg-stone-100 text-stone-700 border-stone-300'
+                              }`}
+                            >
+                              <option value="Belum Konfirmasi">Belum Konfirmasi</option>
+                              <option value="Hadir">✓ Hadir</option>
+                              <option value="Masih Ragu">Masih Ragu</option>
+                              <option value="Tidak Hadir">✕ Tidak Hadir</option>
+                            </select>
+
+                            <select
+                              aria-label={`Jumlah Pax ${guest.guestName}`}
+                              value={guest.pax}
+                              onChange={async (e) => {
+                                const nextPax = Number(e.target.value) || 1;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  pax: nextPax,
+                                  confirmedPax:
+                                    guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
+                                );
+                              }}
+                              className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#FAF8F5] text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
+                                <option key={num} value={num}>
+                                  {num} Pax
+                                </option>
+                              ))}
+                            </select>
                           </div>
 
                           <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
                             <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                             <span>
                               {guest.institution || guest.guestType} &bull; {guest.side}
-                            </span>
-                            <span>
-                              &bull; RSVP: <strong>{guest.rsvpStatus}</strong> ({guest.pax} Pax)
                             </span>
                             {!isOnlineGuest && guest.address && (
                               <span>&bull; Lokasi Cetak: {guest.address}</span>
@@ -2234,7 +2343,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <span className="text-[10px] font-bold text-emerald-800 shrink-0">
                                 Link Tamu:
                               </span>
-                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[220px] sm:max-w-[380px]">
+                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[200px] sm:max-w-[380px]">
                                 {waData.inviteUrl}
                               </span>
                               <button
@@ -2343,41 +2452,62 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
               </div>
             ) : (
-              /* SUB-TAB BUKU TAMU & MODERASI UCAPAN DOA */
+              /* SUB-TAB BUKU TAMU, KONFIRMASI RSVP & BALASAN UCAPAN DOA */
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
                 <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-stone-900">
-                      Buku Tamu &amp; Ucapan Doa ({state.wishes.length})
+                      Buku Tamu, Konfirmasi RSVP &amp; Doa ({state.wishes.length})
                     </h2>
                     <p className="text-[11px] sm:text-xs text-stone-500">
-                      Daftar ucapan doa yang dikirim langsung oleh tamu melalui halaman undangan
+                      Semua konfirmasi kehadiran (RSVP + jumlah Pax) dan doa yang dikirim tamu dari undangan masuk ke sini &mdash; Anda bisa langsung klik <strong>Balas</strong> untuk menjawab ucapan tamu.
                     </p>
                   </div>
                 </div>
                 {state.wishes.length === 0 ? (
                   <div className="p-8 text-center text-xs text-stone-500">
-                    Belum ada ucapan doa yang masuk dari tamu.
+                    Belum ada konfirmasi kehadiran atau ucapan doa yang masuk dari tamu.
                   </div>
                 ) : (
                   <div className="divide-y divide-stone-200 px-4 sm:px-6">
                     {state.wishes.map((w) => (
                       <div key={w.id} className="py-4 space-y-2">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="font-bold text-sm text-stone-900">
                                 {w.guestName}
                               </h4>
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                {w.rsvpStatus} ({w.pax} Pax)
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  w.rsvpStatus === 'Hadir'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : w.rsvpStatus === 'Tidak Hadir'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {w.rsvpStatus}
+                                {w.rsvpStatus === 'Hadir' ? ` (${w.pax} Pax)` : ''}
                               </span>
                             </div>
                             <p className="text-xs text-stone-500">
                               {w.institution || w.relation}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingWishId(w.id);
+                                setReplyText(w.replyFromCouple || '');
+                              }}
+                              className="px-3 py-1 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-bold flex items-center gap-1 shadow-2xs"
+                              title="Balas Konfirmasi & Ucapan Tamu"
+                            >
+                              <Reply className="w-3.5 h-3.5" />
+                              <span>{w.replyFromCouple ? 'Edit Balasan' : 'Balas'}</span>
+                            </button>
                             <button
                               type="button"
                               onClick={async () => {
@@ -2387,17 +2517,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               className="px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] text-xs font-bold flex items-center gap-1 border border-[#D4AF37]/30"
                             >
                               <Pin className="w-3 h-3" /> {w.isPinned ? 'Unpin' : 'Pin'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReplyingWishId(w.id);
-                                setReplyText(w.replyFromCouple || '');
-                              }}
-                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
-                              title="Balas Ucapan"
-                            >
-                              <Reply className="w-4 h-4" />
                             </button>
                             <button
                               type="button"
@@ -2415,7 +2534,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <p className="text-xs sm:text-sm text-stone-700">&ldquo;{w.message}&rdquo;</p>
                         {w.replyFromCouple && (
                           <p className="text-xs text-[#8B6914] pl-3 border-l-2 border-[#D4AF37]">
-                            <strong>Balasan:</strong> {w.replyFromCouple}
+                            <strong>Balasan Mempelai:</strong> {w.replyFromCouple}
                           </p>
                         )}
                         {replyingWishId === w.id && (
@@ -2424,7 +2543,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               type="text"
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}
-                              placeholder="Tulis balasan terima kasih..."
+                              placeholder="Tulis balasan terima kasih untuk tamu ini..."
                               className="flex-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs"
                             />
                             <button
@@ -2432,11 +2551,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               onClick={async () => {
                                 await onReplyWish(w.id, replyText);
                                 setReplyingWishId(null);
-                                showToast('Balasan berhasil disimpan!');
+                                showToast('Balasan berhasil disimpan & tampil di undangan!');
                               }}
                               className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
                             >
-                              Simpan
+                              Kirim Balasan
                             </button>
                           </div>
                         )}
@@ -6872,7 +6991,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           {[
             {
               id: 'readiness' as AdminModuleTab,
-              label: 'Ringkasan',
+              label: 'Tracker',
               icon: LayoutDashboard,
             },
             {
@@ -6884,7 +7003,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               ? [
                   {
                     id: 'budget' as AdminModuleTab,
-                    label: 'Anggaran',
+                    label: 'Moneter',
                     icon: Wallet,
                   },
                 ]

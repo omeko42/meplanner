@@ -356,9 +356,21 @@ export const serverStore = {
 
     if (existingIdx >= 0) {
       const prev = store.guests[existingIdx];
+      const nextPax =
+        guestInput.pax !== undefined ? Number(guestInput.pax) : prev.pax;
+      const nextRsvp = guestInput.rsvpStatus || prev.rsvpStatus;
+      const nextConfirmedPax =
+        nextRsvp === 'Tidak Hadir'
+          ? 0
+          : guestInput.confirmedPax !== undefined &&
+            guestInput.pax === prev.pax
+          ? Number(guestInput.confirmedPax)
+          : nextPax;
       const updated: WeddingGuest = {
         ...prev,
         ...guestInput,
+        pax: nextPax,
+        confirmedPax: nextConfirmedPax,
         guestName: guestInput.guestName.trim(),
         updatedAt: nowSlash,
         updatedBy: guestInput.updatedBy || prev.updatedBy || 'mempelai_pria',
@@ -376,6 +388,8 @@ export const serverStore = {
     const nextCode =
       guestInput.invitationCode || `INV-${String(maxCodeNum + 1).padStart(4, '0')}`;
 
+    const initialPax = guestInput.pax !== undefined ? Number(guestInput.pax) : 2;
+    const initialRsvp = guestInput.rsvpStatus || 'Belum Konfirmasi';
     const newGuest: WeddingGuest = {
       id: guestInput.id || `guest_${Date.now().toString(36)}`,
       invitationCode: nextCode,
@@ -383,20 +397,20 @@ export const serverStore = {
       guestType: guestInput.guestType || 'Teman/Sahabat',
       side: guestInput.side || 'Bersama',
       institution: guestInput.institution || '',
-      invitationFormat: guestInput.invitationFormat || 'Digital WA',
+      invitationFormat: guestInput.invitationFormat || 'Cetak Tebal',
       priority: guestInput.priority || 'P2 - Utama',
-      cardQty: guestInput.cardQty !== undefined ? Number(guestInput.cardQty) : 0,
-      pax: guestInput.pax !== undefined ? Number(guestInput.pax) : 2,
+      cardQty: guestInput.cardQty !== undefined ? Number(guestInput.cardQty) : 1,
+      pax: initialPax,
       confirmedPax:
-        guestInput.confirmedPax !== undefined
+        initialRsvp === 'Tidak Hadir'
+          ? 0
+          : guestInput.confirmedPax !== undefined
           ? Number(guestInput.confirmedPax)
-          : guestInput.pax !== undefined
-          ? Number(guestInput.pax)
-          : 2,
+          : initialPax,
       phone: guestInput.phone || '',
       address: guestInput.address || '',
       deliveryStatus: guestInput.deliveryStatus || 'Belum Disiapkan',
-      rsvpStatus: guestInput.rsvpStatus || 'Belum Konfirmasi',
+      rsvpStatus: initialRsvp,
       attendanceStatus: guestInput.attendanceStatus || 'Belum Dicek',
       notes: guestInput.notes || '',
       wishes: guestInput.wishes || '',
@@ -436,6 +450,7 @@ export const serverStore = {
     const store = getStore();
     const nowSlash = formatDateSlash();
     const cleanName = payload.guestName.trim();
+    const submittedPax = Math.max(0, Number(payload.pax) || 1);
 
     const matchIdx = store.guests.findIndex(
       (g) =>
@@ -450,7 +465,8 @@ export const serverStore = {
       targetGuest = {
         ...prev,
         rsvpStatus: payload.rsvpStatus,
-        confirmedPax: payload.rsvpStatus === 'Hadir' ? Number(payload.pax) || prev.pax : 0,
+        pax: payload.rsvpStatus === 'Hadir' ? submittedPax : prev.pax,
+        confirmedPax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
         phone: payload.phone || prev.phone,
         institution: payload.institution || prev.institution,
         sessionChoice: payload.sessionChoice || prev.sessionChoice || 'Pemberkatan & Resepsi',
@@ -473,11 +489,11 @@ export const serverStore = {
         guestType: 'Teman/Sahabat',
         side: 'Bersama',
         institution: payload.institution || payload.relation || 'Tamu Undangan Digital',
-        invitationFormat: 'Digital WA',
+        invitationFormat: 'Online',
         priority: 'P2 - Utama',
         cardQty: 0,
-        pax: Number(payload.pax) || 2,
-        confirmedPax: payload.rsvpStatus === 'Hadir' ? Number(payload.pax) || 1 : 0,
+        pax: submittedPax || 2,
+        confirmedPax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
         phone: payload.phone || '',
         address: '',
         deliveryStatus: 'Sudah Diterima',
@@ -493,23 +509,29 @@ export const serverStore = {
       store.guests.push(targetGuest);
     }
 
-    let createdWish: GuestWish | undefined;
-    if (payload.message && payload.message.trim()) {
-      createdWish = {
-        id: `wish_${Date.now().toString(36)}`,
-        guestId: targetGuest.id,
-        invitationCode: targetGuest.invitationCode,
-        guestName: cleanName,
-        institution: payload.institution || targetGuest.institution || '',
-        relation: payload.relation || targetGuest.guestType || 'Tamu Kehormatan',
-        rsvpStatus: payload.rsvpStatus,
-        pax: payload.rsvpStatus === 'Hadir' ? Number(payload.pax) || 1 : 0,
-        message: payload.message.trim(),
-        createdAt: new Date().toISOString(),
-        isPinned: false,
-      };
-      store.wishes.unshift(createdWish);
-    }
+    const effectiveMessage =
+      payload.message && payload.message.trim()
+        ? payload.message.trim()
+        : payload.rsvpStatus === 'Hadir'
+        ? `Konfirmasi hadir (${submittedPax} Pax) pada sesi ${
+            payload.sessionChoice || 'Pemberkatan & Resepsi'
+          }.`
+        : `Konfirmasi kehadiran: ${payload.rsvpStatus}.`;
+
+    const createdWish: GuestWish = {
+      id: `wish_${Date.now().toString(36)}`,
+      guestId: targetGuest.id,
+      invitationCode: targetGuest.invitationCode,
+      guestName: cleanName,
+      institution: payload.institution || targetGuest.institution || '',
+      relation: payload.relation || targetGuest.guestType || 'Tamu Kehormatan',
+      rsvpStatus: payload.rsvpStatus,
+      pax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
+      message: effectiveMessage,
+      createdAt: new Date().toISOString(),
+      isPinned: false,
+    };
+    store.wishes.unshift(createdWish);
 
     persistStore(store);
     return { guest: targetGuest, wish: createdWish };
