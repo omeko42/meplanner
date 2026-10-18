@@ -23,6 +23,10 @@ import {
   getStoredViewMode,
   saveStoredViewMode,
 } from '@/lib/clientSync';
+import {
+  loadStateFromSupabase,
+  saveStateToSupabase,
+} from '@/lib/supabaseCloud';
 
 function mergePreservingLocalMedia(
   serverState: WeddingDatabaseSchema,
@@ -112,7 +116,7 @@ function WeddingAppContent() {
     saveStoredViewMode(mode);
   }, []);
 
-  // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Server state on mount
+  // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
   useEffect(() => {
     let isMounted = true;
 
@@ -160,37 +164,52 @@ function WeddingAppContent() {
         setState(bestLocal);
       }
 
-      // 2. Fetch server state and compare timestamps so a cold-started server NEVER overwrites newer local edits
-      try {
-        const res = await fetch('/api/wedding', { cache: 'no-store' });
-        const resData = await res.json();
-        if (!isMounted) return;
+      // 2. Fetch both Supabase Cloud & Next.js Server state in parallel
+      const [cloudResult, serverState] = await Promise.all([
+        loadStateFromSupabase(),
+        fetch('/api/wedding', { cache: 'no-store' })
+          .then((r) => r.json())
+          .then((j) => (j.success && j.data ? (j.data as WeddingDatabaseSchema) : null))
+          .catch(() => null),
+      ]);
 
-        if (resData.success && resData.data) {
-          const serverState = resData.data as WeddingDatabaseSchema;
-          const serverTime = new Date(serverState.lastSyncedAt || 0).getTime() || 0;
+      if (!isMounted) return;
 
-          if (bestLocalTime > serverTime) {
-            // Browser has newer edits than server (e.g. after hard refresh or serverless cold start):
-            // Keep browser state and push it back to the server!
-            setState(bestLocal);
-            saveClientState(bestLocal, false);
-            void fetch('/api/wedding', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'IMPORT_BACKUP',
-                payload: stripLargeAudioForServerPayload(bestLocal),
-              }),
-            }).catch(() => {});
-          } else {
-            const merged = mergePreservingLocalMedia(serverState, bestLocal);
-            setState(merged);
-            saveClientState(merged, false);
-          }
-        }
-      } catch {
-        // Offline fallback: bestLocal from IndexedDB/localStorage is already active
+      const cloudState = cloudResult.state;
+      const cloudTime = new Date(cloudState?.lastSyncedAt || 0).getTime() || 0;
+      const serverTime = new Date(serverState?.lastSyncedAt || 0).getTime() || 0;
+
+      // Determine the newest state across Browser (IndexedDB), Supabase Cloud, and Next.js Server
+      let winner: WeddingDatabaseSchema = bestLocal;
+      let winnerTime = bestLocalTime;
+
+      if (cloudState && cloudTime >= winnerTime) {
+        winner = mergePreservingLocalMedia(cloudState, bestLocal);
+        winnerTime = cloudTime;
+      }
+      if (serverState && serverTime > winnerTime) {
+        winner = mergePreservingLocalMedia(serverState, bestLocal);
+        winnerTime = serverTime;
+      }
+
+      setState(winner);
+      saveClientState(winner, false);
+
+      // If our winning state is newer than Supabase Cloud (and the table exists), push it to Supabase Cloud
+      if (cloudResult.tableExists && (!cloudState || winnerTime > cloudTime)) {
+        void saveStateToSupabase(winner);
+      }
+
+      // If our winning state is newer than Next.js Server, push it to Next.js Server
+      if (!serverState || winnerTime > serverTime) {
+        void fetch('/api/wedding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'IMPORT_BACKUP',
+            payload: stripLargeAudioForServerPayload(winner),
+          }),
+        }).catch(() => {});
       }
     })();
 
@@ -398,7 +417,10 @@ function WeddingAppContent() {
     sessionChoice?: WeddingGuest['sessionChoice'];
     message?: string;
   }) => {
-    await mutateServer('SUBMIT_RSVP', payload);
+    const serverUpdated = await mutateServer('SUBMIT_RSVP', payload);
+    if (serverUpdated) {
+      saveClientState(serverUpdated, true);
+    }
   };
 
   const handleTogglePinWish = async (id: string) => {

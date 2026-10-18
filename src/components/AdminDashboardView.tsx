@@ -102,6 +102,14 @@ import {
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
 } from '@/lib/clientSync';
+import {
+  CloudSyncStatus,
+  getCloudSyncStatus,
+  subscribeCloudSyncStatus,
+  saveStateToSupabase,
+  SUPABASE_SETUP_SQL,
+  SUPABASE_PROJECT_REF,
+} from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
   | 'readiness'
@@ -607,6 +615,43 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
       return next;
     });
+  };
+
+  // ============================================================================
+  // SUPABASE CLOUD SYNC STATUS & MODAL
+  // ============================================================================
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>(
+    () => getCloudSyncStatus().status
+  );
+  const [cloudSyncDetail, setCloudSyncDetail] = useState<string>(
+    () => getCloudSyncStatus().detail
+  );
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  useEffect(() => {
+    return subscribeCloudSyncStatus((st, det) => {
+      setCloudSyncStatus(st);
+      setCloudSyncDetail(det || '');
+    });
+  }, []);
+
+  const handleForceCloudSyncNow = async () => {
+    const payloadToSave: WeddingDatabaseSchema = {
+      ...state,
+      settings: {
+        ...state.settings,
+        ...settingsForm,
+      },
+      lastSyncedAt: new Date().toISOString(),
+    };
+    const ok = await saveStateToSupabase(payloadToSave);
+    if (ok) {
+      showToast('Data berhasil disimpan & disinkronkan ke Supabase Cloud!');
+      setIsCloudModalOpen(false);
+    } else {
+      showToast('Tabel wedding_state belum aktif di Supabase. Silakan jalankan SQL 4 baris di bawah.');
+    }
   };
 
   // ============================================================================
@@ -1984,15 +2029,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Auto-Save Status, Quick Export/Import JSON, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Supabase Cloud Status, Quick Export/Import JSON, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <div
-                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700"
-                title="Semua ketikan & perubahan tersimpan otomatis di Browser (IndexedDB) & Server"
+              <button
+                type="button"
+                onClick={() => setIsCloudModalOpen(true)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
+                  cloudSyncStatus === 'SYNCED'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                    : cloudSyncStatus === 'SYNCING'
+                    ? 'bg-amber-50 border-amber-200 text-amber-700'
+                    : cloudSyncStatus === 'NEEDS_TABLE_SETUP'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 animate-pulse'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                }`}
+                title={
+                  cloudSyncDetail ||
+                  'Klik untuk melihat status penyimpanan Supabase Cloud & Auto-Save'
+                }
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Auto-Save</span>
-              </div>
+                {cloudSyncStatus === 'SYNCING' ? (
+                  <>
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    <span className="hidden sm:inline">Sync...</span>
+                  </>
+                ) : cloudSyncStatus === 'NEEDS_TABLE_SETUP' ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="hidden sm:inline">Setup Supabase</span>
+                    <span className="sm:hidden">SQL</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="hidden sm:inline">
+                      {cloudSyncStatus === 'SYNCED' ? 'Supabase OK' : 'Auto-Save'}
+                    </span>
+                  </>
+                )}
+              </button>
 
               {!isPanitia && (
                 <div className="inline-flex items-center rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden">
@@ -2131,6 +2206,99 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
         </div>
       </header>
+
+      {/* SUPABASE CLOUD SYNC & 1-CLICK SQL SETUP MODAL */}
+      {isCloudModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl max-w-lg w-full p-4 sm:p-6 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900">
+                  ☁️ Supabase Cloud &amp; Penyimpanan Permanen
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Project ID: <code className="font-mono font-bold text-[#8B6914]">{SUPABASE_PROJECT_REF}</code>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCloudModalOpen(false)}
+                className="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div
+              className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 ${
+                cloudSyncStatus === 'SYNCED'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-amber-50 border-amber-200 text-amber-900'
+              }`}
+            >
+              <div>
+                <p className="font-bold">
+                  Status:{' '}
+                  {cloudSyncStatus === 'SYNCED'
+                    ? '✅ Terhubung & Tersimpan di Supabase Cloud'
+                    : cloudSyncStatus === 'SYNCING'
+                    ? '⏳ Sedang Menyimpan ke Supabase...'
+                    : cloudSyncStatus === 'NEEDS_TABLE_SETUP'
+                    ? '⚠️ Tabel public.wedding_state Belum Dibuat (1x Klik Setup)'
+                    : '💾 Tersimpan di Browser (IndexedDB) — Siap Sinkron ke Supabase'}
+                </p>
+                {cloudSyncDetail && (
+                  <p className="text-[11px] opacity-80 mt-0.5">{cloudSyncDetail}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-stone-700">
+                  SQL Setup Tabel (Cukup Jalankan 1 Kali di SQL Editor Supabase):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
+                    setCopiedSql(true);
+                    showToast('SQL berhasil disalin! Paste di SQL Editor Supabase lalu klik Run.');
+                    setTimeout(() => setCopiedSql(false), 3000);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[11px]"
+                >
+                  {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedSql ? 'Tersalin!' : 'Copy SQL'}</span>
+                </button>
+              </div>
+              <pre className="p-3 rounded-xl bg-stone-900 text-emerald-300 font-mono text-[11px] overflow-x-auto leading-relaxed select-all">
+                {SUPABASE_SETUP_SQL}
+              </pre>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+              <a
+                href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D4AF37]/60 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Buka SQL Editor Supabase</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleForceCloudSyncNow}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-sm"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Simpan &amp; Tes Koneksi Sekarang</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MAIN CONTENT CONTAINER */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">

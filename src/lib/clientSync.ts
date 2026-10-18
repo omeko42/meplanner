@@ -17,6 +17,7 @@ import {
   INITIAL_BUDGET_ITEMS,
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
+import { queueSaveStateToSupabase } from '@/lib/supabaseCloud';
 
 const STORAGE_KEY = 'my_wedding_manager_state_v2';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
@@ -170,6 +171,11 @@ export function saveClientState(
     } catch {
       // Ignore secondary quota errors; IndexedDB has the full copy
     }
+  }
+
+  // 3. When user modifies state (touchTimestamp=true), sync to Supabase Cloud
+  if (touchTimestamp) {
+    queueSaveStateToSupabase(syncedState, 450);
   }
 
   return syncedState;

@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    await serverStore.reconcileWithSupabase();
     const sessionUser = verifyAdminRequest(req);
     const hideBudget = !isPrivilegedDefaultOrSuperUser(sessionUser);
     const state = serverStore.getFullState(hideBudget);
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await serverStore.reconcileWithSupabase();
     const body = await req.json();
     const { action, payload } = body;
 

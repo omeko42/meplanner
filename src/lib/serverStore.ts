@@ -19,6 +19,10 @@ import {
   INITIAL_ADMIN_USERS,
   inferTimelinePhase,
 } from '@/data/seedData';
+import {
+  loadStateFromSupabase,
+  saveStateToSupabase,
+} from '@/lib/supabaseCloud';
 
 const PRIMARY_DB_PATH = path.join(process.cwd(), 'database', 'wedding_db.json');
 const LOCAL_DB_PATH = path.join(process.cwd(), '.data', 'wedding_db.json');
@@ -99,7 +103,11 @@ function readDbFromDisk(): WeddingDatabaseSchema {
   return bestCandidate || defaultStore;
 }
 
-function persistStore(store: WeddingDatabaseSchema, updateTimestamp = true): void {
+function persistStore(
+  store: WeddingDatabaseSchema,
+  updateTimestamp = true,
+  syncCloud = true
+): void {
   if (updateTimestamp || !store.lastSyncedAt) {
     store.lastSyncedAt = new Date().toISOString();
   }
@@ -117,12 +125,16 @@ function persistStore(store: WeddingDatabaseSchema, updateTimestamp = true): voi
       // Ignore individual path error in restricted serverless environments
     }
   }
+
+  if (updateTimestamp && syncCloud) {
+    void saveStateToSupabase(store);
+  }
 }
 
 function getStore(): WeddingDatabaseSchema {
   if (!globalThis.__weddingGlobalStore) {
     globalThis.__weddingGlobalStore = readDbFromDisk();
-    persistStore(globalThis.__weddingGlobalStore, false);
+    persistStore(globalThis.__weddingGlobalStore, false, false);
   }
   return globalThis.__weddingGlobalStore;
 }
@@ -150,6 +162,28 @@ function formatDateSlash(date: Date = new Date()): string {
 }
 
 export const serverStore = {
+  reconcileWithSupabase: async (): Promise<WeddingDatabaseSchema> => {
+    const localStore = getStore();
+    try {
+      const { state: cloudState, tableExists } = await loadStateFromSupabase();
+      if (cloudState) {
+        const localTime = new Date(localStore.lastSyncedAt || 0).getTime() || 0;
+        const cloudTime = new Date(cloudState.lastSyncedAt || 0).getTime() || 0;
+        if (cloudTime > localTime) {
+          persistStore(cloudState, false, false);
+          return cloudState;
+        } else if (localTime > cloudTime && tableExists) {
+          void saveStateToSupabase(localStore);
+        }
+      } else if (tableExists) {
+        void saveStateToSupabase(localStore);
+      }
+    } catch {
+      // Fallback to localStore
+    }
+    return localStore;
+  },
+
   getFullState: (hideBudgetForPanitia = false): WeddingDatabaseSchema => {
     const sanitized = sanitizeStoreForClient(getStore());
     if (hideBudgetForPanitia) {
