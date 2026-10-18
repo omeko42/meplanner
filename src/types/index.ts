@@ -270,6 +270,10 @@ export interface WeddingSettings {
   invitationOpeningText: string;
   invitationClosingText: string;
 
+  // Global Default WhatsApp Invitation Templates (VIP/Pejabat & Regular/Umum)
+  waTemplateVip?: string;
+  waTemplateRegular?: string;
+
   // Digital Envelope / Gift
   giftRecipientName: string;
   giftShippingAddress: string;

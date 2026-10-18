@@ -130,78 +130,55 @@ export function buildGuestInvitationUrl(
   return `${base}/?${params.toString()}`;
 }
 
-export function generateWhatsAppMessage(
-  guest: WeddingGuest,
-  settings: WeddingSettings,
-  originUrl?: string
-): { inviteUrl: string; messageText: string; waHref: string } {
-  const inviteUrl = buildGuestInvitationUrl(guest, originUrl);
-  const isVipPolri =
-    guest.guestType === 'Pejabat/VIP' ||
-    guest.priority === 'P1 - VIP' ||
-    /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(guest.guestName);
+export const DEFAULT_WA_TEMPLATE_VIP = [
+  'Selamat Pagi/Siang/Sore Jenderal / Komandan,',
+  'Kepada Yth.',
+  '*{nama_tamu}*',
+  '{instansi}',
+  '',
+  'Mohon izin Jenderal / Komandan, dengan penuh rasa hormat dan kerendahan hati, kami bermaksud menyampaikan undangan digital rangkaian acara pernikahan kami:',
+  '',
+  '💍 *{mempelai_pria}*',
+  '&',
+  '💍 *{mempelai_wanita}*',
+  '',
+  '{jadwal_acara}',
+  '📍 *Lokasi:* {lokasi_utama}',
+  '',
+  'Tautan Undangan Resmi & Konfirmasi Kehadiran:',
+  '{link_undangan}',
+  '',
+  'Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.',
+  '',
+  'Hormat kami,',
+  '*{mempelai_pria}* & Keluarga',
+].join('\n');
 
-  let messageText = '';
+export const DEFAULT_WA_TEMPLATE_REGULAR = [
+  'Kepada Yth. Bapak/Ibu/Saudara/i:',
+  '*{nama_tamu}*',
+  '{instansi}',
+  '',
+  'Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada acara pernikahan kami:',
+  '',
+  '✨ *{mempelai_pria}*',
+  '&',
+  '✨ *{mempelai_wanita}*',
+  '',
+  '{jadwal_acara}',
+  '📍 *Tempat:* {lokasi_utama}',
+  '',
+  'Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:',
+  '👉 {link_undangan}',
+  '',
+  'Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.',
+  '',
+  'Salam kasih,',
+  '*{panggilan_pria} & {panggilan_wanita}*',
+].join('\n');
 
-  if (isVipPolri) {
-    messageText = [
-      `Selamat Pagi/Siang/Sore Jenderal / Komandan,`,
-      `Kepada Yth.`,
-      `*${guest.guestName}*`,
-      guest.institution ? `(${guest.institution})` : '',
-      ``,
-      `Mohon izin Jenderal / Komandan, dengan penuh rasa hormat dan kerendahan hati, kami bermaksud menyampaikan undangan digital rangkaian acara pernikahan kami:`,
-      ``,
-      `💍 *${settings.groomFullName}*`,
-      `&`,
-      `💍 *${settings.brideFullName}*`,
-      ``,
-      `📅 *Ibadah Biston:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
-      `📅 *Pemberkatan Nikah:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
-      `📅 *Resepsi Kehormatan:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
-      `📍 *Lokasi:* ${settings.event3Venue}, Semarang`,
-      ``,
-      `Tautan Undangan Resmi & Konfirmasi Kehadiran:`,
-      `${inviteUrl}`,
-      ``,
-      `Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.`,
-      ``,
-      `Hormat kami,`,
-      `*${settings.groomFullName}* & Keluarga`,
-    ]
-      .filter((line) => line !== undefined)
-      .join('\n');
-  } else {
-    messageText = [
-      `Kepada Yth. Bapak/Ibu/Saudara/i:`,
-      `*${guest.guestName}*`,
-      guest.institution ? `_${guest.institution}_` : '',
-      ``,
-      `Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada acara pernikahan kami:`,
-      ``,
-      `✨ *${settings.groomFullName}*`,
-      `&`,
-      `✨ *${settings.brideFullName}*`,
-      ``,
-      `🗓️ *Biston:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
-      `🗓️ *Pemberkatan:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
-      `🗓️ *Resepsi:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
-      `📍 *Tempat:* ${settings.event3Venue} — ${settings.event3Address}`,
-      ``,
-      `Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:`,
-      `👉 ${inviteUrl}`,
-      ``,
-      `Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.`,
-      ``,
-      `Salam kasih,`,
-      `*${settings.groomNickname} & ${settings.brideNickname}*`,
-    ]
-      .filter((line) => line !== undefined)
-      .join('\n');
-  }
-
-  // Normalize phone number for wa.me
-  const digits = (guest.phone || '').replace(/\D+/g, '');
+export function buildWaHref(phone: string | undefined, messageText: string): string {
+  const digits = (phone || '').replace(/\D+/g, '');
   let normalizedPhone = '';
   if (digits.startsWith('08')) {
     normalizedPhone = `62${digits.slice(1)}`;
@@ -212,11 +189,72 @@ export function generateWhatsAppMessage(
   }
 
   const encodedText = encodeURIComponent(messageText);
-  const waHref = normalizedPhone
+  return normalizedPhone
     ? `https://wa.me/${normalizedPhone}?text=${encodedText}`
     : `https://api.whatsapp.com/send?text=${encodedText}`;
+}
 
-  return { inviteUrl, messageText, waHref };
+export function generateWhatsAppMessage(
+  guest: WeddingGuest,
+  settings: WeddingSettings,
+  originUrl?: string
+): { inviteUrl: string; messageText: string; waHref: string; isVipPolri: boolean } {
+  const inviteUrl = buildGuestInvitationUrl(guest, originUrl);
+  const isVipPolri =
+    guest.guestType === 'Pejabat/VIP' ||
+    guest.priority === 'P1 - VIP' ||
+    /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(guest.guestName);
+
+  const activeEvents = getEffectiveScheduleEvents(settings).filter(
+    (ev) => ev.showOnInvitation !== false
+  );
+  const jadwalAcaraText =
+    activeEvents.length > 0
+      ? activeEvents
+          .map((ev) => `📅 *${ev.title}:* ${ev.dateLabel} (${ev.timeLabel})`)
+          .join('\n')
+      : [
+          `📅 *${settings.event1Title}:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
+          `📅 *${settings.event2Title}:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
+          `📅 *${settings.event3Title}:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
+        ].join('\n');
+
+  const lastEvent = activeEvents[activeEvents.length - 1];
+  const lokasiUtamaText = lastEvent
+    ? `${lastEvent.venue}${lastEvent.address ? ` — ${lastEvent.address}` : ''}`
+    : `${settings.event3Venue}${settings.event3Address ? ` — ${settings.event3Address}` : ''}`;
+
+  const rawTemplate = isVipPolri
+    ? settings.waTemplateVip && settings.waTemplateVip.trim()
+      ? settings.waTemplateVip
+      : DEFAULT_WA_TEMPLATE_VIP
+    : settings.waTemplateRegular && settings.waTemplateRegular.trim()
+    ? settings.waTemplateRegular
+    : DEFAULT_WA_TEMPLATE_REGULAR;
+
+  const instansiFormatted = guest.institution
+    ? isVipPolri
+      ? `(${guest.institution})`
+      : `_${guest.institution}_`
+    : '';
+
+  const messageText = rawTemplate
+    .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
+    .replace(/\{instansi\}/g, instansiFormatted)
+    .replace(/\{link_undangan\}/g, inviteUrl)
+    .replace(/\{mempelai_pria\}/g, settings.groomFullName || 'Mempelai Pria')
+    .replace(/\{mempelai_wanita\}/g, settings.brideFullName || 'Mempelai Wanita')
+    .replace(/\{panggilan_pria\}/g, settings.groomNickname || 'Mempelai Pria')
+    .replace(/\{panggilan_wanita\}/g, settings.brideNickname || 'Mempelai Wanita')
+    .replace(/\{jadwal_acara\}/g, jadwalAcaraText)
+    .replace(/\{lokasi_utama\}/g, lokasiUtamaText)
+    .replace(/\{kode_undangan\}/g, guest.invitationCode || '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const waHref = buildWaHref(guest.phone, messageText);
+
+  return { inviteUrl, messageText, waHref, isVipPolri };
 }
 
 function escapeCsvCell(val: unknown): string {

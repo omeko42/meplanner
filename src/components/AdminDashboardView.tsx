@@ -73,6 +73,9 @@ import {
 import {
   formatRupiah,
   generateWhatsAppMessage,
+  buildWaHref,
+  DEFAULT_WA_TEMPLATE_VIP,
+  DEFAULT_WA_TEMPLATE_REGULAR,
   exportTasksToCsv,
   exportGuestsToCsv,
   exportBudgetToCsv,
@@ -361,9 +364,77 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   >('ALL');
   const [editingGuest, setEditingGuest] = useState<Partial<WeddingGuest> | null>(null);
   const [waPreviewGuest, setWaPreviewGuest] = useState<WeddingGuest | null>(null);
+  const [waModalMode, setWaModalMode] = useState<'preview' | 'global'>('preview');
+  const [waCustomMessage, setWaCustomMessage] = useState<string>('');
+  const [waGlobalTab, setWaGlobalTab] = useState<'vip' | 'regular'>('vip');
+  const [waTemplateVipDraft, setWaTemplateVipDraft] = useState<string>(
+    state.settings.waTemplateVip || DEFAULT_WA_TEMPLATE_VIP
+  );
+  const [waTemplateRegularDraft, setWaTemplateRegularDraft] = useState<string>(
+    state.settings.waTemplateRegular || DEFAULT_WA_TEMPLATE_REGULAR
+  );
+  const [isWaGlobalModalOpen, setIsWaGlobalModalOpen] = useState(false);
   const [copiedGuestLinkId, setCopiedGuestLinkId] = useState<string | null>(null);
   const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+
+  const openGuestWaPreview = (guest: WeddingGuest) => {
+    const gen = generateWhatsAppMessage(guest, state.settings);
+    setWaPreviewGuest(guest);
+    setWaCustomMessage(gen.messageText);
+    setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
+    setWaTemplateVipDraft(
+      state.settings.waTemplateVip?.trim()
+        ? state.settings.waTemplateVip
+        : DEFAULT_WA_TEMPLATE_VIP
+    );
+    setWaTemplateRegularDraft(
+      state.settings.waTemplateRegular?.trim()
+        ? state.settings.waTemplateRegular
+        : DEFAULT_WA_TEMPLATE_REGULAR
+    );
+    setWaModalMode('preview');
+    setIsWaGlobalModalOpen(true);
+  };
+
+  const openGlobalWaTemplateEditor = () => {
+    setWaPreviewGuest(state.guests[0] || null);
+    setWaTemplateVipDraft(
+      state.settings.waTemplateVip?.trim()
+        ? state.settings.waTemplateVip
+        : DEFAULT_WA_TEMPLATE_VIP
+    );
+    setWaTemplateRegularDraft(
+      state.settings.waTemplateRegular?.trim()
+        ? state.settings.waTemplateRegular
+        : DEFAULT_WA_TEMPLATE_REGULAR
+    );
+    setWaModalMode('global');
+    setIsWaGlobalModalOpen(true);
+  };
+
+  const handleSaveGlobalWaTemplates = async () => {
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      waTemplateVip: waTemplateVipDraft.trim() || DEFAULT_WA_TEMPLATE_VIP,
+      waTemplateRegular:
+        waTemplateRegularDraft.trim() || DEFAULT_WA_TEMPLATE_REGULAR,
+      updatedBy: adminUser.username,
+    };
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    if (waPreviewGuest) {
+      const refreshed = generateWhatsAppMessage(waPreviewGuest, nextSettings);
+      setWaCustomMessage(refreshed.messageText);
+      setWaModalMode('preview');
+    } else {
+      setIsWaGlobalModalOpen(false);
+    }
+    showToast(
+      'Teks Default Pengantar WhatsApp Global berhasil disimpan untuk semua tamu!'
+    );
+  };
 
   const normalizeGuestFormat = (
     fmt?: InvitationFormat | string
@@ -2174,7 +2245,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       Pilih penanda (<strong>Cetak Tebal</strong>, <strong>Cetak Biasa</strong>, <strong>Online</strong>), status RSVP, dan jumlah Pax langsung pada baris tamu.
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={openGlobalWaTemplateEditor}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[11px] sm:text-xs transition-colors"
+                      title="Atur Teks Default Pengantar WhatsApp Global untuk Semua Tamu"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
+                      <span className="hidden sm:inline">Teks WA Global</span>
+                      <span className="sm:hidden">WA Global</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -2379,7 +2460,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </a>
                           <button
                             type="button"
-                            onClick={() => setWaPreviewGuest(guest)}
+                            onClick={() => openGuestWaPreview(guest)}
                             className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40"
                           >
                             Teks WA
@@ -5299,75 +5380,290 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL 4: GENERATOR TEKS & LINK UNDANGAN WA
+          MODAL 4: GENERATOR TEKS WA & PENGATURAN TEKS DEFAULT GLOBAL
          ======================================================================= */}
-      {waPreviewGuest && (
+      {(isWaGlobalModalOpen || waPreviewGuest) && (
         <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           {(() => {
-            const generated = generateWhatsAppMessage(waPreviewGuest, state.settings);
+            const targetGuest = waPreviewGuest || state.guests[0];
+            const generated = targetGuest
+              ? generateWhatsAppMessage(targetGuest, state.settings)
+              : null;
+            const effectiveMessage =
+              waCustomMessage || generated?.messageText || '';
+            const effectiveWaHref = targetGuest
+              ? buildWaHref(targetGuest.phone, effectiveMessage)
+              : '#';
+
             return (
-              <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
-                <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
+                {/* Header */}
+                <div className="px-5 sm:px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-lg font-bold text-stone-900">
-                      Bagikan Undangan WhatsApp
+                    <h3 className="text-base sm:text-lg font-bold text-stone-900">
+                      {waModalMode === 'global'
+                        ? 'Pengaturan Teks Default WhatsApp (Global)'
+                        : 'Bagikan Undangan WhatsApp'}
                     </h3>
-                    <p className="text-xs text-stone-500">{waPreviewGuest.guestName}</p>
+                    <p className="text-xs text-stone-500">
+                      {waModalMode === 'global'
+                        ? 'Ubah format pesan default sekali untuk otomatis diterapkan ke seluruh tamu'
+                        : targetGuest?.guestName || 'Tamu Undangan'}
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setWaPreviewGuest(null)}
-                    className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600"
+                    onClick={() => {
+                      setIsWaGlobalModalOpen(false);
+                      setWaPreviewGuest(null);
+                    }}
+                    className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 shrink-0"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="p-6 space-y-4">
-                  <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-1">
-                    <p className="text-[11px] font-bold text-stone-700">
-                      Link Undangan Khusus Tamu Ini:
-                    </p>
-                    <p className="font-mono text-xs text-[#8B6914] font-semibold break-all">
-                      {generated.inviteUrl}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block font-medium text-stone-700 mb-1">
-                      Preview Pesan Pengantar WhatsApp:
-                    </label>
-                    <textarea
-                      readOnly
-                      rows={9}
-                      value={generated.messageText}
-                      className="w-full p-3.5 rounded-xl border border-stone-300 bg-[#FAF8F5] font-sans text-xs leading-relaxed"
-                    />
-                  </div>
-                </div>
-
-                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
+                {/* Mode Switcher Tabs: Pesan Tamu Ini vs Teks Default Global */}
+                <div className="px-5 sm:px-6 pt-3 bg-white border-b border-stone-100 flex items-center gap-2">
+                  {targetGuest && (
+                    <button
+                      type="button"
+                      onClick={() => setWaModalMode('preview')}
+                      className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 transition-all ${
+                        waModalMode === 'preview'
+                          ? 'border-[#B68D40] text-[#8B6914] bg-[#FAF3E3]/60'
+                          : 'border-transparent text-stone-500 hover:text-stone-800'
+                      }`}
+                    >
+                      Pesan Tamu Ini
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generated.messageText);
-                      showToast('Seluruh teks undangan WA berhasil disalin!');
-                    }}
-                    className="px-4 py-2 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
+                    onClick={() => setWaModalMode('global')}
+                    className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 flex items-center gap-1.5 transition-all ${
+                      waModalMode === 'global'
+                        ? 'border-[#B68D40] text-[#8B6914] bg-[#FAF3E3]/60'
+                        : 'border-transparent text-stone-500 hover:text-stone-800'
+                    }`}
                   >
-                    <Copy className="w-3.5 h-3.5" />
-                    Salin Teks
+                    <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
+                    <span>Atur Teks Default Global</span>
                   </button>
-                  <a
-                    href={generated.waHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    Kirim ke WhatsApp
-                  </a>
                 </div>
+
+                {waModalMode === 'preview' && generated && targetGuest ? (
+                  <>
+                    <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold text-stone-700">
+                            Link Undangan Khusus Tamu Ini:
+                          </p>
+                          <p className="font-mono text-xs text-[#8B6914] font-semibold break-all">
+                            {generated.inviteUrl}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(generated.inviteUrl);
+                            showToast('Link undangan berhasil disalin!');
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 shrink-0"
+                        >
+                          Salin Link
+                        </button>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                          <label className="block font-bold text-stone-700">
+                            Preview Pesan Pengantar WhatsApp (Bisa Diedit):
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setWaModalMode('global')}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#8B6914] hover:underline"
+                          >
+                            <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
+                            <span>Ubah Teks Default Global &rarr;</span>
+                          </button>
+                        </div>
+                        <textarea
+                          rows={10}
+                          value={effectiveMessage}
+                          onChange={(e) => setWaCustomMessage(e.target.value)}
+                          className="w-full p-3.5 rounded-xl border border-stone-300 bg-[#FAF8F5] focus:bg-white focus:border-[#B68D40] focus:outline-none font-sans text-xs leading-relaxed"
+                        />
+                        <p className="text-[11px] text-stone-500 mt-1">
+                          Teks di atas otomatis mengikuti template{' '}
+                          <strong>
+                            {generated.isVipPolri
+                              ? 'VIP / Pejabat (P1)'
+                              : 'Umum / Reguler'}
+                          </strong>
+                          . Klik <strong>Atur Teks Default Global</strong> jika ingin mengubah format default untuk semua tamu.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setWaCustomMessage(generated.messageText)}
+                        className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+                      >
+                        Reset sesuai Default
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(effectiveMessage);
+                            showToast('Seluruh teks undangan WA berhasil disalin!');
+                          }}
+                          className="px-4 py-2 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          Salin Teks
+                        </button>
+                        <a
+                          href={effectiveWaHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-5 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Kirim ke WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* TAB 2: EDITOR TEMPLATE DEFAULT GLOBAL (VIP & UMUM) */
+                  <>
+                    <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                      {/* Pilihan Kategori Template: VIP vs Umum */}
+                      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#FAF8F5] border border-stone-200">
+                        <button
+                          type="button"
+                          onClick={() => setWaGlobalTab('vip')}
+                          className={`py-2 px-3 rounded-lg font-bold text-xs transition-all ${
+                            waGlobalTab === 'vip'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          ⭐ Template VIP / Pejabat (P1)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setWaGlobalTab('regular')}
+                          className={`py-2 px-3 rounded-lg font-bold text-xs transition-all ${
+                            waGlobalTab === 'regular'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          ✉️ Template Tamu Umum / Reguler
+                        </button>
+                      </div>
+
+                      {/* Variabel Otomatis (Klik untuk menyisipkan) */}
+                      <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-1.5">
+                        <p className="text-[11px] font-bold text-stone-700">
+                          Variabel Otomatis (Klik tag untuk menambahkan ke teks):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { tag: '{nama_tamu}', label: 'Nama Tamu' },
+                            { tag: '{instansi}', label: 'Jabatan/Instansi' },
+                            { tag: '{link_undangan}', label: 'Link Undangan Tamu' },
+                            { tag: '{jadwal_acara}', label: 'Daftar Jadwal Acara' },
+                            { tag: '{lokasi_utama}', label: 'Lokasi Acara' },
+                            { tag: '{mempelai_pria}', label: 'Nama Mempelai Pria' },
+                            { tag: '{mempelai_wanita}', label: 'Nama Mempelai Wanita' },
+                            { tag: '{panggilan_pria}', label: 'Panggilan Pria' },
+                            { tag: '{panggilan_wanita}', label: 'Panggilan Wanita' },
+                          ].map((v) => (
+                            <button
+                              key={v.tag}
+                              type="button"
+                              onClick={() => {
+                                if (waGlobalTab === 'vip') {
+                                  setWaTemplateVipDraft(
+                                    (prev) => `${prev} ${v.tag}`
+                                  );
+                                } else {
+                                  setWaTemplateRegularDraft(
+                                    (prev) => `${prev} ${v.tag}`
+                                  );
+                                }
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[11px] font-bold transition-colors"
+                              title={`Sisipkan ${v.label}`}
+                            >
+                              + {v.tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-stone-800">
+                            {waGlobalTab === 'vip'
+                              ? 'Isi Teks Default untuk Tamu Pejabat / VIP (P1):'
+                              : 'Isi Teks Default untuk Tamu Umum / Keluarga / Rekan:'}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (waGlobalTab === 'vip') {
+                                setWaTemplateVipDraft(DEFAULT_WA_TEMPLATE_VIP);
+                              } else {
+                                setWaTemplateRegularDraft(
+                                  DEFAULT_WA_TEMPLATE_REGULAR
+                                );
+                              }
+                              showToast('Template dikembalikan ke teks bawaan.');
+                            }}
+                            className="text-[11px] font-bold text-rose-600 hover:underline"
+                          >
+                            Reset ke Bawaan
+                          </button>
+                        </div>
+                        <textarea
+                          rows={11}
+                          value={
+                            waGlobalTab === 'vip'
+                              ? waTemplateVipDraft
+                              : waTemplateRegularDraft
+                          }
+                          onChange={(e) => {
+                            if (waGlobalTab === 'vip') {
+                              setWaTemplateVipDraft(e.target.value);
+                            } else {
+                              setWaTemplateRegularDraft(e.target.value);
+                            }
+                          }}
+                          className="w-full p-3.5 rounded-xl border border-stone-300 bg-white focus:border-[#B68D40] focus:outline-none font-sans text-xs leading-relaxed"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveGlobalWaTemplates}
+                        className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm shadow-xs transition-all"
+                      >
+                        Simpan Teks Default Global
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })()}
