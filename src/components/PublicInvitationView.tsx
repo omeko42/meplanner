@@ -1500,24 +1500,28 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-stone-200/80 text-xs text-stone-600">
-              <button
-                type="button"
-                onClick={() => setShowQrisModal(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>Tampilkan Barcode QRIS</span>
-              </button>
-              {settings.giftShippingAddress && (
-                <span className="text-stone-500 break-words">
-                  Alamat Kirim Kado:{' '}
-                  <strong className="text-stone-800">
-                    {settings.giftShippingAddress}
-                  </strong>
-                </span>
-              )}
-            </div>
+            {(settings.showQrisButton !== false || settings.giftShippingAddress) && (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-stone-200/80 text-xs text-stone-600">
+                {settings.showQrisButton !== false && (
+                  <button
+                    type="button"
+                    onClick={() => setShowQrisModal(true)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>Tampilkan Barcode QRIS</span>
+                  </button>
+                )}
+                {settings.giftShippingAddress && (
+                  <span className="text-stone-500 break-words">
+                    Alamat Kirim Kado:{' '}
+                    <strong className="text-stone-800">
+                      {settings.giftShippingAddress}
+                    </strong>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -1607,8 +1611,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* QRIS MODAL */}
       {showQrisModal && (
-        <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center text-stone-900 relative shadow-2xl border border-[#D4AF37]/50">
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/55 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowQrisModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-sm w-full p-6 text-center text-stone-900 relative shadow-2xl border border-[#D4AF37]/50"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setShowQrisModal(false)}
@@ -1619,21 +1629,48 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <QrCode className="w-8 h-8 text-[#B68D40] mx-auto mb-2" />
             <h3 className="font-serif text-lg font-bold">QRIS Wedding Gift</h3>
             <p className="text-xs text-stone-500 mb-4">
-              a.n. {settings.giftRecipientName}
+              a.n.{' '}
+              {settings.giftRecipientName && settings.giftRecipientName !== 'Mempelai'
+                ? settings.giftRecipientName
+                : `${settings.groomFullName} & ${settings.brideFullName}`}
             </p>
-            <div className="w-52 h-52 mx-auto rounded-2xl border-2 border-dashed border-[#D4AF37] bg-[#FAF8F5] flex flex-col items-center justify-center p-4 mb-4">
-              <QrCode className="w-32 h-32 text-stone-800" />
-              <span className="text-[10px] font-mono text-stone-500 mt-2">
-                SCAN QRIS BANK / E-WALLET
-              </span>
+            {settings.qrisImageUrl && settings.qrisImageUrl.trim() !== '' ? (
+              <div className="w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-2xl border-2 border-[#D4AF37]/60 bg-white flex flex-col items-center justify-center p-2.5 mb-4 shadow-inner overflow-hidden">
+                <img
+                  src={settings.qrisImageUrl}
+                  alt="Barcode QRIS Wedding Gift"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </div>
+            ) : (
+              <div className="w-56 h-56 mx-auto rounded-2xl border-2 border-dashed border-[#D4AF37] bg-[#FAF8F5] flex flex-col items-center justify-center p-4 mb-4">
+                <QrCode className="w-32 h-32 text-stone-800" />
+                <span className="text-[10px] font-mono text-stone-500 mt-2">
+                  SCAN QRIS BANK / E-WALLET
+                </span>
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              {settings.qrisImageUrl && settings.qrisImageUrl.trim() !== '' && (
+                <a
+                  href={settings.qrisImageUrl}
+                  download="QRIS-Wedding-Gift.webp"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Simpan Gambar QRIS</span>
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowQrisModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
+              >
+                Tutup QRIS
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowQrisModal(false)}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
-            >
-              Tutup QRIS
-            </button>
           </div>
         </div>
       )}

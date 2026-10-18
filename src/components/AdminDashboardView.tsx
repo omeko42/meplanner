@@ -2121,6 +2121,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   };
 
+  const handleUploadQrisFile = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+      showToast('Pilih file berformat gambar QRIS (JPG, PNG, WEBP, SVG).');
+      return;
+    }
+    try {
+      const origKb = Math.max(1, Math.round(file.size / 1024));
+      showToast('Mengonversi gambar Barcode QRIS (HD tajam, Maks 2 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.90);
+      const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
+      const finalKb = Math.max(1, Math.round(finalBytes / 1024));
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        qrisImageUrl: dataUrl,
+        showQrisButton: true,
+        updatedBy: adminUser.username,
+      };
+      await commitImmediateSettings(nextSettings);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'AMPLOP_DIGITAL',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Meng-upload gambar Barcode QRIS (${origKb} KB → ${finalKb} KB)`,
+      });
+      showToast(
+        `✓ Barcode QRIS berhasil disimpan ke Supabase (${origKb} KB → ${finalKb} KB)!`
+      );
+    } catch {
+      showToast('Gagal meng-upload gambar Barcode QRIS.');
+    }
+  };
+
   const handleUploadGalleryFile = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -7098,12 +7137,115 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                           <form
                                             onSubmit={handleSaveSettingsModal}
-                                            className="p-3 rounded-xl bg-white border border-stone-200 space-y-2.5"
+                                            className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-3"
                                           >
+                                            {/* Pengaturan Barcode QRIS */}
+                                            <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5">
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <div>
+                                                  <p className="font-bold text-stone-900 text-xs flex items-center gap-1.5">
+                                                    <span>📱 Barcode QRIS (Scan Bank / E-Wallet)</span>
+                                                  </p>
+                                                  <p className="text-[11px] text-stone-500">
+                                                    Upload gambar barcode QRIS Anda agar tamu dapat scan langsung dari undangan.
+                                                  </p>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      showQrisButton:
+                                                        settingsForm.showQrisButton === false ? true : false,
+                                                    })
+                                                  }
+                                                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                                                    settingsForm.showQrisButton !== false
+                                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                      : 'bg-stone-100 text-stone-500 border-stone-200'
+                                                  }`}
+                                                >
+                                                  {settingsForm.showQrisButton !== false
+                                                    ? '● Tombol QRIS Aktif'
+                                                    : '○ Tombol QRIS Nonaktif'}
+                                                </button>
+                                              </div>
+
+                                              <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                                                {/* Preview Thumbnail QRIS */}
+                                                <div className="w-24 h-24 rounded-xl border-2 border-dashed border-[#D4AF37]/60 bg-white flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                                                  {settingsForm.qrisImageUrl &&
+                                                  settingsForm.qrisImageUrl.trim() !== '' ? (
+                                                    <img
+                                                      src={settingsForm.qrisImageUrl}
+                                                      alt="Preview QRIS"
+                                                      className="w-full h-full object-contain rounded-lg"
+                                                    />
+                                                  ) : (
+                                                    <span className="text-[10px] font-bold text-stone-400 text-center px-1">
+                                                      Belum Ada Gambar QRIS
+                                                    </span>
+                                                  )}
+                                                </div>
+
+                                                <div className="flex-1 w-full space-y-2">
+                                                  <div className="flex flex-wrap items-center gap-2">
+                                                    <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs transition-all">
+                                                      <Upload className="w-3.5 h-3.5" />
+                                                      <span>Upload Gambar QRIS</span>
+                                                      <input
+                                                        type="file"
+                                                        accept="image/*,.svg"
+                                                        className="hidden"
+                                                        onChange={handleUploadQrisFile}
+                                                      />
+                                                    </label>
+
+                                                    {settingsForm.qrisImageUrl &&
+                                                      settingsForm.qrisImageUrl.trim() !== '' && (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            setSettingsForm({
+                                                              ...settingsForm,
+                                                              qrisImageUrl: '',
+                                                            })
+                                                          }
+                                                          className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs transition-colors"
+                                                        >
+                                                          Hapus Gambar QRIS
+                                                        </button>
+                                                      )}
+                                                  </div>
+
+                                                  <input
+                                                    type="text"
+                                                    value={
+                                                      settingsForm.qrisImageUrl?.startsWith('data:')
+                                                        ? ''
+                                                        : settingsForm.qrisImageUrl || ''
+                                                    }
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        qrisImageUrl: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder={
+                                                      settingsForm.qrisImageUrl?.startsWith('data:')
+                                                        ? '✓ Gambar QRIS ter-upload (atau tempel URL gambar QRIS di sini)'
+                                                        : 'Atau tempel URL / Link Gambar Barcode QRIS (opsional)...'
+                                                    }
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                  />
+                                                </div>
+                                              </div>
+                                            </div>
+
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                               <div>
                                                 <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                  Penerima Kado
+                                                  Nama Penerima QRIS / Kado
                                                 </label>
                                                 <input
                                                   type="text"
@@ -7114,12 +7256,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       giftRecipientName: e.target.value,
                                                     })
                                                   }
+                                                  placeholder="Contoh: Lettu Inf Eko Budianto & dr. Fransisca"
                                                   className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
                                               <div>
                                                 <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                  Alamat Kirim Kado
+                                                  Alamat Kirim Kado Fisik
                                                 </label>
                                                 <input
                                                   type="text"
@@ -7130,6 +7273,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       giftShippingAddress: e.target.value,
                                                     })
                                                   }
+                                                  placeholder="Alamat lengkap penerima kado"
                                                   className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                 />
                                               </div>
@@ -7139,7 +7283,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 type="submit"
                                                 className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                               >
-                                                Simpan
+                                                Simpan Amplop &amp; QRIS
                                               </button>
                                             </div>
                                           </form>
@@ -10248,13 +10392,112 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </form>
             )}
 
-            {/* 9. MODAL: ALAMAT KADO FISIK */}
+            {/* 9. MODAL: ALAMAT KADO FISIK & QRIS */}
             {activeSettingsModal === 'gift_address' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4">
+                  <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <p className="font-bold text-stone-900 text-xs">
+                          📱 Barcode QRIS (Scan Bank / E-Wallet)
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          Upload gambar barcode QRIS Anda agar tampil di undangan.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            showQrisButton:
+                              settingsForm.showQrisButton === false ? true : false,
+                          })
+                        }
+                        className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                          settingsForm.showQrisButton !== false
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-stone-100 text-stone-500 border-stone-200'
+                        }`}
+                      >
+                        {settingsForm.showQrisButton !== false
+                          ? '● Tombol QRIS Aktif'
+                          : '○ Tombol QRIS Nonaktif'}
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-[#D4AF37]/60 bg-white flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                        {settingsForm.qrisImageUrl &&
+                        settingsForm.qrisImageUrl.trim() !== '' ? (
+                          <img
+                            src={settingsForm.qrisImageUrl}
+                            alt="Preview QRIS"
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-stone-400 text-center px-1">
+                            Belum Ada QRIS
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex-1 w-full space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Gambar QRIS</span>
+                            <input
+                              type="file"
+                              accept="image/*,.svg"
+                              className="hidden"
+                              onChange={handleUploadQrisFile}
+                            />
+                          </label>
+                          {settingsForm.qrisImageUrl &&
+                            settingsForm.qrisImageUrl.trim() !== '' && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    qrisImageUrl: '',
+                                  })
+                                }
+                                className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs"
+                              >
+                                Hapus QRIS
+                              </button>
+                            )}
+                        </div>
+                        <input
+                          type="text"
+                          value={
+                            settingsForm.qrisImageUrl?.startsWith('data:')
+                              ? ''
+                              : settingsForm.qrisImageUrl || ''
+                          }
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              qrisImageUrl: e.target.value,
+                            })
+                          }
+                          placeholder={
+                            settingsForm.qrisImageUrl?.startsWith('data:')
+                              ? '✓ Gambar QRIS ter-upload'
+                              : 'Atau tempel URL Gambar Barcode QRIS...'
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Nama Penerima*
+                      Nama Penerima QRIS / Kado*
                     </label>
                     <input
                       type="text"

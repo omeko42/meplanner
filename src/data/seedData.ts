@@ -161,8 +161,10 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   invitationClosingText:
     'Merupakan suatu kehormatan dan kebahagiaan bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.',
 
-  giftRecipientName: 'Mempelai',
+  giftRecipientName: 'Lettu Inf Eko Budianto & dr. Fransisca C.A.N.',
   giftShippingAddress: 'Kota Semarang, Jawa Tengah',
+  qrisImageUrl: '',
+  showQrisButton: true,
   bankAccounts: [],
 
   loveStory: [],

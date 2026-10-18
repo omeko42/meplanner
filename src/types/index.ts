@@ -296,6 +296,8 @@ export interface WeddingSettings {
   // Digital Envelope / Gift
   giftRecipientName: string;
   giftShippingAddress: string;
+  qrisImageUrl?: string;
+  showQrisButton?: boolean;
   bankAccounts: DigitalGiftAccount[];
 
   // Love Story & Gallery

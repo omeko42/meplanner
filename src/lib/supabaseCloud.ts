@@ -522,13 +522,14 @@ async function prepareCloudSafeState(
   const qual = aggressiveMode ? 0.78 : 0.86;
   const maxChars = aggressiveMode ? 110_000 : 190_000;
 
-  const [groomPhotoUrl, bridePhotoUrl, coverBgUrl, heroPrewedUrl, pageBgUrl] =
+  const [groomPhotoUrl, bridePhotoUrl, coverBgUrl, heroPrewedUrl, pageBgUrl, qrisImageUrl] =
     await Promise.all([
       compressDataUrlForCloud(rawSettings.groomPhotoUrl, avatarDim, qual, maxChars),
       compressDataUrlForCloud(rawSettings.bridePhotoUrl, avatarDim, qual, maxChars),
       compressDataUrlForCloud(rawSettings.coverBgUrl, bannerDim, qual, maxChars),
       compressDataUrlForCloud(rawSettings.heroPrewedUrl, bannerDim, qual, maxChars),
       compressDataUrlForCloud(rawSettings.pageBgUrl, bannerDim, qual, maxChars),
+      compressDataUrlForCloud(rawSettings.qrisImageUrl, avatarDim, qual, maxChars),
     ]);
 
   rawSettings.groomPhotoUrl = groomPhotoUrl || rawSettings.groomPhotoUrl;
@@ -536,6 +537,7 @@ async function prepareCloudSafeState(
   if (coverBgUrl) rawSettings.coverBgUrl = coverBgUrl;
   if (heroPrewedUrl) rawSettings.heroPrewedUrl = heroPrewedUrl;
   if (pageBgUrl) rawSettings.pageBgUrl = pageBgUrl;
+  if (qrisImageUrl) rawSettings.qrisImageUrl = qrisImageUrl;
 
   if (Array.isArray(rawSettings.galleryPhotos)) {
     const cleanedGallery: GalleryPhotoItem[] = await Promise.all(
