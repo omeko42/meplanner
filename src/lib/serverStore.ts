@@ -23,6 +23,7 @@ import {
   loadStateFromSupabase,
   saveStateToSupabase,
 } from '@/lib/supabaseCloud';
+import { analyzeWishModeration } from '@/lib/clientSync';
 
 const PRIMARY_DB_PATH = path.join(process.cwd(), 'database', 'wedding_db.json');
 const LOCAL_DB_PATH = path.join(process.cwd(), '.data', 'wedding_db.json');
@@ -614,6 +615,12 @@ export const serverStore = {
     pax: number;
     sessionChoice?: WeddingGuest['sessionChoice'];
     message?: string;
+    originalUrlGuestParam?: string;
+    originalUrlCodeParam?: string;
+    matchedGuestRecordName?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    devicePlatform?: string;
   }): { guest: WeddingGuest; wish?: GuestWish } => {
     const store = getStore();
     const nowSlash = formatDateSlash();
@@ -686,6 +693,19 @@ export const serverStore = {
           }.`
         : `Konfirmasi kehadiran: ${payload.rsvpStatus}.`;
 
+    const modAnalysis = analyzeWishModeration(
+      {
+        guestName: cleanName,
+        message: effectiveMessage,
+        institution: payload.institution || targetGuest.institution || '',
+        originalUrlGuestParam: payload.originalUrlGuestParam,
+        matchedGuestRecordName:
+          payload.matchedGuestRecordName ||
+          (matchIdx >= 0 ? targetGuest.guestName : undefined),
+      },
+      store.settings.moderationBlockedKeywords
+    );
+
     const createdWish: GuestWish = {
       id: `wish_${Date.now().toString(36)}`,
       guestId: targetGuest.id,
@@ -693,11 +713,23 @@ export const serverStore = {
       guestName: cleanName,
       institution: payload.institution || targetGuest.institution || '',
       relation: payload.relation || targetGuest.guestType || 'Tamu Kehormatan',
+      phone: payload.phone || targetGuest.phone || '',
       rsvpStatus: payload.rsvpStatus,
       pax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
       message: effectiveMessage,
       createdAt: new Date().toISOString(),
       isPinned: false,
+      moderationStatus: modAnalysis.isNegative ? 'FLAGGED' : 'APPROVED',
+      flaggedReason: modAnalysis.flaggedReason || undefined,
+      originalUrlGuestParam: payload.originalUrlGuestParam,
+      originalUrlCodeParam: payload.originalUrlCodeParam,
+      matchedGuestRecordName:
+        payload.matchedGuestRecordName ||
+        (matchIdx >= 0 ? targetGuest.guestName : undefined),
+      ipAddress: payload.ipAddress,
+      userAgent: payload.userAgent,
+      devicePlatform: payload.devicePlatform,
+      clientId: 'client-utama',
     };
     store.wishes.unshift(createdWish);
 
@@ -723,6 +755,22 @@ export const serverStore = {
     const target = store.wishes.find((w) => w.id === id);
     if (!target) return null;
     target.replyFromCouple = replyFromCouple.trim();
+    persistStore(store);
+    return target;
+  },
+
+  moderateWish: (
+    id: string,
+    moderationStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN',
+    flaggedReason?: string
+  ): GuestWish | null => {
+    const store = getStore();
+    const target = store.wishes.find((w) => w.id === id);
+    if (!target) return null;
+    target.moderationStatus = moderationStatus;
+    if (flaggedReason !== undefined) {
+      target.flaggedReason = flaggedReason;
+    }
     persistStore(store);
     return target;
   },

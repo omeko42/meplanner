@@ -117,6 +117,8 @@ import {
   DEFAULT_GALLERY_PHOTOS,
   getEffectiveLoveStory,
   getEffectiveGalleryPhotos,
+  analyzeWishModeration,
+  formatForensicUserAgent,
 } from '@/lib/clientSync';
 import {
   CloudSyncStatus,
@@ -187,6 +189,11 @@ interface AdminDashboardViewProps {
   onDeleteGuest: (id: string) => Promise<void>;
   onTogglePinWish: (id: string) => Promise<void>;
   onReplyWish: (id: string, replyFromCouple: string) => Promise<void>;
+  onModerateWish?: (
+    id: string,
+    moderationStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN',
+    flaggedReason?: string
+  ) => Promise<void>;
   onDeleteWish: (id: string) => Promise<void>;
   onUpsertBudget: (item: Partial<BudgetVendorItem> & { itemName: string }) => Promise<void>;
   onDeleteBudget: (id: string) => Promise<void>;
@@ -266,6 +273,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onDeleteGuest,
   onTogglePinWish,
   onReplyWish,
+  onModerateWish,
   onDeleteWish,
   onUpsertBudget,
   onDeleteBudget,
@@ -278,6 +286,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSwitchWorkspaceClient,
   onOpenLandingPage,
 }) => {
+  const [commentAuditFilter, setCommentAuditFilter] = useState<
+    'ALL' | 'FLAGGED' | 'HIDDEN' | 'APPROVED'
+  >('ALL');
+  const [commentAuditSearch, setCommentAuditSearch] = useState('');
   const isPanitia = adminUser.role === 'PANITIA';
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
     if (typeof window !== 'undefined') {
@@ -9219,26 +9231,48 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
-                    Status Moderasi View
+                    Audit &amp; Moderasi Komentar
                   </p>
-                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
-                    {(settingsForm.invitationModerationMode ||
-                      state.settings.invitationModerationMode ||
-                      'LIVE') === 'LIVE'
-                      ? '🟢 LIVE PUBLIK'
-                      : (settingsForm.invitationModerationMode ||
-                          state.settings.invitationModerationMode) ===
-                        'VIP_CODE_ONLY'
-                      ? '🔐 KHUSUS KODE VIP'
-                      : '🛠️ MAINTENANCE'}
-                  </p>
-                  <p className="text-[11px] text-[#E8DFD1]/70">
-                    RSVP:{' '}
-                    {settingsForm.disableRsvpSubmission ??
-                    state.settings.disableRsvpSubmission
-                      ? 'Dikunci'
-                      : 'Terbuka'}
-                  </p>
+                  {(() => {
+                    const customKeywords =
+                      settingsForm.moderationBlockedKeywords ??
+                      state.settings.moderationBlockedKeywords ??
+                      '';
+                    const flaggedCount = state.wishes.filter((w) => {
+                      const audit = analyzeWishModeration(
+                        {
+                          guestName: w.guestName,
+                          message: w.message,
+                          institution: w.institution,
+                          originalUrlGuestParam: w.originalUrlGuestParam,
+                          matchedGuestRecordName: w.matchedGuestRecordName,
+                        },
+                        customKeywords
+                      );
+                      return (
+                        w.moderationStatus === 'FLAGGED' ||
+                        w.moderationStatus === 'HIDDEN' ||
+                        (w.moderationStatus !== 'APPROVED' &&
+                          (audit.isNegative || audit.isSpoofedIdentity))
+                      );
+                    }).length;
+                    return (
+                      <>
+                        <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                          {flaggedCount > 0
+                            ? `🚨 ${flaggedCount} Komen Terindikasi`
+                            : '🛡️ 0 Komen Negatif'}
+                        </p>
+                        <p className="text-[11px] text-[#E8DFD1]/70">
+                          {state.wishes.length} Total Ucapan &bull; Auto-Filter{' '}
+                          {(settingsForm.autoHideFlaggedWishes ??
+                            state.settings.autoHideFlaggedWishes) !== false
+                            ? 'Aktif'
+                            : 'Mati'}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
@@ -9290,7 +9324,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* GRID 2 KOLOM: KAPASITAS DB & MODERASI VIEW UNDANGAN */}
+            {/* GRID 2 KOLOM: KAPASITAS DB & MODERASI KOMENTAR NEGATIF / PELAKU */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* PANEL 1: DB & SUPABASE STORAGE CAPACITY MONITOR (500 MB) */}
               <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
@@ -9465,128 +9499,592 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* PANEL 2: MODERASI VIEW UNDANGAN PUBLIK & KONTROL AKSES */}
+              {/* PANEL 2: MODERASI KOMENTAR NEGATIF & AUDIT FORENSIK PELAKU */}
               <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
                 <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
-                      <Eye className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-4 h-4" />
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                        Moderasi View Undangan Publik
+                        Moderasi Komentar Negatif &amp; Audit Pelaku
                       </h3>
                       <p className="text-[11px] text-stone-500">
-                        Atur mode akses gerbang sampul, kunci RSVP, dan visibilitas sesi undangan
+                        Deteksi kata kasar/negatif, lacak identitas asli pemilik link undangan, IP, No. WA &amp; perangkat pengirim
                       </p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
-                    Real-Time Sync
+                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px] shrink-0">
+                    Forensic Guard
                   </span>
                 </div>
 
-                {/* Pilihan Mode Penayangan Undangan */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-stone-800">
-                    Mode Penayangan Undangan Publik:
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
+                {(() => {
+                  const customKeywords =
+                    settingsForm.moderationBlockedKeywords ??
+                    state.settings.moderationBlockedKeywords ??
+                    '';
+                  const autoHideEnabled =
+                    (settingsForm.autoHideFlaggedWishes ??
+                      state.settings.autoHideFlaggedWishes) !== false;
+
+                  const enrichedWishes = state.wishes.map((w) => {
+                    const audit = analyzeWishModeration(
                       {
-                        mode: 'LIVE' as const,
-                        title: '🟢 LIVE Publik',
-                        desc: 'Terbuka normal untuk seluruh tamu undangan',
+                        guestName: w.guestName,
+                        message: w.message,
+                        institution: w.institution,
+                        originalUrlGuestParam: w.originalUrlGuestParam,
+                        matchedGuestRecordName: w.matchedGuestRecordName,
                       },
-                      {
-                        mode: 'VIP_CODE_ONLY' as const,
-                        title: '🔐 Khusus Kode VIP',
-                        desc: 'Wajib memasukkan Kode Undangan (INV-xxxx)',
-                      },
-                      {
-                        mode: 'MAINTENANCE' as const,
-                        title: '🛠️ Mode Maintenance',
-                        desc: 'Kunci sementara tampilan undangan publik',
-                      },
-                    ].map((item) => {
-                      const currentMode =
-                        settingsForm.invitationModerationMode ||
-                        state.settings.invitationModerationMode ||
-                        'LIVE';
-                      const active = currentMode === item.mode;
-                      return (
+                      customKeywords
+                    );
+                    const isFlaggedByAudit =
+                      audit.isNegative || audit.isSpoofedIdentity;
+                    const effectiveStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN' =
+                      w.moderationStatus === 'HIDDEN'
+                        ? 'HIDDEN'
+                        : w.moderationStatus === 'APPROVED'
+                        ? 'APPROVED'
+                        : w.moderationStatus === 'FLAGGED' || isFlaggedByAudit
+                        ? 'FLAGGED'
+                        : 'APPROVED';
+                    const effectiveReason =
+                      w.flaggedReason ||
+                      (audit.reasons.length > 0 ? audit.reasons.join(' • ') : '');
+                    const matchedGuest = state.guests.find(
+                      (g) =>
+                        (w.originalUrlCodeParam &&
+                          g.invitationCode?.toUpperCase() ===
+                            w.originalUrlCodeParam.toUpperCase()) ||
+                        (w.originalUrlGuestParam &&
+                          g.guestName.toLowerCase() ===
+                            w.originalUrlGuestParam.toLowerCase()) ||
+                        g.guestName.toLowerCase() === w.guestName.toLowerCase()
+                    );
+                    const isHiddenFromPublic =
+                      effectiveStatus === 'HIDDEN' ||
+                      (autoHideEnabled && effectiveStatus === 'FLAGGED');
+                    return {
+                      wish: w,
+                      audit,
+                      effectiveStatus,
+                      effectiveReason,
+                      matchedGuest,
+                      isHiddenFromPublic,
+                    };
+                  });
+
+                  const totalFlagged = enrichedWishes.filter(
+                    (item) => item.effectiveStatus === 'FLAGGED'
+                  ).length;
+                  const totalHidden = enrichedWishes.filter(
+                    (item) => item.effectiveStatus === 'HIDDEN'
+                  ).length;
+                  const totalSafe = enrichedWishes.filter(
+                    (item) => item.effectiveStatus === 'APPROVED'
+                  ).length;
+
+                  const filteredWishes = enrichedWishes.filter((item) => {
+                    if (
+                      commentAuditFilter === 'FLAGGED' &&
+                      item.effectiveStatus !== 'FLAGGED'
+                    ) {
+                      return false;
+                    }
+                    if (
+                      commentAuditFilter === 'HIDDEN' &&
+                      item.effectiveStatus !== 'HIDDEN'
+                    ) {
+                      return false;
+                    }
+                    if (
+                      commentAuditFilter === 'APPROVED' &&
+                      item.effectiveStatus !== 'APPROVED'
+                    ) {
+                      return false;
+                    }
+                    const q = commentAuditSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      item.wish.guestName.toLowerCase().includes(q) ||
+                      item.wish.message.toLowerCase().includes(q) ||
+                      (item.wish.phone || '').toLowerCase().includes(q) ||
+                      (item.wish.originalUrlGuestParam || '')
+                        .toLowerCase()
+                        .includes(q) ||
+                      (item.wish.originalUrlCodeParam || '')
+                        .toLowerCase()
+                        .includes(q) ||
+                      (item.wish.matchedGuestRecordName || '')
+                        .toLowerCase()
+                        .includes(q) ||
+                      (item.wish.ipAddress || '').toLowerCase().includes(q) ||
+                      (item.effectiveReason || '').toLowerCase().includes(q)
+                    );
+                  });
+
+                  return (
+                    <div className="space-y-3.5">
+                      {/* Ringkasan Statistik Audit Komentar */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <button
-                          key={item.mode}
                           type="button"
-                          onClick={async () => {
-                            const nextSettings: WeddingSettings = {
-                              ...state.settings,
-                              ...settingsForm,
-                              invitationModerationMode: item.mode,
-                              updatedBy: adminUser.username,
-                            };
-                            setSettingsFormInternal(nextSettings);
-                            await commitImmediateSettings(nextSettings);
-                            appendAuditLog({
-                              actor: adminUser.username,
-                              module: 'MODERASI_UNDANGAN',
-                              action: 'EDIT',
-                              status: 'SUCCESS',
-                              summary: `Mengubah mode moderasi undangan publik menjadi ${item.mode}`,
-                            });
-                            showToast(
-                              `✓ Mode undangan publik diubah ke: ${item.title}`
-                            );
-                          }}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            active
-                              ? 'bg-gradient-to-br from-[#FAF3E3] to-[#F5E6C8] border-[#B68D40] ring-1 ring-[#B68D40]/40'
-                              : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/50'
+                          onClick={() => setCommentAuditFilter('ALL')}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            commentAuditFilter === 'ALL'
+                              ? 'bg-[#FAF3E3] border-[#B68D40] ring-1 ring-[#B68D40]/40'
+                              : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/40'
                           }`}
                         >
-                          <p className="text-xs font-extrabold text-stone-900">
-                            {item.title}
+                          <p className="text-[10px] font-bold uppercase text-stone-500">
+                            Semua Komen
                           </p>
-                          <p className="text-[10px] text-stone-500 mt-0.5 leading-snug">
-                            {item.desc}
+                          <p className="text-sm font-extrabold text-stone-900 mt-0.5">
+                            {enrichedWishes.length} Ucapan
                           </p>
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
-                {/* Pesan Maintenance */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Pesan Layar Maintenance / Moderasi Superadmin:
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={
-                        settingsForm.invitationMaintenanceMessage ??
-                        state.settings.invitationMaintenanceMessage ??
-                        ''
-                      }
-                      onChange={(e) =>
-                        setSettingsForm((prev) => ({
-                          ...prev,
-                          invitationMaintenanceMessage: e.target.value,
-                        }))
-                      }
-                      placeholder="Pesan ketika undangan berada dalam mode Maintenance..."
-                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void handleSaveSettingsModal()}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shrink-0"
-                    >
-                      Simpan
-                    </button>
-                  </div>
-                </div>
+                        <button
+                          type="button"
+                          onClick={() => setCommentAuditFilter('FLAGGED')}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            commentAuditFilter === 'FLAGGED'
+                              ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300'
+                              : 'bg-rose-50/40 border-rose-200 hover:border-rose-300'
+                          }`}
+                        >
+                          <p className="text-[10px] font-bold uppercase text-rose-700">
+                            🚨 Negatif / Anomali
+                          </p>
+                          <p className="text-sm font-extrabold text-rose-800 mt-0.5">
+                            {totalFlagged} Terdeteksi
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setCommentAuditFilter('HIDDEN')}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            commentAuditFilter === 'HIDDEN'
+                              ? 'bg-amber-50 border-amber-400 ring-1 ring-amber-300'
+                              : 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
+                          }`}
+                        >
+                          <p className="text-[10px] font-bold uppercase text-amber-800">
+                            👁️‍🗨️ Disembunyikan
+                          </p>
+                          <p className="text-sm font-extrabold text-amber-900 mt-0.5">
+                            {totalHidden} Komen
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setCommentAuditFilter('APPROVED')}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            commentAuditFilter === 'APPROVED'
+                              ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
+                              : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          <p className="text-[10px] font-bold uppercase text-emerald-700">
+                            ✅ Tampil Aman
+                          </p>
+                          <p className="text-sm font-extrabold text-emerald-800 mt-0.5">
+                            {totalSafe} Komen
+                          </p>
+                        </button>
+                      </div>
+
+                      {/* Pencarian Pelaku / Isi Komentar */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={commentAuditSearch}
+                            onChange={(e) => setCommentAuditSearch(e.target.value)}
+                            placeholder="Cari kata negatif, nama pengirim, pemilik link asli (?to=), kode INV, IP, atau No. WA..."
+                            className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
+                          />
+                        </div>
+                        {commentAuditSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setCommentAuditSearch('')}
+                            className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-100"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Daftar Audit Forensik Komentar & Pelaku */}
+                      <div className="max-h-[340px] overflow-y-auto space-y-2.5 pr-1">
+                        {filteredWishes.length === 0 ? (
+                          <div className="p-6 rounded-xl border border-dashed border-stone-200 bg-[#FAF8F5] text-center space-y-1">
+                            <p className="text-xs font-bold text-stone-700">
+                              Tidak ada komentar pada filter ini.
+                            </p>
+                            <p className="text-[11px] text-stone-500">
+                              Setiap ucapan baru dari tamu undangan otomatis dipindai kata negatif &amp; jejak forensik pelakunya di sini.
+                            </p>
+                          </div>
+                        ) : (
+                          filteredWishes.map(
+                            ({
+                              wish,
+                              audit,
+                              effectiveStatus,
+                              effectiveReason,
+                              matchedGuest,
+                              isHiddenFromPublic,
+                            }) => {
+                              const realLinkOwner =
+                                wish.matchedGuestRecordName ||
+                                wish.originalUrlGuestParam ||
+                                matchedGuest?.guestName ||
+                                '';
+                              const isSpoofedName =
+                                Boolean(realLinkOwner) &&
+                                realLinkOwner.trim().toLowerCase() !==
+                                  wish.guestName.trim().toLowerCase();
+                              const actorPhone =
+                                wish.phone || matchedGuest?.phone || '';
+                              const actorCode =
+                                wish.originalUrlCodeParam ||
+                                wish.invitationCode ||
+                                matchedGuest?.invitationCode ||
+                                '';
+                              const actorGroup =
+                                wish.institution ||
+                                matchedGuest?.institution ||
+                                matchedGuest?.guestType ||
+                                '';
+
+                              return (
+                                <div
+                                  key={wish.id}
+                                  className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
+                                    effectiveStatus === 'FLAGGED'
+                                      ? 'bg-rose-50/70 border-rose-300'
+                                      : effectiveStatus === 'HIDDEN'
+                                      ? 'bg-amber-50/60 border-amber-300'
+                                      : 'bg-[#FAF8F5] border-stone-200/90'
+                                  }`}
+                                >
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <div className="space-y-0.5">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="text-xs font-extrabold text-stone-900">
+                                          {wish.guestName}
+                                        </span>
+                                        {effectiveStatus === 'FLAGGED' && (
+                                          <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">
+                                            🚨 TERINDIKASI NEGATIF / ANOMALI
+                                          </span>
+                                        )}
+                                        {effectiveStatus === 'HIDDEN' && (
+                                          <span className="px-2 py-0.5 rounded-full bg-amber-700 text-white text-[10px] font-extrabold">
+                                            👁️‍🗨️ DISEMBUNYIKAN DARI PUBLIK
+                                          </span>
+                                        )}
+                                        {effectiveStatus === 'APPROVED' && (
+                                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                            ✅ Aman
+                                          </span>
+                                        )}
+                                        {isHiddenFromPublic &&
+                                          effectiveStatus === 'FLAGGED' && (
+                                            <span className="px-2 py-0.5 rounded-full bg-stone-800 text-white text-[10px] font-bold">
+                                              Auto-Hidden di Undangan
+                                            </span>
+                                          )}
+                                      </div>
+                                      <p className="text-[10px] text-stone-500">
+                                        Dikirim:{' '}
+                                        {new Date(wish.createdAt).toLocaleString(
+                                          'id-ID',
+                                          {
+                                            dateStyle: 'medium',
+                                            timeStyle: 'short',
+                                          }
+                                        )}{' '}
+                                        &bull; Kehadiran:{' '}
+                                        <strong>{wish.rsvpStatus}</strong>
+                                      </p>
+                                    </div>
+
+                                    {/* Tombol Aksi Moderasi Cepat */}
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      {effectiveStatus !== 'APPROVED' ? (
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            await onModerateWish?.(
+                                              wish.id,
+                                              'APPROVED',
+                                              ''
+                                            );
+                                            appendAuditLog({
+                                              actor: adminUser.username,
+                                              module: 'MODERASI_KOMENTAR',
+                                              action: 'EDIT',
+                                              status: 'SUCCESS',
+                                              summary: `Menyetujui tampil komentar dari "${wish.guestName}"`,
+                                            });
+                                            showToast(
+                                              `✓ Komentar "${wish.guestName}" ditandai Aman & Ditampilkan.`
+                                            );
+                                          }}
+                                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1"
+                                          title="Tampilkan kembali di buku tamu publik"
+                                        >
+                                          <Eye className="w-3 h-3" />
+                                          <span>Tampilkan Aman</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            await onModerateWish?.(
+                                              wish.id,
+                                              'HIDDEN',
+                                              effectiveReason ||
+                                                `Disembunyikan manual oleh Superadmin (${adminUser.username})`
+                                            );
+                                            appendAuditLog({
+                                              actor: adminUser.username,
+                                              module: 'MODERASI_KOMENTAR',
+                                              action: 'EDIT',
+                                              status: 'SUCCESS',
+                                              summary: `Menyembunyikan komentar dari "${wish.guestName}" dari tampilan undangan publik`,
+                                            });
+                                            showToast(
+                                              `👁️‍🗨️ Komentar "${wish.guestName}" disembunyikan dari undangan publik.`
+                                            );
+                                          }}
+                                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold flex items-center gap-1"
+                                          title="Sembunyikan dari publik tapi simpan bukti forensik"
+                                        >
+                                          <Lock className="w-3 h-3" />
+                                          <span>Sembunyikan</span>
+                                        </button>
+                                      )}
+
+                                      {effectiveStatus !== 'FLAGGED' && (
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            await onModerateWish?.(
+                                              wish.id,
+                                              'FLAGGED',
+                                              effectiveReason ||
+                                                `Ditandai negatif oleh Superadmin (${adminUser.username})`
+                                            );
+                                            showToast(
+                                              `🚨 Komentar "${wish.guestName}" ditandai sebagai Komentar Negatif.`
+                                            );
+                                          }}
+                                          className="px-2 py-1 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-[10px] font-bold"
+                                        >
+                                          Tandai Negatif
+                                        </button>
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          await onDeleteWish(wish.id);
+                                          appendAuditLog({
+                                            actor: adminUser.username,
+                                            module: 'MODERASI_KOMENTAR',
+                                            action: 'HAPUS',
+                                            status: 'SUCCESS',
+                                            summary: `Menghapus permanen komentar dari "${wish.guestName}"`,
+                                          });
+                                          showToast(
+                                            `🗑️ Komentar "${wish.guestName}" dihapus permanen.`
+                                          );
+                                        }}
+                                        className="px-2 py-1 rounded-lg border border-stone-300 bg-white hover:bg-rose-600 hover:text-white hover:border-rose-600 text-stone-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                        title="Hapus permanen dari database"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Hapus</span>
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Isi Pesan Komentar */}
+                                  <div className="p-2.5 rounded-lg bg-white border border-stone-200/80 text-xs text-stone-800 italic">
+                                    &ldquo;{wish.message}&rdquo;
+                                  </div>
+
+                                  {/* Alasan Deteksi Negatif / Anomali */}
+                                  {(effectiveReason ||
+                                    audit.matchedKeywords.length > 0 ||
+                                    isSpoofedName) && (
+                                    <div className="px-2.5 py-1.5 rounded-lg bg-rose-100/80 border border-rose-200 text-[11px] text-rose-900 font-semibold">
+                                      ⚠️ <strong>Temuan Audit:</strong>{' '}
+                                      {effectiveReason ||
+                                        `Mengandung kata terlarang (${audit.matchedKeywords.join(
+                                          ', '
+                                        )})`}
+                                    </div>
+                                  )}
+
+                                  {/* Kotak Jejak Forensik Pelaku */}
+                                  <div className="p-2.5 rounded-lg bg-stone-900 text-[#F5EFE6] text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+                                    <div>
+                                      <span className="text-[#D4AF37] font-bold">
+                                        Pemilik Link Asli (?to / DB):
+                                      </span>{' '}
+                                      <span className="font-mono">
+                                        {realLinkOwner ? (
+                                          <>
+                                            {realLinkOwner}
+                                            {isSpoofedName && (
+                                              <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-200 text-[10px] font-bold">
+                                                Samaran! Input: {wish.guestName}
+                                              </span>
+                                            )}
+                                          </>
+                                        ) : (
+                                          'Tamu Umum (Tanpa Parameter ?to)'
+                                        )}
+                                      </span>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[#D4AF37] font-bold">
+                                        Kode Undangan &amp; Instansi:
+                                      </span>{' '}
+                                      <span className="font-mono">
+                                        {actorCode || '—'}
+                                        {actorGroup ? ` (${actorGroup})` : ''}
+                                      </span>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[#D4AF37] font-bold">
+                                        No. WhatsApp Pelaku:
+                                      </span>{' '}
+                                      {actorPhone ? (
+                                        <a
+                                          href={`https://wa.me/${actorPhone
+                                            .replace(/[^0-9]/g, '')
+                                            .replace(/^0/, '62')}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="font-mono underline text-emerald-300 hover:text-emerald-200"
+                                        >
+                                          {actorPhone} (Hubungi WA)
+                                        </a>
+                                      ) : (
+                                        <span className="font-mono text-stone-400">
+                                          Tidak dicantumkan
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[#D4AF37] font-bold">
+                                        IP &amp; Perangkat:
+                                      </span>{' '}
+                                      <span className="font-mono">
+                                        {wish.ipAddress || 'Lokal/Proxy'} &bull;{' '}
+                                        {formatForensicUserAgent(
+                                          wish.userAgent,
+                                          wish.devicePlatform
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )
+                        )}
+                      </div>
+
+                      {/* Pengaturan Kata Kunci Filter & Auto-Hide Komentar Negatif */}
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-2.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={autoHideEnabled}
+                              onChange={async (e) => {
+                                const nextVal = e.target.checked;
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  autoHideFlaggedWishes: nextVal,
+                                  updatedBy: adminUser.username,
+                                };
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                showToast(
+                                  nextVal
+                                    ? '🛡️ Auto-Sembunyikan Komentar Negatif diaktifkan!'
+                                    : 'Auto-Sembunyikan Komentar Negatif dinonaktifkan.'
+                                );
+                              }}
+                              className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                            />
+                            <span className="text-xs font-extrabold text-stone-900">
+                              Otomatis Sembunyikan Komentar Negatif dari Halaman Undangan Publik
+                            </span>
+                          </label>
+                          <span className="text-[10px] font-semibold text-stone-500">
+                            Bukti forensik tetap tersimpan di panel Superadmin ini
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            Kata Kunci Negatif / Blacklist Tambahan (pisahkan dengan koma):
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={customKeywords}
+                              onChange={(e) =>
+                                setSettingsForm((prev) => ({
+                                  ...prev,
+                                  moderationBlockedKeywords: e.target.value,
+                                }))
+                              }
+                              placeholder="Contoh: mantan, hutang, scam, judi, kasar... (kamus kata kasar bawaan sudah aktif)"
+                              className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  updatedBy: adminUser.username,
+                                };
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                showToast(
+                                  '✓ Daftar kata kunci moderasi berhasil disimpan!'
+                                );
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shrink-0"
+                            >
+                              Simpan Filter
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Pengaturan Tautan Credit omeko11 & Kontak WA (Footer & Komersial) */}
                 <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
@@ -9672,37 +10170,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                {/* Saklar Moderasi Sesi & Credit Footer */}
+                {/* Saklar Kunci RSVP & Credit Footer */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   {[
                     {
                       key: 'disableRsvpSubmission' as const,
-                      label: 'Kunci Pengiriman Form RSVP Baru',
-                      invertBadge: true,
+                      label: 'Kunci Pengiriman Form RSVP & Komentar Baru',
                     },
                     {
                       key: 'showFooterCredit' as const,
-                      label: 'Tampilkan Credit & Contact Us di Footer',
-                      defaultTrue: true,
-                    },
-                    {
-                      key: 'showLoveStorySection' as const,
-                      label: 'Tampilkan Sesi Kisah Cinta',
-                      defaultTrue: true,
-                    },
-                    {
-                      key: 'showGallerySection' as const,
-                      label: 'Tampilkan Sesi Galeri Foto',
-                      defaultTrue: true,
-                    },
-                    {
-                      key: 'showGiftSection' as const,
-                      label: 'Tampilkan Sesi Amplop Digital & QRIS',
-                      defaultTrue: true,
-                    },
-                    {
-                      key: 'showRsvpSection' as const,
-                      label: 'Tampilkan Sesi RSVP & Ucapan Tamu',
+                      label: 'Tampilkan Credit & Kontak WA di Footer',
                       defaultTrue: true,
                     },
                   ].map((toggle) => {

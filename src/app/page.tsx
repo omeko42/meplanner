@@ -34,6 +34,7 @@ import {
   saveStoredAdminUser,
   getStoredViewMode,
   saveStoredViewMode,
+  analyzeWishModeration,
 } from '@/lib/clientSync';
 import {
   loadStateFromSupabase,
@@ -784,11 +785,27 @@ function WeddingAppContent() {
     pax: number;
     sessionChoice?: WeddingGuest['sessionChoice'];
     message?: string;
+    originalUrlGuestParam?: string;
+    originalUrlCodeParam?: string;
+    matchedGuestRecordName?: string;
+    userAgent?: string;
+    devicePlatform?: string;
   }) => {
     const cleanName = payload.guestName.trim() || 'Tamu Kehormatan';
     const submittedPax = Math.max(0, Number(payload.pax) || 0);
     const nowIso = new Date().toISOString();
     const nowDate = nowIso.slice(0, 10);
+
+    const modAnalysis = analyzeWishModeration(
+      {
+        guestName: cleanName,
+        message: payload.message || '',
+        institution: payload.institution || '',
+        originalUrlGuestParam: payload.originalUrlGuestParam,
+        matchedGuestRecordName: payload.matchedGuestRecordName,
+      },
+      activePublicState.settings.moderationBlockedKeywords
+    );
 
     updateClientScopedState(activePublicClientId, (prev) => {
       const nextGuests = [...prev.guests];
@@ -869,11 +886,22 @@ function WeddingAppContent() {
         guestName: cleanName,
         institution: payload.institution || targetGuest.institution || '',
         relation: payload.relation || targetGuest.guestType || 'Tamu Kehormatan',
+        phone: payload.phone || targetGuest.phone || '',
         rsvpStatus: payload.rsvpStatus,
         pax: payload.rsvpStatus === 'Hadir' ? submittedPax : 0,
         message: effectiveMessage,
         createdAt: nowIso,
         isPinned: false,
+        moderationStatus: modAnalysis.isNegative ? 'FLAGGED' : 'APPROVED',
+        flaggedReason: modAnalysis.flaggedReason || undefined,
+        originalUrlGuestParam: payload.originalUrlGuestParam,
+        originalUrlCodeParam: payload.originalUrlCodeParam,
+        matchedGuestRecordName:
+          payload.matchedGuestRecordName ||
+          (targetIdx >= 0 ? targetGuest.guestName : undefined),
+        userAgent: payload.userAgent,
+        devicePlatform: payload.devicePlatform,
+        clientId: activePublicClientId,
       };
 
       return {
@@ -887,9 +915,15 @@ function WeddingAppContent() {
       actor: cleanName,
       module: 'DOA_RSVP',
       action: 'TAMBAH',
-      status: 'SUCCESS',
-      summary: `Konfirmasi RSVP & Doa masuk dari "${cleanName}" (${payload.rsvpStatus})`,
-      detail: `Pax: ${submittedPax} • Pesan: ${(payload.message || '').slice(0, 120)}`,
+      status: modAnalysis.isNegative || modAnalysis.isSpoofedIdentity ? 'WARNING' : 'SUCCESS',
+      summary: modAnalysis.isNegative
+        ? `🚨 KOMENTAR NEGATIF TERDETEKSI dari "${cleanName}" (${modAnalysis.flaggedReason})`
+        : `Konfirmasi RSVP & Doa masuk dari "${cleanName}" (${payload.rsvpStatus})`,
+      detail: `Link Asli: ${payload.originalUrlGuestParam || '-'} (${
+        payload.originalUrlCodeParam || '-'
+      }) • WA: ${payload.phone || '-'} • Device: ${
+        payload.devicePlatform || '-'
+      } • Pesan: ${(payload.message || '').slice(0, 120)}`,
     });
 
     if (activePublicClientId === 'client-utama') {
@@ -935,6 +969,41 @@ function WeddingAppContent() {
     });
     if (activeWorkspaceClientId === 'client-utama') {
       await mutateServer('REPLY_WISH', { id, replyFromCouple });
+    }
+  };
+
+  const handleModerateWish = async (
+    id: string,
+    moderationStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN',
+    flaggedReason?: string
+  ) => {
+    const target = activeAdminState.wishes.find((w) => w.id === id);
+    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+      ...prev,
+      wishes: prev.wishes.map((w) =>
+        w.id === id
+          ? {
+              ...w,
+              moderationStatus,
+              ...(flaggedReason !== undefined ? { flaggedReason } : {}),
+            }
+          : w
+      ),
+    }));
+    appendAuditLog({
+      actor: adminUser?.username || 'superadmin',
+      module: 'MODERASI_KOMENTAR',
+      action: 'EDIT',
+      status: moderationStatus === 'APPROVED' ? 'SUCCESS' : 'WARNING',
+      summary: `Moderasi komentar "${target?.guestName || id}" diubah menjadi ${moderationStatus}`,
+      detail: `Isi: ${(target?.message || '').slice(0, 100)}`,
+    });
+    if (activeWorkspaceClientId === 'client-utama') {
+      await mutateServer('MODERATE_WISH', {
+        id,
+        moderationStatus,
+        flaggedReason,
+      });
     }
   };
 
@@ -1136,6 +1205,7 @@ function WeddingAppContent() {
           onDeleteGuest={handleDeleteGuest}
           onTogglePinWish={handleTogglePinWish}
           onReplyWish={handleReplyWish}
+          onModerateWish={handleModerateWish}
           onDeleteWish={handleDeleteWish}
           onUpsertBudget={handleUpsertBudget}
           onDeleteBudget={handleDeleteBudget}

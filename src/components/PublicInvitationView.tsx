@@ -48,6 +48,7 @@ import {
   getEffectiveLoveStory,
   getEffectiveGalleryPhotos,
   getPhotoAdjustStyle,
+  analyzeWishModeration,
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
@@ -69,6 +70,11 @@ interface PublicInvitationViewProps {
     pax: number;
     sessionChoice?: WeddingGuest['sessionChoice'];
     message?: string;
+    originalUrlGuestParam?: string;
+    originalUrlCodeParam?: string;
+    matchedGuestRecordName?: string;
+    userAgent?: string;
+    devicePlatform?: string;
   }) => Promise<void>;
 }
 
@@ -419,6 +425,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     if (!rsvpName.trim()) return;
     setIsSubmittingRsvp(true);
     try {
+      const ua =
+        typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+      const devPlatform =
+        typeof window !== 'undefined'
+          ? `${navigator.platform || 'Web'} • ${window.screen?.width || 0}x${
+              window.screen?.height || 0
+            } • ${Intl.DateTimeFormat().resolvedOptions().timeZone || 'WIB'}`
+          : undefined;
+
       await onSubmitRsvp({
         guestName: rsvpName.trim(),
         invitationCode:
@@ -430,6 +445,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         pax: rsvpStatus === 'Hadir' ? Number(rsvpPax) || 1 : 0,
         sessionChoice: rsvpSession,
         message: rsvpMessage.trim(),
+        originalUrlGuestParam: guestParamName || undefined,
+        originalUrlCodeParam: guestParamCode || undefined,
+        matchedGuestRecordName:
+          effectiveMatchedGuest?.guestName ||
+          matchedGuest?.guestName ||
+          undefined,
+        userAgent: ua,
+        devicePlatform: devPlatform,
       });
       setRsvpSubmittedSuccess(true);
       setRsvpMessage('');
@@ -437,6 +460,27 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       setIsSubmittingRsvp(false);
     }
   };
+
+  const publicVisibleWishes = useMemo(() => {
+    const autoHide = settings.autoHideFlaggedWishes !== false;
+    return wishes.filter((w) => {
+      if (w.moderationStatus === 'HIDDEN') return false;
+      if (w.moderationStatus === 'APPROVED') return true;
+      if (autoHide) {
+        if (w.moderationStatus === 'FLAGGED') return false;
+        const analysis = analyzeWishModeration(
+          w,
+          settings.moderationBlockedKeywords
+        );
+        if (analysis.isNegative) return false;
+      }
+      return true;
+    });
+  }, [
+    wishes,
+    settings.autoHideFlaggedWishes,
+    settings.moderationBlockedKeywords,
+  ]);
 
   // ============================================================================
   // 0. SUPERADMIN MODERATION: MAINTENANCE / PAUSED VIEW MODE
@@ -1528,7 +1572,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="flex items-center gap-2.5">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
                   <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
-                    Buku Tamu &amp; Doa Restu ({wishes.length})
+                    Buku Tamu &amp; Doa Restu ({publicVisibleWishes.length})
                   </h3>
                 </div>
                 <span className="text-[11px] text-[#9A742B] font-semibold">
@@ -1537,7 +1581,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
 
               <div className="flex-1 max-h-[380px] lg:max-h-none overflow-y-auto space-y-3 pr-1">
-                {wishes.length === 0 ? (
+                {publicVisibleWishes.length === 0 ? (
                   <div className="h-full min-h-[260px] sm:min-h-[320px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] mb-3">
                       <Sparkles className="w-5 h-5" />
@@ -1550,7 +1594,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     </p>
                   </div>
                 ) : (
-                  wishes.map((w) => (
+                  publicVisibleWishes.map((w) => (
                     <div
                       key={w.id}
                       className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
@@ -1612,7 +1656,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="pt-3 mt-4 border-t border-stone-200/80 flex items-center justify-between gap-2 text-[11px] text-stone-500 shrink-0">
                 <span className="truncate">Tersinkronisasi otomatis ke Dashboard</span>
                 <span className="font-semibold text-[#9A742B] shrink-0">
-                  {wishes.length} Doa Restu
+                  {publicVisibleWishes.length} Doa Restu
                 </span>
               </div>
             </div>

@@ -107,12 +107,23 @@ export interface GuestWish {
   guestName: string;
   institution?: string;
   relation: string;
+  phone?: string;
   rsvpStatus: RsvpStatus;
   pax: number;
   message: string;
   createdAt: string;
   isPinned?: boolean;
   replyFromCouple?: string;
+  // Forensic & Comment Moderation Metadata (Superadmin Perpetrator Audit)
+  moderationStatus?: 'APPROVED' | 'FLAGGED' | 'HIDDEN';
+  flaggedReason?: string;
+  originalUrlGuestParam?: string;
+  originalUrlCodeParam?: string;
+  matchedGuestRecordName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  devicePlatform?: string;
+  clientId?: string;
 }
 
 export type VendorCategory =
@@ -351,6 +362,8 @@ export interface WeddingSettings {
   showFooterCredit?: boolean; // default true
   developerCreditUrl?: string; // default https://github.com/omeko11/my_wedding_manager
   contactWhatsappNumber?: string; // default 089638616516
+  autoHideFlaggedWishes?: boolean; // default true
+  moderationBlockedKeywords?: string; // custom comma-separated negative keywords
 
   updatedAt: string;
   updatedBy: string;

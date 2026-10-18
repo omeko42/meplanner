@@ -1715,3 +1715,151 @@ export function getEffectiveGalleryPhotos(settings: WeddingSettings): GalleryPho
   }
   return [];
 }
+
+export const DEFAULT_BLOCKED_KEYWORDS: string[] = [
+  'anjing',
+  'anjir',
+  'anjrit',
+  'babi',
+  'bangsat',
+  'bajingan',
+  'brengsek',
+  'kampret',
+  'tolol',
+  'goblok',
+  'bodoh',
+  'idiot',
+  'sinting',
+  'tai',
+  'taik',
+  'kontol',
+  'memek',
+  'ngentot',
+  'asu',
+  'jancok',
+  'jancuk',
+  'pelakor',
+  'pebinor',
+  'selingkuh',
+  'zina',
+  'hamil duluan',
+  'batal nikah',
+  'cepat cerai',
+  'kawin kontrak',
+  'bayar utang',
+  'bayar hutang',
+  'penipu',
+  'nipu',
+  'maling',
+  'laknat',
+  'mampus',
+  'mati aja',
+  'najis',
+  'sampah',
+  'fuck',
+  'shit',
+  'bitch',
+  'bastard',
+  'judol',
+  'slot gacor',
+  'pinjol',
+];
+
+export interface WishModerationAnalysis {
+  isNegative: boolean;
+  isSpoofedIdentity: boolean;
+  matchedKeywords: string[];
+  reasons: string[];
+  flaggedReason: string;
+}
+
+export function analyzeWishModeration(
+  input: {
+    guestName?: string;
+    message?: string;
+    institution?: string;
+    originalUrlGuestParam?: string;
+    matchedGuestRecordName?: string;
+  },
+  customKeywordsCsv?: string
+): WishModerationAnalysis {
+  const extraKeywords = (customKeywordsCsv || '')
+    .split(',')
+    .map((k) => k.trim().toLowerCase())
+    .filter((k) => k.length >= 2);
+
+  const keywordList = Array.from(
+    new Set([...DEFAULT_BLOCKED_KEYWORDS, ...extraKeywords])
+  );
+
+  const combinedText = `${input.guestName || ''} ${input.institution || ''} ${
+    input.message || ''
+  }`.toLowerCase();
+
+  const matchedKeywords: string[] = [];
+  for (const kw of keywordList) {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i');
+    if (regex.test(combinedText)) {
+      matchedKeywords.push(kw);
+    }
+  }
+
+  const reasons: string[] = [];
+  if (matchedKeywords.length > 0) {
+    reasons.push(`Kata negatif/terlarang: "${matchedKeywords.join(', ')}"`);
+  }
+
+  const cleanInputName = (input.guestName || '').trim().toLowerCase();
+  const refOwner = (
+    input.matchedGuestRecordName ||
+    input.originalUrlGuestParam ||
+    ''
+  ).trim();
+  const cleanRefOwner = refOwner.toLowerCase();
+
+  let isSpoofedIdentity = false;
+  if (
+    cleanInputName &&
+    cleanRefOwner &&
+    cleanRefOwner !== 'bapak/ibu/saudara/i tamu kehormatan' &&
+    cleanInputName !== cleanRefOwner &&
+    !cleanRefOwner.includes(cleanInputName) &&
+    !cleanInputName.includes(cleanRefOwner)
+  ) {
+    isSpoofedIdentity = true;
+    reasons.push(
+      `Anomali identitas: Input nama "${input.guestName?.trim()}" berbeda dengan pemilik link undangan "${refOwner}"`
+    );
+  }
+
+  const isNegative = matchedKeywords.length > 0;
+  return {
+    isNegative,
+    isSpoofedIdentity,
+    matchedKeywords,
+    reasons,
+    flaggedReason: reasons.join(' • '),
+  };
+}
+
+export function formatForensicUserAgent(ua?: string, platform?: string): string {
+  if (!ua && !platform) return 'Perangkat Web / Browser Tamu';
+  const raw = ua || '';
+  let os = 'OS Tidak Diketahui';
+  if (/android/i.test(raw)) os = 'Android';
+  else if (/iphone|ipad|ipod/i.test(raw)) os = 'iPhone / iOS';
+  else if (/windows/i.test(raw)) os = 'Windows PC';
+  else if (/macintosh|mac os x/i.test(raw)) os = 'MacOS';
+  else if (/linux/i.test(raw)) os = 'Linux';
+
+  let browser = 'Browser';
+  if (/edg\//i.test(raw)) browser = 'Edge';
+  else if (/opr\/|opera/i.test(raw)) browser = 'Opera';
+  else if (/chrome\//i.test(raw) && !/edg\//i.test(raw)) browser = 'Chrome';
+  else if (/safari\//i.test(raw) && !/chrome\//i.test(raw)) browser = 'Safari';
+  else if (/firefox\//i.test(raw)) browser = 'Firefox';
+
+  return platform ? `${os} (${browser}) • ${platform}` : `${os} (${browser})`;
+}
+

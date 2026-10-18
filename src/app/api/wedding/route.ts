@@ -106,7 +106,19 @@ export async function POST(req: NextRequest) {
       }
 
       case 'SUBMIT_RSVP': {
-        const result = serverStore.submitPublicRsvp(payload);
+        const forwardedFor = req.headers.get('x-forwarded-for');
+        const realIp = req.headers.get('x-real-ip');
+        const ipAddress =
+          (forwardedFor ? forwardedFor.split(',')[0].trim() : realIp) ||
+          payload?.ipAddress ||
+          'Client Direct';
+        const userAgent =
+          req.headers.get('user-agent') || payload?.userAgent || '';
+        const result = serverStore.submitPublicRsvp({
+          ...payload,
+          ipAddress,
+          userAgent,
+        });
         return NextResponse.json({
           success: true,
           guest: result.guest,
@@ -125,6 +137,18 @@ export async function POST(req: NextRequest) {
 
       case 'REPLY_WISH': {
         serverStore.replyToWish(payload.id, payload.replyFromCouple);
+        return NextResponse.json({
+          success: true,
+          data: serverStore.getFullState(hideBudget),
+        });
+      }
+
+      case 'MODERATE_WISH': {
+        serverStore.moderateWish(
+          payload.id,
+          payload.moderationStatus,
+          payload.flaggedReason
+        );
         return NextResponse.json({
           success: true,
           data: serverStore.getFullState(hideBudget),
