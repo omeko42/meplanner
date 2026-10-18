@@ -32,6 +32,8 @@ export const SUPABASE_SETUP_SQL = `create table if not exists public.wedding_sta
   updated_at timestamptz default now()
 );
 alter table public.wedding_state disable row level security;
+drop policy if exists "allow_all" on public.wedding_state;
+create policy "allow_all" on public.wedding_state for all using (true) with check (true);
 grant all on table public.wedding_state to anon, authenticated, service_role;`;
 
 export type CloudSyncStatus =
