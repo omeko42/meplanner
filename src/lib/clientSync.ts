@@ -54,6 +54,12 @@ function normalizeParsedState(
     mergedSettings.groomOrigin = INITIAL_SETTINGS.groomOrigin;
   }
   if (
+    !mergedSettings.groomNickname ||
+    mergedSettings.groomNickname === 'Mempelai Pria'
+  ) {
+    mergedSettings.groomNickname = INITIAL_SETTINGS.groomNickname;
+  }
+  if (
     !mergedSettings.brideFullName ||
     mergedSettings.brideFullName === 'Nama Mempelai Wanita'
   ) {
@@ -62,6 +68,12 @@ function normalizeParsedState(
     mergedSettings.brideTitle = INITIAL_SETTINGS.brideTitle;
     mergedSettings.brideParents = INITIAL_SETTINGS.brideParents;
     mergedSettings.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+  if (
+    !mergedSettings.brideNickname ||
+    mergedSettings.brideNickname === 'Mempelai Wanita'
+  ) {
+    mergedSettings.brideNickname = INITIAL_SETTINGS.brideNickname;
   }
 
   return {

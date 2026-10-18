@@ -380,9 +380,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </p>
 
             <h1 className="font-serif text-2xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight mb-1.5 sm:mb-2 break-words">
-              {settings.groomNickname}{' '}
+              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                ? settings.groomNickname
+                : 'Eko'}{' '}
               <span className="text-[#C5A059] font-normal italic">&amp;</span>{' '}
-              {settings.brideNickname}
+              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                ? settings.brideNickname
+                : 'Selo'}
             </h1>
 
             <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-4 sm:mb-6">
@@ -475,7 +479,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
             <div className="truncate">
               <p className="font-serif text-xs sm:text-base font-bold text-stone-900 truncate">
-                {settings.groomNickname} &amp; {settings.brideNickname}
+                {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                  ? settings.groomNickname
+                  : 'Eko'}{' '}
+                &amp;{' '}
+                {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                  ? settings.brideNickname
+                  : 'Selo'}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
                 {settings.event2DateLabel}
@@ -780,14 +790,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-7 sm:mb-10">
+          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               The Happy Couple
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               Profil Kedua Mempelai
             </h2>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
@@ -861,16 +871,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
         <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-7 sm:mb-10">
+          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               Save The Date
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               Rangkaian Acara Pernikahan
             </h2>
-            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+            <p className="text-xs sm:text-sm text-stone-600 mt-1">
               {settings.subtitle}
             </p>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
           </div>
 
           <div
@@ -950,7 +961,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {(showLoveStory || showGallery) && (
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-7 sm:mb-10">
+          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               {settings.gallerySectionSubtitle?.trim() || 'Our Journey & Moments'}
             </span>
@@ -1139,14 +1150,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
         <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-7 sm:mb-10">
+          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               RSVP &amp; Wedding Wishes
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               Konfirmasi Kehadiran &amp; Doa Restu
             </h2>
-            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+            <p className="text-xs sm:text-sm text-stone-600 mt-1">
               Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time
             </p>
           </div>
@@ -1511,20 +1522,48 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </section>
       )}
 
-      {/* CLOSING FOOTER */}
-      <footer className="relative z-10 py-10 sm:py-12 px-4 text-center max-w-2xl mx-auto">
-        <div className="w-12 h-12 mx-auto rounded-full bg-white/85 border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] shadow-xs mb-4">
-          <WeddingRingsIcon className="w-6 h-6" />
+      {/* CLOSING FOOTER CARD (HIGH-CONTRAST PEARL & CHAMPAGNE GOLD CARD) */}
+      <footer className="relative z-10 pt-2 pb-10 sm:pb-12 px-3 sm:px-4 max-w-5xl mx-auto">
+        <div className="relative overflow-hidden rounded-3xl bg-white/92 backdrop-blur-xl border border-white/95 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
+          {/* Subtle Top & Bottom Champagne Gold Accent Lines */}
+          <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5" />
+
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5">
+            <WeddingRingsIcon className="w-7 h-7" />
+          </div>
+
+          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2">
+            Thank You &amp; Blessing
+          </span>
+
+          <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-6">
+            {settings.invitationClosingText}
+          </p>
+
+          {/* Inner Champagne Gold Couple Signature Box */}
+          <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-1">
+              Kami yang berbahagia,
+            </p>
+            <p className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-wide">
+              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                ? settings.groomNickname
+                : 'Eko'}{' '}
+              <span className="text-[#C5A059] font-normal">&amp;</span>{' '}
+              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                ? settings.brideNickname
+                : 'Selo'}
+            </p>
+            <p className="text-[11px] sm:text-xs text-stone-600 font-medium mt-1.5">
+              {settings.groomFullName} &amp; {settings.brideFullName}
+            </p>
+          </div>
+
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-6 mb-2.5" />
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80">
+            All-in-One Wedding Planner &amp; Digital Invitation
+          </p>
         </div>
-        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-          {settings.invitationClosingText}
-        </p>
-        <p className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
-          {settings.groomNickname} &amp; {settings.brideNickname}
-        </p>
-        <p className="text-[11px] text-stone-400 mt-2">
-          All-in-One Wedding Planner &amp; Digital Invitation
-        </p>
       </footer>
 
       {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE DOCK WITH VISIBLE ICON + LABEL) */}

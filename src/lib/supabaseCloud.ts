@@ -375,6 +375,9 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
     next.groomParents = INITIAL_SETTINGS.groomParents;
     next.groomOrigin = INITIAL_SETTINGS.groomOrigin;
   }
+  if (!next.groomNickname || next.groomNickname === 'Mempelai Pria') {
+    next.groomNickname = INITIAL_SETTINGS.groomNickname;
+  }
   if (
     !next.brideFullName ||
     next.brideFullName === 'Nama Mempelai Wanita'
@@ -384,6 +387,9 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
     next.brideTitle = INITIAL_SETTINGS.brideTitle;
     next.brideParents = INITIAL_SETTINGS.brideParents;
     next.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+  if (!next.brideNickname || next.brideNickname === 'Mempelai Wanita') {
+    next.brideNickname = INITIAL_SETTINGS.brideNickname;
   }
   return next;
 }
