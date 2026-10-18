@@ -38,10 +38,34 @@ function normalizeParsedState(
     ? parsed.guests.filter((g) => !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')))
     : INITIAL_GUESTS;
 
+  const mergedSettings = parsed.settings
+    ? { ...INITIAL_SETTINGS, ...parsed.settings }
+    : { ...INITIAL_SETTINGS };
+  if (
+    !mergedSettings.groomFullName ||
+    mergedSettings.groomFullName === 'Eko' ||
+    mergedSettings.groomFullName === 'Nama Mempelai Pria'
+  ) {
+    mergedSettings.groomFullName = INITIAL_SETTINGS.groomFullName;
+    mergedSettings.groomNickname = INITIAL_SETTINGS.groomNickname;
+    mergedSettings.groomRankAndTitle = INITIAL_SETTINGS.groomRankAndTitle;
+    mergedSettings.groomUnit = INITIAL_SETTINGS.groomUnit;
+    mergedSettings.groomParents = INITIAL_SETTINGS.groomParents;
+    mergedSettings.groomOrigin = INITIAL_SETTINGS.groomOrigin;
+  }
+  if (
+    !mergedSettings.brideFullName ||
+    mergedSettings.brideFullName === 'Nama Mempelai Wanita'
+  ) {
+    mergedSettings.brideFullName = INITIAL_SETTINGS.brideFullName;
+    mergedSettings.brideNickname = INITIAL_SETTINGS.brideNickname;
+    mergedSettings.brideTitle = INITIAL_SETTINGS.brideTitle;
+    mergedSettings.brideParents = INITIAL_SETTINGS.brideParents;
+    mergedSettings.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+
   return {
-    settings: parsed.settings
-      ? { ...INITIAL_SETTINGS, ...parsed.settings }
-      : INITIAL_SETTINGS,
+    settings: mergedSettings,
     tasks: cleanTasks,
     guests: cleanGuests,
     wishes: Array.isArray(parsed.wishes) ? parsed.wishes : INITIAL_WISHES,

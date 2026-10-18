@@ -361,6 +361,33 @@ function getSupabaseHeaders(extra?: Record<string, string>): Record<string, stri
   };
 }
 
+function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
+  const next = { ...INITIAL_SETTINGS, ...s };
+  if (
+    !next.groomFullName ||
+    next.groomFullName === 'Eko' ||
+    next.groomFullName === 'Nama Mempelai Pria'
+  ) {
+    next.groomFullName = INITIAL_SETTINGS.groomFullName;
+    next.groomNickname = INITIAL_SETTINGS.groomNickname;
+    next.groomRankAndTitle = INITIAL_SETTINGS.groomRankAndTitle;
+    next.groomUnit = INITIAL_SETTINGS.groomUnit;
+    next.groomParents = INITIAL_SETTINGS.groomParents;
+    next.groomOrigin = INITIAL_SETTINGS.groomOrigin;
+  }
+  if (
+    !next.brideFullName ||
+    next.brideFullName === 'Nama Mempelai Wanita'
+  ) {
+    next.brideFullName = INITIAL_SETTINGS.brideFullName;
+    next.brideNickname = INITIAL_SETTINGS.brideNickname;
+    next.brideTitle = INITIAL_SETTINGS.brideTitle;
+    next.brideParents = INITIAL_SETTINGS.brideParents;
+    next.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+  return next;
+}
+
 function normalizeCloudState(
   parsed: Partial<WeddingDatabaseSchema>,
   fallbackTimestamp?: string
@@ -374,7 +401,7 @@ function normalizeCloudState(
 
   return {
     settings: parsed.settings
-      ? { ...INITIAL_SETTINGS, ...parsed.settings }
+      ? healStalePlaceholderSettings(parsed.settings as WeddingSettings)
       : INITIAL_SETTINGS,
     tasks: cleanTasks,
     guests: cleanGuests,
@@ -469,7 +496,9 @@ async function prepareCloudSafeState(
   state: WeddingDatabaseSchema,
   aggressiveMode = false
 ): Promise<WeddingDatabaseSchema> {
-  const rawSettings: WeddingSettings = { ...state.settings };
+  const rawSettings: WeddingSettings = healStalePlaceholderSettings(
+    state.settings
+  );
   // Never store duplicate uncropped originalPhotos in the cloud main row (kept in local IndexedDB)
   delete rawSettings.originalPhotos;
 
@@ -1003,17 +1032,13 @@ async function performActualSupabaseUpsert(
 
     let res = await tryUpsertTable(cloudSafePayload);
 
-    // If payload hit timeout (500 / 57014 / 504) or 413, clear TOAST bloat via DELETE and retry with optimized payload
+    // If payload hit timeout (500 / 57014 / 504) or 413, retry with optimized payload
     if (
       res.status === 413 ||
       res.status === 500 ||
       res.status === 502 ||
       res.status === 504
     ) {
-      await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}`, {
-        method: 'DELETE',
-        headers: getSupabaseHeaders({ Prefer: 'return=minimal' }),
-      }).catch(() => {});
       const ultraCompactPayload = await prepareCloudSafeState(
         { ...state, lastSyncedAt: updatedAt },
         true
@@ -1023,7 +1048,6 @@ async function performActualSupabaseUpsert(
 
     if (res.ok) {
       setCloudStatus('SYNCED', updatedAt);
-      void syncRelationalTablesInBackground(cloudSafePayload, updatedAt);
       return true;
     }
 

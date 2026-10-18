@@ -45,6 +45,8 @@ function mergePreservingLocalMedia(
   const localPlaylist = localState.settings?.musicPlaylist || [];
   const serverPlaylist = serverState.settings?.musicPlaylist;
   const localOriginalPhotos = localState.settings?.originalPhotos;
+  const localGallery = localState.settings?.galleryPhotos || [];
+  const serverGallery = serverState.settings?.galleryPhotos;
 
   const mergedPlaylist = Array.isArray(serverPlaylist)
     ? serverPlaylist.map((track) => {
@@ -58,11 +60,26 @@ function mergePreservingLocalMedia(
     ? localPlaylist
     : undefined;
 
+  const mergedGallery = Array.isArray(serverGallery)
+    ? serverGallery.map((sp) => {
+        const localMatch = localGallery.find((lp) => lp.id === sp.id);
+        if (
+          localMatch &&
+          localMatch.imageUrl?.startsWith('data:image/') &&
+          !sp.imageUrl?.startsWith('data:image/')
+        ) {
+          return { ...sp, ...localMatch };
+        }
+        return sp;
+      })
+    : undefined;
+
   return {
     ...serverState,
     settings: {
       ...serverState.settings,
       ...(mergedPlaylist ? { musicPlaylist: mergedPlaylist } : {}),
+      ...(mergedGallery ? { galleryPhotos: mergedGallery } : {}),
       ...(localOriginalPhotos
         ? {
             originalPhotos: {
@@ -206,6 +223,16 @@ function WeddingAppContent() {
           const merged = mergePreservingLocalMedia(cloudState, bestLocal);
           setState(merged);
           saveClientState(merged, false);
+          const rescuedGalleryPhoto = (merged.settings?.galleryPhotos || []).some(
+            (mp, idx) =>
+              mp.imageUrl?.startsWith('data:image/') &&
+              !cloudState.settings?.galleryPhotos?.[idx]?.imageUrl?.startsWith(
+                'data:image/'
+              )
+          );
+          if (rescuedGalleryPhoto) {
+            void saveStateToSupabase(merged);
+          }
         }
       } else if (cloudResult.tableExists) {
         // Table exists in Supabase but no 'main' row yet -> initialize Supabase with current clean state
