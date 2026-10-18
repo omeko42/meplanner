@@ -101,6 +101,7 @@ import {
   weddingMusicPlayer,
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
+  formatAudioDuration,
   getEffectiveLoveStory,
   getEffectiveGalleryPhotos,
 } from '@/lib/clientSync';
@@ -670,6 +671,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
   const [adminCurrentTrack, setAdminCurrentTrack] =
     useState<MusicTrackItem | null>(() => weddingMusicPlayer.getCurrentTrack());
+  const [adminMusicCurrentTime, setAdminMusicCurrentTime] = useState(() =>
+    weddingMusicPlayer.getCurrentTime()
+  );
+  const [adminMusicDuration, setAdminMusicDuration] = useState(() =>
+    weddingMusicPlayer.getDuration()
+  );
+  const [, setMusicMetaTick] = useState(0);
   const [newMusicTitle, setNewMusicTitle] = useState('');
   const [newMusicArtist, setNewMusicArtist] = useState('');
   const [newMusicUrl, setNewMusicUrl] = useState('');
@@ -696,6 +704,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setAdminMusicVolume(weddingMusicPlayer.getVolume());
       setIsAdminMusicMuted(weddingMusicPlayer.getMuted());
       setAdminCurrentTrack(weddingMusicPlayer.getCurrentTrack());
+      setAdminMusicCurrentTime(weddingMusicPlayer.getCurrentTime());
+      setAdminMusicDuration(weddingMusicPlayer.getDuration());
+      setMusicMetaTick((n) => n + 1);
     };
     syncPlayer();
     return weddingMusicPlayer.subscribe(syncPlayer);
@@ -729,9 +740,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         ...state.settings,
         ...settingsForm,
         musicPlaylist: nextList,
-        activeMusicTrackId: newTrack.id,
-        musicTitle: newTrack.title,
-        musicArtist: newTrack.artist,
         updatedBy: adminUser.username,
       };
       setSettingsFormInternal(nextSettings);
@@ -740,7 +748,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       weddingMusicPlayer.playTrack(newTrack.id);
       setNewMusicTitle('');
       setNewMusicArtist('');
-      showToast(`Musik "${newTrack.title}" berhasil diupload ke Playlist & diputar!`);
+      showToast(`Musik "${newTrack.title}" ditambahkan & sedang diputar (klik Pilih untuk jadikan Lagu Utama)!`);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -763,9 +771,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       ...state.settings,
       ...settingsForm,
       musicPlaylist: nextList,
-      activeMusicTrackId: newTrack.id,
-      musicTitle: newTrack.title,
-      musicArtist: newTrack.artist,
       updatedBy: adminUser.username,
     };
     setSettingsFormInternal(nextSettings);
@@ -802,10 +807,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     showToast(`Lagu "${title}" dihapus dari Playlist.`);
   };
 
-  const handleSelectActiveMusicTrack = async (
-    track: MusicTrackItem,
-    playImmediately = true
-  ) => {
+  // Preview / Play / Pause a track WITHOUT changing the selected default song (Pilih)
+  const handlePreviewMusicTrack = (track: MusicTrackItem) => {
+    if (adminCurrentTrack?.id === track.id && isPlayingAdminMusic) {
+      weddingMusicPlayer.stop();
+      return;
+    }
+    weddingMusicPlayer.playTrack(track.id);
+  };
+
+  // Select a track as the primary invitation background music (Pilih) WITHOUT forcing playback
+  const handleSelectActiveMusicTrack = async (track: MusicTrackItem) => {
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
@@ -818,10 +830,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setSettingsFormInternal(nextSettings);
     await onUpdateSettings(nextSettings);
     weddingMusicPlayer.syncFromSettings(nextSettings);
-    if (playImmediately) {
-      weddingMusicPlayer.playTrack(track.id);
-    }
-    showToast(`Lagu aktif diubah ke "${track.title}"!`);
+    showToast(`Lagu "${track.title}" dipilih sebagai Lagu Utama undangan!`);
   };
 
   const handleResetDefaultMusicPlaylist = async () => {
@@ -1793,258 +1802,365 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     e.target.value = '';
   };
 
-  const renderMusicPlaylistManager = () => (
-    <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5 text-xs">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center shrink-0">
-            <Music className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <p className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
-                Musik &amp; Playlist Undangan
-              </p>
-              <InfoTooltip text="Kustomisasi musik latar undangan: putar/jeda, atur volume, pilih lagu di playlist, upload file musik sendiri (.mp3/.m4a/.wav), atau hapus lagu." />
+  const renderMusicPlaylistManager = () => {
+    const selectedPrimaryId =
+      settingsForm.activeMusicTrackId || effectivePlaylist[0]?.id || '';
+    const selectedPrimaryTrack =
+      effectivePlaylist.find((t) => t.id === selectedPrimaryId) ||
+      effectivePlaylist[0] ||
+      null;
+    const currentLoadedMeta = adminCurrentTrack
+      ? weddingMusicPlayer.getTrackMeta(adminCurrentTrack.id)
+      : null;
+
+    return (
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5 text-xs">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center shrink-0">
+              <Music className="w-4 h-4" />
             </div>
-            <p className="text-[11px] text-stone-500 truncate">
-              Aktif: <strong className="text-[#8B6914]">{adminCurrentTrack?.title || settingsForm.musicTitle || 'Belum ada lagu'}</strong> ({effectivePlaylist.length} lagu)
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1">
+                <p className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
+                  Musik &amp; Playlist Undangan
+                </p>
+                <InfoTooltip text="Tombol Play digunakan untuk memutar/mengecek lagu, sedangkan tombol Pilih untuk menetapkan lagu latar utama saat undangan dibuka." />
+              </div>
+              <p className="text-[11px] text-stone-500 truncate">
+                Lagu Utama:{' '}
+                <strong className="text-emerald-700">
+                  {selectedPrimaryTrack?.title || settingsForm.musicTitle || 'Belum ada lagu'}
+                </strong>{' '}
+                ({effectivePlaylist.length} lagu)
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={handleResetDefaultMusicPlaylist}
-            className="px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 font-bold text-[11px] inline-flex items-center gap-1"
-            title="Pulihkan 3 Lagu Romantis Bawaan"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset Bawaan</span>
-          </button>
-          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer transition-all">
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Musik</span>
-            <input
-              ref={musicFileInputRef}
-              type="file"
-              accept="audio/*,.mp3,.m4a,.wav,.ogg"
-              onChange={handleUploadMusicFile}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Live Player & Volume Controller Card */}
-      <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <button
-            type="button"
-            onClick={() => weddingMusicPlayer.prevTrack()}
-            disabled={effectivePlaylist.length <= 1}
-            className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
-            title="Lagu Sebelumnya"
-          >
-            <SkipBack className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => weddingMusicPlayer.toggle()}
-            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs shrink-0"
-          >
-            {isPlayingAdminMusic ? (
-              <>
-                <Pause className="w-3.5 h-3.5" /> Pause
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5" /> Play
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => weddingMusicPlayer.nextTrack()}
-            disabled={effectivePlaylist.length <= 1}
-            className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
-            title="Lagu Berikutnya"
-          >
-            <SkipForward className="w-3.5 h-3.5" />
-          </button>
-          <div className="min-w-0">
-            <p className="font-bold text-stone-900 truncate text-xs">
-              {adminCurrentTrack?.title || 'Pilih lagu di bawah'}
-            </p>
-            <p className="text-[11px] text-stone-500 truncate">
-              {adminCurrentTrack?.artist || 'Instrumental'}
-            </p>
-          </div>
-        </div>
-
-        {/* Volume Slider */}
-        <div className="flex items-center gap-2 sm:w-56 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80 shrink-0">
-          <button
-            type="button"
-            onClick={() => weddingMusicPlayer.toggleMute()}
-            className="text-[#8B6914] hover:opacity-80 shrink-0"
-            title={isAdminMusicMuted ? 'Unmute' : 'Mute'}
-          >
-            {isAdminMusicMuted || adminMusicVolume === 0 ? (
-              <VolumeX className="w-4 h-4 text-rose-600" />
-            ) : (
-              <Volume2 className="w-4 h-4 text-[#B68D40]" />
-            )}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={isAdminMusicMuted ? 0 : adminMusicVolume}
-            onChange={(e) => handleAdminVolumeChange(parseInt(e.target.value, 10))}
-            className="w-full accent-[#B68D40] cursor-pointer"
-          />
-          <span className="text-[11px] font-extrabold text-[#8B6914] w-9 text-right shrink-0">
-            {isAdminMusicMuted ? '0%' : `${adminMusicVolume}%`}
-          </span>
-        </div>
-      </div>
-
-      {/* Playlist Items (Play, Select Default, Delete) */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-bold text-stone-700 flex items-center gap-1">
-            <ListMusic className="w-3.5 h-3.5 text-[#B68D40]" />
-            <span>Playlist ({effectivePlaylist.length})</span>
-            <InfoTooltip text="Klik lagu pada daftar untuk memutar sekaligus menjadikannya lagu latar utama undangan." />
-          </span>
-        </div>
-
-        {effectivePlaylist.length === 0 ? (
-          <div className="p-4 rounded-xl bg-white border border-dashed border-stone-300 text-center text-stone-500">
-            Playlist kosong. Klik <strong>Upload Musik</strong> atau <strong>Reset Bawaan</strong>.
-          </div>
-        ) : (
-          <div className="divide-y divide-stone-100 rounded-xl bg-white border border-stone-200 overflow-hidden">
-            {effectivePlaylist.map((track, idx) => {
-              const isCurrent =
-                (settingsForm.activeMusicTrackId || effectivePlaylist[0]?.id) ===
-                track.id;
-              const isUploaded = track.url.startsWith('data:audio/');
-              return (
-                <div
-                  key={track.id}
-                  className={`p-2.5 sm:px-3.5 flex items-center justify-between gap-2 transition-colors ${
-                    isCurrent ? 'bg-[#FAF3E3]/70' : 'hover:bg-stone-50'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSelectActiveMusicTrack(track, true)}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
-                  >
-                    <span className="w-6 h-6 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center text-[10px] font-bold shrink-0">
-                      {isCurrent && isPlayingAdminMusic ? (
-                        <Pause className="w-3 h-3" />
-                      ) : (
-                        <Play className="w-3 h-3" />
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-stone-900 truncate">
-                          {idx + 1}. {track.title}
-                        </span>
-                        {isCurrent && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                            Utama
-                          </span>
-                        )}
-                        <span className="px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 text-[10px] font-semibold">
-                          {isUploaded
-                            ? 'File Upload'
-                            : track.url.startsWith('synth:')
-                            ? 'Bawaan'
-                            : 'Link Audio'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 truncate">
-                        {track.artist}
-                      </p>
-                    </div>
-                  </button>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {!isCurrent && (
-                      <button
-                        type="button"
-                        onClick={() => handleSelectActiveMusicTrack(track, true)}
-                        className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-[11px]"
-                      >
-                        Pilih
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteMusicTrack(track.id, track.title)}
-                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
-                      title="Hapus Lagu dari Playlist"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Add Track via Custom Metadata / Audio URL or Upload */}
-      <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2">
-        <div className="flex items-center gap-1">
-          <p className="font-bold text-stone-800 text-[11px]">
-            Tambah Lagu
-          </p>
-          <InfoTooltip text="Isi judul & penyanyi lalu tempel URL .mp3 atau gunakan tombol Upload Musik di atas." />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input
-            type="text"
-            value={newMusicTitle}
-            onChange={(e) => setNewMusicTitle(e.target.value)}
-            placeholder="Judul Lagu"
-            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
-          />
-          <input
-            type="text"
-            value={newMusicArtist}
-            onChange={(e) => setNewMusicArtist(e.target.value)}
-            placeholder="Penyanyi / Instrumen"
-            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
-          />
-          <div className="flex items-center gap-1.5">
-            <input
-              type="text"
-              value={newMusicUrl}
-              onChange={(e) => setNewMusicUrl(e.target.value)}
-              placeholder="URL .mp3"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
-            />
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={handleAddMusicUrlTrack}
-              className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap"
+              onClick={handleResetDefaultMusicPlaylist}
+              className="px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 font-bold text-[11px] inline-flex items-center gap-1"
+              title="Pulihkan Lagu Romantis Bawaan"
             >
-              + URL
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset Bawaan</span>
             </button>
+            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer transition-all">
+              <Upload className="w-3.5 h-3.5" />
+              <span>Upload Musik</span>
+              <input
+                ref={musicFileInputRef}
+                type="file"
+                accept="audio/*,.mp3,.m4a,.wav,.ogg"
+                onChange={handleUploadMusicFile}
+                className="hidden"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Live Player, Seek/Duration Bar & Volume Controller Card */}
+        <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => weddingMusicPlayer.prevTrack()}
+                disabled={effectivePlaylist.length <= 1}
+                className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
+                title="Lagu Sebelumnya"
+              >
+                <SkipBack className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => weddingMusicPlayer.toggle()}
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs shrink-0"
+              >
+                {isPlayingAdminMusic ? (
+                  <>
+                    <Pause className="w-3.5 h-3.5" /> Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5" /> Play
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => weddingMusicPlayer.nextTrack()}
+                disabled={effectivePlaylist.length <= 1}
+                className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
+                title="Lagu Berikutnya"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+              </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-stone-900 truncate text-xs">
+                    {adminCurrentTrack?.title || 'Pilih lagu untuk diputar'}
+                  </p>
+                  {currentLoadedMeta?.status === 'error' ? (
+                    <span className="px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-bold">
+                      Audio Rusak
+                    </span>
+                  ) : adminMusicDuration > 0 ? (
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold">
+                      {formatAudioDuration(adminMusicDuration)}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-[11px] text-stone-500 truncate">
+                  {adminCurrentTrack?.artist || 'Instrumental'}
+                </p>
+              </div>
+            </div>
+
+            {/* Volume Slider */}
+            <div className="flex items-center gap-2 sm:w-56 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80 shrink-0">
+              <button
+                type="button"
+                onClick={() => weddingMusicPlayer.toggleMute()}
+                className="text-[#8B6914] hover:opacity-80 shrink-0"
+                title={isAdminMusicMuted ? 'Unmute' : 'Mute'}
+              >
+                {isAdminMusicMuted || adminMusicVolume === 0 ? (
+                  <VolumeX className="w-4 h-4 text-rose-600" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-[#B68D40]" />
+                )}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={isAdminMusicMuted ? 0 : adminMusicVolume}
+                onChange={(e) => handleAdminVolumeChange(parseInt(e.target.value, 10))}
+                className="w-full accent-[#B68D40] cursor-pointer"
+              />
+              <span className="text-[11px] font-extrabold text-[#8B6914] w-9 text-right shrink-0">
+                {isAdminMusicMuted ? '0%' : `${adminMusicVolume}%`}
+              </span>
+            </div>
+          </div>
+
+          {/* Seek / Progress & Duration Checker Bar */}
+          <div className="flex items-center gap-2.5 pt-2 border-t border-stone-100">
+            <span className="text-[11px] font-mono font-bold text-[#8B6914] w-10 text-left shrink-0">
+              {formatAudioDuration(adminMusicCurrentTime)}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(1, Math.floor(adminMusicDuration || 0))}
+              step={1}
+              disabled={!adminMusicDuration || currentLoadedMeta?.status === 'error'}
+              value={Math.min(
+                Math.floor(adminMusicCurrentTime || 0),
+                Math.max(1, Math.floor(adminMusicDuration || 0))
+              )}
+              onChange={(e) =>
+                weddingMusicPlayer.seek(parseInt(e.target.value, 10))
+              }
+              className="w-full accent-[#B68D40] cursor-pointer disabled:opacity-40 h-1.5"
+              title="Geser untuk mengecek bagian tengah/akhir lagu"
+            />
+            <span className="text-[11px] font-mono font-bold text-stone-600 w-10 text-right shrink-0">
+              {adminMusicDuration > 0
+                ? formatAudioDuration(adminMusicDuration)
+                : '--:--'}
+            </span>
+          </div>
+        </div>
+
+        {/* Playlist Items (Separate Play/Preview vs Pilih/Select Default) */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-bold text-stone-700 flex items-center gap-1">
+              <ListMusic className="w-3.5 h-3.5 text-[#B68D40]" />
+              <span>Playlist ({effectivePlaylist.length})</span>
+              <InfoTooltip text="Klik tombol bulat Play di kiri untuk memutar/tes lagu. Klik tombol Pilih di kanan untuk menjadikan lagu sebagai Lagu Utama undangan." />
+            </span>
+          </div>
+
+          {effectivePlaylist.length === 0 ? (
+            <div className="p-4 rounded-xl bg-white border border-dashed border-stone-300 text-center text-stone-500">
+              Playlist kosong. Klik <strong>Upload Musik</strong> atau <strong>Reset Bawaan</strong>.
+            </div>
+          ) : (
+            <div className="divide-y divide-stone-100 rounded-xl bg-white border border-stone-200 overflow-hidden">
+              {effectivePlaylist.map((track, idx) => {
+                const isSelectedDefault = selectedPrimaryId === track.id;
+                const isPlayingThis =
+                  adminCurrentTrack?.id === track.id && isPlayingAdminMusic;
+                const isLoadedThis = adminCurrentTrack?.id === track.id;
+                const isUploaded = track.url.startsWith('data:audio/');
+                const meta = weddingMusicPlayer.getTrackMeta(track.id);
+
+                return (
+                  <div
+                    key={track.id}
+                    className={`p-2.5 sm:px-3.5 flex items-center justify-between gap-2 transition-colors ${
+                      isSelectedDefault
+                        ? 'bg-[#FAF3E3]/70'
+                        : isLoadedThis
+                        ? 'bg-stone-50/90'
+                        : 'hover:bg-stone-50'
+                    }`}
+                  >
+                    {/* Left Area: Play/Pause Preview ONLY */}
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewMusicTrack(track)}
+                      title={
+                        isPlayingThis
+                          ? 'Jeda lagu ini'
+                          : 'Putar / tes lagu ini (tanpa mengubah Lagu Utama)'
+                      }
+                      className="flex items-center gap-2.5 min-w-0 flex-1 text-left group"
+                    >
+                      <span
+                        className={`w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0 transition-all ${
+                          isPlayingThis
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] border-[#B68D40] text-white shadow-2xs'
+                            : 'bg-[#FAF3E3] group-hover:bg-[#F3E5C8] border-[#D4AF37]/45 text-[#8B6914]'
+                        }`}
+                      >
+                        {isPlayingThis ? (
+                          <Pause className="w-3.5 h-3.5" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-stone-900 truncate">
+                            {idx + 1}. {track.title}
+                          </span>
+                          {isSelectedDefault && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                              Utama
+                            </span>
+                          )}
+                          {isPlayingThis && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 text-[10px] font-bold">
+                              Diputar
+                            </span>
+                          )}
+                          {/* Duration & Broken Audio Check Badge */}
+                          {meta.status === 'ready' && meta.durationSec > 0 ? (
+                            <span
+                              className="px-1.5 py-0.5 rounded-md bg-emerald-50/80 text-emerald-800 border border-emerald-200/80 text-[10px] font-mono font-bold"
+                              title="Durasi musik terdeteksi normal (file audio valid)"
+                            >
+                              ⏱ {formatAudioDuration(meta.durationSec)}
+                            </span>
+                          ) : meta.status === 'error' ? (
+                            <span
+                              className="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold"
+                              title="File musik rusak atau link tidak dapat diputar"
+                            >
+                              ⚠️ Audio Rusak
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 text-[10px] font-semibold">
+                              ⏳ Cek durasi...
+                            </span>
+                          )}
+                          <span className="px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 text-[10px] font-semibold">
+                            {isUploaded
+                              ? 'File Upload'
+                              : track.url.startsWith('synth:')
+                              ? 'Bawaan'
+                              : 'Link Audio'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 truncate">
+                          {track.artist}
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Right Area: Separate Pilih (Set as Primary) & Delete */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isSelectedDefault ? (
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[11px]">
+                          Terpilih
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectActiveMusicTrack(track)}
+                          className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/50 bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-[11px] transition-colors"
+                          title="Tetapkan sebagai Lagu Utama undangan"
+                        >
+                          Pilih
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMusicTrack(track.id, track.title)}
+                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
+                        title="Hapus Lagu dari Playlist"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Add Track via Custom Metadata / Audio URL or Upload */}
+        <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2">
+          <div className="flex items-center gap-1">
+            <p className="font-bold text-stone-800 text-[11px]">
+              Tambah Lagu
+            </p>
+            <InfoTooltip text="Isi judul & penyanyi lalu tempel URL .mp3 atau gunakan tombol Upload Musik di atas." />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
+              value={newMusicTitle}
+              onChange={(e) => setNewMusicTitle(e.target.value)}
+              placeholder="Judul Lagu"
+              className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+            />
+            <input
+              type="text"
+              value={newMusicArtist}
+              onChange={(e) => setNewMusicArtist(e.target.value)}
+              placeholder="Penyanyi / Instrumen"
+              className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={newMusicUrl}
+                onChange={(e) => setNewMusicUrl(e.target.value)}
+                placeholder="URL .mp3"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleAddMusicUrlTrack}
+                className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap"
+              >
+                + URL
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-28 sm:pb-24">

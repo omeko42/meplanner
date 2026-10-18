@@ -591,6 +591,19 @@ export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrack
   return DEFAULT_MUSIC_PLAYLIST;
 }
 
+export interface TrackAudioMeta {
+  status: 'loading' | 'ready' | 'error';
+  durationSec: number;
+}
+
+export function formatAudioDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '00:00';
+  const total = Math.floor(seconds);
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 // Hybrid Audio Player: supports custom uploaded/URL MP3/M4A/WAV/OGG tracks + 3 Romantic Web Audio Synth tracks
 class AmbientWeddingPlayer {
   private ctx: AudioContext | null = null;
@@ -598,11 +611,14 @@ class AmbientWeddingPlayer {
   private audioEl: HTMLAudioElement | null = null;
   private currentAudioSrc = '';
   private isPlaying = false;
+  private hasManualPreview = false;
   private step = 0;
   private volume = 75; // 0 to 100
   private isMuted = false;
   private playlist: MusicTrackItem[] = [...DEFAULT_MUSIC_PLAYLIST];
   private currentTrackId: string = DEFAULT_MUSIC_PLAYLIST[0].id;
+  private trackMetaMap: Map<string, TrackAudioMeta> = new Map();
+  private probingIds: Set<string> = new Set();
   private listeners: Set<() => void> = new Set();
 
   // 3 Romantic Synth Melodies (frequencies in Hz)
@@ -662,9 +678,61 @@ class AmbientWeddingPlayer {
     });
   }
 
+  private probePlaylistMetadata(list: MusicTrackItem[]): void {
+    if (typeof window === 'undefined') return;
+    list.forEach((track) => {
+      if (!track.url || track.url.startsWith('synth:')) {
+        this.trackMetaMap.set(track.id, { status: 'ready', durationSec: 180 });
+        return;
+      }
+      const existing = this.trackMetaMap.get(track.id);
+      if (existing && (existing.status === 'ready' || existing.status === 'error')) {
+        return;
+      }
+      if (this.probingIds.has(track.id)) {
+        return;
+      }
+      this.probingIds.add(track.id);
+      this.trackMetaMap.set(track.id, { status: 'loading', durationSec: 0 });
+      try {
+        const probe = new window.Audio();
+        probe.preload = 'metadata';
+        probe.onloadedmetadata = () => {
+          this.probingIds.delete(track.id);
+          const dur = Number.isFinite(probe.duration) ? probe.duration : 0;
+          this.trackMetaMap.set(track.id, {
+            status: dur > 0 ? 'ready' : 'error',
+            durationSec: dur,
+          });
+          this.notify();
+        };
+        probe.onerror = () => {
+          this.probingIds.delete(track.id);
+          this.trackMetaMap.set(track.id, { status: 'error', durationSec: 0 });
+          this.notify();
+        };
+        probe.src = track.url;
+      } catch {
+        this.probingIds.delete(track.id);
+        this.trackMetaMap.set(track.id, { status: 'error', durationSec: 0 });
+      }
+    });
+  }
+
+  public getTrackMeta(trackId: string): TrackAudioMeta {
+    return (
+      this.trackMetaMap.get(trackId) || {
+        status: 'loading',
+        durationSec: 0,
+      }
+    );
+  }
+
   public syncFromSettings(settings: WeddingSettings): void {
     const list = getEffectiveMusicPlaylist(settings);
     this.playlist = list;
+    this.probePlaylistMetadata(list);
+
     if (typeof settings.musicVolume === 'number' && Number.isFinite(settings.musicVolume)) {
       this.volume = Math.max(0, Math.min(100, settings.musicVolume));
       if (this.audioEl) {
@@ -672,18 +740,24 @@ class AmbientWeddingPlayer {
       }
     }
     const desiredId = settings.activeMusicTrackId;
-    if (desiredId && list.some((t) => t.id === desiredId)) {
-      if (this.currentTrackId !== desiredId) {
+    if (!list.some((t) => t.id === this.currentTrackId)) {
+      // Current track was removed from playlist
+      this.hasManualPreview = false;
+      if (desiredId && list.some((t) => t.id === desiredId)) {
         this.currentTrackId = desiredId;
-        if (this.isPlaying) {
-          this.restartCurrentTrack();
-        }
+      } else if (list.length > 0) {
+        this.currentTrackId = list[0].id;
       }
-    } else if (list.length > 0 && !list.some((t) => t.id === this.currentTrackId)) {
-      this.currentTrackId = list[0].id;
       if (this.isPlaying) {
         this.restartCurrentTrack();
       }
+    } else if (
+      !this.isPlaying &&
+      !this.hasManualPreview &&
+      desiredId &&
+      list.some((t) => t.id === desiredId)
+    ) {
+      this.currentTrackId = desiredId;
     } else if (list.length === 0 && this.isPlaying) {
       this.stop();
     }
@@ -699,6 +773,49 @@ class AmbientWeddingPlayer {
     return (
       this.playlist.find((t) => t.id === this.currentTrackId) || this.playlist[0] || null
     );
+  }
+
+  public getCurrentTime(): number {
+    const track = this.getCurrentTrack();
+    if (!track || !track.url || track.url.startsWith('synth:')) {
+      return this.isPlaying ? (this.step % 180) : 0;
+    }
+    if (this.audioEl && Number.isFinite(this.audioEl.currentTime)) {
+      return this.audioEl.currentTime;
+    }
+    return 0;
+  }
+
+  public getDuration(): number {
+    const track = this.getCurrentTrack();
+    if (!track) return 0;
+    if (!track.url || track.url.startsWith('synth:')) {
+      return 180;
+    }
+    if (
+      this.audioEl &&
+      this.currentAudioSrc === track.url &&
+      Number.isFinite(this.audioEl.duration) &&
+      this.audioEl.duration > 0
+    ) {
+      return this.audioEl.duration;
+    }
+    return this.trackMetaMap.get(track.id)?.durationSec || 0;
+  }
+
+  public seek(seconds: number): void {
+    const track = this.getCurrentTrack();
+    if (!track || !track.url || track.url.startsWith('synth:')) return;
+    if (this.audioEl && this.currentAudioSrc === track.url) {
+      const dur = this.getDuration();
+      const clamped = Math.max(0, dur > 0 ? Math.min(dur, seconds) : seconds);
+      try {
+        this.audioEl.currentTime = clamped;
+        this.notify();
+      } catch {
+        // Ignore seek error if not ready
+      }
+    }
   }
 
   public getVolume(): number {
@@ -755,6 +872,30 @@ class AmbientWeddingPlayer {
     if (!this.audioEl) {
       this.audioEl = new window.Audio();
       this.audioEl.preload = 'auto';
+      this.audioEl.ontimeupdate = () => {
+        this.notify();
+      };
+      this.audioEl.onloadedmetadata = () => {
+        if (
+          this.audioEl &&
+          Number.isFinite(this.audioEl.duration) &&
+          this.audioEl.duration > 0
+        ) {
+          this.trackMetaMap.set(this.currentTrackId, {
+            status: 'ready',
+            durationSec: this.audioEl.duration,
+          });
+        }
+        this.notify();
+      };
+      this.audioEl.onerror = () => {
+        this.trackMetaMap.set(this.currentTrackId, {
+          status: 'error',
+          durationSec: 0,
+        });
+        this.isPlaying = false;
+        this.notify();
+      };
       this.audioEl.onended = () => {
         if (this.playlist.length > 1) {
           this.nextTrack();
@@ -813,7 +954,8 @@ class AmbientWeddingPlayer {
         audio.volume = this.isMuted ? 0 : this.volume / 100;
         this.isPlaying = true;
         void audio.play().catch(() => {
-          // Fallback to synth if audio URL is blocked or fails
+          this.isPlaying = false;
+          this.notify();
         });
         this.notify();
         return true;
@@ -849,6 +991,7 @@ class AmbientWeddingPlayer {
     if (!found) return false;
     const changed = this.currentTrackId !== found.id;
     this.currentTrackId = found.id;
+    this.hasManualPreview = true;
     this.step = 0;
     if (changed && this.audioEl) {
       this.audioEl.currentTime = 0;
