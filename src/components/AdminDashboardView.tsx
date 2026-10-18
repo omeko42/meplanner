@@ -101,6 +101,7 @@ import {
   exportBudgetToCsv,
   triggerFileDownload,
   getEffectiveScheduleEvents,
+  buildScheduleSummarySubtitle,
   syncScheduleEventsToSettings,
   formatDateTimeToIndonesianLabels,
   getPhotoAdjustStyle,
@@ -1412,12 +1413,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   ) => {
     const currentVal = settingsForm[key] !== false;
     const nextVal = !currentVal;
-    const nextSettings: WeddingSettings = {
+    let nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
       [key]: nextVal,
       updatedBy: adminUser.username,
     };
+    if (key === 'showEvent1' || key === 'showEvent2' || key === 'showEvent3') {
+      const eventIdx =
+        key === 'showEvent1' ? 0 : key === 'showEvent2' ? 1 : 2;
+      if (scheduleEvents[eventIdx]) {
+        const nextEvents = scheduleEvents.map((ev, i) =>
+          i === eventIdx ? { ...ev, showOnInvitation: nextVal } : ev
+        );
+        nextSettings = syncScheduleEventsToSettings(nextSettings, nextEvents);
+      }
+    }
     await commitImmediateSettings(nextSettings);
     if (nextVal) {
       setExpandedSectionKey(key);
@@ -5767,6 +5778,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             </div>
                                           </div>
 
+                                          {/* Teks Baris Bawah Sampul & Subjudul Rangkaian Acara (settings.subtitle) */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-1.5">
+                                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                              <label className="block font-bold text-stone-700 truncate">
+                                                Teks Baris Bawah Sampul &amp; Subjudul Rangkaian Acara
+                                              </label>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const autoSubtitle =
+                                                    buildScheduleSummarySubtitle(
+                                                      scheduleEvents,
+                                                      settingsForm.groomOrigin ||
+                                                        settingsForm.brideOrigin ||
+                                                        'Semarang'
+                                                    );
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    subtitle: autoSubtitle,
+                                                  });
+                                                  showToast(
+                                                    '✓ Teks baris bawah disinkronkan otomatis dari Jadwal Acara!'
+                                                  );
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px]"
+                                                title="Susun otomatis mengikuti daftar Jadwal Acara di database"
+                                              >
+                                                <RefreshCw className="w-3 h-3 text-[#B68D40]" />
+                                                <span>Sinkron Otomatis dari Jadwal</span>
+                                              </button>
+                                            </div>
+                                            <input
+                                              type="text"
+                                              value={settingsForm.subtitle || ''}
+                                              onChange={(e) =>
+                                                setSettingsForm({
+                                                  ...settingsForm,
+                                                  subtitle: e.target.value,
+                                                })
+                                              }
+                                              placeholder="Contoh: Biston: 17 Desember 2026 • Pemberkatan Nikah: 19 Desember 2026 • Resepsi: 19 Desember 2026 • Semarang"
+                                              className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
+                                            />
+                                            <p className="text-[10px] text-stone-500">
+                                              Teks ini tampil di bagian paling bawah halaman Sampul (Cover Gate) dan di bawah judul Rangkaian Acara Pernikahan.
+                                            </p>
+                                          </div>
+
                                           <div className="flex justify-end pt-1">
                                             <button
                                               type="submit"
@@ -6138,6 +6197,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           className="space-y-3"
                                         >
                                           {(() => {
+                                            const eventIdx =
+                                              sec.key === 'showEvent1'
+                                                ? 0
+                                                : sec.key === 'showEvent2'
+                                                  ? 1
+                                                  : 2;
                                             const prefix =
                                               sec.key === 'showEvent1'
                                                 ? 'event1'
@@ -6153,6 +6218,41 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             const dressKey = `${prefix}Dresscode` as const;
                                             const mapsKey = `${prefix}MapsUrl` as const;
 
+                                            const updateInlineEventField = (
+                                              legacyKey:
+                                                | typeof titleKey
+                                                | typeof subKey
+                                                | typeof dateKey
+                                                | typeof timeKey
+                                                | typeof venueKey
+                                                | typeof addrKey
+                                                | typeof dressKey
+                                                | typeof mapsKey,
+                                              evField: keyof WeddingScheduleEvent,
+                                              val: string
+                                            ) => {
+                                              const nextBase: WeddingSettings = {
+                                                ...settingsForm,
+                                                [legacyKey]: val,
+                                              };
+                                              if (scheduleEvents[eventIdx]) {
+                                                const nextEvents = scheduleEvents.map(
+                                                  (ev, idx) =>
+                                                    idx === eventIdx
+                                                      ? { ...ev, [evField]: val }
+                                                      : ev
+                                                );
+                                                setSettingsForm(
+                                                  syncScheduleEventsToSettings(
+                                                    nextBase,
+                                                    nextEvents
+                                                  )
+                                                );
+                                              } else {
+                                                setSettingsForm(nextBase);
+                                              }
+                                            };
+
                                             return (
                                               <>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -6164,10 +6264,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[titleKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [titleKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          titleKey,
+                                                          'title',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
                                                     />
@@ -6180,10 +6281,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[subKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [subKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          subKey,
+                                                          'subtitle',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6199,10 +6301,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[dateKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [dateKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          dateKey,
+                                                          'dateLabel',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6215,10 +6318,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[timeKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [timeKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          timeKey,
+                                                          'timeLabel',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6234,10 +6338,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[venueKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [venueKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          venueKey,
+                                                          'venue',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6250,10 +6355,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[addrKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [addrKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          addrKey,
+                                                          'address',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6269,10 +6375,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[dressKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [dressKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          dressKey,
+                                                          'dresscode',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
@@ -6285,14 +6392,58 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       type="text"
                                                       value={settingsForm[mapsKey] || ''}
                                                       onChange={(e) =>
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          [mapsKey]: e.target.value,
-                                                        })
+                                                        updateInlineEventField(
+                                                          mapsKey,
+                                                          'mapsUrl',
+                                                          e.target.value
+                                                        )
                                                       }
                                                       className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
                                                     />
                                                   </div>
+                                                </div>
+
+                                                {/* Teks Baris Bawah Sampul & Subjudul Rangkaian Acara */}
+                                                <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-1">
+                                                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                    <label className="block font-bold text-stone-700 truncate">
+                                                      Teks Baris Bawah Sampul &amp; Subjudul Rangkaian Acara
+                                                    </label>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        const autoSub =
+                                                          buildScheduleSummarySubtitle(
+                                                            scheduleEvents,
+                                                            settingsForm.groomOrigin ||
+                                                              settingsForm.brideOrigin ||
+                                                              'Semarang'
+                                                          );
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          subtitle: autoSub,
+                                                        });
+                                                        showToast(
+                                                          '✓ Teks baris bawah disinkronkan otomatis dari Jadwal Acara!'
+                                                        );
+                                                      }}
+                                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px]"
+                                                    >
+                                                      <RefreshCw className="w-3 h-3 text-[#B68D40]" />
+                                                      <span>Sinkron Otomatis</span>
+                                                    </button>
+                                                  </div>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.subtitle || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        subtitle: e.target.value,
+                                                      })
+                                                    }
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
+                                                  />
                                                 </div>
                                               </>
                                             );
@@ -7750,6 +7901,67 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         Tambah Acara
                       </button>
                     </div>
+
+                    {/* Teks Baris Bawah Sampul & Subjudul Rangkaian Acara (settings.subtitle) */}
+                    <form
+                      onSubmit={handleSaveSettingsModal}
+                      className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <label className="block font-bold text-stone-800 text-xs">
+                          Teks Baris Bawah Sampul &amp; Subjudul Rangkaian Acara
+                        </label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const autoSub = buildScheduleSummarySubtitle(
+                              scheduleEvents,
+                              settingsForm.groomOrigin ||
+                                settingsForm.brideOrigin ||
+                                'Semarang'
+                            );
+                            const nextSettings: WeddingSettings = {
+                              ...state.settings,
+                              ...settingsForm,
+                              subtitle: autoSub,
+                              updatedBy: adminUser.username,
+                            };
+                            await commitImmediateSettings(nextSettings);
+                            showToast(
+                              '✓ Teks baris bawah disinkronkan otomatis dari Jadwal Acara & disimpan ke Supabase!'
+                            );
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px]"
+                          title="Susun otomatis mengikuti daftar Jadwal Acara di bawah"
+                        >
+                          <RefreshCw className="w-3 h-3 text-[#B68D40]" />
+                          <span>Sinkron Otomatis dari Jadwal</span>
+                        </button>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <input
+                          type="text"
+                          value={settingsForm.subtitle || ''}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              subtitle: e.target.value,
+                            })
+                          }
+                          placeholder="Contoh: Biston: 17 Desember 2026 • Pemberkatan Nikah: 19 Desember 2026 • Resepsi: 19 Desember 2026 • Semarang"
+                          className="flex-1 px-3 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-xs text-stone-800"
+                        />
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shrink-0"
+                        >
+                          Simpan Teks
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-stone-500">
+                        Teks ini tampil di bagian paling bawah Sampul Undangan (Cover Gate) dan di bawah judul Rangkaian Acara Pernikahan. Setiap kali Anda menambah/mengedit acara di bawah, teks ini juga otomatis ikut menyesuaikan.
+                      </p>
+                    </form>
 
                     {scheduleEvents.length === 0 ? (
                       <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">

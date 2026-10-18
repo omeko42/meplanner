@@ -421,6 +421,43 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       next.musicArtist = next.musicPlaylist[0].artist;
     }
   }
+  if (!next.subtitle || next.subtitle.includes('Biston: 18 Desember 2026')) {
+    if (Array.isArray(next.scheduleEvents) && next.scheduleEvents.length > 0) {
+      const activeEvents = next.scheduleEvents.filter(
+        (e) => e.showOnInvitation !== false
+      );
+      const sourceEvents =
+        activeEvents.length > 0 ? activeEvents : next.scheduleEvents;
+      const parts = sourceEvents
+        .map((ev) => {
+          const shortTitle =
+            (ev.title || '')
+              .trim()
+              .replace(/^Acara\s+/i, '')
+              .replace(/^Ibadah\s+/i, '')
+              .replace(/\s*\/.*$/, '')
+              .replace(/\s+Pernikahan$/i, '')
+              .trim() || (ev.title || '').trim();
+          const cleanDate =
+            (ev.dateLabel || '').replace(/^[A-Za-zÀ-ÿ]+,\s*/, '').trim() ||
+            (ev.dateLabel || '').trim();
+          if (!shortTitle && !cleanDate) return '';
+          if (!cleanDate) return shortTitle;
+          return `${shortTitle}: ${cleanDate}`;
+        })
+        .filter(Boolean);
+      const city = (next.groomOrigin || next.brideOrigin || 'Semarang').trim();
+      if (
+        city &&
+        !parts.some((p) => p.toLowerCase().includes(city.toLowerCase()))
+      ) {
+        parts.push(city);
+      }
+      next.subtitle = parts.join(' • ');
+    } else {
+      next.subtitle = INITIAL_SETTINGS.subtitle;
+    }
+  }
   return next;
 }
 

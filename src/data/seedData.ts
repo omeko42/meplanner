@@ -29,7 +29,8 @@ export function inferTimelinePhase(due: string, category: string): TimelinePhase
 
 export const INITIAL_SETTINGS: WeddingSettings = {
   siteTitle: 'Wedding Readiness Tracker',
-  subtitle: 'Biston: 18 Desember 2026 • Pemberkatan: 19 Desember 2026 • Semarang',
+  subtitle:
+    'Biston: 17 Desember 2026 • Pemberkatan Nikah: 19 Desember 2026 • Resepsi: 19 Desember 2026 • Semarang',
   weddingDatetime: '2026-12-19T07:00:00+07:00',
   bistonDatetime: '2026-12-17T18:00:00+07:00',
   timezone: 'Asia/Jakarta',

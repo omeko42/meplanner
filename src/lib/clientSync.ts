@@ -110,6 +110,16 @@ function normalizeParsedState(
     }
   }
 
+  if (
+    !mergedSettings.subtitle ||
+    mergedSettings.subtitle.includes('Biston: 18 Desember 2026')
+  ) {
+    mergedSettings.subtitle = buildScheduleSummarySubtitle(
+      getEffectiveScheduleEvents(mergedSettings),
+      mergedSettings.groomOrigin || 'Semarang'
+    );
+  }
+
   return {
     settings: mergedSettings,
     tasks: cleanTasks,
@@ -1331,6 +1341,38 @@ export function getEffectiveScheduleEvents(
   ];
 }
 
+export function buildScheduleSummarySubtitle(
+  events: WeddingScheduleEvent[],
+  originCity?: string
+): string {
+  const activeEvents = events.filter((e) => e.showOnInvitation !== false);
+  const sourceEvents = activeEvents.length > 0 ? activeEvents : events;
+  const parts = sourceEvents
+    .map((ev) => {
+      const shortTitle =
+        (ev.title || '')
+          .trim()
+          .replace(/^Acara\s+/i, '')
+          .replace(/^Ibadah\s+/i, '')
+          .replace(/\s*\/.*$/, '')
+          .replace(/\s+Pernikahan$/i, '')
+          .trim() || (ev.title || '').trim();
+      const cleanDate =
+        (ev.dateLabel || '').replace(/^[A-Za-zÀ-ÿ]+,\s*/, '').trim() ||
+        (ev.dateLabel || '').trim();
+      if (!shortTitle && !cleanDate) return '';
+      if (!cleanDate) return shortTitle;
+      return `${shortTitle}: ${cleanDate}`;
+    })
+    .filter(Boolean);
+
+  const city = (originCity || 'Semarang').trim();
+  if (city && !parts.some((p) => p.toLowerCase().includes(city.toLowerCase()))) {
+    parts.push(city);
+  }
+  return parts.join(' • ');
+}
+
 export function syncScheduleEventsToSettings(
   settings: WeddingSettings,
   events: WeddingScheduleEvent[]
@@ -1401,6 +1443,15 @@ export function syncScheduleEventsToSettings(
     if (countdownEvents[0]?.datetime) {
       next.bistonDatetime = countdownEvents[0].datetime;
     }
+  }
+
+  // Automatically sync cover & schedule summary subtitle with the current schedule events
+  const computedSubtitle = buildScheduleSummarySubtitle(
+    events,
+    next.groomOrigin || next.brideOrigin || 'Semarang'
+  );
+  if (computedSubtitle) {
+    next.subtitle = computedSubtitle;
   }
 
   return next;
