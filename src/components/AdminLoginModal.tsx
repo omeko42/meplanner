@@ -88,11 +88,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Akses Terproteksi
+                <ShieldCheck className="w-3.5 h-3.5" /> Portal Login Resmi
               </span>
               <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                Portal Manajemen Pernikahan
+                <span className="sm:hidden">MWM — My Wedding Manager</span>
+                <span className="hidden sm:inline">My Wedding Manager</span>
               </h3>
+              <p className="text-[10px] font-semibold text-[#8B6914]">
+                by omeko11
+              </p>
             </div>
           </div>
         </div>

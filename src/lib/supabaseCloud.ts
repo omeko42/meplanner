@@ -458,6 +458,12 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       next.subtitle = INITIAL_SETTINGS.subtitle;
     }
   }
+  if (
+    !next.siteTitle ||
+    /wedding\s*readiness\s*tracker/i.test(next.siteTitle)
+  ) {
+    next.siteTitle = 'My Wedding Manager';
+  }
   return next;
 }
 

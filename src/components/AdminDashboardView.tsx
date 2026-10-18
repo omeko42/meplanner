@@ -3646,16 +3646,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-serif font-bold text-xs sm:text-base text-stone-900 truncate">
-                    {state.settings.siteTitle}
+                  <h1 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate leading-tight">
+                    <span className="sm:hidden tracking-wider">MWM</span>
+                    <span className="hidden sm:inline">
+                      {!state.settings.siteTitle ||
+                      /wedding\s*readiness\s*tracker/i.test(
+                        state.settings.siteTitle
+                      )
+                        ? 'My Wedding Manager'
+                        : state.settings.siteTitle}
+                    </span>
                   </h1>
                   <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold">
                     <Sparkles className="w-3 h-3" /> All-in-One Planner
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate">
-                  {state.settings.groomNickname} &amp; {state.settings.brideNickname} &bull;{' '}
-                  {state.settings.subtitle}
+                <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate leading-tight mt-0.5">
+                  <span className="font-bold text-[#8B6914]">by omeko11</span>
+                  <span className="mx-1 text-stone-300">&bull;</span>
+                  <span>
+                    {state.settings.groomNickname} &amp;{' '}
+                    {state.settings.brideNickname}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {' '}
+                    &bull; {state.settings.subtitle}
+                  </span>
                 </p>
               </div>
             </div>

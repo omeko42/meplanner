@@ -839,8 +839,9 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex items-center justify-center text-sm font-bold">
-          Memuat Undangan &amp; Wedding Readiness System...
+        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex flex-col items-center justify-center gap-1 text-sm font-bold">
+          <span>Memuat My Wedding Manager...</span>
+          <span className="text-[11px] font-medium text-[#9A742B]">by omeko11</span>
         </div>
       }
     >

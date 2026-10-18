@@ -90,6 +90,13 @@ function readDbFromDisk(): WeddingDatabaseSchema {
           lastSyncedAt: syncedIso,
         };
 
+        if (
+          !candidate.settings.siteTitle ||
+          /wedding\s*readiness\s*tracker/i.test(candidate.settings.siteTitle)
+        ) {
+          candidate.settings.siteTitle = 'My Wedding Manager';
+        }
+
         if (!bestCandidate || candidateTime > bestTime) {
           bestCandidate = candidate;
           bestTime = candidateTime;
