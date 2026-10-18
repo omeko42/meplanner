@@ -7,7 +7,13 @@ import {
   MapPin,
   Clock,
   Music,
+  Volume2,
   VolumeX,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  ListMusic,
   Send,
   Copy,
   Check,
@@ -31,10 +37,13 @@ import {
   GuestWish,
   RsvpStatus,
   GalleryPhotoItem,
+  MusicTrackItem,
 } from '@/types';
 import {
   weddingMusicPlayer,
+  getEffectiveMusicPlaylist,
   getEffectiveScheduleEvents,
+  getPhotoAdjustStyle,
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
@@ -73,10 +82,38 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   onSubmitRsvp,
 }) => {
   const [isOpened, setIsOpened] = useState(false);
-  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const [isPlayingMusic, setIsPlayingMusic] = useState(() =>
+    weddingMusicPlayer.getStatus()
+  );
+  const [musicVolume, setMusicVolume] = useState(() =>
+    weddingMusicPlayer.getVolume()
+  );
+  const [isMusicMuted, setIsMusicMuted] = useState(() =>
+    weddingMusicPlayer.getMuted()
+  );
+  const [currentTrack, setCurrentTrack] = useState<MusicTrackItem | null>(() =>
+    weddingMusicPlayer.getCurrentTrack()
+  );
+  const [playlist, setPlaylist] = useState<MusicTrackItem[]>(() =>
+    getEffectiveMusicPlaylist(settings)
+  );
+  const [isMusicPopoverOpen, setIsMusicPopoverOpen] = useState(false);
   const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
   const [showQrisModal, setShowQrisModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhotoItem | null>(null);
+
+  useEffect(() => {
+    weddingMusicPlayer.syncFromSettings(settings);
+    const syncPlayerState = () => {
+      setIsPlayingMusic(weddingMusicPlayer.getStatus());
+      setMusicVolume(weddingMusicPlayer.getVolume());
+      setIsMusicMuted(weddingMusicPlayer.getMuted());
+      setCurrentTrack(weddingMusicPlayer.getCurrentTrack());
+      setPlaylist([...weddingMusicPlayer.getPlaylist()]);
+    };
+    syncPlayerState();
+    return weddingMusicPlayer.subscribe(syncPlayerState);
+  }, [settings]);
 
   const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
@@ -261,12 +298,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     return (
       <div className="min-h-[100dvh] relative flex flex-col justify-between overflow-x-hidden overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
-        <div
-          className="fixed inset-0 bg-cover bg-center scale-105 transition-transform duration-1000 pointer-events-none"
-          style={{
-            backgroundImage: `url('${coverBgUrl}')`,
-          }}
-        />
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <img
+            src={coverBgUrl}
+            alt="Cover Background"
+            className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000"
+            style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
+          />
+        </div>
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
           style={{
@@ -383,11 +422,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pb-28 sm:pb-24 overflow-x-hidden selection:bg-[#D4AF37]/25 selection:text-stone-900">
       {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
-          style={{
-            backgroundImage: `url('${pageBgUrl}')`,
-          }}
+        <img
+          src={pageBgUrl}
+          alt="Page Wallpaper"
+          className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+          style={getPhotoAdjustStyle(settings.photoAdjustments?.pageBgUrl)}
         />
         <div
           className={`absolute inset-0 ${blurClass}`}
@@ -414,29 +453,176 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleToggleMusic}
-              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                isPlayingMusic
-                  ? 'bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
-                  : 'bg-white/80 border-stone-200 text-stone-500'
-              }`}
-              title="Putar / Hentikan Musik Latar"
-            >
-              {isPlayingMusic ? (
-                <>
-                  <Music className="w-3.5 h-3.5 animate-pulse text-[#B68D40]" />
-                  <span className="hidden sm:inline">Musik Aktif</span>
-                </>
-              ) : (
-                <>
-                  <VolumeX className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Musik Nonaktif</span>
-                </>
-              )}
-            </button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
+            {/* Compact Play/Pause + Playlist & Volume Trigger */}
+            <div className="inline-flex items-center rounded-full border border-[#D4AF37]/45 bg-white/90 shadow-2xs overflow-hidden">
+              <button
+                type="button"
+                onClick={handleToggleMusic}
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold transition-all ${
+                  isPlayingMusic
+                    ? 'bg-[#FAF3E3] text-[#8B6914]'
+                    : 'text-stone-600 hover:bg-stone-50'
+                }`}
+                title={isPlayingMusic ? 'Jeda Musik (Pause)' : 'Putar Musik (Play)'}
+              >
+                {isPlayingMusic ? (
+                  <Pause className="w-3.5 h-3.5 text-[#B68D40]" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 text-[#B68D40]" />
+                )}
+                <span className="hidden sm:inline max-w-[130px] truncate">
+                  {currentTrack?.title || settings.musicTitle || 'Musik'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsMusicPopoverOpen((v) => !v)}
+                className={`px-2 sm:px-2.5 py-1.5 border-l border-[#D4AF37]/30 text-xs font-bold inline-flex items-center gap-1 transition-all ${
+                  isMusicPopoverOpen
+                    ? 'bg-[#B68D40] text-white'
+                    : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914]'
+                }`}
+                title="Buka Playlist & Pengaturan Volume"
+              >
+                <ListMusic className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-extrabold">{playlist.length}</span>
+              </button>
+            </div>
+
+            {/* Popover: Playlist, Play/Pause, Next/Prev & Volume Control */}
+            {isMusicPopoverOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-white/98 backdrop-blur-2xl border border-[#D4AF37]/45 shadow-2xl p-3.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/80">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
+                      Pemutar Musik &amp; Playlist
+                    </p>
+                    <p className="text-xs font-bold text-stone-900 truncate">
+                      {currentTrack?.title || settings.musicTitle || 'Belum ada lagu'}
+                    </p>
+                    <p className="text-[11px] text-stone-500 truncate">
+                      {currentTrack?.artist || settings.musicArtist || 'Instrumental'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMusicPopoverOpen(false)}
+                    className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Transport Controls: Prev / Play-Pause / Next */}
+                <div className="flex items-center justify-center gap-3 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => weddingMusicPlayer.prevTrack()}
+                    disabled={playlist.length <= 1}
+                    className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40 transition-all"
+                    title="Lagu Sebelumnya"
+                  >
+                    <SkipBack className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleMusic}
+                    className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all"
+                  >
+                    {isPlayingMusic ? (
+                      <>
+                        <Pause className="w-3.5 h-3.5" /> Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5" /> Play
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => weddingMusicPlayer.nextTrack()}
+                    disabled={playlist.length <= 1}
+                    className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40 transition-all"
+                    title="Lagu Berikutnya"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Volume Control */}
+                <div className="bg-[#FAF8F5] rounded-xl p-2.5 border border-stone-200/80 mb-2.5">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-stone-700 mb-1">
+                    <button
+                      type="button"
+                      onClick={() => weddingMusicPlayer.toggleMute()}
+                      className="inline-flex items-center gap-1 text-[#8B6914] hover:underline"
+                    >
+                      {isMusicMuted || musicVolume === 0 ? (
+                        <VolumeX className="w-3.5 h-3.5 text-rose-600" />
+                      ) : (
+                        <Volume2 className="w-3.5 h-3.5 text-[#B68D40]" />
+                      )}
+                      <span>{isMusicMuted ? 'Muted' : 'Volume'}</span>
+                    </button>
+                    <span className="text-[11px] font-extrabold text-[#8B6914]">
+                      {isMusicMuted ? '0%' : `${musicVolume}%`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={isMusicMuted ? 0 : musicVolume}
+                    onChange={(e) =>
+                      weddingMusicPlayer.setVolume(parseInt(e.target.value, 10))
+                    }
+                    className="w-full accent-[#B68D40] cursor-pointer"
+                  />
+                </div>
+
+                {/* Track List */}
+                <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1">
+                    Daftar Lagu ({playlist.length})
+                  </p>
+                  {playlist.map((track, idx) => {
+                    const isCurrent = currentTrack?.id === track.id;
+                    return (
+                      <button
+                        key={track.id}
+                        type="button"
+                        onClick={() => weddingMusicPlayer.playTrack(track.id)}
+                        className={`w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 transition-all ${
+                          isCurrent
+                            ? 'bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-bold'
+                            : 'hover:bg-stone-100 text-stone-700'
+                        }`}
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-stone-400 w-4 shrink-0">
+                            {idx + 1}.
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs truncate">{track.title}</p>
+                            <p className="text-[10px] text-stone-500 truncate">
+                              {track.artist}
+                            </p>
+                          </div>
+                        </div>
+                        {isCurrent && isPlayingMusic ? (
+                          <Music className="w-3.5 h-3.5 text-[#B68D40] animate-pulse shrink-0" />
+                        ) : (
+                          <Play className="w-3 h-3 text-stone-400 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
@@ -460,6 +646,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 src={heroBgUrl}
                 alt="Prewedding Banner"
                 className="w-full h-full object-cover object-center"
+                style={getPhotoAdjustStyle(settings.photoAdjustments?.heroPrewedUrl)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-white/35 to-transparent" />
               <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
@@ -575,11 +762,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
                 <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
-                  <img
-                    src={settings.groomPhotoUrl}
-                    alt={settings.groomFullName}
-                    className="w-full h-full object-cover rounded-full bg-stone-100"
-                  />
+                  <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
+                    <img
+                      src={settings.groomPhotoUrl}
+                      alt={settings.groomFullName}
+                      className="w-full h-full object-cover object-center"
+                      style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
+                    />
+                  </div>
                 </div>
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                   {settings.groomRankAndTitle || 'Mempelai Pria'}
@@ -604,11 +794,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="h-full rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <div className="flex flex-col items-center w-full">
                 <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
-                  <img
-                    src={settings.bridePhotoUrl}
-                    alt={settings.brideFullName}
-                    className="w-full h-full object-cover rounded-full bg-stone-100"
-                  />
+                  <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
+                    <img
+                      src={settings.bridePhotoUrl}
+                      alt={settings.brideFullName}
+                      className="w-full h-full object-cover object-center"
+                      style={getPhotoAdjustStyle(settings.photoAdjustments?.bridePhotoUrl)}
+                    />
+                  </div>
                 </div>
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                   {settings.brideTitle || 'Mempelai Wanita'}
@@ -780,7 +973,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <img
                     src={photo.imageUrl}
                     alt={photo.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover object-center transition-transform duration-500"
+                    style={getPhotoAdjustStyle(photo.adjustment)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-950/15 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
                   <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 right-2.5 sm:right-3 text-white">

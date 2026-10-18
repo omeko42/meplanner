@@ -164,12 +164,19 @@ export interface LoveStoryItem {
   description: string;
 }
 
+export interface PhotoAdjustment {
+  zoom: number; // 0.5 to 2.5 (default 1)
+  x: number; // -100 to 100 (negative = left, positive = right)
+  y: number; // -100 to 100 (negative = up, positive = down)
+}
+
 export interface GalleryPhotoItem {
   id: string;
   title: string;
   caption: string;
   imageUrl: string;
   category: 'Prewedding' | 'Momen Bersama' | 'Persiapan & Sidang' | 'Venue Semarang';
+  adjustment?: PhotoAdjustment;
 }
 
 export interface WeddingScheduleEvent {
@@ -291,12 +298,33 @@ export interface WeddingSettings {
   bgBlurIntensity?: 'none' | 'sm' | 'md' | 'lg';
   themePreset?: 'pearl-champagne' | 'ivory-rose' | 'sage-garden' | 'royal-navy';
 
-  // Music
+  // Photo Zoom & Pan Adjustments for Couple, Backgrounds, etc.
+  photoAdjustments?: {
+    groomPhotoUrl?: PhotoAdjustment;
+    bridePhotoUrl?: PhotoAdjustment;
+    coverBgUrl?: PhotoAdjustment;
+    heroPrewedUrl?: PhotoAdjustment;
+    pageBgUrl?: PhotoAdjustment;
+  };
+
+  // Music & Playlist
   musicTitle: string;
   musicArtist: string;
+  musicPlaylist?: MusicTrackItem[];
+  activeMusicTrackId?: string;
+  musicVolume?: number; // 0 to 100 (default 75)
+  musicAutoplay?: boolean; // default true
 
   updatedAt: string;
   updatedBy: string;
+}
+
+export interface MusicTrackItem {
+  id: string;
+  title: string;
+  artist: string;
+  url: string; // 'synth:canon-in-d' | 'synth:thousand-years' | 'synth:beautiful-in-white' | data:audio/... | https://...
+  isDefault?: boolean;
 }
 
 export type AdminRole =

@@ -43,13 +43,16 @@ function createDefaultStore(): WeddingDatabaseSchema {
     wishes: [...INITIAL_WISHES],
     budgetItems: [...INITIAL_BUDGET_ITEMS],
     adminUsers: [...INITIAL_ADMIN_USERS],
-    lastSyncedAt: new Date().toISOString(),
+    lastSyncedAt: '2026-01-01T00:00:00.000Z',
   };
 }
 
 function readDbFromDisk(): WeddingDatabaseSchema {
   const defaultStore = createDefaultStore();
-  const candidatePaths = [PRIMARY_DB_PATH, LOCAL_DB_PATH, BACKUP_DB_PATH, TMP_DB_PATH];
+  const candidatePaths = [TMP_DB_PATH, LOCAL_DB_PATH, PRIMARY_DB_PATH, BACKUP_DB_PATH];
+
+  let bestCandidate: WeddingDatabaseSchema | null = null;
+  let bestTime = -1;
 
   for (const dbPath of candidatePaths) {
     try {
@@ -57,7 +60,10 @@ function readDbFromDisk(): WeddingDatabaseSchema {
         const raw = fs.readFileSync(dbPath, 'utf-8');
         const parsed = JSON.parse(raw) as Partial<WeddingDatabaseSchema>;
 
-        return {
+        const syncedIso = parsed.lastSyncedAt || '2026-01-01T00:00:00.000Z';
+        const candidateTime = new Date(syncedIso).getTime() || 0;
+
+        const candidate: WeddingDatabaseSchema = {
           settings: parsed.settings
             ? { ...defaultStore.settings, ...parsed.settings }
             : defaultStore.settings,
@@ -77,51 +83,46 @@ function readDbFromDisk(): WeddingDatabaseSchema {
             Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
               ? parsed.adminUsers
               : defaultStore.adminUsers,
-          lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
+          lastSyncedAt: syncedIso,
         };
+
+        if (!bestCandidate || candidateTime > bestTime) {
+          bestCandidate = candidate;
+          bestTime = candidateTime;
+        }
       }
     } catch {
       // Continue to next path or fallback
     }
   }
 
-  return defaultStore;
+  return bestCandidate || defaultStore;
 }
 
-function persistStore(store: WeddingDatabaseSchema): void {
-  store.lastSyncedAt = new Date().toISOString();
+function persistStore(store: WeddingDatabaseSchema, updateTimestamp = true): void {
+  if (updateTimestamp || !store.lastSyncedAt) {
+    store.lastSyncedAt = new Date().toISOString();
+  }
   globalThis.__weddingGlobalStore = store;
   const serialized = JSON.stringify(store, null, 2);
 
-  let wroteLocal = false;
-  for (const targetPath of [PRIMARY_DB_PATH, LOCAL_DB_PATH, BACKUP_DB_PATH]) {
+  for (const targetPath of [PRIMARY_DB_PATH, LOCAL_DB_PATH, BACKUP_DB_PATH, TMP_DB_PATH]) {
     try {
       const dir = path.dirname(targetPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(targetPath, serialized, 'utf-8');
-      wroteLocal = true;
     } catch {
       // Ignore individual path error in restricted serverless environments
     }
-  }
-
-  if (wroteLocal) {
-    return;
-  }
-
-  try {
-    fs.writeFileSync(TMP_DB_PATH, serialized, 'utf-8');
-  } catch {
-    // In-memory store remains active
   }
 }
 
 function getStore(): WeddingDatabaseSchema {
   if (!globalThis.__weddingGlobalStore) {
     globalThis.__weddingGlobalStore = readDbFromDisk();
-    persistStore(globalThis.__weddingGlobalStore);
+    persistStore(globalThis.__weddingGlobalStore, false);
   }
   return globalThis.__weddingGlobalStore;
 }

@@ -16,9 +16,73 @@ import {
 } from '@/types';
 import {
   getInitialClientState,
+  loadClientStateFromIndexedDB,
   saveClientState,
+  getStoredAdminUser,
   saveStoredAdminUser,
+  getStoredViewMode,
+  saveStoredViewMode,
 } from '@/lib/clientSync';
+
+function mergePreservingLocalMedia(
+  serverState: WeddingDatabaseSchema,
+  localState: WeddingDatabaseSchema
+): WeddingDatabaseSchema {
+  const localPlaylist = localState.settings?.musicPlaylist || [];
+  const serverPlaylist = serverState.settings?.musicPlaylist;
+
+  const mergedPlaylist = Array.isArray(serverPlaylist)
+    ? serverPlaylist.map((track) => {
+        const localMatch = localPlaylist.find((lt) => lt.id === track.id);
+        if (localMatch && localMatch.url.startsWith('data:audio/')) {
+          return { ...track, url: localMatch.url };
+        }
+        return track;
+      })
+    : localPlaylist.length > 0
+    ? localPlaylist
+    : undefined;
+
+  return {
+    ...serverState,
+    settings: {
+      ...serverState.settings,
+      ...(mergedPlaylist ? { musicPlaylist: mergedPlaylist } : {}),
+    },
+  };
+}
+
+function stripLargeAudioForServerPayload(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object') return payload;
+  try {
+    const rawJson = JSON.stringify(payload);
+    // Vercel serverless body limit is 4.5MB; if under 3.6MB, send as-is
+    if (rawJson.length < 3_600_000) return payload;
+
+    const clone = JSON.parse(rawJson) as Record<string, unknown>;
+    if (Array.isArray(clone.musicPlaylist)) {
+      clone.musicPlaylist = (clone.musicPlaylist as Array<Record<string, unknown>>).map(
+        (m) =>
+          typeof m.url === 'string' && m.url.startsWith('data:audio/')
+            ? { ...m, url: 'synth:canon-in-d' }
+            : m
+      );
+    }
+    if (clone.settings && typeof clone.settings === 'object') {
+      const s = clone.settings as Record<string, unknown>;
+      if (Array.isArray(s.musicPlaylist)) {
+        s.musicPlaylist = (s.musicPlaylist as Array<Record<string, unknown>>).map((m) =>
+          typeof m.url === 'string' && m.url.startsWith('data:audio/')
+            ? { ...m, url: 'synth:canon-in-d' }
+            : m
+        );
+      }
+    }
+    return clone;
+  } catch {
+    return payload;
+  }
+}
 
 function WeddingAppContent() {
   const searchParams = useSearchParams();
@@ -29,22 +93,39 @@ function WeddingAppContent() {
   const [state, setState] = useState<WeddingDatabaseSchema>(() =>
     getInitialClientState()
   );
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>('PUBLIC');
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() =>
+    getStoredAdminUser()
+  );
+  const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>(() => {
+    const storedMode = getStoredViewMode();
+    const storedUser = getStoredAdminUser();
+    if (storedUser && storedMode === 'ADMIN') return 'ADMIN';
+    return 'PUBLIC';
+  });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [previewOverrideGuest, setPreviewOverrideGuest] = useState<WeddingGuest | null>(
     null
   );
 
-  // Verify server-side HttpOnly Admin Session & load database state on mount
+  const changeViewMode = useCallback((mode: 'PUBLIC' | 'ADMIN') => {
+    setViewMode(mode);
+    saveStoredViewMode(mode);
+  }, []);
+
+  // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Server state on mount
   useEffect(() => {
+    let isMounted = true;
+
     fetch('/api/auth', { cache: 'no-store' })
       .then(async (res) => {
+        if (!isMounted) return;
         if (!res.ok) {
-          setAdminUser(null);
-          saveStoredAdminUser(null);
-          if (urlMode === 'admin') {
-            setIsLoginModalOpen(true);
+          const cachedUser = getStoredAdminUser();
+          if (!cachedUser) {
+            setAdminUser(null);
+            if (urlMode === 'admin') {
+              setIsLoginModalOpen(true);
+            }
           }
           return;
         }
@@ -52,57 +133,101 @@ function WeddingAppContent() {
         if (authData.authenticated && authData.user) {
           setAdminUser(authData.user);
           saveStoredAdminUser(authData.user);
-          if (urlMode === 'admin') {
-            setViewMode('ADMIN');
+          if (urlMode === 'admin' || getStoredViewMode() === 'ADMIN') {
+            changeViewMode('ADMIN');
           }
         } else if (urlMode === 'admin') {
           setIsLoginModalOpen(true);
         }
       })
       .catch(() => {
-        if (urlMode === 'admin') {
+        if (urlMode === 'admin' && !getStoredAdminUser()) {
           setIsLoginModalOpen(true);
         }
       });
 
-    fetch('/api/wedding', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((resData) => {
+    (async () => {
+      // 1. Load full state (including high-res photos & uploaded MP3s) from IndexedDB
+      const lsState = getInitialClientState();
+      const idbState = await loadClientStateFromIndexedDB();
+
+      const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
+      const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
+      const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
+      const bestLocalTime = Math.max(lsTime, idbTime);
+
+      if (isMounted && bestLocalTime > 0) {
+        setState(bestLocal);
+      }
+
+      // 2. Fetch server state and compare timestamps so a cold-started server NEVER overwrites newer local edits
+      try {
+        const res = await fetch('/api/wedding', { cache: 'no-store' });
+        const resData = await res.json();
+        if (!isMounted) return;
+
         if (resData.success && resData.data) {
-          setState(resData.data);
-          saveClientState(resData.data);
+          const serverState = resData.data as WeddingDatabaseSchema;
+          const serverTime = new Date(serverState.lastSyncedAt || 0).getTime() || 0;
+
+          if (bestLocalTime > serverTime) {
+            // Browser has newer edits than server (e.g. after hard refresh or serverless cold start):
+            // Keep browser state and push it back to the server!
+            setState(bestLocal);
+            saveClientState(bestLocal, false);
+            void fetch('/api/wedding', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'IMPORT_BACKUP',
+                payload: stripLargeAudioForServerPayload(bestLocal),
+              }),
+            }).catch(() => {});
+          } else {
+            const merged = mergePreservingLocalMedia(serverState, bestLocal);
+            setState(merged);
+            saveClientState(merged, false);
+          }
         }
-      })
-      .catch(() => {
-        // Fallback to localStorage state already loaded
-      });
-  }, [urlMode]);
+      } catch {
+        // Offline fallback: bestLocal from IndexedDB/localStorage is already active
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [urlMode, changeViewMode]);
 
   const mutateServer = useCallback(
     async (action: string, payload: unknown): Promise<WeddingDatabaseSchema | null> => {
       try {
+        const safePayload = stripLargeAudioForServerPayload(payload);
         const res = await fetch('/api/wedding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, payload }),
+          body: JSON.stringify({ action, payload: safePayload }),
         });
 
         if (res.status === 401 && action !== 'SUBMIT_RSVP') {
-          setAdminUser(null);
-          saveStoredAdminUser(null);
-          setViewMode('PUBLIC');
-          setIsLoginModalOpen(true);
+          // Even if server cookie expired, local state is already saved in IndexedDB & localStorage
           return null;
         }
 
         const json = await res.json();
         if (json.success && json.data) {
-          setState(json.data);
-          saveClientState(json.data);
+          setState((prev) => {
+            const merged = mergePreservingLocalMedia(
+              json.data as WeddingDatabaseSchema,
+              prev
+            );
+            saveClientState(merged, false);
+            return merged;
+          });
           return json.data;
         }
       } catch {
-        // Offline fallback handled below
+        // Offline fallback: local optimistic state is already saved in IndexedDB & localStorage
       }
       return null;
     },
@@ -111,7 +236,7 @@ function WeddingAppContent() {
 
   const handleOpenAdminPortal = () => {
     if (adminUser) {
-      setViewMode('ADMIN');
+      changeViewMode('ADMIN');
     } else {
       setIsLoginModalOpen(true);
     }
@@ -121,16 +246,7 @@ function WeddingAppContent() {
     setAdminUser(user);
     saveStoredAdminUser(user);
     setIsLoginModalOpen(false);
-    setViewMode('ADMIN');
-    fetch('/api/wedding', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.success && resData.data) {
-          setState(resData.data);
-          saveClientState(resData.data);
-        }
-      })
-      .catch(() => {});
+    changeViewMode('ADMIN');
   };
 
   const handleSyncStateAndUser = (
@@ -138,8 +254,8 @@ function WeddingAppContent() {
     nextUser?: AdminUser
   ) => {
     if (nextState) {
-      setState(nextState);
-      saveClientState(nextState);
+      const saved = saveClientState(nextState, true);
+      setState(saved);
     }
     if (nextUser) {
       setAdminUser(nextUser);
@@ -159,32 +275,115 @@ function WeddingAppContent() {
     }
     setAdminUser(null);
     saveStoredAdminUser(null);
-    setViewMode('PUBLIC');
+    changeViewMode('PUBLIC');
   };
 
   const handleSwitchToPublicPreview = (guest?: WeddingGuest) => {
     if (guest) {
       setPreviewOverrideGuest(guest);
     }
-    setViewMode('PUBLIC');
+    changeViewMode('PUBLIC');
   };
 
-  // CRUD Handlers
+  // Optimistic Local-First CRUD Handlers (saves to IndexedDB + localStorage immediately before network call)
   const handleUpsertTask = async (task: Partial<WeddingTask> & { title: string }) => {
+    setState((prev) => {
+      const exists = task.id && prev.tasks.some((t) => t.id === task.id);
+      const nextTasks = exists
+        ? prev.tasks.map((t) =>
+            t.id === task.id
+              ? ({
+                  ...t,
+                  ...task,
+                  done:
+                    typeof task.done === 'boolean'
+                      ? task.done
+                      : task.status === 'SELESAI',
+                  status: task.status || (task.done ? 'SELESAI' : t.status),
+                } as WeddingTask)
+              : t
+          )
+        : [
+            ...prev.tasks,
+            {
+              id: task.id || `tsk_${Date.now().toString(36)}`,
+              category: task.category || 'Acara',
+              timelinePhase: task.timelinePhase || 'H-60 s/d H-30',
+              title: task.title,
+              due: task.due || '2026-11-01',
+              priority: task.priority || 'Sedang',
+              owner: task.owner || 'Bersama',
+              status: task.status || 'BELUM',
+              notes: task.notes || '',
+              done: Boolean(task.done),
+              doneAt: task.doneAt || '',
+              createdAt: new Date().toISOString().slice(0, 10),
+              updatedAt: new Date().toISOString().slice(0, 10),
+              updatedBy: adminUser?.username || 'admin',
+            } as WeddingTask,
+          ];
+      return saveClientState({ ...prev, tasks: nextTasks }, true);
+    });
     await mutateServer('UPSERT_TASK', task);
   };
 
   const handleDeleteTask = async (id: string) => {
+    setState((prev) =>
+      saveClientState(
+        { ...prev, tasks: prev.tasks.filter((t) => t.id !== id) },
+        true
+      )
+    );
     await mutateServer('DELETE_TASK', { id });
   };
 
   const handleUpsertGuest = async (
     guest: Partial<WeddingGuest> & { guestName: string }
   ) => {
+    setState((prev) => {
+      const exists = guest.id && prev.guests.some((g) => g.id === guest.id);
+      const nextGuests = exists
+        ? prev.guests.map((g) =>
+            g.id === guest.id ? ({ ...g, ...guest } as WeddingGuest) : g
+          )
+        : [
+            ...prev.guests,
+            {
+              id: guest.id || `gst_${Date.now().toString(36)}`,
+              invitationCode:
+                guest.invitationCode ||
+                `INV-${String(prev.guests.length + 1).padStart(4, '0')}`,
+              guestName: guest.guestName,
+              guestType: guest.guestType || 'Keluarga',
+              side: guest.side || 'Pria',
+              institution: guest.institution || '',
+              invitationFormat: guest.invitationFormat || 'Cetak Tebal',
+              priority: guest.priority || 'P2 - Utama',
+              cardQty: Number(guest.cardQty) || 1,
+              pax: Number(guest.pax) || 2,
+              phone: guest.phone || '',
+              address: guest.address || '',
+              deliveryStatus: guest.deliveryStatus || 'Belum Dikirim',
+              rsvpStatus: guest.rsvpStatus || 'Belum Konfirmasi',
+              attendanceStatus: guest.attendanceStatus || 'Belum Hadir',
+              notes: guest.notes || '',
+              createdAt: new Date().toISOString().slice(0, 10),
+              updatedAt: new Date().toISOString().slice(0, 10),
+              updatedBy: adminUser?.username || 'admin',
+            } as WeddingGuest,
+          ];
+      return saveClientState({ ...prev, guests: nextGuests }, true);
+    });
     await mutateServer('UPSERT_GUEST', guest);
   };
 
   const handleDeleteGuest = async (id: string) => {
+    setState((prev) =>
+      saveClientState(
+        { ...prev, guests: prev.guests.filter((g) => g.id !== id) },
+        true
+      )
+    );
     await mutateServer('DELETE_GUEST', { id });
   };
 
@@ -203,30 +402,101 @@ function WeddingAppContent() {
   };
 
   const handleTogglePinWish = async (id: string) => {
+    setState((prev) =>
+      saveClientState(
+        {
+          ...prev,
+          wishes: prev.wishes.map((w) =>
+            w.id === id ? { ...w, isPinned: !w.isPinned } : w
+          ),
+        },
+        true
+      )
+    );
     await mutateServer('TOGGLE_PIN_WISH', { id });
   };
 
   const handleReplyWish = async (id: string, replyFromCouple: string) => {
+    setState((prev) =>
+      saveClientState(
+        {
+          ...prev,
+          wishes: prev.wishes.map((w) =>
+            w.id === id ? { ...w, replyFromCouple } : w
+          ),
+        },
+        true
+      )
+    );
     await mutateServer('REPLY_WISH', { id, replyFromCouple });
   };
 
   const handleDeleteWish = async (id: string) => {
+    setState((prev) =>
+      saveClientState(
+        { ...prev, wishes: prev.wishes.filter((w) => w.id !== id) },
+        true
+      )
+    );
     await mutateServer('DELETE_WISH', { id });
   };
 
   const handleUpsertBudget = async (
     item: Partial<BudgetVendorItem> & { itemName: string }
   ) => {
+    setState((prev) => {
+      const exists = item.id && prev.budgetItems.some((b) => b.id === item.id);
+      const nextBudget = exists
+        ? prev.budgetItems.map((b) =>
+            b.id === item.id ? ({ ...b, ...item } as BudgetVendorItem) : b
+          )
+        : [
+            ...prev.budgetItems,
+            {
+              id: item.id || `bgt_${Date.now().toString(36)}`,
+              category: item.category || 'Administrasi & Lainnya',
+              itemName: item.itemName,
+              vendorName: item.vendorName || '',
+              vendorContact: item.vendorContact || '',
+              pic: item.pic || 'Bersama',
+              estimatedCost: Number(item.estimatedCost) || 0,
+              actualCost: Number(item.actualCost) || 0,
+              paidAmount: Number(item.paidAmount) || 0,
+              paymentStatus: item.paymentStatus || 'BELUM_DP',
+              dueDate: item.dueDate || '2026-12-01',
+              notes: item.notes || '',
+              updatedAt: new Date().toISOString().slice(0, 10),
+            } as BudgetVendorItem,
+          ];
+      return saveClientState({ ...prev, budgetItems: nextBudget }, true);
+    });
     await mutateServer('UPSERT_BUDGET', item);
   };
 
   const handleDeleteBudget = async (id: string) => {
+    setState((prev) =>
+      saveClientState(
+        { ...prev, budgetItems: prev.budgetItems.filter((b) => b.id !== id) },
+        true
+      )
+    );
     await mutateServer('DELETE_BUDGET', { id });
   };
 
-  const handleUpdateSettings = async (partial: Partial<WeddingSettings>) => {
-    await mutateServer('UPDATE_SETTINGS', partial);
-  };
+  const handleUpdateSettings = useCallback(
+    async (partial: Partial<WeddingSettings>) => {
+      setState((prev) => {
+        const nextSettings: WeddingSettings = {
+          ...prev.settings,
+          ...partial,
+          updatedAt: new Date().toISOString(),
+        };
+        return saveClientState({ ...prev, settings: nextSettings }, true);
+      });
+      await mutateServer('UPDATE_SETTINGS', partial);
+    },
+    [mutateServer]
+  );
 
   const handleSyncGoogleSheets = async (): Promise<string> => {
     try {
@@ -237,8 +507,8 @@ function WeddingAppContent() {
       });
       const json = await res.json();
       if (json.success && json.data) {
-        setState(json.data);
-        saveClientState(json.data);
+        const saved = saveClientState(json.data, true);
+        setState(saved);
         return json.message || 'Sinkronisasi berhasil!';
       }
       return json.error || 'Gagal melakukan sinkronisasi.';
@@ -248,6 +518,21 @@ function WeddingAppContent() {
   };
 
   const handleImportBackup = async (payload: Partial<WeddingDatabaseSchema>) => {
+    setState((prev) => {
+      const next: WeddingDatabaseSchema = {
+        ...prev,
+        ...(payload.settings
+          ? { settings: { ...prev.settings, ...payload.settings } }
+          : {}),
+        ...(Array.isArray(payload.tasks) ? { tasks: payload.tasks } : {}),
+        ...(Array.isArray(payload.guests) ? { guests: payload.guests } : {}),
+        ...(Array.isArray(payload.wishes) ? { wishes: payload.wishes } : {}),
+        ...(Array.isArray(payload.budgetItems)
+          ? { budgetItems: payload.budgetItems }
+          : {}),
+      };
+      return saveClientState(next, true);
+    });
     await mutateServer('IMPORT_BACKUP', payload);
   };
 

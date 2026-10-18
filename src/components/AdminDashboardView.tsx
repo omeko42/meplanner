@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -43,6 +43,17 @@ import {
   Image as ImageIcon,
   BookOpen,
   Info,
+  Move,
+  ZoomIn,
+  ZoomOut,
+  Music,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  ListMusic,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import {
@@ -70,6 +81,8 @@ import {
   LoveStoryItem,
   GalleryPhotoItem,
   WeddingScheduleEvent,
+  PhotoAdjustment,
+  MusicTrackItem,
 } from '@/types';
 import {
   formatRupiah,
@@ -84,6 +97,10 @@ import {
   getEffectiveScheduleEvents,
   syncScheduleEventsToSettings,
   formatDateTimeToIndonesianLabels,
+  getPhotoAdjustStyle,
+  weddingMusicPlayer,
+  DEFAULT_MUSIC_PLAYLIST,
+  getEffectiveMusicPlaylist,
 } from '@/lib/clientSync';
 
 export type AdminModuleTab =
@@ -221,7 +238,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSyncStateAndUser,
 }) => {
   const isPanitia = adminUser.role === 'PANITIA';
-  const [activeTab, setActiveTab] = useState<AdminModuleTab>('readiness');
+  const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem('my_wedding_admin_active_tab_v2');
+      if (
+        savedTab === 'readiness' ||
+        savedTab === 'checklist' ||
+        savedTab === 'budget' ||
+        savedTab === 'guests' ||
+        savedTab === 'settings'
+      ) {
+        return savedTab;
+      }
+    }
+    return 'readiness';
+  });
+  const setActiveTab = (tab: AdminModuleTab) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('my_wedding_admin_active_tab_v2', tab);
+      } catch {
+        // Ignore
+      }
+    }
+  };
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
 
@@ -528,10 +569,231 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   ]);
 
   // ============================================================================
-  // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE (LINKEDIN CARD + MODAL STYLE)
+  // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE (WITH REAL-TIME AUTO-SAVE)
   // ============================================================================
-  const [settingsForm, setSettingsForm] = useState<WeddingSettings>(state.settings);
+  const [settingsForm, setSettingsFormInternal] = useState<WeddingSettings>(
+    state.settings
+  );
+  const isEditingSettingsRef = useRef(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const musicFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync external state.settings updates (e.g., IndexedDB hydration or JSON Backup Import) into settingsForm
+  useEffect(() => {
+    if (!isEditingSettingsRef.current) {
+      setSettingsFormInternal(state.settings);
+    }
+  }, [state.settings]);
+
+  // Wrapper around setSettingsForm that auto-saves changes after 350ms so Hard Refresh never loses typed work
+  const setSettingsForm = (
+    updater: WeddingSettings | ((prev: WeddingSettings) => WeddingSettings)
+  ) => {
+    isEditingSettingsRef.current = true;
+    setSettingsFormInternal((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (typeof window !== 'undefined') {
+        if (autoSaveTimerRef.current !== null) {
+          window.clearTimeout(autoSaveTimerRef.current);
+        }
+        autoSaveTimerRef.current = window.setTimeout(() => {
+          isEditingSettingsRef.current = false;
+          void onUpdateSettings({
+            ...next,
+            updatedBy: adminUser.username,
+          });
+        }, 350);
+      }
+      return next;
+    });
+  };
+
+  // ============================================================================
+  // MUSIC & PLAYLIST CUSTOMIZATION STATE & HANDLERS
+  // ============================================================================
+  const [isPlayingAdminMusic, setIsPlayingAdminMusic] = useState(() =>
+    weddingMusicPlayer.getStatus()
+  );
+  const [adminMusicVolume, setAdminMusicVolume] = useState(() =>
+    weddingMusicPlayer.getVolume()
+  );
+  const [isAdminMusicMuted, setIsAdminMusicMuted] = useState(() =>
+    weddingMusicPlayer.getMuted()
+  );
+  const [adminCurrentTrack, setAdminCurrentTrack] =
+    useState<MusicTrackItem | null>(() => weddingMusicPlayer.getCurrentTrack());
+  const [newMusicTitle, setNewMusicTitle] = useState('');
+  const [newMusicArtist, setNewMusicArtist] = useState('');
+  const [newMusicUrl, setNewMusicUrl] = useState('');
+
+  const effectivePlaylist = useMemo(
+    () => getEffectiveMusicPlaylist(settingsForm),
+    [settingsForm]
+  );
+
+  useEffect(() => {
+    weddingMusicPlayer.syncFromSettings(settingsForm);
+    const syncPlayer = () => {
+      setIsPlayingAdminMusic(weddingMusicPlayer.getStatus());
+      setAdminMusicVolume(weddingMusicPlayer.getVolume());
+      setIsAdminMusicMuted(weddingMusicPlayer.getMuted());
+      setAdminCurrentTrack(weddingMusicPlayer.getCurrentTrack());
+    };
+    syncPlayer();
+    return weddingMusicPlayer.subscribe(syncPlayer);
+  }, [settingsForm]);
+
+  const handleUploadMusicFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const cleanFileName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result || '');
+      if (!dataUrl.startsWith('data:audio/') && !dataUrl.startsWith('data:video/') && !dataUrl.startsWith('data:application/octet-stream')) {
+        showToast('Pilih file audio yang valid (.mp3, .m4a, .wav, .ogg).');
+        return;
+      }
+      const normalizedDataUrl = dataUrl.startsWith('data:application/octet-stream')
+        ? dataUrl.replace('data:application/octet-stream', 'data:audio/mpeg')
+        : dataUrl;
+
+      const newTrack: MusicTrackItem = {
+        id: `music_${Date.now().toString(36)}`,
+        title: newMusicTitle.trim() || cleanFileName || 'Lagu Pernikahan Kustom',
+        artist: newMusicArtist.trim() || 'Koleksi Pribadi',
+        url: normalizedDataUrl,
+        isDefault: false,
+      };
+
+      const nextList = [...effectivePlaylist, newTrack];
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        musicPlaylist: nextList,
+        activeMusicTrackId: newTrack.id,
+        musicTitle: newTrack.title,
+        musicArtist: newTrack.artist,
+        updatedBy: adminUser.username,
+      };
+      setSettingsFormInternal(nextSettings);
+      await onUpdateSettings(nextSettings);
+      weddingMusicPlayer.syncFromSettings(nextSettings);
+      weddingMusicPlayer.playTrack(newTrack.id);
+      setNewMusicTitle('');
+      setNewMusicArtist('');
+      showToast(`Musik "${newTrack.title}" berhasil diupload ke Playlist & diputar!`);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleAddMusicUrlTrack = async () => {
+    if (!newMusicUrl.trim()) {
+      showToast('Masukkan link URL audio (.mp3) atau gunakan tombol Upload Musik.');
+      return;
+    }
+    const newTrack: MusicTrackItem = {
+      id: `music_${Date.now().toString(36)}`,
+      title: newMusicTitle.trim() || 'Lagu Undangan',
+      artist: newMusicArtist.trim() || 'Instrumental',
+      url: newMusicUrl.trim(),
+      isDefault: false,
+    };
+    const nextList = [...effectivePlaylist, newTrack];
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      musicPlaylist: nextList,
+      activeMusicTrackId: newTrack.id,
+      musicTitle: newTrack.title,
+      musicArtist: newTrack.artist,
+      updatedBy: adminUser.username,
+    };
+    setSettingsFormInternal(nextSettings);
+    await onUpdateSettings(nextSettings);
+    weddingMusicPlayer.syncFromSettings(nextSettings);
+    weddingMusicPlayer.playTrack(newTrack.id);
+    setNewMusicTitle('');
+    setNewMusicArtist('');
+    setNewMusicUrl('');
+    showToast(`Lagu "${newTrack.title}" ditambahkan ke Playlist!`);
+  };
+
+  const handleDeleteMusicTrack = async (trackId: string, title: string) => {
+    const nextList = effectivePlaylist.filter((t) => t.id !== trackId);
+    const nextActive =
+      settingsForm.activeMusicTrackId === trackId
+        ? nextList[0]?.id || ''
+        : settingsForm.activeMusicTrackId || nextList[0]?.id || '';
+    const activeTrackObj =
+      nextList.find((t) => t.id === nextActive) || nextList[0];
+
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      musicPlaylist: nextList,
+      activeMusicTrackId: nextActive,
+      musicTitle: activeTrackObj?.title || 'Tidak ada musik',
+      musicArtist: activeTrackObj?.artist || '-',
+      updatedBy: adminUser.username,
+    };
+    setSettingsFormInternal(nextSettings);
+    await onUpdateSettings(nextSettings);
+    weddingMusicPlayer.syncFromSettings(nextSettings);
+    showToast(`Lagu "${title}" dihapus dari Playlist.`);
+  };
+
+  const handleSelectActiveMusicTrack = async (
+    track: MusicTrackItem,
+    playImmediately = true
+  ) => {
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      musicPlaylist: effectivePlaylist,
+      activeMusicTrackId: track.id,
+      musicTitle: track.title,
+      musicArtist: track.artist,
+      updatedBy: adminUser.username,
+    };
+    setSettingsFormInternal(nextSettings);
+    await onUpdateSettings(nextSettings);
+    weddingMusicPlayer.syncFromSettings(nextSettings);
+    if (playImmediately) {
+      weddingMusicPlayer.playTrack(track.id);
+    }
+    showToast(`Lagu aktif diubah ke "${track.title}"!`);
+  };
+
+  const handleResetDefaultMusicPlaylist = async () => {
+    const customTracks = effectivePlaylist.filter((t) => !t.isDefault);
+    const nextList = [...DEFAULT_MUSIC_PLAYLIST, ...customTracks];
+    const first = nextList[0];
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      musicPlaylist: nextList,
+      activeMusicTrackId: first.id,
+      musicTitle: first.title,
+      musicArtist: first.artist,
+      updatedBy: adminUser.username,
+    };
+    setSettingsFormInternal(nextSettings);
+    await onUpdateSettings(nextSettings);
+    weddingMusicPlayer.syncFromSettings(nextSettings);
+    showToast('3 Lagu Romantis Bawaan berhasil dipulihkan ke Playlist!');
+  };
+
+  const handleAdminVolumeChange = (vol: number) => {
+    const clamped = Math.max(0, Math.min(100, vol));
+    weddingMusicPlayer.setVolume(clamped);
+    setSettingsForm((prev) => ({
+      ...prev,
+      musicVolume: clamped,
+    }));
+  };
 
   // LinkedIn-style "Show all ->" expand/collapse toggles for section cards
   const [showAllTasks, setShowAllTasks] = useState(false);
@@ -542,9 +804,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [showAllSectionsToggle, setShowAllSectionsToggle] = useState(false);
 
   // Wira Satya 96 Style Settings Sidebar & Sub-Tab State
-  const [settingsMenuTab, setSettingsMenuTab] = useState<
+  const [settingsMenuTab, setSettingsMenuTabState] = useState<
     'visibilitas' | 'background' | 'jadwal' | 'keamanan' | 'database'
-  >('visibilitas');
+  >(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('my_wedding_admin_settings_subtab_v2');
+      if (
+        saved === 'visibilitas' ||
+        saved === 'background' ||
+        saved === 'jadwal' ||
+        saved === 'keamanan' ||
+        saved === 'database'
+      ) {
+        return saved;
+      }
+    }
+    return 'visibilitas';
+  });
+  const setSettingsMenuTab = (
+    tab: 'visibilitas' | 'background' | 'jadwal' | 'keamanan' | 'database'
+  ) => {
+    setSettingsMenuTabState(tab);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('my_wedding_admin_settings_subtab_v2', tab);
+      } catch {
+        // Ignore
+      }
+    }
+  };
   const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
   const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
 
@@ -895,6 +1183,170 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   };
 
+  // State & Handlers for Interactive Photo Zoom In/Out & Pan (Left/Right/Up/Down) Modal
+  const [photoAdjustTarget, setPhotoAdjustTarget] = useState<
+    | {
+        kind: 'setting';
+        field:
+          | 'groomPhotoUrl'
+          | 'bridePhotoUrl'
+          | 'coverBgUrl'
+          | 'heroPrewedUrl'
+          | 'pageBgUrl';
+        label: string;
+        shape: 'circle' | 'banner' | 'portrait';
+      }
+    | {
+        kind: 'gallery_item';
+        photoId: string;
+        label: string;
+        shape: 'gallery';
+      }
+    | {
+        kind: 'new_gallery';
+        label: string;
+        shape: 'gallery';
+      }
+    | null
+  >(null);
+  const [photoAdjustUrl, setPhotoAdjustUrl] = useState<string>('');
+  const [photoAdjustDraft, setPhotoAdjustDraft] = useState<PhotoAdjustment>({
+    zoom: 1,
+    x: 0,
+    y: 0,
+  });
+  const [photoDragStart, setPhotoDragStart] = useState<{
+    clientX: number;
+    clientY: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
+
+  const openSettingPhotoAdjust = (
+    field:
+      | 'groomPhotoUrl'
+      | 'bridePhotoUrl'
+      | 'coverBgUrl'
+      | 'heroPrewedUrl'
+      | 'pageBgUrl',
+    label: string,
+    shape: 'circle' | 'banner' | 'portrait',
+    overrideUrl?: string,
+    overrideAdj?: PhotoAdjustment
+  ) => {
+    const url =
+      overrideUrl ||
+      settingsForm[field] ||
+      state.settings[field] ||
+      BACKGROUND_PRESETS[0].url;
+    if (!url) {
+      showToast('Upload atau masukkan foto terlebih dahulu.');
+      return;
+    }
+    const existingAdj =
+      overrideAdj ||
+      settingsForm.photoAdjustments?.[field] ||
+      state.settings.photoAdjustments?.[field] || {
+        zoom: 1,
+        x: 0,
+        y: 0,
+      };
+    setPhotoAdjustTarget({ kind: 'setting', field, label, shape });
+    setPhotoAdjustUrl(url);
+    setPhotoAdjustDraft({
+      zoom: existingAdj.zoom ?? 1,
+      x: existingAdj.x ?? 0,
+      y: existingAdj.y ?? 0,
+    });
+  };
+
+  const openGalleryPhotoAdjust = (photo: GalleryPhotoItem) => {
+    const existingAdj = photo.adjustment || { zoom: 1, x: 0, y: 0 };
+    setPhotoAdjustTarget({
+      kind: 'gallery_item',
+      photoId: photo.id,
+      label: `Galeri: ${photo.title}`,
+      shape: 'gallery',
+    });
+    setPhotoAdjustUrl(photo.imageUrl);
+    setPhotoAdjustDraft({
+      zoom: existingAdj.zoom ?? 1,
+      x: existingAdj.x ?? 0,
+      y: existingAdj.y ?? 0,
+    });
+  };
+
+  const openNewGalleryPhotoAdjust = (overrideUrl?: string) => {
+    const url = overrideUrl || newPhotoForm.imageUrl;
+    if (!url) return;
+    const existingAdj = newPhotoForm.adjustment || { zoom: 1, x: 0, y: 0 };
+    setPhotoAdjustTarget({
+      kind: 'new_gallery',
+      label: 'Foto Galeri Baru',
+      shape: 'gallery',
+    });
+    setPhotoAdjustUrl(url);
+    setPhotoAdjustDraft({
+      zoom: existingAdj.zoom ?? 1,
+      x: existingAdj.x ?? 0,
+      y: existingAdj.y ?? 0,
+    });
+  };
+
+  const handleSavePhotoAdjust = async () => {
+    if (!photoAdjustTarget) return;
+    const cleanAdj: PhotoAdjustment = {
+      zoom: Number(photoAdjustDraft.zoom.toFixed(2)),
+      x: Math.round(photoAdjustDraft.x),
+      y: Math.round(photoAdjustDraft.y),
+    };
+
+    if (photoAdjustTarget.kind === 'setting') {
+      const nextAdjustments = {
+        ...(state.settings.photoAdjustments || {}),
+        ...(settingsForm.photoAdjustments || {}),
+        [photoAdjustTarget.field]: cleanAdj,
+      };
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        photoAdjustments: nextAdjustments,
+        updatedBy: adminUser.username,
+      };
+      setSettingsForm(nextSettings);
+      await onUpdateSettings(nextSettings);
+      setPhotoAdjustTarget(null);
+      showToast(`Posisi & Zoom "${photoAdjustTarget.label}" disimpan!`);
+      return;
+    }
+
+    if (photoAdjustTarget.kind === 'gallery_item') {
+      const nextPhotos = (state.settings.galleryPhotos || []).map((p) =>
+        p.id === photoAdjustTarget.photoId ? { ...p, adjustment: cleanAdj } : p
+      );
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        galleryPhotos: nextPhotos,
+        updatedBy: adminUser.username,
+      };
+      setSettingsForm(nextSettings);
+      await onUpdateSettings(nextSettings);
+      setPhotoAdjustTarget(null);
+      showToast('Posisi & Zoom foto galeri disimpan!');
+      return;
+    }
+
+    if (photoAdjustTarget.kind === 'new_gallery') {
+      setNewPhotoForm((prev) => ({
+        ...prev,
+        adjustment: cleanAdj,
+      }));
+      setPhotoAdjustTarget(null);
+      showToast('Posisi foto siap! Klik Tambahkan Foto ke Galeri.');
+    }
+  };
+
   const handleUploadThemeImage = async (
     e: React.ChangeEvent<HTMLInputElement>,
     target:
@@ -917,14 +1369,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       const maxDim =
         target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 900 : 1600;
       const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.82);
+      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
+      const nextAdjustments = {
+        ...(state.settings.photoAdjustments || {}),
+        ...(settingsForm.photoAdjustments || {}),
+        ...(target === 'all_bg'
+          ? {
+              coverBgUrl: defaultAdj,
+              heroPrewedUrl: defaultAdj,
+              pageBgUrl: defaultAdj,
+            }
+          : { [target]: defaultAdj }),
+      };
+
       const patch: Partial<WeddingSettings> =
         target === 'all_bg'
           ? {
               coverBgUrl: dataUrl,
               heroPrewedUrl: dataUrl,
               pageBgUrl: dataUrl,
+              photoAdjustments: nextAdjustments,
             }
-          : { [target]: dataUrl };
+          : {
+              [target]: dataUrl,
+              photoAdjustments: nextAdjustments,
+            };
 
       const nextSettings: WeddingSettings = {
         ...state.settings,
@@ -934,7 +1403,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       };
       setSettingsForm(nextSettings);
       await onUpdateSettings(nextSettings);
-      showToast('Gambar berhasil di-upload & diterapkan!');
+      showToast('Gambar berhasil di-upload! Silakan atur Zoom & Posisi jika perlu.');
+
+      // Automatically open the Zoom & Pan editor so user can adjust framing right away
+      if (target === 'groomPhotoUrl') {
+        openSettingPhotoAdjust('groomPhotoUrl', 'Foto Mempelai Pria', 'circle', dataUrl, defaultAdj);
+      } else if (target === 'bridePhotoUrl') {
+        openSettingPhotoAdjust('bridePhotoUrl', 'Foto Mempelai Wanita', 'circle', dataUrl, defaultAdj);
+      } else if (target === 'coverBgUrl' || target === 'all_bg') {
+        openSettingPhotoAdjust('coverBgUrl', 'Sampul Pembuka (Cover)', 'portrait', dataUrl, defaultAdj);
+      } else if (target === 'heroPrewedUrl') {
+        openSettingPhotoAdjust('heroPrewedUrl', 'Banner Utama (Hero)', 'banner', dataUrl, defaultAdj);
+      } else if (target === 'pageBgUrl') {
+        openSettingPhotoAdjust('pageBgUrl', 'Wallpaper Latar', 'portrait', dataUrl, defaultAdj);
+      }
     } catch {
       showToast('Gagal meng-upload gambar.');
     }
@@ -954,12 +1436,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showToast('Mengompres foto galeri...');
       const dataUrl = await compressImageFileToDataUrl(file, 1400, 0.82);
       const baseName = file.name.replace(/\.[^/.]+$/, '');
+      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
       setNewPhotoForm((prev) => ({
         ...prev,
         title: prev.title || baseName || 'Momen Bahagia',
         imageUrl: dataUrl,
+        adjustment: defaultAdj,
       }));
-      showToast('Foto siap! Klik "Tambahkan Foto ke Galeri" untuk menyimpan.');
+      openNewGalleryPhotoAdjust(dataUrl);
+      showToast('Foto siap! Atur posisi lalu klik Tambahkan ke Galeri.');
     } catch {
       showToast('Gagal memproses file foto.');
     }
@@ -975,6 +1460,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         caption: newPhotoForm.caption.trim() || 'Prewedding',
         imageUrl: newPhotoForm.imageUrl.trim(),
         category: newPhotoForm.category,
+        adjustment: newPhotoForm.adjustment,
       },
     ];
     const nextSettings: WeddingSettings = {
@@ -991,6 +1477,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       caption: '',
       imageUrl: '',
       category: 'Prewedding',
+      adjustment: undefined,
     });
     showToast('Foto Galeri berhasil ditambahkan & ditampilkan!');
   };
@@ -1201,8 +1688,269 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     e.target.value = '';
   };
 
+  const renderMusicPlaylistManager = () => (
+    <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5 text-xs">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center shrink-0">
+            <Music className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1">
+              <p className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
+                Musik &amp; Playlist Undangan
+              </p>
+              <InfoTooltip text="Kustomisasi musik latar undangan: putar/jeda, atur volume, pilih lagu di playlist, upload file musik sendiri (.mp3/.m4a/.wav), atau hapus lagu." />
+            </div>
+            <p className="text-[11px] text-stone-500 truncate">
+              Aktif: <strong className="text-[#8B6914]">{adminCurrentTrack?.title || settingsForm.musicTitle || 'Belum ada lagu'}</strong> ({effectivePlaylist.length} lagu)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleResetDefaultMusicPlaylist}
+            className="px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 font-bold text-[11px] inline-flex items-center gap-1"
+            title="Pulihkan 3 Lagu Romantis Bawaan"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset Bawaan</span>
+          </button>
+          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer transition-all">
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Musik</span>
+            <input
+              ref={musicFileInputRef}
+              type="file"
+              accept="audio/*,.mp3,.m4a,.wav,.ogg"
+              onChange={handleUploadMusicFile}
+              className="hidden"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Live Player & Volume Controller Card */}
+      <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => weddingMusicPlayer.prevTrack()}
+            disabled={effectivePlaylist.length <= 1}
+            className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
+            title="Lagu Sebelumnya"
+          >
+            <SkipBack className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => weddingMusicPlayer.toggle()}
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs shrink-0"
+          >
+            {isPlayingAdminMusic ? (
+              <>
+                <Pause className="w-3.5 h-3.5" /> Pause
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5" /> Play
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => weddingMusicPlayer.nextTrack()}
+            disabled={effectivePlaylist.length <= 1}
+            className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40"
+            title="Lagu Berikutnya"
+          >
+            <SkipForward className="w-3.5 h-3.5" />
+          </button>
+          <div className="min-w-0">
+            <p className="font-bold text-stone-900 truncate text-xs">
+              {adminCurrentTrack?.title || 'Pilih lagu di bawah'}
+            </p>
+            <p className="text-[11px] text-stone-500 truncate">
+              {adminCurrentTrack?.artist || 'Instrumental'}
+            </p>
+          </div>
+        </div>
+
+        {/* Volume Slider */}
+        <div className="flex items-center gap-2 sm:w-56 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80 shrink-0">
+          <button
+            type="button"
+            onClick={() => weddingMusicPlayer.toggleMute()}
+            className="text-[#8B6914] hover:opacity-80 shrink-0"
+            title={isAdminMusicMuted ? 'Unmute' : 'Mute'}
+          >
+            {isAdminMusicMuted || adminMusicVolume === 0 ? (
+              <VolumeX className="w-4 h-4 text-rose-600" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-[#B68D40]" />
+            )}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={isAdminMusicMuted ? 0 : adminMusicVolume}
+            onChange={(e) => handleAdminVolumeChange(parseInt(e.target.value, 10))}
+            className="w-full accent-[#B68D40] cursor-pointer"
+          />
+          <span className="text-[11px] font-extrabold text-[#8B6914] w-9 text-right shrink-0">
+            {isAdminMusicMuted ? '0%' : `${adminMusicVolume}%`}
+          </span>
+        </div>
+      </div>
+
+      {/* Playlist Items (Play, Select Default, Delete) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+            <ListMusic className="w-3.5 h-3.5 text-[#B68D40]" />
+            Daftar Lagu di Playlist ({effectivePlaylist.length})
+          </span>
+          <span className="text-[10px] text-stone-500">
+            Klik lagu untuk memutar &amp; jadikan lagu utama
+          </span>
+        </div>
+
+        {effectivePlaylist.length === 0 ? (
+          <div className="p-4 rounded-xl bg-white border border-dashed border-stone-300 text-center text-stone-500">
+            Playlist kosong. Klik <strong>Upload Musik</strong> atau <strong>Reset Bawaan</strong>.
+          </div>
+        ) : (
+          <div className="divide-y divide-stone-100 rounded-xl bg-white border border-stone-200 overflow-hidden">
+            {effectivePlaylist.map((track, idx) => {
+              const isCurrent =
+                (settingsForm.activeMusicTrackId || effectivePlaylist[0]?.id) ===
+                track.id;
+              const isUploaded = track.url.startsWith('data:audio/');
+              return (
+                <div
+                  key={track.id}
+                  className={`p-2.5 sm:px-3.5 flex items-center justify-between gap-2 transition-colors ${
+                    isCurrent ? 'bg-[#FAF3E3]/70' : 'hover:bg-stone-50'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSelectActiveMusicTrack(track, true)}
+                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                  >
+                    <span className="w-6 h-6 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center text-[10px] font-bold shrink-0">
+                      {isCurrent && isPlayingAdminMusic ? (
+                        <Pause className="w-3 h-3" />
+                      ) : (
+                        <Play className="w-3 h-3" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-stone-900 truncate">
+                          {idx + 1}. {track.title}
+                        </span>
+                        {isCurrent && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                            Utama
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 text-[10px] font-semibold">
+                          {isUploaded
+                            ? 'File Upload'
+                            : track.url.startsWith('synth:')
+                            ? 'Bawaan'
+                            : 'Link Audio'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 truncate">
+                        {track.artist}
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!isCurrent && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectActiveMusicTrack(track, true)}
+                        className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-[11px]"
+                      >
+                        Pilih
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMusicTrack(track.id, track.title)}
+                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
+                      title="Hapus Lagu dari Playlist"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add Track via Custom Metadata / Audio URL or Upload */}
+      <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2">
+        <p className="font-bold text-stone-800 text-[11px]">
+          Tambah Lagu Baru (Upload File MP3 atau Tempel Link URL Audio)
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input
+            type="text"
+            value={newMusicTitle}
+            onChange={(e) => setNewMusicTitle(e.target.value)}
+            placeholder="Judul Lagu (opsional saat upload)"
+            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+          />
+          <input
+            type="text"
+            value={newMusicArtist}
+            onChange={(e) => setNewMusicArtist(e.target.value)}
+            placeholder="Nama Penyanyi / Instrumen"
+            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+          />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={newMusicUrl}
+              onChange={(e) => setNewMusicUrl(e.target.value)}
+              placeholder="URL .mp3 (atau klik Upload)"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+            />
+            <button
+              type="button"
+              onClick={handleAddMusicUrlTrack}
+              className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap"
+            >
+              + URL
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pb-28 sm:pb-24">
+      {/* Global Hidden JSON Backup File Input (Accessible from Header & Settings) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleImportJsonFile}
+        className="hidden"
+      />
+
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-20 sm:bottom-6 inset-x-3 sm:inset-x-auto sm:right-4 z-50 bg-white text-stone-900 border-2 border-[#D4AF37] px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold sm:max-w-md animate-bounce">
@@ -1236,15 +1984,52 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Local DB Status, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Auto-Save Status, Quick Export/Import JSON, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <div
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700"
-                title="Database berjalan 100% di Lokal (database/wedding_db.json)"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700"
+                title="Semua ketikan & perubahan tersimpan otomatis di Browser (IndexedDB) & Server"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>DB Lokal</span>
+                <span>Auto-Save</span>
               </div>
+
+              {!isPanitia && (
+                <div className="inline-flex items-center rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const exportPayload: WeddingDatabaseSchema = {
+                        ...state,
+                        settings: {
+                          ...state.settings,
+                          ...settingsForm,
+                        },
+                      };
+                      triggerFileDownload(
+                        `wedding_backup_${new Date().toISOString().slice(0, 10)}.json`,
+                        JSON.stringify(exportPayload, null, 2),
+                        'application/json'
+                      );
+                      showToast('File Backup (.JSON) berhasil diunduh!');
+                    }}
+                    className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-[11px] font-bold text-[#8B6914] hover:bg-[#FAF3E3] transition-colors"
+                    title="Export / Unduh seluruh data ke file Backup .JSON"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#B68D40]" />
+                    <span className="hidden sm:inline">Backup</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 border-l border-[#D4AF37]/30 text-[11px] font-bold text-stone-700 hover:bg-[#FAF3E3] hover:text-[#8B6914] transition-colors"
+                    title="Import / Pulihkan data dari file Backup .JSON"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#B68D40]" />
+                    <span className="hidden sm:inline">Restore</span>
+                  </button>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -3080,7 +3865,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setSettingsForm(state.settings);
                                           setExpandedSectionKey(
                                             isExpanded ? null : sec.key
                                           );
@@ -3321,44 +4105,94 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 />
                                               </div>
                                               <div>
-                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
                                                   <label className="block text-stone-600">
-                                                    Foto Mempelai Pria (Upload / URL)
+                                                    Foto Mempelai Pria
                                                   </label>
-                                                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
-                                                    <Upload className="w-3 h-3 text-[#B68D40]" />
-                                                    <span>Upload Foto</span>
-                                                    <input
-                                                      type="file"
-                                                      accept="image/*"
-                                                      onChange={(e) =>
-                                                        handleUploadThemeImage(
-                                                          e,
-                                                          'groomPhotoUrl'
-                                                        )
-                                                      }
-                                                      className="hidden"
-                                                    />
-                                                  </label>
+                                                  <div className="flex items-center gap-1.5">
+                                                    {settingsForm.groomPhotoUrl && (
+                                                      <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                          openSettingPhotoAdjust(
+                                                            'groomPhotoUrl',
+                                                            'Foto Mempelai Pria',
+                                                            'circle'
+                                                          )
+                                                        }
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/55 text-[#8B6914] font-bold text-[10px] transition-all"
+                                                        title="Atur Zoom In/Out & Geser Posisi Foto"
+                                                      >
+                                                        <Move className="w-3 h-3 text-[#B68D40]" />
+                                                        <span>Atur Posisi</span>
+                                                      </button>
+                                                    )}
+                                                    <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
+                                                      <Upload className="w-3 h-3 text-[#B68D40]" />
+                                                      <span>Upload</span>
+                                                      <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) =>
+                                                          handleUploadThemeImage(
+                                                            e,
+                                                            'groomPhotoUrl'
+                                                          )
+                                                        }
+                                                        className="hidden"
+                                                      />
+                                                    </label>
+                                                  </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                   {settingsForm.groomPhotoUrl && (
-                                                    <img
-                                                      src={settingsForm.groomPhotoUrl}
-                                                      alt="Foto Mempelai Pria"
-                                                      className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/50 shrink-0"
-                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        openSettingPhotoAdjust(
+                                                          'groomPhotoUrl',
+                                                          'Foto Mempelai Pria',
+                                                          'circle'
+                                                        )
+                                                      }
+                                                      title="Klik untuk atur Zoom & Geser posisi foto"
+                                                      className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#D4AF37]/60 shrink-0 relative group"
+                                                    >
+                                                      <img
+                                                        src={settingsForm.groomPhotoUrl}
+                                                        alt="Foto Mempelai Pria"
+                                                        className="w-full h-full object-cover object-center"
+                                                        style={getPhotoAdjustStyle(
+                                                          settingsForm.photoAdjustments
+                                                            ?.groomPhotoUrl ||
+                                                            state.settings.photoAdjustments
+                                                              ?.groomPhotoUrl
+                                                        )}
+                                                      />
+                                                    </button>
                                                   )}
                                                   <input
                                                     type="text"
-                                                    value={settingsForm.groomPhotoUrl || ''}
+                                                    value={
+                                                      settingsForm.groomPhotoUrl?.startsWith(
+                                                        'data:image/'
+                                                      )
+                                                        ? ''
+                                                        : settingsForm.groomPhotoUrl || ''
+                                                    }
                                                     onChange={(e) =>
                                                       setSettingsForm({
                                                         ...settingsForm,
                                                         groomPhotoUrl: e.target.value,
                                                       })
                                                     }
-                                                    placeholder="Upload foto atau tempel URL gambar..."
+                                                    placeholder={
+                                                      settingsForm.groomPhotoUrl?.startsWith(
+                                                        'data:image/'
+                                                      )
+                                                        ? '✓ Foto tersimpan (Klik Atur Posisi / Upload baru)'
+                                                        : 'Upload foto atau tempel URL gambar...'
+                                                    }
                                                     className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
@@ -3437,44 +4271,94 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 />
                                               </div>
                                               <div>
-                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
                                                   <label className="block text-stone-600">
-                                                    Foto Mempelai Wanita (Upload / URL)
+                                                    Foto Mempelai Wanita
                                                   </label>
-                                                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
-                                                    <Upload className="w-3 h-3 text-[#B68D40]" />
-                                                    <span>Upload Foto</span>
-                                                    <input
-                                                      type="file"
-                                                      accept="image/*"
-                                                      onChange={(e) =>
-                                                        handleUploadThemeImage(
-                                                          e,
-                                                          'bridePhotoUrl'
-                                                        )
-                                                      }
-                                                      className="hidden"
-                                                    />
-                                                  </label>
+                                                  <div className="flex items-center gap-1.5">
+                                                    {settingsForm.bridePhotoUrl && (
+                                                      <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                          openSettingPhotoAdjust(
+                                                            'bridePhotoUrl',
+                                                            'Foto Mempelai Wanita',
+                                                            'circle'
+                                                          )
+                                                        }
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/55 text-[#8B6914] font-bold text-[10px] transition-all"
+                                                        title="Atur Zoom In/Out & Geser Posisi Foto"
+                                                      >
+                                                        <Move className="w-3 h-3 text-[#B68D40]" />
+                                                        <span>Atur Posisi</span>
+                                                      </button>
+                                                    )}
+                                                    <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
+                                                      <Upload className="w-3 h-3 text-[#B68D40]" />
+                                                      <span>Upload</span>
+                                                      <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) =>
+                                                          handleUploadThemeImage(
+                                                            e,
+                                                            'bridePhotoUrl'
+                                                          )
+                                                        }
+                                                        className="hidden"
+                                                      />
+                                                    </label>
+                                                  </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                   {settingsForm.bridePhotoUrl && (
-                                                    <img
-                                                      src={settingsForm.bridePhotoUrl}
-                                                      alt="Foto Mempelai Wanita"
-                                                      className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/50 shrink-0"
-                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        openSettingPhotoAdjust(
+                                                          'bridePhotoUrl',
+                                                          'Foto Mempelai Wanita',
+                                                          'circle'
+                                                        )
+                                                      }
+                                                      title="Klik untuk atur Zoom & Geser posisi foto"
+                                                      className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#D4AF37]/60 shrink-0 relative group"
+                                                    >
+                                                      <img
+                                                        src={settingsForm.bridePhotoUrl}
+                                                        alt="Foto Mempelai Wanita"
+                                                        className="w-full h-full object-cover object-center"
+                                                        style={getPhotoAdjustStyle(
+                                                          settingsForm.photoAdjustments
+                                                            ?.bridePhotoUrl ||
+                                                            state.settings.photoAdjustments
+                                                              ?.bridePhotoUrl
+                                                        )}
+                                                      />
+                                                    </button>
                                                   )}
                                                   <input
                                                     type="text"
-                                                    value={settingsForm.bridePhotoUrl || ''}
+                                                    value={
+                                                      settingsForm.bridePhotoUrl?.startsWith(
+                                                        'data:image/'
+                                                      )
+                                                        ? ''
+                                                        : settingsForm.bridePhotoUrl || ''
+                                                    }
                                                     onChange={(e) =>
                                                       setSettingsForm({
                                                         ...settingsForm,
                                                         bridePhotoUrl: e.target.value,
                                                       })
                                                     }
-                                                    placeholder="Upload foto atau tempel URL gambar..."
+                                                    placeholder={
+                                                      settingsForm.bridePhotoUrl?.startsWith(
+                                                        'data:image/'
+                                                      )
+                                                        ? '✓ Foto tersimpan (Klik Atur Posisi / Upload baru)'
+                                                        : 'Upload foto atau tempel URL gambar...'
+                                                    }
                                                     className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
                                                   />
                                                 </div>
@@ -3837,14 +4721,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 (ph) => (
                                                   <div
                                                     key={ph.id}
-                                                    className="p-2.5 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2.5"
+                                                    className="p-2.5 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
                                                   >
                                                     <div className="flex items-center gap-2.5 min-w-0">
-                                                      <img
-                                                        src={ph.imageUrl}
-                                                        alt={ph.title}
-                                                        className="w-11 h-11 rounded-lg object-cover border border-stone-200 shrink-0"
-                                                      />
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => openGalleryPhotoAdjust(ph)}
+                                                        title="Klik untuk atur Zoom & Geser posisi foto"
+                                                        className="w-11 h-11 rounded-lg overflow-hidden border border-stone-200 shrink-0 relative"
+                                                      >
+                                                        <img
+                                                          src={ph.imageUrl}
+                                                          alt={ph.title}
+                                                          className="w-full h-full object-cover object-center"
+                                                          style={getPhotoAdjustStyle(ph.adjustment)}
+                                                        />
+                                                      </button>
                                                       <div className="min-w-0">
                                                         <p className="font-bold text-stone-900 truncate">
                                                           {ph.title}
@@ -3854,15 +4746,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                         </p>
                                                       </div>
                                                     </div>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                        handleDeleteGalleryPhotoItem(ph.id)
-                                                      }
-                                                      className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 shrink-0"
-                                                    >
-                                                      <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => openGalleryPhotoAdjust(ph)}
+                                                        title="Atur Zoom & Geser Posisi Foto"
+                                                        className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] inline-flex items-center gap-1"
+                                                      >
+                                                        <Move className="w-3 h-3" />
+                                                        <span>Atur</span>
+                                                      </button>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                          handleDeleteGalleryPhotoItem(ph.id)
+                                                        }
+                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
+                                                      >
+                                                        <Trash2 className="w-4 h-4" />
+                                                      </button>
+                                                    </div>
                                                   </div>
                                                 )
                                               )}
@@ -3881,6 +4784,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     caption: 'Momen Prewedding',
                                                     imageUrl: preset.url,
                                                     category: 'Prewedding',
+                                                    adjustment: { zoom: 1, x: 0, y: 0 },
                                                   })
                                                 }
                                                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-[11px]"
@@ -3922,14 +4826,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             <div className="flex flex-col sm:flex-row gap-2">
                                               <input
                                                 type="text"
-                                                value={newPhotoForm.imageUrl}
+                                                value={
+                                                  newPhotoForm.imageUrl.startsWith('data:image/')
+                                                    ? ''
+                                                    : newPhotoForm.imageUrl
+                                                }
                                                 onChange={(e) =>
                                                   setNewPhotoForm({
                                                     ...newPhotoForm,
                                                     imageUrl: e.target.value,
                                                   })
                                                 }
-                                                placeholder="URL Gambar Foto (https://...) atau Upload dari HP/Laptop"
+                                                placeholder={
+                                                  newPhotoForm.imageUrl.startsWith('data:image/')
+                                                    ? '✓ Foto siap ditambahkan (Klik Atur Posisi / Upload baru)'
+                                                    : 'URL Gambar Foto (https://...) atau Upload'
+                                                }
                                                 className="flex-1 px-3 py-1.5 rounded-lg border border-stone-300"
                                               />
                                               <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 transition-all">
@@ -3944,15 +4856,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </label>
                                             </div>
                                             {newPhotoForm.imageUrl && (
-                                              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#FAF8F5] border border-[#D4AF37]/30">
-                                                <img
-                                                  src={newPhotoForm.imageUrl}
-                                                  alt="Preview"
-                                                  className="w-12 h-12 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
-                                                />
-                                                <span className="text-[11px] text-[#8B6914] font-semibold">
-                                                  Foto siap ditambahkan ke galeri. Klik tombol di bawah untuk menyimpan.
-                                                </span>
+                                              <div className="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-[#FAF8F5] border border-[#D4AF37]/30">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0">
+                                                    <img
+                                                      src={newPhotoForm.imageUrl}
+                                                      alt="Preview"
+                                                      className="w-full h-full object-cover object-center"
+                                                      style={getPhotoAdjustStyle(
+                                                        newPhotoForm.adjustment
+                                                      )}
+                                                    />
+                                                  </div>
+                                                  <span className="text-[11px] text-[#8B6914] font-semibold">
+                                                    Foto siap ditambahkan ke galeri.
+                                                  </span>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openNewGalleryPhotoAdjust()}
+                                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[11px] shrink-0"
+                                                >
+                                                  <Move className="w-3 h-3" />
+                                                  <span>Atur Posisi</span>
+                                                </button>
                                               </div>
                                             )}
                                             <div className="flex justify-end">
@@ -4133,6 +5060,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               );
                             })}
                           </div>
+
+                          {/* Musik & Playlist Undangan (Tampil di Konten Undangan: Semua & Media) */}
+                          <div className="pt-3 border-t border-stone-200/80">
+                            {renderMusicPlaylistManager()}
+                          </div>
                         </>
                       );
                     })()}
@@ -4213,108 +5145,240 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* 3 Individual Background Upload / URL Inputs */}
                     <div className="space-y-3">
                       <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <label className="block font-bold text-xs text-stone-800 truncate">
                             1. Sampul Pembuka (Cover)
                           </label>
-                          <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
-                            />
-                          </label>
+                          <div className="flex items-center gap-1.5">
+                            {settingsForm.coverBgUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openSettingPhotoAdjust(
+                                    'coverBgUrl',
+                                    'Sampul Pembuka (Cover)',
+                                    'portrait'
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
+                                title="Atur Zoom In/Out & Geser Posisi Cover"
+                              >
+                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Atur Posisi</span>
+                              </button>
+                            )}
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
+                              />
+                            </label>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2.5">
                           {settingsForm.coverBgUrl && (
-                            <img
-                              src={settingsForm.coverBgUrl}
-                              alt="Cover Preview"
-                              className="w-11 h-11 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
-                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openSettingPhotoAdjust(
+                                  'coverBgUrl',
+                                  'Sampul Pembuka (Cover)',
+                                  'portrait'
+                                )
+                              }
+                              title="Klik untuk atur Zoom & Geser posisi"
+                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
+                            >
+                              <img
+                                src={settingsForm.coverBgUrl}
+                                alt="Cover Preview"
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settingsForm.photoAdjustments?.coverBgUrl ||
+                                    state.settings.photoAdjustments?.coverBgUrl
+                                )}
+                              />
+                            </button>
                           )}
                           <input
                             type="text"
-                            value={settingsForm.coverBgUrl || ''}
+                            value={
+                              settingsForm.coverBgUrl?.startsWith('data:image/')
+                                ? ''
+                                : settingsForm.coverBgUrl || ''
+                            }
                             onChange={(e) =>
                               setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
                             }
-                            placeholder="URL gambar atau klik Upload..."
+                            placeholder={
+                              settingsForm.coverBgUrl?.startsWith('data:image/')
+                                ? '✓ Gambar Cover tersimpan (Klik Atur Posisi / Upload baru)'
+                                : 'URL gambar atau klik Upload...'
+                            }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
                           />
                         </div>
                       </div>
 
                       <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <label className="block font-bold text-xs text-stone-800 truncate">
                             2. Banner Utama (Hero)
                           </label>
-                          <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
-                            />
-                          </label>
+                          <div className="flex items-center gap-1.5">
+                            {settingsForm.heroPrewedUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openSettingPhotoAdjust(
+                                    'heroPrewedUrl',
+                                    'Banner Utama (Hero)',
+                                    'banner'
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
+                                title="Atur Zoom In/Out & Geser Posisi Banner"
+                              >
+                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Atur Posisi</span>
+                              </button>
+                            )}
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
+                              />
+                            </label>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2.5">
                           {settingsForm.heroPrewedUrl && (
-                            <img
-                              src={settingsForm.heroPrewedUrl}
-                              alt="Hero Preview"
-                              className="w-11 h-11 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
-                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openSettingPhotoAdjust(
+                                  'heroPrewedUrl',
+                                  'Banner Utama (Hero)',
+                                  'banner'
+                                )
+                              }
+                              title="Klik untuk atur Zoom & Geser posisi"
+                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
+                            >
+                              <img
+                                src={settingsForm.heroPrewedUrl}
+                                alt="Hero Preview"
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settingsForm.photoAdjustments?.heroPrewedUrl ||
+                                    state.settings.photoAdjustments?.heroPrewedUrl
+                                )}
+                              />
+                            </button>
                           )}
                           <input
                             type="text"
-                            value={settingsForm.heroPrewedUrl || ''}
+                            value={
+                              settingsForm.heroPrewedUrl?.startsWith('data:image/')
+                                ? ''
+                                : settingsForm.heroPrewedUrl || ''
+                            }
                             onChange={(e) =>
                               setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
                             }
-                            placeholder="URL gambar atau klik Upload..."
+                            placeholder={
+                              settingsForm.heroPrewedUrl?.startsWith('data:image/')
+                                ? '✓ Foto Banner tersimpan (Klik Atur Posisi / Upload baru)'
+                                : 'URL gambar atau klik Upload...'
+                            }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
                           />
                         </div>
                       </div>
 
                       <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <label className="block font-bold text-xs text-stone-800 truncate">
                             3. Wallpaper Latar
                           </label>
-                          <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
-                            />
-                          </label>
+                          <div className="flex items-center gap-1.5">
+                            {settingsForm.pageBgUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openSettingPhotoAdjust(
+                                    'pageBgUrl',
+                                    'Wallpaper Latar',
+                                    'portrait'
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
+                                title="Atur Zoom In/Out & Geser Posisi Wallpaper"
+                              >
+                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Atur Posisi</span>
+                              </button>
+                            )}
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
+                              />
+                            </label>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2.5">
                           {settingsForm.pageBgUrl && (
-                            <img
-                              src={settingsForm.pageBgUrl}
-                              alt="Wallpaper Preview"
-                              className="w-11 h-11 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
-                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openSettingPhotoAdjust(
+                                  'pageBgUrl',
+                                  'Wallpaper Latar',
+                                  'portrait'
+                                )
+                              }
+                              title="Klik untuk atur Zoom & Geser posisi"
+                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
+                            >
+                              <img
+                                src={settingsForm.pageBgUrl}
+                                alt="Wallpaper Preview"
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settingsForm.photoAdjustments?.pageBgUrl ||
+                                    state.settings.photoAdjustments?.pageBgUrl
+                                )}
+                              />
+                            </button>
                           )}
                           <input
                             type="text"
-                            value={settingsForm.pageBgUrl || ''}
+                            value={
+                              settingsForm.pageBgUrl?.startsWith('data:image/')
+                                ? ''
+                                : settingsForm.pageBgUrl || ''
+                            }
                             onChange={(e) =>
                               setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
                             }
-                            placeholder="URL gambar atau klik Upload..."
+                            placeholder={
+                              settingsForm.pageBgUrl?.startsWith('data:image/')
+                                ? '✓ Wallpaper tersimpan (Klik Atur Posisi / Upload baru)'
+                                : 'URL gambar atau klik Upload...'
+                            }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
                           />
                         </div>
@@ -4368,6 +5432,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </select>
                       </div>
                     </div>
+
+                    {/* Musik & Playlist Undangan */}
+                    {renderMusicPlaylistManager()}
 
                     <div className="flex justify-end pt-2 border-t border-stone-100">
                       <button
@@ -4727,9 +5794,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             type="button"
                             onClick={() => {
+                              const exportPayload: WeddingDatabaseSchema = {
+                                ...state,
+                                settings: {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                },
+                              };
                               triggerFileDownload(
                                 `wedding_backup_${new Date().toISOString().slice(0, 10)}.json`,
-                                JSON.stringify(state, null, 2),
+                                JSON.stringify(exportPayload, null, 2),
                                 'application/json'
                               );
                               showToast('Backup JSON lengkap berhasil diunduh!');
@@ -4745,13 +5819,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           >
                             Import
                           </button>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".json"
-                            onChange={handleImportJsonFile}
-                            className="hidden"
-                          />
                         </div>
                       </div>
 
@@ -7599,6 +8666,296 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* =======================================================================
+          MODAL: ATUR ZOOM & POSISI FOTO (GESER KIRI/KANAN/ATAS/BAWAH)
+         ======================================================================= */}
+      {photoAdjustTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onPointerMove={(e) => {
+            if (!photoDragStart) return;
+            const dx = e.clientX - photoDragStart.clientX;
+            const dy = e.clientY - photoDragStart.clientY;
+            const sensitivity = 0.65 / Math.max(0.7, photoAdjustDraft.zoom * 0.7);
+            const nextX = Math.max(
+              -100,
+              Math.min(100, Math.round(photoDragStart.startX + dx * sensitivity))
+            );
+            const nextY = Math.max(
+              -100,
+              Math.min(100, Math.round(photoDragStart.startY + dy * sensitivity))
+            );
+            setPhotoAdjustDraft((prev) => ({
+              ...prev,
+              x: nextX,
+              y: nextY,
+            }));
+          }}
+          onPointerUp={() => setPhotoDragStart(null)}
+          onPointerCancel={() => setPhotoDragStart(null)}
+        >
+          <div className="bg-white rounded-2xl border border-[#D4AF37]/45 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-[#FAF3E3] to-[#F3E6C8] border-b border-[#D4AF37]/30 flex items-center justify-between">
+              <div>
+                <h4 className="font-serif text-base font-bold text-[#1C1917] flex items-center gap-2">
+                  <Move className="w-4 h-4 text-[#B68D40]" />
+                  Atur Zoom & Posisi Foto
+                </h4>
+                <p className="text-[11px] text-stone-600 font-semibold truncate">
+                  {photoAdjustTarget.label}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPhotoDragStart(null);
+                  setPhotoAdjustTarget(null);
+                }}
+                className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-white/60"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 max-h-[80vh] overflow-y-auto">
+              {/* Interactive Frame Preview */}
+              <div className="bg-stone-900/95 rounded-xl p-4 flex flex-col items-center justify-center relative select-none">
+                <div
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    setPhotoDragStart({
+                      clientX: e.clientX,
+                      clientY: e.clientY,
+                      startX: photoAdjustDraft.x,
+                      startY: photoAdjustDraft.y,
+                    });
+                  }}
+                  className={`relative overflow-hidden border-2 border-[#D4AF37] shadow-lg bg-stone-800 cursor-grab active:cursor-grabbing touch-none ${
+                    photoAdjustTarget.shape === 'circle'
+                      ? 'w-44 h-44 rounded-full'
+                      : photoAdjustTarget.shape === 'banner'
+                      ? 'w-full max-w-[300px] aspect-[16/9] rounded-xl'
+                      : photoAdjustTarget.shape === 'portrait'
+                      ? 'w-36 aspect-[9/14] rounded-xl'
+                      : 'w-full max-w-[260px] aspect-[4/3] rounded-xl'
+                  }`}
+                >
+                  <img
+                    src={photoAdjustUrl}
+                    alt="Preview Posisi"
+                    draggable={false}
+                    className="w-full h-full object-cover pointer-events-none select-none"
+                    style={getPhotoAdjustStyle(photoAdjustDraft)}
+                  />
+                  {/* Subtle center crosshair guide */}
+                  <div className="absolute inset-0 pointer-events-none border border-white/15">
+                    <div className="absolute inset-y-0 left-1/2 w-px bg-white/20" />
+                    <div className="absolute inset-x-0 top-1/2 h-px bg-white/20" />
+                  </div>
+                </div>
+                <span className="mt-2 text-[10px] text-amber-200/90 font-semibold flex items-center gap-1">
+                  <Move className="w-3 h-3" /> Sentuh & geser langsung pada foto atau gunakan pengatur di bawah
+                </span>
+              </div>
+
+              {/* Control 1: Zoom In / Out */}
+              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+                    <ZoomIn className="w-3.5 h-3.5 text-[#8B6914]" />
+                    Zoom (Perbesar / Perkecil)
+                  </label>
+                  <span className="text-[11px] font-extrabold text-[#8B6914] bg-amber-100/80 px-2 py-0.5 rounded-full">
+                    {Math.round(photoAdjustDraft.zoom * 100)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        zoom: Math.max(0.5, Number((p.zoom - 0.1).toFixed(2))),
+                      }))
+                    }
+                    className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.5}
+                    step={0.05}
+                    value={photoAdjustDraft.zoom}
+                    onChange={(e) =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        zoom: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-[#B68D40] cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        zoom: Math.min(2.5, Number((p.zoom + 0.1).toFixed(2))),
+                      }))
+                    }
+                    className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
+                    title="Zoom In"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Control 2: Geser Kiri / Kanan (X) */}
+              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-stone-700">
+                    Geser Kiri ↔ Kanan
+                  </label>
+                  <span className="text-[11px] font-extrabold text-stone-600">
+                    {photoAdjustDraft.x > 0
+                      ? `+${photoAdjustDraft.x}`
+                      : photoAdjustDraft.x}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        x: Math.max(-100, p.x - 5),
+                      }))
+                    }
+                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
+                  >
+                    ← Kiri
+                  </button>
+                  <input
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={photoAdjustDraft.x}
+                    onChange={(e) =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        x: parseInt(e.target.value, 10),
+                      }))
+                    }
+                    className="w-full accent-[#B68D40] cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        x: Math.min(100, p.x + 5),
+                      }))
+                    }
+                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
+                  >
+                    Kanan →
+                  </button>
+                </div>
+              </div>
+
+              {/* Control 3: Geser Atas / Bawah (Y) */}
+              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-stone-700">
+                    Geser Atas ↕ Bawah
+                  </label>
+                  <span className="text-[11px] font-extrabold text-stone-600">
+                    {photoAdjustDraft.y > 0
+                      ? `+${photoAdjustDraft.y}`
+                      : photoAdjustDraft.y}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        y: Math.max(-100, p.y - 5),
+                      }))
+                    }
+                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
+                  >
+                    ↑ Atas
+                  </button>
+                  <input
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={photoAdjustDraft.y}
+                    onChange={(e) =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        y: parseInt(e.target.value, 10),
+                      }))
+                    }
+                    className="w-full accent-[#B68D40] cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotoAdjustDraft((p) => ({
+                        ...p,
+                        y: Math.min(100, p.y + 5),
+                      }))
+                    }
+                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
+                  >
+                    Bawah ↓
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setPhotoAdjustDraft({ zoom: 1, x: 0, y: 0 })}
+                className="px-3.5 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Tengah
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoDragStart(null);
+                    setPhotoAdjustTarget(null);
+                  }}
+                  className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePhotoAdjust}
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 transition-all"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Simpan Posisi
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

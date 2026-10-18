@@ -6,6 +6,8 @@ import {
   WeddingTask,
   BudgetVendorItem,
   AdminUser,
+  PhotoAdjustment,
+  MusicTrackItem,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -18,6 +20,31 @@ import {
 
 const STORAGE_KEY = 'my_wedding_manager_state_v2';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
+const VIEW_MODE_KEY = 'my_wedding_manager_view_mode_v2';
+const IDB_NAME = 'my_wedding_manager_idb_v2';
+const IDB_STORE = 'wedding_state_store';
+const IDB_KEY = 'current_wedding_db';
+
+function normalizeParsedState(
+  parsed: Partial<WeddingDatabaseSchema>
+): WeddingDatabaseSchema {
+  return {
+    settings: parsed.settings
+      ? { ...INITIAL_SETTINGS, ...parsed.settings }
+      : INITIAL_SETTINGS,
+    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_TASKS,
+    guests: Array.isArray(parsed.guests) ? parsed.guests : INITIAL_GUESTS,
+    wishes: Array.isArray(parsed.wishes) ? parsed.wishes : INITIAL_WISHES,
+    budgetItems: Array.isArray(parsed.budgetItems)
+      ? parsed.budgetItems
+      : INITIAL_BUDGET_ITEMS,
+    adminUsers:
+      Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
+        ? parsed.adminUsers
+        : INITIAL_ADMIN_USERS,
+    lastSyncedAt: parsed.lastSyncedAt || '2026-01-01T00:00:00.000Z',
+  };
+}
 
 export function getInitialClientState(): WeddingDatabaseSchema {
   if (typeof window !== 'undefined') {
@@ -25,32 +52,7 @@ export function getInitialClientState(): WeddingDatabaseSchema {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<WeddingDatabaseSchema>;
-        return {
-          settings: parsed.settings
-            ? { ...INITIAL_SETTINGS, ...parsed.settings }
-            : INITIAL_SETTINGS,
-          tasks:
-            Array.isArray(parsed.tasks) && parsed.tasks.length > 0
-              ? parsed.tasks
-              : INITIAL_TASKS,
-          guests:
-            Array.isArray(parsed.guests) && parsed.guests.length > 0
-              ? parsed.guests
-              : INITIAL_GUESTS,
-          wishes:
-            Array.isArray(parsed.wishes) && parsed.wishes.length > 0
-              ? parsed.wishes
-              : INITIAL_WISHES,
-          budgetItems:
-            Array.isArray(parsed.budgetItems) && parsed.budgetItems.length > 0
-              ? parsed.budgetItems
-              : INITIAL_BUDGET_ITEMS,
-          adminUsers:
-            Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
-              ? parsed.adminUsers
-              : INITIAL_ADMIN_USERS,
-          lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
-        };
+        return normalizeParsedState(parsed);
       }
     } catch {
       // Fallback to seed data
@@ -64,22 +66,132 @@ export function getInitialClientState(): WeddingDatabaseSchema {
     wishes: INITIAL_WISHES,
     budgetItems: INITIAL_BUDGET_ITEMS,
     adminUsers: INITIAL_ADMIN_USERS,
-    lastSyncedAt: new Date().toISOString(),
+    lastSyncedAt: '2026-01-01T00:00:00.000Z',
   };
 }
 
-export function saveClientState(state: WeddingDatabaseSchema): void {
+function openWeddingIdb(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) {
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    try {
+      const req = window.indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+export async function loadClientStateFromIndexedDB(): Promise<WeddingDatabaseSchema | null> {
+  const db = await openWeddingIdb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      const getReq = store.get(IDB_KEY);
+      getReq.onsuccess = () => {
+        if (getReq.result && typeof getReq.result === 'object') {
+          resolve(normalizeParsedState(getReq.result as Partial<WeddingDatabaseSchema>));
+        } else {
+          resolve(null);
+        }
+      };
+      getReq.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+export async function saveClientStateToIndexedDB(
+  state: WeddingDatabaseSchema
+): Promise<void> {
+  const db = await openWeddingIdb();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      const store = tx.objectStore(IDB_STORE);
+      store.put(state, IDB_KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+export function saveClientState(
+  state: WeddingDatabaseSchema,
+  touchTimestamp = false
+): WeddingDatabaseSchema {
+  const syncedState: WeddingDatabaseSchema = {
+    ...state,
+    lastSyncedAt: touchTimestamp
+      ? new Date().toISOString()
+      : state.lastSyncedAt || new Date().toISOString(),
+  };
+
+  if (typeof window === 'undefined') return syncedState;
+
+  // 1. Always save full state (including high-res photos & uploaded MP3 audio) to IndexedDB (500MB+ capacity)
+  void saveClientStateToIndexedDB(syncedState);
+
+  // 2. Also save to localStorage for instant synchronous hydration
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(syncedState));
+  } catch {
+    // If localStorage hits 5MB limit due to large base64 audio/images, save a compact copy to localStorage
+    // while IndexedDB holds the complete media payload
+    try {
+      const compactSettings: WeddingSettings = {
+        ...syncedState.settings,
+        musicPlaylist: (syncedState.settings.musicPlaylist || []).map((m) =>
+          m.url.startsWith('data:audio/') ? { ...m, url: 'synth:canon-in-d' } : m
+        ),
+      };
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...syncedState,
+          settings: compactSettings,
+        })
+      );
+    } catch {
+      // Ignore secondary quota errors; IndexedDB has the full copy
+    }
+  }
+
+  return syncedState;
+}
+
+export function getStoredViewMode(): 'PUBLIC' | 'ADMIN' | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const val = localStorage.getItem(VIEW_MODE_KEY);
+    if (val === 'ADMIN' || val === 'PUBLIC') return val;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredViewMode(mode: 'PUBLIC' | 'ADMIN'): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...state,
-        lastSyncedAt: new Date().toISOString(),
-      })
-    );
+    localStorage.setItem(VIEW_MODE_KEY, mode);
   } catch {
-    // Ignore quota errors
+    // Ignore
   }
 }
 
@@ -407,51 +519,280 @@ export function triggerFileDownload(filename: string, content: string, mimeType:
   URL.revokeObjectURL(url);
 }
 
-// Gentle Web Audio API Synthesizer for Romantic Piano/Chime Background Music (Canon in D progression)
+export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [
+  {
+    id: 'track-canon-in-d',
+    title: 'Canon in D (Romantic Piano)',
+    artist: 'Johann Pachelbel',
+    url: 'synth:canon-in-d',
+    isDefault: true,
+  },
+  {
+    id: 'track-thousand-years',
+    title: 'A Thousand Years (Acoustic Chime)',
+    artist: 'Romantic Ballad',
+    url: 'synth:thousand-years',
+    isDefault: true,
+  },
+  {
+    id: 'track-beautiful-in-white',
+    title: 'Beautiful in White (Soft Music Box)',
+    artist: 'Wedding Instrumental',
+    url: 'synth:beautiful-in-white',
+    isDefault: true,
+  },
+];
+
+export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrackItem[] {
+  if (Array.isArray(settings.musicPlaylist)) {
+    return settings.musicPlaylist;
+  }
+  return DEFAULT_MUSIC_PLAYLIST;
+}
+
+// Hybrid Audio Player: supports custom uploaded/URL MP3/M4A/WAV/OGG tracks + 3 Romantic Web Audio Synth tracks
 class AmbientWeddingPlayer {
   private ctx: AudioContext | null = null;
   private timer: number | null = null;
+  private audioEl: HTMLAudioElement | null = null;
+  private currentAudioSrc = '';
   private isPlaying = false;
   private step = 0;
+  private volume = 75; // 0 to 100
+  private isMuted = false;
+  private playlist: MusicTrackItem[] = [...DEFAULT_MUSIC_PLAYLIST];
+  private currentTrackId: string = DEFAULT_MUSIC_PLAYLIST[0].id;
+  private listeners: Set<() => void> = new Set();
 
-  // Canon in D major chord arpeggio notes (frequencies in Hz)
-  private sequence = [
-    293.66, 440.0, 587.33, 739.99, // D major (D4, A4, D5, F#5)
-    220.0, 329.63, 440.0, 659.25,  // A major (A3, E4, A4, E5)
-    246.94, 369.99, 493.88, 587.33, // B minor (B3, F#4, B4, D5)
-    185.0, 277.18, 369.99, 554.37, // F# minor (F#3, C#4, F#4, C#5)
-    196.0, 293.66, 392.0, 587.33,  // G major (G3, D4, G4, D5)
-    146.83, 220.0, 293.66, 440.0,  // D major low (D3, A3, D4, A4)
-    196.0, 293.66, 392.0, 493.88,  // G major (G3, D4, G4, B4)
-    220.0, 329.63, 440.0, 554.37,  // A major (A3, E4, A4, C#5)
-  ];
+  // 3 Romantic Synth Melodies (frequencies in Hz)
+  private synthMelodies: Record<string, { notes: number[]; intervalMs: number; wave: OscillatorType }> = {
+    'synth:canon-in-d': {
+      intervalMs: 650,
+      wave: 'sine',
+      notes: [
+        293.66, 440.0, 587.33, 739.99, // D major (D4, A4, D5, F#5)
+        220.0, 329.63, 440.0, 659.25,  // A major (A3, E4, A4, E5)
+        246.94, 369.99, 493.88, 587.33, // B minor (B3, F#4, B4, D5)
+        185.0, 277.18, 369.99, 554.37, // F# minor (F#3, C#4, F#4, C#5)
+        196.0, 293.66, 392.0, 587.33,  // G major (G3, D4, G4, D5)
+        146.83, 220.0, 293.66, 440.0,  // D major low (D3, A3, D4, A4)
+        196.0, 293.66, 392.0, 493.88,  // G major (G3, D4, G4, B4)
+        220.0, 329.63, 440.0, 554.37,  // A major (A3, E4, A4, C#5)
+      ],
+    },
+    'synth:thousand-years': {
+      intervalMs: 560,
+      wave: 'triangle',
+      notes: [
+        233.08, 293.66, 349.23, 466.16, 587.33, 466.16, // Bb major arpeggio
+        174.61, 220.0, 261.63, 349.23, 440.0, 349.23,   // F major
+        196.0, 233.08, 293.66, 392.0, 466.16, 392.0,    // G minor
+        155.56, 196.0, 233.08, 311.13, 392.0, 349.23,   // Eb major -> F
+      ],
+    },
+    'synth:beautiful-in-white': {
+      intervalMs: 600,
+      wave: 'sine',
+      notes: [
+        261.63, 329.63, 392.0, 523.25, // C major
+        196.0, 246.94, 293.66, 493.88, // G major
+        220.0, 261.63, 329.63, 440.0,  // A minor
+        174.61, 220.0, 261.63, 349.23, // F major
+        261.63, 329.63, 392.0, 493.88, // C maj7
+        196.0, 293.66, 392.0, 440.0,   // G sus
+      ],
+    },
+  };
 
-  public start(): boolean {
-    if (typeof window === 'undefined') return false;
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!this.ctx) {
-        this.ctx = new AudioCtx();
-      }
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume();
-      }
-      if (this.isPlaying) return true;
-      this.isPlaying = true;
-      this.playTick();
-      this.timer = window.setInterval(() => this.playTick(), 650);
-      return true;
-    } catch {
-      return false;
-    }
+  public subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
-  public stop(): void {
-    this.isPlaying = false;
+  private notify(): void {
+    this.listeners.forEach((fn) => {
+      try {
+        fn();
+      } catch {
+        // Ignore
+      }
+    });
+  }
+
+  public syncFromSettings(settings: WeddingSettings): void {
+    const list = getEffectiveMusicPlaylist(settings);
+    this.playlist = list;
+    if (typeof settings.musicVolume === 'number' && Number.isFinite(settings.musicVolume)) {
+      this.volume = Math.max(0, Math.min(100, settings.musicVolume));
+      if (this.audioEl) {
+        this.audioEl.volume = this.isMuted ? 0 : this.volume / 100;
+      }
+    }
+    const desiredId = settings.activeMusicTrackId;
+    if (desiredId && list.some((t) => t.id === desiredId)) {
+      if (this.currentTrackId !== desiredId) {
+        this.currentTrackId = desiredId;
+        if (this.isPlaying) {
+          this.restartCurrentTrack();
+        }
+      }
+    } else if (list.length > 0 && !list.some((t) => t.id === this.currentTrackId)) {
+      this.currentTrackId = list[0].id;
+      if (this.isPlaying) {
+        this.restartCurrentTrack();
+      }
+    } else if (list.length === 0 && this.isPlaying) {
+      this.stop();
+    }
+    this.notify();
+  }
+
+  public getPlaylist(): MusicTrackItem[] {
+    return this.playlist;
+  }
+
+  public getCurrentTrack(): MusicTrackItem | null {
+    if (this.playlist.length === 0) return null;
+    return (
+      this.playlist.find((t) => t.id === this.currentTrackId) || this.playlist[0] || null
+    );
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
+
+  public setVolume(vol0to100: number): void {
+    this.volume = Math.max(0, Math.min(100, Math.round(vol0to100)));
+    if (this.volume > 0 && this.isMuted) {
+      this.isMuted = false;
+    }
+    if (this.audioEl) {
+      this.audioEl.volume = this.isMuted ? 0 : this.volume / 100;
+    }
+    this.notify();
+  }
+
+  public getMuted(): boolean {
+    return this.isMuted;
+  }
+
+  public setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    if (this.audioEl) {
+      this.audioEl.volume = this.isMuted ? 0 : this.volume / 100;
+    }
+    this.notify();
+  }
+
+  public toggleMute(): boolean {
+    this.setMuted(!this.isMuted);
+    return this.isMuted;
+  }
+
+  private clearSynthTimer(): void {
     if (this.timer !== null) {
       clearInterval(this.timer);
       this.timer = null;
     }
+  }
+
+  private pauseHtmlAudio(): void {
+    if (this.audioEl) {
+      try {
+        this.audioEl.pause();
+      } catch {
+        // Ignore
+      }
+    }
+  }
+
+  private ensureAudioEl(): HTMLAudioElement | null {
+    if (typeof window === 'undefined') return null;
+    if (!this.audioEl) {
+      this.audioEl = new window.Audio();
+      this.audioEl.preload = 'auto';
+      this.audioEl.onended = () => {
+        if (this.playlist.length > 1) {
+          this.nextTrack();
+        } else if (this.audioEl) {
+          this.audioEl.currentTime = 0;
+          void this.audioEl.play().catch(() => {});
+        }
+      };
+    }
+    return this.audioEl;
+  }
+
+  private restartCurrentTrack(): boolean {
+    if (typeof window === 'undefined') return false;
+    const track = this.getCurrentTrack();
+    if (!track) {
+      this.stop();
+      return false;
+    }
+
+    const isSynth = !track.url || track.url.startsWith('synth:');
+    if (isSynth) {
+      this.pauseHtmlAudio();
+      this.clearSynthTimer();
+      try {
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+        if (!this.ctx) {
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          void this.ctx.resume();
+        }
+        const melody =
+          this.synthMelodies[track.url] || this.synthMelodies['synth:canon-in-d'];
+        this.isPlaying = true;
+        this.playTick();
+        this.timer = window.setInterval(() => this.playTick(), melody.intervalMs);
+        this.notify();
+        return true;
+      } catch {
+        return false;
+      }
+    } else {
+      // Real HTML5 Audio (uploaded MP3 data URL or external URL)
+      this.clearSynthTimer();
+      const audio = this.ensureAudioEl();
+      if (!audio) return false;
+      try {
+        if (this.currentAudioSrc !== track.url) {
+          this.currentAudioSrc = track.url;
+          audio.src = track.url;
+        }
+        audio.volume = this.isMuted ? 0 : this.volume / 100;
+        this.isPlaying = true;
+        void audio.play().catch(() => {
+          // Fallback to synth if audio URL is blocked or fails
+        });
+        this.notify();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  public start(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (this.isPlaying) return true;
+    return this.restartCurrentTrack();
+  }
+
+  public stop(): void {
+    this.isPlaying = false;
+    this.clearSynthTimer();
+    this.pauseHtmlAudio();
+    this.notify();
   }
 
   public toggle(): boolean {
@@ -462,26 +803,62 @@ class AmbientWeddingPlayer {
     return this.start();
   }
 
+  public playTrack(trackId: string): boolean {
+    const found = this.playlist.find((t) => t.id === trackId);
+    if (!found) return false;
+    const changed = this.currentTrackId !== found.id;
+    this.currentTrackId = found.id;
+    this.step = 0;
+    if (changed && this.audioEl) {
+      this.audioEl.currentTime = 0;
+    }
+    return this.restartCurrentTrack();
+  }
+
+  public nextTrack(): void {
+    if (this.playlist.length === 0) return;
+    const idx = this.playlist.findIndex((t) => t.id === this.currentTrackId);
+    const nextIdx = idx >= 0 ? (idx + 1) % this.playlist.length : 0;
+    this.playTrack(this.playlist[nextIdx].id);
+  }
+
+  public prevTrack(): void {
+    if (this.playlist.length === 0) return;
+    const idx = this.playlist.findIndex((t) => t.id === this.currentTrackId);
+    const prevIdx =
+      idx >= 0 ? (idx - 1 + this.playlist.length) % this.playlist.length : 0;
+    this.playTrack(this.playlist[prevIdx].id);
+  }
+
   public getStatus(): boolean {
     return this.isPlaying;
   }
 
   private playTick(): void {
     if (!this.ctx || !this.isPlaying) return;
+    if (this.isMuted || this.volume <= 0) {
+      this.step += 1;
+      return;
+    }
     try {
+      const track = this.getCurrentTrack();
+      const melody =
+        this.synthMelodies[track?.url || 'synth:canon-in-d'] ||
+        this.synthMelodies['synth:canon-in-d'];
       const now = this.ctx.currentTime;
-      const freq = this.sequence[this.step % this.sequence.length];
+      const freq = melody.notes[this.step % melody.notes.length];
       this.step += 1;
 
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'sine';
+      osc.type = melody.wave;
       osc.frequency.setValueAtTime(freq, now);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.exponentialRampToValueAtTime(0.045, now + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.4);
+      const peakGain = Math.max(0.002, (this.volume / 100) * 0.085);
+      gain.gain.setValueAtTime(0.0008, now);
+      gain.gain.exponentialRampToValueAtTime(peakGain, now + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0006, now + 1.4);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -684,5 +1061,27 @@ export function syncScheduleEventsToSettings(
   }
 
   return next;
+}
+
+export function getPhotoAdjustStyle(adj?: PhotoAdjustment):
+  | {
+      objectPosition: string;
+      transformOrigin: string;
+      transform: string;
+    }
+  | undefined {
+  if (!adj) return undefined;
+  const zoom = Number.isFinite(adj.zoom) ? adj.zoom : 1;
+  const x = Number.isFinite(adj.x) ? adj.x : 0;
+  const y = Number.isFinite(adj.y) ? adj.y : 0;
+  if (zoom === 1 && x === 0 && y === 0) return undefined;
+
+  const posX = Math.max(0, Math.min(100, 50 - x * 0.5));
+  const posY = Math.max(0, Math.min(100, 50 - y * 0.5));
+  return {
+    objectPosition: `${posX}% ${posY}%`,
+    transformOrigin: 'center center',
+    transform: `translate(${x * 0.4}%, ${y * 0.4}%) scale(${zoom})`,
+  };
 }
 
