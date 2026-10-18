@@ -17,6 +17,7 @@ import {
   GuestWish,
   ClientGroupItem,
   ClientWorkspaceData,
+  InvitationInteractionType,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -35,6 +36,7 @@ import {
   getStoredViewMode,
   saveStoredViewMode,
   analyzeWishModeration,
+  appendInvitationAnalyticsEvent,
 } from '@/lib/clientSync';
 import {
   loadStateFromSupabase,
@@ -1184,6 +1186,38 @@ function WeddingAppContent() {
     }
   };
 
+  const handleTrackPublicAnalytics = useCallback(
+    (payload: {
+      type: InvitationInteractionType;
+      guestName?: string;
+      invitationCode?: string;
+      detail?: string;
+      deviceInfo?: string;
+    }) => {
+      updateClientScopedState(activePublicClientId, (prev) => {
+        const nextAnalytics = appendInvitationAnalyticsEvent(
+          prev.settings,
+          payload,
+          prev.guests,
+          prev.wishes
+        );
+        if (activePublicClientId === 'client-utama') {
+          void mutateServer('UPDATE_SETTINGS', {
+            invitationAnalytics: nextAnalytics,
+          });
+        }
+        return {
+          ...prev,
+          settings: {
+            ...prev.settings,
+            invitationAnalytics: nextAnalytics,
+          },
+        };
+      });
+    },
+    [activePublicClientId, updateClientScopedState, mutateServer]
+  );
+
   const effectiveGuestName =
     previewOverrideGuest?.guestName || manualGuestLookup.to || urlGuestTo;
   const effectiveGuestCode =
@@ -1249,6 +1283,7 @@ function WeddingAppContent() {
             guestParamCode={effectiveGuestCode}
             isAdminLoggedIn={Boolean(adminUser)}
             onOpenAdminPortal={handleOpenAdminPortal}
+            onTrackAnalytics={handleTrackPublicAnalytics}
             onSubmitRsvp={handleSubmitPublicRsvp}
           />
         </div>

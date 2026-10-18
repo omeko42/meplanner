@@ -1,6 +1,7 @@
 import {
   WeddingDatabaseSchema,
   WeddingGuest,
+  GuestWish,
   WeddingSettings,
   WeddingScheduleEvent,
   WeddingTask,
@@ -10,6 +11,9 @@ import {
   MusicTrackItem,
   LoveStoryItem,
   GalleryPhotoItem,
+  InvitationAnalyticsData,
+  InvitationAnalyticsEvent,
+  InvitationInteractionType,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -1862,4 +1866,211 @@ export function formatForensicUserAgent(ua?: string, platform?: string): string 
 
   return platform ? `${os} (${browser}) • ${platform}` : `${os} (${browser})`;
 }
+
+export function getEffectiveInvitationAnalytics(
+  settings?: WeddingSettings,
+  guests: WeddingGuest[] = [],
+  wishes: GuestWish[] = []
+): InvitationAnalyticsData {
+  const stored = settings?.invitationAnalytics;
+  const deliveredGuestsCount = guests.filter(
+    (g) =>
+      g.deliveryStatus === 'Sudah Dikirim' ||
+      g.deliveryStatus === 'Sudah Diterima'
+  ).length;
+  const confirmedRsvpCount = Math.max(
+    wishes.length,
+    guests.filter((g) => g.rsvpStatus !== 'Belum Konfirmasi').length
+  );
+
+  if (stored && typeof stored.totalViews === 'number') {
+    const waShares = Math.max(stored.waShares || 0, deliveredGuestsCount);
+    const linkCopies = stored.linkCopies || 0;
+    const totalShares = Math.max(
+      stored.totalShares || 0,
+      waShares + linkCopies
+    );
+    const rsvpSubmits = Math.max(stored.rsvpSubmits || 0, confirmedRsvpCount);
+    const openCoverClicks = Math.max(
+      stored.openCoverClicks || 0,
+      rsvpSubmits
+    );
+    const mapsClicks = stored.mapsClicks || 0;
+    const giftCopyClicks = stored.giftCopyClicks || 0;
+    const qrisClicks = stored.qrisClicks || 0;
+    const totalClicks = Math.max(
+      stored.totalClicks || 0,
+      openCoverClicks + mapsClicks + giftCopyClicks + qrisClicks + rsvpSubmits
+    );
+    const totalViews = Math.max(
+      stored.totalViews || 0,
+      openCoverClicks,
+      confirmedRsvpCount
+    );
+    const uniqueVisitors = Math.max(
+      stored.uniqueVisitors || 0,
+      Array.isArray(stored.visitedGuestKeys)
+        ? stored.visitedGuestKeys.length
+        : 0,
+      confirmedRsvpCount
+    );
+
+    return {
+      totalShares,
+      waShares,
+      linkCopies,
+      totalViews,
+      uniqueVisitors: Math.min(totalViews, Math.max(1, uniqueVisitors)),
+      totalClicks,
+      openCoverClicks,
+      mapsClicks,
+      giftCopyClicks,
+      qrisClicks,
+      rsvpSubmits,
+      visitedGuestKeys: Array.isArray(stored.visitedGuestKeys)
+        ? stored.visitedGuestKeys
+        : [],
+      recentEvents: Array.isArray(stored.recentEvents)
+        ? stored.recentEvents
+        : [],
+      lastUpdatedAt: stored.lastUpdatedAt,
+    };
+  }
+
+  // Baseline derived from existing guest delivery & wishes when analytics hasn't been initialized yet
+  const baseWaShares = deliveredGuestsCount;
+  const baseLinkCopies = 0;
+  const baseTotalShares = baseWaShares + baseLinkCopies;
+  const baseRsvp = confirmedRsvpCount;
+  const baseOpenCover = Math.max(baseRsvp, deliveredGuestsCount);
+  const baseViews = Math.max(baseOpenCover, baseRsvp);
+
+  const seedEvents: InvitationAnalyticsEvent[] = wishes
+    .slice(0, 10)
+    .map((w, idx) => ({
+      id: `seed_evt_${w.id || idx}`,
+      type: 'SUBMIT_RSVP',
+      guestName: w.guestName,
+      invitationCode: w.invitationCode,
+      detail: `Konfirmasi RSVP (${w.rsvpStatus}) & kirim ucapan doa`,
+      deviceInfo: formatForensicUserAgent(w.userAgent, w.devicePlatform),
+      timestamp: w.createdAt || new Date().toISOString(),
+    }));
+
+  return {
+    totalShares: baseTotalShares,
+    waShares: baseWaShares,
+    linkCopies: baseLinkCopies,
+    totalViews: baseViews,
+    uniqueVisitors: baseViews,
+    totalClicks: baseOpenCover + baseRsvp,
+    openCoverClicks: baseOpenCover,
+    mapsClicks: 0,
+    giftCopyClicks: 0,
+    qrisClicks: 0,
+    rsvpSubmits: baseRsvp,
+    visitedGuestKeys: wishes.map((w) =>
+      (w.invitationCode || w.guestName || '').toLowerCase()
+    ),
+    recentEvents: seedEvents,
+    lastUpdatedAt: settings?.updatedAt || new Date().toISOString(),
+  };
+}
+
+export function appendInvitationAnalyticsEvent(
+  currentSettings: WeddingSettings,
+  input: {
+    type: InvitationInteractionType;
+    guestName?: string;
+    invitationCode?: string;
+    detail?: string;
+    deviceInfo?: string;
+  },
+  guests: WeddingGuest[] = [],
+  wishes: GuestWish[] = []
+): InvitationAnalyticsData {
+  const base = getEffectiveInvitationAnalytics(currentSettings, guests, wishes);
+  const nowIso = new Date().toISOString();
+  const guestKey = (
+    input.invitationCode ||
+    input.guestName ||
+    input.deviceInfo ||
+    'anon'
+  )
+    .trim()
+    .toLowerCase();
+
+  const nextVisitedKeys = Array.from(
+    new Set([...(base.visitedGuestKeys || []), guestKey])
+  ).slice(-300);
+
+  let {
+    totalShares,
+    waShares,
+    linkCopies,
+    totalViews,
+    uniqueVisitors,
+    totalClicks,
+    openCoverClicks,
+    mapsClicks,
+    giftCopyClicks,
+    qrisClicks,
+    rsvpSubmits,
+  } = base;
+
+  if (input.type === 'SHARE_WA') {
+    waShares += 1;
+    totalShares += 1;
+  } else if (input.type === 'COPY_LINK') {
+    linkCopies += 1;
+    totalShares += 1;
+  } else if (input.type === 'PAGE_VIEW') {
+    totalViews += 1;
+    uniqueVisitors = Math.max(uniqueVisitors, nextVisitedKeys.length);
+  } else if (input.type === 'OPEN_COVER') {
+    openCoverClicks += 1;
+    totalClicks += 1;
+    totalViews = Math.max(totalViews, openCoverClicks);
+  } else if (input.type === 'CLICK_MAPS') {
+    mapsClicks += 1;
+    totalClicks += 1;
+  } else if (input.type === 'CLICK_GIFT_COPY') {
+    giftCopyClicks += 1;
+    totalClicks += 1;
+  } else if (input.type === 'CLICK_QRIS') {
+    qrisClicks += 1;
+    totalClicks += 1;
+  } else if (input.type === 'SUBMIT_RSVP') {
+    rsvpSubmits += 1;
+    totalClicks += 1;
+  }
+
+  const newEvent: InvitationAnalyticsEvent = {
+    id: `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    type: input.type,
+    guestName: input.guestName || 'Tamu Undangan',
+    invitationCode: input.invitationCode,
+    detail: input.detail,
+    deviceInfo: input.deviceInfo,
+    timestamp: nowIso,
+  };
+
+  return {
+    totalShares,
+    waShares,
+    linkCopies,
+    totalViews,
+    uniqueVisitors: Math.min(totalViews, Math.max(1, uniqueVisitors)),
+    totalClicks,
+    openCoverClicks,
+    mapsClicks,
+    giftCopyClicks,
+    qrisClicks,
+    rsvpSubmits,
+    visitedGuestKeys: nextVisitedKeys,
+    recentEvents: [newEvent, ...(base.recentEvents || [])].slice(0, 60),
+    lastUpdatedAt: nowIso,
+  };
+}
+
 

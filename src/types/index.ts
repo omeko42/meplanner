@@ -364,9 +364,47 @@ export interface WeddingSettings {
   contactWhatsappNumber?: string; // default 089638616516
   autoHideFlaggedWishes?: boolean; // default true
   moderationBlockedKeywords?: string; // custom comma-separated negative keywords
+  invitationAnalytics?: InvitationAnalyticsData;
 
   updatedAt: string;
   updatedBy: string;
+}
+
+export type InvitationInteractionType =
+  | 'SHARE_WA'
+  | 'COPY_LINK'
+  | 'PAGE_VIEW'
+  | 'OPEN_COVER'
+  | 'CLICK_MAPS'
+  | 'CLICK_GIFT_COPY'
+  | 'CLICK_QRIS'
+  | 'SUBMIT_RSVP';
+
+export interface InvitationAnalyticsEvent {
+  id: string;
+  type: InvitationInteractionType;
+  guestName?: string;
+  invitationCode?: string;
+  detail?: string;
+  deviceInfo?: string;
+  timestamp: string;
+}
+
+export interface InvitationAnalyticsData {
+  totalShares: number;
+  waShares: number;
+  linkCopies: number;
+  totalViews: number;
+  uniqueVisitors: number;
+  totalClicks: number;
+  openCoverClicks: number;
+  mapsClicks: number;
+  giftCopyClicks: number;
+  qrisClicks: number;
+  rsvpSubmits: number;
+  visitedGuestKeys?: string[];
+  recentEvents: InvitationAnalyticsEvent[];
+  lastUpdatedAt?: string;
 }
 
 export interface ClientWorkspaceData {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Heart,
   Calendar,
@@ -40,6 +40,7 @@ import {
   RsvpStatus,
   GalleryPhotoItem,
   MusicTrackItem,
+  InvitationInteractionType,
 } from '@/types';
 import {
   weddingMusicPlayer,
@@ -49,6 +50,7 @@ import {
   getEffectiveGalleryPhotos,
   getPhotoAdjustStyle,
   analyzeWishModeration,
+  formatForensicUserAgent,
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
@@ -60,6 +62,13 @@ interface PublicInvitationViewProps {
   guestParamCode: string;
   isAdminLoggedIn: boolean;
   onOpenAdminPortal: () => void;
+  onTrackAnalytics?: (payload: {
+    type: InvitationInteractionType;
+    guestName?: string;
+    invitationCode?: string;
+    detail?: string;
+    deviceInfo?: string;
+  }) => void;
   onSubmitRsvp: (payload: {
     guestName: string;
     invitationCode?: string;
@@ -89,9 +98,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   guestParamCode,
   isAdminLoggedIn,
   onOpenAdminPortal,
+  onTrackAnalytics,
   onSubmitRsvp,
 }) => {
   const [isOpened, setIsOpened] = useState(false);
+  const [shareCopiedToast, setShareCopiedToast] = useState(false);
+  const hasTrackedPageViewRef = useRef(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(() =>
     weddingMusicPlayer.getStatus()
   );
@@ -298,7 +310,54 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const requiresVipCodeGate =
     settings.invitationModerationMode === 'VIP_CODE_ONLY' && !effectiveMatchedGuest;
 
+  const emitAnalytics = (
+    type: InvitationInteractionType,
+    detail?: string,
+    overrideGuestName?: string,
+    overrideCode?: string
+  ) => {
+    if (!onTrackAnalytics) return;
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+    const devPlatform =
+      typeof window !== 'undefined'
+        ? `${navigator.platform || 'Web'} • ${window.screen?.width || 0}x${
+            window.screen?.height || 0
+          }`
+        : undefined;
+    onTrackAnalytics({
+      type,
+      guestName:
+        overrideGuestName ||
+        effectiveMatchedGuest?.guestName ||
+        (guestParamName ? guestParamName.trim() : 'Tamu Umum / Katalog'),
+      invitationCode:
+        overrideCode ||
+        effectiveMatchedGuest?.invitationCode ||
+        guestParamCode ||
+        undefined,
+      detail,
+      deviceInfo: formatForensicUserAgent(ua, devPlatform),
+    });
+  };
+
+  useEffect(() => {
+    if (hasTrackedPageViewRef.current) return;
+    hasTrackedPageViewRef.current = true;
+    emitAnalytics(
+      'PAGE_VIEW',
+      `Membuka halaman tautan undangan (${
+        guestParamName
+          ? `?to=${guestParamName}`
+          : guestParamCode
+          ? `?code=${guestParamCode}`
+          : 'Tautan Umum'
+      })`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOpenInvitation = () => {
+    let resolvedGuestForOpen = effectiveMatchedGuest;
     if (requiresVipCodeGate) {
       const cleanCode = vipCodeInput.trim().toUpperCase();
       if (!cleanCode) {
@@ -317,16 +376,52 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         return;
       }
       if (found) {
+        resolvedGuestForOpen = found;
         setVerifiedGuestByCode(found);
         setRsvpName(found.guestName);
         setRsvpInstitution(found.institution || '');
       }
       setVipCodeError('');
     }
+    emitAnalytics(
+      'OPEN_COVER',
+      'Klik tombol "Buka Undangan" pada sampul pembuka',
+      resolvedGuestForOpen?.guestName,
+      resolvedGuestForOpen?.invitationCode
+    );
     setIsOpened(true);
     weddingMusicPlayer.start();
     setIsPlayingMusic(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSharePublicLink = async () => {
+    const shareUrl =
+      typeof window !== 'undefined' ? window.location.href : '';
+    const coupleNames = `${settings.groomNickname || 'Eko'} & ${
+      settings.brideNickname || 'Selo'
+    }`;
+    emitAnalytics(
+      'COPY_LINK',
+      `Membagikan / menyalin tautan undangan (${coupleNames})`
+    );
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Undangan Pernikahan ${coupleNames}`,
+          text: `Undangan Pernikahan ${coupleNames} — ${settings.event2DateLabel}`,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard copy
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard && shareUrl) {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopiedToast(true);
+      setTimeout(() => setShareCopiedToast(false), 2500);
+    }
   };
 
   const renderDeveloperCreditBar = (compact = false) => {
@@ -359,6 +454,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleSharePublicLink()}
+            title="Bagikan atau salin tautan undangan ini"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
+          >
+            {shareCopiedToast ? (
+              <>
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span className="text-emerald-700">Link Disalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3 text-[#B68D40]" />
+                <span>Bagikan Link</span>
+              </>
+            )}
+          </button>
+
           <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest text-stone-500">
             Contact Us:
           </span>
@@ -416,6 +530,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const handleCopyAccount = (id: string, numberStr: string) => {
     navigator.clipboard.writeText(numberStr);
     setCopiedAccountId(id);
+    emitAnalytics('CLICK_GIFT_COPY', `Menyalin nomor rekening amplop digital (${numberStr})`);
     setTimeout(() => setCopiedAccountId(null), 2500);
   };
 
@@ -433,6 +548,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               window.screen?.height || 0
             } • ${Intl.DateTimeFormat().resolvedOptions().timeZone || 'WIB'}`
           : undefined;
+
+      emitAnalytics(
+        'SUBMIT_RSVP',
+        `Mengirim konfirmasi RSVP (${rsvpStatus}) & doa restu`,
+        rsvpName.trim(),
+        effectiveMatchedGuest?.invitationCode || guestParamCode || undefined
+      );
 
       await onSubmitRsvp({
         guestName: rsvpName.trim(),
@@ -1185,6 +1307,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     href={ev.mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      emitAnalytics(
+                        'CLICK_MAPS',
+                        `Membuka lokasi Google Maps: ${ev.title} (${ev.venue})`
+                      )
+                    }
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <MapPin className="w-3.5 h-3.5" />
@@ -1747,7 +1875,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {settings.showQrisButton !== false && (
                   <button
                     type="button"
-                    onClick={() => setShowQrisModal(true)}
+                    onClick={() => {
+                      emitAnalytics('CLICK_QRIS', 'Membuka tampilan Barcode QRIS Amplop Digital');
+                      setShowQrisModal(true);
+                    }}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
                   >
                     <QrCode className="w-4 h-4" />

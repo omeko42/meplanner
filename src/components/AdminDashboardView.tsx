@@ -90,6 +90,7 @@ import {
   MusicTrackItem,
   AuditLogEntry,
   ClientGroupItem,
+  InvitationInteractionType,
 } from '@/types';
 import {
   formatRupiah,
@@ -119,6 +120,8 @@ import {
   getEffectiveGalleryPhotos,
   analyzeWishModeration,
   formatForensicUserAgent,
+  getEffectiveInvitationAnalytics,
+  appendInvitationAnalyticsEvent,
 } from '@/lib/clientSync';
 import {
   CloudSyncStatus,
@@ -664,6 +667,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
       return next;
     });
+  };
+
+  const recordAdminAnalyticsEvent = (
+    type: InvitationInteractionType,
+    guest?: WeddingGuest,
+    detail?: string
+  ) => {
+    const nextAnalytics = appendInvitationAnalyticsEvent(
+      { ...state.settings, ...settingsForm },
+      {
+        type,
+        guestName: guest?.guestName || `Admin (${adminUser.username})`,
+        invitationCode: guest?.invitationCode,
+        detail:
+          detail ||
+          (type === 'SHARE_WA'
+            ? `Mengirim link undangan via WhatsApp ke ${guest?.guestName || 'Tamu'}`
+            : `Menyalin link undangan untuk ${guest?.guestName || 'Tamu'}`),
+        deviceInfo: `Dashboard Admin (${adminUser.username})`,
+      },
+      state.guests,
+      state.wishes
+    );
+    setSettingsFormInternal((prev) => ({
+      ...prev,
+      invitationAnalytics: nextAnalytics,
+    }));
+    void onUpdateSettings(
+      {
+        invitationAnalytics: nextAnalytics,
+        updatedBy: adminUser.username,
+      },
+      true
+    );
   };
 
   // ============================================================================
@@ -5596,6 +5633,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   navigator.clipboard.writeText(waData.inviteUrl);
                                   setCopiedGuestLinkId(guest.id);
                                   setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                                  recordAdminAnalyticsEvent(
+                                    'COPY_LINK',
+                                    guest,
+                                    `Menyalin tautan undangan personal untuk ${guest.guestName} (${guest.invitationCode})`
+                                  );
                                   showToast(
                                     `Link undangan online ${guest.guestName} berhasil disalin!`
                                   );
@@ -5617,6 +5659,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             href={waData.waHref}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() =>
+                              recordAdminAnalyticsEvent(
+                                'SHARE_WA',
+                                guest,
+                                `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guest.invitationCode})`
+                              )
+                            }
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
                           >
                             <Send className="w-3 h-3" /> Kirim WA
@@ -5634,6 +5683,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               navigator.clipboard.writeText(waData.inviteUrl);
                               setCopiedGuestLinkId(guest.id);
                               setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                              recordAdminAnalyticsEvent(
+                                'COPY_LINK',
+                                guest,
+                                `Menyalin link undangan untuk ${guest.guestName} (${guest.invitationCode})`
+                              );
                               showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
                             }}
                             className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1"
@@ -10220,6 +10274,398 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
+            {/* PANEL INSIGHT & ANALITIK TRAFIK UNDANGAN (LINK DI-SHARE, DILIHAT, DIKLIK & FUNNEL KONVERSI) */}
+            {(() => {
+              const analytics = getEffectiveInvitationAnalytics(
+                { ...state.settings, ...settingsForm },
+                state.guests,
+                state.wishes
+              );
+              const ctrPercent =
+                analytics.totalViews > 0
+                  ? Math.min(
+                      100,
+                      Math.round(
+                        (analytics.openCoverClicks / analytics.totalViews) * 100
+                      )
+                    )
+                  : 0;
+              const rsvpRatePercent =
+                analytics.openCoverClicks > 0
+                  ? Math.min(
+                      100,
+                      Math.round(
+                        (analytics.rsvpSubmits / analytics.openCoverClicks) * 100
+                      )
+                    )
+                  : 0;
+
+              const clickBreakdown = [
+                {
+                  label: '📖 Klik "Buka Undangan" (Sampul Pembuka)',
+                  count: analytics.openCoverClicks,
+                  color: 'bg-[#C5A059]',
+                },
+                {
+                  label: '💌 Klik Kirim Konfirmasi RSVP & Ucapan Doa',
+                  count: analytics.rsvpSubmits,
+                  color: 'bg-emerald-600',
+                },
+                {
+                  label: '📍 Klik Buka Lokasi Google Maps Gedung Acara',
+                  count: analytics.mapsClicks,
+                  color: 'bg-sky-600',
+                },
+                {
+                  label: '💳 Klik Salin No. Rekening Amplop Digital',
+                  count: analytics.giftCopyClicks,
+                  color: 'bg-amber-600',
+                },
+                {
+                  label: '📱 Klik Tampilkan Barcode QRIS Wedding Gift',
+                  count: analytics.qrisClicks,
+                  color: 'bg-purple-600',
+                },
+              ];
+
+              const maxBreakdownCount = Math.max(
+                1,
+                ...clickBreakdown.map((b) => b.count)
+              );
+
+              const badgeForEventType = (type: InvitationInteractionType) => {
+                switch (type) {
+                  case 'SHARE_WA':
+                    return {
+                      label: '📲 Share WA',
+                      cls: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                    };
+                  case 'COPY_LINK':
+                    return {
+                      label: '🔗 Salin Link',
+                      cls: 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40',
+                    };
+                  case 'PAGE_VIEW':
+                    return {
+                      label: '👁️ Dilihat (View)',
+                      cls: 'bg-sky-100 text-sky-800 border-sky-200',
+                    };
+                  case 'OPEN_COVER':
+                    return {
+                      label: '📖 Klik Buka Sampul',
+                      cls: 'bg-amber-100 text-amber-800 border-amber-200',
+                    };
+                  case 'CLICK_MAPS':
+                    return {
+                      label: '📍 Klik Google Maps',
+                      cls: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                    };
+                  case 'CLICK_GIFT_COPY':
+                    return {
+                      label: '💳 Salin Rekening',
+                      cls: 'bg-rose-100 text-rose-800 border-rose-200',
+                    };
+                  case 'CLICK_QRIS':
+                    return {
+                      label: '📱 Klik QRIS',
+                      cls: 'bg-purple-100 text-purple-800 border-purple-200',
+                    };
+                  case 'SUBMIT_RSVP':
+                    return {
+                      label: '✅ Kirim RSVP',
+                      cls: 'bg-emerald-600 text-white border-emerald-700',
+                    };
+                }
+              };
+
+              return (
+                <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                          Insight &amp; Analitik Trafik Undangan (Share, Views &amp; Clicks)
+                        </h3>
+                        <p className="text-[11px] text-stone-500">
+                          Pantau real-time berapa kali link undangan dibagikan (share), dilihat (views), tombol diklik, hingga konversi RSVP tamu
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const origin =
+                            typeof window !== 'undefined'
+                              ? window.location.origin
+                              : '';
+                          const shareUrl = `${origin}/?client=agung_selo`;
+                          if (
+                            typeof navigator !== 'undefined' &&
+                            navigator.clipboard
+                          ) {
+                            void navigator.clipboard.writeText(shareUrl);
+                          }
+                          recordAdminAnalyticsEvent(
+                            'COPY_LINK',
+                            undefined,
+                            `Menyalin link utama undangan (${shareUrl}) dari panel Insight`
+                          );
+                          showToast(
+                            '🔗 Link undangan disalin & tercatat (+1 Share) di Insight!'
+                          );
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Salin &amp; Share Link (+1)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmDialog({
+                            title: 'Reset Statistik Insight Undangan?',
+                            message:
+                              'Seluruh penghitung Share, Views, Clicks, dan riwayat interaksi pada workspace ini akan direset ke kondisi dasar.',
+                            confirmLabel: 'Ya, Reset Insight',
+                            variant: 'danger',
+                            onConfirm: async () => {
+                              const emptyAnalytics = {
+                                totalShares: 0,
+                                waShares: 0,
+                                linkCopies: 0,
+                                totalViews: 0,
+                                uniqueVisitors: 0,
+                                totalClicks: 0,
+                                openCoverClicks: 0,
+                                mapsClicks: 0,
+                                giftCopyClicks: 0,
+                                qrisClicks: 0,
+                                rsvpSubmits: 0,
+                                visitedGuestKeys: [],
+                                recentEvents: [],
+                                lastUpdatedAt: new Date().toISOString(),
+                              };
+                              const nextSettings: WeddingSettings = {
+                                ...state.settings,
+                                ...settingsForm,
+                                invitationAnalytics: emptyAnalytics,
+                                updatedBy: adminUser.username,
+                              };
+                              setSettingsFormInternal(nextSettings);
+                              await commitImmediateSettings(nextSettings);
+                              showToast('✓ Statistik Insight Undangan berhasil direset!');
+                            },
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 font-bold text-xs flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reset Insight</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4 KARTU UTAMA: DI-SHARE, DILIHAT (VIEWS), DIKLIK (CLICKS), KONVERSI RSVP */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* 1. LINK DI-SHARE */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/70 border border-[#D4AF37]/40 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                          🔗 Link Dibagikan (Share)
+                        </span>
+                        <Send className="w-4 h-4 text-[#B68D40]" />
+                      </div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        {analytics.totalShares.toLocaleString('id-ID')}{' '}
+                        <span className="text-xs font-bold text-stone-500">
+                          kali
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-stone-600">
+                        📲 <strong>{analytics.waShares}</strong> Kirim WA &bull; 📋{' '}
+                        <strong>{analytics.linkCopies}</strong> Salin Link
+                      </p>
+                    </div>
+
+                    {/* 2. UNDANGAN DILIHAT (VIEWS) */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/70 to-white border border-sky-200 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-800">
+                          👁️ Undangan Dilihat (Views)
+                        </span>
+                        <Eye className="w-4 h-4 text-sky-600" />
+                      </div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        {analytics.totalViews.toLocaleString('id-ID')}{' '}
+                        <span className="text-xs font-bold text-stone-500">
+                          tayangan
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-sky-900/80">
+                        👤 <strong>{analytics.uniqueVisitors}</strong> Pengunjung / Tamu Unik
+                      </p>
+                    </div>
+
+                    {/* 3. TOTAL TOMBOL DIKLIK (CLICKS) */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-white border border-amber-200 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">
+                          👆 Total Diklik (Clicks)
+                        </span>
+                        <ExternalLink className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        {analytics.totalClicks.toLocaleString('id-ID')}{' '}
+                        <span className="text-xs font-bold text-stone-500">
+                          interaksi
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-amber-900/80">
+                        📖 <strong>{analytics.openCoverClicks}</strong> Buka Sampul ({ctrPercent}% CTR)
+                      </p>
+                    </div>
+
+                    {/* 4. KONVERSI RSVP & DOA */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-white border border-emerald-200 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+                          ✅ Konversi RSVP &amp; Doa
+                        </span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        {analytics.rsvpSubmits.toLocaleString('id-ID')}{' '}
+                        <span className="text-xs font-bold text-stone-500">
+                          konfirmasi
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-emerald-900/80">
+                        🎯 Rasio Konversi Tamu: <strong>{rsvpRatePercent}%</strong> dari Buka Sampul
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* GRID 2 KOLOM: RINCIAN KLIK FITUR & LIVE LOG JEJAK INTERAKSI TAMU */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Kiri: Breakdown Klik per Elemen Undangan */}
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-extrabold text-stone-900">
+                          📊 Rincian Elemen Undangan yang Diklik Tamu
+                        </p>
+                        <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-full border border-[#D4AF37]/35">
+                          Funnel Interaksi
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {clickBreakdown.map((item) => {
+                          const widthPct = Math.max(
+                            4,
+                            Math.round((item.count / maxBreakdownCount) * 100)
+                          );
+                          return (
+                            <div key={item.label} className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-semibold text-stone-700">
+                                  {item.label}
+                                </span>
+                                <span className="font-extrabold text-stone-900">
+                                  {item.count} klik
+                                </span>
+                              </div>
+                              <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${item.color}`}
+                                  style={{ width: `${widthPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="pt-2 border-t border-stone-200/80 text-[11px] text-stone-500 leading-relaxed">
+                        💡 <strong>Cara Kerja Otomatis:</strong> Setiap kali Admin mengirim WA / menyalin link tamu di tabel buku tamu, atau ketika tamu membuka link undangan, mengklik <em>Buka Undangan</em>, <em>Google Maps</em>, <em>Salin Rekening</em>, <em>QRIS</em>, maupun <em>Kirim RSVP</em>, angka di atas otomatis bertambah secara real-time.
+                      </div>
+                    </div>
+
+                    {/* Kanan: Live Log Aktivitas Pengunjung & Share Terbaru */}
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-extrabold text-stone-900">
+                          ⚡ Live Log Jejak Share, Views &amp; Klik Terbaru ({analytics.recentEvents.length})
+                        </p>
+                        <span className="text-[10px] font-semibold text-stone-500">
+                          Real-Time Activity
+                        </span>
+                      </div>
+
+                      <div className="max-h-[225px] overflow-y-auto space-y-2 pr-1">
+                        {analytics.recentEvents.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-stone-500 border border-dashed border-stone-200 rounded-xl bg-white">
+                            Belum ada riwayat klik/kunjungan. Bagikan link atau buka pratinjau undangan untuk melihat log real-time.
+                          </div>
+                        ) : (
+                          analytics.recentEvents.map((ev) => {
+                            const badge = badgeForEventType(ev.type);
+                            return (
+                              <div
+                                key={ev.id}
+                                className="p-2.5 rounded-xl bg-white border border-stone-200/80 flex items-start justify-between gap-2 text-xs"
+                              >
+                                <div className="space-y-0.5 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${badge.cls}`}
+                                    >
+                                      {badge.label}
+                                    </span>
+                                    <span className="font-bold text-stone-900 truncate">
+                                      {ev.guestName || 'Tamu Undangan'}
+                                    </span>
+                                    {ev.invitationCode && (
+                                      <span className="font-mono text-[10px] text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded">
+                                        {ev.invitationCode}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {ev.detail && (
+                                    <p className="text-[11px] text-stone-600 line-clamp-1">
+                                      {ev.detail}
+                                    </p>
+                                  )}
+                                  {ev.deviceInfo && (
+                                    <p className="text-[10px] text-stone-400 font-mono">
+                                      {ev.deviceInfo}
+                                    </p>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-stone-400 shrink-0 whitespace-nowrap">
+                                  {new Date(ev.timestamp).toLocaleString('id-ID', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* PANEL 3: MANAJEMEN KOMERSIAL MULTI-CLIENT & GROUPING USER DEFAULT */}
             <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
@@ -11554,6 +12000,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(generated.inviteUrl);
+                            recordAdminAnalyticsEvent(
+                              'COPY_LINK',
+                              targetGuest,
+                              `Menyalin link undangan dari modal WA untuk ${targetGuest.guestName}`
+                            );
                             showToast('Link undangan berhasil disalin!');
                           }}
                           className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 shrink-0"
@@ -11605,6 +12056,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(effectiveMessage);
+                            recordAdminAnalyticsEvent(
+                              'COPY_LINK',
+                              targetGuest,
+                              `Menyalin teks pengantar & link WA untuk ${targetGuest.guestName}`
+                            );
                             showToast('Seluruh teks undangan WA berhasil disalin!');
                           }}
                           className="px-4 py-2 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
@@ -11616,6 +12072,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           href={effectiveWaHref}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() =>
+                            recordAdminAnalyticsEvent(
+                              'SHARE_WA',
+                              targetGuest,
+                              `Mengirim pesan & link undangan WA ke ${targetGuest.guestName}`
+                            )
+                          }
                           className="px-5 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
                         >
                           <Send className="w-3.5 h-3.5" />
