@@ -925,6 +925,48 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     () => getEffectiveScheduleEvents(state.settings),
     [state.settings]
   );
+  const activeCountdownEvents = useMemo(
+    () => scheduleEvents.filter((ev) => ev.enableCountdown),
+    [scheduleEvents]
+  );
+  const [selectedTrackerCountdownId, setSelectedTrackerCountdownId] =
+    useState<string>('');
+  const activeTrackerCountdownEvent = useMemo(() => {
+    if (activeCountdownEvents.length === 0) return null;
+    if (selectedTrackerCountdownId) {
+      const found = activeCountdownEvents.find(
+        (e) => e.id === selectedTrackerCountdownId
+      );
+      if (found) return found;
+    }
+    return (
+      activeCountdownEvents.find((e) =>
+        /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
+      ) || activeCountdownEvents[0]
+    );
+  }, [activeCountdownEvents, selectedTrackerCountdownId]);
+
+  const [trackerNowMs, setTrackerNowMs] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTrackerNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const computeEventCountdown = (targetIso: string, nowMs: number) => {
+    const target = new Date(
+      targetIso || state.settings.weddingDatetime || '2026-12-19T09:00:00+07:00'
+    ).getTime();
+    const diff = Math.max(0, target - nowMs);
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  };
+
   const [editingScheduleEventId, setEditingScheduleEventId] = useState<string | null>(
     null
   );
@@ -2306,7 +2348,113 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 1: READINESS TRACKER (EXECUTIVE DASHBOARD)
            ===================================================================== */}
         {activeTab === 'readiness' && (
-          <div className="space-y-5 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-5">
+            {/* Full-Width Live Countdown Lengkap Card (Connected with Countdown Hari KPI Card below) */}
+            <div className="w-full bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/70 rounded-3xl p-4 sm:p-5 shadow-sm border border-[#D4AF37]/45 space-y-3.5">
+              {activeTrackerCountdownEvent ? (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
+                            Countdown Lengkap
+                          </span>
+                          <span className="text-stone-300">&bull;</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-stone-900 truncate">
+                            {activeTrackerCountdownEvent.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 truncate">
+                          {activeTrackerCountdownEvent.dateLabel} ({activeTrackerCountdownEvent.timeLabel}) &bull;{' '}
+                          {activeTrackerCountdownEvent.venue}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {activeCountdownEvents.map((ev) => {
+                        const isSelected = activeTrackerCountdownEvent.id === ev.id;
+                        return (
+                          <button
+                            key={ev.id}
+                            type="button"
+                            onClick={() => setSelectedTrackerCountdownId(ev.id)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                                : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                            }`}
+                          >
+                            {ev.title}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('settings');
+                          setSettingsMenuTab('jadwal');
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200 text-stone-600 hover:text-[#8B6914] text-[11px] font-bold transition-all"
+                        title="Atur Jadwal & Waktu Countdown"
+                      >
+                        Atur
+                      </button>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const liveCd = computeEventCountdown(
+                      activeTrackerCountdownEvent.datetime,
+                      trackerNowMs
+                    );
+                    return (
+                      <div className="grid grid-cols-4 gap-2.5 sm:gap-4 items-stretch">
+                        {[
+                          { label: 'HARI', value: liveCd.days },
+                          { label: 'JAM', value: liveCd.hours },
+                          { label: 'MENIT', value: liveCd.minutes },
+                          { label: 'DETIK', value: liveCd.seconds },
+                        ].map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-2xl bg-white border border-[#D4AF37]/40 py-3 sm:py-4 px-2 shadow-[0_6px_20px_rgba(180,150,100,0.08)] flex flex-col items-center justify-center text-center"
+                          >
+                            <div className="font-serif text-2xl sm:text-4xl font-bold text-[#9A742B] leading-none">
+                              {String(item.value).padStart(2, '0')}
+                            </div>
+                            <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-bold mt-1.5">
+                              {item.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (
+                <div className="flex items-center justify-between gap-3 py-1">
+                  <p className="text-xs text-stone-500">
+                    Belum ada acara yang diaktifkan Countdown-nya.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('settings');
+                      setSettingsMenuTab('jadwal');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-bold"
+                  >
+                    Atur Countdown &rarr;
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Top Hero KPI Cards (Symmetrical Height & Width) */}
             <div
               className={`grid grid-cols-1 sm:grid-cols-2 ${
@@ -2342,86 +2490,76 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </p>
               </div>
 
-              {/* Card 2: Countdown Hari-H (Dynamic from scheduleEvents where enableCountdown === true) */}
+              {/* Card 2: Countdown Hari (Synchronized with Countdown Lengkap above) */}
               <div className="h-full bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                    Countdown
+                    Countdown Hari
                   </span>
                   <Calendar className="w-5 h-5 text-[#B68D40]" />
                 </div>
-                {(() => {
-                  const activeCountdowns = scheduleEvents.filter(
-                    (ev) => ev.enableCountdown
-                  );
-                  if (activeCountdowns.length === 0) {
-                    return (
-                      <div className="my-3 p-3 rounded-2xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center">
-                        <p className="text-xs text-stone-500">
-                          Belum ada Countdown aktif.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveTab('settings');
-                            setSettingsMenuTab('jadwal');
-                          }}
-                          className="mt-1 text-[11px] font-bold text-[#8B6914] hover:underline"
-                        >
-                          Atur Countdown &rarr;
-                        </button>
-                      </div>
-                    );
-                  }
-                  const nowMs = Date.now();
-                  return (
-                    <div
-                      className={`my-3 grid gap-2 ${
-                        activeCountdowns.length === 1
-                          ? 'grid-cols-1'
-                          : 'grid-cols-2'
-                      }`}
+                {activeCountdownEvents.length === 0 ? (
+                  <div className="my-3 p-3 rounded-2xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center">
+                    <p className="text-xs text-stone-500">
+                      Belum ada Countdown aktif.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('settings');
+                        setSettingsMenuTab('jadwal');
+                      }}
+                      className="mt-1 text-[11px] font-bold text-[#8B6914] hover:underline"
                     >
-                      {activeCountdowns.map((ev, idx) => {
-                        const targetMs = new Date(
-                          ev.datetime || '2026-12-19T09:00:00+07:00'
-                        ).getTime();
-                        const daysLeft = Math.max(
-                          0,
-                          Math.ceil((targetMs - nowMs) / (1000 * 60 * 60 * 24))
-                        );
-                        const isHighlight =
-                          idx === activeCountdowns.length - 1 ||
-                          /pemberkatan|akad|utama/i.test(
-                            ev.title + ' ' + ev.badge
-                          );
-                        return (
-                          <div
-                            key={ev.id}
-                            className={`p-2.5 rounded-2xl border ${
-                              isHighlight
-                                ? 'bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border-[#D4AF37]/50 text-[#8B6914]'
-                                : 'bg-[#FAF8F5] border-stone-200 text-stone-900'
+                      Atur Countdown &rarr;
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`my-3 grid gap-2 ${
+                      activeCountdownEvents.length === 1
+                        ? 'grid-cols-1'
+                        : 'grid-cols-2'
+                    }`}
+                  >
+                    {activeCountdownEvents.map((ev) => {
+                      const daysLeft = computeEventCountdown(
+                        ev.datetime,
+                        trackerNowMs
+                      ).days;
+                      const isHighlight =
+                        activeTrackerCountdownEvent?.id === ev.id;
+                      return (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => setSelectedTrackerCountdownId(ev.id)}
+                          className={`p-2.5 rounded-2xl border text-left transition-all ${
+                            isHighlight
+                              ? 'bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border-[#D4AF37]/70 text-[#8B6914] shadow-2xs'
+                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3]/50 border-stone-200 text-stone-900'
+                          }`}
+                          title={`Klik untuk menampilkan Countdown Lengkap ${ev.title}`}
+                        >
+                          <p
+                            className={`text-[10px] font-bold uppercase truncate ${
+                              isHighlight ? 'text-[#8B6914]' : 'text-stone-600'
                             }`}
                           >
-                            <p
-                              className={`text-[10px] font-bold uppercase truncate ${
-                                isHighlight ? 'text-[#8B6914]' : 'text-stone-600'
-                              }`}
-                            >
-                              {ev.title}
-                            </p>
-                            <p className="text-xl sm:text-2xl font-extrabold">
-                              H-{daysLeft}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                            {ev.title}
+                          </p>
+                          <p className="text-xl sm:text-2xl font-extrabold">
+                            H-{daysLeft}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <p className="text-[11px] text-stone-500 font-medium pt-2 border-t border-stone-100 truncate">
-                  {state.settings.event2DateLabel} &bull; {state.settings.groomOrigin}
+                  {activeTrackerCountdownEvent
+                    ? `${activeTrackerCountdownEvent.dateLabel} • ${activeTrackerCountdownEvent.venue}`
+                    : `${state.settings.event2DateLabel} • ${state.settings.groomOrigin}`}
                 </p>
               </div>
 

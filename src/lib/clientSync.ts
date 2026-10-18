@@ -19,22 +19,29 @@ import {
 } from '@/data/seedData';
 import { queueSaveStateToSupabase } from '@/lib/supabaseCloud';
 
-const STORAGE_KEY = 'my_wedding_manager_state_v3';
+const STORAGE_KEY = 'my_wedding_manager_state_v4';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
 const VIEW_MODE_KEY = 'my_wedding_manager_view_mode_v2';
-const IDB_NAME = 'my_wedding_manager_idb_v3';
+const IDB_NAME = 'my_wedding_manager_idb_v4';
 const IDB_STORE = 'wedding_state_store';
 const IDB_KEY = 'current_wedding_db';
 
 function normalizeParsedState(
   parsed: Partial<WeddingDatabaseSchema>
 ): WeddingDatabaseSchema {
+  const cleanTasks = Array.isArray(parsed.tasks)
+    ? parsed.tasks.filter((t) => !/^g\d+$/i.test(String(t.id || '')))
+    : INITIAL_TASKS;
+  const cleanGuests = Array.isArray(parsed.guests)
+    ? parsed.guests.filter((g) => !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')))
+    : INITIAL_GUESTS;
+
   return {
     settings: parsed.settings
       ? { ...INITIAL_SETTINGS, ...parsed.settings }
       : INITIAL_SETTINGS,
-    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_TASKS,
-    guests: Array.isArray(parsed.guests) ? parsed.guests : INITIAL_GUESTS,
+    tasks: cleanTasks,
+    guests: cleanGuests,
     wishes: Array.isArray(parsed.wishes) ? parsed.wishes : INITIAL_WISHES,
     budgetItems: Array.isArray(parsed.budgetItems)
       ? parsed.budgetItems
@@ -50,12 +57,14 @@ function normalizeParsedState(
 export function getInitialClientState(): WeddingDatabaseSchema {
   if (typeof window !== 'undefined') {
     try {
-      // Purge legacy v1/v2 cache that contained old seed tasks & guests
+      // Purge legacy v1/v2/v3 cache that contained old seed tasks & guests
       localStorage.removeItem('my_wedding_manager_state_v1');
       localStorage.removeItem('my_wedding_manager_state_v2');
+      localStorage.removeItem('my_wedding_manager_state_v3');
       if ('indexedDB' in window) {
         try {
           window.indexedDB.deleteDatabase('my_wedding_manager_idb_v2');
+          window.indexedDB.deleteDatabase('my_wedding_manager_idb_v3');
         } catch {
           // Ignore
         }

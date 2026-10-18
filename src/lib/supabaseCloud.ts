@@ -91,12 +91,19 @@ function normalizeCloudState(
   parsed: Partial<WeddingDatabaseSchema>,
   fallbackTimestamp?: string
 ): WeddingDatabaseSchema {
+  const cleanTasks = Array.isArray(parsed.tasks)
+    ? parsed.tasks.filter((t) => !/^g\d+$/i.test(String(t.id || '')))
+    : INITIAL_TASKS;
+  const cleanGuests = Array.isArray(parsed.guests)
+    ? parsed.guests.filter((g) => !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')))
+    : INITIAL_GUESTS;
+
   return {
     settings: parsed.settings
       ? { ...INITIAL_SETTINGS, ...parsed.settings }
       : INITIAL_SETTINGS,
-    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_TASKS,
-    guests: Array.isArray(parsed.guests) ? parsed.guests : INITIAL_GUESTS,
+    tasks: cleanTasks,
+    guests: cleanGuests,
     wishes: Array.isArray(parsed.wishes) ? parsed.wishes : INITIAL_WISHES,
     budgetItems: Array.isArray(parsed.budgetItems)
       ? parsed.budgetItems
