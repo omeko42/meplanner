@@ -965,142 +965,164 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           {/* Love Story Timeline Cards */}
-          {showLoveStory && effectiveLoveStory.length > 0 && (
-            <div
-              className={`grid grid-cols-1 gap-4 sm:gap-5 mb-8 sm:mb-10 items-stretch ${
-                effectiveLoveStory.length === 1
-                  ? 'max-w-lg mx-auto'
-                  : effectiveLoveStory.length === 3
-                  ? 'md:grid-cols-3'
-                  : 'sm:grid-cols-2'
-              }`}
-            >
-              {effectiveLoveStory.map((story, i) => (
-                <div
-                  key={story.id || i}
-                  className="h-full rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
-                        {story.dateLabel}
-                      </span>
-                      <Heart className="w-4 h-4 text-[#C5A059]" />
-                    </div>
-                    <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
-                      {story.title}
-                    </h3>
-                    <p className="text-xs text-stone-600 leading-relaxed">
-                      {story.description}
-                    </p>
-                  </div>
-                  {story.location && (
-                    <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-[#B68D40]" />
-                      <span>{story.location}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Smooth Auto-Sliding Photo Gallery Carousel (Steam-Style with Bottom-Center Dots Over Photo, No Navigation Arrows) */}
-          {showGallery && effectiveGalleryPhotos.length > 0 && (
-            <div
-              className="relative w-full aspect-[4/3] sm:aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
-              onTouchStart={(e) => {
-                setTouchStartX(e.touches[0]?.clientX ?? null);
-              }}
-              onTouchEnd={(e) => {
-                if (touchStartX === null || effectiveGalleryPhotos.length <= 1) return;
-                const endX = e.changedTouches[0]?.clientX ?? touchStartX;
-                const diff = touchStartX - endX;
-                if (Math.abs(diff) > 40) {
-                  if (diff > 0) {
-                    setActiveGalleryIdx(
-                      (prev) => (prev + 1) % effectiveGalleryPhotos.length
-                    );
-                  } else {
-                    setActiveGalleryIdx(
-                      (prev) =>
-                        (prev - 1 + effectiveGalleryPhotos.length) %
-                        effectiveGalleryPhotos.length
-                    );
-                  }
-                }
-                setTouchStartX(null);
-              }}
-            >
-              {/* Horizontal Smooth Sliding Track */}
+          {showLoveStory &&
+            (effectiveLoveStory.length > 0 ? (
               <div
-                className="flex w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-                style={{
-                  transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
-                }}
+                className={`grid grid-cols-1 gap-4 sm:gap-5 mb-8 sm:mb-10 items-stretch ${
+                  effectiveLoveStory.length === 1
+                    ? 'max-w-lg mx-auto'
+                    : effectiveLoveStory.length === 3
+                    ? 'md:grid-cols-3'
+                    : 'sm:grid-cols-2'
+                }`}
               >
-                {effectiveGalleryPhotos.map((photo, idx) => (
+                {effectiveLoveStory.map((story, i) => (
                   <div
-                    key={photo.id || idx}
-                    onClick={() => setSelectedPhoto(photo)}
-                    className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group"
+                    key={story.id || i}
+                    className="h-full rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
                   >
-                    <img
-                      src={photo.imageUrl}
-                      alt={photo.title}
-                      className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out"
-                      style={getPhotoAdjustStyle(photo.adjustment)}
-                    />
-                    {/* Soft Gradient Overlay for Caption & Bottom Dots */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/15 to-transparent pointer-events-none" />
-
-                    {/* Top Category Pill */}
-                    <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 flex items-center gap-2 pointer-events-none">
-                      <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                        {photo.category || 'Prewedding'}
-                      </span>
-                    </div>
-
-                    {/* Photo Title & Caption Centered Above the Bottom Dots */}
-                    <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 text-center text-white pointer-events-none">
-                      <h3 className="font-serif text-base sm:text-2xl font-bold drop-shadow-sm truncate">
-                        {photo.title}
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
+                          {story.dateLabel}
+                        </span>
+                        <Heart className="w-4 h-4 text-[#C5A059]" />
+                      </div>
+                      <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
+                        {story.title}
                       </h3>
-                      {photo.caption && (
-                        <p className="text-[11px] sm:text-sm text-stone-200/95 mt-0.5 line-clamp-1 drop-shadow-xs">
-                          {photo.caption}
-                        </p>
-                      )}
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {story.description}
+                      </p>
                     </div>
+                    {story.location && (
+                      <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3 text-[#B68D40]" />
+                        <span>{story.location}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-
-              {/* Centered Small Dots Overlaid on Bottom of Photo (No Navigation Arrows) */}
-              <div
-                className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/25 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {effectiveGalleryPhotos.map((photo, idx) => {
-                  const isActive = idx === safeGalleryIdx;
-                  return (
-                    <button
-                      key={photo.id || idx}
-                      type="button"
-                      aria-label={`Pilih foto ${idx + 1}: ${photo.title}`}
-                      onClick={() => setActiveGalleryIdx(idx)}
-                      title={photo.title}
-                      className={`rounded-full transition-all duration-500 cursor-pointer focus:outline-none ${
-                        isActive
-                          ? 'w-3 h-3 sm:w-3.5 sm:h-3.5 bg-[#F3D77D] ring-2 ring-[#D4AF37]/70 scale-110 shadow-[0_0_10px_rgba(243,215,125,0.85)]'
-                          : 'w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white/55 hover:bg-white/95 hover:scale-110'
-                      }`}
-                    />
-                  );
-                })}
+            ) : (
+              <div className="max-w-xl mx-auto mb-8 sm:mb-10 rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
+                <Heart className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
+                <p className="font-serif font-bold text-stone-800 text-base">
+                  Kisah Perjalanan Cinta
+                </p>
+                <p className="text-xs text-stone-500 mt-1">
+                  Belum ada momen perjalanan cinta yang ditambahkan.
+                </p>
               </div>
-            </div>
-          )}
+            ))}
+
+          {/* Smooth Auto-Sliding Photo Gallery Carousel (Steam-Style with Bottom-Center Dots Over Photo, No Navigation Arrows) */}
+          {showGallery &&
+            (effectiveGalleryPhotos.length > 0 ? (
+              <div
+                className="relative w-full aspect-[4/3] sm:aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
+                onTouchStart={(e) => {
+                  setTouchStartX(e.touches[0]?.clientX ?? null);
+                }}
+                onTouchEnd={(e) => {
+                  if (touchStartX === null || effectiveGalleryPhotos.length <= 1) return;
+                  const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+                  const diff = touchStartX - endX;
+                  if (Math.abs(diff) > 40) {
+                    if (diff > 0) {
+                      setActiveGalleryIdx(
+                        (prev) => (prev + 1) % effectiveGalleryPhotos.length
+                      );
+                    } else {
+                      setActiveGalleryIdx(
+                        (prev) =>
+                          (prev - 1 + effectiveGalleryPhotos.length) %
+                          effectiveGalleryPhotos.length
+                      );
+                    }
+                  }
+                  setTouchStartX(null);
+                }}
+              >
+                {/* Horizontal Smooth Sliding Track */}
+                <div
+                  className="flex w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+                  style={{
+                    transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
+                  }}
+                >
+                  {effectiveGalleryPhotos.map((photo, idx) => (
+                    <div
+                      key={photo.id || idx}
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group"
+                    >
+                      <img
+                        src={photo.imageUrl}
+                        alt={photo.title}
+                        className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out"
+                        style={getPhotoAdjustStyle(photo.adjustment)}
+                      />
+                      {/* Soft Gradient Overlay for Caption & Bottom Dots */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/15 to-transparent pointer-events-none" />
+
+                      {/* Top Category Pill */}
+                      <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 flex items-center gap-2 pointer-events-none">
+                        <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                          {photo.category || 'Prewedding'}
+                        </span>
+                      </div>
+
+                      {/* Photo Title & Caption Centered Above the Bottom Dots */}
+                      <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 text-center text-white pointer-events-none">
+                        <h3 className="font-serif text-base sm:text-2xl font-bold drop-shadow-sm truncate">
+                          {photo.title}
+                        </h3>
+                        {photo.caption && (
+                          <p className="text-[11px] sm:text-sm text-stone-200/95 mt-0.5 line-clamp-1 drop-shadow-xs">
+                            {photo.caption}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Centered Small Dots Overlaid on Bottom of Photo (No Navigation Arrows) */}
+                <div
+                  className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/25 shadow-lg"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {effectiveGalleryPhotos.map((photo, idx) => {
+                    const isActive = idx === safeGalleryIdx;
+                    return (
+                      <button
+                        key={photo.id || idx}
+                        type="button"
+                        aria-label={`Pilih foto ${idx + 1}: ${photo.title}`}
+                        onClick={() => setActiveGalleryIdx(idx)}
+                        title={photo.title}
+                        className={`rounded-full transition-all duration-500 cursor-pointer focus:outline-none ${
+                          isActive
+                            ? 'w-3 h-3 sm:w-3.5 sm:h-3.5 bg-[#F3D77D] ring-2 ring-[#D4AF37]/70 scale-110 shadow-[0_0_10px_rgba(243,215,125,0.85)]'
+                            : 'w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white/55 hover:bg-white/95 hover:scale-110'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-xl mx-auto rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
+                <Sparkles className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
+                <p className="font-serif font-bold text-stone-800 text-base">
+                  Galeri Momen Bahagia
+                </p>
+                <p className="text-xs text-stone-500 mt-1">
+                  Belum ada foto prewedding yang ditambahkan ke galeri.
+                </p>
+              </div>
+            ))}
         </section>
       )}
 

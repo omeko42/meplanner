@@ -102,6 +102,8 @@ import {
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
   formatAudioDuration,
+  DEFAULT_LOVE_STORY_ITEMS,
+  DEFAULT_GALLERY_PHOTOS,
   getEffectiveLoveStory,
   getEffectiveGalleryPhotos,
 } from '@/lib/clientSync';
@@ -907,14 +909,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     'showQuoteSection'
   );
 
-  // Form state for adding Love Story & Gallery Photo items inside the inline editor
+  // Form state for adding & editing Love Story & Gallery Photo items inside the inline editor
   const [newStoryForm, setNewStoryForm] = useState<Omit<LoveStoryItem, 'id'>>({
     dateLabel: '2026',
     title: '',
     location: 'Semarang',
     description: '',
   });
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [editingStoryDraft, setEditingStoryDraft] = useState<
+    Omit<LoveStoryItem, 'id'>
+  >({
+    dateLabel: '',
+    title: '',
+    location: '',
+    description: '',
+  });
+
   const [newPhotoForm, setNewPhotoForm] = useState<Omit<GalleryPhotoItem, 'id'>>({
+    title: '',
+    caption: '',
+    imageUrl: '',
+    category: 'Prewedding',
+  });
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [editingPhotoDraft, setEditingPhotoDraft] = useState<
+    Omit<GalleryPhotoItem, 'id'>
+  >({
     title: '',
     caption: '',
     imageUrl: '',
@@ -1202,6 +1223,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     );
   };
 
+  const commitImmediateSettings = async (nextSettings: WeddingSettings) => {
+    if (typeof window !== 'undefined' && autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    isEditingSettingsRef.current = false;
+    setSettingsFormInternal(nextSettings);
+    await onUpdateSettings(nextSettings);
+  };
+
   const handleAddLoveStoryItem = async () => {
     if (!newStoryForm.title.trim() || !newStoryForm.description.trim()) {
       showToast('Isi Judul Momen dan cerita singkat terlebih dahulu.');
@@ -1224,8 +1255,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showLoveStorySection: true,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     setNewStoryForm({
       dateLabel: '2026',
       title: '',
@@ -1233,6 +1263,59 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       description: '',
     });
     showToast('Momen Kisah Kasih berhasil ditambahkan & ditampilkan!');
+  };
+
+  const handleStartEditLoveStoryItem = (st: LoveStoryItem) => {
+    setEditingStoryId(st.id);
+    setEditingStoryDraft({
+      dateLabel: st.dateLabel,
+      title: st.title,
+      location: st.location || '',
+      description: st.description,
+    });
+  };
+
+  const handleSaveEditLoveStoryItem = async () => {
+    if (!editingStoryId) return;
+    if (!editingStoryDraft.title.trim() || !editingStoryDraft.description.trim()) {
+      showToast('Judul Momen dan cerita singkat wajib diisi.');
+      return;
+    }
+    const nextStory = effectiveLoveStory.map((s) =>
+      s.id === editingStoryId
+        ? {
+            ...s,
+            dateLabel: editingStoryDraft.dateLabel.trim() || '2026',
+            title: editingStoryDraft.title.trim(),
+            location: editingStoryDraft.location?.trim() || '',
+            description: editingStoryDraft.description.trim(),
+          }
+        : s
+    );
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      loveStory: nextStory,
+      updatedBy: adminUser.username,
+    };
+    setEditingStoryId(null);
+    await commitImmediateSettings(nextSettings);
+    showToast('Momen Kisah Kasih berhasil diperbarui!');
+  };
+
+  const handleLoadDefaultLoveStory = async () => {
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      loveStory: DEFAULT_LOVE_STORY_ITEMS.map((item, idx) => ({
+        ...item,
+        id: `story_def_${Date.now().toString(36)}_${idx}`,
+      })),
+      showLoveStorySection: true,
+      updatedBy: adminUser.username,
+    };
+    await commitImmediateSettings(nextSettings);
+    showToast('3 Template Kisah Kasih dimuat! Klik Edit untuk mengubah isinya.');
   };
 
   const handleDeleteLoveStoryItem = async (storyId: string) => {
@@ -1243,8 +1326,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       loveStory: nextStory,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    if (editingStoryId === storyId) {
+      setEditingStoryId(null);
+    }
+    await commitImmediateSettings(nextSettings);
     showToast('Momen Kisah Kasih dihapus.');
   };
 
@@ -1584,8 +1669,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       showGallerySection: true,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    await commitImmediateSettings(nextSettings);
     setNewPhotoForm({
       title: '',
       caption: '',
@@ -1596,6 +1680,103 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     showToast('Foto Galeri berhasil ditambahkan & ditampilkan!');
   };
 
+  const handleStartEditGalleryPhotoItem = (ph: GalleryPhotoItem) => {
+    setEditingPhotoId(ph.id);
+    setEditingPhotoDraft({
+      title: ph.title,
+      caption: ph.caption,
+      imageUrl: ph.imageUrl,
+      category: ph.category,
+      adjustment: ph.adjustment,
+    });
+  };
+
+  const handleSaveEditGalleryPhotoItem = async () => {
+    if (!editingPhotoId) return;
+    if (!editingPhotoDraft.imageUrl.trim()) {
+      showToast('URL foto tidak boleh kosong.');
+      return;
+    }
+    const nextPhotos = effectiveGalleryPhotos.map((p) =>
+      p.id === editingPhotoId
+        ? {
+            ...p,
+            title: editingPhotoDraft.title.trim() || 'Momen Bahagia',
+            caption: editingPhotoDraft.caption.trim(),
+            imageUrl: editingPhotoDraft.imageUrl.trim(),
+            category: editingPhotoDraft.category,
+          }
+        : p
+    );
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      galleryPhotos: nextPhotos,
+      updatedBy: adminUser.username,
+    };
+    setEditingPhotoId(null);
+    await commitImmediateSettings(nextSettings);
+    showToast('Konten foto galeri berhasil diperbarui!');
+  };
+
+  const handleReplaceGalleryPhotoFile = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    photoId: string
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+      return;
+    }
+    try {
+      showToast('Mengompres & mengganti foto...');
+      const dataUrl = await compressImageFileToDataUrl(file, 1400, 0.82);
+      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
+      let updatedPhoto: GalleryPhotoItem | null = null;
+      const nextPhotos = effectiveGalleryPhotos.map((p) => {
+        if (p.id === photoId) {
+          updatedPhoto = {
+            ...p,
+            imageUrl: dataUrl,
+            adjustment: defaultAdj,
+          };
+          return updatedPhoto;
+        }
+        return p;
+      });
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        galleryPhotos: nextPhotos,
+        updatedBy: adminUser.username,
+      };
+      await commitImmediateSettings(nextSettings);
+      if (updatedPhoto) {
+        openGalleryPhotoAdjust(updatedPhoto);
+      }
+      showToast('Foto berhasil diganti! Silakan atur Zoom & Posisi jika perlu.');
+    } catch {
+      showToast('Gagal mengganti file foto.');
+    }
+  };
+
+  const handleLoadDefaultGalleryPhotos = async () => {
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      galleryPhotos: DEFAULT_GALLERY_PHOTOS.map((item, idx) => ({
+        ...item,
+        id: `gal_def_${Date.now().toString(36)}_${idx}`,
+      })),
+      showGallerySection: true,
+      updatedBy: adminUser.username,
+    };
+    await commitImmediateSettings(nextSettings);
+    showToast('4 Foto Template dimuat! Klik "Ganti Foto" atau "Edit" untuk menyesuaikan.');
+  };
+
   const handleDeleteGalleryPhotoItem = async (photoId: string) => {
     const nextPhotos = effectiveGalleryPhotos.filter((p) => p.id !== photoId);
     const nextSettings: WeddingSettings = {
@@ -1604,8 +1785,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       galleryPhotos: nextPhotos,
       updatedBy: adminUser.username,
     };
-    setSettingsForm(nextSettings);
-    await onUpdateSettings(nextSettings);
+    if (editingPhotoId === photoId) {
+      setEditingPhotoId(null);
+    }
+    await commitImmediateSettings(nextSettings);
     showToast('Foto Galeri dihapus.');
   };
 
@@ -5002,47 +5185,175 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 6. EDITOR KISAH KASIH (LOVE STORY TIMELINE) */}
                                       {sec.key === 'showLoveStorySection' && (
                                         <div className="space-y-3">
-                                          <div className="flex items-center gap-1">
-                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                              Timeline Kisah Kasih ({effectiveLoveStory.length})
-                                            </p>
-                                            <InfoTooltip text="Tambahkan momen perjalanan cinta yang akan ditampilkan secara berurutan pada seksi Kisah Kasih di undangan." />
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1">
+                                              <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
+                                                Timeline Kisah Kasih ({effectiveLoveStory.length})
+                                              </p>
+                                              <InfoTooltip text="Tambahkan momen perjalanan cinta, klik Edit pada kartu untuk mengubah isi cerita, atau klik Hapus untuk menghapusnya." />
+                                            </div>
+                                            {effectiveLoveStory.length === 0 && (
+                                              <button
+                                                type="button"
+                                                onClick={handleLoadDefaultLoveStory}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[10px]"
+                                              >
+                                                <Sparkles className="w-3 h-3" />
+                                                <span>Muat 3 Contoh Default</span>
+                                              </button>
+                                            )}
                                           </div>
 
                                           {/* Existing Love Story List */}
                                           {effectiveLoveStory.length === 0 ? (
-                                            <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
-                                              Belum ada cerita perjalanan cinta.
-                                            </p>
+                                            <div className="text-xs text-stone-500 bg-white p-3.5 rounded-lg border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                              <span className="italic">
+                                                Belum ada cerita perjalanan cinta. Tambahkan di bawah atau muat contoh default untuk diedit.
+                                              </span>
+                                            </div>
                                           ) : (
                                             <div className="space-y-2">
-                                              {effectiveLoveStory.map((st) => (
-                                                <div
-                                                  key={st.id}
-                                                  className="p-3 rounded-lg bg-white border border-stone-200 flex items-start justify-between gap-3"
-                                                >
-                                                  <div>
-                                                    <p className="font-bold text-stone-900">
-                                                      {st.dateLabel} — {st.title}{' '}
-                                                      <span className="text-stone-400 font-normal">
-                                                        ({st.location})
-                                                      </span>
-                                                    </p>
-                                                    <p className="text-stone-600 mt-0.5">
-                                                      {st.description}
-                                                    </p>
-                                                  </div>
-                                                  <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                      handleDeleteLoveStoryItem(st.id)
-                                                    }
-                                                    className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 shrink-0"
+                                              {effectiveLoveStory.map((st) => {
+                                                const isEditingThis =
+                                                  editingStoryId === st.id;
+                                                return (
+                                                  <div
+                                                    key={st.id}
+                                                    className="p-3 rounded-lg bg-white border border-stone-200 space-y-2.5"
                                                   >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                                </div>
-                                              ))}
+                                                    {isEditingThis ? (
+                                                      <div className="space-y-2">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                          <input
+                                                            type="text"
+                                                            value={
+                                                              editingStoryDraft.dateLabel
+                                                            }
+                                                            onChange={(e) =>
+                                                              setEditingStoryDraft({
+                                                                ...editingStoryDraft,
+                                                                dateLabel:
+                                                                  e.target.value,
+                                                              })
+                                                            }
+                                                            placeholder="Tahun / Tanggal"
+                                                            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+                                                          />
+                                                          <input
+                                                            type="text"
+                                                            value={
+                                                              editingStoryDraft.title
+                                                            }
+                                                            onChange={(e) =>
+                                                              setEditingStoryDraft({
+                                                                ...editingStoryDraft,
+                                                                title: e.target.value,
+                                                              })
+                                                            }
+                                                            placeholder="Judul Momen"
+                                                            className="px-2.5 py-1.5 rounded-lg border border-stone-300 font-semibold text-xs"
+                                                          />
+                                                          <input
+                                                            type="text"
+                                                            value={
+                                                              editingStoryDraft.location ||
+                                                              ''
+                                                            }
+                                                            onChange={(e) =>
+                                                              setEditingStoryDraft({
+                                                                ...editingStoryDraft,
+                                                                location:
+                                                                  e.target.value,
+                                                              })
+                                                            }
+                                                            placeholder="Kota / Lokasi"
+                                                            className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+                                                          />
+                                                        </div>
+                                                        <textarea
+                                                          rows={2}
+                                                          value={
+                                                            editingStoryDraft.description
+                                                          }
+                                                          onChange={(e) =>
+                                                            setEditingStoryDraft({
+                                                              ...editingStoryDraft,
+                                                              description:
+                                                                e.target.value,
+                                                            })
+                                                          }
+                                                          placeholder="Ceritakan singkat momen tersebut..."
+                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+                                                        />
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              setEditingStoryId(null)
+                                                            }
+                                                            className="px-3 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px]"
+                                                          >
+                                                            Batal
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={
+                                                              handleSaveEditLoveStoryItem
+                                                            }
+                                                            className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-[11px]"
+                                                          >
+                                                            <Check className="w-3 h-3" />
+                                                            <span>Simpan</span>
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    ) : (
+                                                      <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                          <p className="font-bold text-stone-900">
+                                                            {st.dateLabel} — {st.title}{' '}
+                                                            {st.location ? (
+                                                              <span className="text-stone-400 font-normal">
+                                                                ({st.location})
+                                                              </span>
+                                                            ) : null}
+                                                          </p>
+                                                          <p className="text-stone-600 mt-0.5">
+                                                            {st.description}
+                                                          </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              handleStartEditLoveStoryItem(
+                                                                st
+                                                              )
+                                                            }
+                                                            title="Edit momen ini"
+                                                            className="px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] inline-flex items-center gap-1"
+                                                          >
+                                                            <Edit3 className="w-3 h-3" />
+                                                            <span>Edit</span>
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              handleDeleteLoveStoryItem(
+                                                                st.id
+                                                              )
+                                                            }
+                                                            title="Hapus momen ini"
+                                                            className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
+                                                          >
+                                                            <Trash2 className="w-4 h-4" />
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
                                           )}
 
@@ -5152,70 +5463,193 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 7. EDITOR GALERI FOTO PREWEDDING */}
                                       {sec.key === 'showGallerySection' && (
                                         <div className="space-y-3">
-                                          <div className="flex items-center gap-1">
-                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                              Galeri Foto ({effectiveGalleryPhotos.length})
-                                            </p>
-                                            <InfoTooltip text="Tambahkan foto prewedding dari preset atau upload sendiri, lalu klik Atur untuk menyesuaikan zoom & posisi." />
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1">
+                                              <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
+                                                Galeri Foto ({effectiveGalleryPhotos.length})
+                                              </p>
+                                              <InfoTooltip text="Klik 'Ganti Foto' untuk langsung mengganti gambar tanpa mengubah tulisan, klik 'Edit' untuk mengubah judul/caption, atau klik 'Atur' untuk posisi & zoom." />
+                                            </div>
+                                            {effectiveGalleryPhotos.length === 0 && (
+                                              <button
+                                                type="button"
+                                                onClick={handleLoadDefaultGalleryPhotos}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[10px]"
+                                              >
+                                                <Sparkles className="w-3 h-3" />
+                                                <span>Muat 4 Foto Default</span>
+                                              </button>
+                                            )}
                                           </div>
 
                                           {effectiveGalleryPhotos.length === 0 ? (
-                                            <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
-                                              Belum ada foto di galeri prewedding.
+                                            <p className="text-xs text-stone-500 italic bg-white p-3.5 rounded-lg border border-stone-200">
+                                              Belum ada foto di galeri prewedding. Tambahkan foto di bawah atau klik Muat 4 Foto Default untuk langsung mengganti fotonya.
                                             </p>
                                           ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                            <div className="grid grid-cols-1 gap-2.5">
                                               {effectiveGalleryPhotos.map(
-                                                (ph) => (
-                                                  <div
-                                                    key={ph.id}
-                                                    className="p-2.5 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
-                                                  >
-                                                    <div className="flex items-center gap-2.5 min-w-0">
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => openGalleryPhotoAdjust(ph)}
-                                                        title="Klik untuk atur Zoom & Geser posisi foto"
-                                                        className="w-11 h-11 rounded-lg overflow-hidden border border-stone-200 shrink-0 relative"
-                                                      >
-                                                        <img
-                                                          src={ph.imageUrl}
-                                                          alt={ph.title}
-                                                          className="w-full h-full object-cover object-center"
-                                                          style={getPhotoAdjustStyle(ph.adjustment)}
-                                                        />
-                                                      </button>
-                                                      <div className="min-w-0">
-                                                        <p className="font-bold text-stone-900 truncate">
-                                                          {ph.title}
-                                                        </p>
-                                                        <p className="text-[11px] text-stone-500 truncate">
-                                                          {ph.caption}
-                                                        </p>
+                                                (ph) => {
+                                                  const isEditingPhoto =
+                                                    editingPhotoId === ph.id;
+                                                  return (
+                                                    <div
+                                                      key={ph.id}
+                                                      className="p-2.5 rounded-lg bg-white border border-stone-200 space-y-2"
+                                                    >
+                                                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              openGalleryPhotoAdjust(
+                                                                ph
+                                                              )
+                                                            }
+                                                            title="Klik untuk atur Zoom & Geser posisi foto"
+                                                            className="w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 relative"
+                                                          >
+                                                            <img
+                                                              src={ph.imageUrl}
+                                                              alt={ph.title}
+                                                              className="w-full h-full object-cover object-center"
+                                                              style={getPhotoAdjustStyle(
+                                                                ph.adjustment
+                                                              )}
+                                                            />
+                                                          </button>
+                                                          <div className="min-w-0">
+                                                            <p className="font-bold text-stone-900 truncate">
+                                                              {ph.title}
+                                                            </p>
+                                                            <p className="text-[11px] text-stone-500 truncate">
+                                                              {ph.caption}
+                                                            </p>
+                                                          </div>
+                                                        </div>
+                                                        <div className="flex items-center flex-wrap gap-1 shrink-0">
+                                                          {/* 1-Click Replace Photo Only (Keep Title & Caption) */}
+                                                          <label
+                                                            title="Ganti fotonya saja tanpa mengubah judul & tulisan"
+                                                            className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] inline-flex items-center gap-1 cursor-pointer"
+                                                          >
+                                                            <Upload className="w-3 h-3" />
+                                                            <span>Ganti Foto</span>
+                                                            <input
+                                                              type="file"
+                                                              accept="image/*"
+                                                              className="hidden"
+                                                              onChange={(e) =>
+                                                                handleReplaceGalleryPhotoFile(
+                                                                  e,
+                                                                  ph.id
+                                                                )
+                                                              }
+                                                            />
+                                                          </label>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              handleStartEditGalleryPhotoItem(
+                                                                ph
+                                                              )
+                                                            }
+                                                            title="Edit Judul & Caption foto ini"
+                                                            className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] inline-flex items-center gap-1"
+                                                          >
+                                                            <Edit3 className="w-3 h-3" />
+                                                            <span>Edit</span>
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              openGalleryPhotoAdjust(
+                                                                ph
+                                                              )
+                                                            }
+                                                            title="Atur Zoom & Geser Posisi Foto"
+                                                            className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 font-bold text-[10px] inline-flex items-center gap-1"
+                                                          >
+                                                            <Move className="w-3 h-3" />
+                                                            <span>Atur</span>
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              handleDeleteGalleryPhotoItem(
+                                                                ph.id
+                                                              )
+                                                            }
+                                                            title="Hapus foto dari galeri"
+                                                            className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
+                                                          >
+                                                            <Trash2 className="w-4 h-4" />
+                                                          </button>
+                                                        </div>
                                                       </div>
+
+                                                      {isEditingPhoto && (
+                                                        <div className="pt-2 border-t border-stone-100 space-y-2">
+                                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            <input
+                                                              type="text"
+                                                              value={
+                                                                editingPhotoDraft.title
+                                                              }
+                                                              onChange={(e) =>
+                                                                setEditingPhotoDraft({
+                                                                  ...editingPhotoDraft,
+                                                                  title:
+                                                                    e.target.value,
+                                                                })
+                                                              }
+                                                              placeholder="Judul Foto"
+                                                              className="px-2.5 py-1.5 rounded-lg border border-stone-300 font-semibold text-xs"
+                                                            />
+                                                            <input
+                                                              type="text"
+                                                              value={
+                                                                editingPhotoDraft.caption
+                                                              }
+                                                              onChange={(e) =>
+                                                                setEditingPhotoDraft({
+                                                                  ...editingPhotoDraft,
+                                                                  caption:
+                                                                    e.target.value,
+                                                                })
+                                                              }
+                                                              placeholder="Caption Singkat"
+                                                              className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
+                                                            />
+                                                          </div>
+                                                          <div className="flex items-center justify-end gap-1.5">
+                                                            <button
+                                                              type="button"
+                                                              onClick={() =>
+                                                                setEditingPhotoId(
+                                                                  null
+                                                                )
+                                                              }
+                                                              className="px-3 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px]"
+                                                            >
+                                                              Batal
+                                                            </button>
+                                                            <button
+                                                              type="button"
+                                                              onClick={
+                                                                handleSaveEditGalleryPhotoItem
+                                                              }
+                                                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-[11px]"
+                                                            >
+                                                              <Check className="w-3 h-3" />
+                                                              <span>Simpan</span>
+                                                            </button>
+                                                          </div>
+                                                        </div>
+                                                      )}
                                                     </div>
-                                                    <div className="flex items-center gap-1 shrink-0">
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => openGalleryPhotoAdjust(ph)}
-                                                        title="Atur Zoom & Geser Posisi Foto"
-                                                        className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] inline-flex items-center gap-1"
-                                                      >
-                                                        <Move className="w-3 h-3" />
-                                                        <span>Atur</span>
-                                                      </button>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          handleDeleteGalleryPhotoItem(ph.id)
-                                                        }
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
-                                                      >
-                                                        <Trash2 className="w-4 h-4" />
-                                                      </button>
-                                                    </div>
-                                                  </div>
-                                                )
+                                                  );
+                                                }
                                               )}
                                             </div>
                                           )}

@@ -151,65 +151,33 @@ function WeddingAppContent() {
       });
 
     (async () => {
-      // 1. Load full state (including high-res photos & uploaded MP3s) from IndexedDB
+      // 1. Load local cache only for instant initial render before Supabase responds
       const lsState = getInitialClientState();
       const idbState = await loadClientStateFromIndexedDB();
 
       const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
       const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
       const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
-      const bestLocalTime = Math.max(lsTime, idbTime);
 
-      if (isMounted && bestLocalTime > 0) {
-        setState(bestLocal);
-      }
-
-      // 2. Fetch both Supabase Cloud & Next.js Server state in parallel
-      const [cloudResult, serverState] = await Promise.all([
-        loadStateFromSupabase(),
-        fetch('/api/wedding', { cache: 'no-store' })
-          .then((r) => r.json())
-          .then((j) => (j.success && j.data ? (j.data as WeddingDatabaseSchema) : null))
-          .catch(() => null),
-      ]);
-
+      // 2. Fetch from Supabase Cloud (Primary 100% Main Database)
+      const cloudResult = await loadStateFromSupabase();
       if (!isMounted) return;
 
       const cloudState = cloudResult.state;
-      const cloudTime = new Date(cloudState?.lastSyncedAt || 0).getTime() || 0;
-      const serverTime = new Date(serverState?.lastSyncedAt || 0).getTime() || 0;
 
-      // Determine the newest state across Browser (IndexedDB), Supabase Cloud, and Next.js Server
-      let winner: WeddingDatabaseSchema = bestLocal;
-      let winnerTime = bestLocalTime;
-
-      if (cloudState && cloudTime >= winnerTime) {
-        winner = mergePreservingLocalMedia(cloudState, bestLocal);
-        winnerTime = cloudTime;
-      }
-      if (serverState && serverTime > winnerTime) {
-        winner = mergePreservingLocalMedia(serverState, bestLocal);
-        winnerTime = serverTime;
-      }
-
-      setState(winner);
-      saveClientState(winner, false);
-
-      // If our winning state is newer than Supabase Cloud (and the table exists), push it to Supabase Cloud
-      if (cloudResult.tableExists && (!cloudState || winnerTime > cloudTime)) {
-        void saveStateToSupabase(winner);
-      }
-
-      // If our winning state is newer than Next.js Server, push it to Next.js Server
-      if (!serverState || winnerTime > serverTime) {
-        void fetch('/api/wedding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'IMPORT_BACKUP',
-            payload: stripLargeAudioForServerPayload(winner),
-          }),
-        }).catch(() => {});
+      if (cloudState) {
+        // Supabase row exists -> Supabase is 100% the source of truth
+        const merged = mergePreservingLocalMedia(cloudState, bestLocal);
+        setState(merged);
+        saveClientState(merged, false);
+      } else if (cloudResult.tableExists) {
+        // Table exists in Supabase but no 'main' row yet -> initialize Supabase with current clean state
+        setState(bestLocal);
+        saveClientState(bestLocal, false);
+        void saveStateToSupabase(bestLocal);
+      } else {
+        // Offline / table not created yet fallback
+        setState(bestLocal);
       }
     })();
 
@@ -229,24 +197,27 @@ function WeddingAppContent() {
         });
 
         if (res.status === 401 && action !== 'SUBMIT_RSVP') {
-          // Even if server cookie expired, local state is already saved in IndexedDB & localStorage
           return null;
         }
 
         const json = await res.json();
         if (json.success && json.data) {
-          setState((prev) => {
-            const merged = mergePreservingLocalMedia(
-              json.data as WeddingDatabaseSchema,
-              prev
-            );
-            saveClientState(merged, false);
-            return merged;
-          });
+          // Only update client state from server response for public SUBMIT_RSVP;
+          // for all Admin actions, client state is already updated and synced directly to Supabase.
+          if (action === 'SUBMIT_RSVP') {
+            setState((prev) => {
+              const merged = mergePreservingLocalMedia(
+                json.data as WeddingDatabaseSchema,
+                prev
+              );
+              saveClientState(merged, true);
+              return merged;
+            });
+          }
           return json.data;
         }
       } catch {
-        // Offline fallback: local optimistic state is already saved in IndexedDB & localStorage
+        // Offline fallback: state is already saved in Supabase & IndexedDB
       }
       return null;
     },
