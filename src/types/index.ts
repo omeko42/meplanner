@@ -379,12 +379,22 @@ export interface WeddingSettings {
   commercialCryptoNetwork?: string;
   commercialPaymentChannels?: CommercialPaymentChannel[];
   commercialPayments?: CommercialPaymentTransaction[];
+  commercialGatewayConfig?: CommercialGatewayConfig;
   autoHideFlaggedWishes?: boolean; // default true
   moderationBlockedKeywords?: string; // custom comma-separated negative keywords
   invitationAnalytics?: InvitationAnalyticsData;
 
   updatedAt: string;
   updatedBy: string;
+}
+
+export interface CommercialGatewayConfig {
+  paypalClientId?: string;
+  midtransClientKey?: string;
+  midtransEnvironment?: 'sandbox' | 'production';
+  enableWeb3AutoConnect?: boolean;
+  enableOnChainAutoVerify?: boolean;
+  autoProvisionClientOnPaid?: boolean;
 }
 
 export type CommercialPaymentCategory =
@@ -443,6 +453,15 @@ export interface CommercialPaymentTransaction {
   verifiedAt?: string;
   verifiedBy?: string;
   provisionedClientId?: string;
+  verificationMethod?:
+    | 'ONCHAIN_RPC'
+    | 'WEB3_WALLET'
+    | 'PAYPAL_SDK'
+    | 'MIDTRANS_SNAP'
+    | 'GATEWAY_AUTO'
+    | 'MANUAL_RECEIPT';
+  onChainVerified?: boolean;
+  blockchainExplorerUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

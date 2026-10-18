@@ -254,6 +254,9 @@ function projectStateForClient(
       commercialPayments:
         rootState.settings.commercialPayments ||
         ws.settings.commercialPayments,
+      commercialGatewayConfig:
+        rootState.settings.commercialGatewayConfig ||
+        ws.settings.commercialGatewayConfig,
     },
     tasks: ws.tasks || [],
     guests: ws.guests || [],
@@ -491,6 +494,9 @@ function WeddingAppContent() {
             commercialPayments:
               updatedProjected.settings.commercialPayments ||
               prevRoot.settings.commercialPayments,
+            commercialGatewayConfig:
+              updatedProjected.settings.commercialGatewayConfig ||
+              prevRoot.settings.commercialGatewayConfig,
             clientWorkspaces: {
               ...(prevRoot.settings.clientWorkspaces || {}),
               ...(updatedProjected.settings.clientWorkspaces || {}),
@@ -1290,11 +1296,76 @@ function WeddingAppContent() {
           nextList = [mergedTx, ...currentList];
         }
 
+        let nextClientGroups = Array.isArray(prev.settings.clientGroups)
+          ? [...prev.settings.clientGroups]
+          : [];
+
+        if (
+          (mergedTx.status === 'PAID_VERIFIED' ||
+            mergedTx.status === 'PENDING_VERIFICATION') &&
+          prev.settings.commercialGatewayConfig?.autoProvisionClientOnPaid !==
+            false &&
+          mergedTx.buyerCoupleName?.trim()
+        ) {
+          const existingGroup = nextClientGroups.find(
+            (g) =>
+              g.notes?.includes(mergedTx.idempotencyKey) ||
+              (mergedTx.provisionedClientId &&
+                g.id === mergedTx.provisionedClientId)
+          );
+          if (existingGroup) {
+            mergedTx = {
+              ...mergedTx,
+              provisionedClientId: existingGroup.id,
+            };
+            nextList = nextList.map((item) =>
+              item.idempotencyKey === mergedTx.idempotencyKey ||
+              item.id === mergedTx.id
+                ? mergedTx
+                : item
+            );
+          } else if (mergedTx.status === 'PAID_VERIFIED') {
+            const cleanCouple = mergedTx.buyerCoupleName.trim();
+            const rawCode =
+              cleanCouple
+                .replace(/[^a-zA-Z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .toUpperCase()
+                .slice(0, 18) ||
+              `VIP_${Date.now().toString(36).slice(-4).toUpperCase()}`;
+            const newGroup: ClientGroupItem = {
+              id: `client-${Date.now().toString(36)}`,
+              clientCode: rawCode,
+              clientName: `Client • ${cleanCouple}`,
+              coupleLabel: cleanCouple,
+              packageTier:
+                mergedTx.packageTier === 'ROYAL VIP'
+                  ? 'ROYAL_VIP'
+                  : mergedTx.packageTier,
+              status: 'ACTIVE',
+              notes: `Auto-provisioned dari Order ${mergedTx.orderId} (${mergedTx.idempotencyKey})`,
+              createdAt: nowIso,
+            };
+            nextClientGroups = [...nextClientGroups, newGroup];
+            mergedTx = {
+              ...mergedTx,
+              provisionedClientId: newGroup.id,
+            };
+            nextList = nextList.map((item) =>
+              item.idempotencyKey === mergedTx.idempotencyKey ||
+              item.id === mergedTx.id
+                ? mergedTx
+                : item
+            );
+          }
+        }
+
         const nextState: WeddingDatabaseSchema = {
           ...prev,
           settings: {
             ...prev.settings,
             commercialPayments: nextList,
+            clientGroups: nextClientGroups,
             updatedAt: nowIso,
           },
           lastSyncedAt: nowIso,
@@ -1315,6 +1386,12 @@ function WeddingAppContent() {
               ? (capturedNextState as WeddingDatabaseSchema).settings
                   .commercialPayments
               : [mergedTx],
+            ...(capturedNextState
+              ? {
+                  clientGroups: (capturedNextState as WeddingDatabaseSchema)
+                    .settings.clientGroups,
+                }
+              : {}),
           }),
         ]);
 

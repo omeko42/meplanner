@@ -9916,8 +9916,229 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       };
                     };
 
+                    const gatewayCfg =
+                      settingsForm.commercialGatewayConfig ??
+                      state.settings.commercialGatewayConfig ??
+                      {};
+
                     return (
                       <div className="space-y-6">
+                        {/* =======================================================
+                            SECTION 0: PLUGIN & VERIFIKASI OTOMATIS KELAS DUNIA
+                           ======================================================= */}
+                        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF3E3]/90 via-[#FFFDF9] to-white border-2 border-[#D4AF37]/55 shadow-2xs space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4AF37]/30 pb-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] text-[10px] font-extrabold uppercase tracking-wider">
+                                  Zero-Cost Payment Engine
+                                </span>
+                                <h3 className="text-xs sm:text-sm font-extrabold text-stone-900">
+                                  Plugin &amp; Verifikasi Otomatis Kelas Dunia (Web3 On-Chain, PayPal SDK &amp; Midtrans Snap — 100% Gratis)
+                                </h3>
+                              </div>
+                              <p className="text-[11px] text-stone-600 mt-0.5">
+                                Aktifkan koneksi dompet Web3 sekali klik, verifikasi mutasi blockchain publik otomatis (0% fee), serta integrasi opsional PayPal Smart Buttons &amp; Midtrans Snap.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 3 Interactive Feature Toggles */}
+                          <div className="grid grid-cols-1 gap-2.5">
+                            {[
+                              {
+                                key: 'enableWeb3AutoConnect' as const,
+                                title:
+                                  '🦊 Web3 One-Click Wallet Connect (MetaMask / TrustWallet / TronLink)',
+                                desc: 'Memungkinkan klien membayar USDT (TRC20 / BEP20 / ERC20) secara instan dari dompet ekstensi/mobile dan otomatis menangkap TXID transaksi.',
+                                checked:
+                                  gatewayCfg.enableWeb3AutoConnect !== false,
+                              },
+                              {
+                                key: 'enableOnChainAutoVerify' as const,
+                                title:
+                                  '⛓️ On-Chain Blockchain RPC Auto-Verifier (TronGrid TRC20 / BSC BEP20 / ETH ERC20 — Gratis 0% Fee)',
+                                desc: 'Memverifikasi validitas hash transaksi (TXID) langsung ke node publik blockchain tanpa biaya perantara dan otomatis mengubah status menjadi PAID_VERIFIED.',
+                                checked:
+                                  gatewayCfg.enableOnChainAutoVerify !== false,
+                              },
+                              {
+                                key: 'autoProvisionClientOnPaid' as const,
+                                title:
+                                  '🚀 Auto-Provisioning Grup Klien Otomatis Saat Status PAID_VERIFIED',
+                                desc: 'Otomatis membuat & mengaktifkan Grup Klien baru saat pembayaran terverifikasi lunas secara idempoten (tanpa duplikasi).',
+                                checked:
+                                  gatewayCfg.autoProvisionClientOnPaid !==
+                                  false,
+                              },
+                            ].map((toggle) => (
+                              <label
+                                key={toggle.key}
+                                className="p-3 rounded-xl bg-white border border-stone-200/90 hover:border-[#D4AF37]/60 flex items-start justify-between gap-3 cursor-pointer transition-all"
+                              >
+                                <div className="space-y-0.5">
+                                  <p className="text-xs font-extrabold text-stone-900">
+                                    {toggle.title}
+                                  </p>
+                                  <p className="text-[11px] text-stone-500 leading-relaxed">
+                                    {toggle.desc}
+                                  </p>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={toggle.checked}
+                                  onChange={(e) =>
+                                    setSettingsForm((prev) => ({
+                                      ...prev,
+                                      commercialGatewayConfig: {
+                                        ...(prev.commercialGatewayConfig ??
+                                          state.settings
+                                            .commercialGatewayConfig ??
+                                          {}),
+                                        [toggle.key]: e.target.checked,
+                                      },
+                                    }))
+                                  }
+                                  className="w-4 h-4 mt-0.5 accent-[#B68D40] rounded cursor-pointer shrink-0"
+                                />
+                              </label>
+                            ))}
+                          </div>
+
+                          {/* Optional SDK Keys Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                🌐 PayPal Client ID (Opsional — untuk Smart Payment Buttons Auto-Capture):
+                              </label>
+                              <input
+                                type="text"
+                                value={gatewayCfg.paypalClientId || ''}
+                                onChange={(e) =>
+                                  setSettingsForm((prev) => ({
+                                    ...prev,
+                                    commercialGatewayConfig: {
+                                      ...(prev.commercialGatewayConfig ??
+                                        state.settings
+                                          .commercialGatewayConfig ??
+                                        {}),
+                                      paypalClientId: e.target.value,
+                                    },
+                                  }))
+                                }
+                                placeholder="Kosongkan untuk mode PayPal Link/QR standar"
+                                className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                🇮🇩 Midtrans Snap Client Key (Opsional — untuk Popup QRIS &amp; Virtual Account Otomatis):
+                              </label>
+                              <input
+                                type="text"
+                                value={gatewayCfg.midtransClientKey || ''}
+                                onChange={(e) =>
+                                  setSettingsForm((prev) => ({
+                                    ...prev,
+                                    commercialGatewayConfig: {
+                                      ...(prev.commercialGatewayConfig ??
+                                        state.settings
+                                          .commercialGatewayConfig ??
+                                        {}),
+                                      midtransClientKey: e.target.value,
+                                    },
+                                  }))
+                                }
+                                placeholder="Contoh: SB-Mid-client-xxxx / Mid-client-xxxx"
+                                className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                Mode Midtrans:
+                              </label>
+                              <select
+                                value={
+                                  gatewayCfg.midtransEnvironment || 'sandbox'
+                                }
+                                onChange={(e) =>
+                                  setSettingsForm((prev) => ({
+                                    ...prev,
+                                    commercialGatewayConfig: {
+                                      ...(prev.commercialGatewayConfig ??
+                                        state.settings
+                                          .commercialGatewayConfig ??
+                                        {}),
+                                      midtransEnvironment: e.target.value as
+                                        | 'sandbox'
+                                        | 'production',
+                                    },
+                                  }))
+                                }
+                                className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800"
+                              >
+                                <option value="sandbox">
+                                  🧪 Sandbox Gratis (Testing)
+                                </option>
+                                <option value="production">
+                                  🟢 Production Live (Transaksi Nyata)
+                                </option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  commercialGatewayConfig: {
+                                    enableWeb3AutoConnect:
+                                      gatewayCfg.enableWeb3AutoConnect !==
+                                      false,
+                                    enableOnChainAutoVerify:
+                                      gatewayCfg.enableOnChainAutoVerify !==
+                                      false,
+                                    autoProvisionClientOnPaid:
+                                      gatewayCfg.autoProvisionClientOnPaid !==
+                                      false,
+                                    paypalClientId: (
+                                      gatewayCfg.paypalClientId || ''
+                                    ).trim(),
+                                    midtransClientKey: (
+                                      gatewayCfg.midtransClientKey || ''
+                                    ).trim(),
+                                    midtransEnvironment:
+                                      gatewayCfg.midtransEnvironment ||
+                                      'sandbox',
+                                  },
+                                  updatedBy: adminUser.username,
+                                };
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                appendAuditLog({
+                                  actor: adminUser.username,
+                                  module: 'SUPERADMIN_GATEWAY_PLUGIN',
+                                  action: 'SIMPAN',
+                                  status: 'SUCCESS',
+                                  summary:
+                                    'Menyimpan Konfigurasi Plugin Payment Gateway Otomatis (Web3, On-Chain RPC, PayPal SDK & Midtrans Snap)',
+                                });
+                                showToast(
+                                  '✓ Konfigurasi Plugin Payment Gateway berhasil disimpan!'
+                                );
+                              }}
+                              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs transition-all"
+                            >
+                              Simpan Konfigurasi Plugin Gateway
+                            </button>
+                          </div>
+                        </div>
+
                         {/* =======================================================
                             SECTION A: MANAJEMEN WALLET & CHANNEL PEMBAYARAN SUPERADMIN
                            ======================================================= */}
@@ -11276,6 +11497,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         cls: 'bg-amber-100 text-amber-900 border-amber-300',
                                       };
 
+                                const verifBadge =
+                                  tx.verificationMethod === 'ONCHAIN_RPC'
+                                    ? {
+                                        label: '⛓️ On-Chain RPC Verified',
+                                        cls: 'bg-amber-100 text-amber-900 border-amber-300',
+                                      }
+                                    : tx.verificationMethod === 'WEB3_WALLET'
+                                    ? {
+                                        label: '🦊 Web3 Wallet',
+                                        cls: 'bg-orange-100 text-orange-900 border-orange-300',
+                                      }
+                                    : tx.verificationMethod === 'PAYPAL_SDK'
+                                    ? {
+                                        label: '🌐 PayPal SDK',
+                                        cls: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+                                      }
+                                    : tx.verificationMethod === 'MIDTRANS_SNAP'
+                                    ? {
+                                        label: '🇮🇩 Midtrans Snap',
+                                        cls: 'bg-sky-100 text-sky-900 border-sky-300',
+                                      }
+                                    : null;
+
                                 return (
                                   <div
                                     key={tx.id}
@@ -11292,6 +11536,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           >
                                             {statusConfig.label}
                                           </span>
+                                          {verifBadge && (
+                                            <span
+                                              className={`px-2 py-0.5 rounded-full border text-[10px] font-extrabold ${verifBadge.cls}`}
+                                            >
+                                              {verifBadge.label}
+                                            </span>
+                                          )}
+                                          {tx.provisionedClientId && (
+                                            <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold">
+                                              🚀 Klien Aktif:{' '}
+                                              {tx.provisionedClientId}
+                                            </span>
+                                          )}
                                           <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 font-mono text-[10px] text-stone-600">
                                             Idempotency Key: {tx.idempotencyKey}
                                           </span>
@@ -11332,6 +11589,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           Ref/TXID:{' '}
                                           {tx.paymentReference || '-'}
                                         </p>
+                                        {tx.blockchainExplorerUrl && (
+                                          <a
+                                            href={tx.blockchainExplorerUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 mt-1 text-[10px] font-extrabold text-amber-800 hover:text-amber-950 underline"
+                                          >
+                                            <span>
+                                              Lihat Bukti di Blockchain Explorer ↗
+                                            </span>
+                                          </a>
+                                        )}
                                       </div>
                                       <div>
                                         <p className="text-stone-500">
@@ -11363,6 +11632,78 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             onClick={async () => {
                                               const nowIso =
                                                 new Date().toISOString();
+                                              const currentClientGroups: ClientGroupItem[] =
+                                                settingsForm.clientGroups &&
+                                                settingsForm.clientGroups
+                                                  .length > 0
+                                                  ? settingsForm.clientGroups
+                                                  : state.settings
+                                                      .clientGroups &&
+                                                    state.settings.clientGroups
+                                                      .length > 0
+                                                  ? state.settings.clientGroups
+                                                  : effectiveClientGroups;
+
+                                              let provisionedId =
+                                                tx.provisionedClientId;
+                                              let nextClientGroups = [
+                                                ...currentClientGroups,
+                                              ];
+
+                                              if (
+                                                !provisionedId &&
+                                                tx.buyerCoupleName?.trim()
+                                              ) {
+                                                // Idempotently check if a ClientGroupItem already exists for this idempotencyKey or orderId
+                                                const existingGroup =
+                                                  currentClientGroups.find(
+                                                    (cg) =>
+                                                      cg.notes?.includes(
+                                                        tx.idempotencyKey
+                                                      ) ||
+                                                      cg.notes?.includes(
+                                                        tx.orderId
+                                                      )
+                                                  );
+                                                if (existingGroup) {
+                                                  provisionedId =
+                                                    existingGroup.id;
+                                                } else {
+                                                  const safeCode =
+                                                    tx.buyerCoupleName
+                                                      .toUpperCase()
+                                                      .replace(
+                                                        /[^A-Z0-9]/g,
+                                                        ''
+                                                      )
+                                                      .slice(0, 8) || 'CLIENT';
+                                                  const newClient: ClientGroupItem =
+                                                    {
+                                                      id: `client-${safeCode.toLowerCase()}-${Date.now()
+                                                        .toString(36)
+                                                        .slice(-4)}`,
+                                                      clientCode: safeCode,
+                                                      clientName: `Client • ${tx.buyerCoupleName.trim()}`,
+                                                      coupleLabel:
+                                                        tx.buyerCoupleName.trim(),
+                                                      packageTier:
+                                                        tx.packageTier ===
+                                                        'ROYAL VIP'
+                                                          ? 'ROYAL_VIP'
+                                                          : tx.packageTier,
+                                                      status: 'ACTIVE',
+                                                      eventDate: '2026-12-19',
+                                                      notes: `Auto-Provisioned • Order ${tx.orderId} (${tx.idempotencyKey}) • ${tx.buyerEmail}`,
+                                                      createdAt: nowIso,
+                                                    };
+                                                  provisionedId = newClient.id;
+                                                  nextClientGroups = [
+                                                    ...currentClientGroups,
+                                                    newClient,
+                                                  ];
+                                                }
+                                              }
+
                                               const updatedTx: CommercialPaymentTransaction =
                                                 {
                                                   ...tx,
@@ -11370,6 +11711,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   verifiedAt: nowIso,
                                                   verifiedBy:
                                                     adminUser.username,
+                                                  provisionedClientId:
+                                                    provisionedId,
                                                   lastErrorOrTimeoutReason:
                                                     undefined,
                                                   updatedAt: nowIso,
@@ -11380,13 +11723,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     ? updatedTx
                                                     : item
                                                 );
-                                              await savePaymentsToDatabase(
-                                                nextList,
-                                                updatedTx,
-                                                `Memverifikasi lunas transaksi ${tx.orderId} (${tx.buyerCoupleName})`
+
+                                              const nextSettings: WeddingSettings =
+                                                {
+                                                  ...state.settings,
+                                                  ...settingsForm,
+                                                  commercialPayments: nextList,
+                                                  clientGroups:
+                                                    nextClientGroups,
+                                                  updatedBy: adminUser.username,
+                                                };
+                                              setSettingsFormInternal(
+                                                nextSettings
                                               );
+                                              await commitImmediateSettings(
+                                                nextSettings
+                                              );
+                                              await upsertCommercialPaymentToSupabase(
+                                                updatedTx
+                                              );
+                                              appendAuditLog({
+                                                actor: adminUser.username,
+                                                module:
+                                                  'SUPERADMIN_PAYMENT_LEDGER',
+                                                action: 'SIMPAN',
+                                                status: 'SUCCESS',
+                                                summary: `Memverifikasi lunas transaksi ${tx.orderId} & auto-provisioning grup klien (${tx.buyerCoupleName})`,
+                                              });
                                               showToast(
-                                                `✓ Order ${tx.orderId} diverifikasi LUNAS (PAID_VERIFIED)!`
+                                                '✓ Pembayaran diverifikasi LUNAS & Grup Klien otomatis diaktifkan!'
                                               );
                                             }}
                                             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"

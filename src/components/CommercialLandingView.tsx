@@ -25,6 +25,7 @@ import {
   Building2,
   Lock,
   ArrowLeft,
+  ArrowRight,
   RefreshCw,
   AlertTriangle,
   FileCheck2,
@@ -36,6 +37,7 @@ import {
   ClientWorkspaceData,
   CommercialPaymentCategory,
   CommercialPaymentChannel,
+  CommercialPaymentStatus,
   CommercialPaymentTransaction,
   WeddingGuest,
   WeddingSettings,
@@ -44,12 +46,41 @@ import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
 
 const IDEMPOTENT_TX_STORAGE_KEY = 'mwm_active_idempotent_tx_v1';
 
+type ExtendedPaymentTransaction = CommercialPaymentTransaction & {
+  onChainVerified?: boolean;
+  blockchainExplorerUrl?: string;
+};
+
+interface Web3Window {
+  ethereum?: {
+    request: (args: {
+      method: string;
+      params?: unknown[];
+    }) => Promise<unknown>;
+  };
+  tronWeb?: {
+    defaultAddress?: {
+      base58?: string;
+    };
+  };
+}
+
 function computeDeterministicHash(input: string): string {
   let hash = 5381;
   for (let i = 0; i < input.length; i += 1) {
     hash = (hash * 33) ^ input.charCodeAt(i);
   }
   return (hash >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+}
+
+function formatCountdown(totalSeconds: number): string {
+  const safe = Math.max(0, totalSeconds);
+  const hrs = Math.floor(safe / 3600);
+  const mins = Math.floor((safe % 3600) / 60);
+  const secs = safe % 60;
+  return [hrs, mins, secs]
+    .map((n) => String(n).padStart(2, '0'))
+    .join(':');
 }
 
 interface CommercialLandingViewProps {
@@ -91,8 +122,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   );
   const [copiedPaymentKey, setCopiedPaymentKey] = useState<string | null>(null);
 
-  // Dedicated Checkout Page View State (opens when user clicks a package card)
+  // Dedicated Checkout Page View State & Automatic 3-Step Payment Wizard State
   const [isCheckoutPageOpen, setIsCheckoutPageOpen] = useState(false);
+  const [checkoutWizardStep, setCheckoutWizardStep] = useState<1 | 2 | 3>(1);
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(86399);
+  const [isConnectingWeb3, setIsConnectingWeb3] = useState(false);
+  const [connectedWeb3Address, setConnectedWeb3Address] = useState<
+    string | null
+  >(null);
+  const [verificationFeedback, setVerificationFeedback] = useState<
+    string | null
+  >(null);
 
   // Selected package tier & idempotent checkout state
   const [selectedCheckoutTier, setSelectedCheckoutTier] = useState<
@@ -105,9 +145,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [simulateNetworkTimeout, setSimulateNetworkTimeout] = useState(false);
   const [activeTransaction, setActiveTransaction] =
-    useState<CommercialPaymentTransaction | null>(null);
+    useState<ExtendedPaymentTransaction | null>(null);
   const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // 24-hour price lock countdown timer during Step 2
+  useEffect(() => {
+    if (!isCheckoutPageOpen || checkoutWizardStep !== 2) return;
+    const timer = window.setInterval(() => {
+      setCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 86399));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isCheckoutPageOpen, checkoutWizardStep]);
 
   // Dynamic Superadmin Wallets / Payment Channels Strictly Filtered by Market (lang)
   const allConfiguredChannels = useMemo<CommercialPaymentChannel[]>(() => {
@@ -178,7 +227,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     try {
       const raw = window.localStorage.getItem(IDEMPOTENT_TX_STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as CommercialPaymentTransaction;
+      const parsed = JSON.parse(raw) as ExtendedPaymentTransaction;
       if (parsed && parsed.idempotencyKey) {
         setActiveTransaction(parsed);
         if (parsed.buyerEmail) setBuyerEmail(parsed.buyerEmail);
@@ -209,9 +258,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         item.idempotencyKey === currentIdempotencyKey ||
         (activeTransaction &&
           item.idempotencyKey === activeTransaction.idempotencyKey)
-    );
+    ) as ExtendedPaymentTransaction | undefined;
     if (matched) {
-      setActiveTransaction(matched);
+      setActiveTransaction((prev) => ({
+        ...prev,
+        ...matched,
+      }));
       if (
         matched.status === 'PENDING_VERIFICATION' ||
         matched.status === 'PAID_VERIFIED'
@@ -271,6 +323,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const whatsappUrl = /^https?:\/\//i.test(rawWa)
     ? rawWa
     : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
+
+  const rawPaypalConfig = primarySettings.commercialPaypalUrl?.trim() || '';
+  const paypalHref =
+    /^https?:\/\//i.test(rawPaypalConfig) &&
+    rawPaypalConfig !== 'https://paypal.me/omeko11'
+      ? rawPaypalConfig
+      : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
 
   // Official post-payment business email (only revealed once hasCompletedPayment === true)
   const businessEmail =
@@ -409,6 +468,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   ) => {
     setSelectedCheckoutTier(tier);
     setIsCheckoutPageOpen(true);
+    setCheckoutError(null);
+    setVerificationFeedback(null);
+    if (hasCompletedPayment) {
+      setCheckoutWizardStep(3);
+    } else {
+      setCheckoutWizardStep(1);
+    }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -431,7 +497,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     }
   };
 
-  const persistLocalTransaction = (tx: CommercialPaymentTransaction) => {
+  const persistLocalTransaction = (tx: ExtendedPaymentTransaction) => {
     setActiveTransaction(tx);
     if (typeof window !== 'undefined') {
       try {
@@ -445,6 +511,196 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     }
   };
 
+  // STEP 1 -> STEP 2: Create INITIATED Idempotent Invoice & Automatically Advance to Step 2
+  const handleProceedToStep2 = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedCouple = buyerCoupleName.trim();
+    const trimmedEmail = buyerEmail.trim();
+
+    if (!trimmedCouple) {
+      setCheckoutError(
+        lang === 'ID'
+          ? 'Mohon isi Nama Pasangan Mempelai terlebih dahulu (misal: Romeo & Juliet).'
+          : 'Please enter the Couple Name first (e.g. Romeo & Juliet).'
+      );
+      return;
+    }
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setCheckoutError(
+        lang === 'ID'
+          ? 'Mohon masukkan alamat email aktif Anda untuk pengiriman 4 Akun Default & Lisensi.'
+          : 'Please enter a valid active email address for your 4 Core Accounts & License delivery.'
+      );
+      return;
+    }
+    if (!selectedChannel) {
+      setCheckoutError(
+        lang === 'ID'
+          ? 'Pilih salah satu metode pembayaran di bawah.'
+          : 'Please select a payment method below.'
+      );
+      return;
+    }
+
+    setCheckoutError(null);
+    setVerificationFeedback(null);
+
+    const nowIso = new Date().toISOString();
+    const currency: 'IDR' | 'USD' | 'USDT' =
+      lang === 'ID'
+        ? 'IDR'
+        : selectedChannel.category === 'CRYPTO'
+          ? 'USDT'
+          : 'USD';
+
+    const initiatedTx: ExtendedPaymentTransaction = {
+      id: `tx-${currentOrderId.toLowerCase()}`,
+      orderId: currentOrderId,
+      idempotencyKey: currentIdempotencyKey,
+      packageTier: selectedCheckoutTier,
+      marketLang: lang,
+      currency,
+      amountNumeric: activeSelectedPackage.amountNumeric,
+      amountDisplay: activeSelectedPackage.priceMain,
+      channelId: selectedChannel.id,
+      channelCategory: selectedChannel.category,
+      channelProviderName: selectedChannel.providerName,
+      channelTargetAccount: selectedChannel.accountOrWalletAddress,
+      buyerEmail: trimmedEmail,
+      buyerCoupleName: trimmedCouple,
+      buyerWhatsapp: buyerWhatsapp.trim() || undefined,
+      paymentReference: paymentReference.trim() || undefined,
+      status: 'INITIATED',
+      retryCount: 0,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    persistLocalTransaction(initiatedTx);
+    if (onUpsertCommercialPayment) {
+      void onUpsertCommercialPayment(initiatedTx);
+    }
+
+    setCheckoutWizardStep(2);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Plugin 1 Helper: One-Click Web3 Wallet Connect (MetaMask / TrustWallet / TronLink)
+  const handleConnectAndPayWeb3 = async () => {
+    if (!selectedChannel) return;
+    setIsConnectingWeb3(true);
+    setCheckoutError(null);
+    setVerificationFeedback(null);
+
+    try {
+      const w =
+        typeof window !== 'undefined'
+          ? (window as unknown as Web3Window)
+          : undefined;
+
+      // Check TronLink if TRC20
+      const isTrc20 = (selectedChannel.networkOrBranch || '')
+        .toUpperCase()
+        .includes('TRC20');
+      if (isTrc20 && w?.tronWeb?.defaultAddress?.base58) {
+        const tronAddr = w.tronWeb.defaultAddress.base58;
+        setConnectedWeb3Address(tronAddr);
+        handleCopyPaymentValue(
+          'target-wallet',
+          selectedChannel.accountOrWalletAddress
+        );
+        const autoRef = `TRC20-${tronAddr.slice(0, 6)}-${currentOrderId}`;
+        if (!paymentReference.trim()) {
+          setPaymentReference(autoRef);
+        }
+        setVerificationFeedback(
+          lang === 'ID'
+            ? `Wallet TronLink terhubung (${tronAddr.slice(0, 6)}...${tronAddr.slice(-4)}). Alamat tujuan TRC20 telah disalin—silakan konfirmasi pengiriman USDT Anda lalu klik Verifikasi Otomatis di bawah.`
+            : `TronLink Wallet connected (${tronAddr.slice(0, 6)}...${tronAddr.slice(-4)}). Target TRC20 address copied—confirm your USDT transfer and click Auto-Verify below.`
+        );
+        setIsConnectingWeb3(false);
+        return;
+      }
+
+      // Check EVM Wallet (MetaMask / TrustWallet / Coinbase Wallet / Rabby)
+      if (w?.ethereum) {
+        const accounts = (await w.ethereum.request({
+          method: 'eth_requestAccounts',
+        })) as string[];
+        const sender = accounts?.[0] || '';
+        if (sender) {
+          setConnectedWeb3Address(sender);
+          handleCopyPaymentValue(
+            'target-wallet',
+            selectedChannel.accountOrWalletAddress
+          );
+          if (!paymentReference.trim()) {
+            setPaymentReference(
+              `0x${computeDeterministicHash(sender + currentOrderId).toLowerCase()}${computeDeterministicHash(currentIdempotencyKey).toLowerCase()}`
+            );
+          }
+          setVerificationFeedback(
+            lang === 'ID'
+              ? `Web3 Wallet terhubung (${sender.slice(0, 6)}...${sender.slice(-4)}). Silakan selesaikan transfer USDT ke alamat wallet yang telah disalin, lalu klik tombol Verifikasi Blockchain di bawah.`
+              : `Web3 Wallet connected (${sender.slice(0, 6)}...${sender.slice(-4)}). Complete the USDT transfer to the copied treasury address, then click Auto-Verify on Blockchain below.`
+          );
+          setIsConnectingWeb3(false);
+          return;
+        }
+      }
+
+      // Fallback if no browser Web3 extension is installed
+      handleCopyPaymentValue(
+        'target-wallet',
+        selectedChannel.accountOrWalletAddress
+      );
+      setVerificationFeedback(
+        lang === 'ID'
+          ? 'Alamat Wallet Crypto telah disalin otomatis! Silakan kirim melalui aplikasi Binance, Indodax, TrustWallet, atau MetaMask Mobile Anda, lalu tempelkan TXID di bawah.'
+          : 'Crypto Wallet Address copied! Send USDT from your mobile wallet or exchange (Binance, TrustWallet, MetaMask, etc.) and paste the TXID below.'
+      );
+    } catch (err) {
+      setCheckoutError(
+        err instanceof Error
+          ? err.message
+          : lang === 'ID'
+            ? 'Gagal menghubungkan Web3 Wallet. Anda tetap dapat menyalin alamat wallet secara manual.'
+            : 'Could not connect Web3 Wallet extension. You can still copy the wallet address manually.'
+      );
+    } finally {
+      setIsConnectingWeb3(false);
+    }
+  };
+
+  // Plugin 2 Helper: Open Centered PayPal / Card Smart Checkout Popup & Auto-Prefill Reference
+  const handleOpenPaypalSmartPopup = () => {
+    if (!selectedChannel) return;
+    const url = selectedChannel.checkoutUrl || paypalHref;
+    if (typeof window !== 'undefined') {
+      const width = 520;
+      const height = 680;
+      const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+      const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+      window.open(
+        url,
+        'MWMPayPalCheckout',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+    }
+    if (!paymentReference.trim()) {
+      setPaymentReference(`PAYPAL-${currentOrderId}`);
+    }
+    setVerificationFeedback(
+      lang === 'ID'
+        ? `Jendela pembayaran resmi ${selectedChannel.providerName} telah dibuka dan ID Referensi (${`PAYPAL-${currentOrderId}`}) telah diisi otomatis. Setelah selesai membayar di popup, klik tombol Verifikasi di bawah!`
+        : `Official ${selectedChannel.providerName} checkout window opened and Reference ID (${`PAYPAL-${currentOrderId}`}) auto-filled. Once you complete payment in the popup, click Verify below!`
+    );
+  };
+
+  // STEP 2 -> STEP 3: Execute Automatic Verification (/api/payment/verify) + Upsert + Advance to Step 3
   const executeIdempotentPaymentSubmission = async () => {
     const trimmedEmail = buyerEmail.trim();
     const trimmedCouple = buyerCoupleName.trim();
@@ -453,32 +709,32 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
       setCheckoutError(
         lang === 'ID'
-          ? 'Mohon masukkan alamat email aktif Anda untuk pengiriman akses 4 Akun Default & Workspace Klien.'
-          : 'Please enter a valid email address to receive your 4 Core Accounts & Client Workspace credentials.'
+          ? 'Mohon masukkan alamat email aktif Anda.'
+          : 'Please enter a valid active email address.'
       );
       return;
     }
     if (!trimmedCouple) {
       setCheckoutError(
         lang === 'ID'
-          ? 'Mohon isi Nama Pasangan Mempelai (misal: Romeo & Juliet).'
-          : 'Please enter the Couple Name (e.g. Romeo & Juliet).'
+          ? 'Mohon isi Nama Pasangan Mempelai.'
+          : 'Please enter the Couple Name.'
       );
       return;
     }
     if (!trimmedRef) {
       setCheckoutError(
         lang === 'ID'
-          ? 'Mohon masukkan Nomor Referensi Transfer / TXID Crypto / Transaction ID PayPal.'
-          : 'Please enter your Payment Reference / Crypto TXID / PayPal Transaction ID.'
+          ? 'Mohon masukkan Nomor Referensi / TXID / ID Transaksi atau gunakan tombol isi otomatis.'
+          : 'Please enter your Payment Reference / TXID / Transaction ID.'
       );
       return;
     }
     if (!selectedChannel) {
       setCheckoutError(
         lang === 'ID'
-          ? 'Pilih salah satu wallet atau metode pembayaran terlebih dahulu.'
-          : 'Please select a payment wallet or method first.'
+          ? 'Pilih metode pembayaran terlebih dahulu.'
+          : 'Please select a payment method first.'
       );
       return;
     }
@@ -501,56 +757,49 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           ? 'USDT'
           : 'USD';
 
-    const draftTx: CommercialPaymentTransaction = {
-      id:
-        isSameIdempotencyKey && activeTransaction?.id
-          ? activeTransaction.id
-          : `tx-${currentOrderId.toLowerCase()}`,
-      orderId:
-        isSameIdempotencyKey && activeTransaction?.orderId
-          ? activeTransaction.orderId
-          : currentOrderId,
-      idempotencyKey: currentIdempotencyKey,
-      packageTier: selectedCheckoutTier,
-      marketLang: lang,
-      currency,
-      amountNumeric: activeSelectedPackage.amountNumeric,
-      amountDisplay: activeSelectedPackage.priceMain,
-      channelId: selectedChannel.id,
-      channelCategory: selectedChannel.category,
-      channelProviderName: selectedChannel.providerName,
-      channelTargetAccount: selectedChannel.accountOrWalletAddress,
-      buyerEmail: trimmedEmail,
-      buyerCoupleName: trimmedCouple,
-      buyerWhatsapp: buyerWhatsapp.trim() || undefined,
-      paymentReference: trimmedRef,
-      status: 'PENDING_VERIFICATION',
-      retryCount: nextRetryCount,
-      expiresAt:
-        isSameIdempotencyKey && activeTransaction?.expiresAt
-          ? activeTransaction.expiresAt
-          : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      createdAt:
-        isSameIdempotencyKey && activeTransaction?.createdAt
-          ? activeTransaction.createdAt
-          : nowIso,
-      updatedAt: nowIso,
-    };
-
-    // Save optimistically to localStorage with idempotencyKey before network call
-    persistLocalTransaction(draftTx);
+    let verifiedStatus: CommercialPaymentStatus = 'PENDING_VERIFICATION';
+    let isOnChainConfirmed = false;
+    let explorerUrl: string | undefined;
+    let verifiedByActor: string | undefined;
 
     try {
       if (simulateNetworkTimeout) {
         await new Promise((resolve) => window.setTimeout(resolve, 650));
-        const timeoutTx: CommercialPaymentTransaction = {
-          ...draftTx,
+        const timeoutTx: ExtendedPaymentTransaction = {
+          id:
+            isSameIdempotencyKey && activeTransaction?.id
+              ? activeTransaction.id
+              : `tx-${currentOrderId.toLowerCase()}`,
+          orderId: currentOrderId,
+          idempotencyKey: currentIdempotencyKey,
+          packageTier: selectedCheckoutTier,
+          marketLang: lang,
+          currency,
+          amountNumeric: activeSelectedPackage.amountNumeric,
+          amountDisplay: activeSelectedPackage.priceMain,
+          channelId: selectedChannel.id,
+          channelCategory: selectedChannel.category,
+          channelProviderName: selectedChannel.providerName,
+          channelTargetAccount: selectedChannel.accountOrWalletAddress,
+          buyerEmail: trimmedEmail,
+          buyerCoupleName: trimmedCouple,
+          buyerWhatsapp: buyerWhatsapp.trim() || undefined,
+          paymentReference: trimmedRef,
           status: 'FAILED_TIMEOUT',
+          retryCount: nextRetryCount,
           lastErrorOrTimeoutReason:
             lang === 'ID'
               ? 'Waktu tunggu koneksi habis (Request Timeout). Jangan khawatir, Idempotency Key Anda telah dikunci—silakan klik Retry tanpa risiko duplikat.'
               : 'Network request timed out. Your Idempotency Key is locked—safely click Retry without risking duplicate orders.',
-          updatedAt: new Date().toISOString(),
+          expiresAt:
+            isSameIdempotencyKey && activeTransaction?.expiresAt
+              ? activeTransaction.expiresAt
+              : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          createdAt:
+            isSameIdempotencyKey && activeTransaction?.createdAt
+              ? activeTransaction.createdAt
+              : nowIso,
+          updatedAt: nowIso,
         };
         persistLocalTransaction(timeoutTx);
         setSimulateNetworkTimeout(false);
@@ -558,10 +807,94 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         return;
       }
 
+      // Call Server-Side Automatic Payment & Blockchain Verifier (/api/payment/verify)
+      try {
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: currentOrderId,
+            idempotencyKey: currentIdempotencyKey,
+            category: selectedChannel.category,
+            network: selectedChannel.networkOrBranch,
+            txHashOrRef: trimmedRef,
+            expectedWalletAddress: selectedChannel.accountOrWalletAddress,
+            expectedAmount: activeSelectedPackage.amountNumeric,
+            currency,
+          }),
+        });
+        if (verifyRes.ok) {
+          const verifyJson = (await verifyRes.json()) as {
+            ok?: boolean;
+            status?: CommercialPaymentStatus;
+            onChainVerified?: boolean;
+            blockchainExplorerUrl?: string;
+            verifiedBy?: string;
+          };
+          if (verifyJson.status) {
+            verifiedStatus = verifyJson.status;
+          }
+          if (verifyJson.onChainVerified) {
+            isOnChainConfirmed = true;
+            verifiedStatus = 'PAID_VERIFIED';
+          }
+          if (verifyJson.blockchainExplorerUrl) {
+            explorerUrl = verifyJson.blockchainExplorerUrl;
+          }
+          if (verifyJson.verifiedBy) {
+            verifiedByActor = verifyJson.verifiedBy;
+          }
+        }
+      } catch {
+        // Fallback gracefully if offline or route unavailable
+      }
+
+      const draftTx: ExtendedPaymentTransaction = {
+        id:
+          isSameIdempotencyKey && activeTransaction?.id
+            ? activeTransaction.id
+            : `tx-${currentOrderId.toLowerCase()}`,
+        orderId:
+          isSameIdempotencyKey && activeTransaction?.orderId
+            ? activeTransaction.orderId
+            : currentOrderId,
+        idempotencyKey: currentIdempotencyKey,
+        packageTier: selectedCheckoutTier,
+        marketLang: lang,
+        currency,
+        amountNumeric: activeSelectedPackage.amountNumeric,
+        amountDisplay: activeSelectedPackage.priceMain,
+        channelId: selectedChannel.id,
+        channelCategory: selectedChannel.category,
+        channelProviderName: selectedChannel.providerName,
+        channelTargetAccount: selectedChannel.accountOrWalletAddress,
+        buyerEmail: trimmedEmail,
+        buyerCoupleName: trimmedCouple,
+        buyerWhatsapp: buyerWhatsapp.trim() || undefined,
+        paymentReference: trimmedRef,
+        status: verifiedStatus,
+        retryCount: nextRetryCount,
+        verifiedAt: verifiedStatus === 'PAID_VERIFIED' ? nowIso : undefined,
+        verifiedBy: verifiedByActor,
+        onChainVerified: isOnChainConfirmed,
+        blockchainExplorerUrl: explorerUrl,
+        expiresAt:
+          isSameIdempotencyKey && activeTransaction?.expiresAt
+            ? activeTransaction.expiresAt
+            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        createdAt:
+          isSameIdempotencyKey && activeTransaction?.createdAt
+            ? activeTransaction.createdAt
+            : nowIso,
+        updatedAt: nowIso,
+      };
+
+      persistLocalTransaction(draftTx);
+
       if (onUpsertCommercialPayment) {
         const result = await onUpsertCommercialPayment(draftTx);
         if (!result.ok || result.timedOut) {
-          const failedTx: CommercialPaymentTransaction = {
+          const failedTx: ExtendedPaymentTransaction = {
             ...draftTx,
             status: 'FAILED_TIMEOUT',
             lastErrorOrTimeoutReason:
@@ -575,23 +908,53 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           setIsSubmittingPayment(false);
           return;
         }
-        persistLocalTransaction(result.transaction);
-        setHasCompletedPayment(true);
-      } else {
-        persistLocalTransaction(draftTx);
-        setHasCompletedPayment(true);
+        const mergedTx: ExtendedPaymentTransaction = {
+          ...result.transaction,
+          onChainVerified:
+            isOnChainConfirmed ||
+            (result.transaction as ExtendedPaymentTransaction).onChainVerified,
+          blockchainExplorerUrl:
+            explorerUrl ||
+            (result.transaction as ExtendedPaymentTransaction)
+              .blockchainExplorerUrl,
+        };
+        persistLocalTransaction(mergedTx);
+      }
+
+      setHasCompletedPayment(true);
+      setCheckoutWizardStep(3);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) {
-      const failedTx: CommercialPaymentTransaction = {
-        ...draftTx,
+      const failedTx: ExtendedPaymentTransaction = {
+        id: `tx-${currentOrderId.toLowerCase()}`,
+        orderId: currentOrderId,
+        idempotencyKey: currentIdempotencyKey,
+        packageTier: selectedCheckoutTier,
+        marketLang: lang,
+        currency,
+        amountNumeric: activeSelectedPackage.amountNumeric,
+        amountDisplay: activeSelectedPackage.priceMain,
+        channelId: selectedChannel.id,
+        channelCategory: selectedChannel.category,
+        channelProviderName: selectedChannel.providerName,
+        channelTargetAccount: selectedChannel.accountOrWalletAddress,
+        buyerEmail: trimmedEmail,
+        buyerCoupleName: trimmedCouple,
+        buyerWhatsapp: buyerWhatsapp.trim() || undefined,
+        paymentReference: trimmedRef,
         status: 'FAILED_TIMEOUT',
+        retryCount: nextRetryCount,
         lastErrorOrTimeoutReason:
           err instanceof Error
             ? err.message
             : lang === 'ID'
               ? 'Gangguan jaringan saat mengirim konfirmasi pembayaran.'
               : 'Network error while submitting payment confirmation.',
-        updatedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: nowIso,
+        updatedAt: nowIso,
       };
       persistLocalTransaction(failedTx);
     } finally {
@@ -827,12 +1190,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       </header>
 
-      {/* MAIN CONTENT: EITHER DEDICATED IDEMPOTENT MULTI-WALLET CHECKOUT PAGE OR MAIN LANDING PAGE */}
+      {/* MAIN CONTENT: EITHER FULL-AUTO 3-STEP PAYMENT WIZARD OR MAIN LANDING PAGE */}
       <main className="flex-1">
         {isCheckoutPageOpen ? (
-          /* DEDICATED 2-COLUMN IDEMPOTENT MULTI-WALLET PAYMENT GATEWAY */
+          /* DEDICATED 2-COLUMN FULL-AUTO 3-STEP PAYMENT GATEWAY WIZARD */
           <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            {/* Top Back Bar & 3-Step Gateway Pills */}
+            {/* Top Back Bar & Clickable 3-Step Wizard Progress Pills */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-[#D4AF37]/40 shadow-2xs">
               <button
                 type="button"
@@ -848,32 +1211,62 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </button>
 
               <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
-                <span className="px-3 py-1.5 rounded-full bg-stone-900 text-[#D4AF37]">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutWizardStep(1)}
+                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                    checkoutWizardStep === 1
+                      ? 'bg-stone-900 text-[#D4AF37] shadow-xs ring-2 ring-[#D4AF37]/50'
+                      : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 hover:bg-[#F3E5C8]'
+                  }`}
+                >
                   1.{' '}
                   {lang === 'ID'
-                    ? `Pilih Paket (${selectedCheckoutTier})`
-                    : `Select Plan (${selectedCheckoutTier})`}
-                </span>
+                    ? `Identitas & Metode (${selectedCheckoutTier})`
+                    : `Identity & Method (${selectedCheckoutTier})`}
+                </button>
                 <span className="text-stone-400">&rarr;</span>
-                <span className="px-3 py-1.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (buyerCoupleName.trim() && buyerEmail.includes('@')) {
+                      setCheckoutWizardStep(2);
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                    checkoutWizardStep === 2
+                      ? 'bg-stone-900 text-[#D4AF37] shadow-xs ring-2 ring-[#D4AF37]/50'
+                      : buyerCoupleName.trim() && buyerEmail.includes('@')
+                        ? 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 hover:bg-[#F3E5C8]'
+                        : 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
+                  }`}
+                >
                   2.{' '}
                   {lang === 'ID'
-                    ? 'Pilih Wallet & Bayar'
-                    : 'Select Wallet & Pay'}
-                </span>
+                    ? 'Pembayaran Otomatis'
+                    : 'Automated Payment'}
+                </button>
                 <span className="text-stone-400">&rarr;</span>
-                <span
-                  className={`px-3 py-1.5 rounded-full ${
-                    hasCompletedPayment
-                      ? 'bg-emerald-700 text-white'
-                      : 'bg-stone-100 text-stone-700 border border-stone-200'
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hasCompletedPayment) {
+                      setCheckoutWizardStep(3);
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full transition-all ${
+                    checkoutWizardStep === 3
+                      ? 'bg-emerald-800 text-[#E6C76B] shadow-xs ring-2 ring-[#D4AF37]'
+                      : hasCompletedPayment
+                        ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                        : 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
                   }`}
                 >
                   3.{' '}
                   {lang === 'ID'
-                    ? 'Verifikasi Idempoten'
-                    : 'Idempotent Verification'}
-                </span>
+                    ? 'Sertifikat & Lisensi'
+                    : 'Certificate & License'}
+                </button>
               </div>
             </div>
 
@@ -1001,435 +1394,604 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
               </div>
 
-              {/* RIGHT COLUMN (lg:col-span-7): MULTI-WALLET SELECTOR, FOCUSED PAYMENT EXECUTION & IDEMPOTENT VERIFICATION */}
-              <div className="lg:col-span-7 space-y-6">
-                {/* STEP 1: PILIH WALLET / METODE PEMBAYARAN RESMI */}
-                <div className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-6 shadow-[0_12px_36px_rgba(182,141,64,0.08)] space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-stone-200/80">
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                        {lang === 'ID'
-                          ? 'Langkah 1 • Pilih Kanal / Wallet Pembayaran'
-                          : 'Step 1 • Choose Official Payment Wallet'}
+              {/* RIGHT COLUMN (lg:col-span-7): AUTOMATIC 3-STEP WIZARD SCREENS (ONLY CURRENT STEP RENDERED) */}
+              <div className="lg:col-span-7">
+                {/* ===================================================================== */}
+                {/* SCREEN 1: IDENTITAS KLIEN & PILIH METODE PEMBAYARAN AMAN              */}
+                {/* ===================================================================== */}
+                {checkoutWizardStep === 1 && (
+                  <form
+                    onSubmit={handleProceedToStep2}
+                    className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-6"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-stone-200/80">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                          {lang === 'ID'
+                            ? 'Langkah 1 dari 3 • Identitas Klien & Pilih Metode Pembayaran Aman'
+                            : 'Step 1 of 3 • Client Identity & Select Secure Payment Method'}
+                        </span>
+                        <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900 mt-0.5">
+                          {lang === 'ID'
+                            ? 'Data Pemesan & Kanal Pembayaran Resmi'
+                            : 'Buyer Details & Official Payment Channel'}
+                        </h3>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider self-start sm:self-auto">
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>
+                          {lang === 'ID' ? 'Enkripsi SSL/Web3' : 'SSL/Web3 Secured'}
+                        </span>
                       </span>
-                      <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900">
-                        {lang === 'ID'
-                          ? `Metode Pembayaran Resmi (${activeMarketChannels.length} Kanal Aktif)`
-                          : `Supported Global Payment Wallets (${activeMarketChannels.length} Active)`}
-                      </h3>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider self-start sm:self-auto">
-                      <Wallet className="w-3.5 h-3.5" />
-                      <span>
-                        {lang === 'ID'
-                          ? 'Tersinkronisasi Superadmin'
-                          : 'Superadmin Verified Wallets'}
-                      </span>
-                    </span>
-                  </div>
 
-                  {/* Multi-Wallet Selector Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {activeMarketChannels.map((ch) => {
-                      const Icon = getCategoryIcon(ch.category);
-                      const isActive = selectedChannel?.id === ch.id;
-                      return (
-                        <button
-                          key={ch.id}
-                          type="button"
-                          onClick={() => setSelectedChannelId(ch.id)}
-                          className={`p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-2.5 ${
-                            isActive
-                              ? 'bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8]/70 border-2 border-[#B68D40] shadow-sm'
-                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3]/50 border-stone-200/90'
-                          }`}
-                        >
-                          <div className="flex items-start gap-2.5 min-w-0">
-                            <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    {/* Client Identity Fields */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-stone-700 mb-1.5">
+                          {lang === 'ID'
+                            ? 'Nama Pasangan Mempelai *'
+                            : 'Couple Name *'}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={buyerCoupleName}
+                          onChange={(e) => setBuyerCoupleName(e.target.value)}
+                          placeholder={
+                            lang === 'ID'
+                              ? 'Misal: Romeo & Juliet'
+                              : 'e.g. Romeo & Juliet'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-bold text-stone-900 focus:border-[#B68D40] focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-stone-700 mb-1.5">
+                          {lang === 'ID'
+                            ? 'No. WhatsApp Konfirmasi (Opsional)'
+                            : 'WhatsApp Number (Optional)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={buyerWhatsapp}
+                          onChange={(e) => setBuyerWhatsapp(e.target.value)}
+                          placeholder={
+                            lang === 'ID'
+                              ? '0812xxxxxxxx'
+                              : '+1 / +62 / International WhatsApp'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-medium text-stone-900 focus:border-[#B68D40] focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-stone-700 mb-1.5">
+                          {lang === 'ID'
+                            ? 'Email Aktif Klien (Wajib — Tujuan Pengiriman 4 Akun & Lisensi) *'
+                            : 'Active Client Email (Required — Destination for 4 Core Accounts & License) *'}
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={buyerEmail}
+                          onChange={(e) => setBuyerEmail(e.target.value)}
+                          placeholder={
+                            lang === 'ID'
+                              ? 'email.anda@domain.com'
+                              : 'your.email@domain.com'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-bold text-stone-900 focus:border-[#B68D40] focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Selectable Wallet / Gateway Cards */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-extrabold uppercase tracking-wider text-stone-700">
+                          {lang === 'ID'
+                            ? `Pilih Metode Pembayaran Resmi (${activeMarketChannels.length} Kanal Aktif)`
+                            : `Select Official Payment Method (${activeMarketChannels.length} Active Channels)`}
+                        </label>
+                        <span className="text-[10px] font-bold text-[#8B6914]">
+                          {lang === 'ID' ? 'Pasar Indonesia (IDR)' : 'Global Market (USD / USDT)'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {activeMarketChannels.map((ch) => {
+                          const Icon = getCategoryIcon(ch.category);
+                          const isActive = selectedChannel?.id === ch.id;
+                          return (
+                            <button
+                              key={ch.id}
+                              type="button"
+                              onClick={() => setSelectedChannelId(ch.id)}
+                              className={`p-3.5 rounded-2xl border text-left transition-all flex items-start justify-between gap-2.5 ${
                                 isActive
-                                  ? 'bg-stone-900 text-[#D4AF37]'
-                                  : 'bg-white border border-[#D4AF37]/35 text-[#8B6914]'
+                                  ? 'bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8]/70 border-2 border-[#B68D40] shadow-sm'
+                                  : 'bg-[#FAF8F5] hover:bg-[#FAF3E3]/50 border-stone-200/90'
                               }`}
                             >
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/90 border border-[#D4AF37]/30 text-[#8B6914] mb-1">
-                                {ch.category.replace('_', ' ')}
-                              </span>
-                              <p className="text-xs font-extrabold text-stone-900 leading-snug">
-                                {ch.providerName}
-                              </p>
-                              {ch.networkOrBranch && (
-                                <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                                  {ch.networkOrBranch}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-                              isActive
-                                ? 'bg-[#8B6914] text-white'
-                                : 'border border-stone-300 bg-white'
-                            }`}
-                          >
-                            {isActive && <Check className="w-3 h-3" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* STEP 2: FOCUSED PAYMENT EXECUTION FOR SELECTED WALLET */}
-                  {selectedChannel && (
-                    <div className="mt-4 p-5 rounded-2xl bg-[#FAF8F5] border-2 border-[#D4AF37]/50 space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200/80">
-                        <div>
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                            {lang === 'ID'
-                              ? 'Langkah 2 • Instruksi & Tujuan Pembayaran'
-                              : 'Step 2 • Payment Destination & Instructions'}
-                          </span>
-                          <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
-                            {selectedChannel.providerName}
-                          </h4>
-                        </div>
-                        {selectedChannel.minAmountNote && (
-                          <span className="px-2.5 py-1 rounded-lg bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
-                            {selectedChannel.minAmountNote}
-                          </span>
-                        )}
+                              <div className="flex items-start gap-2.5 min-w-0">
+                                <div
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                                    isActive
+                                      ? 'bg-stone-900 text-[#D4AF37]'
+                                      : 'bg-white border border-[#D4AF37]/35 text-[#8B6914]'
+                                  }`}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/90 border border-[#D4AF37]/30 text-[#8B6914] mb-1">
+                                    {ch.category.replace('_', ' ')}
+                                  </span>
+                                  <p className="text-xs font-extrabold text-stone-900 leading-snug">
+                                    {ch.providerName}
+                                  </p>
+                                  {ch.networkOrBranch && (
+                                    <p className="text-[10px] text-stone-500 truncate mt-0.5">
+                                      {ch.networkOrBranch}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1 ${
+                                  isActive
+                                    ? 'bg-[#8B6914] text-white'
+                                    : 'border border-stone-300 bg-white'
+                                }`}
+                              >
+                                {isActive && <Check className="w-3 h-3" />}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
-
-                      {/* Nominal & Target Account / Wallet Boxes */}
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                        <div className="sm:col-span-5 p-3.5 rounded-2xl bg-white border border-stone-200/90 flex flex-col justify-between gap-2">
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                              {lang === 'ID'
-                                ? 'Nominal yang Harus Dibayar'
-                                : 'Exact Amount to Pay'}
-                            </p>
-                            <p className="text-xl font-extrabold text-[#8B6914] mt-0.5">
-                              {activeCheckoutAmountDisplay}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyPaymentValue(
-                                'amount',
-                                String(activeSelectedPackage.amountNumeric)
-                              )
-                            }
-                            className="w-full py-1.5 px-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                          >
-                            {copiedPaymentKey === 'amount' ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Nominal Tersalin'
-                                    : 'Amount Copied'}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Salin Nominal Angka'
-                                    : 'Copy Exact Amount'}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-
-                        <div className="sm:col-span-7 p-3.5 rounded-2xl bg-white border border-stone-200/90 flex flex-col justify-between gap-2">
-                          <div>
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                                {selectedChannel.category === 'CRYPTO'
-                                  ? lang === 'ID'
-                                    ? 'Alamat Wallet Crypto Resmi'
-                                    : 'Official Crypto Wallet Address'
-                                  : selectedChannel.category === 'PAYPAL'
-                                    ? lang === 'ID'
-                                      ? 'Akun / Link PayPal Resmi'
-                                      : 'Official PayPal Merchant Link'
-                                    : lang === 'ID'
-                                      ? 'Nomor Rekening / Tujuan Pembayaran'
-                                      : 'Target Payment Account'}
-                              </p>
-                              {selectedChannel.networkOrBranch && (
-                                <span className="text-[10px] font-bold text-[#8B6914]">
-                                  {selectedChannel.networkOrBranch}
-                                </span>
-                              )}
-                            </div>
-                            <p className="font-mono text-xs font-extrabold text-stone-900 break-all mt-1">
-                              {selectedChannel.accountOrWalletAddress}
-                            </p>
-                            {selectedChannel.accountHolder && (
-                              <p className="text-[11px] text-stone-500 mt-0.5">
-                                a.n.{' '}
-                                <strong className="text-stone-700">
-                                  {selectedChannel.accountHolder}
-                                </strong>
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyPaymentValue(
-                                'target-wallet',
-                                selectedChannel.accountOrWalletAddress
-                              )
-                            }
-                            className="w-full py-1.5 px-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
-                          >
-                            {copiedPaymentKey === 'target-wallet' ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Tujuan Pembayaran Tersalin!'
-                                    : 'Wallet / Account Copied!'}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>
-                                  {selectedChannel.category === 'CRYPTO'
-                                    ? lang === 'ID'
-                                      ? 'Salin Alamat Wallet Crypto'
-                                      : 'Copy Crypto Wallet Address'
-                                    : lang === 'ID'
-                                      ? 'Salin Nomor Rekening / Link'
-                                      : 'Copy Account / Link'}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* QR Code Display if Configured on Selected Channel */}
-                      {selectedChannel.qrCodeImageUrl && (
-                        <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 flex flex-col items-center text-center space-y-2">
-                          <p className="text-xs font-extrabold text-stone-900">
-                            {lang === 'ID'
-                              ? `Scan QR Code Resmi — ${selectedChannel.providerName}`
-                              : `Scan Official QR Code — ${selectedChannel.providerName}`}
-                          </p>
-                          <img
-                            src={selectedChannel.qrCodeImageUrl}
-                            alt={selectedChannel.providerName}
-                            className="max-h-56 w-auto rounded-2xl border border-stone-200 shadow-sm bg-white p-2"
-                          />
-                        </div>
-                      )}
-
-                      {/* Direct Checkout Button if checkoutUrl is Configured */}
-                      {selectedChannel.checkoutUrl && (
-                        <a
-                          href={selectedChannel.checkoutUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full py-3 px-4 rounded-2xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all"
-                        >
-                          <span>
-                            {lang === 'ID'
-                              ? `Bayar Langsung via ${selectedChannel.providerName}`
-                              : `Proceed to ${selectedChannel.providerName} Checkout`}
-                          </span>
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      )}
-
-                      {/* Channel Instructions */}
-                      {selectedChannel.instructions && (
-                        <div className="p-3 rounded-xl bg-[#FAF3E3]/70 border border-[#D4AF37]/35 text-xs text-stone-700 leading-relaxed">
-                          <strong className="text-[#8B6914]">
-                            {lang === 'ID' ? 'Panduan:' : 'Instructions:'}
-                          </strong>{' '}
-                          {selectedChannel.instructions}
-                        </div>
-                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* STEP 3: IDEMPOTENT PAYMENT CONFIRMATION & TIMEOUT RECOVERY */}
-                <div className="rounded-3xl bg-gradient-to-br from-[#FAF3E3]/70 via-[#FFFDF9] to-[#F3E5C8]/45 border border-[#D4AF37]/50 p-5 sm:p-6 shadow-[0_12px_36px_rgba(182,141,64,0.08)] space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    {checkoutError && (
+                      <p className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3.5 py-2.5 rounded-xl">
+                        {checkoutError}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                    >
+                      <span>
+                        {lang === 'ID'
+                          ? 'Buat Invoice Idempoten & Lanjut ke Pembayaran Otomatis (Langkah 2)'
+                          : 'Create Idempotent Invoice & Proceed to Auto-Payment (Step 2)'}
+                      </span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
+                    </button>
+                  </form>
+                )}
+
+                {/* ===================================================================== */}
+                {/* SCREEN 2: EKSEKUSI PEMBAYARAN OTOMATIS & VERIFIKASI SECURITY          */}
+                {/* ===================================================================== */}
+                {checkoutWizardStep === 2 && selectedChannel && (
+                  <div className="rounded-3xl bg-white border border-[#D4AF37]/45 p-5 sm:p-7 shadow-[0_12px_36px_rgba(182,141,64,0.1)] space-y-5">
+                    {/* Top Bar inside Step 2 Card */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-stone-200/80">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutWizardStep(1)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] text-xs font-extrabold transition-all"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Ubah Data / Metode (Langkah 1)'
+                            : 'Edit Details / Method (Step 1)'}
+                        </span>
+                      </button>
+
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold">
+                        <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span>
+                          {lang === 'ID'
+                            ? `⏱️ Batas Waktu Kunci Harga: ${formatCountdown(countdownSeconds)}`
+                            : `⏱️ Price Lock Timer: ${formatCountdown(countdownSeconds)}`}
+                        </span>
+                      </span>
+                    </div>
+
                     <div>
                       <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                         {lang === 'ID'
-                          ? 'Langkah 3 • Verifikasi Pembayaran Idempoten'
-                          : 'Step 3 • Idempotent Payment Verification'}
+                          ? 'Langkah 2 dari 3 • Eksekusi Pembayaran Otomatis & Verifikasi Security'
+                          : 'Step 2 of 3 • Automated Payment Execution & Security Verification'}
                       </span>
-                      <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900 mt-0.5">
+                      <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900 mt-0.5">
+                        {selectedChannel.providerName}
+                      </h3>
+                      <p className="text-xs text-stone-500 mt-0.5">
                         {lang === 'ID'
-                          ? 'Konfirmasi Sudah Bayar & Masukkan Email Anda'
-                          : 'I Have Paid & Submit Email for Account Activation'}
-                      </h4>
+                          ? `Pemesan: ${buyerCoupleName} (${buyerEmail}) • Order ID: ${currentOrderId}`
+                          : `Buyer: ${buyerCoupleName} (${buyerEmail}) • Order ID: ${currentOrderId}`}
+                      </p>
                     </div>
-                    {!hasCompletedPayment && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900 text-[#D4AF37] text-[10px] font-bold self-start sm:self-auto">
-                        <Lock className="w-3 h-3" />
-                        <span>
-                          {lang === 'ID'
-                            ? 'Kontak Prioritas Terbuka Setelah Konfirmasi'
-                            : 'Priority Contact Unlocks After Confirmation'}
-                        </span>
-                      </span>
-                    )}
-                  </div>
 
-                  {/* Timeout / Network Failure Recovery Banner (Idempotent Retry) */}
-                  {activeTransaction?.status === 'FAILED_TIMEOUT' && (
-                    <div className="p-4 rounded-2xl bg-amber-950 text-amber-50 border-2 border-amber-400 shadow-md space-y-3">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
-                        <div className="space-y-1 text-xs leading-relaxed">
-                          <p className="font-extrabold text-amber-300 uppercase tracking-wider">
+                    {/* Locked Amount & Target Wallet/Account Summary */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      <div className="sm:col-span-5 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
                             {lang === 'ID'
-                              ? `Peringatan Timeout / Koneksi Terputus (Retry #${activeTransaction.retryCount || 0})`
-                              : `Payment Confirmation Timeout / Network Interrupted (Retry #${activeTransaction.retryCount || 0})`}
+                              ? 'Nominal Terkunci'
+                              : 'Locked Exact Amount'}
                           </p>
-                          <p>
-                            {activeTransaction.lastErrorOrTimeoutReason ||
-                              (lang === 'ID'
-                                ? 'Koneksi terputus saat mencatat konfirmasi pembayaran Anda.'
-                                : 'Connection dropped while recording your payment confirmation.')}
-                          </p>
-                          <p className="font-mono text-[10px] text-amber-200/90">
-                            Idempotency Key: {activeTransaction.idempotencyKey}
+                          <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914] mt-0.5">
+                            {activeCheckoutAmountDisplay}
                           </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyPaymentValue(
+                              'amount',
+                              String(activeSelectedPackage.amountNumeric)
+                            )
+                          }
+                          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          {copiedPaymentKey === 'amount' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Nominal Tersalin!'
+                                  : 'Amount Copied!'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Salin Nominal'
+                                  : 'Copy Exact Amount'}
+                              </span>
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        disabled={isSubmittingPayment}
-                        onClick={() => void executeIdempotentPaymentSubmission()}
-                        className="w-full py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 transition-all"
-                      >
-                        <RefreshCw
-                          className={`w-4 h-4 ${
-                            isSubmittingPayment ? 'animate-spin' : ''
-                          }`}
+
+                      <div className="sm:col-span-7 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                              {selectedChannel.category === 'CRYPTO'
+                                ? lang === 'ID'
+                                  ? 'Alamat Wallet Crypto Resmi'
+                                  : 'Official Crypto Wallet Address'
+                                : selectedChannel.category === 'PAYPAL'
+                                  ? lang === 'ID'
+                                    ? 'Merchant PayPal Resmi'
+                                    : 'Official PayPal Merchant'
+                                  : lang === 'ID'
+                                    ? 'Nomor Rekening / Tujuan'
+                                    : 'Target Account'}
+                            </p>
+                            {selectedChannel.networkOrBranch && (
+                              <span className="text-[10px] font-extrabold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-md border border-[#D4AF37]/30">
+                                {selectedChannel.networkOrBranch}
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-mono text-xs font-extrabold text-stone-900 break-all mt-1">
+                            {selectedChannel.accountOrWalletAddress}
+                          </p>
+                          {selectedChannel.accountHolder && (
+                            <p className="text-[11px] text-stone-500 mt-0.5">
+                              a.n.{' '}
+                              <strong className="text-stone-700">
+                                {selectedChannel.accountHolder}
+                              </strong>
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyPaymentValue(
+                              'target-wallet',
+                              selectedChannel.accountOrWalletAddress
+                            )
+                          }
+                          className="w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          {copiedPaymentKey === 'target-wallet' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Alamat / Rekening Tersalin!'
+                                  : 'Address / Account Copied!'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>
+                                {selectedChannel.category === 'CRYPTO'
+                                  ? lang === 'ID'
+                                    ? 'Salin Alamat Wallet Crypto'
+                                    : 'Copy Crypto Wallet Address'
+                                  : lang === 'ID'
+                                    ? 'Salin Tujuan Pembayaran'
+                                    : 'Copy Payment Destination'}
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* =============================================================== */}
+                    {/* PLUGIN 1: CRYPTO WEB3 AUTO-PAY + ON-CHAIN BLOCKCHAIN VERIFIER   */}
+                    {/* =============================================================== */}
+                    {selectedChannel.category === 'CRYPTO' && (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-[#FAF3E3]/60 border-2 border-[#D4AF37]/60 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                            <Coins className="w-4 h-4 text-[#B68D40]" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'Plugin Web3 Wallet & On-Chain Blockchain Verifier'
+                                : 'Web3 Wallet Plugin & On-Chain Blockchain Verifier'}
+                            </span>
+                          </span>
+                          {connectedWeb3Address && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-[10px] font-bold">
+                              Connected: {connectedWeb3Address.slice(0, 6)}...
+                              {connectedWeb3Address.slice(-4)}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={isConnectingWeb3}
+                          onClick={() => void handleConnectAndPayWeb3()}
+                          className="w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <Coins className="w-4 h-4 text-[#D4AF37]" />
+                          <span>
+                            {isConnectingWeb3
+                              ? lang === 'ID'
+                                ? 'Menghubungkan Web3 Wallet...'
+                                : 'Connecting Web3 Wallet...'
+                              : lang === 'ID'
+                                ? '🦊 One-Click Pay via Web3 Wallet (MetaMask / TrustWallet / TronLink)'
+                                : '🦊 One-Click Pay via Web3 Wallet (MetaMask / TrustWallet / TronLink)'}
+                          </span>
+                        </button>
+
+                        {selectedChannel.qrCodeImageUrl && (
+                          <div className="p-3 rounded-2xl bg-white border border-stone-200 flex flex-col items-center text-center space-y-1.5">
+                            <p className="text-[11px] font-bold text-stone-700">
+                              {lang === 'ID'
+                                ? 'Atau Scan QR Deposit Crypto Resmi:'
+                                : 'Or Scan Official Crypto Deposit QR:'}
+                            </p>
+                            <img
+                              src={selectedChannel.qrCodeImageUrl}
+                              alt={selectedChannel.providerName}
+                              className="max-h-48 w-auto rounded-xl border border-stone-200 p-1.5 bg-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* =============================================================== */}
+                    {/* PLUGIN 2: PAYPAL / CREDIT CARD SMART POPUP & QR                 */}
+                    {/* =============================================================== */}
+                    {(selectedChannel.category === 'PAYPAL' ||
+                      selectedChannel.category === 'CREDIT_CARD') && (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/40 border-2 border-sky-300/80 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-950 flex items-center gap-1.5">
+                            <Globe className="w-4 h-4 text-[#0070BA]" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'PayPal & Visa/Mastercard Smart Checkout Popup'
+                                : 'PayPal & Visa/Mastercard Smart Checkout Popup'}
+                            </span>
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-extrabold">
+                            Auto-Capture Ready
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenPaypalSmartPopup}
+                          className="w-full py-3.5 px-4 rounded-2xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          <span>
+                            {lang === 'ID'
+                              ? '🌐 Buka Popup Pembayaran Resmi PayPal / Visa / Mastercard'
+                              : '🌐 Open Official PayPal / Visa / Mastercard Checkout Popup'}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div className="p-3.5 rounded-2xl bg-white border border-sky-200/80 flex flex-col items-center text-center space-y-2">
+                          <p className="text-xs font-extrabold text-stone-900">
+                            {lang === 'ID'
+                              ? 'Atau Scan QR Code PayPal Resmi My Wedding Manager:'
+                              : 'Or Scan Official My Wedding Manager PayPal QR Code:'}
+                          </p>
+                          <img
+                            src={
+                              selectedChannel.qrCodeImageUrl ||
+                              '/paypal-qr-mwm.png'
+                            }
+                            alt="Official PayPal QR Code"
+                            className="max-h-48 w-auto rounded-xl border border-sky-100 shadow-xs p-2 bg-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* =============================================================== */}
+                    {/* PLUGIN 3: QRIS / BANK TRANSFER / E-WALLET (INDONESIA IDR)       */}
+                    {/* =============================================================== */}
+                    {(selectedChannel.category === 'QRIS' ||
+                      selectedChannel.category === 'BANK_TRANSFER' ||
+                      selectedChannel.category === 'EWALLET') && (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF3E3]/70 via-white to-emerald-50/40 border-2 border-[#D4AF37]/55 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-stone-900 flex items-center gap-1.5">
+                            <QrCode className="w-4 h-4 text-[#8B6914]" />
+                            <span>
+                              Pembayaran Instan Nasional (QRIS / BI-FAST / E-Wallet)
+                            </span>
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                            IDR Verified
+                          </span>
+                        </div>
+
+                        {selectedChannel.qrCodeImageUrl && (
+                          <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40 flex flex-col items-center text-center space-y-2">
+                            <p className="text-xs font-extrabold text-stone-900">
+                              Scan Barcode QRIS Resmi —{' '}
+                              {selectedChannel.providerName}
+                            </p>
+                            <img
+                              src={selectedChannel.qrCodeImageUrl}
+                              alt="QRIS Barcode"
+                              className="max-h-56 w-auto rounded-xl border border-stone-200 p-2 bg-white shadow-xs"
+                            />
+                          </div>
+                        )}
+
+                        {selectedChannel.instructions && (
+                          <p className="text-xs text-stone-600 leading-relaxed">
+                            {selectedChannel.instructions}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Feedback Banner if Web3 or Popup was triggered */}
+                    {verificationFeedback && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-semibold leading-relaxed">
+                        {verificationFeedback}
+                      </div>
+                    )}
+
+                    {/* Idempotent Timeout Recovery Banner inside Step 2 */}
+                    {activeTransaction?.status === 'FAILED_TIMEOUT' && (
+                      <div className="p-4 rounded-2xl bg-amber-950 text-amber-50 border-2 border-amber-400 shadow-md space-y-3">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+                          <div className="space-y-1 text-xs leading-relaxed">
+                            <p className="font-extrabold text-amber-300 uppercase tracking-wider">
+                              {lang === 'ID'
+                                ? `Peringatan Timeout / Koneksi Terputus (Retry #${activeTransaction.retryCount || 0})`
+                                : `Payment Verification Timeout / Network Interrupted (Retry #${activeTransaction.retryCount || 0})`}
+                            </p>
+                            <p>{activeTransaction.lastErrorOrTimeoutReason}</p>
+                            <p className="font-mono text-[10px] text-amber-200/90">
+                              Idempotency Key:{' '}
+                              {activeTransaction.idempotencyKey}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isSubmittingPayment}
+                          onClick={() =>
+                            void executeIdempotentPaymentSubmission()
+                          }
+                          className="w-full py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 transition-all"
+                        >
+                          <RefreshCw
+                            className={`w-4 h-4 ${
+                              isSubmittingPayment ? 'animate-spin' : ''
+                            }`}
+                          />
+                          <span>
+                            {lang === 'ID'
+                              ? '↻ Retry Verifikasi (Idempoten — Tidak Akan Duplikat)'
+                              : '↻ Retry Verification Safely (Idempotent — No Duplicate Order)'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Automatic Security Verification Form (Advances to Step 3) */}
+                    <form
+                      onSubmit={handleConfirmPaymentSubmit}
+                      className="space-y-3 pt-2 border-t border-stone-200/80"
+                    >
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                          <label className="text-[11px] font-extrabold uppercase tracking-wider text-stone-700">
+                            {selectedChannel.category === 'CRYPTO'
+                              ? lang === 'ID'
+                                ? 'TXID / Transaction Hash Blockchain *'
+                                : 'Blockchain TXID / Transaction Hash *'
+                              : selectedChannel.category === 'PAYPAL' ||
+                                  selectedChannel.category === 'CREDIT_CARD'
+                                ? lang === 'ID'
+                                  ? 'ID Transaksi PayPal / 4 Digit Terakhir Kartu *'
+                                  : 'PayPal Transaction ID / Card Last 4 Digits *'
+                                : 'Nomor Referensi Transfer / RRN QRIS *'}
+                          </label>
+                          {selectedChannel.category !== 'CRYPTO' && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPaymentReference(`INV-${currentOrderId}`)
+                              }
+                              className="text-[10px] font-extrabold text-[#8B6914] hover:underline"
+                            >
+                              {lang === 'ID'
+                                ? `+ Gunakan ID Invoice Otomatis (INV-${currentOrderId})`
+                                : `+ Auto-Fill Invoice ID (INV-${currentOrderId})`}
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={paymentReference}
+                          onChange={(e) => setPaymentReference(e.target.value)}
+                          placeholder={
+                            selectedChannel.category === 'CRYPTO'
+                              ? '0x... / TRC20 Transaction Hash (64 hex chars)'
+                              : selectedChannel.category === 'PAYPAL' ||
+                                  selectedChannel.category === 'CREDIT_CARD'
+                                ? `PAYPAL-${currentOrderId}`
+                                : `INV-${currentOrderId} / Nomor Referensi Bank`
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-mono font-bold text-stone-900 focus:border-[#B68D40] focus:bg-white focus:outline-none"
                         />
-                        <span>
-                          {lang === 'ID'
-                            ? '↻ Retry Kirim Konfirmasi (Idempoten — Tidak Akan Duplikat)'
-                            : '↻ Retry Confirmation Safely (Idempotent — No Duplicate Order)'}
-                        </span>
-                      </button>
-                    </div>
-                  )}
+                      </div>
 
-                  <form
-                    onSubmit={handleConfirmPaymentSubmit}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
-                  >
-                    <div>
-                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-stone-700 mb-1">
-                        {lang === 'ID'
-                          ? 'Email Aktif Klien (Wajib — Pengiriman 4 Akun Maks. H+3)*'
-                          : 'Active Client Email (Required — Credentials Sent Max D+3)*'}
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={buyerEmail}
-                        onChange={(e) => setBuyerEmail(e.target.value)}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'email.anda@domain.com'
-                            : 'your.email@domain.com'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-medium text-stone-900 focus:border-[#B68D40] focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-stone-700 mb-1">
-                        {lang === 'ID'
-                          ? 'Nama Pasangan Mempelai*'
-                          : 'Couple Name*'}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={buyerCoupleName}
-                        onChange={(e) => setBuyerCoupleName(e.target.value)}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'Misal: Romeo & Juliet'
-                            : 'e.g. Romeo & Juliet'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-medium text-stone-900 focus:border-[#B68D40] focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-stone-700 mb-1">
-                        {lang === 'ID'
-                          ? 'Nomor Referensi / TXID Crypto / ID Transaksi PayPal*'
-                          : 'Payment Reference / Crypto TXID / PayPal Transaction ID*'}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={paymentReference}
-                        onChange={(e) => setPaymentReference(e.target.value)}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'Nomor Ref Bank / QRIS / TXID Hash'
-                            : 'PayPal TX ID / Card Ref / USDT TXID Hash'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-mono font-semibold text-stone-900 focus:border-[#B68D40] focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-stone-700 mb-1">
-                        {lang === 'ID'
-                          ? 'No. WhatsApp Konfirmasi (Opsional)'
-                          : 'WhatsApp Number (Optional)'}
-                      </label>
-                      <input
-                        type="text"
-                        value={buyerWhatsapp}
-                        onChange={(e) => setBuyerWhatsapp(e.target.value)}
-                        placeholder={
-                          lang === 'ID'
-                            ? '0812xxxxxxxx'
-                            : '+1 / +62 / International WhatsApp'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-medium text-stone-900 focus:border-[#B68D40] focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2 pt-1 space-y-2">
                       {checkoutError && (
                         <p className="text-xs font-bold text-rose-600">
                           {checkoutError}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600 bg-white/80 px-3 py-2 rounded-xl border border-stone-200/80">
-                        <span>
-                          {lang === 'ID' ? 'Kanal Terpilih:' : 'Selected Wallet:'}{' '}
-                          <strong className="text-stone-900">
-                            {selectedChannel?.providerName || '-'}
-                          </strong>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-stone-200/80">
+                        <span className="font-mono text-[10px]">
+                          Key: {currentIdempotencyKey}
                         </span>
                         <label className="inline-flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-bold text-stone-500 hover:text-stone-800">
                           <input
@@ -1451,159 +2013,215 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <button
                         type="submit"
                         disabled={isSubmittingPayment}
-                        className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] disabled:opacity-60 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                        className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] disabled:opacity-60 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all"
                       >
                         {isSubmittingPayment ? (
                           <>
                             <RefreshCw className="w-4 h-4 animate-spin" />
                             <span>
                               {lang === 'ID'
-                                ? 'Memproses Verifikasi Idempoten...'
-                                : 'Processing Idempotent Verification...'}
+                                ? 'Memverifikasi Pembayaran & Security...'
+                                : 'Verifying Payment & Security...'}
                             </span>
                           </>
                         ) : (
                           <>
                             <CheckCircle2 className="w-4 h-4" />
                             <span>
-                              {lang === 'ID'
-                                ? `Konfirmasi Sudah Bayar (${activeCheckoutAmountDisplay}) & Masukkan Email Anda`
-                                : `I Have Paid (${activeCheckoutAmountDisplay}) & Submit Email`}
+                              {selectedChannel.category === 'CRYPTO'
+                                ? lang === 'ID'
+                                  ? '⛓️ Verifikasi Otomatis di Blockchain & Selesaikan Order →'
+                                  : '⛓️ Auto-Verify on Blockchain & Complete Order →'
+                                : selectedChannel.category === 'PAYPAL' ||
+                                    selectedChannel.category === 'CREDIT_CARD'
+                                  ? lang === 'ID'
+                                    ? '✅ Verifikasi Pembayaran PayPal/Kartu & Lanjut Otomatis →'
+                                    : '✅ Verify PayPal/Card Payment & Continue Automatically →'
+                                  : '✅ Verifikasi Pembayaran & Aktifkan Lisensi Otomatis →'}
                             </span>
                           </>
                         )}
                       </button>
-                    </div>
-                  </form>
+                    </form>
+                  </div>
+                )}
 
-                  {/* UNLOCKED DIGITAL RECEIPT, POST-PAYMENT SLA & PRIORITY CONTACT (ONLY VISIBLE AFTER PAYMENT CONFIRMATION) */}
-                  {hasCompletedPayment && (
-                    <div className="mt-4 p-5 rounded-2xl bg-emerald-950 text-emerald-50 border-2 border-[#D4AF37] shadow-lg space-y-4 animate-fadeIn">
-                      {/* Official Idempotent Digital Receipt Header */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-emerald-800/80">
-                        <div className="flex items-center gap-2">
-                          <FileCheck2 className="w-5 h-5 text-[#E6C76B]" />
-                          <span className="font-extrabold text-[#E6C76B] uppercase tracking-wider text-xs">
-                            {lang === 'ID'
-                              ? 'Bukti Konfirmasi Pembayaran Idempoten Tercatat'
-                              : 'Official Idempotent Payment Confirmation Receipt'}
-                          </span>
-                        </div>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                            activeTransaction?.status === 'PAID_VERIFIED'
-                              ? 'bg-emerald-400 text-stone-950'
-                              : 'bg-[#D4AF37] text-stone-950'
-                          }`}
-                        >
-                          {activeTransaction?.status === 'PAID_VERIFIED'
-                            ? lang === 'ID'
-                              ? '✓ LUNAS TERVERIFIKASI SUPERADMIN'
-                              : '✓ VERIFIED PAID BY SUPERADMIN'
-                            : lang === 'ID'
-                              ? '⏳ MENUNGGU VERIFIKASI (MAKS. H+3)'
-                              : '⏳ PENDING VERIFICATION (MAX D+3)'}
+                {/* ===================================================================== */}
+                {/* SCREEN 3: SERTIFIKAT KEAMANAN, BUKTI PEMBAYARAN & KONTAK PRIORITAS    */}
+                {/* ===================================================================== */}
+                {checkoutWizardStep === 3 && (
+                  <div className="rounded-3xl bg-emerald-950 text-emerald-50 border-2 border-[#D4AF37] p-6 sm:p-7 shadow-[0_20px_50px_rgba(6,78,59,0.28)] space-y-5 animate-fadeIn">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-emerald-800/80">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
+                          {lang === 'ID'
+                            ? 'Langkah 3 dari 3 • Pembayaran Tercatat & Sertifikat Keamanan'
+                            : 'Step 3 of 3 • Payment Recorded & Security Certificate'}
                         </span>
-                      </div>
-
-                      {/* Receipt Metadata Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-black/25 p-3.5 rounded-xl border border-emerald-800/60 font-mono">
-                        <div>
-                          <span className="text-emerald-300/80 text-[10px] block">
-                            Order ID:
-                          </span>
-                          <strong className="text-white">
-                            {activeTransaction?.orderId || currentOrderId}
-                          </strong>
-                        </div>
-                        <div>
-                          <span className="text-emerald-300/80 text-[10px] block">
-                            Idempotency Key:
-                          </span>
-                          <strong className="text-[#E6C76B] break-all">
-                            {activeTransaction?.idempotencyKey ||
-                              currentIdempotencyKey}
-                          </strong>
-                        </div>
-                        <div>
-                          <span className="text-emerald-300/80 text-[10px] block">
-                            {lang === 'ID' ? 'Paket & Nominal:' : 'Plan & Amount:'}
-                          </span>
-                          <strong className="text-white">
-                            {activeTransaction?.packageTier ||
-                              selectedCheckoutTier}{' '}
-                            •{' '}
-                            {activeTransaction?.amountDisplay ||
-                              activeCheckoutAmountDisplay}
-                          </strong>
-                        </div>
-                        <div>
-                          <span className="text-emerald-300/80 text-[10px] block">
+                        <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-white mt-0.5 flex items-center gap-2">
+                          <FileCheck2 className="w-6 h-6 text-[#D4AF37]" />
+                          <span>
                             {lang === 'ID'
-                              ? 'Wallet & Referensi:'
-                              : 'Wallet & Reference:'}
+                              ? 'Sertifikat Konfirmasi Pembayaran Idempoten'
+                              : 'Official Idempotent Payment Certificate'}
                           </span>
-                          <strong className="text-white break-all">
-                            {activeTransaction?.channelProviderName ||
-                              selectedChannel?.providerName}{' '}
-                            ({activeTransaction?.paymentReference || paymentReference})
-                          </strong>
-                        </div>
+                        </h3>
                       </div>
 
-                      {/* Exact SLA Message & Priority Email */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-[#D4AF37] text-stone-950 flex items-center justify-center shrink-0 mt-0.5">
-                          <Clock className="w-4 h-4" />
-                        </div>
-                        <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed">
-                          {lang === 'ID' ? (
-                            <p>
-                              Terima kasih! Pembayaran Anda telah tercatat. Tim
-                              kami akan menghubungi Anda melalui email maksimal{' '}
-                              <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
-                                H+3 setelah pembayaran
-                              </strong>{' '}
-                              untuk pengiriman akses 4 Akun Default &amp;
-                              Workspace Klien. Untuk konfirmasi bukti bayar
-                              prioritas, silakan hubungi:{' '}
-                              <a
-                                href={mailtoPostPaymentUrl}
-                                className="font-extrabold text-[#E6C76B] underline hover:text-white"
-                              >
-                                {businessEmail}
-                              </a>
-                              .
-                            </p>
-                          ) : (
-                            <p>
-                              Thank you! Your payment confirmation has been
-                              recorded. Our team will contact you via email
-                              within a maximum of{' '}
-                              <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
-                                3 days (D+3) after payment
-                              </strong>{' '}
-                              with your 4 Core Accounts &amp; Client Workspace
-                              credentials. For priority payment receipt
-                              confirmation, please contact:{' '}
-                              <a
-                                href={mailtoPostPaymentUrl}
-                                className="font-extrabold text-[#E6C76B] underline hover:text-white"
-                              >
-                                {businessEmail}
-                              </a>
-                              .
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          activeTransaction?.onChainVerified ||
+                          activeTransaction?.status === 'PAID_VERIFIED'
+                            ? 'bg-emerald-400 text-stone-950'
+                            : 'bg-[#D4AF37] text-stone-950'
+                        }`}
+                      >
+                        {activeTransaction?.onChainVerified
+                          ? '⛓️ PAID_VERIFIED (On-Chain Confirmed)'
+                          : activeTransaction?.status === 'PAID_VERIFIED'
+                            ? lang === 'ID'
+                              ? '✓ LUNAS TERVERIFIKASI'
+                              : '✓ PAID_VERIFIED'
+                            : lang === 'ID'
+                              ? '⏳ PENDING_VERIFICATION (MAKS. H+3)'
+                              : '⏳ PENDING_VERIFICATION (MAX D+3)'}
+                      </span>
+                    </div>
 
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-800/80">
+                    {/* Digital Certificate Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-black/30 p-4 rounded-2xl border border-emerald-800/70 font-mono">
+                      <div>
+                        <span className="text-emerald-300/80 text-[10px] block">
+                          Order ID:
+                        </span>
+                        <strong className="text-white">
+                          {activeTransaction?.orderId || currentOrderId}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-emerald-300/80 text-[10px] block">
+                          Idempotency Key:
+                        </span>
+                        <strong className="text-[#E6C76B] break-all">
+                          {activeTransaction?.idempotencyKey ||
+                            currentIdempotencyKey}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-emerald-300/80 text-[10px] block">
+                          {lang === 'ID'
+                            ? 'Paket & Nominal:'
+                            : 'Plan & Amount:'}
+                        </span>
+                        <strong className="text-white">
+                          {activeTransaction?.packageTier ||
+                            selectedCheckoutTier}{' '}
+                          •{' '}
+                          {activeTransaction?.amountDisplay ||
+                            activeCheckoutAmountDisplay}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-emerald-300/80 text-[10px] block">
+                          {lang === 'ID'
+                            ? 'Metode & Referensi:'
+                            : 'Wallet & Reference:'}
+                        </span>
+                        <strong className="text-white break-all">
+                          {activeTransaction?.channelProviderName ||
+                            selectedChannel?.providerName}{' '}
+                          (
+                          {activeTransaction?.paymentReference ||
+                            paymentReference}
+                          )
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Optional Blockchain Explorer Proof & Provisioned Client Badges */}
+                    {(activeTransaction?.blockchainExplorerUrl ||
+                      activeTransaction?.provisionedClientId) && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {activeTransaction?.blockchainExplorerUrl && (
+                          <a
+                            href={activeTransaction.blockchainExplorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-[#D4AF37] text-[#E6C76B] text-xs font-extrabold transition-all"
+                          >
+                            <Coins className="w-3.5 h-3.5" />
+                            <span>
+                              {lang === 'ID'
+                                ? '⛓️ Lihat Bukti di Blockchain Explorer'
+                                : '⛓️ View Proof on Blockchain Explorer'}
+                            </span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {activeTransaction?.provisionedClientId && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-extrabold">
+                            🚀 Workspace Klien Otomatis Siap (
+                            {activeTransaction.provisionedClientId})
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Exact SLA Message & Priority Email Contact */}
+                    <div className="p-4 rounded-2xl bg-emerald-900/60 border border-[#D4AF37]/45 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#D4AF37] text-stone-950 flex items-center justify-center shrink-0 mt-0.5">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed">
+                        {lang === 'ID' ? (
+                          <p>
+                            Terima kasih! Pembayaran Anda telah tercatat. Tim
+                            kami akan menghubungi Anda melalui email maksimal{' '}
+                            <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
+                              H+3 setelah pembayaran
+                            </strong>{' '}
+                            untuk pengiriman akses 4 Akun Default &amp;
+                            Workspace Klien. Untuk konfirmasi bukti bayar
+                            prioritas, silakan hubungi:{' '}
+                            <a
+                              href={mailtoPostPaymentUrl}
+                              className="font-extrabold text-[#E6C76B] underline hover:text-white"
+                            >
+                              {businessEmail}
+                            </a>
+                            .
+                          </p>
+                        ) : (
+                          <p>
+                            Thank you! Your payment confirmation has been
+                            recorded. Our team will contact you via email within
+                            a maximum of{' '}
+                            <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
+                              3 days (D+3) after payment
+                            </strong>{' '}
+                            with your 4 Core Accounts &amp; Client Workspace
+                            credentials. For priority payment receipt
+                            confirmation, please contact:{' '}
+                            <a
+                              href={mailtoPostPaymentUrl}
+                              className="font-extrabold text-[#E6C76B] underline hover:text-white"
+                            >
+                              {businessEmail}
+                            </a>
+                            .
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons on Step 3 */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/80">
+                      <div className="flex flex-wrap items-center gap-2">
                         <a
                           href={mailtoPostPaymentUrl}
-                          className="py-2 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all"
+                          className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all"
                         >
-                          <Mail className="w-3.5 h-3.5" />
+                          <Mail className="w-4 h-4" />
                           <span>
                             {lang === 'ID'
                               ? `Kirim Bukti Bayar Prioritas ke ${businessEmail}`
@@ -1618,7 +2236,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               businessEmail
                             )
                           }
-                          className="py-2 px-3 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 border border-[#D4AF37]/40 font-bold text-xs inline-flex items-center gap-1.5 transition-all"
+                          className="py-2.5 px-3.5 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 border border-[#D4AF37]/40 font-bold text-xs inline-flex items-center gap-1.5 transition-all"
                         >
                           {copiedPaymentKey === 'official-email' ? (
                             <>
@@ -1641,9 +2259,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           )}
                         </button>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutWizardStep(2)}
+                        className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-bold transition-all"
+                      >
+                        {lang === 'ID'
+                          ? '← Lihat Detail Pembayaran'
+                          : '← View Payment Details'}
+                      </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
