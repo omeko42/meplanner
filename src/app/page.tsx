@@ -42,44 +42,12 @@ function mergePreservingLocalMedia(
   serverState: WeddingDatabaseSchema,
   localState: WeddingDatabaseSchema
 ): WeddingDatabaseSchema {
-  const localPlaylist = localState.settings?.musicPlaylist || [];
-  const serverPlaylist = serverState.settings?.musicPlaylist;
   const localOriginalPhotos = localState.settings?.originalPhotos;
-  const localGallery = localState.settings?.galleryPhotos || [];
-  const serverGallery = serverState.settings?.galleryPhotos;
-
-  const mergedPlaylist = Array.isArray(serverPlaylist)
-    ? serverPlaylist.map((track) => {
-        const localMatch = localPlaylist.find((lt) => lt.id === track.id);
-        if (localMatch && localMatch.url.startsWith('data:audio/')) {
-          return { ...track, url: localMatch.url };
-        }
-        return track;
-      })
-    : localPlaylist.length > 0
-    ? localPlaylist
-    : undefined;
-
-  const mergedGallery = Array.isArray(serverGallery)
-    ? serverGallery.map((sp) => {
-        const localMatch = localGallery.find((lp) => lp.id === sp.id);
-        if (
-          localMatch &&
-          localMatch.imageUrl?.startsWith('data:image/') &&
-          !sp.imageUrl?.startsWith('data:image/')
-        ) {
-          return { ...sp, ...localMatch };
-        }
-        return sp;
-      })
-    : undefined;
 
   return {
     ...serverState,
     settings: {
       ...serverState.settings,
-      ...(mergedPlaylist ? { musicPlaylist: mergedPlaylist } : {}),
-      ...(mergedGallery ? { galleryPhotos: mergedGallery } : {}),
       ...(localOriginalPhotos
         ? {
             originalPhotos: {
@@ -207,33 +175,10 @@ function WeddingAppContent() {
       const cloudState = cloudResult.state;
 
       if (cloudState) {
-        const cloudTime = new Date(cloudState.lastSyncedAt || 0).getTime() || 0;
-        const isLocalSeedOnly =
-          !bestLocal.lastSyncedAt ||
-          bestLocal.lastSyncedAt === '2026-01-01T00:00:00.000Z';
-
-        if (!isLocalSeedOnly && localTime > cloudTime + 1500) {
-          // Local has a very recent edit that hadn't finished uploading before refresh -> push to Supabase!
-          const merged = mergePreservingLocalMedia(bestLocal, cloudState);
-          setState(merged);
-          saveClientState(merged, false);
-          void saveStateToSupabase(merged);
-        } else {
-          // Supabase is 100% the source of truth
-          const merged = mergePreservingLocalMedia(cloudState, bestLocal);
-          setState(merged);
-          saveClientState(merged, false);
-          const rescuedGalleryPhoto = (merged.settings?.galleryPhotos || []).some(
-            (mp, idx) =>
-              mp.imageUrl?.startsWith('data:image/') &&
-              !cloudState.settings?.galleryPhotos?.[idx]?.imageUrl?.startsWith(
-                'data:image/'
-              )
-          );
-          if (rescuedGalleryPhoto) {
-            void saveStateToSupabase(merged);
-          }
-        }
+        // Supabase Cloud is 100% the single source of truth
+        const merged = mergePreservingLocalMedia(cloudState, bestLocal);
+        setState(merged);
+        saveClientState(merged, false);
       } else if (cloudResult.tableExists) {
         // Table exists in Supabase but no 'main' row yet -> initialize Supabase with current clean state
         setState(bestLocal);

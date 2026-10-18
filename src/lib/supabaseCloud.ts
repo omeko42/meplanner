@@ -391,7 +391,107 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   if (!next.brideNickname || next.brideNickname === 'Mempelai Wanita') {
     next.brideNickname = INITIAL_SETTINGS.brideNickname;
   }
+
+  // Heal custom tracks whose URL was previously overwritten with '/musik/beautiful-in-white.mp3'
+  if (Array.isArray(next.musicPlaylist)) {
+    next.musicPlaylist = next.musicPlaylist.map((m) => {
+      if (m.url === '/musik/beautiful-in-white.mp3' && !/beautiful\s*in\s*white/i.test(m.title || '')) {
+        if (/pernikahan\s*kita/i.test(m.title || '')) {
+          return {
+            ...m,
+            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3`,
+          };
+        }
+        if (/jalaraning\s*tresna/i.test(m.title || '')) {
+          return {
+            ...m,
+            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3`,
+          };
+        }
+      }
+      return m;
+    });
+    if (
+      next.musicPlaylist.length > 0 &&
+      (!next.activeMusicTrackId ||
+        !next.musicPlaylist.some((m) => m.id === next.activeMusicTrackId))
+    ) {
+      next.activeMusicTrackId = next.musicPlaylist[0].id;
+      next.musicTitle = next.musicPlaylist[0].title;
+      next.musicArtist = next.musicPlaylist[0].artist;
+    }
+  }
   return next;
+}
+
+export async function uploadAudioToSupabaseStorage(
+  fileOrDataUrl: File | string,
+  trackId: string
+): Promise<string | null> {
+  try {
+    let bodyBlob: Blob | File;
+    let contentType = 'audio/mpeg';
+    let ext = 'mp3';
+
+    if (typeof fileOrDataUrl === 'string') {
+      if (!fileOrDataUrl.startsWith('data:')) return fileOrDataUrl;
+      const mimeMatch = fileOrDataUrl.match(/^data:([^;]+);base64,/i);
+      if (mimeMatch && mimeMatch[1]) {
+        contentType = mimeMatch[1];
+        if (contentType.includes('wav')) ext = 'wav';
+        else if (contentType.includes('ogg')) ext = 'ogg';
+        else if (contentType.includes('mp4') || contentType.includes('m4a')) ext = 'm4a';
+      }
+      const res = await fetch(fileOrDataUrl);
+      bodyBlob = await res.blob();
+    } else {
+      bodyBlob = fileOrDataUrl;
+      contentType = fileOrDataUrl.type || 'audio/mpeg';
+      const nameExt = fileOrDataUrl.name.split('.').pop()?.toLowerCase();
+      if (nameExt && ['mp3', 'm4a', 'wav', 'ogg', 'aac'].includes(nameExt)) {
+        ext = nameExt;
+      }
+    }
+
+    const safeId = trackId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const objectPath = `music/${safeId}.${ext}`;
+    const upRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': contentType,
+          'x-upsert': 'true',
+        },
+        body: bodyBlob,
+      }
+    );
+    if (!upRes.ok) return null;
+    return `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteAudioFromSupabaseStorage(audioUrl: string): Promise<void> {
+  try {
+    const marker = '/storage/v1/object/public/wedding-media/';
+    const idx = audioUrl.indexOf(marker);
+    if (idx === -1) return;
+    const objectPath = audioUrl.slice(idx + marker.length).split('?')[0];
+    if (!objectPath) return;
+    await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+  } catch {
+    // Ignore storage delete errors
+  }
 }
 
 function normalizeCloudState(
@@ -508,12 +608,18 @@ async function prepareCloudSafeState(
   // Never store duplicate uncropped originalPhotos in the cloud main row (kept in local IndexedDB)
   delete rawSettings.originalPhotos;
 
-  // Never store multi-megabyte base64 MP3 inside the JSONB row
+  // Upload any inline data:audio/ MP3 to Supabase Storage bucket wedding-media so every track keeps its real audio URL
   if (Array.isArray(rawSettings.musicPlaylist)) {
-    rawSettings.musicPlaylist = rawSettings.musicPlaylist.map((m) =>
-      m.url && m.url.startsWith('data:audio/')
-        ? { ...m, url: '/musik/beautiful-in-white.mp3' }
-        : m
+    rawSettings.musicPlaylist = await Promise.all(
+      rawSettings.musicPlaylist.map(async (m) => {
+        if (m.url && m.url.startsWith('data:audio/')) {
+          const uploadedUrl = await uploadAudioToSupabaseStorage(m.url, m.id);
+          if (uploadedUrl) {
+            return { ...m, url: uploadedUrl };
+          }
+        }
+        return m;
+      })
     );
   }
 

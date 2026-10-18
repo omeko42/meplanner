@@ -127,6 +127,8 @@ import {
   subscribeAuditLogs,
   clearAuditLogs,
   appendAuditLog,
+  uploadAudioToSupabaseStorage,
+  deleteAudioFromSupabaseStorage,
 } from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
@@ -801,41 +803,56 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     return weddingMusicPlayer.subscribe(syncPlayer);
   }, [settingsForm]);
 
-  const handleUploadMusicFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadMusicFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const cleanFileName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result || '');
-      if (!dataUrl.startsWith('data:audio/') && !dataUrl.startsWith('data:video/') && !dataUrl.startsWith('data:application/octet-stream')) {
-        appendAuditLog({
-          actor: adminUser.username,
-          module: 'MUSIK_PLAYLIST',
-          action: 'ERROR',
-          status: 'ERROR',
-          summary: `Gagal upload musik "${file.name}": format tidak didukung`,
-        });
-        showToast('Pilih file audio yang valid (.mp3, .m4a, .wav, .ogg).');
-        return;
-      }
-      const normalizedDataUrl = dataUrl.startsWith('data:application/octet-stream')
-        ? dataUrl.replace('data:application/octet-stream', 'data:audio/mpeg')
-        : dataUrl;
+    const isAudioExt = /\.(mp3|m4a|wav|ogg|aac)$/i.test(file.name);
+    if (!file.type.startsWith('audio/') && !file.type.startsWith('video/') && !isAudioExt) {
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'MUSIK_PLAYLIST',
+        action: 'ERROR',
+        status: 'ERROR',
+        summary: `Gagal upload musik "${file.name}": format tidak didukung`,
+      });
+      showToast('Pilih file audio yang valid (.mp3, .m4a, .wav, .ogg).');
+      return;
+    }
 
+    const cleanFileName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
+    const trackId = `music_${Date.now().toString(36)}`;
+    showToast(`Meng-upload lagu "${cleanFileName}" ke Supabase Cloud Storage...`);
+
+    // 1. Upload directly to Supabase Storage bucket wedding-media/music/
+    const cloudAudioUrl = await uploadAudioToSupabaseStorage(file, trackId);
+
+    const finishAddTrack = async (finalUrl: string) => {
       const newTrack: MusicTrackItem = {
-        id: `music_${Date.now().toString(36)}`,
+        id: trackId,
         title: newMusicTitle.trim() || cleanFileName || 'Lagu Pernikahan Kustom',
         artist: newMusicArtist.trim() || 'Koleksi Pribadi',
-        url: normalizedDataUrl,
+        url: finalUrl,
         isDefault: false,
       };
 
       const nextList = [...effectivePlaylist, newTrack];
+      const shouldSetPrimary =
+        effectivePlaylist.length === 0 ||
+        !settingsForm.activeMusicTrackId ||
+        !nextList.some((t) => t.id === settingsForm.activeMusicTrackId);
+
       const nextSettings: WeddingSettings = {
         ...state.settings,
         ...settingsForm,
         musicPlaylist: nextList,
+        ...(shouldSetPrimary
+          ? {
+              activeMusicTrackId: newTrack.id,
+              musicTitle: newTrack.title,
+              musicArtist: newTrack.artist,
+            }
+          : {}),
         updatedBy: adminUser.username,
       };
       await commitImmediateSettings(nextSettings);
@@ -848,12 +865,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'MUSIK_PLAYLIST',
         action: 'TAMBAH',
         status: 'SUCCESS',
-        summary: `Upload lagu "${newTrack.title}" ke playlist`,
+        summary: `Upload lagu "${newTrack.title}" ke Supabase Cloud`,
       });
-      showToast(`Musik "${newTrack.title}" ditambahkan & sedang diputar (klik Pilih untuk jadikan Lagu Utama)!`);
+      showToast(
+        `✓ Musik "${newTrack.title}" tersimpan di Supabase & sedang diputar!`
+      );
+    };
+
+    if (cloudAudioUrl) {
+      await finishAddTrack(cloudAudioUrl);
+      return;
+    }
+
+    // Fallback to Data URL if offline
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result || '');
+      const normalizedDataUrl = dataUrl.startsWith('data:application/octet-stream')
+        ? dataUrl.replace('data:application/octet-stream', 'data:audio/mpeg')
+        : dataUrl;
+      await finishAddTrack(normalizedDataUrl);
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   const handleAddMusicUrlTrack = async () => {
@@ -893,16 +926,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const handleDeleteMusicTrack = (trackId: string, title: string) => {
     requestConfirm({
-      title: 'Hapus Lagu dari Playlist?',
-      message: `Apakah Anda yakin ingin menghapus lagu "${title}" dari playlist undangan?`,
-      confirmLabel: 'Ya, Hapus Lagu',
+      title: 'Hapus Lagu Secara Permanen?',
+      message: `Apakah Anda yakin ingin menghapus lagu "${title}" secara permanen dari playlist & Supabase Cloud?`,
+      confirmLabel: 'Ya, Hapus Permanen',
       variant: 'danger',
       onConfirm: async () => {
+        const targetTrack = effectivePlaylist.find((t) => t.id === trackId);
+        if (adminCurrentTrack?.id === trackId) {
+          weddingMusicPlayer.stop();
+        }
+        if (targetTrack?.url) {
+          void deleteAudioFromSupabaseStorage(targetTrack.url);
+        }
+
         const nextList = effectivePlaylist.filter((t) => t.id !== trackId);
         const nextActive =
           settingsForm.activeMusicTrackId === trackId
             ? nextList[0]?.id || ''
-            : settingsForm.activeMusicTrackId || nextList[0]?.id || '';
+            : settingsForm.activeMusicTrackId &&
+              nextList.some((t) => t.id === settingsForm.activeMusicTrackId)
+            ? settingsForm.activeMusicTrackId
+            : nextList[0]?.id || '';
         const activeTrackObj =
           nextList.find((t) => t.id === nextActive) || nextList[0];
 
@@ -922,9 +966,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           module: 'MUSIK_PLAYLIST',
           action: 'HAPUS',
           status: 'SUCCESS',
-          summary: `Menghapus lagu "${title}" dari playlist`,
+          summary: `Menghapus lagu "${title}" secara permanen dari playlist & Supabase`,
         });
-        showToast(`Lagu "${title}" dihapus dari Playlist.`);
+        showToast(`✓ Lagu "${title}" berhasil dihapus permanen dari Playlist & Cloud.`);
       },
     });
   };
@@ -2948,7 +2992,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 const isPlayingThis =
                   adminCurrentTrack?.id === track.id && isPlayingAdminMusic;
                 const isLoadedThis = adminCurrentTrack?.id === track.id;
-                const isUploaded = track.url.startsWith('data:audio/');
+                const isUploaded =
+                  track.url.startsWith('data:audio/') ||
+                  track.url.includes('/storage/v1/object/public/wedding-media/music/');
                 const meta = weddingMusicPlayer.getTrackMeta(track.id);
 
                 return (

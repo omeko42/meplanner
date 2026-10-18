@@ -19,7 +19,7 @@ import {
   INITIAL_BUDGET_ITEMS,
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
-import { queueSaveStateToSupabase } from '@/lib/supabaseCloud';
+import { queueSaveStateToSupabase, SUPABASE_URL } from '@/lib/supabaseCloud';
 
 const STORAGE_KEY = 'my_wedding_manager_state_v5';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
@@ -74,6 +74,40 @@ function normalizeParsedState(
     mergedSettings.brideNickname === 'Mempelai Wanita'
   ) {
     mergedSettings.brideNickname = INITIAL_SETTINGS.brideNickname;
+  }
+
+  if (Array.isArray(mergedSettings.musicPlaylist)) {
+    mergedSettings.musicPlaylist = mergedSettings.musicPlaylist.map((m) => {
+      if (
+        m.url === '/musik/beautiful-in-white.mp3' &&
+        !/beautiful\s*in\s*white/i.test(m.title || '')
+      ) {
+        if (/pernikahan\s*kita/i.test(m.title || '')) {
+          return {
+            ...m,
+            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3`,
+          };
+        }
+        if (/jalaraning\s*tresna/i.test(m.title || '')) {
+          return {
+            ...m,
+            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3`,
+          };
+        }
+      }
+      return m;
+    });
+    if (
+      mergedSettings.musicPlaylist.length > 0 &&
+      (!mergedSettings.activeMusicTrackId ||
+        !mergedSettings.musicPlaylist.some(
+          (m) => m.id === mergedSettings.activeMusicTrackId
+        ))
+    ) {
+      mergedSettings.activeMusicTrackId = mergedSettings.musicPlaylist[0].id;
+      mergedSettings.musicTitle = mergedSettings.musicPlaylist[0].title;
+      mergedSettings.musicArtist = mergedSettings.musicPlaylist[0].artist;
+    }
   }
 
   return {
@@ -229,8 +263,8 @@ export function saveClientState(
       const compactSettings: WeddingSettings = {
         ...syncedState.settings,
         originalPhotos: undefined,
-        musicPlaylist: (syncedState.settings.musicPlaylist || []).map((m) =>
-          m.url.startsWith('data:audio/') ? { ...m, url: '/musik/beautiful-in-white.mp3' } : m
+        musicPlaylist: (syncedState.settings.musicPlaylist || []).filter(
+          (m) => !m.url.startsWith('data:audio/')
         ),
         galleryPhotos: (syncedState.settings.galleryPhotos || []).map((g) => ({
           ...g,
@@ -648,6 +682,7 @@ export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrack
 export interface TrackAudioMeta {
   status: 'loading' | 'ready' | 'error';
   durationSec: number;
+  probedUrl?: string;
 }
 
 export function formatAudioDuration(seconds: number): string {
@@ -734,20 +769,41 @@ class AmbientWeddingPlayer {
 
   private probePlaylistMetadata(list: MusicTrackItem[]): void {
     if (typeof window === 'undefined') return;
+    // Purge deleted track IDs from metadata cache
+    const validIds = new Set(list.map((t) => t.id));
+    Array.from(this.trackMetaMap.keys()).forEach((id) => {
+      if (!validIds.has(id)) {
+        this.trackMetaMap.delete(id);
+        this.probingIds.delete(id);
+      }
+    });
+
     list.forEach((track) => {
       if (!track.url || track.url.startsWith('synth:')) {
-        this.trackMetaMap.set(track.id, { status: 'ready', durationSec: 180 });
+        this.trackMetaMap.set(track.id, {
+          status: 'ready',
+          durationSec: 180,
+          probedUrl: track.url,
+        });
         return;
       }
       const existing = this.trackMetaMap.get(track.id);
-      if (existing && (existing.status === 'ready' || existing.status === 'error')) {
+      if (
+        existing &&
+        existing.probedUrl === track.url &&
+        (existing.status === 'ready' || existing.status === 'error')
+      ) {
         return;
       }
-      if (this.probingIds.has(track.id)) {
+      if (this.probingIds.has(track.id) && existing?.probedUrl === track.url) {
         return;
       }
       this.probingIds.add(track.id);
-      this.trackMetaMap.set(track.id, { status: 'loading', durationSec: 0 });
+      this.trackMetaMap.set(track.id, {
+        status: 'loading',
+        durationSec: 0,
+        probedUrl: track.url,
+      });
       try {
         const probe = new window.Audio();
         probe.preload = 'metadata';
@@ -757,18 +813,27 @@ class AmbientWeddingPlayer {
           this.trackMetaMap.set(track.id, {
             status: dur > 0 ? 'ready' : 'error',
             durationSec: dur,
+            probedUrl: track.url,
           });
           this.notify();
         };
         probe.onerror = () => {
           this.probingIds.delete(track.id);
-          this.trackMetaMap.set(track.id, { status: 'error', durationSec: 0 });
+          this.trackMetaMap.set(track.id, {
+            status: 'error',
+            durationSec: 0,
+            probedUrl: track.url,
+          });
           this.notify();
         };
         probe.src = track.url;
       } catch {
         this.probingIds.delete(track.id);
-        this.trackMetaMap.set(track.id, { status: 'error', durationSec: 0 });
+        this.trackMetaMap.set(track.id, {
+          status: 'error',
+          durationSec: 0,
+          probedUrl: track.url,
+        });
       }
     });
   }
@@ -793,27 +858,67 @@ class AmbientWeddingPlayer {
         this.audioEl.volume = this.isMuted ? 0 : this.volume / 100;
       }
     }
+
+    if (list.length === 0) {
+      this.stop();
+      this.currentTrackId = '';
+      this.currentAudioSrc = '';
+      if (this.audioEl) {
+        try {
+          this.audioEl.removeAttribute('src');
+          this.audioEl.load();
+        } catch {
+          // Ignore
+        }
+      }
+      this.notify();
+      return;
+    }
+
     const desiredId = settings.activeMusicTrackId;
     if (!list.some((t) => t.id === this.currentTrackId)) {
-      // Current track was removed from playlist
+      // Current track was removed from playlist: completely clear old audio buffer
       this.hasManualPreview = false;
+      this.pauseHtmlAudio();
+      this.clearSynthTimer();
+      this.currentAudioSrc = '';
+      if (this.audioEl) {
+        try {
+          this.audioEl.removeAttribute('src');
+          this.audioEl.load();
+        } catch {
+          // Ignore
+        }
+      }
       if (desiredId && list.some((t) => t.id === desiredId)) {
         this.currentTrackId = desiredId;
-      } else if (list.length > 0) {
+      } else {
         this.currentTrackId = list[0].id;
       }
       if (this.isPlaying) {
         this.restartCurrentTrack();
       }
-    } else if (
-      !this.isPlaying &&
-      !this.hasManualPreview &&
-      desiredId &&
-      list.some((t) => t.id === desiredId)
-    ) {
-      this.currentTrackId = desiredId;
-    } else if (list.length === 0 && this.isPlaying) {
-      this.stop();
+    } else {
+      if (
+        !this.isPlaying &&
+        !this.hasManualPreview &&
+        desiredId &&
+        list.some((t) => t.id === desiredId)
+      ) {
+        this.currentTrackId = desiredId;
+      }
+      // If the active track's URL changed (e.g., healed or replaced in cloud), switch audio source immediately
+      const currentObj = list.find((t) => t.id === this.currentTrackId);
+      if (
+        currentObj &&
+        this.currentAudioSrc &&
+        this.currentAudioSrc !== currentObj.url
+      ) {
+        this.currentAudioSrc = '';
+        if (this.isPlaying) {
+          this.restartCurrentTrack();
+        }
+      }
     }
     this.notify();
   }
