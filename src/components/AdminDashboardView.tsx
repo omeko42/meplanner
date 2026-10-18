@@ -91,7 +91,12 @@ import {
   AuditLogEntry,
   ClientGroupItem,
   InvitationInteractionType,
+  CommercialPaymentChannel,
+  CommercialPaymentCategory,
+  CommercialPaymentTransaction,
+  CommercialPaymentStatus,
 } from '@/types';
+import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
 import {
   formatRupiah,
   generateWhatsAppMessage,
@@ -140,6 +145,7 @@ import {
   fetchSupabaseStorageCapacity,
   cleanupOrphanedStorageMedia,
   SupabaseStorageCapacityReport,
+  upsertCommercialPaymentToSupabase,
 } from '@/lib/supabaseCloud';
 
 export type AdminModuleTab =
@@ -1143,8 +1149,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
   const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
   const [superadminMenuTab, setSuperadminMenuTab] = useState<
-    'clients' | 'moderation' | 'insights' | 'storage' | 'branding'
+    'clients' | 'payments' | 'moderation' | 'insights' | 'storage' | 'branding'
   >('clients');
+
+  // Superadmin Dynamic Wallet Manager & Idempotent Payment Ledger States
+  const [isChannelEditorOpen, setIsChannelEditorOpen] = useState<boolean>(false);
+  const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
+  const [channelForm, setChannelForm] = useState<
+    Omit<CommercialPaymentChannel, 'id' | 'updatedAt'>
+  >({
+    category: 'CRYPTO',
+    marketScope: 'BOTH',
+    providerName: '',
+    accountOrWalletAddress: '',
+    accountHolder: 'My Wedding Manager (Eko Agung K.)',
+    networkOrBranch: '',
+    qrCodeImageUrl: '',
+    checkoutUrl: '',
+    minAmountNote: 'Min. 10 USDT / Rp 50.000',
+    instructions: '',
+    isActive: true,
+  });
+  const [paymentLedgerFilter, setPaymentLedgerFilter] = useState<
+    'ALL' | 'PENDING_VERIFICATION' | 'PAID_VERIFIED' | 'FAILED_TIMEOUT'
+  >('ALL');
+  const [paymentLedgerSearch, setPaymentLedgerSearch] = useState<string>('');
+  const [isManualPaymentModalOpen, setIsManualPaymentModalOpen] =
+    useState<boolean>(false);
+  const [manualPaymentForm, setManualPaymentForm] = useState<{
+    packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
+    marketLang: 'ID' | 'EN';
+    channelId: string;
+    buyerEmail: string;
+    buyerCoupleName: string;
+    paymentReference: string;
+    status: CommercialPaymentStatus;
+  }>({
+    packageTier: 'EXCLUSIVE',
+    marketLang: 'ID',
+    channelId: 'ch-qris-id',
+    buyerEmail: '',
+    buyerCoupleName: '',
+    paymentReference: '',
+    status: 'PAID_VERIFIED',
+  });
 
   // Expanded section key inside Visibilitas & Konten so user can toggle Switch + edit what is displayed right there
   const [expandedSectionKey, setExpandedSectionKey] = useState<string | null>(
@@ -4318,7 +4366,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="space-y-3 text-xs overflow-y-auto">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-stone-700">
-                    SQL Setup Multi-Tabel (8 Tabel Relasional + Anti-Timeout 30 Detik):
+                    SQL Setup Multi-Tabel (9 Tabel Relasional + Tabel Pembayaran Idempoten + Anti-Timeout 30 Detik):
                   </span>
                   <button
                     type="button"
@@ -4335,7 +4383,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </button>
                 </div>
                 <p className="text-[11px] text-stone-600 leading-relaxed bg-[#FAF8F5] border border-stone-200 rounded-xl p-2.5">
-                  Jalankan SQL ini di <strong>SQL Editor Supabase</strong> untuk membuat 8 tabel terpisah di Schema Visualizer (<code className="font-mono text-[#8B6914]">wedding_settings</code>, <code className="font-mono text-[#8B6914]">wedding_media</code>, <code className="font-mono text-[#8B6914]">wedding_tasks</code>, <code className="font-mono text-[#8B6914]">wedding_guests</code>, <code className="font-mono text-[#8B6914]">wedding_wishes</code>, <code className="font-mono text-[#8B6914]">wedding_budgets</code>, <code className="font-mono text-[#8B6914]">wedding_users</code>, <code className="font-mono text-[#8B6914]">wedding_state</code>) sekaligus menaikkan batas <code className="font-mono text-[#8B6914]">statement_timeout</code> menjadi <strong>30 detik</strong>.
+                  Jalankan SQL ini di <strong>SQL Editor Supabase</strong> untuk membuat 9 tabel terpisah di Schema Visualizer (<code className="font-mono text-[#8B6914]">wedding_settings</code>, <code className="font-mono text-[#8B6914]">wedding_media</code>, <code className="font-mono text-[#8B6914]">wedding_tasks</code>, <code className="font-mono text-[#8B6914]">wedding_guests</code>, <code className="font-mono text-[#8B6914]">wedding_wishes</code>, <code className="font-mono text-[#8B6914]">wedding_budgets</code>, <code className="font-mono text-[#8B6914]">wedding_users</code>, <code className="font-mono text-[#8B6914]">wedding_payments</code>, <code className="font-mono text-[#8B6914]">wedding_state</code>) sekaligus menaikkan batas <code className="font-mono text-[#8B6914]">statement_timeout</code> menjadi <strong>30 detik</strong>.
                 </p>
                 <pre className="p-3 rounded-xl bg-stone-900 text-emerald-300 font-mono text-[11px] overflow-x-auto leading-relaxed select-all">
                   {SUPABASE_SETUP_SQL}
@@ -9452,6 +9500,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       badge: `${effectiveClientGroups.length} Klien`,
                     },
                     {
+                      id: 'payments' as const,
+                      label: 'Wallet & Pembayaran',
+                      icon: Wallet,
+                      badge: `${
+                        (settingsForm.commercialPaymentChannels &&
+                        settingsForm.commercialPaymentChannels.length > 0
+                          ? settingsForm.commercialPaymentChannels
+                          : state.settings.commercialPaymentChannels &&
+                            state.settings.commercialPaymentChannels.length > 0
+                          ? state.settings.commercialPaymentChannels
+                          : DEFAULT_COMMERCIAL_PAYMENT_CHANNELS
+                        ).filter((c) => c.isActive).length
+                      } Wallet`,
+                    },
+                    {
                       id: 'moderation' as const,
                       label: 'Moderasi & Audit',
                       icon: Shield,
@@ -9690,6 +9753,1771 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* ===========================================================
+                    1B. WALLET DINAMIS SUPERADMIN & DATABASE PEMBAYARAN IDEMPOTEN
+                   =========================================================== */}
+                {superadminMenuTab === 'payments' &&
+                  (() => {
+                    const effectiveChannels: CommercialPaymentChannel[] =
+                      settingsForm.commercialPaymentChannels &&
+                      settingsForm.commercialPaymentChannels.length > 0
+                        ? settingsForm.commercialPaymentChannels
+                        : state.settings.commercialPaymentChannels &&
+                          state.settings.commercialPaymentChannels.length > 0
+                        ? state.settings.commercialPaymentChannels
+                        : DEFAULT_COMMERCIAL_PAYMENT_CHANNELS;
+
+                    const effectivePayments: CommercialPaymentTransaction[] =
+                      settingsForm.commercialPayments ??
+                      state.settings.commercialPayments ??
+                      [];
+
+                    const saveChannelsToDatabase = async (
+                      nextChannels: CommercialPaymentChannel[],
+                      auditSummary: string
+                    ) => {
+                      const nextSettings: WeddingSettings = {
+                        ...state.settings,
+                        ...settingsForm,
+                        commercialPaymentChannels: nextChannels,
+                        updatedBy: adminUser.username,
+                      };
+                      setSettingsFormInternal(nextSettings);
+                      await commitImmediateSettings(nextSettings);
+                      appendAuditLog({
+                        actor: adminUser.username,
+                        module: 'SUPERADMIN_WALLET',
+                        action: 'SIMPAN',
+                        status: 'SUCCESS',
+                        summary: auditSummary,
+                      });
+                    };
+
+                    const savePaymentsToDatabase = async (
+                      nextPayments: CommercialPaymentTransaction[],
+                      targetTx: CommercialPaymentTransaction,
+                      auditSummary: string
+                    ) => {
+                      const nextSettings: WeddingSettings = {
+                        ...state.settings,
+                        ...settingsForm,
+                        commercialPayments: nextPayments,
+                        updatedBy: adminUser.username,
+                      };
+                      setSettingsFormInternal(nextSettings);
+                      await commitImmediateSettings(nextSettings);
+                      await upsertCommercialPaymentToSupabase(targetTx);
+                      appendAuditLog({
+                        actor: adminUser.username,
+                        module: 'SUPERADMIN_PAYMENT_LEDGER',
+                        action: 'SIMPAN',
+                        status: 'SUCCESS',
+                        summary: auditSummary,
+                      });
+                    };
+
+                    const pendingCount = effectivePayments.filter(
+                      (p) =>
+                        p.status === 'PENDING_VERIFICATION' ||
+                        p.status === 'INITIATED'
+                    ).length;
+                    const verifiedCount = effectivePayments.filter(
+                      (p) => p.status === 'PAID_VERIFIED'
+                    ).length;
+                    const timeoutRetryCount = effectivePayments.filter(
+                      (p) => p.status === 'FAILED_TIMEOUT' || p.retryCount > 0
+                    ).length;
+
+                    const filteredPayments = effectivePayments.filter((p) => {
+                      if (
+                        paymentLedgerFilter === 'PENDING_VERIFICATION' &&
+                        p.status !== 'PENDING_VERIFICATION' &&
+                        p.status !== 'INITIATED'
+                      ) {
+                        return false;
+                      }
+                      if (
+                        paymentLedgerFilter === 'PAID_VERIFIED' &&
+                        p.status !== 'PAID_VERIFIED'
+                      ) {
+                        return false;
+                      }
+                      if (
+                        paymentLedgerFilter === 'FAILED_TIMEOUT' &&
+                        p.status !== 'FAILED_TIMEOUT' &&
+                        p.retryCount <= 0
+                      ) {
+                        return false;
+                      }
+                      const q = paymentLedgerSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        p.orderId.toLowerCase().includes(q) ||
+                        p.idempotencyKey.toLowerCase().includes(q) ||
+                        p.buyerEmail.toLowerCase().includes(q) ||
+                        p.buyerCoupleName.toLowerCase().includes(q) ||
+                        (p.paymentReference || '').toLowerCase().includes(q) ||
+                        p.channelProviderName.toLowerCase().includes(q)
+                      );
+                    });
+
+                    const getCategoryBadge = (cat: CommercialPaymentCategory) => {
+                      switch (cat) {
+                        case 'CRYPTO':
+                          return {
+                            label: '🪙 CRYPTO',
+                            cls: 'bg-amber-100 text-amber-900 border-amber-300',
+                          };
+                        case 'PAYPAL':
+                          return {
+                            label: '🌐 PAYPAL',
+                            cls: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+                          };
+                        case 'CREDIT_CARD':
+                          return {
+                            label: '💳 KARTU KREDIT',
+                            cls: 'bg-violet-100 text-violet-900 border-violet-300',
+                          };
+                        case 'BANK_TRANSFER':
+                          return {
+                            label: '🏦 BANK',
+                            cls: 'bg-blue-100 text-blue-900 border-blue-300',
+                          };
+                        case 'QRIS':
+                          return {
+                            label: '📱 QRIS',
+                            cls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+                          };
+                        case 'EWALLET':
+                          return {
+                            label: '📲 E-WALLET',
+                            cls: 'bg-teal-100 text-teal-900 border-teal-300',
+                          };
+                      }
+                    };
+
+                    const getScopeBadge = (scope: 'ID' | 'EN' | 'BOTH') => {
+                      if (scope === 'ID') {
+                        return {
+                          label: '🇮🇩 ID Only',
+                          cls: 'bg-rose-50 text-rose-800 border-rose-200',
+                        };
+                      }
+                      if (scope === 'EN') {
+                        return {
+                          label: '🇬🇧 EN Global',
+                          cls: 'bg-sky-50 text-sky-800 border-sky-200',
+                        };
+                      }
+                      return {
+                        label: '🌍 ID & EN',
+                        cls: 'bg-stone-100 text-stone-800 border-stone-300',
+                      };
+                    };
+
+                    return (
+                      <div className="space-y-6">
+                        {/* =======================================================
+                            SECTION A: MANAJEMEN WALLET & CHANNEL PEMBAYARAN SUPERADMIN
+                           ======================================================= */}
+                        <div className="space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                                <Wallet className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                                  Manajemen Wallet &amp; Channel Pembayaran Superadmin
+                                </h3>
+                                <p className="text-[11px] text-stone-500">
+                                  Tambah, edit, aktifkan/nonaktifkan, atau hapus wallet pembayaran komersial (Crypto USDT, PayPal, Kartu Kredit, QRIS, Bank &amp; E-Wallet) untuk halaman order klien.
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingChannelId(null);
+                                setChannelForm({
+                                  category: 'CRYPTO',
+                                  marketScope: 'BOTH',
+                                  providerName: '',
+                                  accountOrWalletAddress: '',
+                                  accountHolder:
+                                    'My Wedding Manager (Eko Agung K.)',
+                                  networkOrBranch: 'TRC20 (Tron)',
+                                  qrCodeImageUrl: '',
+                                  checkoutUrl: '',
+                                  minAmountNote: 'Min. 10 USDT',
+                                  instructions:
+                                    'Kirim tepat sesuai nominal paket dan masukkan TXID / Nomor Referensi pada form verifikasi.',
+                                  isActive: true,
+                                });
+                                setIsChannelEditorOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>+ Tambah Wallet / Channel Baru</span>
+                            </button>
+                          </div>
+
+                          {/* Preset Cepat Pills */}
+                          <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2">
+                            <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                              Preset Cepat Tambah Wallet / Channel Pembayaran:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                {
+                                  pill: '🪙 + Wallet USDT (TRC20)',
+                                  category: 'CRYPTO' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName:
+                                    'USDT (Tether) — Jaringan TRC20 (Tron)',
+                                  accountOrWalletAddress: '',
+                                  accountHolder: 'MWM Crypto Treasury (TRC20)',
+                                  networkOrBranch: 'TRC20 (Tron)',
+                                  minAmountNote: 'Min. 10 USDT',
+                                  instructions:
+                                    'Kirim USDT HANYA melalui jaringan TRC20 (Tron). Masukkan TXID / Hash setelah transaksi Confirmed.',
+                                },
+                                {
+                                  pill: '🪙 + Wallet USDT (BEP20)',
+                                  category: 'CRYPTO' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName:
+                                    'USDT (Tether) — Jaringan BEP20 (BNB Smart Chain)',
+                                  accountOrWalletAddress: '',
+                                  accountHolder: 'MWM Crypto Treasury (BEP20)',
+                                  networkOrBranch: 'BEP20 (BNB Smart Chain)',
+                                  minAmountNote: 'Min. 10 USDT',
+                                  instructions:
+                                    'Kirim USDT HANYA melalui jaringan BEP20 (BNB Smart Chain). Masukkan TXID / Hash setelah transaksi Confirmed.',
+                                },
+                                {
+                                  pill: '🪙 + Wallet USDT (ERC20)',
+                                  category: 'CRYPTO' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName:
+                                    'USDT (Tether) — Jaringan ERC20 (Ethereum)',
+                                  accountOrWalletAddress: '',
+                                  accountHolder: 'MWM Crypto Treasury (ERC20)',
+                                  networkOrBranch: 'ERC20 (Ethereum)',
+                                  minAmountNote: 'Min. 10 USDT',
+                                  instructions:
+                                    'Kirim USDT melalui jaringan ERC20 (Ethereum). Masukkan TXID / Hash setelah transaksi Confirmed.',
+                                },
+                                {
+                                  pill: '🪙 + Wallet BTC / SOL',
+                                  category: 'CRYPTO' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName: 'Bitcoin (BTC) / Solana (SOL)',
+                                  accountOrWalletAddress: '',
+                                  accountHolder: 'MWM Crypto Treasury',
+                                  networkOrBranch: 'SOL (Solana)',
+                                  minAmountNote: 'Setara Min. $10 USD',
+                                  instructions:
+                                    'Pastikan jaringan blockchain sesuai sebelum mengirim aset kripto.',
+                                },
+                                {
+                                  pill: '🌐 + PayPal International',
+                                  category: 'PAYPAL' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName:
+                                    'PayPal International (Official Merchant)',
+                                  accountOrWalletAddress:
+                                    'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+                                  accountHolder:
+                                    'My Wedding Manager (Eko Agung Krisdianto)',
+                                  networkOrBranch:
+                                    'PayPal Balance / International Cards (USD)',
+                                  checkoutUrl:
+                                    'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+                                  qrCodeImageUrl: '/paypal-qr-mwm.png',
+                                  minAmountNote: 'Min. $10 USD',
+                                  instructions:
+                                    'Scan QR Code PayPal resmi atau klik tombol PayPal Checkout, lalu masukkan Transaction ID PayPal Anda.',
+                                },
+                                {
+                                  pill: '💳 + Kartu Kredit (Visa/Mastercard)',
+                                  category:
+                                    'CREDIT_CARD' as CommercialPaymentCategory,
+                                  marketScope: 'BOTH' as const,
+                                  providerName:
+                                    'Visa / Mastercard / JCB / Apple Pay',
+                                  accountOrWalletAddress:
+                                    'Official Card Checkout Gateway',
+                                  accountHolder: 'My Wedding Manager (@omeko11)',
+                                  networkOrBranch:
+                                    'Visa, Mastercard, Amex, JCB & Debit Online',
+                                  checkoutUrl:
+                                    'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+                                  qrCodeImageUrl: '/paypal-qr-mwm.png',
+                                  minAmountNote: 'Mulai Rp 50.000 / $10 USD',
+                                  instructions:
+                                    'Klik tombol Checkout Kartu Kredit/Debit untuk menyelesaikan pembayaran aman via gateway resmi.',
+                                },
+                                {
+                                  pill: '🏦 + Bank BCA / Mandiri / BRI / BNI',
+                                  category:
+                                    'BANK_TRANSFER' as CommercialPaymentCategory,
+                                  marketScope: 'ID' as const,
+                                  providerName: 'Bank BCA / Mandiri / BRI / BNI',
+                                  accountOrWalletAddress: '',
+                                  accountHolder: 'Eko Agung Krisdianto',
+                                  networkOrBranch:
+                                    'Transfer Bank IDR (Real-Time / BI-FAST)',
+                                  minAmountNote: 'Mulai Rp 50.000',
+                                  instructions:
+                                    'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 149.000 / Rp 299.000) dan cantumkan Nama Pasangan di berita transfer.',
+                                },
+                                {
+                                  pill: '📱 + QRIS Nasional',
+                                  category: 'QRIS' as CommercialPaymentCategory,
+                                  marketScope: 'ID' as const,
+                                  providerName:
+                                    'QRIS Nasional (All Bank & E-Wallet Indonesia)',
+                                  accountOrWalletAddress:
+                                    'NMID: My Wedding Manager Indonesia',
+                                  accountHolder:
+                                    'My Wedding Manager (Eko Agung K.)',
+                                  networkOrBranch:
+                                    'M-Banking, GoPay, OVO, DANA, ShopeePay, LinkAja',
+                                  minAmountNote: 'Mulai Rp 50.000',
+                                  instructions:
+                                    'Scan QRIS resmi sesuai nominal paket yang dipilih, lalu masukkan nomor referensi transaksi pada langkah verifikasi.',
+                                },
+                                {
+                                  pill: '📲 + E-Wallet (GoPay/OVO/DANA)',
+                                  category:
+                                    'EWALLET' as CommercialPaymentCategory,
+                                  marketScope: 'ID' as const,
+                                  providerName: 'GoPay / DANA / OVO / ShopeePay',
+                                  accountOrWalletAddress: '089638616516',
+                                  accountHolder: 'Eko Agung Krisdianto',
+                                  networkOrBranch: 'Dompet Digital Indonesia (IDR)',
+                                  minAmountNote: 'Mulai Rp 50.000',
+                                  instructions:
+                                    'Kirim ke nomor E-Wallet resmi di atas dan simpan nomor referensi transaksi.',
+                                },
+                              ].map((preset) => (
+                                <button
+                                  key={preset.pill}
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingChannelId(null);
+                                    setChannelForm({
+                                      category: preset.category,
+                                      marketScope: preset.marketScope,
+                                      providerName: preset.providerName,
+                                      accountOrWalletAddress:
+                                        preset.accountOrWalletAddress,
+                                      accountHolder: preset.accountHolder,
+                                      networkOrBranch: preset.networkOrBranch,
+                                      qrCodeImageUrl:
+                                        'qrCodeImageUrl' in preset &&
+                                        preset.qrCodeImageUrl
+                                          ? preset.qrCodeImageUrl
+                                          : '',
+                                      checkoutUrl:
+                                        'checkoutUrl' in preset &&
+                                        preset.checkoutUrl
+                                          ? preset.checkoutUrl
+                                          : '',
+                                      minAmountNote: preset.minAmountNote,
+                                      instructions: preset.instructions,
+                                      isActive: true,
+                                    });
+                                    setIsChannelEditorOpen(true);
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[11px] transition-all shadow-2xs"
+                                >
+                                  {preset.pill}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Form Tambah / Edit Wallet Superadmin */}
+                          {isChannelEditorOpen && (
+                            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/50 border-2 border-[#B68D40] shadow-md space-y-4">
+                              <div className="flex items-center justify-between gap-2 border-b border-[#D4AF37]/30 pb-2.5">
+                                <div>
+                                  <h4 className="text-xs sm:text-sm font-extrabold text-stone-900">
+                                    {editingChannelId
+                                      ? '✏️ Edit Wallet / Channel Pembayaran Superadmin'
+                                      : '➕ Tambah Wallet / Channel Pembayaran Baru'}
+                                  </h4>
+                                  <p className="text-[11px] text-stone-500">
+                                    Data wallet ini langsung tersinkron ke modal Checkout Paket di halaman depan (Landing Page ID &amp; EN).
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsChannelEditorOpen(false);
+                                    setEditingChannelId(null);
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-stone-100 text-stone-500"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Kategori Metode*
+                                  </label>
+                                  <select
+                                    value={channelForm.category}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        category: e.target
+                                          .value as CommercialPaymentCategory,
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800"
+                                  >
+                                    <option value="CRYPTO">
+                                      🪙 CRYPTO (USDT / BTC / SOL / Web3)
+                                    </option>
+                                    <option value="PAYPAL">
+                                      🌐 PAYPAL (PayPal International)
+                                    </option>
+                                    <option value="CREDIT_CARD">
+                                      💳 CREDIT_CARD (Visa / Mastercard / Link)
+                                    </option>
+                                    <option value="BANK_TRANSFER">
+                                      🏦 BANK_TRANSFER (BCA / Mandiri / BRI / BNI)
+                                    </option>
+                                    <option value="QRIS">
+                                      📱 QRIS (QRIS Nasional Indonesia)
+                                    </option>
+                                    <option value="EWALLET">
+                                      📲 EWALLET (GoPay / OVO / DANA / ShopeePay)
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Target Pasar &amp; Mata Uang*
+                                  </label>
+                                  <select
+                                    value={channelForm.marketScope}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        marketScope: e.target.value as
+                                          | 'ID'
+                                          | 'EN'
+                                          | 'BOTH',
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800"
+                                  >
+                                    <option value="BOTH">
+                                      🌍 Tampil di Indonesia &amp; Internasional (BOTH)
+                                    </option>
+                                    <option value="ID">
+                                      🇮🇩 Khusus Pasar Indonesia — IDR (ID)
+                                    </option>
+                                    <option value="EN">
+                                      🇬🇧 Khusus Pasar Internasional — USD / USDT (EN)
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Nama Provider / Bank / Koin*
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.providerName}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        providerName: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: USDT (Tether) — Jaringan TRC20 / Bank BCA"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-semibold"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Atas Nama / Pemilik Wallet*
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.accountHolder}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        accountHolder: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: Eko Agung Krisdianto / MWM Crypto Treasury"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Alamat Wallet Crypto / Nomor Rekening / ID Merchant*
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.accountOrWalletAddress}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        accountOrWalletAddress: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE atau Nomor Rekening BCA"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Jaringan Blockchain / Cabang / Keterangan
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.networkOrBranch || ''}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        networkOrBranch: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: TRC20 (Tron) / BEP20 (BNB Smart Chain) / KCP Semarang"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                                  />
+                                  {channelForm.category === 'CRYPTO' && (
+                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                      {[
+                                        'TRC20 (Tron)',
+                                        'BEP20 (BNB Smart Chain)',
+                                        'ERC20 (Ethereum)',
+                                        'SOL (Solana)',
+                                        'Bitcoin Network',
+                                      ].map((net) => (
+                                        <button
+                                          key={net}
+                                          type="button"
+                                          onClick={() =>
+                                            setChannelForm((prev) => ({
+                                              ...prev,
+                                              networkOrBranch: net,
+                                            }))
+                                          }
+                                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                                            channelForm.networkOrBranch === net
+                                              ? 'bg-amber-600 text-white border-amber-600'
+                                              : 'bg-amber-50/70 text-amber-900 border-amber-300 hover:bg-amber-100'
+                                          }`}
+                                        >
+                                          {net}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Link Checkout Langsung (Opsional — PayPal / Stripe / Link)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.checkoutUrl || ''}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        checkoutUrl: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="https://www.paypal.com/ncp/payment/..."
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Catatan Minimal Transfer
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={channelForm.minAmountNote || ''}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        minAmountNote: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: Mulai Rp 50.000 / Min. 10 USDT"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                                  />
+                                </div>
+
+                                {/* Upload / URL Barcode QR */}
+                                <div className="sm:col-span-2 p-3 rounded-xl bg-white border border-stone-200 space-y-2">
+                                  <label className="block text-[11px] font-bold text-stone-700">
+                                    Upload / URL Barcode QR (QRIS / QR PayPal / QR Wallet Crypto)
+                                  </label>
+                                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                                    {channelForm.qrCodeImageUrl ? (
+                                      <div className="w-20 h-20 rounded-xl border border-[#D4AF37]/60 bg-[#FAF8F5] p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
+                                        <img
+                                          src={channelForm.qrCodeImageUrl}
+                                          alt="Preview QR Channel"
+                                          className="w-full h-full object-contain rounded-lg"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-stone-300 bg-[#FAF8F5] flex items-center justify-center text-[10px] text-stone-400 text-center p-2 shrink-0">
+                                        Belum Ada QR
+                                      </div>
+                                    )}
+                                    <div className="flex-1 w-full space-y-2">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs">
+                                          <Upload className="w-3.5 h-3.5" />
+                                          <span>Upload Gambar QR</span>
+                                          <input
+                                            type="file"
+                                            accept="image/*,.svg"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              e.target.value = '';
+                                              if (!file) return;
+                                              try {
+                                                showToast(
+                                                  'Mengonversi gambar QR Wallet...'
+                                                );
+                                                const dataUrl =
+                                                  await compressImageFileToDataUrl(
+                                                    file,
+                                                    1800,
+                                                    0.92
+                                                  );
+                                                setChannelForm((prev) => ({
+                                                  ...prev,
+                                                  qrCodeImageUrl: dataUrl,
+                                                }));
+                                                showToast(
+                                                  '✓ Gambar QR berhasil dimuat ke form wallet!'
+                                                );
+                                              } catch {
+                                                showToast(
+                                                  'Gagal memuat file gambar QR.'
+                                                );
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                        {channelForm.qrCodeImageUrl && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setChannelForm((prev) => ({
+                                                ...prev,
+                                                qrCodeImageUrl: '',
+                                              }))
+                                            }
+                                            className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs"
+                                          >
+                                            Hapus QR
+                                          </button>
+                                        )}
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={
+                                          (
+                                            channelForm.qrCodeImageUrl || ''
+                                          ).startsWith('data:')
+                                            ? ''
+                                            : channelForm.qrCodeImageUrl || ''
+                                        }
+                                        onChange={(e) =>
+                                          setChannelForm((prev) => ({
+                                            ...prev,
+                                            qrCodeImageUrl: e.target.value,
+                                          }))
+                                        }
+                                        placeholder={
+                                          (
+                                            channelForm.qrCodeImageUrl || ''
+                                          ).startsWith('data:')
+                                            ? '✓ Gambar QR ter-upload (atau tempel URL gambar QR di sini)'
+                                            : 'Atau tempel URL gambar QR (contoh: /paypal-qr-mwm.png atau https://...)'
+                                        }
+                                        className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Instruksi Pembayaran untuk Klien
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    value={channelForm.instructions || ''}
+                                    onChange={(e) =>
+                                      setChannelForm((prev) => ({
+                                        ...prev,
+                                        instructions: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Instruksi singkat yang tampil saat klien memilih metode pembayaran ini..."
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                                  />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={channelForm.isActive}
+                                      onChange={(e) =>
+                                        setChannelForm((prev) => ({
+                                          ...prev,
+                                          isActive: e.target.checked,
+                                        }))
+                                      }
+                                      className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                                    />
+                                    <span className="text-xs font-bold text-stone-800">
+                                      Status Aktif (Tampilkan metode/wallet ini di halaman Checkout Klien)
+                                    </span>
+                                  </label>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200/80">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsChannelEditorOpen(false);
+                                    setEditingChannelId(null);
+                                  }}
+                                  className="px-4 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs"
+                                >
+                                  Batal
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (
+                                      !channelForm.providerName.trim() ||
+                                      !channelForm.accountOrWalletAddress.trim()
+                                    ) {
+                                      showToast(
+                                        'Nama Provider/Koin dan Alamat Wallet/Nomor Rekening wajib diisi!'
+                                      );
+                                      return;
+                                    }
+                                    const nowIso = new Date().toISOString();
+                                    const cleanChannel: CommercialPaymentChannel =
+                                      {
+                                        id:
+                                          editingChannelId ||
+                                          `ch-${channelForm.category.toLowerCase()}-${Date.now().toString(
+                                            36
+                                          )}`,
+                                        category: channelForm.category,
+                                        marketScope: channelForm.marketScope,
+                                        providerName:
+                                          channelForm.providerName.trim(),
+                                        accountOrWalletAddress:
+                                          channelForm.accountOrWalletAddress.trim(),
+                                        accountHolder:
+                                          channelForm.accountHolder.trim() ||
+                                          'My Wedding Manager',
+                                        networkOrBranch:
+                                          channelForm.networkOrBranch?.trim() ||
+                                          '',
+                                        qrCodeImageUrl:
+                                          channelForm.qrCodeImageUrl?.trim() ||
+                                          '',
+                                        checkoutUrl:
+                                          channelForm.checkoutUrl?.trim() || '',
+                                        minAmountNote:
+                                          channelForm.minAmountNote?.trim() ||
+                                          '',
+                                        instructions:
+                                          channelForm.instructions?.trim() ||
+                                          '',
+                                        isActive: channelForm.isActive,
+                                        updatedAt: nowIso,
+                                      };
+
+                                    const nextChannels = editingChannelId
+                                      ? effectiveChannels.map((c) =>
+                                          c.id === editingChannelId
+                                            ? cleanChannel
+                                            : c
+                                        )
+                                      : [...effectiveChannels, cleanChannel];
+
+                                    await saveChannelsToDatabase(
+                                      nextChannels,
+                                      `${
+                                        editingChannelId
+                                          ? 'Memperbarui'
+                                          : 'Menambahkan'
+                                      } wallet pembayaran Superadmin: ${
+                                        cleanChannel.providerName
+                                      }`
+                                    );
+                                    setIsChannelEditorOpen(false);
+                                    setEditingChannelId(null);
+                                    showToast(
+                                      `✓ Wallet "${cleanChannel.providerName}" berhasil disimpan ke Database!`
+                                    );
+                                  }}
+                                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-sm"
+                                >
+                                  Simpan Wallet ke Database
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Daftar Wallet Superadmin (Grid / List) */}
+                          <div className="grid grid-cols-1 gap-3">
+                            {effectiveChannels.map((ch) => {
+                              const catBadge = getCategoryBadge(ch.category);
+                              const scopeBadge = getScopeBadge(ch.marketScope);
+                              return (
+                                <div
+                                  key={ch.id}
+                                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                                    ch.isActive
+                                      ? 'bg-[#FAF8F5] border-[#D4AF37]/45'
+                                      : 'bg-stone-100/70 border-stone-200 opacity-75'
+                                  }`}
+                                >
+                                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                    <div className="space-y-1.5 min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-md border text-[10px] font-extrabold ${catBadge.cls}`}
+                                        >
+                                          {catBadge.label}
+                                        </span>
+                                        <span
+                                          className={`px-2 py-0.5 rounded-md border text-[10px] font-bold ${scopeBadge.cls}`}
+                                        >
+                                          {scopeBadge.label}
+                                        </span>
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                            ch.isActive
+                                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                              : 'bg-stone-200 text-stone-600'
+                                          }`}
+                                        >
+                                          {ch.isActive
+                                            ? '● Aktif di Checkout'
+                                            : '○ Nonaktif'}
+                                        </span>
+                                        {ch.minAmountNote && (
+                                          <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 text-stone-600 text-[10px] font-semibold">
+                                            {ch.minAmountNote}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <h4 className="text-xs sm:text-sm font-extrabold text-stone-900">
+                                        {ch.providerName}
+                                      </h4>
+
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <code className="px-2.5 py-1 rounded-lg bg-white border border-stone-200/90 font-mono text-xs font-bold text-[#8B6914] break-all">
+                                          {ch.accountOrWalletAddress}
+                                        </code>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            void navigator.clipboard.writeText(
+                                              ch.accountOrWalletAddress
+                                            );
+                                            showToast(
+                                              `Alamat/Rekening "${ch.providerName}" disalin!`
+                                            );
+                                          }}
+                                          className="px-2 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold inline-flex items-center gap-1"
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                          <span>Salin</span>
+                                        </button>
+                                      </div>
+
+                                      <p className="text-[11px] text-stone-600">
+                                        a.n.{' '}
+                                        <strong className="text-stone-800">
+                                          {ch.accountHolder}
+                                        </strong>
+                                        {ch.networkOrBranch
+                                          ? ` • ${ch.networkOrBranch}`
+                                          : ''}
+                                      </p>
+
+                                      {ch.checkoutUrl && (
+                                        <p className="text-[11px] text-indigo-700 font-mono truncate">
+                                          🔗 Checkout URL: {ch.checkoutUrl}
+                                        </p>
+                                      )}
+
+                                      {ch.instructions && (
+                                        <p className="text-[11px] text-stone-500 italic">
+                                          &ldquo;{ch.instructions}&rdquo;
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    {ch.qrCodeImageUrl && (
+                                      <div className="w-16 h-16 rounded-xl border border-[#D4AF37]/50 bg-white p-1 flex items-center justify-center shrink-0">
+                                        <img
+                                          src={ch.qrCodeImageUrl}
+                                          alt={ch.providerName}
+                                          className="w-full h-full object-contain rounded"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="pt-2.5 border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        const nextChannels =
+                                          effectiveChannels.map((item) =>
+                                            item.id === ch.id
+                                              ? {
+                                                  ...item,
+                                                  isActive: !item.isActive,
+                                                  updatedAt:
+                                                    new Date().toISOString(),
+                                                }
+                                              : item
+                                          );
+                                        await saveChannelsToDatabase(
+                                          nextChannels,
+                                          `${
+                                            !ch.isActive
+                                              ? 'Mengaktifkan'
+                                              : 'Menonaktifkan'
+                                          } wallet: ${ch.providerName}`
+                                        );
+                                        showToast(
+                                          `✓ Status "${
+                                            ch.providerName
+                                          }" diubah menjadi ${
+                                            !ch.isActive ? 'Aktif' : 'Nonaktif'
+                                          }.`
+                                        );
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                        ch.isActive
+                                          ? 'bg-white hover:bg-stone-100 text-stone-700 border-stone-300'
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                                      }`}
+                                    >
+                                      {ch.isActive
+                                        ? 'Nonaktifkan Wallet'
+                                        : '✓ Aktifkan Wallet'}
+                                    </button>
+
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingChannelId(ch.id);
+                                          setChannelForm({
+                                            category: ch.category,
+                                            marketScope: ch.marketScope,
+                                            providerName: ch.providerName,
+                                            accountOrWalletAddress:
+                                              ch.accountOrWalletAddress,
+                                            accountHolder: ch.accountHolder,
+                                            networkOrBranch:
+                                              ch.networkOrBranch || '',
+                                            qrCodeImageUrl:
+                                              ch.qrCodeImageUrl || '',
+                                            checkoutUrl: ch.checkoutUrl || '',
+                                            minAmountNote:
+                                              ch.minAmountNote || '',
+                                            instructions: ch.instructions || '',
+                                            isActive: ch.isActive,
+                                          });
+                                          setIsChannelEditorOpen(true);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 text-[11px] font-bold"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                        <span>Edit Wallet</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          requestConfirm({
+                                            title: `Hapus Wallet "${ch.providerName}"?`,
+                                            message: `Apakah Anda yakin ingin menghapus metode pembayaran "${ch.providerName}" (${ch.accountOrWalletAddress}) dari daftar channel pembayaran Superadmin?`,
+                                            confirmLabel: 'Ya, Hapus Wallet',
+                                            variant: 'danger',
+                                            onConfirm: async () => {
+                                              const nextChannels =
+                                                effectiveChannels.filter(
+                                                  (item) => item.id !== ch.id
+                                                );
+                                              await saveChannelsToDatabase(
+                                                nextChannels,
+                                                `Menghapus wallet pembayaran Superadmin: ${ch.providerName}`
+                                              );
+                                              showToast(
+                                                `✓ Wallet "${ch.providerName}" berhasil dihapus.`
+                                              );
+                                            },
+                                          })
+                                        }
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Hapus Wallet</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* =======================================================
+                            SECTION B: DATABASE PEMBAYARAN & LEDGER TRANSAKSI IDEMPOTEN
+                           ======================================================= */}
+                        <div className="pt-5 border-t-2 border-[#D4AF37]/30 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                                  Database Pembayaran &amp; Ledger Transaksi Idempoten
+                                </h3>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
+                                  Idempotency Guard Active
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-stone-500 mt-0.5">
+                                Setiap order menggunakan <code className="font-mono text-[#8B6914]">idempotency_key</code> unik (<code className="font-mono">on_conflict=idempotency_key</code>) untuk mencegah duplikasi tagihan saat koneksi database mengalami timeout/retry.
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setIsManualPaymentModalOpen((prev) => !prev)
+                              }
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-bold text-xs shrink-0"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>
+                                + Catat Order / Pembayaran Manual (Idempoten)
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* 4 KPI Summary Filter Buttons */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPaymentLedgerFilter('ALL')}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                paymentLedgerFilter === 'ALL'
+                                  ? 'bg-[#FAF3E3] border-[#B68D40] ring-1 ring-[#B68D40]/40'
+                                  : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/40'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-stone-500">
+                                Semua Transaksi
+                              </p>
+                              <p className="text-sm font-extrabold text-stone-900 mt-0.5">
+                                {effectivePayments.length} Order
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPaymentLedgerFilter('PENDING_VERIFICATION')
+                              }
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                paymentLedgerFilter === 'PENDING_VERIFICATION'
+                                  ? 'bg-amber-50 border-amber-400 ring-1 ring-amber-300'
+                                  : 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-amber-800">
+                                ⏳ Menunggu Verifikasi
+                              </p>
+                              <p className="text-sm font-extrabold text-amber-900 mt-0.5">
+                                {pendingCount} Order
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPaymentLedgerFilter('PAID_VERIFIED')
+                              }
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                paymentLedgerFilter === 'PAID_VERIFIED'
+                                  ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
+                                  : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-emerald-700">
+                                ✅ Lunas Terverifikasi
+                              </p>
+                              <p className="text-sm font-extrabold text-emerald-800 mt-0.5">
+                                {verifiedCount} Order
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPaymentLedgerFilter('FAILED_TIMEOUT')
+                              }
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                paymentLedgerFilter === 'FAILED_TIMEOUT'
+                                  ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300'
+                                  : 'bg-rose-50/40 border-rose-200 hover:border-rose-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-rose-700">
+                                ⚠️ Timeout / Retry Idempoten
+                              </p>
+                              <p className="text-sm font-extrabold text-rose-800 mt-0.5">
+                                {timeoutRetryCount} Order
+                              </p>
+                            </button>
+                          </div>
+
+                          {/* Inline Form: Catat Order / Pembayaran Manual (Idempoten) */}
+                          {isManualPaymentModalOpen && (
+                            <div className="p-4 rounded-2xl bg-[#FAF8F5] border-2 border-[#D4AF37]/60 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-extrabold text-stone-900">
+                                  📝 Catat Order / Pembayaran Klien Manual (Idempotent Upsert)
+                                </h4>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIsManualPaymentModalOpen(false)
+                                  }
+                                  className="text-stone-400 hover:text-stone-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Paket Lisensi*
+                                  </label>
+                                  <select
+                                    value={manualPaymentForm.packageTier}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        packageTier: e.target.value as
+                                          | 'STARTER'
+                                          | 'EXCLUSIVE'
+                                          | 'ROYAL VIP',
+                                      }))
+                                    }
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-bold"
+                                  >
+                                    <option value="STARTER">
+                                      STARTER (Rp 50.000 / $10)
+                                    </option>
+                                    <option value="EXCLUSIVE">
+                                      EXCLUSIVE (Rp 149.000 / $19)
+                                    </option>
+                                    <option value="ROYAL VIP">
+                                      ROYAL VIP (Rp 299.000 / $29)
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Pasar &amp; Mata Uang*
+                                  </label>
+                                  <select
+                                    value={manualPaymentForm.marketLang}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        marketLang: e.target.value as
+                                          | 'ID'
+                                          | 'EN',
+                                      }))
+                                    }
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-bold"
+                                  >
+                                    <option value="ID">
+                                      🇮🇩 Pasar Indonesia (IDR)
+                                    </option>
+                                    <option value="EN">
+                                      🇬🇧 Pasar Internasional (USD/USDT)
+                                    </option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Wallet / Channel Tujuan*
+                                  </label>
+                                  <select
+                                    value={manualPaymentForm.channelId}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        channelId: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-bold"
+                                  >
+                                    {effectiveChannels.map((ch) => (
+                                      <option key={ch.id} value={ch.id}>
+                                        {ch.providerName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Nama Pasangan Klien*
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={manualPaymentForm.buyerCoupleName}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        buyerCoupleName: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Contoh: Romeo & Juliet"
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    Email Klien*
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={manualPaymentForm.buyerEmail}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        buyerEmail: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="client@email.com"
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                    No. Referensi / TXID Crypto / PayPal
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={manualPaymentForm.paymentReference}
+                                    onChange={(e) =>
+                                      setManualPaymentForm((prev) => ({
+                                        ...prev,
+                                        paymentReference: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="TXID / Nomor Referensi Bank"
+                                    className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIsManualPaymentModalOpen(false)
+                                  }
+                                  className="px-3.5 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-600"
+                                >
+                                  Batal
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (
+                                      !manualPaymentForm.buyerCoupleName.trim() ||
+                                      !manualPaymentForm.buyerEmail.trim()
+                                    ) {
+                                      showToast(
+                                        'Nama Pasangan dan Email Klien wajib diisi!'
+                                      );
+                                      return;
+                                    }
+                                    const selectedCh =
+                                      effectiveChannels.find(
+                                        (c) =>
+                                          c.id === manualPaymentForm.channelId
+                                      ) || effectiveChannels[0];
+                                    const isIdr =
+                                      manualPaymentForm.marketLang === 'ID' &&
+                                      selectedCh?.category !== 'CRYPTO';
+                                    const amountNumeric = isIdr
+                                      ? manualPaymentForm.packageTier ===
+                                        'STARTER'
+                                        ? 50000
+                                        : manualPaymentForm.packageTier ===
+                                          'EXCLUSIVE'
+                                        ? 149000
+                                        : 299000
+                                      : manualPaymentForm.packageTier ===
+                                        'STARTER'
+                                      ? 10
+                                      : manualPaymentForm.packageTier ===
+                                        'EXCLUSIVE'
+                                      ? 19
+                                      : 29;
+                                    const currency: 'IDR' | 'USD' | 'USDT' =
+                                      selectedCh?.category === 'CRYPTO'
+                                        ? 'USDT'
+                                        : isIdr
+                                        ? 'IDR'
+                                        : 'USD';
+                                    const amountDisplay =
+                                      currency === 'IDR'
+                                        ? `Rp ${amountNumeric.toLocaleString(
+                                            'id-ID'
+                                          )}`
+                                        : currency === 'USDT'
+                                        ? `${amountNumeric} USDT`
+                                        : `$${amountNumeric} USD`;
+
+                                    const nowIso = new Date().toISOString();
+                                    const cleanEmail = manualPaymentForm.buyerEmail
+                                      .trim()
+                                      .toLowerCase();
+                                    const idempKey = `IDEMP-MANUAL-${cleanEmail}-${manualPaymentForm.packageTier.replace(
+                                      /\s+/g,
+                                      ''
+                                    )}-${Date.now()}`;
+                                    const newTx: CommercialPaymentTransaction =
+                                      {
+                                        id: `pay_${Date.now().toString(36)}`,
+                                        orderId: `MWM-${Date.now()
+                                          .toString()
+                                          .slice(-6)}`,
+                                        idempotencyKey: idempKey,
+                                        packageTier:
+                                          manualPaymentForm.packageTier,
+                                        marketLang:
+                                          manualPaymentForm.marketLang,
+                                        currency,
+                                        amountNumeric,
+                                        amountDisplay,
+                                        channelId:
+                                          selectedCh?.id || 'ch-qris-id',
+                                        channelCategory:
+                                          selectedCh?.category || 'QRIS',
+                                        channelProviderName:
+                                          selectedCh?.providerName ||
+                                          'Channel Pembayaran',
+                                        channelTargetAccount:
+                                          selectedCh?.accountOrWalletAddress ||
+                                          '-',
+                                        buyerEmail: cleanEmail,
+                                        buyerCoupleName:
+                                          manualPaymentForm.buyerCoupleName.trim(),
+                                        paymentReference:
+                                          manualPaymentForm.paymentReference.trim(),
+                                        status: manualPaymentForm.status,
+                                        retryCount: 0,
+                                        expiresAt: new Date(
+                                          Date.now() + 24 * 3600 * 1000
+                                        ).toISOString(),
+                                        verifiedAt:
+                                          manualPaymentForm.status ===
+                                          'PAID_VERIFIED'
+                                            ? nowIso
+                                            : undefined,
+                                        verifiedBy:
+                                          manualPaymentForm.status ===
+                                          'PAID_VERIFIED'
+                                            ? adminUser.username
+                                            : undefined,
+                                        createdAt: nowIso,
+                                        updatedAt: nowIso,
+                                      };
+
+                                    const nextPayments = [
+                                      newTx,
+                                      ...effectivePayments,
+                                    ];
+                                    await savePaymentsToDatabase(
+                                      nextPayments,
+                                      newTx,
+                                      `Mencatat pembayaran manual idempoten ${newTx.orderId} (${newTx.buyerCoupleName})`
+                                    );
+                                    setIsManualPaymentModalOpen(false);
+                                    setManualPaymentForm((prev) => ({
+                                      ...prev,
+                                      buyerEmail: '',
+                                      buyerCoupleName: '',
+                                      paymentReference: '',
+                                    }));
+                                    showToast(
+                                      `✓ Transaksi ${newTx.orderId} berhasil dicatat dengan Idempotency Key!`
+                                    );
+                                  }}
+                                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs shadow-xs"
+                                >
+                                  Simpan Transaksi Idempoten
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Search Bar Ledger */}
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="relative flex-1">
+                              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={paymentLedgerSearch}
+                                onChange={(e) =>
+                                  setPaymentLedgerSearch(e.target.value)
+                                }
+                                placeholder="Cari Order ID, Idempotency Key, Email Klien, Nama Pasangan, atau TXID / Referensi..."
+                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
+                              />
+                            </div>
+                            {paymentLedgerSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setPaymentLedgerSearch('')}
+                                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-100"
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Daftar Transaksi Pembayaran (Ledger Cards) */}
+                          <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                            {filteredPayments.length === 0 ? (
+                              <div className="p-6 rounded-2xl border border-dashed border-stone-300 bg-[#FAF8F5] text-center space-y-1">
+                                <p className="text-xs font-bold text-stone-700">
+                                  Belum ada transaksi pembayaran pada filter ini.
+                                </p>
+                                <p className="text-[11px] text-stone-500">
+                                  Setiap pembayaran yang dilakukan klien melalui Landing Page (IDR / USD / USDT) otomatis tercatat secara idempoten di sini.
+                                </p>
+                              </div>
+                            ) : (
+                              filteredPayments.map((tx) => {
+                                const statusConfig =
+                                  tx.status === 'PAID_VERIFIED'
+                                    ? {
+                                        label: '✅ PAID_VERIFIED (Lunas)',
+                                        cls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+                                      }
+                                    : tx.status === 'FAILED_TIMEOUT'
+                                    ? {
+                                        label:
+                                          '⚠️ FAILED_TIMEOUT (Perlu Retry Sync)',
+                                        cls: 'bg-rose-100 text-rose-900 border-rose-300',
+                                      }
+                                    : tx.status === 'EXPIRED'
+                                    ? {
+                                        label: '⌛ EXPIRED',
+                                        cls: 'bg-stone-200 text-stone-700 border-stone-300',
+                                      }
+                                    : {
+                                        label:
+                                          '⏳ PENDING_VERIFICATION (Menunggu Verifikasi)',
+                                        cls: 'bg-amber-100 text-amber-900 border-amber-300',
+                                      };
+
+                                return (
+                                  <div
+                                    key={tx.id}
+                                    className="p-4 rounded-2xl border border-stone-200/90 bg-[#FAF8F5] space-y-2.5"
+                                  >
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[11px] font-extrabold">
+                                            {tx.orderId}
+                                          </span>
+                                          <span
+                                            className={`px-2 py-0.5 rounded-full border text-[10px] font-extrabold ${statusConfig.cls}`}
+                                          >
+                                            {statusConfig.label}
+                                          </span>
+                                          <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 font-mono text-[10px] text-stone-600">
+                                            Idempotency Key: {tx.idempotencyKey}
+                                          </span>
+                                          <span className="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 font-mono text-[10px] font-bold text-amber-900">
+                                            Retry: {tx.retryCount}x
+                                          </span>
+                                        </div>
+                                        <p className="text-xs font-extrabold text-stone-900">
+                                          Paket {tx.packageTier} &bull;{' '}
+                                          <span className="text-[#8B6914]">
+                                            {tx.amountDisplay}
+                                          </span>{' '}
+                                          ({tx.currency} &bull; Pasar{' '}
+                                          {tx.marketLang})
+                                        </p>
+                                      </div>
+
+                                      <span className="font-mono text-[10px] text-stone-500">
+                                        {new Date(tx.createdAt).toLocaleString(
+                                          'id-ID',
+                                          {
+                                            dateStyle: 'medium',
+                                            timeStyle: 'short',
+                                          }
+                                        )}
+                                      </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-xl bg-white border border-stone-200/80 text-[11px]">
+                                      <div>
+                                        <p className="text-stone-500">
+                                          Pembeli / Pasangan:
+                                        </p>
+                                        <p className="font-bold text-stone-900">
+                                          {tx.buyerCoupleName} ({tx.buyerEmail})
+                                        </p>
+                                        <p className="font-mono text-[10px] text-[#8B6914]">
+                                          Ref/TXID:{' '}
+                                          {tx.paymentReference || '-'}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-stone-500">
+                                          Channel / Wallet Tujuan:
+                                        </p>
+                                        <p className="font-bold text-stone-900">
+                                          {tx.channelProviderName}
+                                        </p>
+                                        <p className="font-mono text-[10px] text-stone-600 truncate">
+                                          {tx.channelTargetAccount}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {tx.lastErrorOrTimeoutReason && (
+                                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-800 flex items-center justify-between gap-2">
+                                        <span>
+                                          <strong>Log Timeout/Retry:</strong>{' '}
+                                          {tx.lastErrorOrTimeoutReason}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        {tx.status !== 'PAID_VERIFIED' && (
+                                          <button
+                                            type="button"
+                                            onClick={async () => {
+                                              const nowIso =
+                                                new Date().toISOString();
+                                              const updatedTx: CommercialPaymentTransaction =
+                                                {
+                                                  ...tx,
+                                                  status: 'PAID_VERIFIED',
+                                                  verifiedAt: nowIso,
+                                                  verifiedBy:
+                                                    adminUser.username,
+                                                  lastErrorOrTimeoutReason:
+                                                    undefined,
+                                                  updatedAt: nowIso,
+                                                };
+                                              const nextList =
+                                                effectivePayments.map((item) =>
+                                                  item.id === tx.id
+                                                    ? updatedTx
+                                                    : item
+                                                );
+                                              await savePaymentsToDatabase(
+                                                nextList,
+                                                updatedTx,
+                                                `Memverifikasi lunas transaksi ${tx.orderId} (${tx.buyerCoupleName})`
+                                              );
+                                              showToast(
+                                                `✓ Order ${tx.orderId} diverifikasi LUNAS (PAID_VERIFIED)!`
+                                              );
+                                            }}
+                                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
+                                          >
+                                            ✓ Verifikasi Lunas (PAID_VERIFIED)
+                                          </button>
+                                        )}
+
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            const nowIso =
+                                              new Date().toISOString();
+                                            const retriedTx: CommercialPaymentTransaction =
+                                              {
+                                                ...tx,
+                                                status:
+                                                  tx.status === 'PAID_VERIFIED'
+                                                    ? 'PAID_VERIFIED'
+                                                    : 'PENDING_VERIFICATION',
+                                                retryCount:
+                                                  (tx.retryCount || 0) + 1,
+                                                lastErrorOrTimeoutReason:
+                                                  undefined,
+                                                updatedAt: nowIso,
+                                              };
+                                            const syncRes =
+                                              await upsertCommercialPaymentToSupabase(
+                                                retriedTx
+                                              );
+                                            if (!syncRes.ok) {
+                                              retriedTx.status =
+                                                'FAILED_TIMEOUT';
+                                              retriedTx.lastErrorOrTimeoutReason =
+                                                syncRes.error;
+                                            }
+                                            const nextList =
+                                              effectivePayments.map((item) =>
+                                                item.id === tx.id
+                                                  ? retriedTx
+                                                  : item
+                                              );
+                                            await savePaymentsToDatabase(
+                                              nextList,
+                                              retriedTx,
+                                              `Retry sinkronisasi idempoten transaksi ${tx.orderId} (Retry ke-${retriedTx.retryCount})`
+                                            );
+                                            showToast(
+                                              syncRes.ok
+                                                ? `✓ Retry Sync Idempoten ${tx.orderId} berhasil tanpa duplikasi data!`
+                                                : `⚠️ Timeout saat sync: ${syncRes.error}`
+                                            );
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold"
+                                        >
+                                          ↻ Pulihkan Timeout / Retry Sync
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const safeCode =
+                                              tx.buyerCoupleName
+                                                .toUpperCase()
+                                                .replace(/[^A-Z0-9]/g, '')
+                                                .slice(0, 8) || 'CLIENT';
+                                            setNewClientForm({
+                                              clientCode: safeCode,
+                                              coupleLabel: tx.buyerCoupleName,
+                                              packageTier:
+                                                tx.packageTier === 'ROYAL VIP'
+                                                  ? 'ROYAL_VIP'
+                                                  : tx.packageTier,
+                                              eventDate: '2026-12-19',
+                                              notes: `Order ${tx.orderId} (${tx.buyerEmail}) • ${tx.amountDisplay}`,
+                                              initialPassword: '',
+                                            });
+                                            setIsAddClientModalOpen(true);
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 text-[11px] font-bold"
+                                        >
+                                          ⚡ Buat Grup Klien dari Order Ini
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          requestConfirm({
+                                            title: `Hapus Record Transaksi ${tx.orderId}?`,
+                                            message: `Apakah Anda yakin ingin menghapus record transaksi "${tx.orderId}" (${tx.buyerCoupleName}) dari ledger pembayaran?`,
+                                            confirmLabel: 'Ya, Hapus Record',
+                                            variant: 'danger',
+                                            onConfirm: async () => {
+                                              const nextList =
+                                                effectivePayments.filter(
+                                                  (item) => item.id !== tx.id
+                                                );
+                                              const nextSettings: WeddingSettings =
+                                                {
+                                                  ...state.settings,
+                                                  ...settingsForm,
+                                                  commercialPayments: nextList,
+                                                  updatedBy: adminUser.username,
+                                                };
+                                              setSettingsFormInternal(
+                                                nextSettings
+                                              );
+                                              await commitImmediateSettings(
+                                                nextSettings
+                                              );
+                                              showToast(
+                                                `✓ Record transaksi ${tx.orderId} dihapus.`
+                                              );
+                                            },
+                                          })
+                                        }
+                                        className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold"
+                                      >
+                                        Hapus Record
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                 {/* ===========================================================
                     2. MODERASI KOMENTAR NEGATIF & AUDIT FORENSIK PELAKU
@@ -11060,214 +12888,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Bagian 2: Pengaturan Metode Pembayaran Komersial (Untuk Order Paket Klien di Landing Page) */}
-                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5">
-                      <div>
+                    {/* Bagian 2: Ringkasan & Pintasan ke Menu Wallet & Pembayaran Superadmin */}
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#FAF3E3]/80 via-[#FAF8F5] to-white border border-[#D4AF37]/45 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1">
                         <p className="text-xs font-extrabold uppercase tracking-wider text-[#8B6914]">
-                          2. Pengaturan Metode Pembayaran Komersial (Order Paket Klien di Landing Page)
+                          2. Manajemen Wallet &amp; Metode Pembayaran Komersial
                         </p>
-                        <p className="text-[11px] text-stone-500 mt-0.5">
-                           Konfigurasi rekening bank lokal, QRIS komersial, kartu kredit, PayPal, dan Crypto USDT untuk klien yang memesan paket My Wedding Manager.
+                        <p className="text-[11px] text-stone-600 leading-relaxed">
+                          Kelola seluruh daftar wallet pembayaran Superadmin (Crypto USDT TRC20/BEP20/ERC20, PayPal, Kartu Kredit, QRIS, Bank &amp; E-Wallet) serta verifikasi ledger pembayaran idempoten pada tab khusus{' '}
+                          <strong>Wallet &amp; Pembayaran</strong>.
                         </p>
                       </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="sm:col-span-2">
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            🏦 Transfer Bank Lokal (BCA / Mandiri / BRI / BNI):
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.commercialBankTransferInfo ??
-                              state.settings.commercialBankTransferInfo ??
-                              ''
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                commercialBankTransferInfo: e.target.value,
-                              }))
-                            }
-                            placeholder="Contoh: BCA 1234567890 a.n. Eko Agung Krisdianto / Mandiri 136000..."
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            💳 Kartu Kredit / Payment Link (Visa / Mastercard / Apple Pay):
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.commercialCreditCardUrl ||
-                              state.settings.commercialCreditCardUrl ||
-                              'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY'
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                commercialCreditCardUrl: e.target.value,
-                              }))
-                            }
-                            placeholder="https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY"
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            🌐 Link / Email PayPal Komersial (Pasar Internasional):
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.commercialPaypalUrl &&
-                              settingsForm.commercialPaypalUrl !== 'e98.bisnis@gmail.com'
-                                ? settingsForm.commercialPaypalUrl
-                                : state.settings.commercialPaypalUrl &&
-                                  state.settings.commercialPaypalUrl !== 'e98.bisnis@gmail.com'
-                                ? state.settings.commercialPaypalUrl
-                                : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY'
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                commercialPaypalUrl: e.target.value,
-                              }))
-                            }
-                            placeholder="https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY"
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            🪙 Alamat Wallet Crypto USDT Komersial (Min. 10 USDT):
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.commercialCryptoWalletAddress ??
-                              state.settings.commercialCryptoWalletAddress ??
-                              ''
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                commercialCryptoWalletAddress: e.target.value,
-                              }))
-                            }
-                            placeholder="Masukkan alamat wallet USDT (TRC20 / BEP20 / ERC20)"
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            ⛓️ Jaringan Crypto Komersial:
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.commercialCryptoNetwork ??
-                              state.settings.commercialCryptoNetwork ??
-                              'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)'
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                commercialCryptoNetwork: e.target.value,
-                              }))
-                            }
-                            placeholder="USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)"
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-
-                      {/* QRIS Komersial Upload & URL */}
-                      <div className="p-3 rounded-xl bg-white border border-stone-200/90 space-y-2">
-                        <label className="block text-[11px] font-bold text-stone-700">
-                          📱 QRIS Komersial (Untuk Pembayaran Paket MWM):
-                        </label>
-                        <div className="flex flex-col sm:flex-row items-center gap-3">
-                          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[#D4AF37]/60 bg-[#FAF8F5] flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
-                            <img
-                              src={
-                                (
-                                  settingsForm.commercialQrisImageUrl ??
-                                  state.settings.commercialQrisImageUrl
-                                )?.trim() || '/paypal-qr-mwm.png'
-                              }
-                              alt="Preview QRIS Komersial"
-                              className="w-full h-full object-contain rounded-lg"
-                            />
-                          </div>
-                          <div className="flex-1 w-full space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs">
-                                <Upload className="w-3.5 h-3.5" />
-                                <span>Upload QRIS Komersial</span>
-                                <input
-                                  type="file"
-                                  accept="image/*,.svg"
-                                  className="hidden"
-                                  onChange={handleUploadCommercialQrisFile}
-                                />
-                              </label>
-                              {(
-                                settingsForm.commercialQrisImageUrl ??
-                                state.settings.commercialQrisImageUrl
-                              )?.trim() && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setSettingsForm((prev) => ({
-                                      ...prev,
-                                      commercialQrisImageUrl: '',
-                                    }))
-                                  }
-                                  className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs"
-                                >
-                                  Hapus QRIS
-                                </button>
-                              )}
-                            </div>
-                            <input
-                              type="text"
-                              value={
-                                (
-                                  settingsForm.commercialQrisImageUrl ??
-                                  state.settings.commercialQrisImageUrl ??
-                                  ''
-                                ).startsWith('data:')
-                                  ? ''
-                                  : settingsForm.commercialQrisImageUrl ??
-                                    state.settings.commercialQrisImageUrl ??
-                                    ''
-                              }
-                              onChange={(e) =>
-                                setSettingsForm((prev) => ({
-                                  ...prev,
-                                  commercialQrisImageUrl: e.target.value,
-                                }))
-                              }
-                              placeholder={
-                                (
-                                  settingsForm.commercialQrisImageUrl ??
-                                  state.settings.commercialQrisImageUrl ??
-                                  ''
-                                ).startsWith('data:')
-                                  ? '✓ Gambar QRIS Komersial ter-upload (atau tempel URL di sini)'
-                                  : 'Atau tempel URL Gambar QRIS Komersial...'
-                              }
-                              className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSuperadminMenuTab('payments')}
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs shrink-0 transition-all"
+                      >
+                        <Wallet className="w-4 h-4" />
+                        <span>Buka Menu Wallet &amp; Pembayaran Superadmin &rarr;</span>
+                      </button>
                     </div>
 
                     {/* Toggle Tampilkan Credit & Kontak WA di Footer */}

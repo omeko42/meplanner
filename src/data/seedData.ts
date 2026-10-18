@@ -6,7 +6,100 @@ import {
   BudgetVendorItem,
   AdminUser,
   TimelinePhase,
+  CommercialPaymentChannel,
 } from '@/types';
+
+export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
+  {
+    id: 'ch-qris-id',
+    category: 'QRIS',
+    marketScope: 'ID',
+    providerName: 'QRIS Nasional (All Bank & E-Wallet Indonesia)',
+    accountOrWalletAddress: 'NMID: My Wedding Manager Indonesia',
+    accountHolder: 'My Wedding Manager (Eko Agung K.)',
+    networkOrBranch: 'M-Banking, GoPay, OVO, DANA, ShopeePay, LinkAja',
+    qrCodeImageUrl: '',
+    minAmountNote: 'Mulai Rp 50.000',
+    instructions:
+      'Scan QRIS resmi atau transfer sesuai nominal paket yang dipilih, lalu masukkan nomor referensi transaksi pada langkah verifikasi.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+  {
+    id: 'ch-bca-id',
+    category: 'BANK_TRANSFER',
+    marketScope: 'ID',
+    providerName: 'Transfer Bank Nasional (BCA / Mandiri / BRI / BNI)',
+    accountOrWalletAddress: 'BCA / Mandiri / BRI / BNI (Hubungi Admin / Sesuai Invoice)',
+    accountHolder: 'Eko Agung Krisdianto',
+    networkOrBranch: 'Transfer Bank IDR (Real-Time / BI-FAST)',
+    minAmountNote: 'Mulai Rp 50.000',
+    instructions:
+      'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 149.000 / Rp 299.000) dan cantumkan Nama Pasangan di berita transfer.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+  {
+    id: 'ch-card-global',
+    category: 'CREDIT_CARD',
+    marketScope: 'BOTH',
+    providerName: 'Visa / Mastercard / JCB / Apple Pay',
+    accountOrWalletAddress: 'Official Card Checkout Gateway (PayPal NCP)',
+    accountHolder: 'My Wedding Manager (@omeko11)',
+    networkOrBranch: 'Visa, Mastercard, Amex, JCB & Debit Online',
+    checkoutUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+    qrCodeImageUrl: '/paypal-qr-mwm.png',
+    minAmountNote: 'Mulai Rp 50.000 / $10 USD',
+    instructions:
+      'Klik tombol Checkout Kartu Kredit/Debit untuk menyelesaikan pembayaran aman via gateway Visa/Mastercard resmi.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+  {
+    id: 'ch-paypal-global',
+    category: 'PAYPAL',
+    marketScope: 'BOTH',
+    providerName: 'PayPal International (Official Merchant)',
+    accountOrWalletAddress: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+    accountHolder: 'My Wedding Manager (Eko Agung Krisdianto)',
+    networkOrBranch: 'PayPal Balance / International Cards (USD)',
+    checkoutUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
+    qrCodeImageUrl: '/paypal-qr-mwm.png',
+    minAmountNote: 'Min. $10 USD',
+    instructions:
+      'Scan QR Code PayPal resmi di bawah atau klik tombol PayPal Checkout, lalu catat Transaction ID PayPal Anda.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+  {
+    id: 'ch-usdt-trc20',
+    category: 'CRYPTO',
+    marketScope: 'BOTH',
+    providerName: 'USDT (Tether) — Jaringan TRC20 (Tron)',
+    accountOrWalletAddress: 'Atur Alamat Wallet USDT TRC20 di Menu Superadmin',
+    accountHolder: 'MWM Crypto Treasury (TRC20)',
+    networkOrBranch: 'TRC20 (Tron Network)',
+    minAmountNote: 'Min. Transfer 10 USDT',
+    instructions:
+      'Kirim USDT HANYA melalui jaringan TRC20 (Tron). Setelah transaksi berstatus Confirmed, masukkan TXID / Hash transaksi di bawah.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+  {
+    id: 'ch-usdt-bep20',
+    category: 'CRYPTO',
+    marketScope: 'BOTH',
+    providerName: 'USDT (Tether) — Jaringan BEP20 (BNB Smart Chain)',
+    accountOrWalletAddress: 'Atur Alamat Wallet USDT BEP20 di Menu Superadmin',
+    accountHolder: 'MWM Crypto Treasury (BEP20)',
+    networkOrBranch: 'BEP20 (BNB Smart Chain / BSC)',
+    minAmountNote: 'Min. Transfer 10 USDT',
+    instructions:
+      'Kirim USDT HANYA melalui jaringan BEP20 (BNB Smart Chain). Setelah transaksi berstatus Confirmed, masukkan TXID / Hash transaksi di bawah.',
+    isActive: true,
+    updatedAt: '2026-10-18T16:05:00+07:00',
+  },
+];
 
 export function inferTimelinePhase(due: string, category: string): TimelinePhase {
   if (category === 'Setelah Menikah' || due >= '2026-12-20') {
@@ -212,6 +305,8 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   commercialPaypalUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
   commercialCryptoWalletAddress: '',
   commercialCryptoNetwork: 'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)',
+  commercialPaymentChannels: DEFAULT_COMMERCIAL_PAYMENT_CHANNELS,
+  commercialPayments: [],
   autoHideFlaggedWishes: true,
   moderationBlockedKeywords: '',
 

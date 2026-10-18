@@ -18,6 +18,7 @@ import {
   ClientGroupItem,
   ClientWorkspaceData,
   InvitationInteractionType,
+  CommercialPaymentTransaction,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -42,6 +43,7 @@ import {
   loadStateFromSupabase,
   saveStateToSupabase,
   appendAuditLog,
+  upsertCommercialPaymentToSupabase,
 } from '@/lib/supabaseCloud';
 
 function mergePreservingLocalMedia(
@@ -246,6 +248,12 @@ function projectStateForClient(
       contactWhatsappNumber:
         ws.settings.contactWhatsappNumber ||
         rootState.settings.contactWhatsappNumber,
+      commercialPaymentChannels:
+        rootState.settings.commercialPaymentChannels ||
+        ws.settings.commercialPaymentChannels,
+      commercialPayments:
+        rootState.settings.commercialPayments ||
+        ws.settings.commercialPayments,
     },
     tasks: ws.tasks || [],
     guests: ws.guests || [],
@@ -477,6 +485,12 @@ function WeddingAppContent() {
             contactWhatsappNumber:
               updatedProjected.settings.contactWhatsappNumber ??
               prevRoot.settings.contactWhatsappNumber,
+            commercialPaymentChannels:
+              updatedProjected.settings.commercialPaymentChannels ||
+              prevRoot.settings.commercialPaymentChannels,
+            commercialPayments:
+              updatedProjected.settings.commercialPayments ||
+              prevRoot.settings.commercialPayments,
             clientWorkspaces: {
               ...(prevRoot.settings.clientWorkspaces || {}),
               ...(updatedProjected.settings.clientWorkspaces || {}),
@@ -1222,6 +1236,188 @@ function WeddingAppContent() {
     [activePublicClientId, updateClientScopedState, mutateServer]
   );
 
+  const handleUpsertCommercialPayment = useCallback(
+    async (
+      incomingTx: CommercialPaymentTransaction
+    ): Promise<{
+      ok: boolean;
+      transaction: CommercialPaymentTransaction;
+      timedOut?: boolean;
+      error?: string;
+    }> => {
+      const nowIso = new Date().toISOString();
+      let mergedTx: CommercialPaymentTransaction = {
+        ...incomingTx,
+        updatedAt: nowIso,
+      };
+      let capturedNextState: WeddingDatabaseSchema | null = null;
+
+      setState((prev) => {
+        const currentList = Array.isArray(prev.settings.commercialPayments)
+          ? prev.settings.commercialPayments
+          : [];
+        const existingIdx = currentList.findIndex(
+          (item) =>
+            item.idempotencyKey === incomingTx.idempotencyKey ||
+            item.id === incomingTx.id
+        );
+
+        let nextList: CommercialPaymentTransaction[];
+        if (existingIdx >= 0) {
+          const existing = currentList[existingIdx];
+          mergedTx = {
+            ...existing,
+            ...incomingTx,
+            id: existing.id,
+            orderId: existing.orderId,
+            idempotencyKey: existing.idempotencyKey,
+            createdAt: existing.createdAt,
+            retryCount:
+              incomingTx.retryCount > existing.retryCount
+                ? incomingTx.retryCount
+                : existing.retryCount,
+            updatedAt: nowIso,
+          };
+          nextList = currentList.map((item, idx) =>
+            idx === existingIdx ? mergedTx : item
+          );
+        } else {
+          mergedTx = {
+            ...incomingTx,
+            createdAt: incomingTx.createdAt || nowIso,
+            updatedAt: nowIso,
+          };
+          nextList = [mergedTx, ...currentList];
+        }
+
+        const nextState: WeddingDatabaseSchema = {
+          ...prev,
+          settings: {
+            ...prev.settings,
+            commercialPayments: nextList,
+            updatedAt: nowIso,
+          },
+          lastSyncedAt: nowIso,
+        };
+        const saved = saveClientState(nextState, true);
+        capturedNextState = saved;
+        return saved;
+      });
+
+      try {
+        const [paymentRes] = await Promise.all([
+          upsertCommercialPaymentToSupabase(mergedTx, 10000),
+          capturedNextState
+            ? saveStateToSupabase(capturedNextState)
+            : Promise.resolve(true),
+          mutateServer('UPDATE_SETTINGS', {
+            commercialPayments: capturedNextState
+              ? (capturedNextState as WeddingDatabaseSchema).settings
+                  .commercialPayments
+              : [mergedTx],
+          }),
+        ]);
+
+        if (paymentRes.timedOut) {
+          const timeoutReason =
+            paymentRes.error ||
+            'Koneksi database timeout — silakan klik Coba Lagi (Idempotency Key menjaga agar tidak terjadi tagihan ganda).';
+          const timeoutTx: CommercialPaymentTransaction = {
+            ...mergedTx,
+            status: 'FAILED_TIMEOUT',
+            lastErrorOrTimeoutReason: timeoutReason,
+            updatedAt: new Date().toISOString(),
+          };
+          setState((prev) => {
+            const list = Array.isArray(prev.settings.commercialPayments)
+              ? prev.settings.commercialPayments
+              : [];
+            const nextList = list.map((item) =>
+              item.idempotencyKey === timeoutTx.idempotencyKey ||
+              item.id === timeoutTx.id
+                ? timeoutTx
+                : item
+            );
+            return saveClientState(
+              {
+                ...prev,
+                settings: {
+                  ...prev.settings,
+                  commercialPayments: nextList,
+                },
+              },
+              true
+            );
+          });
+          appendAuditLog({
+            actor: mergedTx.buyerEmail || 'checkout-public',
+            module: 'MONETER',
+            action: 'ERROR',
+            status: 'WARNING',
+            summary: `Timeout pembayaran paket ${mergedTx.packageTier} (${mergedTx.orderId}) — Idempotency Key diamankan`,
+            detail: `Idempotency: ${mergedTx.idempotencyKey} • Retry: ${mergedTx.retryCount} • Channel: ${mergedTx.channelProviderName}`,
+          });
+          return {
+            ok: false,
+            transaction: timeoutTx,
+            timedOut: true,
+            error: timeoutReason,
+          };
+        }
+      } catch (err) {
+        const timeoutReason =
+          err instanceof Error
+            ? err.message
+            : 'Gagal terhubung ke server pembayaran (Idempotency Key tetap aman).';
+        const timeoutTx: CommercialPaymentTransaction = {
+          ...mergedTx,
+          status: 'FAILED_TIMEOUT',
+          lastErrorOrTimeoutReason: timeoutReason,
+          updatedAt: new Date().toISOString(),
+        };
+        setState((prev) => {
+          const list = Array.isArray(prev.settings.commercialPayments)
+            ? prev.settings.commercialPayments
+            : [];
+          const nextList = list.map((item) =>
+            item.idempotencyKey === timeoutTx.idempotencyKey ||
+            item.id === timeoutTx.id
+              ? timeoutTx
+              : item
+          );
+          return saveClientState(
+            {
+              ...prev,
+              settings: {
+                ...prev.settings,
+                commercialPayments: nextList,
+              },
+            },
+            true
+          );
+        });
+        return {
+          ok: false,
+          transaction: timeoutTx,
+          timedOut: true,
+          error: timeoutReason,
+        };
+      }
+
+      appendAuditLog({
+        actor: mergedTx.buyerEmail || adminUser?.username || 'checkout-public',
+        module: 'MONETER',
+        action: 'SIMPAN',
+        status: 'SUCCESS',
+        summary: `Transaksi paket ${mergedTx.packageTier} (${mergedTx.orderId}) — Status: ${mergedTx.status}`,
+        detail: `Pembeli: ${mergedTx.buyerCoupleName} (${mergedTx.buyerEmail}) • Nominal: ${mergedTx.amountDisplay} • Metode: ${mergedTx.channelProviderName} • Ref: ${mergedTx.paymentReference || '-'} • Idempotency: ${mergedTx.idempotencyKey}`,
+      });
+
+      return { ok: true, transaction: mergedTx };
+    },
+    [mutateServer, adminUser]
+  );
+
   const effectiveGuestName =
     previewOverrideGuest?.guestName || manualGuestLookup.to || urlGuestTo;
   const effectiveGuestCode =
@@ -1266,6 +1462,7 @@ function WeddingAppContent() {
           adminUserName={adminUser?.nama}
           onOpenAdminPortal={handleOpenAdminPortal}
           onSelectClientInvitation={handleSelectClientInvitationFromLanding}
+          onUpsertCommercialPayment={handleUpsertCommercialPayment}
         />
       ) : (
         <div className="relative">

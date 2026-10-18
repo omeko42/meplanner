@@ -377,12 +377,74 @@ export interface WeddingSettings {
   commercialPaypalUrl?: string;
   commercialCryptoWalletAddress?: string;
   commercialCryptoNetwork?: string;
+  commercialPaymentChannels?: CommercialPaymentChannel[];
+  commercialPayments?: CommercialPaymentTransaction[];
   autoHideFlaggedWishes?: boolean; // default true
   moderationBlockedKeywords?: string; // custom comma-separated negative keywords
   invitationAnalytics?: InvitationAnalyticsData;
 
   updatedAt: string;
   updatedBy: string;
+}
+
+export type CommercialPaymentCategory =
+  | 'BANK_TRANSFER'
+  | 'QRIS'
+  | 'EWALLET'
+  | 'CREDIT_CARD'
+  | 'PAYPAL'
+  | 'CRYPTO';
+
+export interface CommercialPaymentChannel {
+  id: string;
+  category: CommercialPaymentCategory;
+  marketScope: 'ID' | 'EN' | 'BOTH';
+  providerName: string;
+  accountOrWalletAddress: string;
+  accountHolder: string;
+  networkOrBranch?: string;
+  qrCodeImageUrl?: string;
+  checkoutUrl?: string;
+  minAmountNote?: string;
+  instructions?: string;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export type CommercialPaymentStatus =
+  | 'INITIATED'
+  | 'PENDING_VERIFICATION'
+  | 'PAID_VERIFIED'
+  | 'FAILED_TIMEOUT'
+  | 'EXPIRED'
+  | 'REFUNDED';
+
+export interface CommercialPaymentTransaction {
+  id: string;
+  orderId: string;
+  idempotencyKey: string;
+  packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
+  marketLang: 'ID' | 'EN';
+  currency: 'IDR' | 'USD' | 'USDT';
+  amountNumeric: number;
+  amountDisplay: string;
+  channelId: string;
+  channelCategory: CommercialPaymentCategory;
+  channelProviderName: string;
+  channelTargetAccount: string;
+  buyerEmail: string;
+  buyerCoupleName: string;
+  buyerWhatsapp?: string;
+  paymentReference?: string;
+  status: CommercialPaymentStatus;
+  retryCount: number;
+  lastErrorOrTimeoutReason?: string;
+  expiresAt: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  provisionedClientId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type InvitationInteractionType =

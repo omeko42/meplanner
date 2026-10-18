@@ -1,5 +1,6 @@
 import {
   AuditLogEntry,
+  CommercialPaymentTransaction,
   GalleryPhotoItem,
   WeddingDatabaseSchema,
   WeddingSettings,
@@ -208,7 +209,39 @@ alter table public.wedding_users enable row level security;
 drop policy if exists "wedding_users_access" on public.wedding_users;
 create policy "wedding_users_access" on public.wedding_users
   for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_users to anon, authenticated, service_role;`;
+grant all on table public.wedding_users to anon, authenticated, service_role;
+
+-- ============================================================================
+-- 10. TABEL TRANSAKSI & PEMBAYARAN KOMERSIAL IDEMPOTEN (public.wedding_payments)
+--     Menjamin idempotensi transaksi (anti-duplikasi saat timeout / retry)
+-- ============================================================================
+create table if not exists public.wedding_payments (
+  id text primary key,
+  idempotency_key text unique not null,
+  order_id text unique not null,
+  setting_id text references public.wedding_settings(id) on delete cascade default 'main',
+  package_tier text not null,
+  market_lang text default 'ID',
+  currency text not null,
+  amount_numeric numeric not null default 0,
+  channel_id text,
+  channel_category text,
+  buyer_email text not null,
+  buyer_couple_name text,
+  payment_reference text,
+  status text not null default 'PENDING_VERIFICATION',
+  retry_count integer not null default 0,
+  last_error_reason text,
+  expires_at text,
+  data jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.wedding_payments enable row level security;
+drop policy if exists "wedding_payments_access" on public.wedding_payments;
+create policy "wedding_payments_access" on public.wedding_payments
+  for all to anon, authenticated using (true) with check (true);
+grant all on table public.wedding_payments to anon, authenticated, service_role;`;
 
 export type CloudSyncStatus =
   | 'IDLE'
@@ -1756,3 +1789,95 @@ export function queueSaveStateToSupabase(
     }
   }, delayMs);
 }
+
+/**
+ * Idempotent upsert for Commercial Payment Transactions (`public.wedding_payments`).
+ * Uses `on_conflict=idempotency_key` so retries after timeout never create duplicate rows.
+ */
+export async function upsertCommercialPaymentToSupabase(
+  tx: CommercialPaymentTransaction,
+  timeoutMs = 10000
+): Promise<{ ok: boolean; timedOut?: boolean; error?: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const restUrl = `${SUPABASE_URL}/rest/v1/wedding_payments?on_conflict=idempotency_key`;
+    const res = await fetch(restUrl, {
+      method: 'POST',
+      headers: getSupabaseHeaders({
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      }),
+      signal: controller.signal,
+      body: JSON.stringify({
+        id: tx.id,
+        idempotency_key: tx.idempotencyKey,
+        order_id: tx.orderId,
+        setting_id: SUPABASE_ROW_ID,
+        package_tier: tx.packageTier,
+        market_lang: tx.marketLang,
+        currency: tx.currency,
+        amount_numeric: tx.amountNumeric,
+        channel_id: tx.channelId,
+        channel_category: tx.channelCategory,
+        buyer_email: tx.buyerEmail,
+        buyer_couple_name: tx.buyerCoupleName,
+        payment_reference: tx.paymentReference || '',
+        status: tx.status,
+        retry_count: tx.retryCount,
+        last_error_reason: tx.lastErrorOrTimeoutReason || null,
+        expires_at: tx.expiresAt,
+        data: tx,
+        updated_at: tx.updatedAt || new Date().toISOString(),
+      }),
+    });
+
+    clearTimeout(timer);
+
+    if (res.ok) {
+      return { ok: true };
+    }
+
+    const errText = await res.text();
+    const isTableMissing =
+      res.status === 404 ||
+      errText.includes('42P01') ||
+      errText.includes('PGRST205') ||
+      errText.includes('Could not find the table') ||
+      errText.includes('relation') ||
+      errText.includes('does not exist');
+
+    if (isTableMissing) {
+      // Graceful fallback when table `wedding_payments` is not yet created:
+      // `commercialPayments` is still persisted in `wedding_settings` / `wedding_state`.
+      return { ok: true };
+    }
+
+    if (res.status === 504 || res.status === 408 || errText.includes('57014')) {
+      return {
+        ok: false,
+        timedOut: true,
+        error:
+          'Database request timed out (Idempotency Key preserved for safe retry)',
+      };
+    }
+
+    return {
+      ok: false,
+      error: `HTTP ${res.status}: ${errText.slice(0, 140)}`,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    const isAbort =
+      err instanceof Error &&
+      (err.name === 'AbortError' || /abort|timeout/i.test(err.message));
+    return {
+      ok: false,
+      timedOut: true,
+      error: isAbort
+        ? 'Database request timed out (Idempotency Key preserved for safe retry)'
+        : 'Network/connection timeout (Idempotency Key preserved for safe retry)',
+    };
+  }
+}
+

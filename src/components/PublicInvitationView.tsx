@@ -331,7 +331,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
     setShowGuestSuggestions(false);
     setShowCoverGuestSuggestions(false);
-    setCoverGuestSearch(guest.guestName);
     setVipCodeInput(guest.invitationCode);
     setVipCodeError('');
   };
@@ -468,7 +467,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const coverMatchingGuests = useMemo(() => {
     if (guests.length === 0) return [];
     const rawQuery = (
-      requiresVipCodeGate ? vipCodeInput : coverGuestSearch
+      !isOpened && requiresVipCodeGate ? vipCodeInput : coverGuestSearch
     )
       .trim()
       .toLowerCase();
@@ -483,7 +482,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           (g.institution || '').toLowerCase().includes(rawQuery)
       )
       .slice(0, 8);
-  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate]);
+  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate, isOpened]);
 
   const emitAnalytics = (
     type: InvitationInteractionType,
@@ -784,6 +783,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     settings.moderationBlockedKeywords,
   ]);
 
+  const filteredPublicWishes = useMemo(() => {
+    const q = coverGuestSearch.trim().toLowerCase();
+    if (!q) return publicVisibleWishes;
+    return publicVisibleWishes.filter(
+      (w) =>
+        w.guestName.toLowerCase().includes(q) ||
+        (w.institution || '').toLowerCase().includes(q) ||
+        (w.invitationCode || '').toLowerCase().includes(q) ||
+        w.message.toLowerCase().includes(q)
+    );
+  }, [publicVisibleWishes, coverGuestSearch]);
+
   // ============================================================================
   // 0. SUPERADMIN MODERATION: MAINTENANCE / PAUSED VIEW MODE
   // ============================================================================
@@ -929,17 +940,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Personalized Guest Card (Translucent Glass) */}
             <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
-              <div className="flex items-center justify-center gap-2 flex-wrap mb-1.5">
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500">
-                  {lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest'}
-                </p>
-                {effectiveMatchedGuest && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                    ✓ {effectiveMatchedGuest.invitationCode} &bull;{' '}
-                    {effectiveMatchedGuest.confirmedPax || effectiveMatchedGuest.pax || 2} Pax
-                  </span>
-                )}
-              </div>
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
+                {lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest'}
+              </p>
 
               <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
                 {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
@@ -949,91 +952,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1 break-words">
                   {effectiveMatchedGuest?.institution || matchedGuest?.institution}
                 </p>
-              )}
-
-              {/* Quick Guest Search on Cover when opening general client link */}
-              {!requiresVipCodeGate && guests.length > 0 && (
-                <div className="mt-3 pt-2.5 border-t border-[#D4AF37]/25 relative text-left">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-[#B68D40] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={coverGuestSearch}
-                      onFocus={() => setShowCoverGuestSuggestions(true)}
-                      onBlur={() =>
-                        setTimeout(() => setShowCoverGuestSuggestions(false), 180)
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCoverGuestSearch(val);
-                        setShowCoverGuestSuggestions(true);
-                        const exact = guests.find(
-                          (g) =>
-                            g.guestName.trim().toLowerCase() ===
-                              val.trim().toLowerCase() ||
-                            g.invitationCode.trim().toLowerCase() ===
-                              val.trim().toLowerCase()
-                        );
-                        if (exact) {
-                          applyGuestToForm(exact);
-                        } else if (
-                          selectedGuestFromSearch &&
-                          val.trim().toLowerCase() !==
-                            selectedGuestFromSearch.guestName.trim().toLowerCase()
-                        ) {
-                          setSelectedGuestFromSearch(null);
-                        }
-                      }}
-                      placeholder={
-                        lang === 'ID'
-                          ? `Cari nama / kode undangan (${guests.length} tamu terdaftar)...`
-                          : `Search your name / invitation code (${guests.length} registered guests)...`
-                      }
-                      className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 text-[11px] sm:text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#8B6914]"
-                    />
-                    {coverGuestSearch && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCoverGuestSearch('');
-                          setSelectedGuestFromSearch(null);
-                        }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
-                        title="Reset pencarian tamu"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {showCoverGuestSuggestions && coverMatchingGuests.length > 0 && (
-                    <div className="mt-1.5 max-h-44 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100 z-30">
-                      {coverMatchingGuests.map((guest) => (
-                        <button
-                          key={guest.id}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            applyGuestToForm(guest);
-                          }}
-                          className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-stone-900 truncate">
-                              {guest.guestName}
-                            </p>
-                            <p className="text-[10px] text-stone-500 truncate">
-                              {guest.institution || guest.guestType} &bull; {guest.pax} Pax
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
-                            {guest.invitationCode}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               )}
 
               <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
@@ -1945,20 +1863,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         ? 'Nama Lengkap / Gelar *'
                         : 'Full Name / Title *'}
                     </label>
-                    {effectiveMatchedGuest &&
-                    effectiveMatchedGuest.guestName.trim().toLowerCase() ===
-                      rsvpName.trim().toLowerCase() ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                        ✓ {lang === 'ID' ? 'Terhubung Database' : 'Verified Guest'} (
-                        {effectiveMatchedGuest.invitationCode})
-                      </span>
-                    ) : guests.length > 0 ? (
+                    {guests.length > 0 && (
                       <span className="text-[10px] font-semibold text-[#9A742B]">
                         {lang === 'ID'
                           ? `🔍 Ketik nama untuk cari dari ${guests.length} tamu terdaftar`
                           : `🔍 Type your name to search ${guests.length} registered guests`}
                       </span>
-                    ) : null}
+                    )}
                   </div>
                   <input
                     type="text"
@@ -2173,7 +2084,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
             <div className="h-full lg:h-[600px] rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-stone-200/80 shrink-0">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-stone-200/80 shrink-0">
                 <div className="flex items-center gap-2.5">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
                   <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
@@ -2188,25 +2099,112 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </span>
               </div>
 
+              {/* Search Bar in Buku Tamu & Doa Restu Card */}
+              <div className="mb-3 relative shrink-0">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-[#B68D40] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={coverGuestSearch}
+                    onFocus={() => setShowCoverGuestSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowCoverGuestSuggestions(false), 180)
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCoverGuestSearch(val);
+                      setShowCoverGuestSuggestions(true);
+                      const exact = guests.find(
+                        (g) =>
+                          g.guestName.trim().toLowerCase() ===
+                            val.trim().toLowerCase() ||
+                          g.invitationCode.trim().toLowerCase() ===
+                            val.trim().toLowerCase()
+                      );
+                      if (exact) {
+                        applyGuestToForm(exact);
+                      }
+                    }}
+                    placeholder={
+                      lang === 'ID'
+                        ? `Cari nama tamu / kode undangan / ucapan di Buku Tamu...`
+                        : `Search guest name / invitation code / wishes in Guestbook...`
+                    }
+                    className="w-full pl-8 pr-7 py-2 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#8B6914]"
+                  />
+                  {coverGuestSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCoverGuestSearch('');
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                      title="Reset pencarian"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {showCoverGuestSuggestions &&
+                  coverGuestSearch.trim().length > 0 &&
+                  coverMatchingGuests.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 max-h-44 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100 z-30">
+                      {coverMatchingGuests.map((guest) => (
+                        <button
+                          key={guest.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            applyGuestToForm(guest);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-stone-900 truncate">
+                              {guest.guestName}
+                            </p>
+                            <p className="text-[10px] text-stone-500 truncate">
+                              {guest.institution || guest.guestType} &bull;{' '}
+                              {guest.confirmedPax || guest.pax || 2} Pax
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
+                            {guest.invitationCode}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+              </div>
+
               <div className="flex-1 max-h-[380px] lg:max-h-none overflow-y-auto space-y-3 pr-1">
-                {publicVisibleWishes.length === 0 ? (
-                  <div className="h-full min-h-[260px] sm:min-h-[320px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center">
+                {filteredPublicWishes.length === 0 ? (
+                  <div className="h-full min-h-[240px] sm:min-h-[280px] rounded-2xl border border-dashed border-[#D4AF37]/40 bg-[#FAF8F5]/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#B68D40] mb-3">
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <h4 className="font-serif text-base font-bold text-stone-800 mb-1">
-                      {lang === 'ID'
+                      {coverGuestSearch.trim()
+                        ? lang === 'ID'
+                          ? 'Ucapan Tidak Ditemukan'
+                          : 'No Matching Wishes Found'
+                        : lang === 'ID'
                         ? 'Belum Ada Ucapan & Doa'
                         : 'No Wishes Yet'}
                     </h4>
                     <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
-                      {lang === 'ID'
+                      {coverGuestSearch.trim()
+                        ? lang === 'ID'
+                          ? `Tidak ada ucapan untuk pencarian "${coverGuestSearch}". Silakan pilih nama Anda dari daftar untuk mengisi form RSVP.`
+                          : `No wishes matched "${coverGuestSearch}". Select your name from the suggestions to fill the RSVP form.`
+                        : lang === 'ID'
                         ? 'Jadilah yang pertama menuliskan ucapan selamat dan doa restu untuk kedua mempelai melalui formulir di samping.'
                         : 'Be the first to share your warm wishes and blessings for the couple using the form.'}
                     </p>
                   </div>
                 ) : (
-                  publicVisibleWishes.map((w) => (
+                  filteredPublicWishes.map((w) => (
                     <div
                       key={w.id}
                       className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
@@ -2273,7 +2271,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     : 'Automatically synced to Dashboard'}
                 </span>
                 <span className="font-semibold text-[#9A742B] shrink-0">
-                  {publicVisibleWishes.length}{' '}
+                  {filteredPublicWishes.length}{' '}
                   {lang === 'ID' ? 'Doa Restu' : 'Wishes'}
                 </span>
               </div>
