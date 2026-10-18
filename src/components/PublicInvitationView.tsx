@@ -396,7 +396,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {/* Personalized Guest Card (Translucent Glass) */}
             <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
-                Kepada Yth. Bapak / Ibu / Saudara / i
+                Kepada Yth.
               </p>
 
               {isVipGuest && (
@@ -415,14 +415,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               )}
 
-              {matchedGuest?.invitationCode && (
-                <p className="text-[11px] text-stone-400 mt-1.5 font-mono">
-                  Kode Undangan: {matchedGuest.invitationCode} &bull; Kuota:{' '}
-                  {matchedGuest.pax} Pax
-                </p>
-              )}
-
-              <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2 italic">
+              <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
                 *Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar
               </p>
             </div>
