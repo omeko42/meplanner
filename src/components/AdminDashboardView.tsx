@@ -11096,14 +11096,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            💳 Kartu Kredit / Payment Link (Visa / Mastercard / Stripe / Midtrans):
+                            💳 Kartu Kredit / Payment Link (Visa / Mastercard / Apple Pay):
                           </label>
                           <input
                             type="text"
                             value={
-                              settingsForm.commercialCreditCardUrl ??
-                              state.settings.commercialCreditCardUrl ??
-                              ''
+                              settingsForm.commercialCreditCardUrl ||
+                              state.settings.commercialCreditCardUrl ||
+                              'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY'
                             }
                             onChange={(e) =>
                               setSettingsForm((prev) => ({
@@ -11111,7 +11111,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 commercialCreditCardUrl: e.target.value,
                               }))
                             }
-                            placeholder="Contoh: https://buy.stripe.com/... atau Link Payment Gateway"
+                            placeholder="https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY"
                             className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                           />
                         </div>
@@ -11123,9 +11123,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <input
                             type="text"
                             value={
-                              settingsForm.commercialPaypalUrl ??
-                              state.settings.commercialPaypalUrl ??
-                              'e98.bisnis@gmail.com'
+                              settingsForm.commercialPaypalUrl &&
+                              settingsForm.commercialPaypalUrl !== 'e98.bisnis@gmail.com'
+                                ? settingsForm.commercialPaypalUrl
+                                : state.settings.commercialPaypalUrl &&
+                                  state.settings.commercialPaypalUrl !== 'e98.bisnis@gmail.com'
+                                ? state.settings.commercialPaypalUrl
+                                : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY'
                             }
                             onChange={(e) =>
                               setSettingsForm((prev) => ({
@@ -11133,7 +11137,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 commercialPaypalUrl: e.target.value,
                               }))
                             }
-                            placeholder="e98.bisnis@gmail.com atau https://paypal.me/omeko11"
+                            placeholder="https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY"
                             className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                           />
                         </div>

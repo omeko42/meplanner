@@ -138,12 +138,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     primarySettings.commercialQrisImageUrl?.trim() || '';
 
   const creditCardUrl =
-    primarySettings.commercialCreditCardUrl?.trim() || '';
+    primarySettings.commercialCreditCardUrl?.trim() ||
+    'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
 
   const rawPaypalConfig = primarySettings.commercialPaypalUrl?.trim() || '';
   const paypalHref = /^https?:\/\//i.test(rawPaypalConfig)
     ? rawPaypalConfig
-    : 'https://paypal.me/omeko11';
+    : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
 
   const cryptoNetwork =
     primarySettings.commercialCryptoNetwork?.trim() ||
