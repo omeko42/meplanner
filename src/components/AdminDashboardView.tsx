@@ -817,6 +817,122 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     showToast('Momen Kisah Kasih dihapus.');
   };
 
+  // Compress uploaded image file via HTML5 canvas so large phone/camera photos save cleanly & fast
+  const compressImageFileToDataUrl = (
+    file: File,
+    maxDimension = 1600,
+    quality = 0.82
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+      reader.onload = () => {
+        const resultStr = String(reader.result || '');
+        const img = new window.Image();
+        img.onerror = () => resolve(resultStr);
+        img.onload = () => {
+          try {
+            let { width, height } = img;
+            if (width > maxDimension || height > maxDimension) {
+              if (width >= height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(resultStr);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } catch {
+            resolve(resultStr);
+          }
+        };
+        img.src = resultStr;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleUploadThemeImage = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target:
+      | 'all_bg'
+      | 'coverBgUrl'
+      | 'heroPrewedUrl'
+      | 'pageBgUrl'
+      | 'groomPhotoUrl'
+      | 'bridePhotoUrl'
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+      return;
+    }
+    try {
+      showToast('Mengompres & menyiapkan gambar...');
+      const maxDim =
+        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 900 : 1600;
+      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.82);
+      const patch: Partial<WeddingSettings> =
+        target === 'all_bg'
+          ? {
+              coverBgUrl: dataUrl,
+              heroPrewedUrl: dataUrl,
+              pageBgUrl: dataUrl,
+            }
+          : { [target]: dataUrl };
+
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        ...patch,
+        updatedBy: adminUser.username,
+      };
+      setSettingsForm(nextSettings);
+      await onUpdateSettings(nextSettings);
+      showToast('Gambar berhasil di-upload & diterapkan!');
+    } catch {
+      showToast('Gagal meng-upload gambar.');
+    }
+  };
+
+  const handleUploadGalleryFile = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+      return;
+    }
+    try {
+      showToast('Mengompres foto galeri...');
+      const dataUrl = await compressImageFileToDataUrl(file, 1400, 0.82);
+      const baseName = file.name.replace(/\.[^/.]+$/, '');
+      setNewPhotoForm((prev) => ({
+        ...prev,
+        title: prev.title || baseName || 'Momen Bahagia',
+        imageUrl: dataUrl,
+      }));
+      showToast('Foto siap! Klik "Tambahkan Foto ke Galeri" untuk menyimpan.');
+    } catch {
+      showToast('Gagal memproses file foto.');
+    }
+  };
+
   const handleAddGalleryPhotoItem = async () => {
     if (!newPhotoForm.imageUrl.trim()) return;
     const nextPhotos: GalleryPhotoItem[] = [
@@ -3199,20 +3315,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 />
                                               </div>
                                               <div>
-                                                <label className="block text-stone-600 mb-0.5">
-                                                  URL Foto Mempelai Pria
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.groomPhotoUrl || ''}
-                                                  onChange={(e) =>
-                                                    setSettingsForm({
-                                                      ...settingsForm,
-                                                      groomPhotoUrl: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
-                                                />
+                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                  <label className="block text-stone-600">
+                                                    Foto Mempelai Pria (Upload / URL)
+                                                  </label>
+                                                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
+                                                    <Upload className="w-3 h-3 text-[#B68D40]" />
+                                                    <span>Upload Foto</span>
+                                                    <input
+                                                      type="file"
+                                                      accept="image/*"
+                                                      onChange={(e) =>
+                                                        handleUploadThemeImage(
+                                                          e,
+                                                          'groomPhotoUrl'
+                                                        )
+                                                      }
+                                                      className="hidden"
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                  {settingsForm.groomPhotoUrl && (
+                                                    <img
+                                                      src={settingsForm.groomPhotoUrl}
+                                                      alt="Foto Mempelai Pria"
+                                                      className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/50 shrink-0"
+                                                    />
+                                                  )}
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.groomPhotoUrl || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        groomPhotoUrl: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Upload foto atau tempel URL gambar..."
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
+                                                  />
+                                                </div>
                                               </div>
                                             </div>
 
@@ -3288,20 +3431,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 />
                                               </div>
                                               <div>
-                                                <label className="block text-stone-600 mb-0.5">
-                                                  URL Foto Mempelai Wanita
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.bridePhotoUrl || ''}
-                                                  onChange={(e) =>
-                                                    setSettingsForm({
-                                                      ...settingsForm,
-                                                      bridePhotoUrl: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
-                                                />
+                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                  <label className="block text-stone-600">
+                                                    Foto Mempelai Wanita (Upload / URL)
+                                                  </label>
+                                                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
+                                                    <Upload className="w-3 h-3 text-[#B68D40]" />
+                                                    <span>Upload Foto</span>
+                                                    <input
+                                                      type="file"
+                                                      accept="image/*"
+                                                      onChange={(e) =>
+                                                        handleUploadThemeImage(
+                                                          e,
+                                                          'bridePhotoUrl'
+                                                        )
+                                                      }
+                                                      className="hidden"
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                  {settingsForm.bridePhotoUrl && (
+                                                    <img
+                                                      src={settingsForm.bridePhotoUrl}
+                                                      alt="Foto Mempelai Wanita"
+                                                      className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/50 shrink-0"
+                                                    />
+                                                  )}
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.bridePhotoUrl || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        bridePhotoUrl: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Upload foto atau tempel URL gambar..."
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
+                                                  />
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
@@ -3743,18 +3913,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 className="px-3 py-1.5 rounded-lg border border-stone-300"
                                               />
                                             </div>
-                                            <input
-                                              type="text"
-                                              value={newPhotoForm.imageUrl}
-                                              onChange={(e) =>
-                                                setNewPhotoForm({
-                                                  ...newPhotoForm,
-                                                  imageUrl: e.target.value,
-                                                })
-                                              }
-                                              placeholder="URL Gambar Foto (https://...)"
-                                              className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
-                                            />
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                              <input
+                                                type="text"
+                                                value={newPhotoForm.imageUrl}
+                                                onChange={(e) =>
+                                                  setNewPhotoForm({
+                                                    ...newPhotoForm,
+                                                    imageUrl: e.target.value,
+                                                  })
+                                                }
+                                                placeholder="URL Gambar Foto (https://...) atau Upload dari HP/Laptop"
+                                                className="flex-1 px-3 py-1.5 rounded-lg border border-stone-300"
+                                              />
+                                              <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 transition-all">
+                                                <Upload className="w-3.5 h-3.5" />
+                                                <span>Upload Foto</span>
+                                                <input
+                                                  type="file"
+                                                  accept="image/*"
+                                                  className="hidden"
+                                                  onChange={handleUploadGalleryFile}
+                                                />
+                                              </label>
+                                            </div>
+                                            {newPhotoForm.imageUrl && (
+                                              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#FAF8F5] border border-[#D4AF37]/30">
+                                                <img
+                                                  src={newPhotoForm.imageUrl}
+                                                  alt="Preview"
+                                                  className="w-12 h-12 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
+                                                />
+                                                <span className="text-[11px] text-[#8B6914] font-semibold">
+                                                  Foto siap ditambahkan ke galeri. Klik tombol di bawah untuk menyimpan.
+                                                </span>
+                                              </div>
+                                            )}
                                             <div className="flex justify-end">
                                               <button
                                                 type="button"
@@ -3948,7 +4142,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2.5">
                         <Sparkles className="w-4 h-4 text-[#B68D40]" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                          Pengaturan Tema Cerah, Siluet Foto &amp; Efek Transparansi
+                          Pengaturan Tema Cerah, Siluet Foto &amp; Upload Background Sendiri
                         </h3>
                       </div>
                       <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px]">
@@ -3956,11 +4150,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Quick Preset Selector */}
-                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
-                      <p className="font-bold text-xs text-stone-800">
-                        Pilih Cepat Preset Background Tema Cerah / Siluet Prewedding:
-                      </p>
+                    {/* Quick Preset Selector + Upload Gambar Sendiri untuk Semua Background */}
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-xs text-stone-800">
+                            Pilih Cepat Preset Tema Default atau Upload Foto Sendiri:
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            Foto yang diupload dari HP/Laptop otomatis dikompres agar ringan &amp; tersimpan permanen.
+                          </p>
+                        </div>
+                        <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 transition-all">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Gambar untuk Semua Background</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleUploadThemeImage(e, 'all_bg')}
+                          />
+                        </label>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         {BACKGROUND_PRESETS.map((preset) => (
                           <button
@@ -3994,46 +4205,114 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* 3 URL Inputs */}
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block font-bold text-stone-700 mb-1">
-                          URL Background Sampul Pembuka (Cover)
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.coverBgUrl || ''}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
-                        />
+                    {/* 3 Individual Background Upload / URL Inputs */}
+                    <div className="space-y-3.5">
+                      <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="block font-bold text-stone-800">
+                            1. Background Sampul Pembuka (Cover Undangan)
+                          </label>
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Gambar Cover</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
+                            />
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {settingsForm.coverBgUrl && (
+                            <img
+                              src={settingsForm.coverBgUrl}
+                              alt="Cover Preview"
+                              className="w-14 h-14 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
+                            />
+                          )}
+                          <input
+                            type="text"
+                            value={settingsForm.coverBgUrl || ''}
+                            onChange={(e) =>
+                              setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
+                            }
+                            placeholder="Tempel URL gambar atau klik Upload Gambar Cover di kanan atas"
+                            className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block font-bold text-stone-700 mb-1">
-                          URL Banner Utama / Siluet Foto Prewedding
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.heroPrewedUrl || ''}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
-                        />
+
+                      <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="block font-bold text-stone-800">
+                            2. Banner Utama / Siluet Foto Prewedding
+                          </label>
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Foto Banner</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
+                            />
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {settingsForm.heroPrewedUrl && (
+                            <img
+                              src={settingsForm.heroPrewedUrl}
+                              alt="Hero Preview"
+                              className="w-14 h-14 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
+                            />
+                          )}
+                          <input
+                            type="text"
+                            value={settingsForm.heroPrewedUrl || ''}
+                            onChange={(e) =>
+                              setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
+                            }
+                            placeholder="Tempel URL gambar atau klik Upload Foto Banner di kanan atas"
+                            className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block font-bold text-stone-700 mb-1">
-                          URL Wallpaper Latar Halaman Undangan
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.pageBgUrl || ''}
-                          onChange={(e) =>
-                            setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
-                        />
+
+                      <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="block font-bold text-stone-800">
+                            3. Wallpaper Latar Halaman Undangan
+                          </label>
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Wallpaper</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
+                            />
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {settingsForm.pageBgUrl && (
+                            <img
+                              src={settingsForm.pageBgUrl}
+                              alt="Wallpaper Preview"
+                              className="w-14 h-14 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
+                            />
+                          )}
+                          <input
+                            type="text"
+                            value={settingsForm.pageBgUrl || ''}
+                            onChange={(e) =>
+                              setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
+                            }
+                            placeholder="Tempel URL gambar atau klik Upload Wallpaper di kanan atas"
+                            className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -5715,9 +5994,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {activeSettingsModal === 'background' && (
               <form onSubmit={handleSaveSettingsModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <p className="text-xs text-stone-500">
-                    * Gunakan URL gambar dari mana saja atau klik saran tema di bawah
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <p className="text-xs text-stone-500">
+                      * Pilih saran tema di bawah, tempel URL gambar, atau upload gambar sendiri dari HP/Laptop
+                    </p>
+                    <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shrink-0">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload untuk Semua Background</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadThemeImage(e, 'all_bg')}
+                      />
+                    </label>
+                  </div>
 
                   {/* Suggestion Box for Background Presets */}
                   <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
@@ -5747,46 +6038,82 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-medium text-stone-700 mb-1">
-                      URL Background Sampul Pembuka (Cover)*
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-medium text-stone-700">
+                        URL / Upload Background Sampul Pembuka (Cover)*
+                      </label>
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer">
+                        <Upload className="w-3 h-3" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={settingsForm.coverBgUrl || ''}
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
                       }
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://images.unsplash.com/... atau Upload"
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-medium text-stone-700 mb-1">
-                      URL Banner Utama / Foto Siluet Prewedding*
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-medium text-stone-700">
+                        URL / Upload Banner Utama / Foto Siluet Prewedding*
+                      </label>
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer">
+                        <Upload className="w-3 h-3" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={settingsForm.heroPrewedUrl || ''}
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
                       }
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://images.unsplash.com/... atau Upload"
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-medium text-stone-700 mb-1">
-                      URL Wallpaper Halaman Undangan*
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-medium text-stone-700">
+                        URL / Upload Wallpaper Halaman Undangan*
+                      </label>
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer">
+                        <Upload className="w-3 h-3" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={settingsForm.pageBgUrl || ''}
                       onChange={(e) =>
                         setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
                       }
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://images.unsplash.com/... atau Upload"
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
