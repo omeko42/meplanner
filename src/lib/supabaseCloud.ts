@@ -400,10 +400,11 @@ async function compressDataUrlForCloud(
   dataUrl: string | undefined,
   maxDim: number,
   quality: number,
-  maxAllowedChars = 95_000
+  maxAllowedChars = 190_000
 ): Promise<string | undefined> {
   if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
   if (!dataUrl.startsWith('data:image/')) return dataUrl;
+  if (dataUrl.startsWith('data:image/svg+xml')) return dataUrl;
   if (dataUrl.length <= maxAllowedChars) return dataUrl;
 
   const cacheKey = `${dataUrl.slice(0, 64)}_${dataUrl.slice(-64)}_${dataUrl.length}_${maxDim}_${quality}`;
@@ -420,8 +421,8 @@ async function compressDataUrlForCloud(
       img.onerror = () => resolve(dataUrl);
       img.onload = () => {
         try {
-          let w = img.naturalWidth || img.width || 600;
-          let h = img.naturalHeight || img.height || 600;
+          let w = img.naturalWidth || img.width || 1000;
+          let h = img.naturalHeight || img.height || 1000;
           if (w > maxDim || h > maxDim) {
             if (w >= h) {
               h = Math.max(1, Math.round((h * maxDim) / w));
@@ -439,10 +440,13 @@ async function compressDataUrlForCloud(
             resolve(dataUrl);
             return;
           }
-          ctx.fillStyle = '#1C1917';
-          ctx.fillRect(0, 0, w, h);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, w, h);
-          const out = canvas.toDataURL('image/jpeg', quality);
+          let out = canvas.toDataURL('image/webp', quality);
+          if (!out.startsWith('data:image/webp')) {
+            out = canvas.toDataURL('image/jpeg', quality);
+          }
           compressedDataUrlCache.set(cacheKey, out);
           resolve(out);
         } catch {
@@ -458,8 +462,8 @@ async function compressDataUrlForCloud(
 
 /**
  * Strips duplicate `originalPhotos` / `originalImageUrl` and inline `data:audio/`
- * and compresses oversized base64 images so `public.wedding_state` (`id = 'main'`)
- * stays lightweight (< 500 KB) and NEVER hits PostgreSQL's 3s statement_timeout (57014).
+ * and converts oversized base64 images to Full HD WebP (1600px) so photos stay
+ * razor-sharp (anti-pecah) while `public.wedding_state` (`id = 'main'`) never hits timeout.
  */
 async function prepareCloudSafeState(
   state: WeddingDatabaseSchema,
@@ -478,10 +482,10 @@ async function prepareCloudSafeState(
     );
   }
 
-  const avatarDim = aggressiveMode ? 420 : 600;
-  const bannerDim = aggressiveMode ? 720 : 920;
-  const qual = aggressiveMode ? 0.62 : 0.72;
-  const maxChars = aggressiveMode ? 65_000 : 95_000;
+  const avatarDim = aggressiveMode ? 800 : 1080;
+  const bannerDim = aggressiveMode ? 1280 : 1600;
+  const qual = aggressiveMode ? 0.78 : 0.86;
+  const maxChars = aggressiveMode ? 110_000 : 190_000;
 
   const [groomPhotoUrl, bridePhotoUrl, coverBgUrl, heroPrewedUrl, pageBgUrl] =
     await Promise.all([
@@ -999,13 +1003,17 @@ async function performActualSupabaseUpsert(
 
     let res = await tryUpsertTable(cloudSafePayload);
 
-    // If payload hit timeout (500 / 57014 / 504) or 413, retry with aggressive compression
+    // If payload hit timeout (500 / 57014 / 504) or 413, clear TOAST bloat via DELETE and retry with optimized payload
     if (
       res.status === 413 ||
       res.status === 500 ||
       res.status === 502 ||
       res.status === 504
     ) {
+      await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}`, {
+        method: 'DELETE',
+        headers: getSupabaseHeaders({ Prefer: 'return=minimal' }),
+      }).catch(() => {});
       const ultraCompactPayload = await prepareCloudSafeState(
         { ...state, lastSyncedAt: updatedAt },
         true

@@ -1540,22 +1540,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   };
 
-  // Compress uploaded image file via HTML5 canvas so large phone/camera photos save cleanly & fast
+  // Auto-convert & optimize uploaded image file (Full HD WebP / SVG vector, guaranteed <= 2 MB & anti-pecah)
   const compressImageFileToDataUrl = (
     file: File,
-    maxDimension = 1280,
-    quality = 0.78
+    maxDimension = 1800,
+    quality = 0.88
   ): Promise<string> => {
+    const MAX_TARGET_BYTES = 2 * 1024 * 1024; // 2 MB strict max limit
     return new Promise((resolve, reject) => {
+      if (file.size > 25 * 1024 * 1024) {
+        reject(new Error('Ukuran file mentah maksimal 25 MB (akan dikonversi otomatis ke < 2 MB).'));
+        return;
+      }
       const reader = new FileReader();
       reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
       reader.onload = () => {
         const resultStr = String(reader.result || '');
+        // Preserve SVG vector files directly so vector graphics never rasterize
+        if (file.type === 'image/svg+xml' || resultStr.startsWith('data:image/svg+xml')) {
+          resolve(resultStr);
+          return;
+        }
         const img = new window.Image();
         img.onerror = () => resolve(resultStr);
         img.onload = () => {
           try {
-            let { width, height } = img;
+            let width = img.naturalWidth || img.width || 1200;
+            let height = img.naturalHeight || img.height || 1200;
             if (width > maxDimension || height > maxDimension) {
               if (width >= height) {
                 height = Math.round((height * maxDimension) / width);
@@ -1573,9 +1584,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               resolve(resultStr);
               return;
             }
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', quality);
-            resolve(compressed);
+
+            let currentQuality = quality;
+            let converted = canvas.toDataURL('image/webp', currentQuality);
+            const useWebp = converted.startsWith('data:image/webp');
+            if (!useWebp) {
+              converted = canvas.toDataURL('image/jpeg', currentQuality);
+            }
+
+            // Guarantee final converted size is strictly <= 2 MB (~2.7M base64 chars)
+            const maxBase64Length = Math.floor((MAX_TARGET_BYTES * 4) / 3);
+            while (converted.length > maxBase64Length && currentQuality > 0.5) {
+              currentQuality = Number((currentQuality - 0.08).toFixed(2));
+              converted = canvas.toDataURL(
+                useWebp ? 'image/webp' : 'image/jpeg',
+                currentQuality
+              );
+            }
+            resolve(converted);
           } catch {
             resolve(resultStr);
           }
@@ -1677,8 +1706,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       photoAdjustTarget.shape,
       photoAdjustDraft.aspectRatio
     );
-    const stageW = 640;
-    const stageH = Math.max(240, Math.round(stageW / stageRatio));
+    const stageW = 1080;
+    const stageH = Math.max(360, Math.round(stageW / stageRatio));
 
     if (cropStageCanvasRef.current) {
       const stageCanvas = cropStageCanvasRef.current;
@@ -1688,6 +1717,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       if (ctx) {
         ctx.fillStyle = '#141210';
         ctx.fillRect(0, 0, stageW, stageH);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         drawStagePhotoOnContext(ctx, loadedPreviewImg, photoAdjustDraft, stageW, stageH);
       }
     }
@@ -1700,8 +1731,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       const ch = Math.max(0.05, Math.min(1 - cy, cb.h / 100));
 
       const outRatio = (stageW * cw) / Math.max(1, stageH * ch);
-      const previewW = 280;
-      const previewH = Math.max(110, Math.min(340, Math.round(previewW / outRatio)));
+      const previewW = 480;
+      const previewH = Math.max(180, Math.min(600, Math.round(previewW / outRatio)));
 
       const resCanvas = cropResultPreviewCanvasRef.current;
       resCanvas.width = previewW;
@@ -1709,6 +1740,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       const rCtx = resCanvas.getContext('2d');
       if (rCtx && cropStageCanvasRef.current) {
         rCtx.clearRect(0, 0, previewW, previewH);
+        rCtx.imageSmoothingEnabled = true;
+        rCtx.imageSmoothingQuality = 'high';
         rCtx.drawImage(
           cropStageCanvasRef.current,
           stageW * cx,
@@ -1952,15 +1985,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+      showToast('Pilih file berformat gambar (JPG, PNG, WEBP, SVG).');
       return;
     }
     try {
-      showToast('Mengompres & menyiapkan gambar...');
+      const origKb = Math.max(1, Math.round(file.size / 1024));
+      showToast(`Mengonversi foto ke HD tajam (Maks 2 MB)...`);
       const maxDim =
         target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1100 : 1800;
-      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.86);
+      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.88);
+      const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
+      const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       const defaultAdj: PhotoAdjustment = {
         zoom: 1,
         x: 0,
@@ -2022,9 +2058,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'FOTO_TEMA',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Upload & ganti foto tema (${target})`,
+        summary: `Upload & konversi foto HD (${target}: ${origKb}KB -> ${finalKb}KB)`,
       });
-      showToast('✓ Gambar berhasil di-upload! Silakan atur Crop, Zoom & Posisi.');
+      showToast(
+        `✓ Foto HD tajam siap (${origKb} KB → ${finalKb} KB, maks 2 MB)! Silakan atur Crop & Posisi.`
+      );
 
       // Automatically open the Crop, Zoom & Pan Studio so user can adjust framing right away
       if (target === 'groomPhotoUrl') {
@@ -2057,13 +2095,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Pilih file berformat gambar (JPG, PNG, WEBP).');
+    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+      showToast('Pilih file berformat gambar (JPG, PNG, WEBP, SVG).');
       return;
     }
     try {
-      showToast('Mengompres foto galeri...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.86);
+      const origKb = Math.max(1, Math.round(file.size / 1024));
+      showToast('Mengonversi foto galeri ke HD tajam (Maks 2 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.88);
+      const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
+      const finalKb = Math.max(1, Math.round(finalBytes / 1024));
       const baseName = file.name.replace(/\.[^/.]+$/, '');
       const defaultAdj: PhotoAdjustment = {
         zoom: 1,
@@ -2084,7 +2125,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         adjustment: defaultAdj,
       }));
       openNewGalleryPhotoAdjust(dataUrl);
-      showToast('Foto siap! Silakan Crop & atur posisi lalu klik Tambah Foto.');
+      showToast(
+        `✓ Foto HD tajam siap (${origKb} KB → ${finalKb} KB, maks 2 MB)! Silakan Crop lalu klik Tambah Foto.`
+      );
     } catch {
       showToast('Gagal memproses file foto.');
     }

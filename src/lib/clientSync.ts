@@ -1356,8 +1356,8 @@ export async function exportCroppedPhotoDataUrl(
   imageUrl: string,
   adj: PhotoAdjustment,
   shape: 'circle' | 'banner' | 'portrait' | 'gallery',
-  maxOutputDimension = shape === 'circle' ? 640 : shape === 'gallery' ? 920 : 980,
-  quality = shape === 'circle' ? 0.78 : 0.75
+  maxOutputDimension = shape === 'circle' ? 1080 : shape === 'gallery' ? 1500 : 1600,
+  quality = 0.88
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
@@ -1375,10 +1375,10 @@ export async function exportCroppedPhotoDataUrl(
         const safeCropY = Math.max(0, Math.min(100 - safeCropH, crop.y));
 
         // Base virtual stage dimensions
-        let virtualStageW = 1200;
+        let virtualStageW = 1600;
         let virtualStageH = Math.round(virtualStageW / stageAspect);
-        if (virtualStageH > 1600) {
-          virtualStageH = 1600;
+        if (virtualStageH > 2000) {
+          virtualStageH = 2000;
           virtualStageW = Math.round(virtualStageH * stageAspect);
         }
 
@@ -1389,8 +1389,8 @@ export async function exportCroppedPhotoDataUrl(
         // Scale output dimensions up/down so longest side is maxOutputDimension
         const maxSide = Math.max(outW, outH, 1);
         const scaleFactor = maxOutputDimension / maxSide;
-        outW = Math.max(64, Math.round(outW * scaleFactor));
-        outH = Math.max(64, Math.round(outH * scaleFactor));
+        outW = Math.max(128, Math.round(outW * scaleFactor));
+        outH = Math.max(128, Math.round(outH * scaleFactor));
         const scaledStageW = virtualStageW * scaleFactor;
         const scaledStageH = virtualStageH * scaleFactor;
 
@@ -1423,7 +1423,10 @@ export async function exportCroppedPhotoDataUrl(
           offsetY
         );
 
-        const croppedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        let croppedDataUrl = canvas.toDataURL('image/webp', quality);
+        if (!croppedDataUrl.startsWith('data:image/webp')) {
+          croppedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
         resolve(croppedDataUrl);
       } catch (err) {
         reject(err);
