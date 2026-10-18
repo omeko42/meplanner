@@ -162,7 +162,13 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   invitationClosingText:
     'Merupakan suatu kehormatan dan kebahagiaan bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.',
 
-  giftRecipientName: 'Lettu Inf Eko Budianto & dr. Fransisca C.A.N.',
+  giftSectionTitle: 'Amplop Digital & Tanda Kasih',
+  giftSectionSubtitle:
+    'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui saluran resmi berikut:',
+  showPhysicalGiftAddress: true,
+  giftShippingNote:
+    'Konfirmasi pengiriman bingkisan dapat melalui keluarga atau panitia acara.',
+  giftRecipientName: 'Briptu Eko Agung Krisdianto, S.Kom. & Sero Nelci Agustina',
   giftShippingAddress: 'Kota Semarang, Jawa Tengah',
   qrisImageUrl: '',
   showQrisButton: true,
@@ -196,8 +202,16 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   disableRsvpSubmission: false,
   storageQuotaLimitMb: 500,
   showFooterCredit: true,
-  developerCreditUrl: 'https://github.com/omeko11/my_wedding_manager',
+  developerCreditUrl: 'https://github.com/omeko11',
   contactWhatsappNumber: '089638616516',
+  contactBusinessEmail: 'e98.bisnis@gmail.com',
+  defaultLanguage: 'ID',
+  commercialBankTransferInfo: 'BCA / Mandiri / BRI / BNI (Konfirmasi via WA / Email)',
+  commercialQrisImageUrl: '',
+  commercialCreditCardUrl: '',
+  commercialPaypalUrl: 'e98.bisnis@gmail.com',
+  commercialCryptoWalletAddress: '',
+  commercialCryptoNetwork: 'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)',
   autoHideFlaggedWishes: true,
   moderationBlockedKeywords: '',
 

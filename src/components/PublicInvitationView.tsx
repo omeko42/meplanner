@@ -32,6 +32,7 @@ import {
   Sparkles,
   Shield,
   KeyRound,
+  Search,
 } from 'lucide-react';
 import {
   WeddingSettings,
@@ -102,8 +103,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   onSubmitRsvp,
 }) => {
   const [isOpened, setIsOpened] = useState(false);
+  const [lang, setLang] = useState<'ID' | 'EN'>(settings.defaultLanguage || 'ID');
   const [shareCopiedToast, setShareCopiedToast] = useState(false);
   const hasTrackedPageViewRef = useRef(false);
+
+  useEffect(() => {
+    if (settings.defaultLanguage) {
+      setLang(settings.defaultLanguage);
+    }
+  }, [settings.defaultLanguage]);
+
   const [isPlayingMusic, setIsPlayingMusic] = useState(() =>
     weddingMusicPlayer.getStatus()
   );
@@ -178,23 +187,66 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ? 'backdrop-blur-xl'
       : 'backdrop-blur-[2px]';
 
-  // Lookup matched guest from DB if ?code= or ?to= matches
+  // Lookup matched guest from DB if ?code= or ?to= matches (exact or partial)
   const matchedGuest = useMemo(() => {
     const cleanCode = (guestParamCode || '').trim().toLowerCase();
     const cleanName = (guestParamName || '').trim().toLowerCase();
     if (!cleanCode && !cleanName) return null;
-    return (
-      guests.find(
-        (g) =>
-          (cleanCode && g.invitationCode.toLowerCase() === cleanCode) ||
-          (cleanName && g.guestName.trim().toLowerCase() === cleanName)
-      ) || null
+    const exactMatch = guests.find(
+      (g) =>
+        (cleanCode && g.invitationCode.trim().toLowerCase() === cleanCode) ||
+        (cleanName && g.guestName.trim().toLowerCase() === cleanName)
     );
+    if (exactMatch) return exactMatch;
+    if (cleanName.length >= 3) {
+      return (
+        guests.find((g) => {
+          const gName = g.guestName.trim().toLowerCase();
+          return gName.includes(cleanName) || cleanName.includes(gName);
+        }) || null
+      );
+    }
+    return null;
   }, [guests, guestParamCode, guestParamName]);
 
+  const [selectedGuestFromSearch, setSelectedGuestFromSearch] =
+    useState<WeddingGuest | null>(null);
+  const [showGuestSuggestions, setShowGuestSuggestions] = useState(false);
+  const [coverGuestSearch, setCoverGuestSearch] = useState('');
+  const [showCoverGuestSuggestions, setShowCoverGuestSuggestions] = useState(false);
+
+  const [vipCodeInput, setVipCodeInput] = useState('');
+  const [vipCodeError, setVipCodeError] = useState('');
+  const [verifiedGuestByCode, setVerifiedGuestByCode] = useState<WeddingGuest | null>(
+    null
+  );
+
+  // Reset selected/verified guest if client database changes and guest is no longer in list
+  useEffect(() => {
+    if (
+      selectedGuestFromSearch &&
+      !guests.some((g) => g.id === selectedGuestFromSearch.id)
+    ) {
+      setSelectedGuestFromSearch(null);
+    }
+    if (
+      verifiedGuestByCode &&
+      !guests.some((g) => g.id === verifiedGuestByCode.id)
+    ) {
+      setVerifiedGuestByCode(null);
+    }
+  }, [guests, selectedGuestFromSearch, verifiedGuestByCode]);
+
+  const effectiveMatchedGuest =
+    selectedGuestFromSearch || verifiedGuestByCode || matchedGuest;
+
   const resolvedGuestDisplayName =
-    matchedGuest?.guestName ||
-    (guestParamName ? guestParamName.trim() : 'Bapak/Ibu/Saudara/i Tamu Kehormatan');
+    effectiveMatchedGuest?.guestName ||
+    (guestParamName
+      ? guestParamName.trim()
+      : lang === 'ID'
+      ? 'Bapak/Ibu/Saudara/i Tamu Kehormatan'
+      : 'Honored Guest');
 
   const allScheduleEvents = useMemo(
     () => getEffectiveScheduleEvents(settings),
@@ -262,18 +314,51 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
 
+  const applyGuestToForm = (guest: WeddingGuest) => {
+    setSelectedGuestFromSearch(guest);
+    setRsvpName(guest.guestName);
+    setRsvpInstitution(guest.institution || '');
+    setRsvpPhone(guest.phone || '');
+    setRsvpPax(guest.confirmedPax || guest.pax || 2);
+    if (guest.rsvpStatus && guest.rsvpStatus !== 'Belum Konfirmasi') {
+      setRsvpStatus(guest.rsvpStatus);
+    }
+    if (guest.sessionChoice) {
+      setRsvpSession(guest.sessionChoice);
+    }
+    if (guest.wishes && !rsvpMessage) {
+      setRsvpMessage(guest.wishes);
+    }
+    setShowGuestSuggestions(false);
+    setShowCoverGuestSuggestions(false);
+    setCoverGuestSearch(guest.guestName);
+    setVipCodeInput(guest.invitationCode);
+    setVipCodeError('');
+  };
+
   useEffect(() => {
-    if (matchedGuest) {
-      setRsvpName(matchedGuest.guestName);
-      setRsvpInstitution(matchedGuest.institution || '');
-      setRsvpPax(matchedGuest.pax || 2);
-      if (matchedGuest.rsvpStatus !== 'Belum Konfirmasi') {
-        setRsvpStatus(matchedGuest.rsvpStatus);
+    if (effectiveMatchedGuest) {
+      setRsvpName(effectiveMatchedGuest.guestName);
+      setRsvpInstitution(effectiveMatchedGuest.institution || '');
+      setRsvpPhone(effectiveMatchedGuest.phone || '');
+      setRsvpPax(effectiveMatchedGuest.confirmedPax || effectiveMatchedGuest.pax || 2);
+      if (
+        effectiveMatchedGuest.rsvpStatus &&
+        effectiveMatchedGuest.rsvpStatus !== 'Belum Konfirmasi'
+      ) {
+        setRsvpStatus(effectiveMatchedGuest.rsvpStatus);
+      }
+      if (effectiveMatchedGuest.sessionChoice) {
+        setRsvpSession(effectiveMatchedGuest.sessionChoice);
+      }
+      if (effectiveMatchedGuest.wishes && !rsvpMessage) {
+        setRsvpMessage(effectiveMatchedGuest.wishes);
       }
     } else if (guestParamName) {
       setRsvpName(guestParamName.trim());
     }
-  }, [matchedGuest, guestParamName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveMatchedGuest, guestParamName]);
 
   const visibleEvents = useMemo(() => {
     return allScheduleEvents
@@ -295,15 +380,110 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       }));
   }, [allScheduleEvents]);
 
-  const [vipCodeInput, setVipCodeInput] = useState('');
-  const [vipCodeError, setVipCodeError] = useState('');
-  const [verifiedGuestByCode, setVerifiedGuestByCode] = useState<WeddingGuest | null>(
-    null
-  );
+  const sessionOptions = useMemo<{ value: string; label: string }[]>(() => {
+    const rawOptions: { value: string; label: string }[] = [];
 
-  const effectiveMatchedGuest = verifiedGuestByCode || matchedGuest;
+    if (visibleEvents.length === 0) {
+      rawOptions.push({ value: 'Semua Sesi', label: 'Semua Rangkaian Acara' });
+    } else if (visibleEvents.length === 1) {
+      rawOptions.push(
+        { value: visibleEvents[0].title, label: visibleEvents[0].title },
+        { value: 'Semua Sesi', label: 'Semua Rangkaian Acara' }
+      );
+    } else {
+      const primaryPairTitle =
+        visibleEvents.length >= 3
+          ? `${visibleEvents[1].title} & ${visibleEvents[2].title}`
+          : `${visibleEvents[0].title} & ${visibleEvents[1].title}`;
+      rawOptions.push({ value: primaryPairTitle, label: primaryPairTitle });
+
+      visibleEvents.forEach((ev) => {
+        rawOptions.push({
+          value: `${ev.title} Saja`,
+          label: ev.date ? `${ev.title} Saja (${ev.date})` : `${ev.title} Saja`,
+        });
+      });
+
+      if (visibleEvents.length >= 3) {
+        const firstSecondPair = `${visibleEvents[0].title} & ${visibleEvents[1].title}`;
+        rawOptions.push({ value: firstSecondPair, label: firstSecondPair });
+      }
+
+      rawOptions.push({ value: 'Semua Sesi', label: 'Semua Rangkaian Acara' });
+    }
+
+    const deduped: { value: string; label: string }[] = [];
+    const seen = new Set<string>();
+    for (const opt of rawOptions) {
+      if (!seen.has(opt.value)) {
+        seen.add(opt.value);
+        deduped.push(opt);
+      }
+    }
+
+    if (
+      effectiveMatchedGuest?.sessionChoice &&
+      !seen.has(effectiveMatchedGuest.sessionChoice)
+    ) {
+      deduped.unshift({
+        value: effectiveMatchedGuest.sessionChoice,
+        label: effectiveMatchedGuest.sessionChoice,
+      });
+    }
+
+    return deduped;
+  }, [visibleEvents, effectiveMatchedGuest]);
+
+  useEffect(() => {
+    if (sessionOptions.length === 0) return;
+    const existsInOptions = sessionOptions.some((opt) => opt.value === rsvpSession);
+    if (!existsInOptions) {
+      setRsvpSession(
+        effectiveMatchedGuest?.sessionChoice ||
+          sessionOptions[0]?.value ||
+          'Semua Sesi'
+      );
+    }
+  }, [sessionOptions, rsvpSession, effectiveMatchedGuest]);
+
+  const matchingGuestSuggestions = useMemo(() => {
+    if (guests.length === 0) return [];
+    const query = rsvpName.trim().toLowerCase();
+    if (!query) {
+      return guests.slice(0, 6);
+    }
+    return guests
+      .filter(
+        (g) =>
+          g.guestName.toLowerCase().includes(query) ||
+          g.invitationCode.toLowerCase().includes(query) ||
+          (g.institution || '').toLowerCase().includes(query)
+      )
+      .slice(0, 8);
+  }, [guests, rsvpName]);
+
   const requiresVipCodeGate =
     settings.invitationModerationMode === 'VIP_CODE_ONLY' && !effectiveMatchedGuest;
+
+  const coverMatchingGuests = useMemo(() => {
+    if (guests.length === 0) return [];
+    const rawQuery = (
+      requiresVipCodeGate ? vipCodeInput : coverGuestSearch
+    )
+      .trim()
+      .toLowerCase();
+    if (!rawQuery) {
+      return guests.slice(0, 6);
+    }
+    return guests
+      .filter(
+        (g) =>
+          g.guestName.toLowerCase().includes(rawQuery) ||
+          g.invitationCode.toLowerCase().includes(rawQuery) ||
+          (g.institution || '').toLowerCase().includes(rawQuery)
+      )
+      .slice(0, 8);
+  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate]);
 
   const emitAnalytics = (
     type: InvitationInteractionType,
@@ -354,27 +534,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const handleOpenInvitation = () => {
     let resolvedGuestForOpen = effectiveMatchedGuest;
     if (requiresVipCodeGate) {
-      const cleanCode = vipCodeInput.trim().toUpperCase();
-      if (!cleanCode) {
+      const cleanInput = vipCodeInput.trim().toLowerCase();
+      if (!cleanInput) {
         setVipCodeError(
-          'Masukkan Kode Undangan resmi Anda (contoh: INV-0001) untuk membuka undangan.'
+          'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu terdaftar untuk membuka undangan.'
         );
         return;
       }
       const found = guests.find(
-        (g) => (g.invitationCode || '').trim().toUpperCase() === cleanCode
+        (g) =>
+          (g.invitationCode || '').trim().toLowerCase() === cleanInput ||
+          g.guestName.trim().toLowerCase() === cleanInput ||
+          (cleanInput.length >= 3 &&
+            g.guestName.trim().toLowerCase().includes(cleanInput))
       );
       if (!found && guests.length > 0) {
         setVipCodeError(
-          'Kode Undangan tidak ditemukan dalam daftar tamu terdaftar. Periksa kembali kode Anda.'
+          'Kode Undangan atau Nama Tamu tidak ditemukan dalam daftar tamu terdaftar.'
         );
         return;
       }
       if (found) {
         resolvedGuestForOpen = found;
         setVerifiedGuestByCode(found);
-        setRsvpName(found.guestName);
-        setRsvpInstitution(found.institution || '');
+        applyGuestToForm(found);
       }
       setVipCodeError('');
     }
@@ -423,7 +606,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     if (settings.showFooterCredit === false) return null;
     const developerUrl =
       settings.developerCreditUrl?.trim() ||
-      'https://github.com/omeko11/my_wedding_manager';
+      'https://github.com/omeko11';
     const rawWa = settings.contactWhatsappNumber?.trim() || '089638616516';
     const whatsappUrl = /^https?:\/\//i.test(rawWa)
       ? rawWa
@@ -458,12 +641,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {shareCopiedToast ? (
               <>
                 <Check className="w-3 h-3 text-emerald-600" />
-                <span className="text-emerald-700">Link Disalin!</span>
+                <span className="text-emerald-700">
+                  {lang === 'ID' ? 'Link Disalin!' : 'Link Copied!'}
+                </span>
               </>
             ) : (
               <>
                 <Copy className="w-3 h-3 text-[#B68D40]" />
-                <span>Bagikan Link</span>
+                <span>{lang === 'ID' ? 'Bagikan Link' : 'Share Link'}</span>
               </>
             )}
           </button>
@@ -691,15 +876,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={onOpenAdminPortal}
-            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
-            title="Login Portal Manajemen Pernikahan"
-          >
-            <Lock className="w-3 h-3 text-[#B68D40]" />
-            <span>{isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}</span>
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/85 hover:bg-[#FAF3E3] backdrop-blur-md border border-[#D4AF37]/45 text-[10px] sm:text-[11px] font-bold text-[#8B6914] transition-all shadow-2xs"
+              title="Switch Language (Bahasa Indonesia / English)"
+            >
+              <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenAdminPortal}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
+              title="Login Portal Manajemen Pernikahan"
+            >
+              <Lock className="w-3 h-3 text-[#B68D40]" />
+              <span>{isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Center Cover Invitation Frosted Glass Card */}
@@ -714,7 +910,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
 
             <p className="text-[11px] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#9A742B] font-semibold mb-1.5 sm:mb-2">
-              Undangan Pernikahan
+              {lang === 'ID' ? 'Undangan Pernikahan' : 'Wedding Invitation'}
             </p>
 
             <h1 className="font-serif text-2xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight mb-1.5 sm:mb-2 break-words">
@@ -733,9 +929,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Personalized Guest Card (Translucent Glass) */}
             <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
-                Kepada Yth.
-              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap mb-1.5">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500">
+                  {lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest'}
+                </p>
+                {effectiveMatchedGuest && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                    ✓ {effectiveMatchedGuest.invitationCode} &bull;{' '}
+                    {effectiveMatchedGuest.confirmedPax || effectiveMatchedGuest.pax || 2} Pax
+                  </span>
+                )}
+              </div>
 
               <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
                 {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
@@ -747,28 +951,156 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               )}
 
+              {/* Quick Guest Search on Cover when opening general client link */}
+              {!requiresVipCodeGate && guests.length > 0 && (
+                <div className="mt-3 pt-2.5 border-t border-[#D4AF37]/25 relative text-left">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-[#B68D40] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={coverGuestSearch}
+                      onFocus={() => setShowCoverGuestSuggestions(true)}
+                      onBlur={() =>
+                        setTimeout(() => setShowCoverGuestSuggestions(false), 180)
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCoverGuestSearch(val);
+                        setShowCoverGuestSuggestions(true);
+                        const exact = guests.find(
+                          (g) =>
+                            g.guestName.trim().toLowerCase() ===
+                              val.trim().toLowerCase() ||
+                            g.invitationCode.trim().toLowerCase() ===
+                              val.trim().toLowerCase()
+                        );
+                        if (exact) {
+                          applyGuestToForm(exact);
+                        } else if (
+                          selectedGuestFromSearch &&
+                          val.trim().toLowerCase() !==
+                            selectedGuestFromSearch.guestName.trim().toLowerCase()
+                        ) {
+                          setSelectedGuestFromSearch(null);
+                        }
+                      }}
+                      placeholder={
+                        lang === 'ID'
+                          ? `Cari nama / kode undangan (${guests.length} tamu terdaftar)...`
+                          : `Search your name / invitation code (${guests.length} registered guests)...`
+                      }
+                      className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 text-[11px] sm:text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#8B6914]"
+                    />
+                    {coverGuestSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCoverGuestSearch('');
+                          setSelectedGuestFromSearch(null);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                        title="Reset pencarian tamu"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {showCoverGuestSuggestions && coverMatchingGuests.length > 0 && (
+                    <div className="mt-1.5 max-h-44 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100 z-30">
+                      {coverMatchingGuests.map((guest) => (
+                        <button
+                          key={guest.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            applyGuestToForm(guest);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-stone-900 truncate">
+                              {guest.guestName}
+                            </p>
+                            <p className="text-[10px] text-stone-500 truncate">
+                              {guest.institution || guest.guestType} &bull; {guest.pax} Pax
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
+                            {guest.invitationCode}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
-                *Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar
+                {lang === 'ID'
+                  ? '*Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar'
+                  : '*We apologize if there is any misspelling of your name or title'}
               </p>
             </div>
 
             {/* Optional Superadmin VIP Code Gate Input */}
             {requiresVipCodeGate && (
-              <div className="w-full rounded-2xl bg-[#FAF8F5]/95 border border-[#D4AF37]/50 p-3.5 sm:p-4 mb-4 text-left space-y-2">
+              <div className="w-full rounded-2xl bg-[#FAF8F5]/95 border border-[#D4AF37]/50 p-3.5 sm:p-4 mb-4 text-left space-y-2 relative">
                 <label className="text-[11px] font-bold text-[#8B6914] flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-[#B68D40]" />
-                  <span>Mode Undangan Privat VIP — Masukkan Kode Undangan:</span>
+                  <span>
+                    {lang === 'ID'
+                      ? 'Mode Undangan Privat VIP — Masukkan Kode / Nama Tamu:'
+                      : 'VIP Private Invitation — Enter Invitation Code / Guest Name:'}
+                  </span>
                 </label>
                 <input
                   type="text"
                   value={vipCodeInput}
+                  onFocus={() => setShowCoverGuestSuggestions(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowCoverGuestSuggestions(false), 180)
+                  }
                   onChange={(e) => {
                     setVipCodeInput(e.target.value);
                     setVipCodeError('');
+                    setShowCoverGuestSuggestions(true);
                   }}
-                  placeholder="Contoh: INV-0001"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D4AF37]/50 font-mono text-xs sm:text-sm font-bold text-stone-900 uppercase focus:outline-none focus:border-[#8B6914]"
+                  placeholder={
+                    lang === 'ID'
+                      ? 'Contoh: INV-0001 atau ketik nama Anda'
+                      : 'Example: INV-0001 or type your name'
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D4AF37]/50 font-mono text-xs sm:text-sm font-bold text-stone-900 focus:outline-none focus:border-[#8B6914]"
                 />
+                {showCoverGuestSuggestions && coverMatchingGuests.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100">
+                    {coverMatchingGuests.map((guest) => (
+                      <button
+                        key={guest.id}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setVerifiedGuestByCode(guest);
+                          applyGuestToForm(guest);
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-stone-900 truncate">
+                            {guest.guestName}
+                          </p>
+                          <p className="text-[10px] text-stone-500 truncate">
+                            {guest.institution || guest.guestType} &bull; {guest.pax} Pax
+                          </p>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
+                          {guest.invitationCode}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {vipCodeError && (
                   <p className="text-[11px] font-semibold text-rose-600">
                     {vipCodeError}
@@ -784,7 +1116,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
             >
               <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
-              <span>Buka Undangan</span>
+              <span>{lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}</span>
             </button>
           </div>
         </div>
@@ -1020,6 +1352,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             <button
               type="button"
+              onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[11px] sm:text-xs font-bold text-[#8B6914] transition-all shadow-2xs"
+              title="Switch Language (Bahasa Indonesia / English)"
+            >
+              <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={onOpenAdminPortal}
               className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
             >
@@ -1070,7 +1411,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               {/* Countdown Timer Boxes (Conditional via enableCountdown Switch) */}
               {activeCountdownEvent && (
                 <div className="max-w-lg mx-auto mb-6 sm:mb-8 space-y-3">
-                  {countdownEvents.length > 1 ? (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Menuju Hari Bahagia'
+                        : 'Counting Down to the Big Day'}
+                      {countdownEvents.length === 1
+                        ? ` • ${activeCountdownEvent.title}`
+                        : ''}
+                    </span>
+                  </div>
+
+                  {countdownEvents.length > 1 && (
                     <div className="flex flex-wrap items-center justify-center gap-1.5">
                       {countdownEvents.map((ev) => {
                         const isSelected = activeCountdownEvent.id === ev.id;
@@ -1090,19 +1443,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         );
                       })}
                     </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Menuju {activeCountdownEvent.title}</span>
-                    </div>
                   )}
 
                   <div className="grid grid-cols-4 gap-2 sm:gap-4 items-stretch">
                     {[
-                      { label: 'Hari', value: countdown.days },
-                      { label: 'Jam', value: countdown.hours },
-                      { label: 'Menit', value: countdown.minutes },
-                      { label: 'Detik', value: countdown.seconds },
+                      { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
+                      { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
+                      {
+                        label: lang === 'ID' ? 'Menit' : 'Minutes',
+                        value: countdown.minutes,
+                      },
+                      {
+                        label: lang === 'ID' ? 'Detik' : 'Seconds',
+                        value: countdown.seconds,
+                      },
                     ].map((item) => (
                       <div
                         key={item.label}
@@ -1146,7 +1500,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               The Happy Couple
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              Profil Kedua Mempelai
+              {lang === 'ID' ? 'Mempelai yang Berbahagia' : 'The Happy Couple'}
             </h2>
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
           </div>
@@ -1166,7 +1520,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 </div>
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
-                  {settings.groomRankAndTitle || 'Mempelai Pria'}
+                  {settings.groomRankAndTitle || (lang === 'ID' ? 'Mempelai Pria' : 'The Groom')}
                 </span>
                 <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.groomFullName}
@@ -1198,7 +1552,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 </div>
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
-                  {settings.brideTitle || 'Mempelai Wanita'}
+                  {settings.brideTitle || (lang === 'ID' ? 'Mempelai Wanita' : 'The Bride')}
                 </span>
                 <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.brideFullName}
@@ -1227,7 +1581,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               Save The Date
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              Rangkaian Acara Pernikahan
+              {lang === 'ID'
+                ? 'Rangkaian Acara Pernikahan'
+                : 'Wedding Events Schedule'}
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
               {settings.subtitle}
@@ -1305,7 +1661,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <MapPin className="w-3.5 h-3.5" />
-                    <span>Buka Lokasi di Google Maps</span>
+                    <span>
+                      {lang === 'ID' ? 'Buka Google Maps' : 'Open Google Maps'}
+                    </span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -1320,15 +1678,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              {settings.gallerySectionSubtitle?.trim() || 'Our Journey & Moments'}
+              {settings.gallerySectionSubtitle?.trim() ||
+                (showLoveStory && !showGallery
+                  ? lang === 'ID'
+                    ? 'Kisah Perjalanan Cinta'
+                    : 'Our Love Story'
+                  : 'Our Journey & Moments')}
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               {settings.gallerySectionTitle?.trim() ||
-                (showLoveStory && showGallery
-                  ? 'Kisah Kasih & Galeri Momen'
-                  : showLoveStory
-                  ? 'Kisah Kasih Perjalanan Cinta'
-                  : 'Galeri Momen Bahagia')}
+                (showLoveStory && !showGallery
+                  ? lang === 'ID'
+                    ? 'Kisah Perjalanan Cinta'
+                    : 'Our Love Story'
+                  : lang === 'ID'
+                  ? 'Galeri Momen Bahagia'
+                  : 'Moments of Happiness')}
             </h2>
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
           </div>
@@ -1336,51 +1701,61 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {/* Love Story Timeline Cards */}
           {showLoveStory &&
             (effectiveLoveStory.length > 0 ? (
-              <div
-                className={`grid grid-cols-1 gap-4 sm:gap-5 mb-8 sm:mb-10 items-stretch ${
-                  effectiveLoveStory.length === 1
-                    ? 'max-w-lg mx-auto'
-                    : effectiveLoveStory.length === 3
-                    ? 'md:grid-cols-3'
-                    : 'sm:grid-cols-2'
-                }`}
-              >
-                {effectiveLoveStory.map((story, i) => (
-                  <div
-                    key={story.id || i}
-                    className="h-full rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
-                          {story.dateLabel}
-                        </span>
-                        <Heart className="w-4 h-4 text-[#C5A059]" />
+              <div className="mb-8 sm:mb-10 space-y-3">
+                <div className="flex items-center justify-center gap-2">
+                  <Heart className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#8B6914]">
+                    {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
+                  </span>
+                </div>
+                <div
+                  className={`grid grid-cols-1 gap-4 sm:gap-5 items-stretch ${
+                    effectiveLoveStory.length === 1
+                      ? 'max-w-lg mx-auto'
+                      : effectiveLoveStory.length === 3
+                      ? 'md:grid-cols-3'
+                      : 'sm:grid-cols-2'
+                  }`}
+                >
+                  {effectiveLoveStory.map((story, i) => (
+                    <div
+                      key={story.id || i}
+                      className="h-full rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
+                            {story.dateLabel}
+                          </span>
+                          <Heart className="w-4 h-4 text-[#C5A059]" />
+                        </div>
+                        <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
+                          {story.title}
+                        </h3>
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          {story.description}
+                        </p>
                       </div>
-                      <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
-                        {story.title}
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        {story.description}
-                      </p>
+                      {story.location && (
+                        <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3 text-[#B68D40]" />
+                          <span>{story.location}</span>
+                        </div>
+                      )}
                     </div>
-                    {story.location && (
-                      <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
-                        <MapPin className="w-3 h-3 text-[#B68D40]" />
-                        <span>{story.location}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="max-w-xl mx-auto mb-8 sm:mb-10 rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
                 <Heart className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
                 <p className="font-serif font-bold text-stone-800 text-base">
-                  Kisah Perjalanan Cinta
+                  {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
-                  Belum ada momen perjalanan cinta yang ditambahkan.
+                  {lang === 'ID'
+                    ? 'Belum ada momen perjalanan cinta yang ditambahkan.'
+                    : 'No love story moments have been added yet.'}
                 </p>
               </div>
             ))}
@@ -1494,10 +1869,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="max-w-xl mx-auto rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
                 <Sparkles className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
                 <p className="font-serif font-bold text-stone-800 text-base">
-                  Galeri Momen Bahagia
+                  {lang === 'ID' ? 'Galeri Momen Bahagia' : 'Moments of Happiness'}
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
-                  Belum ada foto prewedding yang ditambahkan ke galeri.
+                  {lang === 'ID'
+                    ? 'Belum ada foto prewedding yang ditambahkan ke galeri.'
+                    : 'No prewedding photos have been added to the gallery yet.'}
                 </p>
               </div>
             ))}
@@ -1512,10 +1889,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               RSVP &amp; Wedding Wishes
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              Konfirmasi Kehadiran &amp; Doa Restu
+              {lang === 'ID'
+                ? 'Konfirmasi Kehadiran & Doa Restu'
+                : 'RSVP & Wedding Wishes'}
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
-              Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time
+              {lang === 'ID'
+                ? 'Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time'
+                : 'Your attendance confirmation and wishes will be saved automatically in real-time'}
             </p>
           </div>
 
@@ -1531,11 +1912,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div className="flex items-center gap-2.5">
                     <Users className="w-5 h-5 text-[#B68D40]" />
                     <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
-                      Form RSVP Kehadiran
+                      {lang === 'ID' ? 'Form RSVP Kehadiran' : 'RSVP Attendance Form'}
                     </h3>
                   </div>
                   <span className="text-[11px] text-[#9A742B] font-semibold">
-                    Konfirmasi Online
+                    {lang === 'ID' ? 'Konfirmasi Online' : 'Online RSVP'}
                   </span>
                 </div>
 
@@ -1544,45 +1925,128 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold">
-                        Terima kasih atas konfirmasi &amp; doa restu Anda!
+                        {lang === 'ID'
+                          ? 'Terima kasih atas konfirmasi & doa restu Anda!'
+                          : 'Thank you for your RSVP & warm wishes!'}
                       </p>
                       <p className="text-emerald-700 mt-0.5">
-                        Data kehadiran dan ucapan Anda telah tersimpan di buku tamu.
+                        {lang === 'ID'
+                          ? 'Data kehadiran dan ucapan Anda telah tersimpan di buku tamu.'
+                          : 'Your attendance and message have been recorded in our guestbook.'}
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Nama Lengkap / Gelar *
-                  </label>
+                <div className="relative">
+                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                    <label className="block text-xs font-bold text-stone-700">
+                      {lang === 'ID'
+                        ? 'Nama Lengkap / Gelar *'
+                        : 'Full Name / Title *'}
+                    </label>
+                    {effectiveMatchedGuest &&
+                    effectiveMatchedGuest.guestName.trim().toLowerCase() ===
+                      rsvpName.trim().toLowerCase() ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                        ✓ {lang === 'ID' ? 'Terhubung Database' : 'Verified Guest'} (
+                        {effectiveMatchedGuest.invitationCode})
+                      </span>
+                    ) : guests.length > 0 ? (
+                      <span className="text-[10px] font-semibold text-[#9A742B]">
+                        {lang === 'ID'
+                          ? `🔍 Ketik nama untuk cari dari ${guests.length} tamu terdaftar`
+                          : `🔍 Type your name to search ${guests.length} registered guests`}
+                      </span>
+                    ) : null}
+                  </div>
                   <input
                     type="text"
                     required
                     value={rsvpName}
-                    onChange={(e) => setRsvpName(e.target.value)}
-                    placeholder="Contoh: Bpk. Budi Santoso"
+                    onFocus={() => setShowGuestSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowGuestSuggestions(false), 180)
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRsvpName(val);
+                      setShowGuestSuggestions(true);
+                      const exact = guests.find(
+                        (g) =>
+                          g.guestName.trim().toLowerCase() ===
+                            val.trim().toLowerCase() ||
+                          g.invitationCode.trim().toLowerCase() ===
+                            val.trim().toLowerCase()
+                      );
+                      if (exact) {
+                        applyGuestToForm(exact);
+                      } else if (
+                        selectedGuestFromSearch &&
+                        val.trim().toLowerCase() !==
+                          selectedGuestFromSearch.guestName.trim().toLowerCase()
+                      ) {
+                        setSelectedGuestFromSearch(null);
+                      }
+                    }}
+                    placeholder={
+                      lang === 'ID'
+                        ? 'Contoh: Bpk. Budi Santoso (Ketik untuk cari database tamu)'
+                        : 'Example: Mr. John Doe (Type to search guest database)'
+                    }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                   />
+
+                  {showGuestSuggestions && matchingGuestSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-2xl bg-white border border-[#D4AF37]/50 shadow-xl divide-y divide-stone-100 z-30">
+                      {matchingGuestSuggestions.map((guest) => (
+                        <button
+                          key={guest.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            applyGuestToForm(guest);
+                          }}
+                          className="w-full px-3.5 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-stone-900 truncate">
+                              {guest.guestName}
+                            </p>
+                            <p className="text-[10px] text-stone-500 truncate">
+                              {guest.institution || guest.guestType} &bull;{' '}
+                              {guest.confirmedPax || guest.pax || 2} Pax
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
+                            {guest.invitationCode}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Instansi / Kerabat
+                      {lang === 'ID' ? 'Instansi / Kerabat' : 'Institution / Relation'}
                     </label>
                     <input
                       type="text"
                       value={rsvpInstitution}
                       onChange={(e) => setRsvpInstitution(e.target.value)}
-                      placeholder="Keluarga / Rekan Kerja"
+                      placeholder={
+                        lang === 'ID' ? 'Keluarga / Rekan Kerja' : 'Family / Colleague'
+                      }
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      No. WhatsApp (Opsional)
+                      {lang === 'ID'
+                        ? 'No. WhatsApp (Opsional)'
+                        : 'WhatsApp Number (Optional)'}
                     </label>
                     <input
                       type="text"
@@ -1597,22 +2061,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Status Kehadiran *
+                      {lang === 'ID' ? 'Status Kehadiran *' : 'Attendance Status *'}
                     </label>
                     <select
                       value={rsvpStatus}
                       onChange={(e) => setRsvpStatus(e.target.value as RsvpStatus)}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                     >
-                      <option value="Hadir">Hadir</option>
-                      <option value="Tidak Hadir">Berhalangan Hadir</option>
-                      <option value="Masih Ragu">Masih Ragu</option>
+                      <option value="Hadir">
+                        {lang === 'ID' ? 'Hadir' : 'Will Attend (Hadir)'}
+                      </option>
+                      <option value="Tidak Hadir">
+                        {lang === 'ID'
+                          ? 'Berhalangan Hadir'
+                          : 'Unable to Attend (Berhalangan)'}
+                      </option>
+                      <option value="Masih Ragu">
+                        {lang === 'ID' ? 'Masih Ragu' : 'Tentative (Masih Ragu)'}
+                      </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Jumlah Orang (Pax)
+                      {lang === 'ID' ? 'Jumlah Orang (Pax)' : 'Number of Guests (Pax)'}
                     </label>
                     <select
                       value={rsvpPax}
@@ -1622,7 +2094,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     >
                       {[1, 2, 3, 4, 5].map((n) => (
                         <option key={n} value={n}>
-                          {n} Orang
+                          {n} {lang === 'ID' ? 'Orang' : 'Pax'}
                         </option>
                       ))}
                     </select>
@@ -1630,9 +2102,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Sesi Kehadiran
-                  </label>
+                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                    <label className="block text-xs font-bold text-stone-700">
+                      {lang === 'ID' ? 'Sesi Kehadiran' : 'Event Session'}
+                    </label>
+                    <span className="text-[10px] font-semibold text-[#9A742B]">
+                      {lang === 'ID'
+                        ? `Sinkron Jadwal Acara Database (${visibleEvents.length} Sesi)`
+                        : `Synced Event Schedule (${visibleEvents.length} Sessions)`}
+                    </span>
+                  </div>
                   <select
                     value={rsvpSession}
                     onChange={(e) =>
@@ -1640,26 +2119,29 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     }
                     className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                   >
-                    <option value="Pemberkatan & Resepsi">
-                      {settings.event2Title} &amp; {settings.event3Title}
-                    </option>
-                    <option value="Resepsi Saja">{settings.event3Title} Saja</option>
-                    <option value="Biston & Pemberkatan">
-                      {settings.event1Title} &amp; {settings.event2Title}
-                    </option>
-                    <option value="Semua Sesi">Semua Rangkaian Acara</option>
+                    {sessionOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Ucapan &amp; Doa Restu untuk Kedua Mempelai
+                    {lang === 'ID'
+                      ? 'Ucapan & Doa Restu untuk Kedua Mempelai'
+                      : 'Wedding Wishes & Prayers for the Couple'}
                   </label>
                   <textarea
                     rows={3}
                     value={rsvpMessage}
                     onChange={(e) => setRsvpMessage(e.target.value)}
-                    placeholder="Tuliskan doa restu dan harapan terbaik Anda..."
+                    placeholder={
+                      lang === 'ID'
+                        ? 'Tuliskan doa restu dan harapan terbaik Anda...'
+                        : 'Write your heartfelt wishes and prayers for the couple...'
+                    }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none resize-none"
                   />
                 </div>
@@ -1674,10 +2156,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <Send className="w-4 h-4" />
                   <span>
                     {settings.disableRsvpSubmission
-                      ? 'Konfirmasi RSVP Telah Ditutup'
+                      ? lang === 'ID'
+                        ? 'Konfirmasi RSVP Telah Ditutup'
+                        : 'RSVP Submission Closed'
                       : isSubmittingRsvp
-                      ? 'Menyimpan Konfirmasi...'
-                      : 'Kirim Konfirmasi & Ucapan'}
+                      ? lang === 'ID'
+                        ? 'Menyimpan Konfirmasi...'
+                        : 'Submitting RSVP...'
+                      : lang === 'ID'
+                      ? 'Kirim Konfirmasi & Ucapan'
+                      : 'Send RSVP & Wishes'}
                   </span>
                 </button>
               </div>
@@ -1689,7 +2177,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="flex items-center gap-2.5">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40]" />
                   <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
-                    Buku Tamu &amp; Doa Restu ({publicVisibleWishes.length})
+                    {lang === 'ID'
+                      ? 'Buku Tamu & Doa Restu'
+                      : 'Wedding Guestbook & Wishes'}{' '}
+                    ({publicVisibleWishes.length})
                   </h3>
                 </div>
                 <span className="text-[11px] text-[#9A742B] font-semibold">
@@ -1704,10 +2195,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <h4 className="font-serif text-base font-bold text-stone-800 mb-1">
-                      Belum Ada Ucapan &amp; Doa
+                      {lang === 'ID'
+                        ? 'Belum Ada Ucapan & Doa'
+                        : 'No Wishes Yet'}
                     </h4>
                     <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
-                      Jadilah yang pertama menuliskan ucapan selamat dan doa restu untuk kedua mempelai melalui formulir di samping.
+                      {lang === 'ID'
+                        ? 'Jadilah yang pertama menuliskan ucapan selamat dan doa restu untuk kedua mempelai melalui formulir di samping.'
+                        : 'Be the first to share your warm wishes and blessings for the couple using the form.'}
                     </p>
                   </div>
                 ) : (
@@ -1728,7 +2223,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             </h4>
                             {w.isPinned && (
                               <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
-                                <Pin className="w-2.5 h-2.5" /> Disematkan
+                                <Pin className="w-2.5 h-2.5" />{' '}
+                                {lang === 'ID' ? 'Disematkan' : 'Pinned'}
                               </span>
                             )}
                           </div>
@@ -1760,7 +2256,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       {w.replyFromCouple && (
                         <div className="mt-3 pl-3 border-l-2 border-[#D4AF37] bg-[#FAF8F5] p-2.5 rounded-r-xl text-xs text-stone-600">
                           <span className="font-bold text-[#8B6914] block mb-0.5">
-                            Balasan Mempelai:
+                            {lang === 'ID' ? 'Balasan Mempelai:' : "Couple's Reply:"}
                           </span>
                           {w.replyFromCouple}
                         </div>
@@ -1771,9 +2267,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
 
               <div className="pt-3 mt-4 border-t border-stone-200/80 flex items-center justify-between gap-2 text-[11px] text-stone-500 shrink-0">
-                <span className="truncate">Tersinkronisasi otomatis ke Dashboard</span>
+                <span className="truncate">
+                  {lang === 'ID'
+                    ? 'Tersinkronisasi otomatis ke Dashboard'
+                    : 'Automatically synced to Dashboard'}
+                </span>
                 <span className="font-semibold text-[#9A742B] shrink-0">
-                  {publicVisibleWishes.length} Doa Restu
+                  {publicVisibleWishes.length}{' '}
+                  {lang === 'ID' ? 'Doa Restu' : 'Wishes'}
                 </span>
               </div>
             </div>
@@ -1781,7 +2282,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </section>
       )}
 
-      {/* SECTION: AMPLOP DIGITAL / WEDDING GIFT (CONDITIONAL & SYMMETRICAL) */}
+      {/* SECTION: AMPLOP DIGITAL & TANDA KASIH (CUSTOMIZABLE + CRYPTO / PAYPAL / BANK / E-WALLET / PHYSICAL GIFT) */}
       {settings.showGiftSection !== false && (
         <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
@@ -1792,10 +2293,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               Wedding Gift
             </span>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2">
-              Amplop Digital &amp; Tanda Kasih
+              {settings.giftSectionTitle?.trim() ||
+                (lang === 'ID'
+                  ? 'Amplop Digital & Tanda Kasih'
+                  : 'Digital Envelope & Wedding Gift')}
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-xl mx-auto mb-6">
-              Doa restu Bapak/Ibu/Saudara/i merupakan karunia terindah bagi kami. Namun apabila ingin memberikan tanda kasih secara digital, dapat melalui informasi berikut:
+            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed">
+              {settings.giftSectionSubtitle?.trim() ||
+                (lang === 'ID'
+                  ? 'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui informasi resmi berikut:'
+                  : 'Your prayers and blessings are the greatest gift to us. However, if you wish to send a digital gift, crypto transfer, or wedding present, you may use the official channels below:')}
             </p>
 
             {settings.bankAccounts.length > 0 && (
@@ -1804,84 +2311,264 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   settings.bankAccounts.length === 1
                     ? 'max-w-md mx-auto'
                     : settings.bankAccounts.length === 2
-                    ? 'md:grid-cols-2 max-w-2xl mx-auto'
+                    ? 'md:grid-cols-2 max-w-3xl mx-auto'
                     : 'md:grid-cols-3'
                 }`}
               >
                 {settings.bankAccounts.map((acc) => {
                   const isCopied = copiedAccountId === acc.id;
+                  const accType = acc.type || 'BANK';
+                  const isCrypto = accType === 'CRYPTO';
+                  const isPaypal = accType === 'PAYPAL';
+                  const isEwallet = accType === 'EWALLET';
+
+                  const rawPaypalCandidate =
+                    acc.branchOrNote &&
+                    /^(https?:\/\/|paypal\.me\/)/i.test(acc.branchOrNote.trim())
+                      ? acc.branchOrNote.trim()
+                      : acc.accountNumber &&
+                        /^(https?:\/\/|paypal\.me\/)/i.test(acc.accountNumber.trim())
+                      ? acc.accountNumber.trim()
+                      : '';
+                  const paypalDirectUrl = rawPaypalCandidate
+                    ? /^https?:\/\//i.test(rawPaypalCandidate)
+                      ? rawPaypalCandidate
+                      : `https://${rawPaypalCandidate}`
+                    : '';
+
                   return (
                     <div
                       key={acc.id}
-                      className="h-full rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 p-4 sm:p-5 flex flex-col justify-between shadow-2xs"
+                      className={`h-full rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs border transition-all ${
+                        isCrypto
+                          ? 'bg-gradient-to-b from-[#FAF8F5] to-amber-50/60 border-amber-300/70'
+                          : isPaypal
+                          ? 'bg-gradient-to-b from-[#FAF8F5] to-sky-50/60 border-sky-200/80'
+                          : 'bg-[#FAF8F5] border-[#D4AF37]/30'
+                      }`}
                     >
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#9A742B] block mb-1">
-                          {acc.bankName}
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap mb-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                              isCrypto
+                                ? 'bg-amber-100/80 text-amber-900 border-amber-300'
+                                : isPaypal
+                                ? 'bg-sky-100/80 text-sky-900 border-sky-300'
+                                : isEwallet
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                            }`}
+                          >
+                            {isCrypto
+                              ? '🪙 CRYPTO / WEB3 WALLET'
+                              : isPaypal
+                              ? '🌐 PAYPAL INTERNATIONAL'
+                              : isEwallet
+                              ? '📱 E-WALLET DIGITAL'
+                              : '🏦 TRANSFER BANK'}
+                          </span>
+
+                          {isCrypto && (
+                            <span className="px-2 py-0.5 rounded-md bg-white border border-amber-300/80 text-[10px] font-mono font-bold text-amber-900">
+                              {acc.cryptoNetwork ||
+                                acc.branchOrNote ||
+                                'USDT • TRC20 / BEP20 / ERC20'}
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-[#9A742B] block mb-1">
+                          {acc.bankName || (isPaypal ? 'PayPal' : 'Bank')}
                         </span>
-                        <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1 break-all">
-                          {acc.accountNumber}
-                        </p>
-                        <p className="text-xs font-semibold text-stone-700">
-                          a.n. {acc.accountHolder}
-                        </p>
-                        {acc.branchOrNote && (
-                          <p className="text-[11px] text-stone-500 mt-0.5">
+
+                        {isCrypto ? (
+                          <div className="rounded-xl bg-white/90 border border-amber-200/90 px-3 py-2 mb-1.5">
+                            <p className="font-mono text-xs sm:text-sm font-bold text-stone-900 break-all leading-snug">
+                              {acc.accountNumber}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1 break-all">
+                            {acc.accountNumber}
+                          </p>
+                        )}
+
+                        {acc.accountHolder && (
+                          <p className="text-xs font-semibold text-stone-700">
+                            {isCrypto ? acc.accountHolder : `a.n. ${acc.accountHolder}`}
+                          </p>
+                        )}
+
+                        {!isCrypto && acc.branchOrNote && (
+                          <p className="text-[11px] text-stone-500 mt-0.5 break-words">
                             {acc.branchOrNote}
                           </p>
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleCopyAccount(acc.id, acc.accountNumber)}
-                        className={`mt-4 w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                          isCopied
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
-                        }`}
-                      >
-                        {isCopied ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Nomor Disalin!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Salin No. Rekening</span>
-                          </>
+                      <div className="mt-4 space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAccount(acc.id, acc.accountNumber)}
+                          className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            isCopied
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
+                          }`}
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>
+                                {isCrypto
+                                  ? lang === 'ID'
+                                    ? 'Alamat Wallet Tersalin'
+                                    : 'Wallet Copied!'
+                                  : lang === 'ID'
+                                  ? 'Nomor Disalin!'
+                                  : 'Copied!'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>
+                                {isCrypto
+                                  ? lang === 'ID'
+                                    ? 'Salin Alamat Wallet Crypto'
+                                    : 'Copy Crypto Wallet Address'
+                                  : isPaypal
+                                  ? lang === 'ID'
+                                    ? 'Salin Akun PayPal'
+                                    : 'Copy PayPal Account'
+                                  : isEwallet
+                                  ? lang === 'ID'
+                                    ? 'Salin Nomor E-Wallet'
+                                    : 'Copy E-Wallet Number'
+                                  : lang === 'ID'
+                                  ? 'Salin No. Rekening'
+                                  : 'Copy Account Number'}
+                              </span>
+                            </>
+                          )}
+                        </button>
+
+                        {isPaypal && paypalDirectUrl && (
+                          <a
+                            href={paypalDirectUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2 px-3 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                          >
+                            <span>
+                              {lang === 'ID' ? 'Buka PayPal.Me' : 'Open PayPal.Me'}
+                            </span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
                         )}
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {(settings.showQrisButton !== false || settings.giftShippingAddress) && (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-stone-200/80 text-xs text-stone-600">
+            {/* QRIS & Physical Gift Card Section */}
+            {(settings.showQrisButton !== false ||
+              (settings.showPhysicalGiftAddress !== false &&
+                Boolean(settings.giftShippingAddress?.trim()))) && (
+              <div className="pt-4 border-t border-stone-200/80 space-y-4">
                 {settings.showQrisButton !== false && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      emitAnalytics('CLICK_QRIS', 'Membuka tampilan Barcode QRIS Amplop Digital');
-                      setShowQrisModal(true);
-                    }}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold transition-all"
-                  >
-                    <QrCode className="w-4 h-4" />
-                    <span>Tampilkan Barcode QRIS</span>
-                  </button>
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        emitAnalytics(
+                          'CLICK_QRIS',
+                          'Membuka tampilan Barcode QRIS Amplop Digital'
+                        );
+                        setShowQrisModal(true);
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Tampilkan Barcode QRIS'
+                          : 'Show QRIS Barcode'}
+                      </span>
+                    </button>
+                  </div>
                 )}
-                {settings.giftShippingAddress && (
-                  <span className="text-stone-500 break-words">
-                    Alamat Kirim Kado:{' '}
-                    <strong className="text-stone-800">
-                      {settings.giftShippingAddress}
-                    </strong>
-                  </span>
-                )}
+
+                {settings.showPhysicalGiftAddress !== false &&
+                  Boolean(settings.giftShippingAddress?.trim()) && (
+                    <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                            🎁{' '}
+                            {lang === 'ID'
+                              ? 'KIRIM KADO / BINGKISAN FISIK'
+                              : 'PHYSICAL WEDDING GIFT ADDRESS'}
+                          </span>
+                          {settings.giftRecipientName && (
+                            <span className="text-xs font-bold text-stone-800">
+                              {lang === 'ID' ? 'Penerima:' : 'Recipient:'}{' '}
+                              {settings.giftRecipientName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm font-bold text-stone-900 break-words pt-0.5">
+                          {settings.giftShippingAddress}
+                        </p>
+                        <p className="text-[11px] text-stone-500 italic">
+                          {settings.giftShippingNote?.trim() ||
+                            (lang === 'ID'
+                              ? 'Konfirmasi pengiriman bingkisan dapat melalui keluarga atau panitia acara.'
+                              : 'Please confirm physical gift delivery with our family or wedding committee.')}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopyAccount(
+                            'physical-gift-address',
+                            `${
+                              settings.giftRecipientName
+                                ? `${settings.giftRecipientName} — `
+                                : ''
+                            }${settings.giftShippingAddress}`
+                          )
+                        }
+                        className={`shrink-0 py-2.5 px-4 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
+                          copiedAccountId === 'physical-gift-address'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
+                        }`}
+                      >
+                        {copiedAccountId === 'physical-gift-address' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>
+                              {lang === 'ID' ? 'Alamat Tersalin!' : 'Address Copied!'}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'Salin Alamat Kado'
+                                : 'Copy Shipping Address'}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
               </div>
             )}
           </div>
@@ -1909,7 +2596,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {/* Inner Champagne Gold Couple Signature Box */}
           <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-1">
-              Kami yang berbahagia,
+              {lang === 'ID' ? 'Kami yang berbahagia,' : 'With love & gratitude,'}
             </p>
             <p className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-wide">
               {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
@@ -1938,25 +2625,55 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       <nav className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md sm:w-auto sm:max-w-none bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/45 rounded-2xl sm:rounded-full px-1.5 sm:px-3.5 py-1.5 sm:py-2 shadow-[0_12px_35px_rgba(160,130,85,0.24)] flex items-center justify-around sm:justify-center gap-0.5 sm:gap-2">
         {[
           ...(settings.showCoupleSection !== false
-            ? [{ href: '#mempelai', label: 'Mempelai', icon: Heart }]
+            ? [
+                {
+                  href: '#mempelai',
+                  label: lang === 'ID' ? 'Mempelai' : 'Couple',
+                  icon: Heart,
+                },
+              ]
             : []),
           ...(visibleEvents.length > 0
-            ? [{ href: '#acara', label: 'Acara', icon: Calendar }]
+            ? [
+                {
+                  href: '#acara',
+                  label: lang === 'ID' ? 'Acara' : 'Schedule',
+                  icon: Calendar,
+                },
+              ]
             : []),
           ...(showLoveStory || showGallery
             ? [
                 {
                   href: '#galeri',
-                  label: showGallery ? 'Galeri' : 'Kisah',
+                  label: showGallery
+                    ? lang === 'ID'
+                      ? 'Galeri'
+                      : 'Gallery'
+                    : lang === 'ID'
+                    ? 'Kisah'
+                    : 'Story',
                   icon: showGallery ? Camera : Heart,
                 },
               ]
             : []),
           ...(settings.showRsvpSection !== false
-            ? [{ href: '#rsvp', label: 'RSVP & Doa', icon: MessageSquareHeart }]
+            ? [
+                {
+                  href: '#rsvp',
+                  label: lang === 'ID' ? 'RSVP & Doa' : 'RSVP & Wishes',
+                  icon: MessageSquareHeart,
+                },
+              ]
             : []),
           ...(settings.showGiftSection !== false
-            ? [{ href: '#gift', label: 'Amplop', icon: Gift }]
+            ? [
+                {
+                  href: '#gift',
+                  label: lang === 'ID' ? 'Amplop' : 'Gift',
+                  icon: Gift,
+                },
+              ]
             : []),
         ].map((nav) => {
           const IconComp = nav.icon;

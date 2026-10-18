@@ -418,16 +418,6 @@ function WeddingAppContent() {
 
         const json = await res.json();
         if (json.success && json.data) {
-          if (action === 'SUBMIT_RSVP') {
-            setState((prev) => {
-              const merged = mergePreservingLocalMedia(
-                json.data as WeddingDatabaseSchema,
-                prev
-              );
-              saveClientState(merged, true);
-              return merged;
-            });
-          }
           return json.data;
         }
       } catch {
@@ -819,9 +809,23 @@ function WeddingAppContent() {
             payload.invitationCode!.trim().toLowerCase()
         );
       }
+      if (targetIdx < 0 && payload.originalUrlCodeParam) {
+        targetIdx = nextGuests.findIndex(
+          (g) =>
+            g.invitationCode.toLowerCase() ===
+            payload.originalUrlCodeParam!.trim().toLowerCase()
+        );
+      }
       if (targetIdx < 0) {
         targetIdx = nextGuests.findIndex(
           (g) => g.guestName.toLowerCase() === cleanName.toLowerCase()
+        );
+      }
+      if (targetIdx < 0 && payload.matchedGuestRecordName) {
+        targetIdx = nextGuests.findIndex(
+          (g) =>
+            g.guestName.toLowerCase() ===
+            payload.matchedGuestRecordName!.trim().toLowerCase()
         );
       }
 
@@ -1255,6 +1259,7 @@ function WeddingAppContent() {
       ) : publicSelectedClientId === null ? (
         <CommercialLandingView
           primarySettings={state.settings}
+          primaryGuests={state.guests}
           clientGroups={clientGroups}
           clientWorkspaces={state.settings.clientWorkspaces}
           isAdminLoggedIn={Boolean(adminUser)}

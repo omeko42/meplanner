@@ -94,7 +94,7 @@ export interface WeddingGuest {
   attendanceStatus: AttendanceStatus;
   notes: string;
   wishes?: string;
-  sessionChoice?: 'Biston & Pemberkatan' | 'Pemberkatan & Resepsi' | 'Resepsi Saja' | 'Semua Sesi';
+  sessionChoice?: 'Biston & Pemberkatan' | 'Pemberkatan & Resepsi' | 'Resepsi Saja' | 'Semua Sesi' | string;
   createdAt: string;
   updatedAt: string;
   updatedBy: string;
@@ -109,6 +109,7 @@ export interface GuestWish {
   relation: string;
   phone?: string;
   rsvpStatus: RsvpStatus;
+  sessionChoice?: string;
   pax: number;
   message: string;
   createdAt: string;
@@ -164,7 +165,9 @@ export interface DigitalGiftAccount {
   accountNumber: string;
   accountHolder: string;
   branchOrNote: string;
-  type: 'BANK' | 'EWALLET' | 'QRIS';
+  type: 'BANK' | 'EWALLET' | 'QRIS' | 'CRYPTO' | 'PAYPAL';
+  cryptoNetwork?: string;
+  currencySymbol?: string;
 }
 
 export interface LoveStoryItem {
@@ -305,6 +308,10 @@ export interface WeddingSettings {
   waTemplateRegular?: string;
 
   // Digital Envelope / Gift
+  giftSectionTitle?: string;
+  giftSectionSubtitle?: string;
+  showPhysicalGiftAddress?: boolean;
+  giftShippingNote?: string;
   giftRecipientName: string;
   giftShippingAddress: string;
   qrisImageUrl?: string;
@@ -360,8 +367,16 @@ export interface WeddingSettings {
   disableRsvpSubmission?: boolean;
   storageQuotaLimitMb?: number; // default 500 MB
   showFooterCredit?: boolean; // default true
-  developerCreditUrl?: string; // default https://github.com/omeko11/my_wedding_manager
+  developerCreditUrl?: string; // default https://github.com/omeko11
   contactWhatsappNumber?: string; // default 089638616516
+  contactBusinessEmail?: string; // default e98.bisnis@gmail.com
+  defaultLanguage?: 'ID' | 'EN';
+  commercialBankTransferInfo?: string;
+  commercialQrisImageUrl?: string;
+  commercialCreditCardUrl?: string;
+  commercialPaypalUrl?: string;
+  commercialCryptoWalletAddress?: string;
+  commercialCryptoNetwork?: string;
   autoHideFlaggedWishes?: boolean; // default true
   moderationBlockedKeywords?: string; // custom comma-separated negative keywords
   invitationAnalytics?: InvitationAnalyticsData;

@@ -1142,6 +1142,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
   const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
   const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
+  const [superadminMenuTab, setSuperadminMenuTab] = useState<
+    'clients' | 'moderation' | 'insights' | 'storage' | 'branding'
+  >('clients');
 
   // Expanded section key inside Visibilitas & Konten so user can toggle Switch + edit what is displayed right there
   const [expandedSectionKey, setExpandedSectionKey] = useState<string | null>(
@@ -1275,7 +1278,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     accountNumber: string;
     accountHolder: string;
     branchOrNote: string;
-    type: 'BANK' | 'EWALLET' | 'QRIS';
+    type: 'BANK' | 'EWALLET' | 'QRIS' | 'CRYPTO' | 'PAYPAL';
+    cryptoNetwork?: string;
   }>({
     id: '',
     bankName: 'BANK BCA',
@@ -1283,6 +1287,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     accountHolder: state.settings.groomFullName || 'John Doe',
     branchOrNote: 'Transfer Amplop Digital',
     type: 'BANK',
+    cryptoNetwork: '',
   });
 
   // Default Users & Panitia Users from state.adminUsers
@@ -2386,6 +2391,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   };
 
+  const handleUploadCommercialQrisFile = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/') && !/\.svg$/i.test(file.name)) {
+      showToast('Pilih file berformat gambar QRIS (JPG, PNG, WEBP, SVG).');
+      return;
+    }
+    try {
+      const origKb = Math.max(1, Math.round(file.size / 1024));
+      showToast('Mengonversi gambar QRIS Komersial (Ultra-HD tajam, Maks 10 MB)...');
+      const dataUrl = await compressImageFileToDataUrl(file, 2000, 0.92);
+      const finalBytes = Math.round(((dataUrl.split(',')[1]?.length || 0) * 3) / 4);
+      const finalKb = Math.max(1, Math.round(finalBytes / 1024));
+      void deleteMediaFromSupabaseStorage(
+        settingsForm.commercialQrisImageUrl || state.settings.commercialQrisImageUrl
+      );
+      const nextSettings: WeddingSettings = {
+        ...state.settings,
+        ...settingsForm,
+        commercialQrisImageUrl: dataUrl,
+        updatedBy: adminUser.username,
+      };
+      await commitImmediateSettings(nextSettings);
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'SUPERADMIN_BRANDING',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Meng-upload gambar QRIS Komersial MWM (${origKb} KB → ${finalKb} KB)`,
+      });
+      showToast(
+        `✓ QRIS Komersial MWM berhasil disimpan ke Supabase (${origKb} KB → ${finalKb} KB)!`
+      );
+    } catch {
+      showToast('Gagal meng-upload gambar QRIS Komersial.');
+    }
+  };
+
   const handleUploadGalleryFile = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -2960,6 +3006,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         bankName: bankForm.bankName.trim(),
         accountNumber: bankForm.accountNumber.trim(),
         accountHolder: bankForm.accountHolder.trim(),
+        cryptoNetwork: bankForm.cryptoNetwork?.trim() || undefined,
       };
     } else {
       currentAccounts.push({
@@ -2968,6 +3015,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         bankName: bankForm.bankName.trim(),
         accountNumber: bankForm.accountNumber.trim(),
         accountHolder: bankForm.accountHolder.trim(),
+        cryptoNetwork: bankForm.cryptoNetwork?.trim() || undefined,
       });
     }
     const nextSettings: WeddingSettings = {
@@ -3758,9 +3806,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         : state.settings.siteTitle}
                     </span>
                   </h1>
-                  <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold">
-                    <Sparkles className="w-3 h-3" /> All-in-One Planner
-                  </span>
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate leading-tight mt-0.5">
                   <span className="font-bold text-[#8B6914]">
@@ -3771,7 +3816,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           settingsForm.developerCreditUrl ??
                           state.settings.developerCreditUrl
                         )?.trim() ||
-                        'https://github.com/omeko11/my_wedding_manager'
+                        'https://github.com/omeko11'
                       }
                       target="_blank"
                       rel="noopener noreferrer"
@@ -7810,9 +7855,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                                Rekening &amp; Kado ({(state.settings.bankAccounts || []).length})
+                                                Rekening, E-Wallet, Crypto &amp; PayPal ({(state.settings.bankAccounts || []).length})
                                               </p>
-                                              <InfoTooltip text="Kelola nomor rekening bank/e-wallet untuk amplop digital serta alamat pengiriman kado fisik." />
+                                              <InfoTooltip text="Kelola nomor rekening bank, e-wallet, alamat wallet Crypto (USDT/BTC/ETH/SOL), akun PayPal, serta alamat pengiriman kado fisik." />
                                             </div>
                                             <button
                                               type="button"
@@ -7826,71 +7871,116 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     state.settings.groomFullName || 'John Doe',
                                                   branchOrNote: 'Transfer Amplop Digital',
                                                   type: 'BANK',
+                                                  cryptoNetwork: '',
                                                 });
                                                 setActiveSettingsModal('bank_account');
                                               }}
                                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs"
                                             >
                                               <Plus className="w-3.5 h-3.5" />
-                                              Tambah Rekening
+                                              Tambah Metode / Rekening
                                             </button>
                                           </div>
 
                                           {(state.settings.bankAccounts || []).length === 0 ? (
                                             <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
-                                              Belum ada rekening bank/e-wallet.
+                                              Belum ada rekening bank, e-wallet, crypto, atau PayPal.
                                             </p>
                                           ) : (
                                             <div className="space-y-2">
                                               {(state.settings.bankAccounts || []).map(
-                                                (acc, idx) => (
-                                                  <div
-                                                    key={acc.id || idx}
-                                                    className="p-3 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
-                                                  >
-                                                    <div>
-                                                      <p className="font-bold text-stone-900">
-                                                        {acc.bankName} —{' '}
-                                                        <span className="font-mono">
-                                                          {acc.accountNumber}
-                                                        </span>
-                                                      </p>
-                                                      <p className="text-stone-500">
-                                                        a.n. {acc.accountHolder} &bull;{' '}
-                                                        {acc.branchOrNote}
-                                                      </p>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                          setEditingBankIndex(idx);
-                                                          setBankForm({
-                                                            id: acc.id,
-                                                            bankName: acc.bankName,
-                                                            accountNumber: acc.accountNumber,
-                                                            accountHolder: acc.accountHolder,
-                                                            branchOrNote: acc.branchOrNote,
-                                                            type: acc.type || 'BANK',
-                                                          });
-                                                          setActiveSettingsModal('bank_account');
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-[#FAF3E3] text-stone-600 hover:text-[#8B6914]"
-                                                      >
-                                                        <Edit3 className="w-4 h-4" />
-                                                      </button>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                          handleDeleteBankAccount(acc.id)
+                                                (acc, idx) => {
+                                                  const accType = acc.type || 'BANK';
+                                                  const typeBadge =
+                                                    accType === 'CRYPTO'
+                                                      ? {
+                                                          label: '🪙 CRYPTO',
+                                                          cls: 'bg-amber-50 text-amber-800 border-amber-200',
                                                         }
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
-                                                      >
-                                                        <Trash2 className="w-4 h-4" />
-                                                      </button>
+                                                      : accType === 'PAYPAL'
+                                                      ? {
+                                                          label: '🌐 PAYPAL',
+                                                          cls: 'bg-sky-50 text-sky-800 border-sky-200',
+                                                        }
+                                                      : accType === 'EWALLET'
+                                                      ? {
+                                                          label: '📱 E-WALLET',
+                                                          cls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                                                        }
+                                                      : accType === 'QRIS'
+                                                      ? {
+                                                          label: '📱 QRIS',
+                                                          cls: 'bg-purple-50 text-purple-800 border-purple-200',
+                                                        }
+                                                      : {
+                                                          label: '🏦 BANK',
+                                                          cls: 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40',
+                                                        };
+                                                  return (
+                                                    <div
+                                                      key={acc.id || idx}
+                                                      className="p-3 rounded-lg bg-white border border-stone-200 flex items-center justify-between gap-2"
+                                                    >
+                                                      <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                                                          <span
+                                                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${typeBadge.cls}`}
+                                                          >
+                                                            {typeBadge.label}
+                                                          </span>
+                                                          {acc.cryptoNetwork && (
+                                                            <span className="px-2 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-bold">
+                                                              {acc.cryptoNetwork}
+                                                            </span>
+                                                          )}
+                                                          <p className="font-bold text-stone-900">
+                                                            {acc.bankName}
+                                                          </p>
+                                                        </div>
+                                                        <p className="font-mono text-xs text-stone-800 break-all">
+                                                          {acc.accountNumber}
+                                                        </p>
+                                                        <p className="text-[11px] text-stone-500 mt-0.5">
+                                                          a.n. {acc.accountHolder}
+                                                          {acc.branchOrNote
+                                                            ? ` • ${acc.branchOrNote}`
+                                                            : ''}
+                                                        </p>
+                                                      </div>
+                                                      <div className="flex items-center gap-1 shrink-0">
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => {
+                                                            setEditingBankIndex(idx);
+                                                            setBankForm({
+                                                              id: acc.id,
+                                                              bankName: acc.bankName,
+                                                              accountNumber: acc.accountNumber,
+                                                              accountHolder: acc.accountHolder,
+                                                              branchOrNote: acc.branchOrNote,
+                                                              type: acc.type || 'BANK',
+                                                              cryptoNetwork:
+                                                                acc.cryptoNetwork || '',
+                                                            });
+                                                            setActiveSettingsModal('bank_account');
+                                                          }}
+                                                          className="p-1.5 rounded-lg hover:bg-[#FAF3E3] text-stone-600 hover:text-[#8B6914]"
+                                                        >
+                                                          <Edit3 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() =>
+                                                            handleDeleteBankAccount(acc.id)
+                                                          }
+                                                          className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500"
+                                                        >
+                                                          <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                      </div>
                                                     </div>
-                                                  </div>
-                                                )
+                                                  );
+                                                }
                                               )}
                                             </div>
                                           )}
@@ -7899,6 +7989,49 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             onSubmit={handleSaveSettingsModal}
                                             className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-3"
                                           >
+                                            {/* Kustomisasi Judul & Subjudul Seksi Amplop Digital */}
+                                            <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5">
+                                              <p className="font-bold text-stone-900 text-xs">
+                                                ✨ Judul &amp; Pengantar Seksi Amplop Digital
+                                              </p>
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                <div>
+                                                  <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                    Judul Seksi Amplop Digital
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.giftSectionTitle ?? ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        giftSectionTitle: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Amplop Digital & Tanda Kasih"
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                    Subjudul / Kalimat Pengantar Amplop Digital
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.giftSectionSubtitle ?? ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        giftSectionSubtitle: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Doa restu Bapak/Ibu/Saudara/i merupakan karunia terindah..."
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                  />
+                                                </div>
+                                              </div>
+                                            </div>
+
                                             {/* Pengaturan Barcode QRIS */}
                                             <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5">
                                               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -8018,42 +8151,91 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                              <div>
-                                                <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                  Nama Penerima QRIS / Kado
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.giftRecipientName || ''}
-                                                  onChange={(e) =>
+                                            {/* Pengaturan Kado Fisik */}
+                                            <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5">
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <p className="font-bold text-stone-900 text-xs">
+                                                  🎁 Pengiriman Kado Fisik
+                                                </p>
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
                                                     setSettingsForm({
                                                       ...settingsForm,
-                                                      giftRecipientName: e.target.value,
+                                                      showPhysicalGiftAddress:
+                                                        settingsForm.showPhysicalGiftAddress === false
+                                                          ? true
+                                                          : false,
                                                     })
                                                   }
-                                                  placeholder="Contoh: Lettu Inf Eko Budianto & dr. Fransisca"
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
-                                                />
+                                                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                                                    settingsForm.showPhysicalGiftAddress !== false
+                                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                      : 'bg-stone-100 text-stone-500 border-stone-200'
+                                                  }`}
+                                                >
+                                                  {settingsForm.showPhysicalGiftAddress !== false
+                                                    ? '● Tampilkan Alamat Kado Fisik'
+                                                    : '○ Sembunyikan Alamat Kado Fisik'}
+                                                </button>
                                               </div>
+
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                <div>
+                                                  <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                    Nama Penerima QRIS / Kado
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.giftRecipientName || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        giftRecipientName: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Contoh: Lettu Inf Eko Budianto & dr. Fransisca"
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                    Alamat Kirim Kado Fisik
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    value={settingsForm.giftShippingAddress || ''}
+                                                    onChange={(e) =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        giftShippingAddress: e.target.value,
+                                                      })
+                                                    }
+                                                    placeholder="Alamat lengkap penerima kado"
+                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                  />
+                                                </div>
+                                              </div>
+
                                               <div>
-                                                <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                  Alamat Kirim Kado Fisik
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Catatan Pengiriman Kado Fisik (Opsional)
                                                 </label>
                                                 <input
                                                   type="text"
-                                                  value={settingsForm.giftShippingAddress || ''}
+                                                  value={settingsForm.giftShippingNote ?? ''}
                                                   onChange={(e) =>
                                                     setSettingsForm({
                                                       ...settingsForm,
-                                                      giftShippingAddress: e.target.value,
+                                                      giftShippingNote: e.target.value,
                                                     })
                                                   }
-                                                  placeholder="Alamat lengkap penerima kado"
-                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
+                                                  placeholder="Contoh: Konfirmasi ke WA penerima sebelum pengiriman kurir..."
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
                                                 />
                                               </div>
                                             </div>
+
                                             <div className="flex justify-end">
                                               <button
                                                 type="submit"
@@ -9215,1626 +9397,1968 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
 
         {/* ===================================================================
-            TAB 6: MODUL KHUSUS SUPERADMIN (DB CAPACITY, MODERASI VIEW, MULTI-CLIENT SAAS)
+            TAB 6: MODUL KHUSUS SUPERADMIN (2-COLUMN SIDEBAR LAYOUT)
            =================================================================== */}
         {activeTab === 'superadmin' && !isPanitia && (
-          <div className="space-y-6">
-            {/* Superadmin Hero Header */}
-            <div className="rounded-2xl bg-gradient-to-r from-[#1C1613] via-[#2A2019] to-[#1C1613] border border-[#D4AF37]/50 p-5 sm:p-6 text-[#FAF3E3] shadow-lg">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#E6C76B] text-[11px] font-extrabold uppercase tracking-wider">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Superadmin Commercial &amp; System Control Center</span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                    Manajemen Multi-Client, Kapasitas DB 500 MB &amp; Moderasi Undangan
-                  </h2>
-                  <p className="text-xs text-[#E8DFD1]/80 max-w-3xl leading-relaxed">
-                    Pusat kendali komersial <strong>My Wedding Manager by omeko11</strong> untuk memantau kuota penyimpanan Supabase (Zero-Trace Storage), memoderasi akses tampilan undangan publik secara <em>real-time</em>, dan mengelola grouping <strong>User Default</strong> banyak klien dalam 1 dashboard.
-                  </p>
+          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5">
+            {/* TOP HEADER BANNER CARD (MATCHING PENGATURAN THEME) */}
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddClientModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs shadow-sm transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Grup Client Baru</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleRefreshStorageCapacity(false)}
-                    disabled={isLoadingCapacity}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-[#D4AF37]/40 text-[#FAF3E3] font-bold text-xs transition-all disabled:opacity-50"
-                  >
-                    <RefreshCw
-                      className={`w-3.5 h-3.5 ${
-                        isLoadingCapacity ? 'animate-spin' : ''
-                      }`}
-                    />
-                    <span>
-                      {isLoadingCapacity ? 'Memindai DB...' : 'Cek Kapasitas DB'}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onSwitchToPublicPreview()}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs transition-all"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-[#E6C76B]" />
-                    <span>Preview Undangan</span>
-                  </button>
+                <div className="min-w-0">
+                  <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
+                    Superadmin
+                  </h2>
+                  <p className="text-[11px] sm:text-xs text-[#9A742B] font-medium truncate mt-0.5">
+                    {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
+                    {effectiveClientGroups.length} Klien Komersial Aktif
+                  </p>
                 </div>
               </div>
 
-              {/* Quick KPI Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10">
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
-                    Total Grup Client
-                  </p>
-                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
-                    {effectiveClientGroups.length} Klien Aktif
-                  </p>
-                  <p className="text-[11px] text-[#E8DFD1]/70">
-                    {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
-                    Audit &amp; Moderasi Komentar
-                  </p>
-                  {(() => {
-                    const customKeywords =
-                      settingsForm.moderationBlockedKeywords ??
-                      state.settings.moderationBlockedKeywords ??
-                      '';
-                    const flaggedCount = state.wishes.filter((w) => {
-                      const audit = analyzeWishModeration(
-                        {
-                          guestName: w.guestName,
-                          message: w.message,
-                          institution: w.institution,
-                          originalUrlGuestParam: w.originalUrlGuestParam,
-                          matchedGuestRecordName: w.matchedGuestRecordName,
-                        },
-                        customKeywords
-                      );
-                      return (
-                        w.moderationStatus === 'FLAGGED' ||
-                        w.moderationStatus === 'HIDDEN' ||
-                        (w.moderationStatus !== 'APPROVED' &&
-                          (audit.isNegative || audit.isSpoofedIdentity))
-                      );
-                    }).length;
-                    return (
-                      <>
-                        <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
-                          {flaggedCount > 0
-                            ? `🚨 ${flaggedCount} Komen Terindikasi`
-                            : '🛡️ 0 Komen Negatif'}
-                        </p>
-                        <p className="text-[11px] text-[#E8DFD1]/70">
-                          {state.wishes.length} Total Ucapan &bull; Auto-Filter{' '}
-                          {(settingsForm.autoHideFlaggedWishes ??
-                            state.settings.autoHideFlaggedWishes) !== false
-                            ? 'Aktif'
-                            : 'Mati'}
-                        </p>
-                      </>
-                    );
-                  })()}
-                </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
-                    Pemakaian Supabase (500 MB)
-                  </p>
-                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
-                    {storageCapacityReport
-                      ? `${(
-                          (storageCapacityReport.totalStorageBytes +
-                            JSON.stringify(state).length) /
-                          (1024 * 1024)
-                        ).toFixed(2)} MB`
-                      : 'Memuat...'}
-                  </p>
-                  <p className="text-[11px] text-[#E8DFD1]/70">
-                    {storageCapacityReport
-                      ? `Sisa ${(
-                          ((settingsForm.storageQuotaLimitMb ||
-                            state.settings.storageQuotaLimitMb ||
-                            500) *
-                            1024 *
-                            1024 -
-                            (storageCapacityReport.totalStorageBytes +
-                              JSON.stringify(state).length)) /
-                          (1024 * 1024)
-                        ).toFixed(1)} MB dari ${
-                          settingsForm.storageQuotaLimitMb ||
-                          state.settings.storageQuotaLimitMb ||
-                          500
-                        } MB`
-                      : 'Bucket wedding-media + 8 Tabel DB'}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-[10px] uppercase tracking-wider text-[#D4AF37] font-bold">
-                    Zero-Trace Garbage Collector
-                  </p>
-                  <p className="text-base sm:text-lg font-extrabold text-white mt-0.5">
-                    {storageCapacityReport
-                      ? storageCapacityReport.orphanCount === 0
-                        ? '✨ 0 File Sampah'
-                        : `${storageCapacityReport.orphanCount} File Yatim`
-                      : 'Siap Pindai'}
-                  </p>
-                  <p className="text-[11px] text-[#E8DFD1]/70">
-                    Maks Foto 10 MB &bull; Auto-Delete Aktif
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsAddClientModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span>+ Grup Client Baru</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSwitchToPublicPreview()}
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
+                  title="Buka tampilan undangan publik"
+                >
+                  <Eye className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                  <span className="hidden sm:inline">Pratinjau Undangan</span>
+                </button>
               </div>
             </div>
 
-            {/* GRID 2 KOLOM: KAPASITAS DB & MODERASI KOMENTAR NEGATIF / PELAKU */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* PANEL 1: DB & SUPABASE STORAGE CAPACITY MONITOR (500 MB) */}
-              <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
-                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
-                      <FileSpreadsheet className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                        Kapasitas DB &amp; Supabase Storage (500 MB)
-                      </h3>
-                      <p className="text-[11px] text-stone-500">
-                        Monitoring real-time 8 Tabel PostgreSQL &amp; Bucket CDN{' '}
-                        <code className="font-mono text-[#8B6914]">wedding-media</code>
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleRefreshStorageCapacity(false)}
-                    disabled={isLoadingCapacity}
-                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
-                  >
-                    {isLoadingCapacity ? 'Memindai...' : 'Refresh'}
-                  </button>
-                </div>
-
-                {/* Progress Bar 500 MB */}
-                {(() => {
-                  const dbJsonBytes = JSON.stringify(state).length;
-                  const usedBytes = storageCapacityReport
-                    ? storageCapacityReport.totalStorageBytes + dbJsonBytes
-                    : dbJsonBytes;
-                  const quotaMb =
-                    settingsForm.storageQuotaLimitMb ||
-                    state.settings.storageQuotaLimitMb ||
-                    500;
-                  const quotaBytes = quotaMb * 1024 * 1024;
-                  const usedMb = usedBytes / (1024 * 1024);
-                  const pct = Math.min(
-                    100,
-                    Number(((usedBytes / quotaBytes) * 100).toFixed(2))
-                  );
+            {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+              {/* LEFT SIDEBAR MENU */}
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D4AF37]/30 shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-1.5 p-2 lg:p-0 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+                {(
+                  [
+                    {
+                      id: 'clients' as const,
+                      label: 'Manajemen Klien',
+                      icon: Users,
+                      badge: `${effectiveClientGroups.length} Klien`,
+                    },
+                    {
+                      id: 'moderation' as const,
+                      label: 'Moderasi & Audit',
+                      icon: Shield,
+                    },
+                    {
+                      id: 'insights' as const,
+                      label: 'Insight & Trafik',
+                      icon: Eye,
+                    },
+                    {
+                      id: 'storage' as const,
+                      label: 'Kapasitas DB',
+                      icon: FileSpreadsheet,
+                    },
+                    {
+                      id: 'branding' as const,
+                      label: 'Branding & Global',
+                      icon: Sparkles,
+                    },
+                  ] as const
+                ).map((menu) => {
+                  const IconComp = menu.icon;
+                  const isActive = superadminMenuTab === menu.id;
                   return (
-                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-stone-800">
-                          Total Terpakai: {usedMb.toFixed(2)} MB dari {quotaMb} MB
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                            pct > 85
-                              ? 'bg-rose-100 text-rose-700'
-                              : pct > 60
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-700'
+                    <button
+                      key={menu.id}
+                      type="button"
+                      onClick={() => setSuperadminMenuTab(menu.id)}
+                      className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
+                        isActive
+                          ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border border-[#D4AF37]/50 lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
+                          : 'bg-[#FAF8F5] lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-stone-200/70 lg:border-0'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                        <IconComp
+                          className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
+                            isActive ? 'text-[#B68D40]' : 'text-stone-400'
                           }`}
-                        >
-                          {pct}% Terpakai
+                        />
+                        <span className="text-[11px] sm:text-xs lg:text-sm truncate">
+                          {menu.label}
                         </span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-stone-200 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            pct > 85
-                              ? 'bg-rose-600'
-                              : pct > 60
-                              ? 'bg-amber-500'
-                              : 'bg-gradient-to-r from-[#C5A059] to-emerald-600'
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {'badge' in menu && menu.badge && (
+                          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold">
+                            {menu.badge}
+                          </span>
+                        )}
+                        <ChevronRight
+                          className={`hidden lg:block w-4 h-4 shrink-0 ${
+                            isActive ? 'text-[#B68D40]' : 'text-stone-400'
                           }`}
-                          style={{ width: `${Math.max(pct, 1.5)}%` }}
                         />
                       </div>
-                      <p className="text-[11px] text-stone-500 leading-relaxed">
-                        Batas unggah foto dinaikkan hingga <strong>10 MB per foto (Ultra-HD)</strong>. Agar kuota 500 MB awet bertahun-tahun, setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
-                      </p>
-                    </div>
+                    </button>
                   );
-                })()}
-
-                {/* Rincian Komponen Storage & Tabel */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
-                    <div className="flex items-center justify-between text-stone-500 mb-1">
-                      <span className="font-semibold">Foto Ultra-HD</span>
-                      <ImageIcon className="w-3.5 h-3.5 text-[#B68D40]" />
-                    </div>
-                    <p className="text-sm font-extrabold text-stone-900">
-                      {storageCapacityReport
-                        ? `${(
-                            storageCapacityReport.photoBytes /
-                            (1024 * 1024)
-                          ).toFixed(2)} MB`
-                        : '—'}
-                    </p>
-                    <p className="text-[11px] text-stone-500">
-                      {storageCapacityReport
-                        ? `${storageCapacityReport.photoCount} file di /photos`
-                        : 'Folder wedding-media/photos'}
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
-                    <div className="flex items-center justify-between text-stone-500 mb-1">
-                      <span className="font-semibold">Musik &amp; Audio</span>
-                      <Music className="w-3.5 h-3.5 text-[#B68D40]" />
-                    </div>
-                    <p className="text-sm font-extrabold text-stone-900">
-                      {storageCapacityReport
-                        ? `${(
-                            storageCapacityReport.musicBytes /
-                            (1024 * 1024)
-                          ).toFixed(2)} MB`
-                        : '—'}
-                    </p>
-                    <p className="text-[11px] text-stone-500">
-                      {storageCapacityReport
-                        ? `${storageCapacityReport.musicCount} file di /music`
-                        : 'Folder wedding-media/music'}
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-stone-200 bg-white">
-                    <div className="flex items-center justify-between text-stone-500 mb-1">
-                      <span className="font-semibold">8 Tabel PostgreSQL</span>
-                      <FileJson className="w-3.5 h-3.5 text-emerald-600" />
-                    </div>
-                    <p className="text-sm font-extrabold text-stone-900">
-                      {`${(JSON.stringify(state).length / 1024).toFixed(1)} KB`}
-                    </p>
-                    <p className="text-[11px] text-stone-500">
-                      {state.tasks.length} Tugas &bull; {state.guests.length} Tamu &bull;{' '}
-                      {state.wishes.length} Doa
-                    </p>
-                  </div>
-                </div>
-
-                {/* Zero-Trace Orphan Garbage Collector Box */}
-                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>
-                        Zero-Trace Storage Cleaner (Pembersih File Tanpa Jejak)
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-emerald-800">
-                      {storageCapacityReport &&
-                      storageCapacityReport.orphanCount > 0
-                        ? `Ditemukan ${
-                            storageCapacityReport.orphanCount
-                          } file yatim (${(
-                            storageCapacityReport.orphanBytes /
-                            (1024 * 1024)
-                          ).toFixed(
-                            2
-                          )} MB) yang sudah tidak dipakai di undangan.`
-                        : 'Seluruh file di Supabase Storage sinkron dengan database aktif (0 file sampah).'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleRunZeroTraceCleanupNow()}
-                    disabled={isCleaningOrphans}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 shadow-2xs disabled:opacity-50"
-                  >
-                    {isCleaningOrphans
-                      ? 'Membersihkan...'
-                      : 'Bersihkan File Yatim Sekarang'}
-                  </button>
-                </div>
+                })}
               </div>
 
-              {/* PANEL 2: MODERASI KOMENTAR NEGATIF & AUDIT FORENSIK PELAKU */}
-              <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
-                <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                        Moderasi Komentar Negatif &amp; Audit Pelaku
-                      </h3>
-                      <p className="text-[11px] text-stone-500">
-                        Deteksi kata kasar/negatif, lacak identitas asli pemilik link undangan, IP, No. WA &amp; perangkat pengirim
-                      </p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px] shrink-0">
-                    Forensic Guard
-                  </span>
-                </div>
-
-                {(() => {
-                  const customKeywords =
-                    settingsForm.moderationBlockedKeywords ??
-                    state.settings.moderationBlockedKeywords ??
-                    '';
-                  const autoHideEnabled =
-                    (settingsForm.autoHideFlaggedWishes ??
-                      state.settings.autoHideFlaggedWishes) !== false;
-
-                  const enrichedWishes = state.wishes.map((w) => {
-                    const audit = analyzeWishModeration(
-                      {
-                        guestName: w.guestName,
-                        message: w.message,
-                        institution: w.institution,
-                        originalUrlGuestParam: w.originalUrlGuestParam,
-                        matchedGuestRecordName: w.matchedGuestRecordName,
-                      },
-                      customKeywords
-                    );
-                    const isFlaggedByAudit =
-                      audit.isNegative || audit.isSpoofedIdentity;
-                    const effectiveStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN' =
-                      w.moderationStatus === 'HIDDEN'
-                        ? 'HIDDEN'
-                        : w.moderationStatus === 'APPROVED'
-                        ? 'APPROVED'
-                        : w.moderationStatus === 'FLAGGED' || isFlaggedByAudit
-                        ? 'FLAGGED'
-                        : 'APPROVED';
-                    const effectiveReason =
-                      w.flaggedReason ||
-                      (audit.reasons.length > 0 ? audit.reasons.join(' • ') : '');
-                    const matchedGuest = state.guests.find(
-                      (g) =>
-                        (w.originalUrlCodeParam &&
-                          g.invitationCode?.toUpperCase() ===
-                            w.originalUrlCodeParam.toUpperCase()) ||
-                        (w.originalUrlGuestParam &&
-                          g.guestName.toLowerCase() ===
-                            w.originalUrlGuestParam.toLowerCase()) ||
-                        g.guestName.toLowerCase() === w.guestName.toLowerCase()
-                    );
-                    const isHiddenFromPublic =
-                      effectiveStatus === 'HIDDEN' ||
-                      (autoHideEnabled && effectiveStatus === 'FLAGGED');
-                    return {
-                      wish: w,
-                      audit,
-                      effectiveStatus,
-                      effectiveReason,
-                      matchedGuest,
-                      isHiddenFromPublic,
-                    };
-                  });
-
-                  const totalFlagged = enrichedWishes.filter(
-                    (item) => item.effectiveStatus === 'FLAGGED'
-                  ).length;
-                  const totalHidden = enrichedWishes.filter(
-                    (item) => item.effectiveStatus === 'HIDDEN'
-                  ).length;
-                  const totalSafe = enrichedWishes.filter(
-                    (item) => item.effectiveStatus === 'APPROVED'
-                  ).length;
-
-                  const filteredWishes = enrichedWishes.filter((item) => {
-                    if (
-                      commentAuditFilter === 'FLAGGED' &&
-                      item.effectiveStatus !== 'FLAGGED'
-                    ) {
-                      return false;
-                    }
-                    if (
-                      commentAuditFilter === 'HIDDEN' &&
-                      item.effectiveStatus !== 'HIDDEN'
-                    ) {
-                      return false;
-                    }
-                    if (
-                      commentAuditFilter === 'APPROVED' &&
-                      item.effectiveStatus !== 'APPROVED'
-                    ) {
-                      return false;
-                    }
-                    const q = commentAuditSearch.trim().toLowerCase();
-                    if (!q) return true;
-                    return (
-                      item.wish.guestName.toLowerCase().includes(q) ||
-                      item.wish.message.toLowerCase().includes(q) ||
-                      (item.wish.phone || '').toLowerCase().includes(q) ||
-                      (item.wish.originalUrlGuestParam || '')
-                        .toLowerCase()
-                        .includes(q) ||
-                      (item.wish.originalUrlCodeParam || '')
-                        .toLowerCase()
-                        .includes(q) ||
-                      (item.wish.matchedGuestRecordName || '')
-                        .toLowerCase()
-                        .includes(q) ||
-                      (item.wish.ipAddress || '').toLowerCase().includes(q) ||
-                      (item.effectiveReason || '').toLowerCase().includes(q)
-                    );
-                  });
-
-                  return (
-                    <div className="space-y-3.5">
-                      {/* Ringkasan Statistik Audit Komentar */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setCommentAuditFilter('ALL')}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            commentAuditFilter === 'ALL'
-                              ? 'bg-[#FAF3E3] border-[#B68D40] ring-1 ring-[#B68D40]/40'
-                              : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/40'
-                          }`}
-                        >
-                          <p className="text-[10px] font-bold uppercase text-stone-500">
-                            Semua Komen
-                          </p>
-                          <p className="text-sm font-extrabold text-stone-900 mt-0.5">
-                            {enrichedWishes.length} Ucapan
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setCommentAuditFilter('FLAGGED')}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            commentAuditFilter === 'FLAGGED'
-                              ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300'
-                              : 'bg-rose-50/40 border-rose-200 hover:border-rose-300'
-                          }`}
-                        >
-                          <p className="text-[10px] font-bold uppercase text-rose-700">
-                            🚨 Negatif / Anomali
-                          </p>
-                          <p className="text-sm font-extrabold text-rose-800 mt-0.5">
-                            {totalFlagged} Terdeteksi
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setCommentAuditFilter('HIDDEN')}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            commentAuditFilter === 'HIDDEN'
-                              ? 'bg-amber-50 border-amber-400 ring-1 ring-amber-300'
-                              : 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
-                          }`}
-                        >
-                          <p className="text-[10px] font-bold uppercase text-amber-800">
-                            👁️‍🗨️ Disembunyikan
-                          </p>
-                          <p className="text-sm font-extrabold text-amber-900 mt-0.5">
-                            {totalHidden} Komen
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setCommentAuditFilter('APPROVED')}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            commentAuditFilter === 'APPROVED'
-                              ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
-                              : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
-                          }`}
-                        >
-                          <p className="text-[10px] font-bold uppercase text-emerald-700">
-                            ✅ Tampil Aman
-                          </p>
-                          <p className="text-sm font-extrabold text-emerald-800 mt-0.5">
-                            {totalSafe} Komen
-                          </p>
-                        </button>
-                      </div>
-
-                      {/* Pencarian Pelaku / Isi Komentar */}
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                          <input
-                            type="text"
-                            value={commentAuditSearch}
-                            onChange={(e) => setCommentAuditSearch(e.target.value)}
-                            placeholder="Cari kata negatif, nama pengirim, pemilik link asli (?to=), kode INV, IP, atau No. WA..."
-                            className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
-                          />
+              {/* RIGHT CONTENT PANEL */}
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5">
+                {/* ===========================================================
+                    1. MANAJEMEN KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
+                   =========================================================== */}
+                {superadminMenuTab === 'clients' && (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                          <Users className="w-4 h-4" />
                         </div>
-                        {commentAuditSearch && (
-                          <button
-                            type="button"
-                            onClick={() => setCommentAuditSearch('')}
-                            className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-100"
-                          >
-                            Reset
-                          </button>
-                        )}
+                        <div>
+                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                            Grouping User Default &amp; Manajemen Multi-Client (SaaS)
+                          </h3>
+                          <p className="text-[11px] text-stone-500">
+                            Setiap Grup Client memiliki <strong>4 Akun Default Inti</strong> (Mempelai Pria, Mempelai Wanita, Orang Tua Pria, Orang Tua Wanita) + Akun Panitia masing-masing.
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddClientModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>+ Grup Client Baru</span>
+                      </button>
+                    </div>
 
-                      {/* Daftar Audit Forensik Komentar & Pelaku */}
-                      <div className="max-h-[340px] overflow-y-auto space-y-2.5 pr-1">
-                        {filteredWishes.length === 0 ? (
-                          <div className="p-6 rounded-xl border border-dashed border-stone-200 bg-[#FAF8F5] text-center space-y-1">
-                            <p className="text-xs font-bold text-stone-700">
-                              Tidak ada komentar pada filter ini.
-                            </p>
-                            <p className="text-[11px] text-stone-500">
-                              Setiap ucapan baru dari tamu undangan otomatis dipindai kata negatif &amp; jejak forensik pelakunya di sini.
-                            </p>
-                          </div>
-                        ) : (
-                          filteredWishes.map(
-                            ({
-                              wish,
-                              audit,
-                              effectiveStatus,
-                              effectiveReason,
-                              matchedGuest,
-                              isHiddenFromPublic,
-                            }) => {
-                              const realLinkOwner =
-                                wish.matchedGuestRecordName ||
-                                wish.originalUrlGuestParam ||
-                                matchedGuest?.guestName ||
-                                '';
-                              const isSpoofedName =
-                                Boolean(realLinkOwner) &&
-                                realLinkOwner.trim().toLowerCase() !==
-                                  wish.guestName.trim().toLowerCase();
-                              const actorPhone =
-                                wish.phone || matchedGuest?.phone || '';
-                              const actorCode =
-                                wish.originalUrlCodeParam ||
-                                wish.invitationCode ||
-                                matchedGuest?.invitationCode ||
-                                '';
-                              const actorGroup =
-                                wish.institution ||
-                                matchedGuest?.institution ||
-                                matchedGuest?.guestType ||
-                                '';
+                    <div className="grid grid-cols-1 gap-4">
+                      {effectiveClientGroups.map((cg) => {
+                        const groupDefaultUsers = defaultSystemUsers.filter(
+                          (u) => (u.clientId || 'client-utama') === cg.id
+                        );
+                        const groupPanitiaUsers = panitiaUsers.filter(
+                          (u) => (u.clientId || 'client-utama') === cg.id
+                        );
+                        return (
+                          <div
+                            key={cg.id}
+                            className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
+                                      {cg.clientCode}
+                                    </span>
+                                    <h4 className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
+                                      {cg.clientName}
+                                    </h4>
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                      {cg.packageTier}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-stone-500 mt-0.5">
+                                    {cg.notes || 'Paket Komersial My Wedding Manager'} &bull;{' '}
+                                    {cg.eventDate || '2026-12-19'}
+                                  </p>
+                                </div>
+                                {cg.id !== 'client-utama' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClientGroup(cg)}
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
+                                    title="Hapus Grup Client"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
 
-                              return (
-                                <div
-                                  key={wish.id}
-                                  className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
-                                    effectiveStatus === 'FLAGGED'
-                                      ? 'bg-rose-50/70 border-rose-300'
-                                      : effectiveStatus === 'HIDDEN'
-                                      ? 'bg-amber-50/60 border-amber-300'
-                                      : 'bg-[#FAF8F5] border-stone-200/90'
-                                  }`}
-                                >
-                                  <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <div className="space-y-0.5">
-                                      <div className="flex flex-wrap items-center gap-1.5">
-                                        <span className="text-xs font-extrabold text-stone-900">
-                                          {wish.guestName}
-                                        </span>
-                                        {effectiveStatus === 'FLAGGED' && (
-                                          <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">
-                                            🚨 TERINDIKASI NEGATIF / ANOMALI
-                                          </span>
-                                        )}
-                                        {effectiveStatus === 'HIDDEN' && (
-                                          <span className="px-2 py-0.5 rounded-full bg-amber-700 text-white text-[10px] font-extrabold">
-                                            👁️‍🗨️ DISEMBUNYIKAN DARI PUBLIK
-                                          </span>
-                                        )}
-                                        {effectiveStatus === 'APPROVED' && (
-                                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                            ✅ Aman
-                                          </span>
-                                        )}
-                                        {isHiddenFromPublic &&
-                                          effectiveStatus === 'FLAGGED' && (
-                                            <span className="px-2 py-0.5 rounded-full bg-stone-800 text-white text-[10px] font-bold">
-                                              Auto-Hidden di Undangan
-                                            </span>
-                                          )}
+                              <div className="p-4 space-y-2.5">
+                                <div className="flex items-center justify-between text-[11px] font-bold text-stone-600">
+                                  <span>
+                                    4 User Default ({groupDefaultUsers.length} Akun Inti):
+                                  </span>
+                                  <span className="text-[#8B6914]">
+                                    {groupPanitiaUsers.length} Panitia/WO
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {groupDefaultUsers.map((u) => (
+                                    <div
+                                      key={u.id}
+                                      className="p-2.5 rounded-xl bg-white border border-stone-200/90 flex items-center justify-between gap-2"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-bold text-stone-900 truncate">
+                                          {u.nama}
+                                        </p>
+                                        <p className="text-[10px] font-mono text-[#8B6914] truncate">
+                                          @{u.username}
+                                        </p>
                                       </div>
-                                      <p className="text-[10px] text-stone-500">
-                                        Dikirim:{' '}
-                                        {new Date(wish.createdAt).toLocaleString(
-                                          'id-ID',
-                                          {
-                                            dateStyle: 'medium',
-                                            timeStyle: 'short',
-                                          }
-                                        )}{' '}
-                                        &bull; Kehadiran:{' '}
-                                        <strong>{wish.rsvpStatus}</strong>
-                                      </p>
-                                    </div>
-
-                                    {/* Tombol Aksi Moderasi Cepat */}
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      {effectiveStatus !== 'APPROVED' ? (
-                                        <button
-                                          type="button"
-                                          onClick={async () => {
-                                            await onModerateWish?.(
-                                              wish.id,
-                                              'APPROVED',
-                                              ''
-                                            );
-                                            appendAuditLog({
-                                              actor: adminUser.username,
-                                              module: 'MODERASI_KOMENTAR',
-                                              action: 'EDIT',
-                                              status: 'SUCCESS',
-                                              summary: `Menyetujui tampil komentar dari "${wish.guestName}"`,
-                                            });
-                                            showToast(
-                                              `✓ Komentar "${wish.guestName}" ditandai Aman & Ditampilkan.`
-                                            );
-                                          }}
-                                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1"
-                                          title="Tampilkan kembali di buku tamu publik"
-                                        >
-                                          <Eye className="w-3 h-3" />
-                                          <span>Tampilkan Aman</span>
-                                        </button>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={async () => {
-                                            await onModerateWish?.(
-                                              wish.id,
-                                              'HIDDEN',
-                                              effectiveReason ||
-                                                `Disembunyikan manual oleh Superadmin (${adminUser.username})`
-                                            );
-                                            appendAuditLog({
-                                              actor: adminUser.username,
-                                              module: 'MODERASI_KOMENTAR',
-                                              action: 'EDIT',
-                                              status: 'SUCCESS',
-                                              summary: `Menyembunyikan komentar dari "${wish.guestName}" dari tampilan undangan publik`,
-                                            });
-                                            showToast(
-                                              `👁️‍🗨️ Komentar "${wish.guestName}" disembunyikan dari undangan publik.`
-                                            );
-                                          }}
-                                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold flex items-center gap-1"
-                                          title="Sembunyikan dari publik tapi simpan bukti forensik"
-                                        >
-                                          <Lock className="w-3 h-3" />
-                                          <span>Sembunyikan</span>
-                                        </button>
-                                      )}
-
-                                      {effectiveStatus !== 'FLAGGED' && (
-                                        <button
-                                          type="button"
-                                          onClick={async () => {
-                                            await onModerateWish?.(
-                                              wish.id,
-                                              'FLAGGED',
-                                              effectiveReason ||
-                                                `Ditandai negatif oleh Superadmin (${adminUser.username})`
-                                            );
-                                            showToast(
-                                              `🚨 Komentar "${wish.guestName}" ditandai sebagai Komentar Negatif.`
-                                            );
-                                          }}
-                                          className="px-2 py-1 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-[10px] font-bold"
-                                        >
-                                          Tandai Negatif
-                                        </button>
-                                      )}
-
                                       <button
                                         type="button"
-                                        onClick={async () => {
-                                          await onDeleteWish(wish.id);
-                                          appendAuditLog({
-                                            actor: adminUser.username,
-                                            module: 'MODERASI_KOMENTAR',
-                                            action: 'HAPUS',
-                                            status: 'SUCCESS',
-                                            summary: `Menghapus permanen komentar dari "${wish.guestName}"`,
-                                          });
-                                          showToast(
-                                            `🗑️ Komentar "${wish.guestName}" dihapus permanen.`
-                                          );
-                                        }}
-                                        className="px-2 py-1 rounded-lg border border-stone-300 bg-white hover:bg-rose-600 hover:text-white hover:border-rose-600 text-stone-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
-                                        title="Hapus permanen dari database"
+                                        onClick={() =>
+                                          handleSelectDefaultUserForEdit(u)
+                                        }
+                                        className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold shrink-0"
                                       >
-                                        <Trash2 className="w-3 h-3" />
-                                        <span>Hapus</span>
+                                        Edit
                                       </button>
                                     </div>
-                                  </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
 
-                                  {/* Isi Pesan Komentar */}
-                                  <div className="p-2.5 rounded-lg bg-white border border-stone-200/80 text-xs text-stone-800 italic">
-                                    &ldquo;{wish.message}&rdquo;
-                                  </div>
+                            <div className="px-4 py-2.5 bg-white border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                {onSwitchWorkspaceClient && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onSwitchWorkspaceClient(cg.id);
+                                      showToast(
+                                        `✓ Beralih ke Workspace Klien: ${
+                                          cg.coupleLabel || cg.clientName
+                                        }`
+                                      );
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all ${
+                                      activeWorkspaceClientId === cg.id
+                                        ? 'bg-emerald-600 text-white shadow-2xs'
+                                        : 'bg-stone-900 hover:bg-stone-800 text-[#D4AF37]'
+                                    }`}
+                                  >
+                                    {activeWorkspaceClientId === cg.id
+                                      ? '✓ Workspace Sedang Aktif'
+                                      : 'Buka Workspace Klien Ini'}
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedClientGroupFilter(cg.id);
+                                    setActiveTab('settings');
+                                    setSettingsMenuTab('keamanan');
+                                  }}
+                                  className="text-[11px] font-bold text-[#8B6914] hover:underline"
+                                >
+                                  Kelola Akun &rarr;
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPanitiaEditId(undefined);
+                                  setPanitiaUsername(
+                                    `${cg.clientCode.toLowerCase()}_wo`
+                                  );
+                                  setPanitiaNama(`Tim WO ${cg.coupleLabel}`);
+                                  setPanitiaJabatan(
+                                    'Panitia / WO (Akses Non-Budgeting)'
+                                  );
+                                  setPanitiaClientId(cg.id);
+                                  setPanitiaPassword('');
+                                  setActiveSettingsModal('panitia_user');
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 text-[11px] font-bold"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Panitia Klien</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                                  {/* Alasan Deteksi Negatif / Anomali */}
-                                  {(effectiveReason ||
-                                    audit.matchedKeywords.length > 0 ||
-                                    isSpoofedName) && (
-                                    <div className="px-2.5 py-1.5 rounded-lg bg-rose-100/80 border border-rose-200 text-[11px] text-rose-900 font-semibold">
-                                      ⚠️ <strong>Temuan Audit:</strong>{' '}
-                                      {effectiveReason ||
-                                        `Mengandung kata terlarang (${audit.matchedKeywords.join(
-                                          ', '
-                                        )})`}
-                                    </div>
-                                  )}
+                {/* ===========================================================
+                    2. MODERASI KOMENTAR NEGATIF & AUDIT FORENSIK PELAKU
+                   =========================================================== */}
+                {superadminMenuTab === 'moderation' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0">
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                            Moderasi Komentar Negatif &amp; Audit Forensik Pelaku
+                          </h3>
+                          <p className="text-[11px] text-stone-500">
+                            Deteksi kata kasar/negatif, lacak identitas asli pemilik link undangan, IP, No. WA &amp; perangkat pengirim
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px] shrink-0">
+                        Forensic Guard
+                      </span>
+                    </div>
 
-                                  {/* Kotak Jejak Forensik Pelaku */}
-                                  <div className="p-2.5 rounded-lg bg-stone-900 text-[#F5EFE6] text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
-                                    <div>
-                                      <span className="text-[#D4AF37] font-bold">
-                                        Pemilik Link Asli (?to / DB):
-                                      </span>{' '}
-                                      <span className="font-mono">
-                                        {realLinkOwner ? (
-                                          <>
-                                            {realLinkOwner}
-                                            {isSpoofedName && (
-                                              <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-200 text-[10px] font-bold">
-                                                Samaran! Input: {wish.guestName}
+                    {(() => {
+                      const customKeywords =
+                        settingsForm.moderationBlockedKeywords ??
+                        state.settings.moderationBlockedKeywords ??
+                        '';
+                      const autoHideEnabled =
+                        (settingsForm.autoHideFlaggedWishes ??
+                          state.settings.autoHideFlaggedWishes) !== false;
+
+                      const enrichedWishes = state.wishes.map((w) => {
+                        const audit = analyzeWishModeration(
+                          {
+                            guestName: w.guestName,
+                            message: w.message,
+                            institution: w.institution,
+                            originalUrlGuestParam: w.originalUrlGuestParam,
+                            matchedGuestRecordName: w.matchedGuestRecordName,
+                          },
+                          customKeywords
+                        );
+                        const isFlaggedByAudit =
+                          audit.isNegative || audit.isSpoofedIdentity;
+                        const effectiveStatus: 'APPROVED' | 'FLAGGED' | 'HIDDEN' =
+                          w.moderationStatus === 'HIDDEN'
+                            ? 'HIDDEN'
+                            : w.moderationStatus === 'APPROVED'
+                            ? 'APPROVED'
+                            : w.moderationStatus === 'FLAGGED' || isFlaggedByAudit
+                            ? 'FLAGGED'
+                            : 'APPROVED';
+                        const effectiveReason =
+                          w.flaggedReason ||
+                          (audit.reasons.length > 0 ? audit.reasons.join(' • ') : '');
+                        const matchedGuest = state.guests.find(
+                          (g) =>
+                            (w.originalUrlCodeParam &&
+                              g.invitationCode?.toUpperCase() ===
+                                w.originalUrlCodeParam.toUpperCase()) ||
+                            (w.originalUrlGuestParam &&
+                              g.guestName.toLowerCase() ===
+                                w.originalUrlGuestParam.toLowerCase()) ||
+                            g.guestName.toLowerCase() === w.guestName.toLowerCase()
+                        );
+                        const isHiddenFromPublic =
+                          effectiveStatus === 'HIDDEN' ||
+                          (autoHideEnabled && effectiveStatus === 'FLAGGED');
+                        return {
+                          wish: w,
+                          audit,
+                          effectiveStatus,
+                          effectiveReason,
+                          matchedGuest,
+                          isHiddenFromPublic,
+                        };
+                      });
+
+                      const totalFlagged = enrichedWishes.filter(
+                        (item) => item.effectiveStatus === 'FLAGGED'
+                      ).length;
+                      const totalHidden = enrichedWishes.filter(
+                        (item) => item.effectiveStatus === 'HIDDEN'
+                      ).length;
+                      const totalSafe = enrichedWishes.filter(
+                        (item) => item.effectiveStatus === 'APPROVED'
+                      ).length;
+
+                      const filteredWishes = enrichedWishes.filter((item) => {
+                        if (
+                          commentAuditFilter === 'FLAGGED' &&
+                          item.effectiveStatus !== 'FLAGGED'
+                        ) {
+                          return false;
+                        }
+                        if (
+                          commentAuditFilter === 'HIDDEN' &&
+                          item.effectiveStatus !== 'HIDDEN'
+                        ) {
+                          return false;
+                        }
+                        if (
+                          commentAuditFilter === 'APPROVED' &&
+                          item.effectiveStatus !== 'APPROVED'
+                        ) {
+                          return false;
+                        }
+                        const q = commentAuditSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          item.wish.guestName.toLowerCase().includes(q) ||
+                          item.wish.message.toLowerCase().includes(q) ||
+                          (item.wish.phone || '').toLowerCase().includes(q) ||
+                          (item.wish.originalUrlGuestParam || '')
+                            .toLowerCase()
+                            .includes(q) ||
+                          (item.wish.originalUrlCodeParam || '')
+                            .toLowerCase()
+                            .includes(q) ||
+                          (item.wish.matchedGuestRecordName || '')
+                            .toLowerCase()
+                            .includes(q) ||
+                          (item.wish.ipAddress || '').toLowerCase().includes(q) ||
+                          (item.effectiveReason || '').toLowerCase().includes(q)
+                        );
+                      });
+
+                      return (
+                        <div className="space-y-3.5">
+                          {/* Ringkasan Statistik Audit Komentar */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setCommentAuditFilter('ALL')}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                commentAuditFilter === 'ALL'
+                                  ? 'bg-[#FAF3E3] border-[#B68D40] ring-1 ring-[#B68D40]/40'
+                                  : 'bg-[#FAF8F5] border-stone-200 hover:border-[#D4AF37]/40'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-stone-500">
+                                Semua Komen
+                              </p>
+                              <p className="text-sm font-extrabold text-stone-900 mt-0.5">
+                                {enrichedWishes.length} Ucapan
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCommentAuditFilter('FLAGGED')}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                commentAuditFilter === 'FLAGGED'
+                                  ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300'
+                                  : 'bg-rose-50/40 border-rose-200 hover:border-rose-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-rose-700">
+                                🚨 Terindikasi Negatif
+                              </p>
+                              <p className="text-sm font-extrabold text-rose-800 mt-0.5">
+                                {totalFlagged} Terdeteksi
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCommentAuditFilter('HIDDEN')}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                commentAuditFilter === 'HIDDEN'
+                                  ? 'bg-amber-50 border-amber-400 ring-1 ring-amber-300'
+                                  : 'bg-amber-50/40 border-amber-200 hover:border-amber-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-amber-800">
+                                👁️‍🗨️ Disembunyikan
+                              </p>
+                              <p className="text-sm font-extrabold text-amber-900 mt-0.5">
+                                {totalHidden} Komen
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCommentAuditFilter('APPROVED')}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                commentAuditFilter === 'APPROVED'
+                                  ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
+                                  : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
+                              }`}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-emerald-700">
+                                ✅ Tampil Aman
+                              </p>
+                              <p className="text-sm font-extrabold text-emerald-800 mt-0.5">
+                                {totalSafe} Komen
+                              </p>
+                            </button>
+                          </div>
+
+                          {/* Pencarian Pelaku / Isi Komentar */}
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="relative flex-1">
+                              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={commentAuditSearch}
+                                onChange={(e) => setCommentAuditSearch(e.target.value)}
+                                placeholder="Cari kata negatif, nama pengirim, pemilik link asli (?to=), kode INV, IP, atau No. WA..."
+                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
+                              />
+                            </div>
+                            {commentAuditSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setCommentAuditSearch('')}
+                                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-100"
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Daftar Audit Forensik Komentar & Pelaku */}
+                          <div className="max-h-[380px] overflow-y-auto space-y-2.5 pr-1">
+                            {filteredWishes.length === 0 ? (
+                              <div className="p-6 rounded-xl border border-dashed border-stone-200 bg-[#FAF8F5] text-center space-y-1">
+                                <p className="text-xs font-bold text-stone-700">
+                                  Tidak ada komentar pada filter ini.
+                                </p>
+                                <p className="text-[11px] text-stone-500">
+                                  Setiap ucapan baru dari tamu undangan otomatis dipindai kata negatif &amp; jejak forensik pelakunya di sini.
+                                </p>
+                              </div>
+                            ) : (
+                              filteredWishes.map(
+                                ({
+                                  wish,
+                                  audit,
+                                  effectiveStatus,
+                                  effectiveReason,
+                                  matchedGuest,
+                                  isHiddenFromPublic,
+                                }) => {
+                                  const realLinkOwner =
+                                    wish.matchedGuestRecordName ||
+                                    wish.originalUrlGuestParam ||
+                                    matchedGuest?.guestName ||
+                                    '';
+                                  const isSpoofedName =
+                                    Boolean(realLinkOwner) &&
+                                    realLinkOwner.trim().toLowerCase() !==
+                                      wish.guestName.trim().toLowerCase();
+                                  const actorPhone =
+                                    wish.phone || matchedGuest?.phone || '';
+                                  const actorCode =
+                                    wish.originalUrlCodeParam ||
+                                    wish.invitationCode ||
+                                    matchedGuest?.invitationCode ||
+                                    '';
+                                  const actorGroup =
+                                    wish.institution ||
+                                    matchedGuest?.institution ||
+                                    matchedGuest?.guestType ||
+                                    '';
+
+                                  return (
+                                    <div
+                                      key={wish.id}
+                                      className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
+                                        effectiveStatus === 'FLAGGED'
+                                          ? 'bg-rose-50/70 border-rose-300'
+                                          : effectiveStatus === 'HIDDEN'
+                                          ? 'bg-amber-50/60 border-amber-300'
+                                          : 'bg-[#FAF8F5] border-stone-200/90'
+                                      }`}
+                                    >
+                                      <div className="flex flex-wrap items-start justify-between gap-2">
+                                        <div className="space-y-0.5">
+                                          <div className="flex flex-wrap items-center gap-1.5">
+                                            <span className="text-xs font-extrabold text-stone-900">
+                                              {wish.guestName}
+                                            </span>
+                                            {effectiveStatus === 'FLAGGED' && (
+                                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">
+                                                🚨 TERINDIKASI NEGATIF / ANOMALI
                                               </span>
                                             )}
-                                          </>
-                                        ) : (
-                                          'Tamu Umum (Tanpa Parameter ?to)'
-                                        )}
-                                      </span>
-                                    </div>
+                                            {effectiveStatus === 'HIDDEN' && (
+                                              <span className="px-2 py-0.5 rounded-full bg-amber-700 text-white text-[10px] font-extrabold">
+                                                👁️‍🗨️ DISEMBUNYIKAN DARI PUBLIK
+                                              </span>
+                                            )}
+                                            {effectiveStatus === 'APPROVED' && (
+                                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                                ✅ Aman
+                                              </span>
+                                            )}
+                                            {isHiddenFromPublic &&
+                                              effectiveStatus === 'FLAGGED' && (
+                                                <span className="px-2 py-0.5 rounded-full bg-stone-800 text-white text-[10px] font-bold">
+                                                  Auto-Hidden di Undangan
+                                                </span>
+                                              )}
+                                          </div>
+                                          <p className="text-[10px] text-stone-500">
+                                            Dikirim:{' '}
+                                            {new Date(wish.createdAt).toLocaleString(
+                                              'id-ID',
+                                              {
+                                                dateStyle: 'medium',
+                                                timeStyle: 'short',
+                                              }
+                                            )}{' '}
+                                            &bull; Kehadiran:{' '}
+                                            <strong>{wish.rsvpStatus}</strong>
+                                          </p>
+                                        </div>
 
-                                    <div>
-                                      <span className="text-[#D4AF37] font-bold">
-                                        Kode Undangan &amp; Instansi:
-                                      </span>{' '}
-                                      <span className="font-mono">
-                                        {actorCode || '—'}
-                                        {actorGroup ? ` (${actorGroup})` : ''}
-                                      </span>
-                                    </div>
+                                        {/* Tombol Aksi Moderasi Cepat */}
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          {effectiveStatus !== 'APPROVED' ? (
+                                            <button
+                                              type="button"
+                                              onClick={async () => {
+                                                await onModerateWish?.(
+                                                  wish.id,
+                                                  'APPROVED',
+                                                  ''
+                                                );
+                                                appendAuditLog({
+                                                  actor: adminUser.username,
+                                                  module: 'MODERASI_KOMENTAR',
+                                                  action: 'EDIT',
+                                                  status: 'SUCCESS',
+                                                  summary: `Menyetujui tampil komentar dari "${wish.guestName}"`,
+                                                });
+                                                showToast(
+                                                  `✓ Komentar "${wish.guestName}" ditandai Aman & Ditampilkan.`
+                                                );
+                                              }}
+                                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1"
+                                              title="Tampilkan kembali di buku tamu publik"
+                                            >
+                                              <Eye className="w-3 h-3" />
+                                              <span>Tampilkan Aman</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={async () => {
+                                                await onModerateWish?.(
+                                                  wish.id,
+                                                  'HIDDEN',
+                                                  effectiveReason ||
+                                                    `Disembunyikan manual oleh Superadmin (${adminUser.username})`
+                                                );
+                                                appendAuditLog({
+                                                  actor: adminUser.username,
+                                                  module: 'MODERASI_KOMENTAR',
+                                                  action: 'EDIT',
+                                                  status: 'SUCCESS',
+                                                  summary: `Menyembunyikan komentar dari "${wish.guestName}" dari tampilan undangan publik`,
+                                                });
+                                                showToast(
+                                                  `👁️‍🗨️ Komentar "${wish.guestName}" disembunyikan dari undangan publik.`
+                                                );
+                                              }}
+                                              className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold flex items-center gap-1"
+                                              title="Sembunyikan dari publik tapi simpan bukti forensik"
+                                            >
+                                              <Lock className="w-3 h-3" />
+                                              <span>Sembunyikan</span>
+                                            </button>
+                                          )}
 
-                                    <div>
-                                      <span className="text-[#D4AF37] font-bold">
-                                        No. WhatsApp Pelaku:
-                                      </span>{' '}
-                                      {actorPhone ? (
-                                        <a
-                                          href={`https://wa.me/${actorPhone
-                                            .replace(/[^0-9]/g, '')
-                                            .replace(/^0/, '62')}`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="font-mono underline text-emerald-300 hover:text-emerald-200"
-                                        >
-                                          {actorPhone} (Hubungi WA)
-                                        </a>
-                                      ) : (
-                                        <span className="font-mono text-stone-400">
-                                          Tidak dicantumkan
-                                        </span>
+                                          {effectiveStatus !== 'FLAGGED' && (
+                                            <button
+                                              type="button"
+                                              onClick={async () => {
+                                                await onModerateWish?.(
+                                                  wish.id,
+                                                  'FLAGGED',
+                                                  effectiveReason ||
+                                                    `Ditandai negatif oleh Superadmin (${adminUser.username})`
+                                                );
+                                                showToast(
+                                                  `🚨 Komentar "${wish.guestName}" ditandai sebagai Komentar Negatif.`
+                                                );
+                                              }}
+                                              className="px-2 py-1 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-[10px] font-bold"
+                                            >
+                                              Tandai Negatif
+                                            </button>
+                                          )}
+
+                                          <button
+                                            type="button"
+                                            onClick={async () => {
+                                              await onDeleteWish(wish.id);
+                                              appendAuditLog({
+                                                actor: adminUser.username,
+                                                module: 'MODERASI_KOMENTAR',
+                                                action: 'HAPUS',
+                                                status: 'SUCCESS',
+                                                summary: `Menghapus permanen komentar dari "${wish.guestName}"`,
+                                              });
+                                              showToast(
+                                                `🗑️ Komentar "${wish.guestName}" dihapus permanen.`
+                                              );
+                                            }}
+                                            className="px-2 py-1 rounded-lg border border-stone-300 bg-white hover:bg-rose-600 hover:text-white hover:border-rose-600 text-stone-700 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                            title="Hapus permanen dari database"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                            <span>Hapus</span>
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Isi Pesan Komentar */}
+                                      <div className="p-2.5 rounded-lg bg-white border border-stone-200/80 text-xs text-stone-800 italic">
+                                        &ldquo;{wish.message}&rdquo;
+                                      </div>
+
+                                      {/* Alasan Deteksi Negatif / Anomali */}
+                                      {(effectiveReason ||
+                                        audit.matchedKeywords.length > 0 ||
+                                        isSpoofedName) && (
+                                        <div className="px-2.5 py-1.5 rounded-lg bg-rose-100/80 border border-rose-200 text-[11px] text-rose-900 font-semibold">
+                                          ⚠️ <strong>Temuan Audit:</strong>{' '}
+                                          {effectiveReason ||
+                                            `Mengandung kata terlarang (${audit.matchedKeywords.join(
+                                              ', '
+                                            )})`}
+                                        </div>
                                       )}
-                                    </div>
 
-                                    <div>
-                                      <span className="text-[#D4AF37] font-bold">
-                                        IP &amp; Perangkat:
-                                      </span>{' '}
-                                      <span className="font-mono">
-                                        {wish.ipAddress || 'Lokal/Proxy'} &bull;{' '}
-                                        {formatForensicUserAgent(
-                                          wish.userAgent,
-                                          wish.devicePlatform
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            }
-                          )
-                        )}
-                      </div>
+                                      {/* Kotak Jejak Forensik Pelaku */}
+                                      <div className="p-2.5 rounded-lg bg-stone-900 text-[#F5EFE6] text-[11px] grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
+                                        <div>
+                                          <span className="text-[#D4AF37] font-bold">
+                                            Pemilik Link Asli (?to / DB):
+                                          </span>{' '}
+                                          <span className="font-mono">
+                                            {realLinkOwner ? (
+                                              <>
+                                                {realLinkOwner}
+                                                {isSpoofedName && (
+                                                  <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-200 text-[10px] font-bold">
+                                                    Samaran! Input: {wish.guestName}
+                                                  </span>
+                                                )}
+                                              </>
+                                            ) : (
+                                              'Tamu Umum (Tanpa Parameter ?to)'
+                                            )}
+                                          </span>
+                                        </div>
 
-                      {/* Pengaturan Kata Kunci Filter & Auto-Hide Komentar Negatif */}
-                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-2.5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <label className="flex items-center gap-2 cursor-pointer">
+                                        <div>
+                                          <span className="text-[#D4AF37] font-bold">
+                                            Kode Undangan &amp; Instansi:
+                                          </span>{' '}
+                                          <span className="font-mono">
+                                            {actorCode || '—'}
+                                            {actorGroup ? ` (${actorGroup})` : ''}
+                                          </span>
+                                        </div>
+
+                                        <div>
+                                          <span className="text-[#D4AF37] font-bold">
+                                            No. WhatsApp Pelaku:
+                                          </span>{' '}
+                                          {actorPhone ? (
+                                            <a
+                                              href={`https://wa.me/${actorPhone
+                                                .replace(/[^0-9]/g, '')
+                                                .replace(/^0/, '62')}`}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="font-mono underline text-emerald-300 hover:text-emerald-200"
+                                            >
+                                              {actorPhone} (Hubungi WA)
+                                            </a>
+                                          ) : (
+                                            <span className="font-mono text-stone-400">
+                                              Tidak dicantumkan
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div>
+                                          <span className="text-[#D4AF37] font-bold">
+                                            IP &amp; Perangkat:
+                                          </span>{' '}
+                                          <span className="font-mono">
+                                            {wish.ipAddress || 'Lokal/Proxy'} &bull;{' '}
+                                            {formatForensicUserAgent(
+                                              wish.userAgent,
+                                              wish.devicePlatform
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              )
+                            )}
+                          </div>
+
+                          {/* Pengaturan Kata Kunci Filter & Auto-Hide Komentar Negatif */}
+                          <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-2.5">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={autoHideEnabled}
+                                  onChange={async (e) => {
+                                    const nextVal = e.target.checked;
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      autoHideFlaggedWishes: nextVal,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      nextVal
+                                        ? '🛡️ Auto-Sembunyikan Komentar Negatif diaktifkan!'
+                                        : 'Auto-Sembunyikan Komentar Negatif dinonaktifkan.'
+                                    );
+                                  }}
+                                  className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                                />
+                                <span className="text-xs font-extrabold text-stone-900">
+                                  Otomatis Sembunyikan Komentar Negatif dari Halaman Undangan Publik
+                                </span>
+                              </label>
+                              <span className="text-[10px] font-semibold text-stone-500">
+                                Bukti forensik tetap tersimpan di panel Superadmin ini
+                              </span>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                Kata Kunci Negatif / Blacklist Tambahan (pisahkan dengan koma):
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={customKeywords}
+                                  onChange={(e) =>
+                                    setSettingsForm((prev) => ({
+                                      ...prev,
+                                      moderationBlockedKeywords: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Contoh: mantan, hutang, scam, judi, kasar... (kamus kata kasar bawaan sudah aktif)"
+                                  className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      '✓ Daftar kata kunci moderasi berhasil disimpan!'
+                                    );
+                                  }}
+                                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shrink-0"
+                                >
+                                  Simpan Filter
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Kunci Pengiriman Form RSVP & Komentar Baru */}
+                          <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50">
+                            <div>
+                              <p className="text-xs font-extrabold text-stone-900">
+                                Kunci Pengiriman Form RSVP &amp; Komentar Baru
+                              </p>
+                              <p className="text-[11px] text-stone-500">
+                                Matikan sementara formulir kirim ucapan/RSVP di halaman undangan publik bila diperlukan.
+                              </p>
+                            </div>
                             <input
                               type="checkbox"
-                              checked={autoHideEnabled}
+                              checked={Boolean(
+                                settingsForm.disableRsvpSubmission ??
+                                  state.settings.disableRsvpSubmission
+                              )}
                               onChange={async (e) => {
                                 const nextVal = e.target.checked;
                                 const nextSettings: WeddingSettings = {
                                   ...state.settings,
                                   ...settingsForm,
-                                  autoHideFlaggedWishes: nextVal,
+                                  disableRsvpSubmission: nextVal,
                                   updatedBy: adminUser.username,
                                 };
                                 setSettingsFormInternal(nextSettings);
                                 await commitImmediateSettings(nextSettings);
                                 showToast(
                                   nextVal
-                                    ? '🛡️ Auto-Sembunyikan Komentar Negatif diaktifkan!'
-                                    : 'Auto-Sembunyikan Komentar Negatif dinonaktifkan.'
+                                    ? '🔒 Pengiriman Form RSVP & Komentar dikunci!'
+                                    : '🔓 Pengiriman Form RSVP & Komentar dibuka kembali.'
                                 );
                               }}
-                              className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                              className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer shrink-0"
                             />
-                            <span className="text-xs font-extrabold text-stone-900">
-                              Otomatis Sembunyikan Komentar Negatif dari Halaman Undangan Publik
-                            </span>
                           </label>
-                          <span className="text-[10px] font-semibold text-stone-500">
-                            Bukti forensik tetap tersimpan di panel Superadmin ini
-                          </span>
                         </div>
+                      );
+                    })()}
+                  </div>
+                )}
 
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Kata Kunci Negatif / Blacklist Tambahan (pisahkan dengan koma):
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={customKeywords}
-                              onChange={(e) =>
-                                setSettingsForm((prev) => ({
-                                  ...prev,
-                                  moderationBlockedKeywords: e.target.value,
-                                }))
-                              }
-                              placeholder="Contoh: mantan, hutang, scam, judi, kasar... (kamus kata kasar bawaan sudah aktif)"
-                              className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
-                            />
+                {/* ===========================================================
+                    3. INSIGHT & ANALITIK TRAFIK UNDANGAN (SHARE, VIEWS, CLICKS)
+                   =========================================================== */}
+                {superadminMenuTab === 'insights' &&
+                  (() => {
+                    const analytics = getEffectiveInvitationAnalytics(
+                      { ...state.settings, ...settingsForm },
+                      state.guests,
+                      state.wishes
+                    );
+                    const ctrPercent =
+                      analytics.totalViews > 0
+                        ? Math.min(
+                            100,
+                            Math.round(
+                              (analytics.openCoverClicks / analytics.totalViews) * 100
+                            )
+                          )
+                        : 0;
+                    const rsvpRatePercent =
+                      analytics.openCoverClicks > 0
+                        ? Math.min(
+                            100,
+                            Math.round(
+                              (analytics.rsvpSubmits / analytics.openCoverClicks) * 100
+                            )
+                          )
+                        : 0;
+
+                    const clickBreakdown = [
+                      {
+                        label: '📖 Klik "Buka Undangan" (Sampul Pembuka)',
+                        count: analytics.openCoverClicks,
+                        color: 'bg-[#C5A059]',
+                      },
+                      {
+                        label: '💌 Klik Kirim Konfirmasi RSVP & Ucapan Doa',
+                        count: analytics.rsvpSubmits,
+                        color: 'bg-emerald-600',
+                      },
+                      {
+                        label: '📍 Klik Buka Lokasi Google Maps Gedung Acara',
+                        count: analytics.mapsClicks,
+                        color: 'bg-sky-600',
+                      },
+                      {
+                        label: '💳 Klik Salin No. Rekening Amplop Digital',
+                        count: analytics.giftCopyClicks,
+                        color: 'bg-amber-600',
+                      },
+                      {
+                        label: '📱 Klik Tampilkan Barcode QRIS Wedding Gift',
+                        count: analytics.qrisClicks,
+                        color: 'bg-purple-600',
+                      },
+                    ];
+
+                    const maxBreakdownCount = Math.max(
+                      1,
+                      ...clickBreakdown.map((b) => b.count)
+                    );
+
+                    const badgeForEventType = (type: InvitationInteractionType) => {
+                      switch (type) {
+                        case 'SHARE_WA':
+                          return {
+                            label: '📲 Share WA',
+                            cls: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                          };
+                        case 'COPY_LINK':
+                          return {
+                            label: '🔗 Salin Link',
+                            cls: 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40',
+                          };
+                        case 'PAGE_VIEW':
+                          return {
+                            label: '👁️ Dilihat (View)',
+                            cls: 'bg-sky-100 text-sky-800 border-sky-200',
+                          };
+                        case 'OPEN_COVER':
+                          return {
+                            label: '📖 Klik Buka Sampul',
+                            cls: 'bg-amber-100 text-amber-800 border-amber-200',
+                          };
+                        case 'CLICK_MAPS':
+                          return {
+                            label: '📍 Klik Google Maps',
+                            cls: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                          };
+                        case 'CLICK_GIFT_COPY':
+                          return {
+                            label: '💳 Salin Rekening',
+                            cls: 'bg-rose-100 text-rose-800 border-rose-200',
+                          };
+                        case 'CLICK_QRIS':
+                          return {
+                            label: '📱 Klik QRIS',
+                            cls: 'bg-purple-100 text-purple-800 border-purple-200',
+                          };
+                        case 'SUBMIT_RSVP':
+                          return {
+                            label: '✅ Kirim RSVP',
+                            cls: 'bg-emerald-600 text-white border-emerald-700',
+                          };
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                              <Eye className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                                Insight &amp; Analitik Trafik Undangan (Share, Views, Clicks &amp; Funnel Konversi)
+                              </h3>
+                              <p className="text-[11px] text-stone-500">
+                                Pantau real-time berapa kali link undangan dibagikan (share), dilihat (views), tombol diklik, hingga konversi RSVP tamu
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              onClick={async () => {
-                                const nextSettings: WeddingSettings = {
-                                  ...state.settings,
-                                  ...settingsForm,
-                                  updatedBy: adminUser.username,
-                                };
-                                setSettingsFormInternal(nextSettings);
-                                await commitImmediateSettings(nextSettings);
+                              onClick={() => {
+                                const origin =
+                                  typeof window !== 'undefined'
+                                    ? window.location.origin
+                                    : '';
+                                const shareUrl = `${origin}/?client=agung_selo`;
+                                if (
+                                  typeof navigator !== 'undefined' &&
+                                  navigator.clipboard
+                                ) {
+                                  void navigator.clipboard.writeText(shareUrl);
+                                }
+                                recordAdminAnalyticsEvent(
+                                  'COPY_LINK',
+                                  undefined,
+                                  `Menyalin link utama undangan (${shareUrl}) dari panel Insight`
+                                );
                                 showToast(
-                                  '✓ Daftar kata kunci moderasi berhasil disimpan!'
+                                  '🔗 Link undangan disalin & tercatat (+1 Share) di Insight!'
                                 );
                               }}
-                              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shrink-0"
+                              className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
                             >
-                              Simpan Filter
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Salin &amp; Share Link (+1)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmDialog({
+                                  title: 'Reset Statistik Insight Undangan?',
+                                  message:
+                                    'Seluruh penghitung Share, Views, Clicks, dan riwayat interaksi pada workspace ini akan direset ke kondisi dasar.',
+                                  confirmLabel: 'Ya, Reset Insight',
+                                  variant: 'danger',
+                                  onConfirm: async () => {
+                                    const emptyAnalytics = {
+                                      totalShares: 0,
+                                      waShares: 0,
+                                      linkCopies: 0,
+                                      totalViews: 0,
+                                      uniqueVisitors: 0,
+                                      totalClicks: 0,
+                                      openCoverClicks: 0,
+                                      mapsClicks: 0,
+                                      giftCopyClicks: 0,
+                                      qrisClicks: 0,
+                                      rsvpSubmits: 0,
+                                      visitedGuestKeys: [],
+                                      recentEvents: [],
+                                      lastUpdatedAt: new Date().toISOString(),
+                                    };
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      invitationAnalytics: emptyAnalytics,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast('✓ Statistik Insight Undangan berhasil direset!');
+                                  },
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 font-bold text-xs flex items-center gap-1"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Reset Insight</span>
                             </button>
                           </div>
                         </div>
+
+                        {/* 4 KARTU UTAMA */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/70 border border-[#D4AF37]/40 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                                🔗 Link Dibagikan (Share)
+                              </span>
+                              <Send className="w-4 h-4 text-[#B68D40]" />
+                            </div>
+                            <p className="text-2xl font-extrabold text-stone-900">
+                              {analytics.totalShares.toLocaleString('id-ID')}{' '}
+                              <span className="text-xs font-bold text-stone-500">
+                                kali
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-stone-600">
+                              📲 <strong>{analytics.waShares}</strong> Kirim WA &bull; 📋{' '}
+                              <strong>{analytics.linkCopies}</strong> Salin Link
+                            </p>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/70 to-white border border-sky-200 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-800">
+                                👁️ Undangan Dilihat (Views)
+                              </span>
+                              <Eye className="w-4 h-4 text-sky-600" />
+                            </div>
+                            <p className="text-2xl font-extrabold text-stone-900">
+                              {analytics.totalViews.toLocaleString('id-ID')}{' '}
+                              <span className="text-xs font-bold text-stone-500">
+                                tayangan
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-sky-900/80">
+                              👤 <strong>{analytics.uniqueVisitors}</strong> Pengunjung / Tamu Unik
+                            </p>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-white border border-amber-200 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">
+                                👆 Total Diklik (Clicks)
+                              </span>
+                              <ExternalLink className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <p className="text-2xl font-extrabold text-stone-900">
+                              {analytics.totalClicks.toLocaleString('id-ID')}{' '}
+                              <span className="text-xs font-bold text-stone-500">
+                                interaksi
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-amber-900/80">
+                              📖 <strong>{analytics.openCoverClicks}</strong> Buka Sampul ({ctrPercent}% CTR)
+                            </p>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-white border border-emerald-200 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+                                ✅ Konversi RSVP &amp; Doa
+                              </span>
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <p className="text-2xl font-extrabold text-stone-900">
+                              {analytics.rsvpSubmits.toLocaleString('id-ID')}{' '}
+                              <span className="text-xs font-bold text-stone-500">
+                                konfirmasi
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-emerald-900/80">
+                              🎯 Rasio Konversi Tamu: <strong>{rsvpRatePercent}%</strong> dari Buka Sampul
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Breakdown Bar Chart */}
+                        <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-extrabold text-stone-900">
+                              📊 Rincian Elemen Undangan yang Diklik Tamu
+                            </p>
+                            <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-full border border-[#D4AF37]/35">
+                              Funnel Interaksi
+                            </span>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {clickBreakdown.map((item) => {
+                              const widthPct = Math.max(
+                                4,
+                                Math.round((item.count / maxBreakdownCount) * 100)
+                              );
+                              return (
+                                <div key={item.label} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="font-semibold text-stone-700">
+                                      {item.label}
+                                    </span>
+                                    <span className="font-extrabold text-stone-900">
+                                      {item.count} klik
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${item.color}`}
+                                      style={{ width: `${widthPct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Live Activity Log */}
+                        <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-extrabold text-stone-900">
+                              ⚡ Live Log Jejak Share, Views &amp; Klik Terbaru ({analytics.recentEvents.length})
+                            </p>
+                            <span className="text-[10px] font-semibold text-stone-500">
+                              Real-Time Activity
+                            </span>
+                          </div>
+
+                          <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1">
+                            {analytics.recentEvents.length === 0 ? (
+                              <div className="p-6 text-center text-xs text-stone-500 border border-dashed border-stone-200 rounded-xl bg-white">
+                                Belum ada riwayat klik/kunjungan. Bagikan link atau buka pratinjau undangan untuk melihat log real-time.
+                              </div>
+                            ) : (
+                              analytics.recentEvents.map((ev) => {
+                                const badge = badgeForEventType(ev.type);
+                                return (
+                                  <div
+                                    key={ev.id}
+                                    className="p-2.5 rounded-xl bg-white border border-stone-200/80 flex items-start justify-between gap-2 text-xs"
+                                  >
+                                    <div className="space-y-0.5 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${badge.cls}`}
+                                        >
+                                          {badge.label}
+                                        </span>
+                                        <span className="font-bold text-stone-900 truncate">
+                                          {ev.guestName || 'Tamu Undangan'}
+                                        </span>
+                                        {ev.invitationCode && (
+                                          <span className="font-mono text-[10px] text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded">
+                                            {ev.invitationCode}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {ev.detail && (
+                                        <p className="text-[11px] text-stone-600 line-clamp-1">
+                                          {ev.detail}
+                                        </p>
+                                      )}
+                                      {ev.deviceInfo && (
+                                        <p className="text-[10px] text-stone-400 font-mono">
+                                          {ev.deviceInfo}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-stone-400 shrink-0 whitespace-nowrap">
+                                      {new Date(ev.timestamp).toLocaleString('id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                {/* ===========================================================
+                    4. KAPASITAS PENYIMPANAN SUPABASE (500 MB) & ZERO-TRACE STORAGE
+                   =========================================================== */}
+                {superadminMenuTab === 'storage' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                          <FileSpreadsheet className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                            Kapasitas Penyimpanan Supabase (500 MB) &amp; Zero-Trace Storage
+                          </h3>
+                          <p className="text-[11px] text-stone-500">
+                            Monitoring real-time 8 Tabel PostgreSQL &amp; Bucket CDN{' '}
+                            <code className="font-mono text-[#8B6914]">wedding-media</code>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleRefreshStorageCapacity(false)}
+                        disabled={isLoadingCapacity}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0 disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-3.5 h-3.5 ${
+                            isLoadingCapacity ? 'animate-spin' : ''
+                          }`}
+                        />
+                        <span>
+                          {isLoadingCapacity ? 'Memindai...' : 'Cek Kapasitas DB'}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Progress Bar 500 MB */}
+                    {(() => {
+                      const dbJsonBytes = JSON.stringify(state).length;
+                      const usedBytes = storageCapacityReport
+                        ? storageCapacityReport.totalStorageBytes + dbJsonBytes
+                        : dbJsonBytes;
+                      const quotaMb =
+                        settingsForm.storageQuotaLimitMb ||
+                        state.settings.storageQuotaLimitMb ||
+                        500;
+                      const quotaBytes = quotaMb * 1024 * 1024;
+                      const usedMb = usedBytes / (1024 * 1024);
+                      const pct = Math.min(
+                        100,
+                        Number(((usedBytes / quotaBytes) * 100).toFixed(2))
+                      );
+                      return (
+                        <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-stone-800">
+                              Total Terpakai: {usedMb.toFixed(2)} MB dari {quotaMb} MB
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                                pct > 85
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : pct > 60
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-emerald-100 text-emerald-700'
+                              }`}
+                            >
+                              {pct}% Terpakai
+                            </span>
+                          </div>
+                          <div className="w-full h-3 rounded-full bg-stone-200 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                pct > 85
+                                  ? 'bg-rose-600'
+                                  : pct > 60
+                                  ? 'bg-amber-500'
+                                  : 'bg-gradient-to-r from-[#C5A059] to-emerald-600'
+                              }`}
+                              style={{ width: `${Math.max(pct, 1.5)}%` }}
+                            />
+                          </div>
+                          <p className="text-[11px] text-stone-500 leading-relaxed">
+                            Batas unggah foto dinaikkan hingga <strong>10 MB per foto (Ultra-HD)</strong>. Agar kuota {quotaMb} MB awet bertahun-tahun, setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Rincian Komponen Storage & Tabel */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                        <div className="flex items-center justify-between text-stone-500 mb-1">
+                          <span className="font-semibold">Foto Ultra-HD</span>
+                          <ImageIcon className="w-3.5 h-3.5 text-[#B68D40]" />
+                        </div>
+                        <p className="text-sm font-extrabold text-stone-900">
+                          {storageCapacityReport
+                            ? `${(
+                                storageCapacityReport.photoBytes /
+                                (1024 * 1024)
+                              ).toFixed(2)} MB`
+                            : '—'}
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          {storageCapacityReport
+                            ? `${storageCapacityReport.photoCount} file di /photos`
+                            : 'Folder wedding-media/photos'}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                        <div className="flex items-center justify-between text-stone-500 mb-1">
+                          <span className="font-semibold">Musik &amp; Audio</span>
+                          <Music className="w-3.5 h-3.5 text-[#B68D40]" />
+                        </div>
+                        <p className="text-sm font-extrabold text-stone-900">
+                          {storageCapacityReport
+                            ? `${(
+                                storageCapacityReport.musicBytes /
+                                (1024 * 1024)
+                              ).toFixed(2)} MB`
+                            : '—'}
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          {storageCapacityReport
+                            ? `${storageCapacityReport.musicCount} file di /music`
+                            : 'Folder wedding-media/music'}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl border border-stone-200 bg-white">
+                        <div className="flex items-center justify-between text-stone-500 mb-1">
+                          <span className="font-semibold">8 Tabel PostgreSQL</span>
+                          <FileJson className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                        <p className="text-sm font-extrabold text-stone-900">
+                          {`${(JSON.stringify(state).length / 1024).toFixed(1)} KB`}
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          {state.tasks.length} Tugas &bull; {state.guests.length} Tamu &bull;{' '}
+                          {state.wishes.length} Doa
+                        </p>
                       </div>
                     </div>
-                  );
-                })()}
 
-                {/* Pengaturan Tautan Credit omeko11 & Kontak WA (Footer & Komersial) */}
-                <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-extrabold text-stone-900">
-                      Pengaturan Tautan Credit <span className="text-[#8B6914]">omeko11</span> &amp; Kontak WA (Footer)
-                    </p>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const nextSettings: WeddingSettings = {
-                          ...state.settings,
-                          ...settingsForm,
-                          developerCreditUrl:
-                            (
-                              settingsForm.developerCreditUrl ??
-                              state.settings.developerCreditUrl
-                            )?.trim() ||
-                            'https://github.com/omeko11/my_wedding_manager',
-                          contactWhatsappNumber:
-                            (
-                              settingsForm.contactWhatsappNumber ??
-                              state.settings.contactWhatsappNumber
-                            )?.trim() || '089638616516',
-                          updatedBy: adminUser.username,
-                        };
-                        setSettingsFormInternal(nextSettings);
-                        await commitImmediateSettings(nextSettings);
-                        showToast(
-                          '✓ Tautan Credit omeko11 & Nomor Kontak WA berhasil disimpan!'
-                        );
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-[11px] shrink-0 shadow-2xs"
-                    >
-                      Simpan Tautan Footer
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                        Link Credit &ldquo;omeko11&rdquo; (GitHub / Website):
-                      </label>
-                      <input
-                        type="url"
-                        value={
-                          settingsForm.developerCreditUrl ??
-                          state.settings.developerCreditUrl ??
-                          'https://github.com/omeko11/my_wedding_manager'
-                        }
-                        onChange={(e) =>
-                          setSettingsForm((prev) => ({
-                            ...prev,
-                            developerCreditUrl: e.target.value,
-                          }))
-                        }
-                        placeholder="https://github.com/omeko11/my_wedding_manager"
-                        className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                        Nomor / Link Kontak WA (&ldquo;Kontak WA&rdquo; Footer):
-                      </label>
-                      <input
-                        type="text"
-                        value={
-                          settingsForm.contactWhatsappNumber ??
-                          state.settings.contactWhatsappNumber ??
-                          '089638616516'
-                        }
-                        onChange={(e) =>
-                          setSettingsForm((prev) => ({
-                            ...prev,
-                            contactWhatsappNumber: e.target.value,
-                          }))
-                        }
-                        placeholder="089638616516"
-                        className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Saklar Kunci RSVP & Credit Footer */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {[
-                    {
-                      key: 'disableRsvpSubmission' as const,
-                      label: 'Kunci Pengiriman Form RSVP & Komentar Baru',
-                    },
-                    {
-                      key: 'showFooterCredit' as const,
-                      label: 'Tampilkan Credit & Kontak WA di Footer',
-                      defaultTrue: true,
-                    },
-                  ].map((toggle) => {
-                    const rawVal =
-                      settingsForm[toggle.key] ?? state.settings[toggle.key];
-                    const checked = toggle.defaultTrue
-                      ? rawVal !== false
-                      : Boolean(rawVal);
-                    return (
-                      <label
-                        key={toggle.key}
-                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50"
+                    {/* Zero-Trace Orphan Garbage Collector Box */}
+                    <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>
+                            Zero-Trace Storage Cleaner (Pembersih File Tanpa Jejak)
+                          </span>
+                        </p>
+                        <p className="text-[11px] text-emerald-800">
+                          {storageCapacityReport &&
+                          storageCapacityReport.orphanCount > 0
+                            ? `Ditemukan ${
+                                storageCapacityReport.orphanCount
+                              } file yatim (${(
+                                storageCapacityReport.orphanBytes /
+                                (1024 * 1024)
+                              ).toFixed(
+                                2
+                              )} MB) yang sudah tidak dipakai di undangan.`
+                            : 'Seluruh file di Supabase Storage sinkron dengan database aktif (0 file sampah).'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleRunZeroTraceCleanupNow()}
+                        disabled={isCleaningOrphans}
+                        className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 shadow-2xs disabled:opacity-50"
                       >
-                        <span className="text-[11px] font-semibold text-stone-800">
-                          {toggle.label}
-                        </span>
+                        {isCleaningOrphans
+                          ? 'Membersihkan...'
+                          : 'Bersihkan File Yatim Sekarang'}
+                      </button>
+                    </div>
+
+                    {/* Batas Kuota Penyimpanan (MB) */}
+                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-extrabold text-stone-900">
+                          Batas Kuota Penyimpanan Supabase (MB)
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          Sesuaikan batas kuota indikator penyimpanan (Default Free/Pro Tier: 500 MB)
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={async (e) => {
-                            const nextVal = e.target.checked;
+                          type="number"
+                          min={50}
+                          max={100000}
+                          value={
+                            settingsForm.storageQuotaLimitMb ??
+                            state.settings.storageQuotaLimitMb ??
+                            500
+                          }
+                          onChange={(e) =>
+                            setSettingsForm((prev) => ({
+                              ...prev,
+                              storageQuotaLimitMb: Math.max(
+                                50,
+                                Number(e.target.value) || 500
+                              ),
+                            }))
+                          }
+                          className="w-28 px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono font-bold text-stone-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
                             const nextSettings: WeddingSettings = {
                               ...state.settings,
                               ...settingsForm,
-                              [toggle.key]: nextVal,
+                              storageQuotaLimitMb:
+                                settingsForm.storageQuotaLimitMb ||
+                                state.settings.storageQuotaLimitMb ||
+                                500,
                               updatedBy: adminUser.username,
                             };
                             setSettingsFormInternal(nextSettings);
                             await commitImmediateSettings(nextSettings);
-                            showToast(`✓ Pengaturan "${toggle.label}" diperbarui!`);
+                            showToast('✓ Batas kuota penyimpanan berhasil disimpan!');
                           }}
-                          className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* PANEL INSIGHT & ANALITIK TRAFIK UNDANGAN (LINK DI-SHARE, DILIHAT, DIKLIK & FUNNEL KONVERSI) */}
-            {(() => {
-              const analytics = getEffectiveInvitationAnalytics(
-                { ...state.settings, ...settingsForm },
-                state.guests,
-                state.wishes
-              );
-              const ctrPercent =
-                analytics.totalViews > 0
-                  ? Math.min(
-                      100,
-                      Math.round(
-                        (analytics.openCoverClicks / analytics.totalViews) * 100
-                      )
-                    )
-                  : 0;
-              const rsvpRatePercent =
-                analytics.openCoverClicks > 0
-                  ? Math.min(
-                      100,
-                      Math.round(
-                        (analytics.rsvpSubmits / analytics.openCoverClicks) * 100
-                      )
-                    )
-                  : 0;
-
-              const clickBreakdown = [
-                {
-                  label: '📖 Klik "Buka Undangan" (Sampul Pembuka)',
-                  count: analytics.openCoverClicks,
-                  color: 'bg-[#C5A059]',
-                },
-                {
-                  label: '💌 Klik Kirim Konfirmasi RSVP & Ucapan Doa',
-                  count: analytics.rsvpSubmits,
-                  color: 'bg-emerald-600',
-                },
-                {
-                  label: '📍 Klik Buka Lokasi Google Maps Gedung Acara',
-                  count: analytics.mapsClicks,
-                  color: 'bg-sky-600',
-                },
-                {
-                  label: '💳 Klik Salin No. Rekening Amplop Digital',
-                  count: analytics.giftCopyClicks,
-                  color: 'bg-amber-600',
-                },
-                {
-                  label: '📱 Klik Tampilkan Barcode QRIS Wedding Gift',
-                  count: analytics.qrisClicks,
-                  color: 'bg-purple-600',
-                },
-              ];
-
-              const maxBreakdownCount = Math.max(
-                1,
-                ...clickBreakdown.map((b) => b.count)
-              );
-
-              const badgeForEventType = (type: InvitationInteractionType) => {
-                switch (type) {
-                  case 'SHARE_WA':
-                    return {
-                      label: '📲 Share WA',
-                      cls: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                    };
-                  case 'COPY_LINK':
-                    return {
-                      label: '🔗 Salin Link',
-                      cls: 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40',
-                    };
-                  case 'PAGE_VIEW':
-                    return {
-                      label: '👁️ Dilihat (View)',
-                      cls: 'bg-sky-100 text-sky-800 border-sky-200',
-                    };
-                  case 'OPEN_COVER':
-                    return {
-                      label: '📖 Klik Buka Sampul',
-                      cls: 'bg-amber-100 text-amber-800 border-amber-200',
-                    };
-                  case 'CLICK_MAPS':
-                    return {
-                      label: '📍 Klik Google Maps',
-                      cls: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                    };
-                  case 'CLICK_GIFT_COPY':
-                    return {
-                      label: '💳 Salin Rekening',
-                      cls: 'bg-rose-100 text-rose-800 border-rose-200',
-                    };
-                  case 'CLICK_QRIS':
-                    return {
-                      label: '📱 Klik QRIS',
-                      cls: 'bg-purple-100 text-purple-800 border-purple-200',
-                    };
-                  case 'SUBMIT_RSVP':
-                    return {
-                      label: '✅ Kirim RSVP',
-                      cls: 'bg-emerald-600 text-white border-emerald-700',
-                    };
-                }
-              };
-
-              return (
-                <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                          Insight &amp; Analitik Trafik Undangan (Share, Views &amp; Clicks)
-                        </h3>
-                        <p className="text-[11px] text-stone-500">
-                          Pantau real-time berapa kali link undangan dibagikan (share), dilihat (views), tombol diklik, hingga konversi RSVP tamu
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const origin =
-                            typeof window !== 'undefined'
-                              ? window.location.origin
-                              : '';
-                          const shareUrl = `${origin}/?client=agung_selo`;
-                          if (
-                            typeof navigator !== 'undefined' &&
-                            navigator.clipboard
-                          ) {
-                            void navigator.clipboard.writeText(shareUrl);
-                          }
-                          recordAdminAnalyticsEvent(
-                            'COPY_LINK',
-                            undefined,
-                            `Menyalin link utama undangan (${shareUrl}) dari panel Insight`
-                          );
-                          showToast(
-                            '🔗 Link undangan disalin & tercatat (+1 Share) di Insight!'
-                          );
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Salin &amp; Share Link (+1)</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfirmDialog({
-                            title: 'Reset Statistik Insight Undangan?',
-                            message:
-                              'Seluruh penghitung Share, Views, Clicks, dan riwayat interaksi pada workspace ini akan direset ke kondisi dasar.',
-                            confirmLabel: 'Ya, Reset Insight',
-                            variant: 'danger',
-                            onConfirm: async () => {
-                              const emptyAnalytics = {
-                                totalShares: 0,
-                                waShares: 0,
-                                linkCopies: 0,
-                                totalViews: 0,
-                                uniqueVisitors: 0,
-                                totalClicks: 0,
-                                openCoverClicks: 0,
-                                mapsClicks: 0,
-                                giftCopyClicks: 0,
-                                qrisClicks: 0,
-                                rsvpSubmits: 0,
-                                visitedGuestKeys: [],
-                                recentEvents: [],
-                                lastUpdatedAt: new Date().toISOString(),
-                              };
-                              const nextSettings: WeddingSettings = {
-                                ...state.settings,
-                                ...settingsForm,
-                                invitationAnalytics: emptyAnalytics,
-                                updatedBy: adminUser.username,
-                              };
-                              setSettingsFormInternal(nextSettings);
-                              await commitImmediateSettings(nextSettings);
-                              showToast('✓ Statistik Insight Undangan berhasil direset!');
-                            },
-                          });
-                        }}
-                        className="px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 font-bold text-xs flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset Insight</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 4 KARTU UTAMA: DI-SHARE, DILIHAT (VIEWS), DIKLIK (CLICKS), KONVERSI RSVP */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* 1. LINK DI-SHARE */}
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/70 border border-[#D4AF37]/40 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                          🔗 Link Dibagikan (Share)
-                        </span>
-                        <Send className="w-4 h-4 text-[#B68D40]" />
-                      </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        {analytics.totalShares.toLocaleString('id-ID')}{' '}
-                        <span className="text-xs font-bold text-stone-500">
-                          kali
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-stone-600">
-                        📲 <strong>{analytics.waShares}</strong> Kirim WA &bull; 📋{' '}
-                        <strong>{analytics.linkCopies}</strong> Salin Link
-                      </p>
-                    </div>
-
-                    {/* 2. UNDANGAN DILIHAT (VIEWS) */}
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/70 to-white border border-sky-200 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-800">
-                          👁️ Undangan Dilihat (Views)
-                        </span>
-                        <Eye className="w-4 h-4 text-sky-600" />
-                      </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        {analytics.totalViews.toLocaleString('id-ID')}{' '}
-                        <span className="text-xs font-bold text-stone-500">
-                          tayangan
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-sky-900/80">
-                        👤 <strong>{analytics.uniqueVisitors}</strong> Pengunjung / Tamu Unik
-                      </p>
-                    </div>
-
-                    {/* 3. TOTAL TOMBOL DIKLIK (CLICKS) */}
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-white border border-amber-200 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">
-                          👆 Total Diklik (Clicks)
-                        </span>
-                        <ExternalLink className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        {analytics.totalClicks.toLocaleString('id-ID')}{' '}
-                        <span className="text-xs font-bold text-stone-500">
-                          interaksi
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-amber-900/80">
-                        📖 <strong>{analytics.openCoverClicks}</strong> Buka Sampul ({ctrPercent}% CTR)
-                      </p>
-                    </div>
-
-                    {/* 4. KONVERSI RSVP & DOA */}
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-white border border-emerald-200 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
-                          ✅ Konversi RSVP &amp; Doa
-                        </span>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        {analytics.rsvpSubmits.toLocaleString('id-ID')}{' '}
-                        <span className="text-xs font-bold text-stone-500">
-                          konfirmasi
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-emerald-900/80">
-                        🎯 Rasio Konversi Tamu: <strong>{rsvpRatePercent}%</strong> dari Buka Sampul
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* GRID 2 KOLOM: RINCIAN KLIK FITUR & LIVE LOG JEJAK INTERAKSI TAMU */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* Kiri: Breakdown Klik per Elemen Undangan */}
-                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-extrabold text-stone-900">
-                          📊 Rincian Elemen Undangan yang Diklik Tamu
-                        </p>
-                        <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-full border border-[#D4AF37]/35">
-                          Funnel Interaksi
-                        </span>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {clickBreakdown.map((item) => {
-                          const widthPct = Math.max(
-                            4,
-                            Math.round((item.count / maxBreakdownCount) * 100)
-                          );
-                          return (
-                            <div key={item.label} className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-semibold text-stone-700">
-                                  {item.label}
-                                </span>
-                                <span className="font-extrabold text-stone-900">
-                                  {item.count} klik
-                                </span>
-                              </div>
-                              <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${item.color}`}
-                                  style={{ width: `${widthPct}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="pt-2 border-t border-stone-200/80 text-[11px] text-stone-500 leading-relaxed">
-                        💡 <strong>Cara Kerja Otomatis:</strong> Setiap kali Admin mengirim WA / menyalin link tamu di tabel buku tamu, atau ketika tamu membuka link undangan, mengklik <em>Buka Undangan</em>, <em>Google Maps</em>, <em>Salin Rekening</em>, <em>QRIS</em>, maupun <em>Kirim RSVP</em>, angka di atas otomatis bertambah secara real-time.
-                      </div>
-                    </div>
-
-                    {/* Kanan: Live Log Aktivitas Pengunjung & Share Terbaru */}
-                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col justify-between space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-extrabold text-stone-900">
-                          ⚡ Live Log Jejak Share, Views &amp; Klik Terbaru ({analytics.recentEvents.length})
-                        </p>
-                        <span className="text-[10px] font-semibold text-stone-500">
-                          Real-Time Activity
-                        </span>
-                      </div>
-
-                      <div className="max-h-[225px] overflow-y-auto space-y-2 pr-1">
-                        {analytics.recentEvents.length === 0 ? (
-                          <div className="p-6 text-center text-xs text-stone-500 border border-dashed border-stone-200 rounded-xl bg-white">
-                            Belum ada riwayat klik/kunjungan. Bagikan link atau buka pratinjau undangan untuk melihat log real-time.
-                          </div>
-                        ) : (
-                          analytics.recentEvents.map((ev) => {
-                            const badge = badgeForEventType(ev.type);
-                            return (
-                              <div
-                                key={ev.id}
-                                className="p-2.5 rounded-xl bg-white border border-stone-200/80 flex items-start justify-between gap-2 text-xs"
-                              >
-                                <div className="space-y-0.5 min-w-0">
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    <span
-                                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${badge.cls}`}
-                                    >
-                                      {badge.label}
-                                    </span>
-                                    <span className="font-bold text-stone-900 truncate">
-                                      {ev.guestName || 'Tamu Undangan'}
-                                    </span>
-                                    {ev.invitationCode && (
-                                      <span className="font-mono text-[10px] text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded">
-                                        {ev.invitationCode}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {ev.detail && (
-                                    <p className="text-[11px] text-stone-600 line-clamp-1">
-                                      {ev.detail}
-                                    </p>
-                                  )}
-                                  {ev.deviceInfo && (
-                                    <p className="text-[10px] text-stone-400 font-mono">
-                                      {ev.deviceInfo}
-                                    </p>
-                                  )}
-                                </div>
-                                <span className="text-[10px] text-stone-400 shrink-0 whitespace-nowrap">
-                                  {new Date(ev.timestamp).toLocaleString('id-ID', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* PANEL 3: MANAJEMEN KOMERSIAL MULTI-CLIENT & GROUPING USER DEFAULT */}
-            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 shadow-xs p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                      Grouping User Default &amp; Manajemen Multi-Client (SaaS)
-                    </h3>
-                    <p className="text-[11px] text-stone-500">
-                      Setiap Grup Client memiliki <strong>4 Akun Default Inti</strong> (Mempelai Pria, Mempelai Wanita, Orang Tua Pria, Orang Tua Wanita) + Akun Panitia masing-masing.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddClientModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Grup Client Baru (Otomatis 4 User Default)</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {effectiveClientGroups.map((cg) => {
-                  const groupDefaultUsers = defaultSystemUsers.filter(
-                    (u) => (u.clientId || 'client-utama') === cg.id
-                  );
-                  const groupPanitiaUsers = panitiaUsers.filter(
-                    (u) => (u.clientId || 'client-utama') === cg.id
-                  );
-                  return (
-                    <div
-                      key={cg.id}
-                      className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF8F5] overflow-hidden flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
-                                {cg.clientCode}
-                              </span>
-                              <h4 className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
-                                {cg.clientName}
-                              </h4>
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                {cg.packageTier}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-stone-500 mt-0.5">
-                              {cg.notes || 'Paket Komersial My Wedding Manager'} &bull;{' '}
-                              {cg.eventDate || '2026-12-19'}
-                            </p>
-                          </div>
-                          {cg.id !== 'client-utama' && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClientGroup(cg)}
-                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
-                              title="Hapus Grup Client"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="p-4 space-y-2.5">
-                          <div className="flex items-center justify-between text-[11px] font-bold text-stone-600">
-                            <span>
-                              4 User Default ({groupDefaultUsers.length} Akun Inti):
-                            </span>
-                            <span className="text-[#8B6914]">
-                              {groupPanitiaUsers.length} Panitia/WO
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {groupDefaultUsers.map((u) => (
-                              <div
-                                key={u.id}
-                                className="p-2.5 rounded-xl bg-white border border-stone-200/90 flex items-center justify-between gap-2"
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-stone-900 truncate">
-                                    {u.nama}
-                                  </p>
-                                  <p className="text-[10px] font-mono text-[#8B6914] truncate">
-                                    @{u.username}
-                                  </p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleSelectDefaultUserForEdit(u)
-                                  }
-                                  className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold shrink-0"
-                                >
-                                  Edit
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="px-4 py-2.5 bg-white border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          {onSwitchWorkspaceClient && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onSwitchWorkspaceClient(cg.id);
-                                showToast(
-                                  `✓ Beralih ke Workspace Klien: ${
-                                    cg.coupleLabel || cg.clientName
-                                  }`
-                                );
-                              }}
-                              className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all ${
-                                activeWorkspaceClientId === cg.id
-                                  ? 'bg-emerald-600 text-white shadow-2xs'
-                                  : 'bg-stone-900 hover:bg-stone-800 text-[#D4AF37]'
-                              }`}
-                            >
-                              {activeWorkspaceClientId === cg.id
-                                ? '✓ Workspace Sedang Aktif'
-                                : 'Buka Workspace Klien Ini'}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedClientGroupFilter(cg.id);
-                              setActiveTab('settings');
-                              setSettingsMenuTab('keamanan');
-                            }}
-                            className="text-[11px] font-bold text-[#8B6914] hover:underline"
-                          >
-                            Kelola Akun &rarr;
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPanitiaEditId(undefined);
-                            setPanitiaUsername(
-                              `${cg.clientCode.toLowerCase()}_wo`
-                            );
-                            setPanitiaNama(`Tim WO ${cg.coupleLabel}`);
-                            setPanitiaJabatan(
-                              'Panitia / WO (Akses Non-Budgeting)'
-                            );
-                            setPanitiaClientId(cg.id);
-                            setPanitiaPassword('');
-                            setActiveSettingsModal('panitia_user');
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 text-[11px] font-bold"
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
                         >
-                          <Plus className="w-3 h-3" />
-                          <span>Panitia Klien</span>
+                          Simpan Kuota
                         </button>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* ===========================================================
+                    5. BRANDING OMEKO11, KONTAK WA/EMAIL, BAHASA & PEMBAYARAN KOMERSIAL
+                   =========================================================== */}
+                {superadminMenuTab === 'branding' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                            Pengaturan Branding <span className="text-[#8B6914]">omeko11</span>, Kontak Global &amp; Pembayaran Komersial
+                          </h3>
+                          <p className="text-[11px] text-stone-500">
+                            Kelola link GitHub omeko11, Kontak WA, Email Bisnis (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bagian 1: Branding, Kontak WA, Email Bisnis & Bahasa Default */}
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5">
+                      <p className="text-xs font-extrabold text-stone-900 uppercase tracking-wider text-[#8B6914]">
+                        1. Identitas Developer, Kontak Resmi &amp; Bahasa Default
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            Link Credit &ldquo;omeko11&rdquo; (GitHub / Website):
+                          </label>
+                          <input
+                            type="url"
+                            value={
+                              settingsForm.developerCreditUrl ??
+                              state.settings.developerCreditUrl ??
+                              'https://github.com/omeko11'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                developerCreditUrl: e.target.value,
+                              }))
+                            }
+                            placeholder="https://github.com/omeko11"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            Nomor / Link Kontak WA (&ldquo;Kontak WA&rdquo; Footer &amp; Order):
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.contactWhatsappNumber ??
+                              state.settings.contactWhatsappNumber ??
+                              '089638616516'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                contactWhatsappNumber: e.target.value,
+                              }))
+                            }
+                            placeholder="089638616516"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            Email Bisnis / Klien Luar Negeri:
+                          </label>
+                          <input
+                            type="email"
+                            value={
+                              settingsForm.contactBusinessEmail ??
+                              state.settings.contactBusinessEmail ??
+                              'e98.bisnis@gmail.com'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                contactBusinessEmail: e.target.value,
+                              }))
+                            }
+                            placeholder="e98.bisnis@gmail.com"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            Bahasa Default Aplikasi &amp; Undangan:
+                          </label>
+                          <select
+                            value={
+                              settingsForm.defaultLanguage ??
+                              state.settings.defaultLanguage ??
+                              'ID'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                defaultLanguage: e.target.value as 'ID' | 'EN',
+                              }))
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-semibold text-stone-800"
+                          >
+                            <option value="ID">🇮🇩 Bahasa Indonesia (ID)</option>
+                            <option value="EN">🌐 English International (EN)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bagian 2: Pengaturan Metode Pembayaran Komersial (Untuk Order Paket Klien di Landing Page) */}
+                    <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5">
+                      <div>
+                        <p className="text-xs font-extrabold uppercase tracking-wider text-[#8B6914]">
+                          2. Pengaturan Metode Pembayaran Komersial (Order Paket Klien di Landing Page)
+                        </p>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                           Konfigurasi rekening bank lokal, QRIS komersial, kartu kredit, PayPal, dan Crypto USDT untuk klien yang memesan paket My Wedding Manager.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            🏦 Transfer Bank Lokal (BCA / Mandiri / BRI / BNI):
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.commercialBankTransferInfo ??
+                              state.settings.commercialBankTransferInfo ??
+                              ''
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                commercialBankTransferInfo: e.target.value,
+                              }))
+                            }
+                            placeholder="Contoh: BCA 1234567890 a.n. Eko Agung Krisdianto / Mandiri 136000..."
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            💳 Kartu Kredit / Payment Link (Visa / Mastercard / Stripe / Midtrans):
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.commercialCreditCardUrl ??
+                              state.settings.commercialCreditCardUrl ??
+                              ''
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                commercialCreditCardUrl: e.target.value,
+                              }))
+                            }
+                            placeholder="Contoh: https://buy.stripe.com/... atau Link Payment Gateway"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            🌐 Link / Email PayPal Komersial (Pasar Internasional):
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.commercialPaypalUrl ??
+                              state.settings.commercialPaypalUrl ??
+                              'e98.bisnis@gmail.com'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                commercialPaypalUrl: e.target.value,
+                              }))
+                            }
+                            placeholder="e98.bisnis@gmail.com atau https://paypal.me/omeko11"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            🪙 Alamat Wallet Crypto USDT Komersial (Min. 10 USDT):
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.commercialCryptoWalletAddress ??
+                              state.settings.commercialCryptoWalletAddress ??
+                              ''
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                commercialCryptoWalletAddress: e.target.value,
+                              }))
+                            }
+                            placeholder="Masukkan alamat wallet USDT (TRC20 / BEP20 / ERC20)"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                            ⛓️ Jaringan Crypto Komersial:
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              settingsForm.commercialCryptoNetwork ??
+                              state.settings.commercialCryptoNetwork ??
+                              'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)'
+                            }
+                            onChange={(e) =>
+                              setSettingsForm((prev) => ({
+                                ...prev,
+                                commercialCryptoNetwork: e.target.value,
+                              }))
+                            }
+                            placeholder="USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)"
+                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* QRIS Komersial Upload & URL */}
+                      <div className="p-3 rounded-xl bg-white border border-stone-200/90 space-y-2">
+                        <label className="block text-[11px] font-bold text-stone-700">
+                          📱 QRIS Komersial (Untuk Pembayaran Paket MWM):
+                        </label>
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[#D4AF37]/60 bg-[#FAF8F5] flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                            {(
+                              settingsForm.commercialQrisImageUrl ??
+                              state.settings.commercialQrisImageUrl
+                            )?.trim() ? (
+                              <img
+                                src={
+                                  settingsForm.commercialQrisImageUrl ??
+                                  state.settings.commercialQrisImageUrl
+                                }
+                                alt="Preview QRIS Komersial"
+                                className="w-full h-full object-contain rounded-lg"
+                              />
+                            ) : (
+                              <span className="text-[10px] font-bold text-stone-400 text-center">
+                                Belum Ada QRIS
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 w-full space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Upload QRIS Komersial</span>
+                                <input
+                                  type="file"
+                                  accept="image/*,.svg"
+                                  className="hidden"
+                                  onChange={handleUploadCommercialQrisFile}
+                                />
+                              </label>
+                              {(
+                                settingsForm.commercialQrisImageUrl ??
+                                state.settings.commercialQrisImageUrl
+                              )?.trim() && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSettingsForm((prev) => ({
+                                      ...prev,
+                                      commercialQrisImageUrl: '',
+                                    }))
+                                  }
+                                  className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs"
+                                >
+                                  Hapus QRIS
+                                </button>
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={
+                                (
+                                  settingsForm.commercialQrisImageUrl ??
+                                  state.settings.commercialQrisImageUrl ??
+                                  ''
+                                ).startsWith('data:')
+                                  ? ''
+                                  : settingsForm.commercialQrisImageUrl ??
+                                    state.settings.commercialQrisImageUrl ??
+                                    ''
+                              }
+                              onChange={(e) =>
+                                setSettingsForm((prev) => ({
+                                  ...prev,
+                                  commercialQrisImageUrl: e.target.value,
+                                }))
+                              }
+                              placeholder={
+                                (
+                                  settingsForm.commercialQrisImageUrl ??
+                                  state.settings.commercialQrisImageUrl ??
+                                  ''
+                                ).startsWith('data:')
+                                  ? '✓ Gambar QRIS Komersial ter-upload (atau tempel URL di sini)'
+                                  : 'Atau tempel URL Gambar QRIS Komersial...'
+                              }
+                              className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Toggle Tampilkan Credit & Kontak WA di Footer */}
+                    <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50">
+                      <div>
+                        <p className="text-xs font-extrabold text-stone-900">
+                          Tampilkan Credit &amp; Kontak WA di Footer
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          Menampilkan tautan credit by omeko11, Kontak WA, dan Email Bisnis pada bagian bawah halaman.
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={
+                          (settingsForm.showFooterCredit ??
+                            state.settings.showFooterCredit) !== false
+                        }
+                        onChange={(e) =>
+                          setSettingsForm((prev) => ({
+                            ...prev,
+                            showFooterCredit: e.target.checked,
+                          }))
+                        }
+                        className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer shrink-0"
+                      />
+                    </label>
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const nextSettings: WeddingSettings = {
+                            ...state.settings,
+                            ...settingsForm,
+                            developerCreditUrl:
+                              (
+                                settingsForm.developerCreditUrl ??
+                                state.settings.developerCreditUrl
+                              )?.trim() || 'https://github.com/omeko11',
+                            contactWhatsappNumber:
+                              (
+                                settingsForm.contactWhatsappNumber ??
+                                state.settings.contactWhatsappNumber
+                              )?.trim() || '089638616516',
+                            contactBusinessEmail:
+                              (
+                                settingsForm.contactBusinessEmail ??
+                                state.settings.contactBusinessEmail
+                              )?.trim() || 'e98.bisnis@gmail.com',
+                            defaultLanguage:
+                              settingsForm.defaultLanguage ??
+                              state.settings.defaultLanguage ??
+                              'ID',
+                            commercialPaypalUrl:
+                              (
+                                settingsForm.commercialPaypalUrl ??
+                                state.settings.commercialPaypalUrl
+                              )?.trim() || 'e98.bisnis@gmail.com',
+                            commercialCryptoNetwork:
+                              (
+                                settingsForm.commercialCryptoNetwork ??
+                                state.settings.commercialCryptoNetwork
+                              )?.trim() ||
+                              'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)',
+                            updatedBy: adminUser.username,
+                          };
+                          setSettingsFormInternal(nextSettings);
+                          await commitImmediateSettings(nextSettings);
+                          appendAuditLog({
+                            actor: adminUser.username,
+                            module: 'SUPERADMIN_BRANDING',
+                            action: 'SIMPAN',
+                            status: 'SUCCESS',
+                            summary:
+                              'Menyimpan Pengaturan Branding omeko11, Kontak Global & Pembayaran Komersial',
+                          });
+                          showToast(
+                            '✓ Pengaturan Branding, Kontak Global & Pembayaran Komersial berhasil disimpan!'
+                          );
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-sm transition-all"
+                      >
+                        Simpan Pengaturan Branding &amp; Pembayaran Global
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -11030,7 +11554,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         settingsForm.developerCreditUrl ??
                         state.settings.developerCreditUrl
                       )?.trim() ||
-                      'https://github.com/omeko11/my_wedding_manager'
+                      'https://github.com/omeko11'
                     }
                     target="_blank"
                     rel="noopener noreferrer"
@@ -11083,6 +11607,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
                 <span>Kontak WA</span>
+              </a>
+
+              <a
+                href={`mailto:${
+                  (
+                    settingsForm.contactBusinessEmail ??
+                    state.settings.contactBusinessEmail
+                  )?.trim() || 'e98.bisnis@gmail.com'
+                }`}
+                title={`Email Bisnis & Klien Internasional (${
+                  (
+                    settingsForm.contactBusinessEmail ??
+                    state.settings.contactBusinessEmail
+                  )?.trim() || 'e98.bisnis@gmail.com'
+                })`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-[11px] font-bold transition-all shadow-2xs"
+              >
+                <span>✉️</span>
+                <span>
+                  {(
+                    settingsForm.contactBusinessEmail ??
+                    state.settings.contactBusinessEmail
+                  )?.trim() || 'e98.bisnis@gmail.com'}
+                </span>
               </a>
 
               <a
@@ -12297,10 +12845,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <>
                     <span>
                       {editingBankIndex !== null
-                        ? 'Edit Rekening'
-                        : 'Tambah Rekening'}
+                        ? 'Edit Rekening / Metode Amplop'
+                        : 'Tambah Rekening / Metode Amplop'}
                     </span>
-                    <InfoTooltip text="Tambahkan nomor rekening bank atau dompet digital untuk fitur Amplop Digital." />
+                    <InfoTooltip text="Tambahkan nomor rekening bank, dompet digital (E-Wallet), Crypto Wallet, atau PayPal untuk fitur Amplop Digital." />
                   </>
                 )}
                 {activeSettingsModal === 'gift_address' && (
@@ -13187,40 +13735,201 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </form>
             )}
 
-            {/* 8. MODAL: TAMBAH / EDIT REKENING BANK */}
+            {/* 8. MODAL: TAMBAH / EDIT REKENING BANK / CRYPTO / PAYPAL */}
             {activeSettingsModal === 'bank_account' && (
               <form onSubmit={handleSaveBankAccountModal}>
                 <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
-                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
-                    <p className="font-bold text-xs text-stone-800">
-                      Template Bank / E-Wallet
-                    </p>
-                    <div className="flex flex-wrap gap-2">
+                  {/* Kategori Metode Selector */}
+                  <div>
+                    <label className="block font-bold text-xs text-stone-800 mb-2">
+                      Kategori Metode Pembayaran
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[
-                        { name: 'BANK BCA', type: 'BANK' as const },
-                        { name: 'BANK MANDIRI', type: 'BANK' as const },
-                        { name: 'BANK BRI', type: 'BANK' as const },
-                        { name: 'BANK BNI', type: 'BANK' as const },
-                        { name: 'GOPAY / DANA / OVO', type: 'EWALLET' as const },
-                      ].map((b) => (
-                        <button
-                          key={b.name}
-                          type="button"
-                          onClick={() =>
-                            setBankForm({ ...bankForm, bankName: b.name, type: b.type })
-                          }
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
-                        >
-                          <span>{b.name}</span>
-                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
-                        </button>
-                      ))}
+                        {
+                          value: 'BANK' as const,
+                          label: 'Transfer Bank',
+                          badge: '🏦 BANK',
+                          activeClass:
+                            'bg-blue-600 text-white border-blue-600 shadow-xs',
+                          idleClass:
+                            'bg-white text-stone-700 border-stone-200 hover:border-blue-300 hover:bg-blue-50/40',
+                        },
+                        {
+                          value: 'EWALLET' as const,
+                          label: 'Dompet Digital',
+                          badge: '📱 E-WALLET',
+                          activeClass:
+                            'bg-emerald-600 text-white border-emerald-600 shadow-xs',
+                          idleClass:
+                            'bg-white text-stone-700 border-stone-200 hover:border-emerald-300 hover:bg-emerald-50/40',
+                        },
+                        {
+                          value: 'CRYPTO' as const,
+                          label: 'Crypto / Web3',
+                          badge: '🪙 CRYPTO',
+                          activeClass:
+                            'bg-amber-600 text-white border-amber-600 shadow-xs',
+                          idleClass:
+                            'bg-white text-stone-700 border-stone-200 hover:border-amber-300 hover:bg-amber-50/40',
+                        },
+                        {
+                          value: 'PAYPAL' as const,
+                          label: 'PayPal Intl',
+                          badge: '🌐 PAYPAL',
+                          activeClass:
+                            'bg-indigo-600 text-white border-indigo-600 shadow-xs',
+                          idleClass:
+                            'bg-white text-stone-700 border-stone-200 hover:border-indigo-300 hover:bg-indigo-50/40',
+                        },
+                      ].map((cat) => {
+                        const isSelected = (bankForm.type || 'BANK') === cat.value;
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() =>
+                              setBankForm({
+                                ...bankForm,
+                                type: cat.value,
+                                bankName:
+                                  cat.value === 'PAYPAL' && !bankForm.bankName
+                                    ? 'PayPal'
+                                    : bankForm.bankName,
+                              })
+                            }
+                            className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition-all ${
+                              isSelected ? cat.activeClass : cat.idleClass
+                            }`}
+                          >
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                              {cat.badge}
+                            </span>
+                            <span className="text-[11px] font-semibold mt-0.5 truncate w-full">
+                              {cat.label}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
+                  {/* Quick Preset Pills: Bank & E-Wallet + Crypto & International */}
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
+                    <div className="space-y-1.5">
+                      <p className="font-bold text-[11px] text-stone-800 uppercase tracking-wider">
+                        Preset Bank &amp; E-Wallet
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { name: 'BANK BCA', type: 'BANK' as const },
+                          { name: 'BANK MANDIRI', type: 'BANK' as const },
+                          { name: 'BANK BRI', type: 'BANK' as const },
+                          { name: 'BANK BNI', type: 'BANK' as const },
+                          { name: 'GOPAY / DANA / OVO', type: 'EWALLET' as const },
+                        ].map((b) => (
+                          <button
+                            key={b.name}
+                            type="button"
+                            onClick={() =>
+                              setBankForm({
+                                ...bankForm,
+                                bankName: b.name,
+                                type: b.type,
+                                cryptoNetwork: '',
+                              })
+                            }
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-[11px] transition-colors"
+                          >
+                            <span>{b.name}</span>
+                            <Plus className="w-3 h-3 text-[#8B6914]" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#D4AF37]/20 space-y-1.5">
+                      <p className="font-bold text-[11px] text-stone-800 uppercase tracking-wider">
+                        Preset Crypto &amp; International
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          {
+                            label: 'USDT (TRC20)',
+                            bankName: 'USDT',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'TRC20 (Tron)',
+                          },
+                          {
+                            label: 'USDT (BEP20)',
+                            bankName: 'USDT',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'BEP20 (BNB Smart Chain)',
+                          },
+                          {
+                            label: 'USDT (ERC20)',
+                            bankName: 'USDT',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'ERC20 (Ethereum)',
+                          },
+                          {
+                            label: 'Bitcoin (BTC)',
+                            bankName: 'Bitcoin (BTC)',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'Bitcoin',
+                          },
+                          {
+                            label: 'Ethereum (ETH)',
+                            bankName: 'Ethereum (ETH)',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'ERC20 (Ethereum)',
+                          },
+                          {
+                            label: 'Solana (SOL)',
+                            bankName: 'Solana (SOL)',
+                            type: 'CRYPTO' as const,
+                            cryptoNetwork: 'Solana',
+                          },
+                          {
+                            label: 'PayPal (USD)',
+                            bankName: 'PayPal',
+                            type: 'PAYPAL' as const,
+                            cryptoNetwork: '',
+                          },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() =>
+                              setBankForm({
+                                ...bankForm,
+                                bankName: preset.bankName,
+                                type: preset.type,
+                                cryptoNetwork: preset.cryptoNetwork,
+                              })
+                            }
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-[11px] transition-colors ${
+                              preset.type === 'CRYPTO'
+                                ? 'bg-amber-50/80 hover:bg-amber-100 border-amber-300 text-amber-800'
+                                : 'bg-indigo-50/80 hover:bg-indigo-100 border-indigo-300 text-indigo-800'
+                            }`}
+                          >
+                            <span>{preset.label}</span>
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Field 1: Nama Bank / Koin / Platform */}
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Nama Bank / E-Wallet*
+                      {bankForm.type === 'CRYPTO'
+                        ? 'Nama Koin / Token*'
+                        : bankForm.type === 'PAYPAL'
+                        ? 'Nama Platform*'
+                        : 'Nama Bank / E-Wallet*'}
                     </label>
                     <input
                       type="text"
@@ -13229,13 +13938,73 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setBankForm({ ...bankForm, bankName: e.target.value })
                       }
-                      placeholder="Contoh: BANK BCA"
+                      placeholder={
+                        bankForm.type === 'CRYPTO'
+                          ? 'Contoh: USDT, Bitcoin (BTC), Ethereum (ETH)'
+                          : bankForm.type === 'PAYPAL'
+                          ? 'Contoh: PayPal'
+                          : 'Contoh: BANK BCA'
+                      }
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
                     />
                   </div>
+
+                  {/* Field 1b (CRYPTO ONLY): Jaringan Blockchain (Network) */}
+                  {bankForm.type === 'CRYPTO' && (
+                    <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
+                      <label className="block font-bold text-xs text-amber-900">
+                        Jaringan Blockchain (Network)*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bankForm.cryptoNetwork || ''}
+                        onChange={(e) =>
+                          setBankForm({
+                            ...bankForm,
+                            cryptoNetwork: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: TRC20 (Tron), BEP20 (BNB Smart Chain), ERC20 (Ethereum)"
+                        className="w-full px-3.5 py-2 rounded-lg border border-amber-300 bg-white font-semibold text-stone-800"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {[
+                          'TRC20 (Tron)',
+                          'BEP20 (BNB Smart Chain)',
+                          'ERC20 (Ethereum)',
+                          'Solana',
+                          'Bitcoin',
+                          'Polygon (MATIC)',
+                          'Arbitrum One',
+                        ].map((net) => (
+                          <button
+                            key={net}
+                            type="button"
+                            onClick={() =>
+                              setBankForm({ ...bankForm, cryptoNetwork: net })
+                            }
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all ${
+                              bankForm.cryptoNetwork === net
+                                ? 'bg-amber-600 text-white border-amber-600'
+                                : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-100/70'
+                            }`}
+                          >
+                            {net}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Field 2: Nomor Rekening / Wallet Address / Email PayPal */}
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Nomor Rekening*
+                      {bankForm.type === 'CRYPTO'
+                        ? 'Alamat Wallet Crypto (Wallet Address)*'
+                        : bankForm.type === 'PAYPAL'
+                        ? 'Email PayPal / Link PayPal.me*'
+                        : 'Nomor Rekening / No. HP*'}
                     </label>
                     <input
                       type="text"
@@ -13244,13 +14013,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setBankForm({ ...bankForm, accountNumber: e.target.value })
                       }
-                      placeholder="Contoh: 1234567890"
+                      placeholder={
+                        bankForm.type === 'CRYPTO'
+                          ? '0x... atau T...'
+                          : bankForm.type === 'PAYPAL'
+                          ? 'email@domain.com atau paypal.me/username'
+                          : 'Contoh: 1234567890'
+                      }
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                     />
                   </div>
+
+                  {/* Field 3: Atas Nama / Label */}
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Atas Nama*
+                      {bankForm.type === 'CRYPTO'
+                        ? 'Label / Atas Nama Penerima*'
+                        : bankForm.type === 'PAYPAL'
+                        ? 'Nama Pemilik Akun PayPal*'
+                        : 'Atas Nama*'}
                     </label>
                     <input
                       type="text"
@@ -13259,18 +14040,38 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       onChange={(e) =>
                         setBankForm({ ...bankForm, accountHolder: e.target.value })
                       }
+                      placeholder={
+                        bankForm.type === 'CRYPTO'
+                          ? 'Contoh: Wallet Pernikahan Andi & Bunga'
+                          : bankForm.type === 'PAYPAL'
+                          ? 'Contoh: Andi Pratama'
+                          : 'Contoh: a.n. Andi Pratama'
+                      }
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />
                   </div>
+
+                  {/* Field 4: Keterangan / Cabang / Memo */}
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Keterangan / Cabang
+                      {bankForm.type === 'CRYPTO'
+                        ? 'Memo / Tag / Catatan Tambahan (Opsional)'
+                        : bankForm.type === 'PAYPAL'
+                        ? 'Catatan Mata Uang / Keterangan (Opsional)'
+                        : 'Keterangan / Cabang'}
                     </label>
                     <input
                       type="text"
                       value={bankForm.branchOrNote}
                       onChange={(e) =>
                         setBankForm({ ...bankForm, branchOrNote: e.target.value })
+                      }
+                      placeholder={
+                        bankForm.type === 'CRYPTO'
+                          ? 'Contoh: Pastikan jaringan sesuai sebelum mengirim aset'
+                          : bankForm.type === 'PAYPAL'
+                          ? 'Contoh: Menerima USD / SGD / EUR (Friends & Family)'
+                          : 'Contoh: KCP Jakarta Pusat'
                       }
                       className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                     />

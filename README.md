@@ -1,106 +1,92 @@
-# 💍 My Wedding Manager — Enterprise Wedding Planner & Digital Invitation Suite
+# 💍 My Wedding Manager (MWM) — Enterprise Wedding Planner & Digital Invitation Suite
 
-> **My Wedding Manager by omeko11 © 2026**  
-> Sistem Informasi Terpadu **Manajemen Kesiapan Pernikahan (Wedding Readiness Tracker)**, **Undangan Digital Interaktif Real-Time**, dan **Manajemen Multi-Client Komersial (SaaS)** dengan arsitektur terpisah antara **Frontend (Vercel Edge)**, **Backend Service Layer (Next.js API Routes)**, serta **Cloud Database & Object Storage CDN (Supabase PostgreSQL 8 Tabel Relasional + Supabase Storage)**.
-
----
-
-## 🏗️ Arsitektur Sistem (Layered Cloud Architecture)
-
-Aplikasi ini dirancang secara modular dengan pemisahan jelas antara **Presentation Layer (FE)**, **Application/API Layer (BE)**, dan **Persistence & CDN Layer (DB + Storage)**:
-
-| Layer | Teknologi & Infrastruktur | Fungsi Utama |
-| :--- | :--- | :--- |
-| **1. Frontend (FE)** | **Next.js 14 App Router**, React 18, TypeScript, Tailwind CSS, Lucide Icons *(Deployed on Vercel)* | Antarmuka Undangan Publik (`PublicInvitationView.tsx`), Dashboard Admin & Superadmin (`AdminDashboardView.tsx`), Interactive Photo Cropper, serta Audio Engine (`weddingMusicPlayer`). |
-| **2. Backend (BE)** | **Next.js Serverless API Routes** (`/api/auth`, `/api/wedding`, `/api/sync-sheets`) + Service Layer (`supabaseCloud.ts`, `serverStore.ts`, `clientSync.ts`) | Otentikasi kriptografi `scrypt`, RBAC Multi-Client, sinkronisasi real-time lintas perangkat, serta **Zero-Trace Garbage Collector** untuk menjaga kuota penyimpanan tetap hemat. |
-| **3. Database (DB)** | **Supabase PostgreSQL** *(8 Tabel Relasional Terpisah)* + **IndexedDB Local Cache** | Menyimpan state utama & relasional (`wedding_state`, `wedding_settings`, `wedding_media`, `wedding_tasks`, `wedding_guests`, `wedding_wishes`, `wedding_budgets`, `wedding_users`). |
-| **4. Media CDN** | **Supabase Storage Bucket** (`wedding-media/photos` & `wedding-media/music`) | Menyimpan foto **Ultra-HD (hingga 10 MB per foto)** dan file musik **MP3/WAV/AAC** sebagai URL CDN publik sehingga tabel database tetap ringan dan bebas timeout. |
+> **Official Commercial Product Showcase & Release Documentation**  
+> Created & Maintained by **Eko Agung Krisdianto ([@omeko11](https://github.com/omeko11)) © 2026**  
+> 🌐 **Bilingual Ready:** Bahasa Indonesia (ID) & English (EN) | 💎 **Commercial Multi-Client SaaS Platform**
 
 ---
 
-## ✨ Fitur Utama
+## 🇮🇩 Ringkasan Produk (Bahasa Indonesia)
 
-### 1. Landing Page Komersial (`/`) & Undangan Digital Per Klien (`/?client=<kode>&to=Nama+Tamu&code=INV-0001`)
-- **Landing Page Komersial Resmi (`CommercialLandingView.tsx`)**:
-  - Ketika domain utama (`/`) diakses tanpa parameter undangan tamu, sistem menampilkan **Halaman Depan Komersial My Wedding Manager (`MWM`) by omeko11** yang memuat:
-    - **Katalog & Live Showcase Undangan Klien Aktif** (termasuk *Featured Showcase* `Agung & Selo` maupun klien-klien lainnya).
-    - **Pencarian Cepat Tamu Undangan VIP** (pilih pasangan mempelai & masukkan kode `INV-0001` atau nama tamu).
-    - **Informasi 6 Modul Terintegrasi & Pilihan Paket Komersial (`STARTER`, `EXCLUSIVE`, `ROYAL VIP`)**.
-- **Gerbang Sampul (Cover Gate) Personalisasi Otomatis**:
-  - Ketika diakses melalui tautan undangan (`/?client=agung_selo`, `/?client=<kode_klien>`, atau langsung `/?to=Nama+Tamu&code=INV-0001`), sistem langsung membuka undangan pasangan terkait tanpa melewati landing page.
-  - Menampilkan badge **Tamu Kehormatan / VIP** secara otomatis untuk tamu prioritas `P1 - VIP`.
-- **Sinkronisasi Penuh dengan Database Pengaturan (100% Editable)**:
-  - Seluruh teks pembuka, nama & gelar kedua mempelai, profil orang tua, kutipan ayat suci, rangkaian acara (*Acara Biston, Pemberkatan, Resepsi, maupun Acara Kustom*), **Kisah Cinta (Love Story)**, **Galeri Foto Lightbox**, **Amplop Digital & QRIS**, hingga **Kalimat Penutup (Closing Card)** tersinkron langsung dari database masing-masing klien.
-- **Pemutar Musik Latar Pintar (Smart Audio Engine)**:
-  - Mendukung *playlist* kustom dari Supabase Storage CDN, lengkap dengan deteksi otomatis file musik duplikat/salah unggah dan pemutaran lintas sesi.
-- **RSVP & Buku Tamu Doa Restu Real-Time**:
-  - Konfirmasi kehadiran (*Hadir / Masih Ragu / Tidak Hadir*), kuota jumlah hadir (*Pax*), serta pengiriman ucapan doa dan balasan resmi mempelai secara langsung ke Supabase.
+**My Wedding Manager (MWM)** adalah platform komersial **All-in-One Wedding Readiness Tracker & Undangan Digital Interaktif** yang dirancang khusus untuk pasangan mempelai, keluarga besar, serta Wedding Organizer (WO). Melalui satu ekosistem terpadu, mempelai dapat menyebarkan undangan digital eksklusif sekaligus memantau kesiapan pernikahan secara *real-time*.
 
----
-
-### 2. Dashboard Admin, Mempelai & Panitia (`/?mode=admin`)
-- **Tracker Kesiapan (Executive Dashboard)**:
-  - Persentase kesiapan pernikahan, hitung mundur menuju Hari-H, progres per domain (*Polri, Gereja, Kependudukan, Kesehatan & Dokumen, Vendor, Acara, Setelah Menikah*), ringkasan anggaran, dan statistik kehadiran tamu.
-- **Checklist Kesiapan Bertahap**:
-  - Manajemen tugas berdasarkan Fase Timeline (*H-6 Bulan s/d Setelah Menikah*), Kategori Domain, Status, dan Penanggung Jawab (PIC).
-- **Manajemen Moneter, Vendor & Amplop Digital (Khusus Akun Utama)**:
-  - Pencatatan estimasi vs realisasi kontrak vendor, status pembayaran (*DP, Cicilan, Lunas*), pengelolaan rekening bank amplop digital, serta unggah gambar **QRIS Wedding Gift**.
-- **Manajemen Tamu & Generator WhatsApp 1-Klik**:
-  - Dukungan penuh kode undangan (`INV-0001`), prioritas VIP, filter grup keluarga, serta pengiriman pesan WhatsApp otomatis dengan link undangan personal per klien (`/?client=<kode>&to=...&code=...`).
-- **Studio Foto Ultra-HD (Maks 10 MB) & Zero-Trace Delete**:
-  - Unggah foto profil mempelai, sampul, kisah cinta, galeri, dan QRIS hingga **10 MB per foto** dengan fitur *Interactive Crop & Zoom*.
-  - Setiap penghapusan atau pergantian foto/musik langsung menghapus file fisik lama di Supabase Storage (**Zero-Trace Hard Delete**) agar kuota **500 MB Supabase** tetap awet dan bebas sampah.
+### ✨ Fitur Unggulan Utama
+1. **Undangan Digital Eksklusif & Personalisasi Tamu VIP**
+   - Gerbang sampul (*Cover Gate*) personalisasi otomatis dengan nama tamu dan kode undangan resmi (`INV-xxxx`).
+   - Penanda khusus **Tamu Kehormatan / VIP** secara otomatis pada layar undangan.
+   - Rangkaian acara lengkap, Kisah Cinta (*Love Story*), Galeri Foto *Ultra-HD* dengan *Interactive Lightbox*, pemutar musik latar pintar (*Smart Audio Engine*), serta **Amplop Digital & QRIS Wedding Gift**.
+2. **Konfirmasi Kehadiran (RSVP) & Buku Tamu Doa Restu Real-Time**
+   - Tamu dapat mengonfirmasi kehadiran (*Hadir / Masih Ragu / Tidak Hadir*), menentukan jumlah kuota hadir (*Pax*), serta mengirimkan ucapan doa restu yang langsung tampil dan dapat dibalas resmi oleh mempelai.
+3. **Dashboard Kesiapan Pernikahan (Executive Readiness Tracker)**
+   - Pemantauan persentase kesiapan menuju Hari-H, hitung mundur waktu acara, serta manajemen checklist tugas lintas fase (*H-6 Bulan hingga Pasca-Pernikahan*).
+4. **Manajemen Anggaran, Vendor & Moneter Pernikahan**
+   - Pencatatan estimasi vs realisasi biaya pernikahan, pelacakan status pembayaran vendor (*DP, Cicilan, Lunas*), serta rekapitulasi finansial yang terisolasi khusus untuk akun inti mempelai.
+5. **Manajemen Daftar Tamu & Generator WhatsApp 1-Klik**
+   - Pengelolaan database tamu undangan beserta pengiriman pesan WhatsApp terpersonalisasi hanya dengan 1 klik.
+6. **Sistem Multi-bahasa Instan (ID / EN)**
+   - Mendukung pergantian bahasa **Bahasa Indonesia** dan **English** secara langsung untuk memfasilitasi tamu maupun klien internasional.
 
 ---
 
-### 3. Modul Khusus Superadmin & Multi-Workspace Commercial System (SaaS)
-Dirancang agar **1 Dashboard** dapat dikomersialkan untuk mengelola banyak klien sekaligus oleh Superadmin dengan **Isolasi Data Penuh (Multi-Workspace)**:
-- **Isolasi Workspace per Klien (`ClientWorkspaceData`) & Grouping User Default (`ClientGroupItem`)**:
-  - Setiap klien komersial memiliki grup tersendiri dengan **4 Akun User Default otomatis** (`<kode>_pria`, `<kode>_wanita`, `<kode>_kel_pria`, `<kode>_kel_wanita`) serta akun **Panitia / WO** masing-masing.
-  - Saat akun klien (misal `@rian_dina_pria`) login, ia hanya melihat dan mengelola **Data Mempelai, Foto, Musik, Checklist, Moneter, Tamu, dan Doa Restu miliknya sendiri** (terpisah penuh dari data klien lain).
-  - **Superadmin** memiliki **Global Workspace Switcher** di bagian atas dashboard untuk berpindah antar-workspace klien dengan 1 klik.
-- **Monitor Kapasitas DB & Supabase Storage (Kuota 500 MB)**:
-  - Pemantauan *real-time* pemakaian MB pada folder `wedding-media/photos`, `wedding-media/music`, dan estimasi ukuran 8 tabel PostgreSQL.
-  - Dilengkapi tombol **1-Klik Zero-Trace Garbage Collector** untuk memindai dan membersihkan *orphaned files* di Supabase Storage.
-- **Moderasi View Undangan Publik Real-Time**:
-  - Kendali instan mode tayangan undangan publik:
-    - `🟢 LIVE Publik`: Terbuka normal untuk seluruh tamu undangan.
-    - `🔐 Khusus Kode VIP`: Mewajibkan verifikasi Kode Undangan (`INV-xxxx`) untuk membuka sampul undangan.
-    - `🛠️ Mode Maintenance`: Menampilkan layar pemeliharaan khusus dan mengunci undangan sementara.
-  - Saklar cepat untuk mengunci pengiriman RSVP baru serta mengatur visibilitas tiap seksi undangan.
+## 🇬🇧 Product Overview (English)
+
+**My Wedding Manager (MWM)** is an **All-in-One Enterprise Wedding Readiness Tracker & Interactive Digital Invitation Suite** crafted for modern couples, families, and professional Wedding Organizers (WO). MWM combines a luxury digital invitation experience with a comprehensive back-office wedding planning dashboard.
+
+### ✨ Key Highlights
+- **Personalized VIP Digital Invitations**: Automatic guest name greeting, unique invitation code verification (`INV-xxxx`), interactive *Love Story* timeline, Ultra-HD photo gallery, background music player, and Digital Wedding Gift / QRIS integration.
+- **Real-Time RSVP & Wishes Wall**: Instant attendance confirmation, guest headcount (*Pax*) tracking, and live wedding wishes with official couple replies.
+- **360° Wedding Readiness & Checklist Dashboard**: Track preparation progress across all milestones, ceremony domains, and committee PIC assignments.
+- **Smart Budget & Vendor Contract Tracker**: Manage estimated vs. actual wedding expenses and vendor payment milestones securely.
+- **1-Click WhatsApp Invitation Dispatcher**: Generate and send personalized invitation links effortlessly.
+- **Full Bilingual Experience (ID / EN)**: Seamless language switching for domestic and international guests.
 
 ---
 
-## 🔐 Keamanan Otentikasi & Role-Based Access Control (RBAC)
-- Seluruh password akun dienkripsi menggunakan **One-Way Cryptographic Hash (`scrypt`)** dan diverifikasi di sisi server (`/api/auth`).
-- Pemisahan hak akses tegas antara:
-  - **Superadmin**: Kendali penuh atas modul Superadmin, kapasitas DB, moderasi undangan, serta pembuatan/penghapusan Grup Client komersial.
-  - **User Default (4 Akun Inti per Klien)**: Akses penuh ke kesiapan pernikahan, moneter/anggaran, daftar tamu, dan pengaturan undangan.
-  - **Akun Panitia / WO**: Akses operasional checklist dan tamu, **tanpa** akses ke modul Moneter/Budgeting maupun Superadmin.
+## 💎 Paket Layanan Komersial / Commercial Pricing Tiers
+
+Kami menyediakan **3 Pilihan Paket Berlangganan Resmi** yang dapat disesuaikan dengan kebutuhan acara pernikahan Anda:
+
+| Paket / Tier | Harga (IDR) | International (USDT) | Fitur & Fasilitas Utama / Key Inclusions |
+| :--- | :---: | :---: | :--- |
+| **🥉 STARTER** | **Rp 50.000** | **$10 USDT** | • Undangan Digital Eksklusif Aktif<br>• Kuota hingga **150 Tamu Undangan**<br>• Galeri Foto & Musik Latar Standar<br>• RSVP & Buku Tamu Doa Restu Real-Time<br>• Masa Aktif **3 Bulan** |
+| **🥈 EXCLUSIVE** *(Best Seller)* | **Rp 149.000** | **$25 USDT** | • **Seluruh Fitur Paket STARTER**<br>• Kuota hingga **500 Tamu Undangan + Generator WA 1-Klik**<br>• Dashboard Checklist Kesiapan & Manajemen Anggaran/Vendor<br>• Amplop Digital Rekening & **QRIS Wedding Gift**<br>• **4 Akun Inti Mempelai/Keluarga + Akun Panitia/WO**<br>• Masa Aktif **6 Bulan** |
+| **👑 ROYAL VIP** *(Full Suite)* | **Rp 299.000** | **$49 USDT** | • **Seluruh Fitur Paket EXCLUSIVE Tanpa Batas (Unlimited Tamu)**<br>• **Mode Privasi Kode VIP (`INV-xxxx`)** & Moderasi Tayangan Penuh<br>• Studio Foto Ultra-HD & Custom Playlist Audio Eksklusif<br>• Prioritas Dukungan Teknis & Pendampingan Setup<br>• Masa Aktif **12 Bulan (1 Tahun Penuh)** |
 
 ---
 
-## 🚀 Menjalankan Secara Lokal
+## 💳 Metode Pembayaran Global / Supported Payment Methods
 
-```bash
-# 1. Instal dependensi
-npm install
-
-# 2. Jalankan server pengembangan (http://localhost:3000)
-npm run dev
-
-# 3. Verifikasi TypeScript (Zero Error Check)
-npx tsc --noEmit
-```
+Untuk kemudahan transaksi klien di Indonesia maupun mancanegara, **My Wedding Manager** menerima pembayaran resmi melalui:
+- 💳 **Kartu Kredit / Credit Card (Visa / Mastercard / JCB)** — *Mendukung transaksi domestik & internasional.*
+- 📱 **QRIS (Indonesia)** — *Pembayaran instan melalui seluruh aplikasi Mobile Banking & E-Wallet.*
+- 🏦 **Transfer Bank Lokal (Indonesia)** — *Verifikasi pembayaran melalui sistem checkout resmi.*
+- 🌍 **PayPal (International)** — *Mendukung pembayaran global dalam mata uang USD.*
+- 🪙 **Cryptocurrency (`USDT` — TRC20 / BEP20 / ERC20)** — *Pembayaran aset digital cepat lintas negara.*
 
 ---
 
-## 👨‍💻 Credit & Contact Us
+## 🚀 Alur Pemesanan, Konfirmasi & Aktivasi Akun / Order & Post-Payment Onboarding
 
-**My Wedding Manager by [omeko11](https://github.com/omeko11/my_wedding_manager) © 2026**  
-All-in-One Enterprise Wedding Readiness Tracker & Digital Invitation Platform.
+Demi menjaga keamanan privasi serta memprioritaskan layanan khusus bagi klien terverifikasi:
+- 🔐 **Kontak Resmi & Pengiriman Akses Akun Klien**: Kanal kontak prioritas (Email Bisnis Resmi & Layanan Dukungan Klien) tidak ditampilkan secara terbuka sebelum transaksi, melainkan **muncul secara otomatis pada Halaman Konfirmasi Pembayaran setelah proses pembayaran diselesaikan** melalui aplikasi/website resmi **My Wedding Manager**.
+- ⏱️ **SLA Aktivasi & Onboarding Maksimal H+3 (`Maximum D+3 Post-Payment Email Onboarding`)**:
+  - **Bahasa Indonesia**: Setelah pembayaran diselesaikan dan dikonfirmasi, tim kami akan memproses pembuatan *workspace* serta menghubungi klien secara resmi melalui **Email maksimal H+3 (3 hari kerja) setelah pembayaran** untuk pengiriman kredensial akun inti mempelai & panduan penggunaan.
+  - **English**: Official priority contact details are revealed automatically on the **Post-Payment Confirmation Screen** upon completing checkout. Our onboarding team will reach out to you via **email within a maximum of D+3 (3 business days) after payment** with your dedicated couple workspace credentials.
 
-- **Developer / Architect**: **Eko Agung Krisdianto ([`omeko11`](https://github.com/omeko11/my_wedding_manager))**
-- **Kontak WA & Commercial Inquiry**: [089638616516 (WhatsApp)](https://wa.me/6289638616516)
-- **Official LinkedIn Profile**: [www.linkedin.com/in/eko-agung-krisdianto-408955130](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+---
 
+## 🔒 Lisensi & Perlindungan Hak Cipta / Commercial License Notice
+
+**My Wedding Manager (MWM)** adalah perangkat lunak komersial tertutup (*Proprietary Commercial SaaS*) milik **Eko Agung Krisdianto ([@omeko11](https://github.com/omeko11))**.
+- Dokumentasi publik ini disediakan sebagai informasi produk resmi, katalog fitur, dan catatan rilis (*Release Notes*).
+- Kode sumber inti (*proprietary source code*), skema infrastruktur internal, dan konfigurasi keamanan dikelola secara tertutup untuk menjamin keamanan data seluruh klien.
+
+---
+
+## 👨‍💻 Developer & Official Profile
+
+- 👨‍💻 **GitHub Profile**: [**@omeko11**](https://github.com/omeko11)
+- 🔗 **LinkedIn**: [**Eko Agung Krisdianto**](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+
+---
+*© 2026 My Wedding Manager by [@omeko11](https://github.com/omeko11). All Rights Reserved.*
