@@ -165,9 +165,20 @@ export interface LoveStoryItem {
 }
 
 export interface PhotoAdjustment {
-  zoom: number; // 0.5 to 2.5 (default 1)
-  x: number; // -100 to 100 (negative = left, positive = right)
-  y: number; // -100 to 100 (negative = up, positive = down)
+  zoom: number; // 0.4 to 4.0 (default 1)
+  x: number; // -150 to 150 (negative = left, positive = right)
+  y: number; // -150 to 150 (negative = up, positive = down)
+  rotation?: number; // 0, 90, 180, 270
+  flipX?: boolean;
+  fitMode?: 'cover' | 'contain';
+  aspectRatio?: 'auto' | '1:1' | '16:9' | '4:3' | '3:4' | '9:16' | 'free';
+  cropBox?: {
+    x: number; // 0 to 100 (% from left of stage)
+    y: number; // 0 to 100 (% from top of stage)
+    w: number; // 10 to 100 (% width of stage)
+    h: number; // 10 to 100 (% height of stage)
+  };
+  baked?: boolean;
 }
 
 export interface GalleryPhotoItem {
@@ -175,6 +186,7 @@ export interface GalleryPhotoItem {
   title: string;
   caption: string;
   imageUrl: string;
+  originalImageUrl?: string;
   category: 'Prewedding' | 'Momen Bersama' | 'Persiapan & Sidang' | 'Venue Semarang';
   adjustment?: PhotoAdjustment;
 }
@@ -305,6 +317,15 @@ export interface WeddingSettings {
     coverBgUrl?: PhotoAdjustment;
     heroPrewedUrl?: PhotoAdjustment;
     pageBgUrl?: PhotoAdjustment;
+  };
+
+  // Uncropped Original Photos for Non-Destructive Re-Cropping
+  originalPhotos?: {
+    groomPhotoUrl?: string;
+    bridePhotoUrl?: string;
+    coverBgUrl?: string;
+    heroPrewedUrl?: string;
+    pageBgUrl?: string;
   };
 
   // Music & Playlist

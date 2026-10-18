@@ -46,6 +46,11 @@ import {
   Move,
   ZoomIn,
   ZoomOut,
+  Crop,
+  RotateCw,
+  FlipHorizontal,
+  Maximize2,
+  Minimize2,
   Music,
   Volume2,
   VolumeX,
@@ -99,6 +104,9 @@ import {
   syncScheduleEventsToSettings,
   formatDateTimeToIndonesianLabels,
   getPhotoAdjustStyle,
+  resolveStageAspectRatio,
+  drawStagePhotoOnContext,
+  exportCroppedPhotoDataUrl,
   weddingMusicPlayer,
   DEFAULT_MUSIC_PLAYLIST,
   getEffectiveMusicPlaylist,
@@ -1581,7 +1589,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   };
 
-  // State & Handlers for Interactive Photo Zoom In/Out & Pan (Left/Right/Up/Down) Modal
+  // State & Handlers for Interactive Photo Crop, Zoom, Pan, Rotate & Fit Studio
   const [photoAdjustTarget, setPhotoAdjustTarget] = useState<
     | {
         kind: 'setting';
@@ -1612,13 +1620,130 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     zoom: 1,
     x: 0,
     y: 0,
+    rotation: 0,
+    flipX: false,
+    fitMode: 'cover',
+    aspectRatio: 'auto',
+    cropBox: { x: 0, y: 0, w: 100, h: 100 },
   });
+  const [photoStudioToolMode, setPhotoStudioToolMode] = useState<'pan' | 'crop'>('crop');
+  const [isSavingPhotoCrop, setIsSavingPhotoCrop] = useState(false);
+  const [loadedPreviewImg, setLoadedPreviewImg] = useState<HTMLImageElement | null>(null);
+  const cropStageRef = useRef<HTMLDivElement | null>(null);
+  const cropStageCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cropResultPreviewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const [photoDragStart, setPhotoDragStart] = useState<{
+    mode: 'move-image' | 'move-crop' | 'nw' | 'ne' | 'sw' | 'se';
     clientX: number;
     clientY: number;
+    stageW: number;
+    stageH: number;
     startX: number;
     startY: number;
+    startCrop: { x: number; y: number; w: number; h: number };
   } | null>(null);
+
+  // Load image into HTMLImageElement for 100% accurate live canvas preview
+  useEffect(() => {
+    if (!photoAdjustTarget || !photoAdjustUrl) {
+      setLoadedPreviewImg(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    if (!photoAdjustUrl.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+    img.onload = () => {
+      if (!cancelled) setLoadedPreviewImg(img);
+    };
+    img.onerror = () => {
+      if (!photoAdjustUrl.startsWith('data:')) {
+        const fallbackImg = new window.Image();
+        fallbackImg.onload = () => {
+          if (!cancelled) setLoadedPreviewImg(fallbackImg);
+        };
+        fallbackImg.src = photoAdjustUrl;
+      }
+    };
+    img.src = photoAdjustUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [photoAdjustTarget, photoAdjustUrl]);
+
+  // Draw live WYSIWYG Stage Canvas + Final Cropped Result Preview Canvas
+  useEffect(() => {
+    if (!photoAdjustTarget || !loadedPreviewImg) return;
+    const stageRatio = resolveStageAspectRatio(
+      photoAdjustTarget.shape,
+      photoAdjustDraft.aspectRatio
+    );
+    const stageW = 640;
+    const stageH = Math.max(240, Math.round(stageW / stageRatio));
+
+    if (cropStageCanvasRef.current) {
+      const stageCanvas = cropStageCanvasRef.current;
+      stageCanvas.width = stageW;
+      stageCanvas.height = stageH;
+      const ctx = stageCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#141210';
+        ctx.fillRect(0, 0, stageW, stageH);
+        drawStagePhotoOnContext(ctx, loadedPreviewImg, photoAdjustDraft, stageW, stageH);
+      }
+    }
+
+    if (cropResultPreviewCanvasRef.current) {
+      const cb = photoAdjustDraft.cropBox || { x: 0, y: 0, w: 100, h: 100 };
+      const cx = Math.max(0, Math.min(95, cb.x)) / 100;
+      const cy = Math.max(0, Math.min(95, cb.y)) / 100;
+      const cw = Math.max(0.05, Math.min(1 - cx, cb.w / 100));
+      const ch = Math.max(0.05, Math.min(1 - cy, cb.h / 100));
+
+      const outRatio = (stageW * cw) / Math.max(1, stageH * ch);
+      const previewW = 280;
+      const previewH = Math.max(110, Math.min(340, Math.round(previewW / outRatio)));
+
+      const resCanvas = cropResultPreviewCanvasRef.current;
+      resCanvas.width = previewW;
+      resCanvas.height = previewH;
+      const rCtx = resCanvas.getContext('2d');
+      if (rCtx && cropStageCanvasRef.current) {
+        rCtx.clearRect(0, 0, previewW, previewH);
+        rCtx.drawImage(
+          cropStageCanvasRef.current,
+          stageW * cx,
+          stageH * cy,
+          stageW * cw,
+          stageH * ch,
+          0,
+          0,
+          previewW,
+          previewH
+        );
+      }
+    }
+  }, [photoAdjustTarget, loadedPreviewImg, photoAdjustDraft]);
+
+  const normalizeDraftAdjust = (adj?: PhotoAdjustment): PhotoAdjustment => ({
+    zoom: Number.isFinite(adj?.zoom) ? Number(adj!.zoom) : 1,
+    x: Number.isFinite(adj?.x) ? Number(adj!.x) : 0,
+    y: Number.isFinite(adj?.y) ? Number(adj!.y) : 0,
+    rotation: Number.isFinite(adj?.rotation) ? Number(adj!.rotation) : 0,
+    flipX: Boolean(adj?.flipX),
+    fitMode: adj?.fitMode || 'cover',
+    aspectRatio: adj?.aspectRatio || 'auto',
+    cropBox: adj?.cropBox
+      ? {
+          x: Math.max(0, Math.min(90, Number(adj.cropBox.x) || 0)),
+          y: Math.max(0, Math.min(90, Number(adj.cropBox.y) || 0)),
+          w: Math.max(10, Math.min(100, Number(adj.cropBox.w) || 100)),
+          h: Math.max(10, Math.min(100, Number(adj.cropBox.h) || 100)),
+        }
+      : { x: 0, y: 0, w: 100, h: 100 },
+  });
 
   const openSettingPhotoAdjust = (
     field:
@@ -1632,128 +1757,188 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     overrideUrl?: string,
     overrideAdj?: PhotoAdjustment
   ) => {
-    const url =
+    const sourceUrl =
       overrideUrl ||
+      settingsForm.originalPhotos?.[field] ||
+      state.settings.originalPhotos?.[field] ||
       settingsForm[field] ||
       state.settings[field] ||
       BACKGROUND_PRESETS[0].url;
-    if (!url) {
+    if (!sourceUrl) {
       showToast('Upload atau masukkan foto terlebih dahulu.');
       return;
     }
     const existingAdj =
       overrideAdj ||
       settingsForm.photoAdjustments?.[field] ||
-      state.settings.photoAdjustments?.[field] || {
-        zoom: 1,
-        x: 0,
-        y: 0,
-      };
+      state.settings.photoAdjustments?.[field];
     setPhotoAdjustTarget({ kind: 'setting', field, label, shape });
-    setPhotoAdjustUrl(url);
-    setPhotoAdjustDraft({
-      zoom: existingAdj.zoom ?? 1,
-      x: existingAdj.x ?? 0,
-      y: existingAdj.y ?? 0,
-    });
+    setPhotoAdjustUrl(sourceUrl);
+    setPhotoAdjustDraft(normalizeDraftAdjust(existingAdj));
+    setPhotoStudioToolMode('crop');
   };
 
   const openGalleryPhotoAdjust = (photo: GalleryPhotoItem) => {
-    const existingAdj = photo.adjustment || { zoom: 1, x: 0, y: 0 };
+    const sourceUrl = photo.originalImageUrl || photo.imageUrl;
     setPhotoAdjustTarget({
       kind: 'gallery_item',
       photoId: photo.id,
       label: `Galeri: ${photo.title}`,
       shape: 'gallery',
     });
-    setPhotoAdjustUrl(photo.imageUrl);
-    setPhotoAdjustDraft({
-      zoom: existingAdj.zoom ?? 1,
-      x: existingAdj.x ?? 0,
-      y: existingAdj.y ?? 0,
-    });
+    setPhotoAdjustUrl(sourceUrl);
+    setPhotoAdjustDraft(normalizeDraftAdjust(photo.adjustment));
+    setPhotoStudioToolMode('crop');
   };
 
   const openNewGalleryPhotoAdjust = (overrideUrl?: string) => {
-    const url = overrideUrl || newPhotoForm.imageUrl;
+    const url =
+      overrideUrl || newPhotoForm.originalImageUrl || newPhotoForm.imageUrl;
     if (!url) return;
-    const existingAdj = newPhotoForm.adjustment || { zoom: 1, x: 0, y: 0 };
     setPhotoAdjustTarget({
       kind: 'new_gallery',
       label: 'Foto Galeri Baru',
       shape: 'gallery',
     });
     setPhotoAdjustUrl(url);
-    setPhotoAdjustDraft({
-      zoom: existingAdj.zoom ?? 1,
-      x: existingAdj.x ?? 0,
-      y: existingAdj.y ?? 0,
+    setPhotoAdjustDraft(normalizeDraftAdjust(newPhotoForm.adjustment));
+    setPhotoStudioToolMode('crop');
+  };
+
+  const applyCropAspectPreset = (
+    preset: NonNullable<PhotoAdjustment['aspectRatio']>
+  ) => {
+    setPhotoAdjustDraft((prev) => {
+      if (preset === 'free') {
+        const cur = prev.cropBox || { x: 0, y: 0, w: 100, h: 100 };
+        const isFull = cur.x === 0 && cur.y === 0 && cur.w === 100 && cur.h === 100;
+        return {
+          ...prev,
+          aspectRatio: 'free',
+          cropBox: isFull ? { x: 8, y: 8, w: 84, h: 84 } : cur,
+        };
+      }
+      return {
+        ...prev,
+        aspectRatio: preset,
+        cropBox: { x: 0, y: 0, w: 100, h: 100 },
+      };
     });
   };
 
   const handleSavePhotoAdjust = async () => {
-    if (!photoAdjustTarget) return;
-    const cleanAdj: PhotoAdjustment = {
-      zoom: Number(photoAdjustDraft.zoom.toFixed(2)),
-      x: Math.round(photoAdjustDraft.x),
-      y: Math.round(photoAdjustDraft.y),
-    };
-
-    if (photoAdjustTarget.kind === 'setting') {
-      const nextAdjustments = {
-        ...(state.settings.photoAdjustments || {}),
-        ...(settingsForm.photoAdjustments || {}),
-        [photoAdjustTarget.field]: cleanAdj,
+    if (!photoAdjustTarget || isSavingPhotoCrop) return;
+    setIsSavingPhotoCrop(true);
+    try {
+      const cb = photoAdjustDraft.cropBox || { x: 0, y: 0, w: 100, h: 100 };
+      const cleanAdj: PhotoAdjustment = {
+        zoom: Number(photoAdjustDraft.zoom.toFixed(2)),
+        x: Math.round(photoAdjustDraft.x),
+        y: Math.round(photoAdjustDraft.y),
+        rotation: ((photoAdjustDraft.rotation || 0) % 360 + 360) % 360,
+        flipX: Boolean(photoAdjustDraft.flipX),
+        fitMode: photoAdjustDraft.fitMode || 'cover',
+        aspectRatio: photoAdjustDraft.aspectRatio || 'auto',
+        cropBox: {
+          x: Math.round(cb.x * 10) / 10,
+          y: Math.round(cb.y * 10) / 10,
+          w: Math.round(cb.w * 10) / 10,
+          h: Math.round(cb.h * 10) / 10,
+        },
       };
-      const nextSettings: WeddingSettings = {
-        ...state.settings,
-        ...settingsForm,
-        photoAdjustments: nextAdjustments,
-        updatedBy: adminUser.username,
-      };
-      await commitImmediateSettings(nextSettings);
-      appendAuditLog({
-        actor: adminUser.username,
-        module: 'FOTO_TEMA',
-        action: 'SIMPAN',
-        status: 'SUCCESS',
-        summary: `Menyimpan posisi & zoom "${photoAdjustTarget.label}" (zoom ${Math.round(cleanAdj.zoom * 100)}%)`,
-      });
-      setPhotoAdjustTarget(null);
-      showToast(`✓ Tersimpan: Posisi & Zoom "${photoAdjustTarget.label}" disimpan!`);
-      return;
-    }
 
-    if (photoAdjustTarget.kind === 'gallery_item') {
-      const nextPhotos = effectiveGalleryPhotos.map((p) =>
-        p.id === photoAdjustTarget.photoId ? { ...p, adjustment: cleanAdj } : p
+      // Bake the exact cropped & positioned canvas into a high-resolution JPEG Data URL
+      const maxOutDim =
+        photoAdjustTarget.shape === 'circle' ? 900 : 1600;
+      const croppedDataUrl = await exportCroppedPhotoDataUrl(
+        photoAdjustUrl,
+        cleanAdj,
+        photoAdjustTarget.shape,
+        maxOutDim,
+        0.88
       );
-      const nextSettings: WeddingSettings = {
-        ...state.settings,
-        ...settingsForm,
-        galleryPhotos: nextPhotos,
-        updatedBy: adminUser.username,
+      const savedAdj: PhotoAdjustment = {
+        ...cleanAdj,
+        baked: Boolean(croppedDataUrl),
       };
-      await commitImmediateSettings(nextSettings);
-      appendAuditLog({
-        actor: adminUser.username,
-        module: 'GALERI_FOTO',
-        action: 'SIMPAN',
-        status: 'SUCCESS',
-        summary: `Menyimpan posisi & zoom "${photoAdjustTarget.label}"`,
-      });
-      setPhotoAdjustTarget(null);
-      showToast('✓ Tersimpan: Posisi & Zoom foto galeri disimpan!');
-      return;
-    }
 
-    if (photoAdjustTarget.kind === 'new_gallery') {
-      setNewPhotoForm((prev) => ({
-        ...prev,
-        adjustment: cleanAdj,
-      }));
-      setPhotoAdjustTarget(null);
-      showToast('Posisi foto siap! Klik Tambahkan Foto ke Galeri.');
+      if (photoAdjustTarget.kind === 'setting') {
+        const field = photoAdjustTarget.field;
+        const nextOriginalPhotos = {
+          ...(state.settings.originalPhotos || {}),
+          ...(settingsForm.originalPhotos || {}),
+          [field]: photoAdjustUrl,
+        };
+        const nextAdjustments = {
+          ...(state.settings.photoAdjustments || {}),
+          ...(settingsForm.photoAdjustments || {}),
+          [field]: savedAdj,
+        };
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          [field]: croppedDataUrl || photoAdjustUrl,
+          originalPhotos: nextOriginalPhotos,
+          photoAdjustments: nextAdjustments,
+          updatedBy: adminUser.username,
+        };
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'FOTO_TEMA',
+          action: 'SIMPAN',
+          status: 'SUCCESS',
+          summary: `Menyimpan hasil crop & posisi "${photoAdjustTarget.label}" (zoom ${Math.round(cleanAdj.zoom * 100)}%, crop ${Math.round(cleanAdj.cropBox?.w || 100)}x${Math.round(cleanAdj.cropBox?.h || 100)}%)`,
+        });
+        setPhotoAdjustTarget(null);
+        showToast(
+          `✓ Tersimpan: Hasil Crop & Posisi "${photoAdjustTarget.label}" berhasil diterapkan!`
+        );
+        return;
+      }
+
+      if (photoAdjustTarget.kind === 'gallery_item') {
+        const nextPhotos = effectiveGalleryPhotos.map((p) =>
+          p.id === photoAdjustTarget.photoId
+            ? {
+                ...p,
+                imageUrl: croppedDataUrl || photoAdjustUrl,
+                originalImageUrl: p.originalImageUrl || photoAdjustUrl,
+                adjustment: savedAdj,
+              }
+            : p
+        );
+        const nextSettings: WeddingSettings = {
+          ...state.settings,
+          ...settingsForm,
+          galleryPhotos: nextPhotos,
+          updatedBy: adminUser.username,
+        };
+        await commitImmediateSettings(nextSettings);
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'GALERI_FOTO',
+          action: 'SIMPAN',
+          status: 'SUCCESS',
+          summary: `Menyimpan hasil crop & posisi "${photoAdjustTarget.label}"`,
+        });
+        setPhotoAdjustTarget(null);
+        showToast('✓ Tersimpan: Hasil Crop & Posisi foto galeri berhasil diterapkan!');
+        return;
+      }
+
+      if (photoAdjustTarget.kind === 'new_gallery') {
+        setNewPhotoForm((prev) => ({
+          ...prev,
+          imageUrl: croppedDataUrl || photoAdjustUrl,
+          originalImageUrl: prev.originalImageUrl || photoAdjustUrl,
+          adjustment: savedAdj,
+        }));
+        setPhotoAdjustTarget(null);
+        showToast('✓ Hasil crop siap! Klik Tambah Foto untuk menyimpan ke Galeri.');
+      }
+    } finally {
+      setIsSavingPhotoCrop(false);
     }
   };
 
@@ -1777,9 +1962,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     try {
       showToast('Mengompres & menyiapkan gambar...');
       const maxDim =
-        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 900 : 1600;
-      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.82);
-      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
+        target === 'groomPhotoUrl' || target === 'bridePhotoUrl' ? 1100 : 1800;
+      const dataUrl = await compressImageFileToDataUrl(file, maxDim, 0.86);
+      const defaultAdj: PhotoAdjustment = {
+        zoom: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: false,
+        fitMode: 'cover',
+        aspectRatio: 'auto',
+        cropBox: { x: 0, y: 0, w: 100, h: 100 },
+        baked: false,
+      };
       const nextAdjustments = {
         ...(state.settings.photoAdjustments || {}),
         ...(settingsForm.photoAdjustments || {}),
@@ -1791,6 +1986,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             }
           : { [target]: defaultAdj }),
       };
+      const nextOriginalPhotos = {
+        ...(state.settings.originalPhotos || {}),
+        ...(settingsForm.originalPhotos || {}),
+        ...(target === 'all_bg'
+          ? {
+              coverBgUrl: dataUrl,
+              heroPrewedUrl: dataUrl,
+              pageBgUrl: dataUrl,
+            }
+          : { [target]: dataUrl }),
+      };
 
       const patch: Partial<WeddingSettings> =
         target === 'all_bg'
@@ -1798,10 +2004,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               coverBgUrl: dataUrl,
               heroPrewedUrl: dataUrl,
               pageBgUrl: dataUrl,
+              originalPhotos: nextOriginalPhotos,
               photoAdjustments: nextAdjustments,
             }
           : {
               [target]: dataUrl,
+              originalPhotos: nextOriginalPhotos,
               photoAdjustments: nextAdjustments,
             };
 
@@ -1819,9 +2027,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         status: 'SUCCESS',
         summary: `Upload & ganti foto tema (${target})`,
       });
-      showToast('✓ Gambar berhasil di-upload! Silakan atur Zoom & Posisi jika perlu.');
+      showToast('✓ Gambar berhasil di-upload! Silakan atur Crop, Zoom & Posisi.');
 
-      // Automatically open the Zoom & Pan editor so user can adjust framing right away
+      // Automatically open the Crop, Zoom & Pan Studio so user can adjust framing right away
       if (target === 'groomPhotoUrl') {
         openSettingPhotoAdjust('groomPhotoUrl', 'Foto Mempelai Pria', 'circle', dataUrl, defaultAdj);
       } else if (target === 'bridePhotoUrl') {
@@ -1858,17 +2066,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     try {
       showToast('Mengompres foto galeri...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1400, 0.82);
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.86);
       const baseName = file.name.replace(/\.[^/.]+$/, '');
-      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
+      const defaultAdj: PhotoAdjustment = {
+        zoom: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: false,
+        fitMode: 'cover',
+        aspectRatio: 'auto',
+        cropBox: { x: 0, y: 0, w: 100, h: 100 },
+        baked: false,
+      };
       setNewPhotoForm((prev) => ({
         ...prev,
         title: prev.title || baseName || 'Momen Bahagia',
         imageUrl: dataUrl,
+        originalImageUrl: dataUrl,
         adjustment: defaultAdj,
       }));
       openNewGalleryPhotoAdjust(dataUrl);
-      showToast('Foto siap! Atur posisi lalu klik Tambahkan ke Galeri.');
+      showToast('Foto siap! Silakan Crop & atur posisi lalu klik Tambah Foto.');
     } catch {
       showToast('Gagal memproses file foto.');
     }
@@ -1887,6 +2106,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         title: cleanTitle,
         caption: newPhotoForm.caption.trim() || 'Prewedding',
         imageUrl: newPhotoForm.imageUrl.trim(),
+        originalImageUrl:
+          newPhotoForm.originalImageUrl || newPhotoForm.imageUrl.trim(),
         category: newPhotoForm.category,
         adjustment: newPhotoForm.adjustment,
       },
@@ -1903,6 +2124,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       title: '',
       caption: '',
       imageUrl: '',
+      originalImageUrl: undefined,
       category: 'Prewedding',
       adjustment: undefined,
     });
@@ -1922,6 +2144,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       title: ph.title,
       caption: ph.caption,
       imageUrl: ph.imageUrl,
+      originalImageUrl: ph.originalImageUrl,
       category: ph.category,
       adjustment: ph.adjustment,
     });
@@ -1976,14 +2199,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     try {
       showToast('Mengompres & mengganti foto...');
-      const dataUrl = await compressImageFileToDataUrl(file, 1400, 0.82);
-      const defaultAdj: PhotoAdjustment = { zoom: 1, x: 0, y: 0 };
+      const dataUrl = await compressImageFileToDataUrl(file, 1600, 0.86);
+      const defaultAdj: PhotoAdjustment = {
+        zoom: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: false,
+        fitMode: 'cover',
+        aspectRatio: 'auto',
+        cropBox: { x: 0, y: 0, w: 100, h: 100 },
+        baked: false,
+      };
       let updatedPhoto: GalleryPhotoItem | null = null;
       const nextPhotos = effectiveGalleryPhotos.map((p) => {
         if (p.id === photoId) {
           updatedPhoto = {
             ...p,
             imageUrl: dataUrl,
+            originalImageUrl: dataUrl,
             adjustment: defaultAdj,
           };
           return updatedPhoto;
@@ -2007,7 +2241,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         status: 'SUCCESS',
         summary: `Mengganti file foto pada galeri "${(updatedPhoto as GalleryPhotoItem | null)?.title || photoId}"`,
       });
-      showToast('✓ Foto berhasil diganti! Silakan atur Zoom & Posisi jika perlu.');
+      showToast('✓ Foto berhasil diganti! Silakan atur Crop, Zoom & Posisi.');
     } catch (err) {
       appendAuditLog({
         actor: adminUser.username,
@@ -5479,10 +5713,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           )
                                                         }
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/55 text-[#8B6914] font-bold text-[10px] transition-all"
-                                                        title="Atur Zoom In/Out & Geser Posisi Foto"
+                                                        title="Crop, Zoom In/Out & Geser Posisi Foto"
                                                       >
-                                                        <Move className="w-3 h-3 text-[#B68D40]" />
-                                                        <span>Atur Posisi</span>
+                                                        <Crop className="w-3 h-3 text-[#B68D40]" />
+                                                        <span>Crop &amp; Posisi</span>
                                                       </button>
                                                     )}
                                                     <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
@@ -5645,10 +5879,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                           )
                                                         }
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/55 text-[#8B6914] font-bold text-[10px] transition-all"
-                                                        title="Atur Zoom In/Out & Geser Posisi Foto"
+                                                        title="Crop, Zoom In/Out & Geser Posisi Foto"
                                                       >
-                                                        <Move className="w-3 h-3 text-[#B68D40]" />
-                                                        <span>Atur Posisi</span>
+                                                        <Crop className="w-3 h-3 text-[#B68D40]" />
+                                                        <span>Crop &amp; Posisi</span>
                                                       </button>
                                                     )}
                                                     <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] cursor-pointer">
@@ -6300,11 +6534,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                 ph
                                                               )
                                                             }
-                                                            title="Atur Zoom & Geser Posisi Foto"
+                                                            title="Crop, Zoom & Geser Posisi Foto"
                                                             className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 font-bold text-[10px] inline-flex items-center gap-1"
                                                           >
-                                                            <Move className="w-3 h-3" />
-                                                            <span>Atur</span>
+                                                            <Crop className="w-3 h-3 text-[#8B6914]" />
+                                                            <span>Crop &amp; Posisi</span>
                                                           </button>
                                                           <button
                                                             type="button"
@@ -6492,8 +6726,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   onClick={() => openNewGalleryPhotoAdjust()}
                                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-[11px] shrink-0"
                                                 >
-                                                  <Move className="w-3 h-3" />
-                                                  <span>Atur Posisi</span>
+                                                  <Crop className="w-3 h-3 text-[#B68D40]" />
+                                                  <span>Crop &amp; Posisi</span>
                                                 </button>
                                               </div>
                                             )}
@@ -6782,10 +7016,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   )
                                 }
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Atur Zoom In/Out & Geser Posisi Cover"
+                                title="Crop, Zoom In/Out & Geser Posisi Cover"
                               >
-                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Atur Posisi</span>
+                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Crop &amp; Posisi</span>
                               </button>
                             )}
                             <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
@@ -6811,7 +7045,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   'portrait'
                                 )
                               }
-                              title="Klik untuk atur Zoom & Geser posisi"
+                              title="Klik untuk Crop, Zoom & Geser posisi"
                               className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
                             >
                               <img
@@ -6837,7 +7071,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             }
                             placeholder={
                               settingsForm.coverBgUrl?.startsWith('data:image/')
-                                ? '✓ Gambar Cover tersimpan (Klik Atur Posisi / Upload baru)'
+                                ? '✓ Gambar Cover tersimpan (Klik Crop & Posisi / Upload baru)'
                                 : 'URL gambar atau klik Upload...'
                             }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
@@ -6862,10 +7096,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   )
                                 }
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Atur Zoom In/Out & Geser Posisi Banner"
+                                title="Crop, Zoom In/Out & Geser Posisi Banner"
                               >
-                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Atur Posisi</span>
+                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Crop &amp; Posisi</span>
                               </button>
                             )}
                             <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
@@ -6891,7 +7125,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   'banner'
                                 )
                               }
-                              title="Klik untuk atur Zoom & Geser posisi"
+                              title="Klik untuk Crop, Zoom & Geser posisi"
                               className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
                             >
                               <img
@@ -6917,7 +7151,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             }
                             placeholder={
                               settingsForm.heroPrewedUrl?.startsWith('data:image/')
-                                ? '✓ Foto Banner tersimpan (Klik Atur Posisi / Upload baru)'
+                                ? '✓ Foto Banner tersimpan (Klik Crop & Posisi / Upload baru)'
                                 : 'URL gambar atau klik Upload...'
                             }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
@@ -6942,10 +7176,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   )
                                 }
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Atur Zoom In/Out & Geser Posisi Wallpaper"
+                                title="Crop, Zoom In/Out & Geser Posisi Wallpaper"
                               >
-                                <Move className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Atur Posisi</span>
+                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
+                                <span>Crop &amp; Posisi</span>
                               </button>
                             )}
                             <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
@@ -10423,42 +10657,104 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL: ATUR ZOOM & POSISI FOTO (GESER KIRI/KANAN/ATAS/BAWAH)
+          MODAL: STUDIO CROP, ZOOM, ROTATE & POSISI FOTO (100% WYSIWYG)
          ======================================================================= */}
       {photoAdjustTarget && (
         <div
-          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
           onPointerMove={(e) => {
             if (!photoDragStart) return;
-            const dx = e.clientX - photoDragStart.clientX;
-            const dy = e.clientY - photoDragStart.clientY;
-            const sensitivity = 0.65 / Math.max(0.7, photoAdjustDraft.zoom * 0.7);
-            const nextX = Math.max(
-              -100,
-              Math.min(100, Math.round(photoDragStart.startX + dx * sensitivity))
-            );
-            const nextY = Math.max(
-              -100,
-              Math.min(100, Math.round(photoDragStart.startY + dy * sensitivity))
-            );
+            const dxPx = e.clientX - photoDragStart.clientX;
+            const dyPx = e.clientY - photoDragStart.clientY;
+            const stageW = Math.max(120, photoDragStart.stageW);
+            const stageH = Math.max(120, photoDragStart.stageH);
+
+            if (photoDragStart.mode === 'move-image') {
+              const dxPct = (dxPx / stageW) * 100;
+              const dyPct = (dyPx / stageH) * 100;
+              const nextX = Math.max(
+                -150,
+                Math.min(150, Math.round(photoDragStart.startX + dxPct))
+              );
+              const nextY = Math.max(
+                -150,
+                Math.min(150, Math.round(photoDragStart.startY + dyPct))
+              );
+              setPhotoAdjustDraft((prev) => ({
+                ...prev,
+                x: nextX,
+                y: nextY,
+              }));
+              return;
+            }
+
+            const dxCrop = (dxPx / stageW) * 100;
+            const dyCrop = (dyPx / stageH) * 100;
+            const sc = photoDragStart.startCrop;
+            const minSize = 15;
+
+            if (photoDragStart.mode === 'move-crop') {
+              const nx = Math.max(0, Math.min(100 - sc.w, sc.x + dxCrop));
+              const ny = Math.max(0, Math.min(100 - sc.h, sc.y + dyCrop));
+              setPhotoAdjustDraft((prev) => ({
+                ...prev,
+                cropBox: {
+                  x: Math.round(nx * 10) / 10,
+                  y: Math.round(ny * 10) / 10,
+                  w: sc.w,
+                  h: sc.h,
+                },
+              }));
+              return;
+            }
+
+            let nx = sc.x;
+            let ny = sc.y;
+            let nw = sc.w;
+            let nh = sc.h;
+
+            if (photoDragStart.mode === 'nw') {
+              nx = Math.max(0, Math.min(sc.x + sc.w - minSize, sc.x + dxCrop));
+              ny = Math.max(0, Math.min(sc.y + sc.h - minSize, sc.y + dyCrop));
+              nw = sc.w - (nx - sc.x);
+              nh = sc.h - (ny - sc.y);
+            } else if (photoDragStart.mode === 'ne') {
+              ny = Math.max(0, Math.min(sc.y + sc.h - minSize, sc.y + dyCrop));
+              nw = Math.max(minSize, Math.min(100 - sc.x, sc.w + dxCrop));
+              nh = sc.h - (ny - sc.y);
+            } else if (photoDragStart.mode === 'sw') {
+              nx = Math.max(0, Math.min(sc.x + sc.w - minSize, sc.x + dxCrop));
+              nw = sc.w - (nx - sc.x);
+              nh = Math.max(minSize, Math.min(100 - sc.y, sc.h + dyCrop));
+            } else if (photoDragStart.mode === 'se') {
+              nw = Math.max(minSize, Math.min(100 - sc.x, sc.w + dxCrop));
+              nh = Math.max(minSize, Math.min(100 - sc.y, sc.h + dyCrop));
+            }
+
             setPhotoAdjustDraft((prev) => ({
               ...prev,
-              x: nextX,
-              y: nextY,
+              aspectRatio: prev.aspectRatio === 'auto' ? 'free' : prev.aspectRatio,
+              cropBox: {
+                x: Math.round(nx * 10) / 10,
+                y: Math.round(ny * 10) / 10,
+                w: Math.round(nw * 10) / 10,
+                h: Math.round(nh * 10) / 10,
+              },
             }));
           }}
           onPointerUp={() => setPhotoDragStart(null)}
           onPointerCancel={() => setPhotoDragStart(null)}
         >
-          <div className="bg-white rounded-2xl border border-[#D4AF37]/45 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-5 py-3.5 bg-gradient-to-r from-[#FAF3E3] to-[#F3E6C8] border-b border-[#D4AF37]/30 flex items-center justify-between">
-              <div>
-                <h4 className="font-serif text-base font-bold text-[#1C1917] flex items-center gap-2">
-                  <Move className="w-4 h-4 text-[#B68D40]" />
-                  Atur Zoom & Posisi Foto
+          <div className="bg-white rounded-2xl border border-[#D4AF37]/45 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-[#FAF3E3] to-[#F3E6C8] border-b border-[#D4AF37]/30 flex items-center justify-between shrink-0">
+              <div className="min-w-0">
+                <h4 className="font-serif text-sm sm:text-base font-bold text-[#1C1917] flex items-center gap-2">
+                  <Crop className="w-4 h-4 text-[#B68D40] shrink-0" />
+                  <span>Studio Crop, Zoom &amp; Posisi Foto</span>
                 </h4>
                 <p className="text-[11px] text-stone-600 font-semibold truncate">
-                  {photoAdjustTarget.label}
+                  {photoAdjustTarget.label} &bull; Hasil simpan 100% sesuai pratinjau
                 </p>
               </div>
               <button
@@ -10473,219 +10769,601 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </button>
             </div>
 
-            <div className="p-4 space-y-3.5 max-h-[80vh] overflow-y-auto">
-              {/* Interactive Frame Preview */}
-              <div className="bg-stone-900/95 rounded-xl p-4 flex flex-col items-center justify-center relative select-none">
-                <div
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    setPhotoDragStart({
-                      clientX: e.clientX,
-                      clientY: e.clientY,
-                      startX: photoAdjustDraft.x,
-                      startY: photoAdjustDraft.y,
-                    });
-                  }}
-                  className={`relative overflow-hidden border-2 border-[#D4AF37] shadow-lg bg-stone-800 cursor-grab active:cursor-grabbing touch-none ${
-                    photoAdjustTarget.shape === 'circle'
-                      ? 'w-44 h-44 rounded-full'
-                      : photoAdjustTarget.shape === 'banner'
-                      ? 'w-full max-w-[300px] aspect-[16/9] rounded-xl'
-                      : photoAdjustTarget.shape === 'portrait'
-                      ? 'w-36 aspect-[9/14] rounded-xl'
-                      : 'w-full max-w-[260px] aspect-[4/3] rounded-xl'
-                  }`}
-                >
-                  <img
-                    src={photoAdjustUrl}
-                    alt="Preview Posisi"
-                    draggable={false}
-                    className="w-full h-full object-cover pointer-events-none select-none"
-                    style={getPhotoAdjustStyle(photoAdjustDraft)}
-                  />
-                  {/* Subtle center crosshair guide */}
-                  <div className="absolute inset-0 pointer-events-none border border-white/15">
-                    <div className="absolute inset-y-0 left-1/2 w-px bg-white/20" />
-                    <div className="absolute inset-x-0 top-1/2 h-px bg-white/20" />
+            {/* Modal Body */}
+            <div className="p-3.5 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+              {/* Top Interactive Stage + Live Cropped Output Preview */}
+              {(() => {
+                const cb = photoAdjustDraft.cropBox || {
+                  x: 0,
+                  y: 0,
+                  w: 100,
+                  h: 100,
+                };
+                const stageRatio = resolveStageAspectRatio(
+                  photoAdjustTarget.shape,
+                  photoAdjustDraft.aspectRatio
+                );
+                const startDrag = (
+                  e: React.PointerEvent,
+                  mode: 'move-image' | 'move-crop' | 'nw' | 'ne' | 'sw' | 'se'
+                ) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const rect = cropStageRef.current?.getBoundingClientRect();
+                  setPhotoDragStart({
+                    mode,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    stageW: rect?.width || 280,
+                    stageH: rect?.height || 280,
+                    startX: photoAdjustDraft.x,
+                    startY: photoAdjustDraft.y,
+                    startCrop: { ...cb },
+                  });
+                };
+
+                return (
+                  <div className="bg-stone-900 rounded-2xl p-3 sm:p-4 border border-stone-800 space-y-3 select-none">
+                    {/* Mode Switcher Bar inside Dark Stage */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex rounded-xl bg-stone-800 p-1 border border-stone-700">
+                        <button
+                          type="button"
+                          onClick={() => setPhotoStudioToolMode('crop')}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-all ${
+                            photoStudioToolMode === 'crop'
+                              ? 'bg-[#D4AF37] text-stone-950 shadow-2xs'
+                              : 'text-stone-300 hover:text-white'
+                          }`}
+                        >
+                          <Crop className="w-3.5 h-3.5" />
+                          <span>Mode Crop &amp; Geser</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPhotoStudioToolMode('pan')}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-all ${
+                            photoStudioToolMode === 'pan'
+                              ? 'bg-[#D4AF37] text-stone-950 shadow-2xs'
+                              : 'text-stone-300 hover:text-white'
+                          }`}
+                        >
+                          <Move className="w-3.5 h-3.5" />
+                          <span>Geser Kotak Crop</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPhotoAdjustDraft((p) => ({
+                              ...p,
+                              rotation: (((p.rotation || 0) - 90) % 360 + 360) % 360,
+                            }))
+                          }
+                          className="px-2 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-[11px] font-bold inline-flex items-center gap-1"
+                          title="Putar Kiri 90 Derajat"
+                        >
+                          <RotateCcw className="w-3 h-3 text-[#D4AF37]" />
+                          <span>-90°</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPhotoAdjustDraft((p) => ({
+                              ...p,
+                              rotation: ((p.rotation || 0) + 90) % 360,
+                            }))
+                          }
+                          className="px-2 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-[11px] font-bold inline-flex items-center gap-1"
+                          title="Putar Kanan 90 Derajat"
+                        >
+                          <RotateCw className="w-3 h-3 text-[#D4AF37]" />
+                          <span>+90°</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPhotoAdjustDraft((p) => ({
+                              ...p,
+                              flipX: !p.flipX,
+                            }))
+                          }
+                          className={`px-2 py-1 rounded-lg border text-[11px] font-bold inline-flex items-center gap-1 ${
+                            photoAdjustDraft.flipX
+                              ? 'bg-[#D4AF37]/25 border-[#D4AF37] text-amber-200'
+                              : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border-stone-700'
+                          }`}
+                          title="Balik Cermin Horizontal (Kiri-Kanan)"
+                        >
+                          <FlipHorizontal className="w-3 h-3 text-[#D4AF37]" />
+                          <span>Cermin</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Main Interactive Stage + Live Result Preview Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
+                      {/* Left: Interactive Crop & Pan Canvas Stage */}
+                      <div className="md:col-span-8 flex flex-col items-center justify-center bg-stone-950/90 rounded-xl p-3 border border-stone-800/90 min-h-[230px]">
+                        <div
+                          ref={cropStageRef}
+                          onPointerDown={(e) =>
+                            startDrag(
+                              e,
+                              photoStudioToolMode === 'pan'
+                                ? 'move-crop'
+                                : 'move-image'
+                            )
+                          }
+                          style={{ aspectRatio: String(stageRatio) }}
+                          className={`relative overflow-hidden bg-stone-900 shadow-xl cursor-grab active:cursor-grabbing touch-none ${
+                            stageRatio < 0.85
+                              ? 'w-44 sm:w-48'
+                              : stageRatio <= 1.05
+                              ? 'w-52 sm:w-60'
+                              : 'w-full max-w-[360px]'
+                          }`}
+                        >
+                          {/* Live Rendered Canvas (Exact Math as Final Save) */}
+                          <canvas
+                            ref={cropStageCanvasRef}
+                            className="w-full h-full block pointer-events-none select-none"
+                          />
+
+                          {/* Darkened Mask Outside Crop Box */}
+                          <div
+                            className="absolute inset-x-0 top-0 bg-black/65 pointer-events-none"
+                            style={{ height: `${cb.y}%` }}
+                          />
+                          <div
+                            className="absolute inset-x-0 bottom-0 bg-black/65 pointer-events-none"
+                            style={{
+                              height: `${Math.max(0, 100 - cb.y - cb.h)}%`,
+                            }}
+                          />
+                          <div
+                            className="absolute left-0 bg-black/65 pointer-events-none"
+                            style={{
+                              top: `${cb.y}%`,
+                              height: `${cb.h}%`,
+                              width: `${cb.x}%`,
+                            }}
+                          />
+                          <div
+                            className="absolute right-0 bg-black/65 pointer-events-none"
+                            style={{
+                              top: `${cb.y}%`,
+                              height: `${cb.h}%`,
+                              width: `${Math.max(0, 100 - cb.x - cb.w)}%`,
+                            }}
+                          />
+
+                          {/* Interactive Gold Crop Box Overlay */}
+                          <div
+                            onPointerDown={(e) =>
+                              startDrag(
+                                e,
+                                photoStudioToolMode === 'pan'
+                                  ? 'move-crop'
+                                  : 'move-image'
+                              )
+                            }
+                            style={{
+                              left: `${cb.x}%`,
+                              top: `${cb.y}%`,
+                              width: `${cb.w}%`,
+                              height: `${cb.h}%`,
+                            }}
+                            className="absolute border-2 border-[#D4AF37] shadow-[0_0_0_1px_rgba(0,0,0,0.5)] touch-none"
+                          >
+                            {/* 3x3 Rule-of-Thirds Grid */}
+                            <div className="absolute inset-0 pointer-events-none">
+                              <div className="absolute inset-y-0 left-1/3 w-px bg-white/30" />
+                              <div className="absolute inset-y-0 left-2/3 w-px bg-white/30" />
+                              <div className="absolute inset-x-0 top-1/3 h-px bg-white/30" />
+                              <div className="absolute inset-x-0 top-2/3 h-px bg-white/30" />
+                            </div>
+
+                            {/* Circular Guide if Profile Avatar */}
+                            {photoAdjustTarget.shape === 'circle' && (
+                              <div className="absolute inset-0 rounded-full border-2 border-dashed border-amber-200/80 pointer-events-none" />
+                            )}
+
+                            {/* 4 Corner Resize Handles for Crop */}
+                            <div
+                              onPointerDown={(e) => startDrag(e, 'nw')}
+                              title="Tarik sudut untuk memotong (Crop)"
+                              className="absolute -top-2 -left-2 w-4 h-4 rounded-sm bg-[#D4AF37] border-2 border-stone-950 cursor-nwse-resize shadow-md"
+                            />
+                            <div
+                              onPointerDown={(e) => startDrag(e, 'ne')}
+                              title="Tarik sudut untuk memotong (Crop)"
+                              className="absolute -top-2 -right-2 w-4 h-4 rounded-sm bg-[#D4AF37] border-2 border-stone-950 cursor-nesw-resize shadow-md"
+                            />
+                            <div
+                              onPointerDown={(e) => startDrag(e, 'sw')}
+                              title="Tarik sudut untuk memotong (Crop)"
+                              className="absolute -bottom-2 -left-2 w-4 h-4 rounded-sm bg-[#D4AF37] border-2 border-stone-950 cursor-nesw-resize shadow-md"
+                            />
+                            <div
+                              onPointerDown={(e) => startDrag(e, 'se')}
+                              title="Tarik sudut untuk memotong (Crop)"
+                              className="absolute -bottom-2 -right-2 w-4 h-4 rounded-sm bg-[#D4AF37] border-2 border-stone-950 cursor-nwse-resize shadow-md"
+                            />
+                          </div>
+                        </div>
+
+                        <p className="mt-2 text-[10px] text-amber-200/90 font-semibold text-center flex items-center gap-1">
+                          <Move className="w-3 h-3 shrink-0" />
+                          <span>
+                            Geser tengah foto untuk mengatur posisi, atau tarik{' '}
+                            <strong>4 titik sudut emas</strong> untuk memotong (Crop)
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Right: Live "Hasil Akhir Saat Disimpan" Preview */}
+                      <div className="md:col-span-4 bg-stone-950/90 rounded-xl p-3 border border-stone-800/90 flex flex-col items-center justify-center space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                          Hasil Akhir Saat Disimpan
+                        </span>
+                        <div
+                          className={`overflow-hidden border-2 border-[#D4AF37]/80 bg-stone-900 shadow-lg flex items-center justify-center ${
+                            photoAdjustTarget.shape === 'circle'
+                              ? 'w-28 h-28 rounded-full'
+                              : 'w-full max-w-[170px] rounded-xl'
+                          }`}
+                        >
+                          <canvas
+                            ref={cropResultPreviewCanvasRef}
+                            className="w-full h-full object-contain block"
+                          />
+                        </div>
+                        <span className="text-[10px] text-stone-400 text-center leading-tight">
+                          Area di dalam kotak emas inilah yang akan disimpan ke undangan.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Preset Rasio Crop & Mode Tampilan */}
+              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+                    <Crop className="w-3.5 h-3.5 text-[#8B6914]" />
+                    <span>Pilih Bentuk / Rasio Crop</span>
+                  </label>
+                  <div className="inline-flex rounded-lg bg-white border border-stone-200 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({ ...p, fitMode: 'cover' }))
+                      }
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1 transition-all ${
+                        (photoAdjustDraft.fitMode || 'cover') === 'cover'
+                          ? 'bg-[#B68D40] text-white'
+                          : 'text-stone-600 hover:bg-stone-100'
+                      }`}
+                      title="Foto memenuhi seluruh bingkai"
+                    >
+                      <Maximize2 className="w-2.5 h-2.5" />
+                      <span>Penuh Bingkai</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          fitMode: 'contain',
+                          zoom: 1,
+                          x: 0,
+                          y: 0,
+                        }))
+                      }
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1 transition-all ${
+                        photoAdjustDraft.fitMode === 'contain'
+                          ? 'bg-[#B68D40] text-white'
+                          : 'text-stone-600 hover:bg-stone-100'
+                      }`}
+                      title="Tampilkan seluruh foto utuh tanpa terpotong"
+                    >
+                      <Minimize2 className="w-2.5 h-2.5" />
+                      <span>Foto Utuh (Fit)</span>
+                    </button>
                   </div>
                 </div>
-                <span className="mt-2 text-[10px] text-amber-200/90 font-semibold flex items-center gap-1">
-                  <Move className="w-3 h-3" /> Sentuh & geser langsung pada foto atau gunakan pengatur di bawah
-                </span>
-              </div>
 
-              {/* Control 1: Zoom In / Out */}
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
-                    <ZoomIn className="w-3.5 h-3.5 text-[#8B6914]" />
-                    Zoom (Perbesar / Perkecil)
-                  </label>
-                  <span className="text-[11px] font-extrabold text-[#8B6914] bg-amber-100/80 px-2 py-0.5 rounded-full">
-                    {Math.round(photoAdjustDraft.zoom * 100)}%
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        zoom: Math.max(0.5, Number((p.zoom - 0.1).toFixed(2))),
-                      }))
-                    }
-                    className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
-                    title="Zoom Out"
-                  >
-                    <ZoomOut className="w-3.5 h-3.5" />
-                  </button>
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={2.5}
-                    step={0.05}
-                    value={photoAdjustDraft.zoom}
-                    onChange={(e) =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        zoom: parseFloat(e.target.value),
-                      }))
-                    }
-                    className="w-full accent-[#B68D40] cursor-pointer"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        zoom: Math.min(2.5, Number((p.zoom + 0.1).toFixed(2))),
-                      }))
-                    }
-                    className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
-                    title="Zoom In"
-                  >
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {(
+                    [
+                      { id: 'auto', label: 'Sesuai Bingkai' },
+                      { id: 'free', label: 'Potong Bebas (Custom)' },
+                      { id: '1:1', label: '1:1 Kotak' },
+                      { id: '16:9', label: '16:9 Landscape' },
+                      { id: '4:3', label: '4:3 Klasik' },
+                      { id: '3:4', label: '3:4 Potret' },
+                      { id: '9:16', label: '9:16 Layar HP' },
+                    ] as const
+                  ).map((preset) => {
+                    const active =
+                      (photoAdjustDraft.aspectRatio || 'auto') === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyCropAspectPreset(preset.id)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                          active
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
+                            : 'bg-white hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Control 2: Geser Kiri / Kanan (X) */}
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-stone-700">
-                    Geser Kiri ↔ Kanan
-                  </label>
-                  <span className="text-[11px] font-extrabold text-stone-600">
-                    {photoAdjustDraft.x > 0
-                      ? `+${photoAdjustDraft.x}`
-                      : photoAdjustDraft.x}
-                  </span>
+              {/* Sliders Grid: Zoom, Geser X, Geser Y, Ukuran Crop */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Control 1: Zoom In / Out */}
+                <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+                      <ZoomIn className="w-3.5 h-3.5 text-[#8B6914]" />
+                      <span>Zoom Foto</span>
+                    </label>
+                    <span className="text-[11px] font-extrabold text-[#8B6914] bg-amber-100/80 px-2 py-0.5 rounded-full">
+                      {Math.round(photoAdjustDraft.zoom * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          zoom: Math.max(0.4, Number((p.zoom - 0.1).toFixed(2))),
+                        }))
+                      }
+                      className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
+                      title="Perkecil (Zoom Out)"
+                    >
+                      <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <input
+                      type="range"
+                      min={0.4}
+                      max={3.5}
+                      step={0.05}
+                      value={photoAdjustDraft.zoom}
+                      onChange={(e) =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          zoom: parseFloat(e.target.value),
+                        }))
+                      }
+                      className="w-full accent-[#B68D40] cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          zoom: Math.min(3.5, Number((p.zoom + 0.1).toFixed(2))),
+                        }))
+                      }
+                      className="p-1.5 rounded-lg bg-white border border-stone-200 text-stone-700 hover:bg-stone-100"
+                      title="Perbesar (Zoom In)"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        x: Math.max(-100, p.x - 5),
-                      }))
-                    }
-                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
-                  >
-                    ← Kiri
-                  </button>
-                  <input
-                    type="range"
-                    min={-100}
-                    max={100}
-                    step={1}
-                    value={photoAdjustDraft.x}
-                    onChange={(e) =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        x: parseInt(e.target.value, 10),
-                      }))
-                    }
-                    className="w-full accent-[#B68D40] cursor-pointer"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        x: Math.min(100, p.x + 5),
-                      }))
-                    }
-                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
-                  >
-                    Kanan →
-                  </button>
-                </div>
-              </div>
 
-              {/* Control 3: Geser Atas / Bawah (Y) */}
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-stone-700">
-                    Geser Atas ↕ Bawah
-                  </label>
-                  <span className="text-[11px] font-extrabold text-stone-600">
-                    {photoAdjustDraft.y > 0
-                      ? `+${photoAdjustDraft.y}`
-                      : photoAdjustDraft.y}
-                  </span>
+                {/* Control 2: Ukuran Area Kotak Crop */}
+                <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+                      <Crop className="w-3.5 h-3.5 text-[#8B6914]" />
+                      <span>Ukuran Area Crop</span>
+                    </label>
+                    <span className="text-[11px] font-extrabold text-stone-600">
+                      {Math.round(photoAdjustDraft.cropBox?.w ?? 100)}% &times;{' '}
+                      {Math.round(photoAdjustDraft.cropBox?.h ?? 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={25}
+                      max={100}
+                      step={1}
+                      value={Math.round(
+                        ((photoAdjustDraft.cropBox?.w ?? 100) +
+                          (photoAdjustDraft.cropBox?.h ?? 100)) /
+                          2
+                      )}
+                      onChange={(e) => {
+                        const size = parseInt(e.target.value, 10);
+                        const offset = Math.round(((100 - size) / 2) * 10) / 10;
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          cropBox: {
+                            x: offset,
+                            y: offset,
+                            w: size,
+                            h: size,
+                          },
+                        }));
+                      }}
+                      className="w-full accent-[#B68D40] cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          cropBox: { x: 0, y: 0, w: 100, h: 100 },
+                        }))
+                      }
+                      className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-700 hover:bg-stone-100 shrink-0"
+                    >
+                      100%
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        y: Math.max(-100, p.y - 5),
-                      }))
-                    }
-                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
-                  >
-                    ↑ Atas
-                  </button>
-                  <input
-                    type="range"
-                    min={-100}
-                    max={100}
-                    step={1}
-                    value={photoAdjustDraft.y}
-                    onChange={(e) =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        y: parseInt(e.target.value, 10),
-                      }))
-                    }
-                    className="w-full accent-[#B68D40] cursor-pointer"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPhotoAdjustDraft((p) => ({
-                        ...p,
-                        y: Math.min(100, p.y + 5),
-                      }))
-                    }
-                    className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-100"
-                  >
-                    Bawah ↓
-                  </button>
+
+                {/* Control 3: Geser Kiri / Kanan (X) */}
+                <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-stone-700">
+                      Geser Kiri ↔ Kanan
+                    </label>
+                    <span className="text-[11px] font-extrabold text-stone-600">
+                      {photoAdjustDraft.x > 0
+                        ? `+${photoAdjustDraft.x}`
+                        : photoAdjustDraft.x}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          x: Math.max(-150, p.x - 5),
+                        }))
+                      }
+                      className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-700 hover:bg-stone-100"
+                    >
+                      ← Kiri
+                    </button>
+                    <input
+                      type="range"
+                      min={-150}
+                      max={150}
+                      step={1}
+                      value={photoAdjustDraft.x}
+                      onChange={(e) =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          x: parseInt(e.target.value, 10),
+                        }))
+                      }
+                      className="w-full accent-[#B68D40] cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          x: Math.min(150, p.x + 5),
+                        }))
+                      }
+                      className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-700 hover:bg-stone-100"
+                    >
+                      Kanan →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Control 4: Geser Atas / Bawah (Y) */}
+                <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-stone-700">
+                      Geser Atas ↕ Bawah
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPhotoAdjustDraft((p) => ({
+                            ...p,
+                            y: 22,
+                          }))
+                        }
+                        className="px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-[#8B6914] text-[10px] font-bold"
+                        title="Fokuskan ke bagian atas / wajah"
+                      >
+                        Fokus Wajah
+                      </button>
+                      <span className="text-[11px] font-extrabold text-stone-600">
+                        {photoAdjustDraft.y > 0
+                          ? `+${photoAdjustDraft.y}`
+                          : photoAdjustDraft.y}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          y: Math.max(-150, p.y - 5),
+                        }))
+                      }
+                      className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-700 hover:bg-stone-100"
+                    >
+                      ↑ Atas
+                    </button>
+                    <input
+                      type="range"
+                      min={-150}
+                      max={150}
+                      step={1}
+                      value={photoAdjustDraft.y}
+                      onChange={(e) =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          y: parseInt(e.target.value, 10),
+                        }))
+                      }
+                      className="w-full accent-[#B68D40] cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotoAdjustDraft((p) => ({
+                          ...p,
+                          y: Math.min(150, p.y + 5),
+                        }))
+                      }
+                      className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[10px] font-bold text-stone-700 hover:bg-stone-100"
+                    >
+                      Bawah ↓
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-5 py-3 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2">
+            {/* Modal Footer */}
+            <div className="px-4 sm:px-5 py-3 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex flex-wrap items-center justify-between gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setPhotoAdjustDraft({ zoom: 1, x: 0, y: 0 })}
+                onClick={() =>
+                  setPhotoAdjustDraft({
+                    zoom: 1,
+                    x: 0,
+                    y: 0,
+                    rotation: 0,
+                    flipX: false,
+                    fitMode: 'cover',
+                    aspectRatio: 'auto',
+                    cropBox: { x: 0, y: 0, w: 100, h: 100 },
+                  })
+                }
                 className="px-3.5 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Reset Tengah
+                <span>Reset Awal</span>
               </button>
               <div className="flex items-center gap-2">
                 <button
@@ -10700,11 +11378,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </button>
                 <button
                   type="button"
+                  disabled={isSavingPhotoCrop}
                   onClick={handleSavePhotoAdjust}
-                  className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 transition-all"
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 transition-all disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Simpan Posisi
+                  <span>
+                    {isSavingPhotoCrop
+                      ? 'Menyimpan Crop...'
+                      : 'Simpan Hasil Crop'}
+                  </span>
                 </button>
               </div>
             </div>

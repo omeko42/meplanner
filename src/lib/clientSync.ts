@@ -1251,24 +1251,170 @@ export function syncScheduleEventsToSettings(
 
 export function getPhotoAdjustStyle(adj?: PhotoAdjustment):
   | {
-      objectPosition: string;
+      objectFit?: 'cover' | 'contain';
       transformOrigin: string;
       transform: string;
     }
   | undefined {
-  if (!adj) return undefined;
+  if (!adj || adj.baked) return undefined;
   const zoom = Number.isFinite(adj.zoom) ? adj.zoom : 1;
   const x = Number.isFinite(adj.x) ? adj.x : 0;
   const y = Number.isFinite(adj.y) ? adj.y : 0;
-  if (zoom === 1 && x === 0 && y === 0) return undefined;
+  const rot = Number.isFinite(adj.rotation) ? (adj.rotation || 0) : 0;
+  const flipX = Boolean(adj.flipX);
+  const fitMode = adj.fitMode || 'cover';
 
-  const posX = Math.max(0, Math.min(100, 50 - x * 0.5));
-  const posY = Math.max(0, Math.min(100, 50 - y * 0.5));
+  if (zoom === 1 && x === 0 && y === 0 && rot === 0 && !flipX && fitMode === 'cover') {
+    return undefined;
+  }
+
+  const scaleX = flipX ? -zoom : zoom;
+  const scaleY = zoom;
   return {
-    objectPosition: `${posX}% ${posY}%`,
+    objectFit: fitMode,
     transformOrigin: 'center center',
-    transform: `translate(${x * 0.4}%, ${y * 0.4}%) scale(${zoom})`,
+    transform: `translate3d(${x}%, ${y}%, 0) rotate(${rot}deg) scale(${scaleX}, ${scaleY})`,
   };
+}
+
+export function resolveStageAspectRatio(
+  shape: 'circle' | 'banner' | 'portrait' | 'gallery',
+  aspectPref?: PhotoAdjustment['aspectRatio']
+): number {
+  if (aspectPref === '1:1') return 1;
+  if (aspectPref === '16:9') return 16 / 9;
+  if (aspectPref === '4:3') return 4 / 3;
+  if (aspectPref === '3:4') return 3 / 4;
+  if (aspectPref === '9:16') return 9 / 16;
+
+  // 'auto' or 'free' default stage aspect ratio based on target slot
+  if (shape === 'circle') return 1;
+  if (shape === 'banner') return 16 / 9;
+  if (shape === 'gallery') return 16 / 9;
+  if (shape === 'portrait') return 9 / 16;
+  return 4 / 3;
+}
+
+export function drawStagePhotoOnContext(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  adj: PhotoAdjustment,
+  stageW: number,
+  stageH: number,
+  offsetX = 0,
+  offsetY = 0
+): void {
+  const imgW = img.naturalWidth || img.width || 1;
+  const imgH = img.naturalHeight || img.height || 1;
+  const rot = (((adj.rotation || 0) % 360) + 360) % 360;
+  const isRotated90 = rot === 90 || rot === 270;
+  const effW = isRotated90 ? imgH : imgW;
+  const effH = isRotated90 ? imgW : imgH;
+
+  const fitMode = adj.fitMode || 'cover';
+  const baseScale =
+    fitMode === 'contain'
+      ? Math.min(stageW / effW, stageH / effH)
+      : Math.max(stageW / effW, stageH / effH);
+
+  const zoom = Number.isFinite(adj.zoom) ? Math.max(0.2, adj.zoom) : 1;
+  const finalScale = baseScale * zoom;
+
+  const panX = ((Number.isFinite(adj.x) ? adj.x : 0) / 100) * stageW;
+  const panY = ((Number.isFinite(adj.y) ? adj.y : 0) / 100) * stageH;
+
+  const cx = offsetX + stageW / 2 + panX;
+  const cy = offsetY + stageH / 2 + panY;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rot !== 0) {
+    ctx.rotate((rot * Math.PI) / 180);
+  }
+  ctx.scale(adj.flipX ? -finalScale : finalScale, finalScale);
+  ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+  ctx.restore();
+}
+
+export async function exportCroppedPhotoDataUrl(
+  imageUrl: string,
+  adj: PhotoAdjustment,
+  shape: 'circle' | 'banner' | 'portrait' | 'gallery',
+  maxOutputDimension = 1500,
+  quality = 0.88
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    if (!imageUrl.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+    img.onerror = () => reject(new Error('Gagal memuat gambar untuk dipotong (crop).'));
+    img.onload = () => {
+      try {
+        const stageAspect = resolveStageAspectRatio(shape, adj.aspectRatio);
+        const crop = adj.cropBox || { x: 0, y: 0, w: 100, h: 100 };
+        const safeCropW = Math.max(10, Math.min(100, crop.w));
+        const safeCropH = Math.max(10, Math.min(100, crop.h));
+        const safeCropX = Math.max(0, Math.min(100 - safeCropW, crop.x));
+        const safeCropY = Math.max(0, Math.min(100 - safeCropH, crop.y));
+
+        // Base virtual stage dimensions
+        let virtualStageW = 1200;
+        let virtualStageH = Math.round(virtualStageW / stageAspect);
+        if (virtualStageH > 1600) {
+          virtualStageH = 1600;
+          virtualStageW = Math.round(virtualStageH * stageAspect);
+        }
+
+        // Output dimensions proportional to the cropBox on the virtual stage
+        let outW = Math.round(virtualStageW * (safeCropW / 100));
+        let outH = Math.round(virtualStageH * (safeCropH / 100));
+
+        // Scale output dimensions up/down so longest side is maxOutputDimension
+        const maxSide = Math.max(outW, outH, 1);
+        const scaleFactor = maxOutputDimension / maxSide;
+        outW = Math.max(64, Math.round(outW * scaleFactor));
+        outH = Math.max(64, Math.round(outH * scaleFactor));
+        const scaledStageW = virtualStageW * scaleFactor;
+        const scaledStageH = virtualStageH * scaleFactor;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context tidak tersedia.'));
+          return;
+        }
+
+        // Fill subtle dark/ivory background in case user zoomed out or used contain mode
+        ctx.fillStyle = shape === 'circle' ? '#FAF8F5' : '#1C1917';
+        ctx.fillRect(0, 0, outW, outH);
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        const offsetX = -(safeCropX / 100) * scaledStageW;
+        const offsetY = -(safeCropY / 100) * scaledStageH;
+
+        drawStagePhotoOnContext(
+          ctx,
+          img,
+          adj,
+          scaledStageW,
+          scaledStageH,
+          offsetX,
+          offsetY
+        );
+
+        const croppedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(croppedDataUrl);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.src = imageUrl;
+  });
 }
 
 export const DEFAULT_LOVE_STORY_ITEMS: LoveStoryItem[] = [

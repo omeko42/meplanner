@@ -332,7 +332,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <img
             src={coverBgUrl}
             alt="Cover Background"
-            className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000"
+            className="w-full h-full object-cover object-center transition-transform duration-1000"
             style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
           />
         </div>
@@ -455,7 +455,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <img
           src={pageBgUrl}
           alt="Page Wallpaper"
-          className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           style={getPhotoAdjustStyle(settings.photoAdjustments?.pageBgUrl)}
         />
         <div
@@ -673,15 +673,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
           <div className="relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
-            {/* Prewedding Silhouette Image Header */}
-            <div className="relative h-60 sm:h-96 overflow-hidden">
+            {/* Prewedding Silhouette Image Header (16:9 matching Crop Studio) */}
+            <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-stone-900">
               <img
                 src={heroBgUrl}
                 alt="Prewedding Banner"
                 className="w-full h-full object-cover object-center"
                 style={getPhotoAdjustStyle(settings.photoAdjustments?.heroPrewedUrl)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent pointer-events-none" />
               <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
                 <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Holy Matrimony &amp; Reception</span>
@@ -1020,7 +1020,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {showGallery &&
             (effectiveGalleryPhotos.length > 0 ? (
               <div
-                className="relative w-full aspect-[4/3] sm:aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
+                className="relative w-full aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
                 onTouchStart={(e) => {
                   setTouchStartX(e.touches[0]?.clientX ?? null);
                 }}
@@ -1055,26 +1055,33 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <div
                       key={photo.id || idx}
                       onClick={() => setSelectedPhoto(photo)}
-                      className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group"
+                      className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group bg-stone-950"
                     >
+                      {/* Ambient Blurred Backdrop so custom/portrait crops never have harsh black bars or get cut off */}
+                      <img
+                        src={photo.imageUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-55 pointer-events-none"
+                      />
                       <img
                         src={photo.imageUrl}
                         alt={photo.title}
-                        className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out"
+                        className="relative z-10 w-full h-full object-contain object-center transition-transform duration-1000 ease-out"
                         style={getPhotoAdjustStyle(photo.adjustment)}
                       />
                       {/* Soft Gradient Overlay for Caption & Bottom Dots */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/15 to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent pointer-events-none" />
 
                       {/* Top Category Pill */}
-                      <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 flex items-center gap-2 pointer-events-none">
+                      <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 z-20 flex items-center gap-2 pointer-events-none">
                         <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                           {photo.category || 'Prewedding'}
                         </span>
                       </div>
 
                       {/* Photo Title & Caption Centered Above the Bottom Dots */}
-                      <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 text-center text-white pointer-events-none">
+                      <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none">
                         <h3 className="font-serif text-base sm:text-2xl font-bold drop-shadow-sm truncate">
                           {photo.title}
                         </h3>
@@ -1599,11 +1606,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden border border-[#D4AF37]/40 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={selectedPhoto.imageUrl}
-              alt={selectedPhoto.title}
-              className="w-full max-h-[70vh] object-cover"
-            />
+            <div className="w-full max-h-[72vh] bg-stone-950 overflow-hidden flex items-center justify-center">
+              <img
+                src={selectedPhoto.imageUrl}
+                alt={selectedPhoto.title}
+                className="w-full max-h-[72vh] object-contain"
+                style={getPhotoAdjustStyle(selectedPhoto.adjustment)}
+              />
+            </div>
             <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <span className="text-[10px] uppercase tracking-widest text-[#9A742B] font-bold">
