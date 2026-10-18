@@ -68,6 +68,7 @@ import {
   VendorPaymentStatus,
   LoveStoryItem,
   GalleryPhotoItem,
+  WeddingScheduleEvent,
 } from '@/types';
 import {
   formatRupiah,
@@ -76,6 +77,9 @@ import {
   exportGuestsToCsv,
   exportBudgetToCsv,
   triggerFileDownload,
+  getEffectiveScheduleEvents,
+  syncScheduleEventsToSettings,
+  formatDateTimeToIndonesianLabels,
 } from '@/lib/clientSync';
 
 export type AdminModuleTab =
@@ -425,6 +429,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     | 'event1'
     | 'event2'
     | 'event3'
+    | 'schedule_event'
     | 'quote'
     | 'couple_groom'
     | 'couple_bride'
@@ -434,6 +439,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     | 'panitia_user'
     | 'budget_cap'
   >(null);
+
+  // Dynamic Schedule Events (Add/Edit/Delete like Panitia + Countdown Switch ON/OFF)
+  const scheduleEvents = useMemo(
+    () => getEffectiveScheduleEvents(state.settings),
+    [state.settings]
+  );
+  const [editingScheduleEventId, setEditingScheduleEventId] = useState<string | null>(
+    null
+  );
+  const [scheduleEventForm, setScheduleEventForm] = useState<WeddingScheduleEvent>({
+    id: '',
+    title: '',
+    badge: 'Acara Pernikahan',
+    subtitle: 'Rangkaian acara bahagia kami',
+    datetime: '2026-12-19T09:00:00+07:00',
+    dateLabel: 'Sabtu, 19 Desember 2026',
+    timeLabel: '09.00 WIB - Selesai',
+    venue: '',
+    address: 'Semarang, Jawa Tengah',
+    mapsUrl: 'https://maps.google.com',
+    dresscode: 'Formal / Batik Rapi',
+    enableCountdown: true,
+    showOnInvitation: true,
+  });
 
   // State for adding/editing a single Bank Account inside modal
   const [editingBankIndex, setEditingBankIndex] = useState<number | null>(null);
@@ -487,6 +516,115 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   ) => {
     setSettingsForm(state.settings);
     setActiveSettingsModal(modalType);
+  };
+
+  const handleOpenAddScheduleEvent = () => {
+    setEditingScheduleEventId(null);
+    setScheduleEventForm({
+      id: `ev_${Date.now().toString(36)}`,
+      title: '',
+      badge: `Acara ${scheduleEvents.length + 1}`,
+      subtitle: 'Rangkaian acara bahagia kedua mempelai',
+      datetime: '2026-12-19T09:00:00+07:00',
+      dateLabel: 'Sabtu, 19 Desember 2026',
+      timeLabel: '09.00 WIB - Selesai',
+      venue: '',
+      address: 'Semarang, Jawa Tengah',
+      mapsUrl: 'https://maps.google.com',
+      dresscode: 'Formal / Batik Elegan',
+      enableCountdown: true,
+      showOnInvitation: true,
+    });
+    setActiveSettingsModal('schedule_event');
+  };
+
+  const handleOpenEditScheduleEvent = (ev: WeddingScheduleEvent) => {
+    setEditingScheduleEventId(ev.id);
+    setScheduleEventForm({ ...ev });
+    setActiveSettingsModal('schedule_event');
+  };
+
+  const handleSaveScheduleEventModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleEventForm.title.trim()) return;
+    const currentList = [...scheduleEvents];
+    const cleanEvent: WeddingScheduleEvent = {
+      ...scheduleEventForm,
+      id: scheduleEventForm.id || `ev_${Date.now().toString(36)}`,
+      title: scheduleEventForm.title.trim(),
+      badge: scheduleEventForm.badge.trim() || 'Acara Pernikahan',
+      subtitle: scheduleEventForm.subtitle.trim(),
+      venue: scheduleEventForm.venue.trim() || 'Lokasi Acara',
+      address: scheduleEventForm.address.trim(),
+      mapsUrl: scheduleEventForm.mapsUrl.trim() || 'https://maps.google.com',
+      dresscode: scheduleEventForm.dresscode.trim(),
+    };
+
+    const existingIdx = currentList.findIndex(
+      (item) => item.id === editingScheduleEventId
+    );
+    if (existingIdx >= 0) {
+      currentList[existingIdx] = cleanEvent;
+    } else {
+      currentList.push(cleanEvent);
+    }
+
+    const nextSettings = syncScheduleEventsToSettings(
+      {
+        ...state.settings,
+        ...settingsForm,
+        updatedBy: adminUser.username,
+      },
+      currentList
+    );
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    setActiveSettingsModal(null);
+    setEditingScheduleEventId(null);
+    showToast(
+      existingIdx >= 0
+        ? `Jadwal "${cleanEvent.title}" berhasil diperbarui!`
+        : `Acara baru "${cleanEvent.title}" berhasil ditambahkan!`
+    );
+  };
+
+  const handleDeleteScheduleEvent = async (id: string, title: string) => {
+    const nextList = scheduleEvents.filter((item) => item.id !== id);
+    const nextSettings = syncScheduleEventsToSettings(
+      {
+        ...state.settings,
+        ...settingsForm,
+        updatedBy: adminUser.username,
+      },
+      nextList
+    );
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    showToast(`Acara "${title}" berhasil dihapus.`);
+  };
+
+  const handleToggleEventCountdownSwitch = async (id: string, title: string) => {
+    const nextList = scheduleEvents.map((item) =>
+      item.id === id
+        ? { ...item, enableCountdown: !item.enableCountdown }
+        : item
+    );
+    const toggled = nextList.find((item) => item.id === id);
+    const nextSettings = syncScheduleEventsToSettings(
+      {
+        ...state.settings,
+        ...settingsForm,
+        updatedBy: adminUser.username,
+      },
+      nextList
+    );
+    setSettingsForm(nextSettings);
+    await onUpdateSettings(nextSettings);
+    showToast(
+      `Countdown untuk "${title}" ${
+        toggled?.enableCountdown ? 'diaktifkan (ON)' : 'dinonaktifkan (OFF)'
+      }.`
+    );
   };
 
   // Immediate 1-click switch toggle for any invitation section visibility
@@ -992,7 +1130,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </p>
               </div>
 
-              {/* Card 2: Countdown Hari-H */}
+              {/* Card 2: Countdown Hari-H (Dynamic from scheduleEvents where enableCountdown === true) */}
               <div className="h-full bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-stone-200 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
@@ -1000,24 +1138,76 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </span>
                   <Calendar className="w-5 h-5 text-[#B68D40]" />
                 </div>
-                <div className="my-3 grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-200">
-                    <p className="text-[10px] font-bold uppercase text-stone-600 truncate">
-                      {state.settings.event1Title || 'Acara 1'}
-                    </p>
-                    <p className="text-xl sm:text-2xl font-extrabold text-stone-900">
-                      H-{metrics.daysToBiston}
-                    </p>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 text-[#8B6914]">
-                    <p className="text-[10px] font-bold uppercase text-[#8B6914] truncate">
-                      {state.settings.event2Title || 'Pemberkatan'}
-                    </p>
-                    <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914]">
-                      H-{metrics.daysToWedding}
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const activeCountdowns = scheduleEvents.filter(
+                    (ev) => ev.enableCountdown
+                  );
+                  if (activeCountdowns.length === 0) {
+                    return (
+                      <div className="my-3 p-3 rounded-2xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center">
+                        <p className="text-xs text-stone-500">
+                          Belum ada acara dengan switch Countdown aktif.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('settings');
+                            setSettingsMenuTab('jadwal');
+                          }}
+                          className="mt-1 text-[11px] font-bold text-[#8B6914] hover:underline"
+                        >
+                          Nyalakan Switch Countdown &rarr;
+                        </button>
+                      </div>
+                    );
+                  }
+                  const nowMs = Date.now();
+                  return (
+                    <div
+                      className={`my-3 grid gap-2 ${
+                        activeCountdowns.length === 1
+                          ? 'grid-cols-1'
+                          : 'grid-cols-2'
+                      }`}
+                    >
+                      {activeCountdowns.map((ev, idx) => {
+                        const targetMs = new Date(
+                          ev.datetime || '2026-12-19T09:00:00+07:00'
+                        ).getTime();
+                        const daysLeft = Math.max(
+                          0,
+                          Math.ceil((targetMs - nowMs) / (1000 * 60 * 60 * 24))
+                        );
+                        const isHighlight =
+                          idx === activeCountdowns.length - 1 ||
+                          /pemberkatan|akad|utama/i.test(
+                            ev.title + ' ' + ev.badge
+                          );
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`p-2.5 rounded-2xl border ${
+                              isHighlight
+                                ? 'bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border-[#D4AF37]/50 text-[#8B6914]'
+                                : 'bg-[#FAF8F5] border-stone-200 text-stone-900'
+                            }`}
+                          >
+                            <p
+                              className={`text-[10px] font-bold uppercase truncate ${
+                                isHighlight ? 'text-[#8B6914]' : 'text-stone-600'
+                              }`}
+                            >
+                              {ev.title}
+                            </p>
+                            <p className="text-xl sm:text-2xl font-extrabold">
+                              H-{daysLeft}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <p className="text-[11px] text-stone-500 font-medium pt-2 border-t border-stone-100 truncate">
                   {state.settings.event2DateLabel} &bull; {state.settings.groomOrigin}
                 </p>
@@ -3554,143 +3744,128 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===============================================================
-                    MENU 3: JADWAL ACARA & WAKTU COUNTDOWN
+                    MENU 3: JADWAL ACARA & WAKTU COUNTDOWN (BEHAVIOR SEPERTI TAMBAH PANITIA + SWITCH COUNTDOWN ON/OFF)
                    =============================================================== */}
                 {settingsMenuTab === 'jadwal' && (
-                  <div className="space-y-5 text-xs sm:text-sm">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-stone-100 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                          Pengaturan Waktu Countdown &amp; Rangkaian Acara Mandiri
-                        </h3>
-                      </div>
+                  <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                        Pengaturan Waktu Countdown &amp; Rangkaian Acara Mandiri
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                      <span className="text-xs text-stone-500">
+                        Tambah, edit, atau hapus rangkaian acara. Nyalakan tombol <strong>Switch Countdown</strong> pada acara yang ingin dihitung mundur.
+                      </span>
                       <button
                         type="button"
-                        onClick={() => openSettingsPopup('countdown')}
-                        className="self-end sm:self-auto px-3.5 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-xs shrink-0"
+                        onClick={handleOpenAddScheduleEvent}
+                        className="self-end sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
                       >
-                        Ubah Countdown
+                        <Plus className="w-3.5 h-3.5" />
+                        Tambah Acara
                       </button>
                     </div>
 
-                    <div className="divide-y divide-stone-100">
-                      {/* Row Countdown Utama */}
-                      <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
-                            <Clock className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-stone-900">
-                              Target Waktu Countdown Hari-H &amp; Biston
-                            </p>
-                            <p className="text-xs text-stone-500">
-                              Pemberkatan: <span className="font-mono font-semibold">{(state.settings.weddingDatetime || '').slice(0, 16).replace('T', ' ')}</span> &bull; Acara 1: <span className="font-mono font-semibold">{(state.settings.bistonDatetime || '').slice(0, 16).replace('T', ' ')}</span>
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => openSettingsPopup('countdown')}
-                          className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
-                        >
-                          Edit Waktu
-                        </button>
+                    {scheduleEvents.length === 0 ? (
+                      <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
+                        Belum ada rangkaian acara pernikahan. Klik <strong>+ Tambah Acara</strong> di kanan atas untuk menambahkan jadwal acara.
                       </div>
-
-                      {/* Row Acara 1, 2, 3 */}
-                      {[
-                        {
-                          modal: 'event1' as const,
-                          showKey: 'showEvent1' as const,
-                          title: state.settings.event1Title,
-                          date: state.settings.event1DateLabel,
-                          time: state.settings.event1TimeLabel,
-                          venue: state.settings.event1Venue,
-                          badge: 'Acara 1',
-                        },
-                        {
-                          modal: 'event2' as const,
-                          showKey: 'showEvent2' as const,
-                          title: state.settings.event2Title,
-                          date: state.settings.event2DateLabel,
-                          time: state.settings.event2TimeLabel,
-                          venue: state.settings.event2Venue,
-                          badge: 'Pemberkatan / Akad',
-                        },
-                        {
-                          modal: 'event3' as const,
-                          showKey: 'showEvent3' as const,
-                          title: state.settings.event3Title,
-                          date: state.settings.event3DateLabel,
-                          time: state.settings.event3TimeLabel,
-                          venue: state.settings.event3Venue,
-                          badge: 'Resepsi Utama',
-                        },
-                      ].map((ev) => {
-                        const isShown = state.settings[ev.showKey] !== false;
-                        return (
-                          <div
-                            key={ev.modal}
-                            className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#FAF8F5] border border-[#D4AF37]/30 text-[#8B6914] flex items-center justify-center shrink-0">
-                                <Calendar className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-bold text-stone-900">{ev.title}</p>
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
-                                    {ev.badge}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-stone-500">
-                                  {ev.date} &bull; {ev.time} &bull; {ev.venue}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                                  isShown
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : 'bg-rose-50 text-rose-600 border-rose-200'
-                                }`}
-                              >
-                                {isShown ? 'Aktif' : 'Nonaktif'}
-                              </span>
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={isShown}
-                                onClick={() =>
-                                  handleToggleSectionSwitch(ev.showKey, ev.title)
-                                }
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                  isShown ? 'bg-[#B68D40]' : 'bg-stone-300'
-                                }`}
-                              >
-                                <span
-                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                                    isShown ? 'translate-x-5' : 'translate-x-0'
+                    ) : (
+                      <div className="divide-y divide-stone-100">
+                        {scheduleEvents.map((ev) => {
+                          const isCountdownOn = Boolean(ev.enableCountdown);
+                          return (
+                            <div
+                              key={ev.id}
+                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                            >
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div
+                                  className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                                    isCountdownOn
+                                      ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                      : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
                                   }`}
-                                />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openSettingsPopup(ev.modal)}
-                                className="px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
-                              >
-                                Edit Jadwal
-                              </button>
+                                >
+                                  {isCountdownOn ? (
+                                    <Clock className="w-4 h-4" />
+                                  ) : (
+                                    <Calendar className="w-4 h-4" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-bold text-stone-900">{ev.title}</p>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
+                                      {ev.badge}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-stone-500 mt-0.5">
+                                    {ev.dateLabel} &bull; {ev.timeLabel} &bull; {ev.venue}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap justify-end">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                    isCountdownOn
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-stone-100 text-stone-500 border-stone-200'
+                                  }`}
+                                >
+                                  {isCountdownOn ? 'Countdown ON' : 'Countdown OFF'}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={isCountdownOn}
+                                  onClick={() =>
+                                    handleToggleEventCountdownSwitch(ev.id, ev.title)
+                                  }
+                                  title={
+                                    isCountdownOn
+                                      ? 'Klik untuk mematikan Countdown acara ini'
+                                      : 'Klik untuk mengaktifkan Countdown acara ini'
+                                  }
+                                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                    isCountdownOn ? 'bg-[#B68D40]' : 'bg-stone-300'
+                                  }`}
+                                >
+                                  <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                                      isCountdownOn ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                  />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditScheduleEvent(ev)}
+                                  className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                >
+                                  Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDeleteScheduleEvent(ev.id, ev.title)
+                                  }
+                                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -4872,6 +5047,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {activeSettingsModal === 'event1' && 'Edit Detail Acara 1 (Keluarga / Biston)'}
                 {activeSettingsModal === 'event2' && 'Edit Detail Acara 2 (Pemberkatan / Akad)'}
                 {activeSettingsModal === 'event3' && 'Edit Detail Acara 3 (Resepsi Pernikahan)'}
+                {activeSettingsModal === 'schedule_event' &&
+                  (editingScheduleEventId
+                    ? 'Edit Jadwal Rangkaian Acara'
+                    : 'Tambahkan Rangkaian Acara Baru')}
                 {activeSettingsModal === 'couple_groom' && 'Edit Profil Mempelai Pria'}
                 {activeSettingsModal === 'couple_bride' && 'Edit Profil Mempelai Wanita'}
                 {activeSettingsModal === 'quote' && 'Edit Kutipan Ayat & Kalimat Undangan'}
@@ -6127,6 +6306,326 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all disabled:opacity-50"
                   >
                     {isSavingPanitia ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* 13. MODAL: TAMBAH / EDIT RANGKAIAN ACARA & COUNTDOWN SWITCH */}
+            {activeSettingsModal === 'schedule_event' && (
+              <form onSubmit={handleSaveScheduleEventModal}>
+                <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+                  <p className="text-xs text-stone-500">
+                    * Atur detail rangkaian acara pernikahan dan pilih apakah acara ini ingin dihitung mundur (Countdown).
+                  </p>
+
+                  {/* Quick Suggestions Box (Same pattern as Tambah Panitia) */}
+                  <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
+                    <p className="font-bold text-xs text-stone-800">
+                      Disarankan berdasarkan rangkaian acara pernikahan
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        {
+                          title: 'Acara Biston / Pertemuan Keluarga',
+                          badge: 'Acara 1 • Keluarga',
+                          subtitle: 'Pertemuan hangat keluarga besar kedua mempelai',
+                          venue: 'Lokasi Biston Semarang',
+                          dresscode: 'Batik / Formal Rapi',
+                          enableCountdown: true,
+                        },
+                        {
+                          title: 'Ibadah Pemberkatan Pernikahan',
+                          badge: 'Pemberkatan / Akad',
+                          subtitle: 'Peneguhan & Pemberkatan Nikah Kudus',
+                          venue: 'Gereja di Semarang',
+                          dresscode: 'Kebaya / Jas Formal',
+                          enableCountdown: true,
+                        },
+                        {
+                          title: 'Akad Nikah',
+                          badge: 'Acara Utama • Sakral',
+                          subtitle: 'Ijab Qabul & Janji Suci Pernikahan',
+                          venue: 'Masjid / Ballroom Semarang',
+                          dresscode: 'Busana Pengantin & Nasional',
+                          enableCountdown: true,
+                        },
+                        {
+                          title: 'Resepsi Pernikahan',
+                          badge: 'Resepsi Utama',
+                          subtitle: 'Ramah Tamah & Jamuan Syukur Pernikahan',
+                          venue: 'Gedung Resepsi Semarang',
+                          dresscode: 'Formal / Batik Elegan',
+                          enableCountdown: false,
+                        },
+                        {
+                          title: 'Ngunduh Mantu',
+                          badge: 'Acara Keluarga',
+                          subtitle: 'Syukuran Keluarga Besar Mempelai Pria',
+                          venue: 'Kediaman / Gedung Keluarga',
+                          dresscode: 'Batik / Busana Adat',
+                          enableCountdown: false,
+                        },
+                      ].map((preset) => (
+                        <button
+                          key={preset.title}
+                          type="button"
+                          onClick={() =>
+                            setScheduleEventForm({
+                              ...scheduleEventForm,
+                              title: preset.title,
+                              badge: preset.badge,
+                              subtitle: preset.subtitle,
+                              venue: scheduleEventForm.venue || preset.venue,
+                              dresscode: preset.dresscode,
+                              enableCountdown: preset.enableCountdown,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-semibold text-xs"
+                        >
+                          <span>{preset.title}</span>
+                          <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Switch Countdown ON/OFF inside Modal */}
+                  <div className="p-3.5 rounded-xl bg-[#FAF3E3]/60 border border-[#D4AF37]/40 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-xs text-stone-900">
+                        Aktifkan Countdown (Hitung Mundur) untuk Acara Ini
+                      </p>
+                      <p className="text-[11px] text-stone-500">
+                        Jika aktif, waktu acara ini akan ditampilkan pada Countdown di Dashboard &amp; Undangan
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={scheduleEventForm.enableCountdown}
+                      onClick={() =>
+                        setScheduleEventForm({
+                          ...scheduleEventForm,
+                          enableCountdown: !scheduleEventForm.enableCountdown,
+                        })
+                      }
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                        scheduleEventForm.enableCountdown
+                          ? 'bg-[#B68D40]'
+                          : 'bg-stone-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                          scheduleEventForm.enableCountdown
+                            ? 'translate-x-5'
+                            : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Nama / Judul Acara*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleEventForm.title}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            title: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: Ibadah Pemberkatan Pernikahan"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Label Kategori Sesi*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleEventForm.badge}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            badge: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: Pemberkatan / Akad"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">
+                      Subjudul / Keterangan Acara
+                    </label>
+                    <input
+                      type="text"
+                      value={scheduleEventForm.subtitle}
+                      onChange={(e) =>
+                        setScheduleEventForm({
+                          ...scheduleEventForm,
+                          subtitle: e.target.value,
+                        })
+                      }
+                      placeholder="Contoh: Peneguhan & Pemberkatan Nikah Kudus"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-medium text-[#8B6914] mb-1">
+                        Tanggal &amp; Jam Target Countdown*
+                      </label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={(
+                          scheduleEventForm.datetime || '2026-12-19T09:00'
+                        ).slice(0, 16)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const autoLabels = formatDateTimeToIndonesianLabels(val);
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            datetime: `${val}:00+07:00`,
+                            dateLabel: autoLabels.dateLabel,
+                            timeLabel: autoLabels.timeLabel,
+                          });
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF8F5] font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Teks Hari &amp; Tanggal*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleEventForm.dateLabel}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            dateLabel: e.target.value,
+                          })
+                        }
+                        placeholder="Sabtu, 19 Desember 2026"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Teks Jam Pelaksanaan*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleEventForm.timeLabel}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            timeLabel: e.target.value,
+                          })
+                        }
+                        placeholder="09.00 WIB - Selesai"
+                        className="w-full px-3 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Nama Tempat / Gedung / Gereja*
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleEventForm.venue}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            venue: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: Gereja / Ballroom Semarang"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Alamat Lengkap Lokasi
+                      </label>
+                      <input
+                        type="text"
+                        value={scheduleEventForm.address}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            address: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: Jl. Pemuda, Semarang"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Dresscode Tamu
+                      </label>
+                      <input
+                        type="text"
+                        value={scheduleEventForm.dresscode}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            dresscode: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: Kebaya / Jas Formal"
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-stone-700 mb-1">
+                        Link Google Maps
+                      </label>
+                      <input
+                        type="text"
+                        value={scheduleEventForm.mapsUrl}
+                        onChange={(e) =>
+                          setScheduleEventForm({
+                            ...scheduleEventForm,
+                            mapsUrl: e.target.value,
+                          })
+                        }
+                        placeholder="https://maps.google.com/..."
+                        className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-sm shadow-xs transition-all"
+                  >
+                    Simpan
                   </button>
                 </div>
               </form>

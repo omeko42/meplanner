@@ -2,6 +2,7 @@ import {
   WeddingDatabaseSchema,
   WeddingGuest,
   WeddingSettings,
+  WeddingScheduleEvent,
   WeddingTask,
   BudgetVendorItem,
   AdminUser,
@@ -456,3 +457,194 @@ class AmbientWeddingPlayer {
 }
 
 export const weddingMusicPlayer = new AmbientWeddingPlayer();
+
+const HARI_INDONESIA = [
+  'Minggu',
+  'Senin',
+  'Selasa',
+  'Rabu',
+  'Kamis',
+  'Jumat',
+  'Sabtu',
+];
+
+const BULAN_INDONESIA = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
+
+export function formatDateTimeToIndonesianLabels(isoOrLocal: string): {
+  dateLabel: string;
+  timeLabel: string;
+} {
+  try {
+    const clean = (isoOrLocal || '').slice(0, 16);
+    const [datePart, timePart] = clean.split('T');
+    if (!datePart) {
+      return {
+        dateLabel: 'Sabtu, 19 Desember 2026',
+        timeLabel: '09.00 WIB - Selesai',
+      };
+    }
+    const [y, m, d] = datePart.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    const dayName = HARI_INDONESIA[dt.getDay()] || 'Sabtu';
+    const monthName = BULAN_INDONESIA[(m || 1) - 1] || 'Desember';
+    const formattedTime = (timePart || '09:00').replace(':', '.');
+    return {
+      dateLabel: `${dayName}, ${d} ${monthName} ${y}`,
+      timeLabel: `${formattedTime} WIB - Selesai`,
+    };
+  } catch {
+    return {
+      dateLabel: 'Sabtu, 19 Desember 2026',
+      timeLabel: '09.00 WIB - Selesai',
+    };
+  }
+}
+
+export function getEffectiveScheduleEvents(
+  settings: WeddingSettings
+): WeddingScheduleEvent[] {
+  if (Array.isArray(settings.scheduleEvents)) {
+    return settings.scheduleEvents;
+  }
+
+  return [
+    {
+      id: 'ev-default-1',
+      title: settings.event1Title || 'Acara Biston / Pertemuan Keluarga',
+      badge: 'Acara 1 • Keluarga',
+      subtitle:
+        settings.event1Subtitle ||
+        'Pertemuan hangat keluarga besar kedua mempelai',
+      datetime: settings.bistonDatetime || '2026-12-18T18:00:00+07:00',
+      dateLabel: settings.event1DateLabel || 'Jumat, 18 Desember 2026',
+      timeLabel: settings.event1TimeLabel || '18.00 WIB - Selesai',
+      venue: settings.event1Venue || 'Lokasi Biston Semarang',
+      address: settings.event1Address || 'Semarang, Jawa Tengah',
+      mapsUrl: settings.event1MapsUrl || 'https://maps.google.com',
+      dresscode: settings.event1Dresscode || 'Batik / Formal Rapi',
+      enableCountdown: true,
+      showOnInvitation: settings.showEvent1 !== false,
+    },
+    {
+      id: 'ev-default-2',
+      title: settings.event2Title || 'Ibadah Pemberkatan Pernikahan',
+      badge: 'Pemberkatan / Akad',
+      subtitle:
+        settings.event2Subtitle || 'Peneguhan & Pemberkatan Nikah Kudus',
+      datetime: settings.weddingDatetime || '2026-12-19T09:00:00+07:00',
+      dateLabel: settings.event2DateLabel || 'Sabtu, 19 Desember 2026',
+      timeLabel: settings.event2TimeLabel || '09.00 WIB - Selesai',
+      venue: settings.event2Venue || 'Gereja di Semarang',
+      address: settings.event2Address || 'Semarang, Jawa Tengah',
+      mapsUrl: settings.event2MapsUrl || 'https://maps.google.com',
+      dresscode: settings.event2Dresscode || 'Kebaya / Jas Formal',
+      enableCountdown: true,
+      showOnInvitation: settings.showEvent2 !== false,
+    },
+    {
+      id: 'ev-default-3',
+      title: settings.event3Title || 'Resepsi Pernikahan',
+      badge: 'Resepsi Utama',
+      subtitle:
+        settings.event3Subtitle || 'Ramah Tamah & Jamuan Syukur Pernikahan',
+      datetime: '2026-12-19T18:30:00+07:00',
+      dateLabel: settings.event3DateLabel || 'Sabtu, 19 Desember 2026',
+      timeLabel: settings.event3TimeLabel || '18.30 WIB - Selesai',
+      venue: settings.event3Venue || 'Gedung Resepsi Semarang',
+      address: settings.event3Address || 'Semarang, Jawa Tengah',
+      mapsUrl: settings.event3MapsUrl || 'https://maps.google.com',
+      dresscode: settings.event3Dresscode || 'Formal / Batik Elegan',
+      enableCountdown: false,
+      showOnInvitation: settings.showEvent3 !== false,
+    },
+  ];
+}
+
+export function syncScheduleEventsToSettings(
+  settings: WeddingSettings,
+  events: WeddingScheduleEvent[]
+): WeddingSettings {
+  const next: WeddingSettings = {
+    ...settings,
+    scheduleEvents: events,
+  };
+
+  const ev1 = events[0];
+  const ev2 = events[1];
+  const ev3 = events[2];
+
+  if (ev1) {
+    next.event1Title = ev1.title;
+    next.event1Subtitle = ev1.subtitle;
+    next.event1DateLabel = ev1.dateLabel;
+    next.event1TimeLabel = ev1.timeLabel;
+    next.event1Venue = ev1.venue;
+    next.event1Address = ev1.address;
+    next.event1MapsUrl = ev1.mapsUrl;
+    next.event1Dresscode = ev1.dresscode;
+    next.bistonDatetime = ev1.datetime;
+    next.showEvent1 = ev1.showOnInvitation !== false;
+  } else {
+    next.showEvent1 = false;
+  }
+
+  if (ev2) {
+    next.event2Title = ev2.title;
+    next.event2Subtitle = ev2.subtitle;
+    next.event2DateLabel = ev2.dateLabel;
+    next.event2TimeLabel = ev2.timeLabel;
+    next.event2Venue = ev2.venue;
+    next.event2Address = ev2.address;
+    next.event2MapsUrl = ev2.mapsUrl;
+    next.event2Dresscode = ev2.dresscode;
+    next.weddingDatetime = ev2.datetime;
+    next.showEvent2 = ev2.showOnInvitation !== false;
+  } else if (ev1) {
+    next.weddingDatetime = ev1.datetime;
+    next.showEvent2 = false;
+  }
+
+  if (ev3) {
+    next.event3Title = ev3.title;
+    next.event3Subtitle = ev3.subtitle;
+    next.event3DateLabel = ev3.dateLabel;
+    next.event3TimeLabel = ev3.timeLabel;
+    next.event3Venue = ev3.venue;
+    next.event3Address = ev3.address;
+    next.event3MapsUrl = ev3.mapsUrl;
+    next.event3Dresscode = ev3.dresscode;
+    next.showEvent3 = ev3.showOnInvitation !== false;
+  } else {
+    next.showEvent3 = false;
+  }
+
+  // Ensure weddingDatetime reflects the primary countdown event if one is enabled
+  const countdownEvents = events.filter((e) => e.enableCountdown);
+  if (countdownEvents.length > 0) {
+    const mainCountdown =
+      countdownEvents.find((e) => /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)) ||
+      countdownEvents[countdownEvents.length - 1];
+    if (mainCountdown?.datetime) {
+      next.weddingDatetime = mainCountdown.datetime;
+    }
+    if (countdownEvents[0]?.datetime) {
+      next.bistonDatetime = countdownEvents[0].datetime;
+    }
+  }
+
+  return next;
+}
+

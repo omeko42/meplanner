@@ -170,6 +170,22 @@ export interface GalleryPhotoItem {
   category: 'Prewedding' | 'Momen Bersama' | 'Persiapan & Sidang' | 'Venue Semarang';
 }
 
+export interface WeddingScheduleEvent {
+  id: string;
+  title: string;
+  badge: string;
+  subtitle: string;
+  datetime: string; // ISO string e.g. '2026-12-19T09:00:00+07:00' for Countdown
+  dateLabel: string; // e.g. 'Sabtu, 19 Desember 2026'
+  timeLabel: string; // e.g. '09.00 WIB - Selesai'
+  venue: string;
+  address: string;
+  mapsUrl: string;
+  dresscode: string;
+  enableCountdown: boolean; // Switch ON/OFF for Countdown
+  showOnInvitation?: boolean; // Switch ON/OFF for visibility on invitation
+}
+
 export interface WeddingSettings {
   // Core Settings
   siteTitle: string;
@@ -180,6 +196,9 @@ export interface WeddingSettings {
   autoRefreshSeconds: number;
   googleSheetId: string;
   googleSiteUrl: string;
+
+  // Dynamic Schedule Events (Add/Edit/Delete like Panitia + Countdown Switch ON/OFF)
+  scheduleEvents?: WeddingScheduleEvent[];
 
   // Budget Target / Cap (Editable / Revisable)
   totalBudgetCap: number;

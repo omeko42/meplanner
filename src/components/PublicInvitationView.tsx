@@ -32,7 +32,10 @@ import {
   RsvpStatus,
   GalleryPhotoItem,
 } from '@/types';
-import { weddingMusicPlayer } from '@/lib/clientSync';
+import {
+  weddingMusicPlayer,
+  getEffectiveScheduleEvents,
+} from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
 interface PublicInvitationViewProps {
@@ -111,7 +114,32 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     matchedGuest?.guestType === 'Pejabat/VIP' ||
     /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(resolvedGuestDisplayName);
 
-  // Countdown state to Wedding Day
+  const allScheduleEvents = useMemo(
+    () => getEffectiveScheduleEvents(settings),
+    [settings]
+  );
+
+  const countdownEvents = useMemo(
+    () => allScheduleEvents.filter((ev) => ev.enableCountdown),
+    [allScheduleEvents]
+  );
+
+  const [selectedCountdownEventId, setSelectedCountdownEventId] = useState<string>('');
+
+  const activeCountdownEvent = useMemo(() => {
+    if (countdownEvents.length === 0) return null;
+    if (selectedCountdownEventId) {
+      const found = countdownEvents.find((e) => e.id === selectedCountdownEventId);
+      if (found) return found;
+    }
+    return (
+      countdownEvents.find((e) =>
+        /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
+      ) || countdownEvents[0]
+    );
+  }, [countdownEvents, selectedCountdownEventId]);
+
+  // Countdown state to Active Countdown Event
   const [countdown, setCountdown] = useState({
     days: 62,
     hours: 10,
@@ -120,10 +148,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   });
 
   useEffect(() => {
+    const targetIso =
+      activeCountdownEvent?.datetime ||
+      settings.weddingDatetime ||
+      '2026-12-19T09:00:00+07:00';
     const updateTimer = () => {
-      const target = new Date(
-        settings.weddingDatetime || '2026-12-19T09:00:00+07:00'
-      ).getTime();
+      const target = new Date(targetIso).getTime();
       const now = Date.now();
       const diff = Math.max(0, target - now);
       setCountdown({
@@ -136,7 +166,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [settings.weddingDatetime]);
+  }, [activeCountdownEvent, settings.weddingDatetime]);
 
   // RSVP Form State
   const [rsvpName, setRsvpName] = useState('');
@@ -164,51 +194,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }, [matchedGuest, guestParamName]);
 
   const visibleEvents = useMemo(() => {
-    const list = [];
-    if (settings.showEvent1 !== false) {
-      list.push({
-        badge: 'Acara 1 • Keluarga',
-        title: settings.event1Title,
-        subtitle: settings.event1Subtitle,
-        date: settings.event1DateLabel,
-        time: settings.event1TimeLabel,
-        venue: settings.event1Venue,
-        address: settings.event1Address,
-        mapsUrl: settings.event1MapsUrl,
-        dresscode: settings.event1Dresscode,
-        highlight: false,
-      });
-    }
-    if (settings.showEvent2 !== false) {
-      list.push({
-        badge: 'Acara Utama • Sakral',
-        title: settings.event2Title,
-        subtitle: settings.event2Subtitle,
-        date: settings.event2DateLabel,
-        time: settings.event2TimeLabel,
-        venue: settings.event2Venue,
-        address: settings.event2Address,
-        mapsUrl: settings.event2MapsUrl,
-        dresscode: settings.event2Dresscode,
-        highlight: true,
-      });
-    }
-    if (settings.showEvent3 !== false) {
-      list.push({
-        badge: 'Acara 3 • Resepsi',
-        title: settings.event3Title,
-        subtitle: settings.event3Subtitle,
-        date: settings.event3DateLabel,
-        time: settings.event3TimeLabel,
-        venue: settings.event3Venue,
-        address: settings.event3Address,
-        mapsUrl: settings.event3MapsUrl,
-        dresscode: settings.event3Dresscode,
-        highlight: false,
-      });
-    }
-    return list;
-  }, [settings]);
+    return allScheduleEvents
+      .filter((ev) => ev.showOnInvitation !== false)
+      .map((ev, idx) => ({
+        id: ev.id,
+        badge: ev.badge || `Acara ${idx + 1}`,
+        title: ev.title,
+        subtitle: ev.subtitle,
+        date: ev.dateLabel,
+        time: ev.timeLabel,
+        venue: ev.venue,
+        address: ev.address,
+        mapsUrl: ev.mapsUrl || 'https://maps.google.com',
+        dresscode: ev.dresscode,
+        highlight:
+          ev.enableCountdown &&
+          (/pemberkatan|akad|utama/i.test(ev.title + ' ' + ev.badge) || idx === 1),
+      }));
+  }, [allScheduleEvents]);
 
   const handleOpenInvitation = () => {
     setIsOpened(true);
@@ -483,27 +486,58 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {settings.invitationOpeningText}
               </p>
 
-              {/* Countdown Timer Boxes (Symmetrical 4-Column Grid) */}
-              <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-lg mx-auto mb-6 sm:mb-8 items-stretch">
-                {[
-                  { label: 'Hari', value: countdown.days },
-                  { label: 'Jam', value: countdown.hours },
-                  { label: 'Menit', value: countdown.minutes },
-                  { label: 'Detik', value: countdown.seconds },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
-                  >
-                    <div className="font-serif text-xl sm:text-4xl font-bold text-[#9A742B]">
-                      {String(item.value).padStart(2, '0')}
+              {/* Countdown Timer Boxes (Conditional via enableCountdown Switch) */}
+              {activeCountdownEvent && (
+                <div className="max-w-lg mx-auto mb-6 sm:mb-8 space-y-3">
+                  {countdownEvents.length > 1 ? (
+                    <div className="flex flex-wrap items-center justify-center gap-1.5">
+                      {countdownEvents.map((ev) => {
+                        const isSelected = activeCountdownEvent.id === ev.id;
+                        return (
+                          <button
+                            key={ev.id}
+                            type="button"
+                            onClick={() => setSelectedCountdownEventId(ev.id)}
+                            className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                : 'bg-white/85 hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                            }`}
+                          >
+                            {ev.title}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-stone-500 font-semibold mt-0.5">
-                      {item.label}
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Menuju {activeCountdownEvent.title}</span>
                     </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-2 sm:gap-4 items-stretch">
+                    {[
+                      { label: 'Hari', value: countdown.days },
+                      { label: 'Jam', value: countdown.hours },
+                      { label: 'Menit', value: countdown.minutes },
+                      { label: 'Detik', value: countdown.seconds },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
+                      >
+                        <div className="font-serif text-xl sm:text-4xl font-bold text-[#9A742B]">
+                          {String(item.value).padStart(2, '0')}
+                        </div>
+                        <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-stone-500 font-semibold mt-0.5">
+                          {item.label}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Verse / Quote Card (Conditional via showQuoteSection) */}
               {settings.showQuoteSection !== false && settings.quoteVerse && (
