@@ -256,6 +256,22 @@ let currentCloudStatus: CloudSyncStatus = 'IDLE';
 let currentCloudDetail = '';
 const statusListeners = new Set<StatusListener>();
 
+let hasCompletedInitialCloudHydration = false;
+let lastKnownCloudState: WeddingDatabaseSchema | null = null;
+
+export function isInitialCloudHydrationComplete(): boolean {
+  return hasCompletedInitialCloudHydration;
+}
+
+export function markInitialCloudHydrationComplete(
+  cloudState?: WeddingDatabaseSchema | null
+): void {
+  hasCompletedInitialCloudHydration = true;
+  if (cloudState) {
+    lastKnownCloudState = cloudState;
+  }
+}
+
 // ============================================================================
 // REAL-TIME AUDIT & ERROR LOG SYSTEM
 // ============================================================================
@@ -408,21 +424,73 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
     next.groomParents = INITIAL_SETTINGS.groomParents;
     next.groomOrigin = INITIAL_SETTINGS.groomOrigin;
   }
-  if (!next.groomNickname || next.groomNickname === 'Mempelai Pria') {
+  if (
+    !next.groomParents ||
+    next.groomParents.includes('Putra dari Bapak ...')
+  ) {
+    next.groomParents = INITIAL_SETTINGS.groomParents;
+  }
+  if (
+    !next.groomNickname ||
+    next.groomNickname === 'Mempelai Pria' ||
+    next.groomNickname === 'Eko'
+  ) {
     next.groomNickname = INITIAL_SETTINGS.groomNickname;
   }
   if (
     !next.brideFullName ||
-    next.brideFullName === 'Nama Mempelai Wanita'
+    next.brideFullName === 'Nama Mempelai Wanita' ||
+    next.brideFullName === 'Sero Nelci Agustina'
   ) {
     next.brideFullName = INITIAL_SETTINGS.brideFullName;
     next.brideNickname = INITIAL_SETTINGS.brideNickname;
     next.brideTitle = INITIAL_SETTINGS.brideTitle;
-    next.brideParents = INITIAL_SETTINGS.brideParents;
     next.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+  if (
+    !next.brideParents ||
+    next.brideParents.includes('Putri dari Bapak ...')
+  ) {
+    next.brideParents = INITIAL_SETTINGS.brideParents;
   }
   if (!next.brideNickname || next.brideNickname === 'Mempelai Wanita') {
     next.brideNickname = INITIAL_SETTINGS.brideNickname;
+  }
+  if (
+    !next.groomPhotoUrl ||
+    next.groomPhotoUrl.includes('images.unsplash.com')
+  ) {
+    next.groomPhotoUrl = INITIAL_SETTINGS.groomPhotoUrl;
+  }
+  if (
+    !next.bridePhotoUrl ||
+    next.bridePhotoUrl.includes('images.unsplash.com')
+  ) {
+    next.bridePhotoUrl = INITIAL_SETTINGS.bridePhotoUrl;
+  }
+  if (!next.coverBgUrl || next.coverBgUrl.includes('images.unsplash.com')) {
+    next.coverBgUrl = INITIAL_SETTINGS.coverBgUrl;
+  }
+  if (
+    !next.heroPrewedUrl ||
+    next.heroPrewedUrl.includes('images.unsplash.com')
+  ) {
+    next.heroPrewedUrl = INITIAL_SETTINGS.heroPrewedUrl;
+  }
+  if (!next.pageBgUrl || next.pageBgUrl.includes('images.unsplash.com')) {
+    next.pageBgUrl = INITIAL_SETTINGS.pageBgUrl;
+  }
+  if (!Array.isArray(next.galleryPhotos) || next.galleryPhotos.length === 0) {
+    next.galleryPhotos = INITIAL_SETTINGS.galleryPhotos;
+  }
+  if (!Array.isArray(next.loveStory) || next.loveStory.length === 0) {
+    next.loveStory = INITIAL_SETTINGS.loveStory;
+  }
+  if (!Array.isArray(next.musicPlaylist) || next.musicPlaylist.length === 0) {
+    next.musicPlaylist = INITIAL_SETTINGS.musicPlaylist;
+    next.activeMusicTrackId = INITIAL_SETTINGS.activeMusicTrackId;
+    next.musicTitle = INITIAL_SETTINGS.musicTitle;
+    next.musicArtist = INITIAL_SETTINGS.musicArtist;
   }
 
   // Heal custom tracks whose URL was previously overwritten with '/musik/beautiful-in-white.mp3'
@@ -687,6 +755,11 @@ export async function cleanupOrphanedStorageMedia(
     }
     if (Array.isArray(settings.musicPlaylist)) {
       settings.musicPlaylist.forEach((m) => registerUrl(m.url));
+    }
+
+    // Extra safety guard: never delete anything if settings contain 0 wedding-media URLs
+    if (activeObjectPaths.size === 0) {
+      return;
     }
 
     for (const folder of ['photos', 'music']) {
@@ -1111,12 +1184,6 @@ async function prepareCloudSafeState(
     rawSettings.galleryPhotos = cleanedGallery;
   }
 
-  // Trigger background Zero-Trace Storage Garbage Collector to purge any replaced/deleted files
-  void cleanupOrphanedStorageMedia({
-    ...rawSettings,
-    originalPhotos: state.settings.originalPhotos,
-  });
-
   return {
     ...state,
     settings: rawSettings,
@@ -1207,6 +1274,151 @@ async function recoverStateFromSupabaseBySlices(): Promise<WeddingDatabaseSchema
   }
 }
 
+async function recoverFromRelationalTablesIfNeeded(
+  base: WeddingDatabaseSchema
+): Promise<WeddingDatabaseSchema> {
+  const needsGuests = base.guests.length === 0;
+  const needsTasks = base.tasks.length === 0;
+  const needsWishes = base.wishes.length === 0;
+  const needsBudgets = base.budgetItems.length === 0;
+  const needsSettings =
+    base.settings.groomParents === INITIAL_SETTINGS.groomParents;
+
+  if (
+    !needsGuests &&
+    !needsTasks &&
+    !needsWishes &&
+    !needsBudgets &&
+    !needsSettings
+  ) {
+    return base;
+  }
+
+  try {
+    const fetchJson = async (path: string) => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        method: 'GET',
+        headers: getSupabaseHeaders({ Accept: 'application/json' }),
+        cache: 'no-store',
+      });
+      if (!r.ok) return null;
+      return r.json();
+    };
+
+    const [guestsRows, tasksRows, wishesRows, budgetsRows, settingsRows, mediaRows] =
+      await Promise.all([
+        needsGuests ? fetchJson('wedding_guests?select=*') : Promise.resolve(null),
+        needsTasks ? fetchJson('wedding_tasks?select=*') : Promise.resolve(null),
+        needsWishes ? fetchJson('wedding_wishes?select=*') : Promise.resolve(null),
+        needsBudgets ? fetchJson('wedding_budgets?select=*') : Promise.resolve(null),
+        needsSettings
+          ? fetchJson('wedding_settings?id=eq.main&select=*')
+          : Promise.resolve(null),
+        needsSettings
+          ? fetchJson('wedding_media?select=*')
+          : Promise.resolve(null),
+      ]);
+
+    const nextState: WeddingDatabaseSchema = {
+      ...base,
+      settings: { ...base.settings },
+    };
+
+    if (Array.isArray(guestsRows) && guestsRows.length > 0) {
+      const recoveredGuests = guestsRows
+        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+        .filter(Boolean) as WeddingDatabaseSchema['guests'];
+      if (recoveredGuests.length > 0) {
+        nextState.guests = recoveredGuests;
+      }
+    }
+
+    if (Array.isArray(tasksRows) && tasksRows.length > 0) {
+      const recoveredTasks = tasksRows
+        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+        .filter(Boolean) as WeddingDatabaseSchema['tasks'];
+      if (recoveredTasks.length > 0) {
+        nextState.tasks = recoveredTasks;
+      }
+    }
+
+    if (Array.isArray(wishesRows) && wishesRows.length > 0) {
+      const recoveredWishes = wishesRows
+        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+        .filter(Boolean) as WeddingDatabaseSchema['wishes'];
+      if (recoveredWishes.length > 0) {
+        nextState.wishes = recoveredWishes;
+      }
+    }
+
+    if (Array.isArray(budgetsRows) && budgetsRows.length > 0) {
+      const recoveredBudgets = budgetsRows
+        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+        .filter(Boolean) as WeddingDatabaseSchema['budgetItems'];
+      if (recoveredBudgets.length > 0) {
+        nextState.budgetItems = recoveredBudgets;
+      }
+    }
+
+    const rawSettingsObj =
+      Array.isArray(settingsRows) && settingsRows[0]
+        ? settingsRows[0].payload ?? settingsRows[0].settings_json
+        : null;
+    if (rawSettingsObj && typeof rawSettingsObj === 'object') {
+      nextState.settings = healStalePlaceholderSettings({
+        ...nextState.settings,
+        ...(rawSettingsObj as Partial<WeddingSettings>),
+      });
+    }
+
+    if (Array.isArray(mediaRows) && mediaRows.length > 0) {
+      const galleryRecovered: GalleryPhotoItem[] = [];
+      for (const m of mediaRows as Array<{
+        slot_key?: string;
+        data_url?: string;
+        media_url?: string;
+        title?: string;
+        caption?: string;
+        category?: string;
+        adjustment?: Record<string, unknown>;
+      }>) {
+        const resolvedUrl = m.data_url || m.media_url;
+        if (!m.slot_key || !resolvedUrl) continue;
+        if (
+          m.slot_key === 'groomPhotoUrl' ||
+          m.slot_key === 'bridePhotoUrl' ||
+          m.slot_key === 'coverBgUrl' ||
+          m.slot_key === 'heroPrewedUrl' ||
+          m.slot_key === 'pageBgUrl' ||
+          m.slot_key === 'qrisImageUrl'
+        ) {
+          (nextState.settings as unknown as Record<string, unknown>)[m.slot_key] =
+            resolvedUrl;
+        } else if (m.slot_key.startsWith('gallery_')) {
+          galleryRecovered.push({
+            id: m.slot_key.replace(/^gallery_/, ''),
+            title: m.title || 'Foto Prewedding',
+            caption: m.caption || '',
+            category: m.category || 'Prewedding',
+            imageUrl: resolvedUrl,
+          });
+        }
+      }
+      if (
+        galleryRecovered.length > 0 &&
+        (!Array.isArray(nextState.settings.galleryPhotos) ||
+          nextState.settings.galleryPhotos.length === 0)
+      ) {
+        nextState.settings.galleryPhotos = galleryRecovered;
+      }
+    }
+
+    return nextState;
+  } catch {
+    return base;
+  }
+}
+
 /**
  * Load WeddingDatabaseSchema from Supabase PostgreSQL table `public.wedding_state`
  * (with automatic slice-recovery if statement_timeout 57014 occurs).
@@ -1232,11 +1444,14 @@ export async function loadStateFromSupabase(): Promise<{
         updated_at?: string;
       }>;
       if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
-        const loaded = normalizeCloudState(rows[0].data, rows[0].updated_at);
+        const normalized = normalizeCloudState(rows[0].data, rows[0].updated_at);
+        const loaded = await recoverFromRelationalTablesIfNeeded(normalized);
+        markInitialCloudHydrationComplete(loaded);
         setCloudStatus('SYNCED', loaded.lastSyncedAt || '');
         return { state: loaded, tableExists: true };
       }
       // Table exists, just empty (no row yet)
+      markInitialCloudHydrationComplete(null);
       setCloudStatus('SYNCED', 'Tabel siap (belum ada baris)');
       return { state: null, tableExists: true };
     }
@@ -1251,8 +1466,10 @@ export async function loadStateFromSupabase(): Promise<{
       errText.includes('57014') ||
       errText.includes('statement timeout')
     ) {
-      const recovered = await recoverStateFromSupabaseBySlices();
-      if (recovered) {
+      const recoveredRaw = await recoverStateFromSupabaseBySlices();
+      if (recoveredRaw) {
+        const recovered = await recoverFromRelationalTablesIfNeeded(recoveredRaw);
+        markInitialCloudHydrationComplete(recovered);
         setCloudStatus('SYNCED', recovered.lastSyncedAt || '');
         appendAuditLog({
           actor: 'system',
@@ -1320,12 +1537,11 @@ async function pruneDeletedRelationalRows(
     const cleanKeys = activeKeys
       .map((k) => String(k || '').trim())
       .filter(Boolean);
-    const filterExpr =
-      cleanKeys.length > 0
-        ? `${pkColumn}=not.in.(${cleanKeys
-            .map((k) => `"${k.replace(/"/g, '')}"`)
-            .join(',')})`
-        : `${pkColumn}=neq.__none__`;
+    // Anti-Wipe Guard: never execute a full-table delete when cleanKeys is empty
+    if (cleanKeys.length === 0) return;
+    const filterExpr = `${pkColumn}=not.in.(${cleanKeys
+      .map((k) => `"${k.replace(/"/g, '')}"`)
+      .join(',')})`;
     await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?${filterExpr}`, {
       method: 'DELETE',
       headers: getSupabaseHeaders(),
@@ -1362,13 +1578,13 @@ async function syncRelationalTablesInBackground(
         }),
         body: JSON.stringify({
           id: 'main',
+          project_id: 'main',
           site_title: s.siteTitle,
           groom_full_name: s.groomFullName,
           bride_full_name: s.brideFullName,
           wedding_datetime: s.weddingDatetime,
-          biston_datetime: s.bistonDatetime,
           total_budget_cap: s.totalBudgetCap || 0,
-          settings_json: lightSettingsCopy,
+          payload: lightSettingsCopy,
           updated_at: updatedAt,
         }),
       }
@@ -1385,46 +1601,61 @@ async function syncRelationalTablesInBackground(
     const mediaRows = [
       {
         slot_key: 'groomPhotoUrl',
-        setting_id: 'main',
-        label: 'Foto Profil Mempelai Pria',
-        media_type: 'image',
-        media_url: s.groomPhotoUrl || '',
+        project_id: 'main',
+        media_type: 'couple_groom',
+        title: s.groomFullName || 'Mempelai Pria',
+        category: 'Profil Mempelai',
+        caption: 'Foto Profil Mempelai Pria',
+        size_kb: 0,
+        data_url: s.groomPhotoUrl || '',
         adjustment: s.photoAdjustments?.groomPhotoUrl || {},
         updated_at: updatedAt,
       },
       {
         slot_key: 'bridePhotoUrl',
-        setting_id: 'main',
-        label: 'Foto Profil Mempelai Wanita',
-        media_type: 'image',
-        media_url: s.bridePhotoUrl || '',
+        project_id: 'main',
+        media_type: 'couple_bride',
+        title: s.brideFullName || 'Mempelai Wanita',
+        category: 'Profil Mempelai',
+        caption: 'Foto Profil Mempelai Wanita',
+        size_kb: 0,
+        data_url: s.bridePhotoUrl || '',
         adjustment: s.photoAdjustments?.bridePhotoUrl || {},
         updated_at: updatedAt,
       },
       {
         slot_key: 'coverBgUrl',
-        setting_id: 'main',
-        label: 'Foto Sampul Undangan',
-        media_type: 'image',
-        media_url: s.coverBgUrl || '',
+        project_id: 'main',
+        media_type: 'theme_cover',
+        title: 'Sampul Pembuka (Cover)',
+        category: 'Tema & Latar',
+        caption: 'Background Sampul Pembuka',
+        size_kb: 0,
+        data_url: s.coverBgUrl || '',
         adjustment: s.photoAdjustments?.coverBgUrl || {},
         updated_at: updatedAt,
       },
       {
         slot_key: 'heroPrewedUrl',
-        setting_id: 'main',
-        label: 'Foto Utama Prewedding',
-        media_type: 'image',
-        media_url: s.heroPrewedUrl || '',
+        project_id: 'main',
+        media_type: 'theme_hero',
+        title: 'Banner Utama (Hero)',
+        category: 'Tema & Latar',
+        caption: 'Banner Hero Prewedding',
+        size_kb: 0,
+        data_url: s.heroPrewedUrl || '',
         adjustment: s.photoAdjustments?.heroPrewedUrl || {},
         updated_at: updatedAt,
       },
       {
         slot_key: 'pageBgUrl',
-        setting_id: 'main',
-        label: 'Foto Latar Belakang',
-        media_type: 'image',
-        media_url: s.pageBgUrl || '',
+        project_id: 'main',
+        media_type: 'theme_bg',
+        title: 'Wallpaper Latar Undangan',
+        category: 'Tema & Latar',
+        caption: 'Background Halaman Undangan',
+        size_kb: 0,
+        data_url: s.pageBgUrl || '',
         adjustment: s.photoAdjustments?.pageBgUrl || {},
         updated_at: updatedAt,
       },
@@ -1432,10 +1663,13 @@ async function syncRelationalTablesInBackground(
         ? [
             {
               slot_key: 'qrisImageUrl',
-              setting_id: 'main',
-              label: 'Barcode QRIS Amplop Digital',
-              media_type: 'image',
-              media_url: s.qrisImageUrl,
+              project_id: 'main',
+              media_type: 'gift_qris',
+              title: 'Barcode QRIS Amplop Digital',
+              category: 'Amplop Digital',
+              caption: 'QRIS Pernikahan',
+              size_kb: 0,
+              data_url: s.qrisImageUrl,
               adjustment: {},
               updated_at: updatedAt,
             },
@@ -1444,10 +1678,13 @@ async function syncRelationalTablesInBackground(
       ...(Array.isArray(s.galleryPhotos)
         ? s.galleryPhotos.map((gp) => ({
             slot_key: `gallery_${gp.id}`,
-            setting_id: 'main',
-            label: gp.title || 'Foto Galeri',
-            media_type: 'image',
-            media_url: gp.imageUrl || '',
+            project_id: 'main',
+            media_type: 'gallery_photo',
+            title: gp.title || 'Foto Galeri',
+            category: gp.category || 'Galeri Prewedding',
+            caption: gp.caption || '',
+            size_kb: 0,
+            data_url: gp.imageUrl || '',
             adjustment: gp.adjustment || {},
             updated_at: updatedAt,
           }))
@@ -1472,17 +1709,12 @@ async function syncRelationalTablesInBackground(
     if (tasksList.length > 0) {
       const taskRows = tasksList.map((t) => ({
         id: t.id,
-        setting_id: 'main',
+        project_id: 'main',
         category: t.category,
-        timeline_phase: t.timelinePhase,
         title: t.title,
-        due: t.due,
-        priority: t.priority,
-        owner: t.owner,
         status: t.status,
         done: Boolean(t.done),
-        notes: t.notes || '',
-        data: t,
+        payload: t,
         updated_at: updatedAt,
       }));
       void fetch(`${SUPABASE_URL}/rest/v1/wedding_tasks?on_conflict=id`, {
@@ -1503,18 +1735,13 @@ async function syncRelationalTablesInBackground(
     if (guestsList.length > 0) {
       const guestRows = guestsList.map((g) => ({
         id: g.id,
-        setting_id: 'main',
-        invitation_code: g.invitationCode,
-        guest_name: g.guestName,
-        guest_type: g.guestType,
-        side: g.side,
-        institution: g.institution || '',
-        invitation_format: g.invitationFormat,
-        priority: g.priority,
-        pax: g.pax || 2,
+        project_id: 'main',
+        name: g.guestName,
+        category: g.guestType,
         rsvp_status: g.rsvpStatus,
-        delivery_status: g.deliveryStatus,
-        data: g,
+        pax: g.pax || 1,
+        phone: g.phone || '',
+        payload: g,
         updated_at: updatedAt,
       }));
       void fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?on_conflict=id`, {
@@ -1535,17 +1762,11 @@ async function syncRelationalTablesInBackground(
     if (wishesList.length > 0) {
       const wishRows = wishesList.map((w) => ({
         id: w.id,
-        setting_id: 'main',
+        project_id: 'main',
         guest_name: w.guestName,
-        institution: w.institution || '',
-        relation: w.relation || '',
-        rsvp_status: w.rsvpStatus,
-        pax: w.pax || 0,
         message: w.message || '',
-        is_pinned: Boolean(w.isPinned),
-        reply_from_couple: w.replyFromCouple || '',
-        created_at: w.createdAt,
-        data: w,
+        rsvp_status: w.rsvpStatus,
+        payload: w,
         updated_at: updatedAt,
       }));
       void fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
@@ -1568,16 +1789,12 @@ async function syncRelationalTablesInBackground(
     if (budgetsList.length > 0) {
       const budgetRows = budgetsList.map((b) => ({
         id: b.id,
-        setting_id: 'main',
+        project_id: 'main',
         category: b.category,
         item_name: b.itemName,
-        vendor_name: b.vendorName || '',
         estimated_cost: b.estimatedCost || 0,
         actual_cost: b.actualCost || 0,
-        paid_amount: b.paidAmount || 0,
-        payment_status: b.paymentStatus,
-        due_date: b.dueDate || '',
-        data: b,
+        payload: b,
         updated_at: updatedAt,
       }));
       void fetch(`${SUPABASE_URL}/rest/v1/wedding_budgets?on_conflict=id`, {
@@ -1598,13 +1815,12 @@ async function syncRelationalTablesInBackground(
     if (usersList.length > 0) {
       const userRows = usersList.map((u) => ({
         id: u.id,
-        setting_id: 'main',
+        project_id: 'main',
         username: u.username,
-        nama: u.nama,
+        full_name: u.nama,
         role: u.role,
-        jabatan: u.jabatan || '',
-        is_default_user: Boolean(u.isDefaultUser),
-        data: u,
+        committee_role: u.jabatan || '',
+        payload: u,
         updated_at: updatedAt,
       }));
       void fetch(`${SUPABASE_URL}/rest/v1/wedding_users?on_conflict=id`, {
@@ -1629,12 +1845,16 @@ async function syncRelationalTablesInBackground(
 // SINGLE-FLIGHT SERIALIZED UPSERT ENGINE (NO OVERLAPPING ROW LOCKS)
 // ============================================================================
 let inFlightSavePromise: Promise<boolean> | null = null;
-let queuedLatestState: WeddingDatabaseSchema | null = null;
+let queuedLatestState: {
+  state: WeddingDatabaseSchema;
+  options?: { forceOverwrite?: boolean };
+} | null = null;
 
 async function executeSingleFlightSave(
-  initialState: WeddingDatabaseSchema
+  initialState: WeddingDatabaseSchema,
+  options?: { forceOverwrite?: boolean }
 ): Promise<boolean> {
-  queuedLatestState = initialState;
+  queuedLatestState = { state: initialState, options };
 
   if (inFlightSavePromise) {
     return inFlightSavePromise;
@@ -1643,9 +1863,12 @@ async function executeSingleFlightSave(
   inFlightSavePromise = (async () => {
     let lastResult = false;
     while (queuedLatestState !== null) {
-      const stateToProcess = queuedLatestState;
+      const itemToProcess = queuedLatestState;
       queuedLatestState = null;
-      lastResult = await performActualSupabaseUpsert(stateToProcess);
+      lastResult = await performActualSupabaseUpsert(
+        itemToProcess.state,
+        itemToProcess.options
+      );
     }
     inFlightSavePromise = null;
     return lastResult;
@@ -1655,9 +1878,110 @@ async function executeSingleFlightSave(
 }
 
 async function performActualSupabaseUpsert(
-  state: WeddingDatabaseSchema
+  rawState: WeddingDatabaseSchema,
+  options?: { forceOverwrite?: boolean }
 ): Promise<boolean> {
   setCloudStatus('SYNCING', 'Menyimpan ke Supabase...');
+  let state = rawState;
+
+  // Anti-Wipe Guard: protect existing cloud collections & couple profile from accidental overwrite by unhydrated/seed state
+  if (!options?.forceOverwrite && lastKnownCloudState) {
+    const nextSettings: WeddingSettings = { ...state.settings };
+    if (
+      nextSettings.groomParents === 'Putra dari Bapak ... & Ibu ...' &&
+      lastKnownCloudState.settings?.groomParents &&
+      lastKnownCloudState.settings.groomParents !==
+        'Putra dari Bapak ... & Ibu ...'
+    ) {
+      const cs = lastKnownCloudState.settings;
+      nextSettings.groomFullName = cs.groomFullName || nextSettings.groomFullName;
+      nextSettings.groomNickname = cs.groomNickname || nextSettings.groomNickname;
+      nextSettings.groomRankAndTitle =
+        cs.groomRankAndTitle ?? nextSettings.groomRankAndTitle;
+      nextSettings.groomUnit = cs.groomUnit ?? nextSettings.groomUnit;
+      nextSettings.groomParents = cs.groomParents || nextSettings.groomParents;
+      nextSettings.groomOrigin = cs.groomOrigin || nextSettings.groomOrigin;
+      nextSettings.groomInstagram =
+        cs.groomInstagram ?? nextSettings.groomInstagram;
+      nextSettings.groomPhotoUrl = cs.groomPhotoUrl || nextSettings.groomPhotoUrl;
+      nextSettings.brideFullName = cs.brideFullName || nextSettings.brideFullName;
+      nextSettings.brideNickname = cs.brideNickname || nextSettings.brideNickname;
+      nextSettings.brideTitle = cs.brideTitle ?? nextSettings.brideTitle;
+      nextSettings.brideParents = cs.brideParents || nextSettings.brideParents;
+      nextSettings.brideOrigin = cs.brideOrigin || nextSettings.brideOrigin;
+      nextSettings.brideInstagram =
+        cs.brideInstagram ?? nextSettings.brideInstagram;
+      nextSettings.bridePhotoUrl = cs.bridePhotoUrl || nextSettings.bridePhotoUrl;
+      nextSettings.coverBgUrl = cs.coverBgUrl || nextSettings.coverBgUrl;
+      nextSettings.heroPrewedUrl = cs.heroPrewedUrl || nextSettings.heroPrewedUrl;
+      nextSettings.pageBgUrl = cs.pageBgUrl || nextSettings.pageBgUrl;
+      nextSettings.qrisImageUrl = cs.qrisImageUrl ?? nextSettings.qrisImageUrl;
+      nextSettings.photoAdjustments =
+        cs.photoAdjustments || nextSettings.photoAdjustments;
+      if (
+        (!Array.isArray(nextSettings.galleryPhotos) ||
+          nextSettings.galleryPhotos.length === 0) &&
+        Array.isArray(cs.galleryPhotos) &&
+        cs.galleryPhotos.length > 0
+      ) {
+        nextSettings.galleryPhotos = cs.galleryPhotos;
+      }
+      if (
+        (!Array.isArray(nextSettings.bankAccounts) ||
+          nextSettings.bankAccounts.length === 0) &&
+        Array.isArray(cs.bankAccounts) &&
+        cs.bankAccounts.length > 0
+      ) {
+        nextSettings.bankAccounts = cs.bankAccounts;
+      }
+      if (
+        (!Array.isArray(nextSettings.loveStory) ||
+          nextSettings.loveStory.length === 0) &&
+        Array.isArray(cs.loveStory) &&
+        cs.loveStory.length > 0
+      ) {
+        nextSettings.loveStory = cs.loveStory;
+      }
+      if (
+        (!Array.isArray(nextSettings.musicPlaylist) ||
+          nextSettings.musicPlaylist.length === 0) &&
+        Array.isArray(cs.musicPlaylist) &&
+        cs.musicPlaylist.length > 0
+      ) {
+        nextSettings.musicPlaylist = cs.musicPlaylist;
+        nextSettings.activeMusicTrackId =
+          cs.activeMusicTrackId || nextSettings.activeMusicTrackId;
+        nextSettings.musicTitle = cs.musicTitle || nextSettings.musicTitle;
+        nextSettings.musicArtist = cs.musicArtist || nextSettings.musicArtist;
+      }
+    }
+
+    state = {
+      ...state,
+      settings: nextSettings,
+      guests:
+        state.guests.length === 0 &&
+        (lastKnownCloudState.guests?.length || 0) > 0
+          ? lastKnownCloudState.guests
+          : state.guests,
+      tasks:
+        state.tasks.length === 0 &&
+        (lastKnownCloudState.tasks?.length || 0) > 0
+          ? lastKnownCloudState.tasks
+          : state.tasks,
+      wishes:
+        state.wishes.length === 0 &&
+        (lastKnownCloudState.wishes?.length || 0) > 0
+          ? lastKnownCloudState.wishes
+          : state.wishes,
+      budgetItems:
+        state.budgetItems.length === 0 &&
+        (lastKnownCloudState.budgetItems?.length || 0) > 0
+          ? lastKnownCloudState.budgetItems
+          : state.budgetItems,
+    };
+  }
+
   const updatedAt = state.lastSyncedAt || new Date().toISOString();
 
   const tryUpsertTable = async (
@@ -1678,7 +2002,7 @@ async function performActualSupabaseUpsert(
   };
 
   try {
-    const cloudSafePayload = await prepareCloudSafeState(
+    let cloudSafePayload = await prepareCloudSafeState(
       { ...state, lastSyncedAt: updatedAt },
       false
     );
@@ -1692,14 +2016,16 @@ async function performActualSupabaseUpsert(
       res.status === 502 ||
       res.status === 504
     ) {
-      const ultraCompactPayload = await prepareCloudSafeState(
+      cloudSafePayload = await prepareCloudSafeState(
         { ...state, lastSyncedAt: updatedAt },
         true
       );
-      res = await tryUpsertTable(ultraCompactPayload);
+      res = await tryUpsertTable(cloudSafePayload);
     }
 
     if (res.ok) {
+      lastKnownCloudState = cloudSafePayload;
+      void syncRelationalTablesInBackground(cloudSafePayload, updatedAt);
       setCloudStatus('SYNCED', updatedAt);
       return true;
     }
@@ -1761,9 +2087,10 @@ async function performActualSupabaseUpsert(
  * requests never collide on the same row.
  */
 export async function saveStateToSupabase(
-  state: WeddingDatabaseSchema
+  state: WeddingDatabaseSchema,
+  options?: { forceOverwrite?: boolean }
 ): Promise<boolean> {
-  return executeSingleFlightSave(state);
+  return executeSingleFlightSave(state, options);
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1776,6 +2103,10 @@ export function queueSaveStateToSupabase(
   state: WeddingDatabaseSchema,
   delayMs = 400
 ): void {
+  // Never queue a save to Supabase before initial cloud hydration has completed!
+  if (!hasCompletedInitialCloudHydration) {
+    return;
+  }
   pendingState = state;
   if (debounceTimer) {
     clearTimeout(debounceTimer);

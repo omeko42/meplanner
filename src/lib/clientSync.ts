@@ -23,12 +23,16 @@ import {
   INITIAL_BUDGET_ITEMS,
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
-import { queueSaveStateToSupabase, SUPABASE_URL } from '@/lib/supabaseCloud';
+import {
+  queueSaveStateToSupabase,
+  isInitialCloudHydrationComplete,
+  SUPABASE_URL,
+} from '@/lib/supabaseCloud';
 
-const STORAGE_KEY = 'my_wedding_manager_state_v5';
+const STORAGE_KEY = 'my_wedding_manager_state_v6';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
 const VIEW_MODE_KEY = 'my_wedding_manager_view_mode_v2';
-const IDB_NAME = 'my_wedding_manager_idb_v5';
+const IDB_NAME = 'my_wedding_manager_idb_v6';
 const IDB_STORE = 'wedding_state_store';
 const IDB_KEY = 'current_wedding_db';
 
@@ -38,9 +42,11 @@ function normalizeParsedState(
   const cleanTasks = Array.isArray(parsed.tasks)
     ? parsed.tasks.filter((t) => !/^g\d+$/i.test(String(t.id || '')))
     : INITIAL_TASKS;
-  const cleanGuests = Array.isArray(parsed.guests)
+  const filteredGuests = Array.isArray(parsed.guests)
     ? parsed.guests.filter((g) => !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')))
-    : INITIAL_GUESTS;
+    : [];
+  const cleanGuests =
+    filteredGuests.length > 0 ? filteredGuests : INITIAL_GUESTS;
 
   const mergedSettings = parsed.settings
     ? { ...INITIAL_SETTINGS, ...parsed.settings }
@@ -58,26 +64,90 @@ function normalizeParsedState(
     mergedSettings.groomOrigin = INITIAL_SETTINGS.groomOrigin;
   }
   if (
+    !mergedSettings.groomParents ||
+    mergedSettings.groomParents.includes('Putra dari Bapak ...')
+  ) {
+    mergedSettings.groomParents = INITIAL_SETTINGS.groomParents;
+  }
+  if (
     !mergedSettings.groomNickname ||
-    mergedSettings.groomNickname === 'Mempelai Pria'
+    mergedSettings.groomNickname === 'Mempelai Pria' ||
+    mergedSettings.groomNickname === 'Eko'
   ) {
     mergedSettings.groomNickname = INITIAL_SETTINGS.groomNickname;
   }
   if (
     !mergedSettings.brideFullName ||
-    mergedSettings.brideFullName === 'Nama Mempelai Wanita'
+    mergedSettings.brideFullName === 'Nama Mempelai Wanita' ||
+    mergedSettings.brideFullName === 'Sero Nelci Agustina'
   ) {
     mergedSettings.brideFullName = INITIAL_SETTINGS.brideFullName;
     mergedSettings.brideNickname = INITIAL_SETTINGS.brideNickname;
     mergedSettings.brideTitle = INITIAL_SETTINGS.brideTitle;
-    mergedSettings.brideParents = INITIAL_SETTINGS.brideParents;
     mergedSettings.brideOrigin = INITIAL_SETTINGS.brideOrigin;
+  }
+  if (
+    !mergedSettings.brideParents ||
+    mergedSettings.brideParents.includes('Putri dari Bapak ...')
+  ) {
+    mergedSettings.brideParents = INITIAL_SETTINGS.brideParents;
   }
   if (
     !mergedSettings.brideNickname ||
     mergedSettings.brideNickname === 'Mempelai Wanita'
   ) {
     mergedSettings.brideNickname = INITIAL_SETTINGS.brideNickname;
+  }
+  if (
+    !mergedSettings.groomPhotoUrl ||
+    mergedSettings.groomPhotoUrl.includes('images.unsplash.com')
+  ) {
+    mergedSettings.groomPhotoUrl = INITIAL_SETTINGS.groomPhotoUrl;
+  }
+  if (
+    !mergedSettings.bridePhotoUrl ||
+    mergedSettings.bridePhotoUrl.includes('images.unsplash.com')
+  ) {
+    mergedSettings.bridePhotoUrl = INITIAL_SETTINGS.bridePhotoUrl;
+  }
+  if (
+    !mergedSettings.coverBgUrl ||
+    mergedSettings.coverBgUrl.includes('images.unsplash.com')
+  ) {
+    mergedSettings.coverBgUrl = INITIAL_SETTINGS.coverBgUrl;
+  }
+  if (
+    !mergedSettings.heroPrewedUrl ||
+    mergedSettings.heroPrewedUrl.includes('images.unsplash.com')
+  ) {
+    mergedSettings.heroPrewedUrl = INITIAL_SETTINGS.heroPrewedUrl;
+  }
+  if (
+    !mergedSettings.pageBgUrl ||
+    mergedSettings.pageBgUrl.includes('images.unsplash.com')
+  ) {
+    mergedSettings.pageBgUrl = INITIAL_SETTINGS.pageBgUrl;
+  }
+  if (
+    !Array.isArray(mergedSettings.galleryPhotos) ||
+    mergedSettings.galleryPhotos.length === 0
+  ) {
+    mergedSettings.galleryPhotos = INITIAL_SETTINGS.galleryPhotos;
+  }
+  if (
+    !Array.isArray(mergedSettings.loveStory) ||
+    mergedSettings.loveStory.length === 0
+  ) {
+    mergedSettings.loveStory = INITIAL_SETTINGS.loveStory;
+  }
+  if (
+    !Array.isArray(mergedSettings.musicPlaylist) ||
+    mergedSettings.musicPlaylist.length === 0
+  ) {
+    mergedSettings.musicPlaylist = INITIAL_SETTINGS.musicPlaylist;
+    mergedSettings.activeMusicTrackId = INITIAL_SETTINGS.activeMusicTrackId;
+    mergedSettings.musicTitle = INITIAL_SETTINGS.musicTitle;
+    mergedSettings.musicArtist = INITIAL_SETTINGS.musicArtist;
   }
 
   if (Array.isArray(mergedSettings.musicPlaylist)) {
@@ -143,16 +213,18 @@ function normalizeParsedState(
 export function getInitialClientState(): WeddingDatabaseSchema {
   if (typeof window !== 'undefined') {
     try {
-      // Purge legacy v1/v2/v3/v4 local caches so Supabase is the clean source of truth
+      // Purge legacy v1/v2/v3/v4/v5 local caches so Supabase is the clean source of truth
       localStorage.removeItem('my_wedding_manager_state_v1');
       localStorage.removeItem('my_wedding_manager_state_v2');
       localStorage.removeItem('my_wedding_manager_state_v3');
       localStorage.removeItem('my_wedding_manager_state_v4');
+      localStorage.removeItem('my_wedding_manager_state_v5');
       if ('indexedDB' in window) {
         try {
           window.indexedDB.deleteDatabase('my_wedding_manager_idb_v2');
           window.indexedDB.deleteDatabase('my_wedding_manager_idb_v3');
           window.indexedDB.deleteDatabase('my_wedding_manager_idb_v4');
+          window.indexedDB.deleteDatabase('my_wedding_manager_idb_v5');
         } catch {
           // Ignore
         }
@@ -297,8 +369,8 @@ export function saveClientState(
     }
   }
 
-  // 3. When user modifies state (touchTimestamp=true), sync to Supabase Cloud with safe debounce
-  if (touchTimestamp) {
+  // 3. When user modifies state (touchTimestamp=true) AFTER initial cloud hydration, sync to Supabase Cloud with safe debounce
+  if (touchTimestamp && isInitialCloudHydrationComplete()) {
     queueSaveStateToSupabase(syncedState, 380);
   }
 

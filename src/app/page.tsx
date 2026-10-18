@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Suspense,
+} from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 import { AdminDashboardView } from '@/components/AdminDashboardView';
@@ -45,6 +52,7 @@ import {
   saveStateToSupabase,
   appendAuditLog,
   upsertCommercialPaymentToSupabase,
+  markInitialCloudHydrationComplete,
 } from '@/lib/supabaseCloud';
 
 function mergePreservingLocalMedia(
@@ -289,6 +297,7 @@ function WeddingAppContent() {
   const [previewOverrideGuest, setPreviewOverrideGuest] = useState<WeddingGuest | null>(
     null
   );
+  const isCloudHydratedRef = useRef(false);
 
   const clientGroups = useMemo(() => buildEffectiveClientGroups(state), [state]);
 
@@ -404,12 +413,21 @@ function WeddingAppContent() {
 
       if (cloudState) {
         const merged = mergePreservingLocalMedia(cloudState, bestLocal);
+        markInitialCloudHydrationComplete(merged);
+        isCloudHydratedRef.current = true;
         setState(merged);
         saveClientState(merged, false);
       } else if (cloudResult.tableExists) {
+        markInitialCloudHydrationComplete(null);
+        isCloudHydratedRef.current = true;
         setState(bestLocal);
         saveClientState(bestLocal, false);
-        void saveStateToSupabase(bestLocal);
+        const isEmptySeed =
+          bestLocal.guests.length === 0 &&
+          bestLocal.settings.groomParents === INITIAL_SETTINGS.groomParents;
+        if (!isEmptySeed) {
+          void saveStateToSupabase(bestLocal);
+        }
       } else {
         setState(bestLocal);
       }
@@ -1199,15 +1217,19 @@ function WeddingAppContent() {
   };
 
   const handleResetDefault = async () => {
-    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
+    const resetState: WeddingDatabaseSchema = {
       settings: { ...INITIAL_SETTINGS, updatedAt: new Date().toISOString() },
       tasks: [...INITIAL_TASKS],
       guests: [...INITIAL_GUESTS],
       wishes: [...INITIAL_WISHES],
       budgetItems: [...INITIAL_BUDGET_ITEMS],
-      adminUsers: prev.adminUsers?.length ? prev.adminUsers : [...INITIAL_ADMIN_USERS],
+      adminUsers: state.adminUsers?.length ? state.adminUsers : [...INITIAL_ADMIN_USERS],
       lastSyncedAt: new Date().toISOString(),
-    }));
+    };
+    updateClientScopedState(activeWorkspaceClientId, () => resetState);
+    if (activeWorkspaceClientId === 'client-utama') {
+      void saveStateToSupabase(resetState, { forceOverwrite: true });
+    }
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DATABASE',
@@ -1228,6 +1250,7 @@ function WeddingAppContent() {
       detail?: string;
       deviceInfo?: string;
     }) => {
+      if (!isCloudHydratedRef.current) return;
       updateClientScopedState(activePublicClientId, (prev) => {
         const nextAnalytics = appendInvitationAnalyticsEvent(
           prev.settings,
