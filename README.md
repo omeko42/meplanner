@@ -32,9 +32,9 @@ Kami menyediakan **3 Pilihan Paket Berlangganan Resmi** yang dapat disesuaikan d
 
 | Paket Layanan | Harga Resmi (IDR) | Fitur & Fasilitas Utama |
 | :--- | :---: | :--- |
-| **🥉 STARTER** | **Rp 50.000** | • Undangan Digital Eksklusif Aktif<br>• Kuota hingga **150 Tamu Undangan**<br>• Galeri Foto & Musik Latar Standar<br>• RSVP & Buku Tamu Doa Restu Real-Time<br>• Masa Aktif **3 Bulan** |
-| **🥈 EXCLUSIVE** *(Best Seller)* | **Rp 149.000** | • **Seluruh Fitur Paket STARTER**<br>• Kuota hingga **500 Tamu Undangan + Generator WA 1-Klik**<br>• Dashboard Checklist Kesiapan & Manajemen Anggaran/Vendor<br>• Amplop Digital Rekening & **QRIS Wedding Gift**<br>• **4 Akun Inti Mempelai/Keluarga + Akun Panitia/WO**<br>• Masa Aktif **6 Bulan** |
-| **👑 ROYAL VIP** *(Full Suite)* | **Rp 299.000** | • **Seluruh Fitur Paket EXCLUSIVE Tanpa Batas (Unlimited Tamu)**<br>• **Mode Privasi Kode VIP (`INV-xxxx`)** & Moderasi Tayangan Penuh<br>• Studio Foto Ultra-HD & Custom Playlist Audio Eksklusif<br>• Prioritas Dukungan Teknis & Pendampingan Setup<br>• Masa Aktif **12 Bulan (1 Tahun Penuh)** |
+| **🥉 STARTER** | **Rp 50.000**<br>*(Harga normal ~~Rp 150.000~~)* | • Undangan Digital Eksklusif Aktif<br>• Kuota hingga **150 Tamu Undangan**<br>• Galeri Foto & Musik Latar Standar<br>• RSVP & Buku Tamu Doa Restu Real-Time<br>• Masa Aktif **3 Bulan** |
+| **🥈 EXCLUSIVE** *(Best Seller)* | **Rp 299.000**<br>*(Harga normal ~~Rp 600.000~~)* | • **Seluruh Fitur Paket STARTER**<br>• Kuota hingga **500 Tamu Undangan + Generator WA 1-Klik**<br>• Dashboard Checklist Kesiapan & Manajemen Anggaran/Vendor<br>• Amplop Digital Rekening & **QRIS Wedding Gift**<br>• **4 Akun Inti Mempelai/Keluarga + Akun Panitia/WO**<br>• Masa Aktif **6 Bulan** |
+| **👑 ROYAL VIP** *(Full Suite)* | **Rp 599.000**<br>*(Harga normal ~~Rp 1.200.000~~)* | • **Seluruh Fitur Paket EXCLUSIVE Tanpa Batas (Unlimited Tamu)**<br>• **Mode Privasi Kode VIP (`INV-xxxx`)** & Moderasi Tayangan Penuh<br>• Studio Foto Ultra-HD & Custom Playlist Audio Eksklusif<br>• Prioritas Dukungan Teknis & Pendampingan Setup<br>• Masa Aktif **12 Bulan (1 Tahun Penuh)** |
 
 ---
 

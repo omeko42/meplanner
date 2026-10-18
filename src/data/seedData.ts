@@ -35,7 +35,7 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     networkOrBranch: 'Transfer Bank IDR (Real-Time / BI-FAST)',
     minAmountNote: 'Mulai Rp 50.000',
     instructions:
-      'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 149.000 / Rp 299.000) dan cantumkan Nama Pasangan di berita transfer.',
+      'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 299.000 / Rp 599.000) dan cantumkan Nama Pasangan di berita transfer.',
     isActive: true,
     updatedAt: '2026-10-18T16:05:00+07:00',
   },

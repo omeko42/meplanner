@@ -386,10 +386,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               ? '★ PALING POPULER • EXCLUSIVE'
               : '★ MOST POPULAR • EXCLUSIVE',
           name: 'Exclusive Planner & Gallery',
-          priceMain: lang === 'ID' ? 'Rp 149.000' : '$25 USD',
+          priceMain: lang === 'ID' ? 'Rp 299.000' : '$25 USD',
           priceCryptoDisplay: '25 USDT',
-          amountNumeric: lang === 'ID' ? 149000 : 25,
-          priceStrike: lang === 'ID' ? 'Rp 350.000' : '$59 USD',
+          amountNumeric: lang === 'ID' ? 299000 : 25,
+          priceStrike: lang === 'ID' ? 'Rp 600.000' : '$59 USD',
           priceSubBadge:
             lang === 'ID'
               ? 'Paket Paling Populer • Sekali Bayar'
@@ -419,10 +419,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               ? '👑 PAKET TERLENGKAP • ROYAL VIP'
               : '👑 ALL-INCLUSIVE FLAGSHIP • ROYAL VIP',
           name: 'Royal VIP Flagship Suite',
-          priceMain: lang === 'ID' ? 'Rp 299.000' : '$49 USD',
+          priceMain: lang === 'ID' ? 'Rp 599.000' : '$49 USD',
           priceCryptoDisplay: '49 USDT',
-          amountNumeric: lang === 'ID' ? 299000 : 49,
-          priceStrike: lang === 'ID' ? 'Rp 650.000' : '$99 USD',
+          amountNumeric: lang === 'ID' ? 599000 : 49,
+          priceStrike: lang === 'ID' ? 'Rp 1.200.000' : '$99 USD',
           priceSubBadge:
             lang === 'ID'
               ? 'Paket Terlengkap Tanpa Batas • Sekali Bayar'

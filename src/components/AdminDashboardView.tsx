@@ -10314,7 +10314,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     'Transfer Bank IDR (Real-Time / BI-FAST)',
                                   minAmountNote: 'Mulai Rp 50.000',
                                   instructions:
-                                    'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 149.000 / Rp 299.000) dan cantumkan Nama Pasangan di berita transfer.',
+                                    'Transfer tepat sesuai nominal paket (Rp 50.000 / Rp 299.000 / Rp 599.000) dan cantumkan Nama Pasangan di berita transfer.',
                                 },
                                 {
                                   pill: '📱 + QRIS Nasional',
@@ -11202,10 +11202,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       STARTER (Rp 50.000 / $10)
                                     </option>
                                     <option value="EXCLUSIVE">
-                                      EXCLUSIVE (Rp 149.000 / $19)
+                                      EXCLUSIVE (Rp 299.000 / $19)
                                     </option>
                                     <option value="ROYAL VIP">
-                                      ROYAL VIP (Rp 299.000 / $29)
+                                      ROYAL VIP (Rp 599.000 / $29)
                                     </option>
                                   </select>
                                 </div>
@@ -11348,8 +11348,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         ? 50000
                                         : manualPaymentForm.packageTier ===
                                           'EXCLUSIVE'
-                                        ? 149000
-                                        : 299000
+                                        ? 299000
+                                        : 599000
                                       : manualPaymentForm.packageTier ===
                                         'STARTER'
                                       ? 10
@@ -13474,9 +13474,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       }
                       className="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white"
                     >
-                      <option value="ROYAL_VIP">ROYAL VIP (Full Suite)</option>
-                      <option value="EXCLUSIVE">EXCLUSIVE</option>
-                      <option value="STARTER">STARTER</option>
+                      <option value="ROYAL_VIP">ROYAL VIP (Rp 599.000 / Full Suite)</option>
+                      <option value="EXCLUSIVE">EXCLUSIVE (Rp 299.000)</option>
+                      <option value="STARTER">STARTER (Rp 50.000)</option>
                     </select>
                   </div>
                   <div>
