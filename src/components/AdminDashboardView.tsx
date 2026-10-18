@@ -356,17 +356,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [guestTypeFilter, setGuestTypeFilter] = useState<GuestType | 'ALL'>('ALL');
   const [guestPriorityFilter, setGuestPriorityFilter] = useState<GuestPriority | 'ALL'>('ALL');
   const [guestRsvpFilter, setGuestRsvpFilter] = useState<RsvpStatus | 'ALL'>('ALL');
+  const [guestFormatFilter, setGuestFormatFilter] = useState<
+    'ALL' | 'Cetak Tebal' | 'Cetak Biasa' | 'Online'
+  >('ALL');
   const [editingGuest, setEditingGuest] = useState<Partial<WeddingGuest> | null>(null);
   const [waPreviewGuest, setWaPreviewGuest] = useState<WeddingGuest | null>(null);
   const [copiedGuestLinkId, setCopiedGuestLinkId] = useState<string | null>(null);
   const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
 
+  const normalizeGuestFormat = (
+    fmt?: InvitationFormat | string
+  ): 'Cetak Tebal' | 'Cetak Biasa' | 'Online' => {
+    if (fmt === 'Cetak Tebal') return 'Cetak Tebal';
+    if (
+      fmt === 'Cetak Biasa' ||
+      fmt === 'Cetak Reguler' ||
+      fmt === 'Cetak & Digital'
+    ) {
+      return 'Cetak Biasa';
+    }
+    if (fmt === 'Online' || fmt === 'Digital WA') return 'Online';
+    return 'Cetak Tebal';
+  };
+
+  const guestFormatCounts = useMemo(() => {
+    let cetakTebal = 0;
+    let cetakBiasa = 0;
+    let online = 0;
+    for (const g of state.guests) {
+      const norm = normalizeGuestFormat(g.invitationFormat);
+      if (norm === 'Cetak Tebal') cetakTebal += 1;
+      else if (norm === 'Cetak Biasa') cetakBiasa += 1;
+      else online += 1;
+    }
+    return { cetakTebal, cetakBiasa, online };
+  }, [state.guests]);
+
   const filteredGuests = useMemo(() => {
     return state.guests.filter((g) => {
       if (guestTypeFilter !== 'ALL' && g.guestType !== guestTypeFilter) return false;
       if (guestPriorityFilter !== 'ALL' && g.priority !== guestPriorityFilter) return false;
       if (guestRsvpFilter !== 'ALL' && g.rsvpStatus !== guestRsvpFilter) return false;
+      if (
+        guestFormatFilter !== 'ALL' &&
+        normalizeGuestFormat(g.invitationFormat) !== guestFormatFilter
+      ) {
+        return false;
+      }
       if (guestSearch.trim()) {
         const q = guestSearch.toLowerCase();
         const match =
@@ -378,7 +415,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
       return true;
     });
-  }, [state.guests, guestTypeFilter, guestPriorityFilter, guestRsvpFilter, guestSearch]);
+  }, [
+    state.guests,
+    guestTypeFilter,
+    guestPriorityFilter,
+    guestRsvpFilter,
+    guestFormatFilter,
+    guestSearch,
+  ]);
 
   // ============================================================================
   // SETTINGS, USER MANAGEMENT & BACKUP MODULE STATE (LINKEDIN CARD + MODAL STYLE)
@@ -1963,6 +2007,49 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     Buku Tamu &amp; Doa ({state.wishes.length})
                   </button>
                 </div>
+
+                {/* Penanda Cetak Undangan Filter Pills: Cetak Tebal | Cetak Biasa | Online */}
+                {guestSubTab === 'list' && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-stone-500 mr-1">
+                      Penanda Undangan:
+                    </span>
+                    {[
+                      {
+                        key: 'ALL' as const,
+                        label: `Semua (${state.guests.length})`,
+                      },
+                      {
+                        key: 'Cetak Tebal' as const,
+                        label: `Cetak Tebal (${guestFormatCounts.cetakTebal})`,
+                      },
+                      {
+                        key: 'Cetak Biasa' as const,
+                        label: `Cetak Biasa (${guestFormatCounts.cetakBiasa})`,
+                      },
+                      {
+                        key: 'Online' as const,
+                        label: `Online (${guestFormatCounts.online})`,
+                      },
+                    ].map((pill) => {
+                      const active = guestFormatFilter === pill.key;
+                      return (
+                        <button
+                          key={pill.key}
+                          type="button"
+                          onClick={() => setGuestFormatFilter(pill.key)}
+                          className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                            active
+                              ? 'bg-[#FAF3E3] text-[#8B6914] border-[#B68D40] shadow-2xs'
+                              : 'bg-[#FAF8F5] text-stone-600 border-stone-200 hover:border-[#D4AF37]/50 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          {pill.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {guestSubTab === 'list' && (
@@ -2028,7 +2115,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       Tamu Undangan ({filteredGuests.length})
                     </h2>
                     <p className="text-[11px] sm:text-xs text-stone-500">
-                      Klik + untuk menambah tamu baru atau ikon pensil pada tiap baris untuk mengedit tamu
+                      Pilih penanda <strong>Cetak Tebal</strong>, <strong>Cetak Biasa</strong>, atau <strong>Online</strong> pada tiap tamu. Untuk tamu Online, langsung salin/kirim link masing-masing.
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -2074,12 +2161,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
                     const waData = generateWhatsAppMessage(guest, state.settings);
                     const isLinkCopied = copiedGuestLinkId === guest.id;
+                    const currentFormat = normalizeGuestFormat(guest.invitationFormat);
+                    const isOnlineGuest = currentFormat === 'Online';
+
                     return (
                       <div
                         key={guest.id}
                         className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                       >
-                        <div className="space-y-1 min-w-0">
+                        <div className="space-y-1.5 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-bold text-xs sm:text-base text-stone-900">
                               {guest.guestName}
@@ -2090,7 +2180,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                               {guest.priority}
                             </span>
+
+                            {/* Penanda Cetak Undangan Langsung di Baris Tamu: Cetak Tebal | Cetak Biasa | Online */}
+                            <select
+                              aria-label={`Penanda undangan ${guest.guestName}`}
+                              value={currentFormat}
+                              onChange={async (e) => {
+                                const nextFormat = e.target.value as InvitationFormat;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  invitationFormat: nextFormat,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
+                                );
+                              }}
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer transition-colors ${
+                                currentFormat === 'Cetak Tebal'
+                                  ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
+                                  : currentFormat === 'Cetak Biasa'
+                                  ? 'bg-[#FAF8F5] text-stone-800 border-stone-300'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              }`}
+                            >
+                              <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
+                              <option value="Cetak Biasa">✉️ Cetak Biasa</option>
+                              <option value="Online">🌐 Online (Link)</option>
+                            </select>
                           </div>
+
                           <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
                             <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                             <span>
@@ -2099,8 +2218,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <span>
                               &bull; RSVP: <strong>{guest.rsvpStatus}</strong> ({guest.pax} Pax)
                             </span>
-                            {guest.address && <span>&bull; {guest.address}</span>}
+                            {!isOnlineGuest && guest.address && (
+                              <span>&bull; Lokasi Cetak: {guest.address}</span>
+                            )}
+                            {!isOnlineGuest && guest.deliveryStatus && (
+                              <span className="text-[#8B6914] font-semibold">
+                                &bull; {guest.deliveryStatus}
+                              </span>
+                            )}
                           </p>
+
+                          {/* Jika Tamu ONLINE: Tampilkan Link Undangan Masing-Masing Langsung Agar Tinggal Kirim/Salin */}
+                          {isOnlineGuest && (
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 border border-emerald-200 max-w-full">
+                              <span className="text-[10px] font-bold text-emerald-800 shrink-0">
+                                Link Tamu:
+                              </span>
+                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[220px] sm:max-w-[380px]">
+                                {waData.inviteUrl}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(waData.inviteUrl);
+                                  setCopiedGuestLinkId(guest.id);
+                                  setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                                  showToast(
+                                    `Link undangan online ${guest.guestName} berhasil disalin!`
+                                  );
+                                }}
+                                className="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shrink-0"
+                              >
+                                {isLinkCopied ? 'Tersalin!' : 'Salin Link'}
+                              </button>
+                            </div>
+                          )}
+
                           {guest.notes && (
                             <p className="text-xs text-stone-500">{guest.notes}</p>
                           )}
@@ -4729,15 +4882,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {/* Quick Preset Chips for Guest Category & Priority */}
               <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5">
                 <p className="font-bold text-xs text-stone-800">
-                  Disarankan berdasarkan kategori tamu undangan
+                  Disarankan berdasarkan kategori &amp; penanda undangan tamu
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { label: 'Pejabat / VIP (Cetak Tebal)', guestType: 'Pejabat/VIP' as GuestType, priority: 'P1 - VIP' as GuestPriority, format: 'Cetak Tebal' as InvitationFormat },
-                    { label: 'Keluarga Inti & Besar', guestType: 'Keluarga' as GuestType, priority: 'P1 - VIP' as GuestPriority, format: 'Cetak & Digital' as InvitationFormat },
-                    { label: 'Rekan Kerja / Satker Polri', guestType: 'Rekan Kerja/Polri' as GuestType, priority: 'P2 - Utama' as GuestPriority, format: 'Digital WA' as InvitationFormat },
-                    { label: 'Sahabat & Rekan Angkatan', guestType: 'Teman/Sahabat' as GuestType, priority: 'P2 - Utama' as GuestPriority, format: 'Digital WA' as InvitationFormat },
-                    { label: 'Jemaat Gereja / Tetangga', guestType: 'Tetangga/Gereja' as GuestType, priority: 'P3 - Reguler' as GuestPriority, format: 'Cetak Reguler' as InvitationFormat },
+                    {
+                      label: 'Pejabat / VIP (Cetak Tebal)',
+                      guestType: 'Pejabat/VIP' as GuestType,
+                      priority: 'P1 - VIP' as GuestPriority,
+                      format: 'Cetak Tebal' as InvitationFormat,
+                    },
+                    {
+                      label: 'Keluarga & Kerabat (Cetak Biasa)',
+                      guestType: 'Keluarga' as GuestType,
+                      priority: 'P1 - VIP' as GuestPriority,
+                      format: 'Cetak Biasa' as InvitationFormat,
+                    },
+                    {
+                      label: 'Rekan Kerja / Polri (Online)',
+                      guestType: 'Rekan Kerja/Polri' as GuestType,
+                      priority: 'P2 - Utama' as GuestPriority,
+                      format: 'Online' as InvitationFormat,
+                    },
+                    {
+                      label: 'Sahabat & Rekan (Online)',
+                      guestType: 'Teman/Sahabat' as GuestType,
+                      priority: 'P2 - Utama' as GuestPriority,
+                      format: 'Online' as InvitationFormat,
+                    },
+                    {
+                      label: 'Jemaat Gereja / Tetangga (Cetak Biasa)',
+                      guestType: 'Tetangga/Gereja' as GuestType,
+                      priority: 'P3 - Reguler' as GuestPriority,
+                      format: 'Cetak Biasa' as InvitationFormat,
+                    },
                   ].map((preset) => (
                     <button
                       key={preset.label}
@@ -4756,6 +4934,60 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <Plus className="w-3.5 h-3.5 text-[#8B6914]" />
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Penanda Cetak Undangan: Cetak Tebal | Cetak Biasa | Online */}
+              <div>
+                <label className="block font-bold text-[#8B6914] mb-1.5">
+                  Penanda Cetak Undangan*
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      {
+                        val: 'Cetak Tebal' as InvitationFormat,
+                        title: '🖨️ Cetak Tebal',
+                        desc: 'Hardcover / VIP',
+                      },
+                      {
+                        val: 'Cetak Biasa' as InvitationFormat,
+                        title: '✉️ Cetak Biasa',
+                        desc: 'Undangan Cetak Reguler',
+                      },
+                      {
+                        val: 'Online' as InvitationFormat,
+                        title: '🌐 Online',
+                        desc: 'Kirim Link Masing-Masing',
+                      },
+                    ] as const
+                  ).map((opt) => {
+                    const isSelected =
+                      normalizeGuestFormat(editingGuest.invitationFormat) ===
+                      opt.val;
+                    return (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() =>
+                          setEditingGuest({
+                            ...editingGuest,
+                            invitationFormat: opt.val,
+                          })
+                        }
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border-[#B68D40] text-[#8B6914] shadow-2xs'
+                            : 'bg-white hover:bg-[#FAF8F5] border-stone-200 text-stone-700'
+                        }`}
+                      >
+                        <p className="font-bold text-xs">{opt.title}</p>
+                        <p className="text-[10px] text-stone-500 mt-0.5">
+                          {opt.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -4846,25 +5078,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-medium text-stone-700 mb-1">Format Undangan</label>
-                  <select
-                    value={editingGuest.invitationFormat || 'Cetak Tebal'}
-                    onChange={(e) =>
-                      setEditingGuest({
-                        ...editingGuest,
-                        invitationFormat: e.target.value as InvitationFormat,
-                      })
-                    }
-                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
-                  >
-                    <option value="Cetak Tebal">Cetak Tebal</option>
-                    <option value="Cetak Reguler">Cetak Reguler</option>
-                    <option value="Digital WA">Digital WA</option>
-                    <option value="Cetak & Digital">Cetak &amp; Digital</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-stone-700 mb-1">Kuota Pax</label>
                   <input
@@ -4896,42 +5110,51 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-stone-700 mb-1">
-                    Alamat / Ruangan
-                  </label>
-                  <input
-                    type="text"
-                    value={editingGuest.address || ''}
-                    onChange={(e) =>
-                      setEditingGuest({ ...editingGuest, address: e.target.value })
-                    }
-                    placeholder="Alamat pengiriman undangan cetak"
-                    className="w-full px-3 py-2 rounded-lg border border-stone-300"
-                  />
+              {normalizeGuestFormat(editingGuest.invitationFormat) === 'Online' ? (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs">
+                  <p className="font-bold">🌐 Mode Undangan Online Aktif</p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    Tamu ini ditandai sebagai <strong>Online</strong>. Setelah disimpan, Anda tinggal menyalin atau mengirim link undangan khusus tamu ini melalui tombol <strong>Salin Link</strong> atau <strong>Kirim WA</strong> pada baris tamu.
+                  </p>
                 </div>
-                <div>
-                  <label className="block font-medium text-stone-700 mb-1">
-                    Status Distribusi
-                  </label>
-                  <select
-                    value={editingGuest.deliveryStatus || 'Belum Disiapkan'}
-                    onChange={(e) =>
-                      setEditingGuest({
-                        ...editingGuest,
-                        deliveryStatus: e.target.value as DeliveryStatus,
-                      })
-                    }
-                    className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
-                  >
-                    <option value="Belum Disiapkan">Belum Disiapkan</option>
-                    <option value="Siap Kirim">Siap Kirim</option>
-                    <option value="Sudah Dikirim">Sudah Dikirim</option>
-                    <option value="Sudah Diterima">Sudah Diterima</option>
-                  </select>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">
+                      Alamat / Ruangan Pengiriman Cetak
+                    </label>
+                    <input
+                      type="text"
+                      value={editingGuest.address || ''}
+                      onChange={(e) =>
+                        setEditingGuest({ ...editingGuest, address: e.target.value })
+                      }
+                      placeholder="Alamat pengiriman undangan cetak"
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-stone-700 mb-1">
+                      Status Distribusi Cetak
+                    </label>
+                    <select
+                      value={editingGuest.deliveryStatus || 'Belum Disiapkan'}
+                      onChange={(e) =>
+                        setEditingGuest({
+                          ...editingGuest,
+                          deliveryStatus: e.target.value as DeliveryStatus,
+                        })
+                      }
+                      className="w-full px-2.5 py-2 rounded-lg border border-stone-300 bg-white"
+                    >
+                      <option value="Belum Disiapkan">Belum Disiapkan</option>
+                      <option value="Siap Kirim">Siap Kirim</option>
+                      <option value="Sudah Dikirim">Sudah Dikirim</option>
+                      <option value="Sudah Diterima">Sudah Diterima</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">

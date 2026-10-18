@@ -50,6 +50,8 @@ export type GuestSide = 'Mempelai Pria' | 'Mempelai Wanita' | 'Bersama';
 
 export type InvitationFormat =
   | 'Cetak Tebal'
+  | 'Cetak Biasa'
+  | 'Online'
   | 'Cetak Reguler'
   | 'Digital WA'
   | 'Cetak & Digital';
