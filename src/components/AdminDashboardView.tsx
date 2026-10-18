@@ -1652,6 +1652,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     aspectRatio: 'auto',
     cropBox: { x: 0, y: 0, w: 100, h: 100 },
   });
+  const [photoStudioMetaDraft, setPhotoStudioMetaDraft] = useState<{
+    category: string;
+    title: string;
+    caption: string;
+  }>({
+    category: 'Momen Bersama',
+    title: '',
+    caption: '',
+  });
   const [photoStudioToolMode, setPhotoStudioToolMode] = useState<'pan' | 'crop'>('crop');
   const [isSavingPhotoCrop, setIsSavingPhotoCrop] = useState(false);
   const [loadedPreviewImg, setLoadedPreviewImg] = useState<HTMLImageElement | null>(null);
@@ -1818,6 +1827,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
     setPhotoAdjustUrl(sourceUrl);
     setPhotoAdjustDraft(normalizeDraftAdjust(photo.adjustment));
+    setPhotoStudioMetaDraft({
+      category: photo.category ?? 'Momen Bersama',
+      title: photo.title ?? '',
+      caption: photo.caption ?? '',
+    });
     setPhotoStudioToolMode('crop');
   };
 
@@ -1832,6 +1846,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
     setPhotoAdjustUrl(url);
     setPhotoAdjustDraft(normalizeDraftAdjust(newPhotoForm.adjustment));
+    setPhotoStudioMetaDraft({
+      category: newPhotoForm.category ?? 'Prewedding',
+      title: newPhotoForm.title ?? '',
+      caption: newPhotoForm.caption ?? '',
+    });
     setPhotoStudioToolMode('crop');
   };
 
@@ -1932,6 +1951,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           p.id === photoAdjustTarget.photoId
             ? {
                 ...p,
+                category: photoStudioMetaDraft.category.trim(),
+                title:
+                  photoStudioMetaDraft.title.trim() ||
+                  p.title ||
+                  'Momen Bahagia',
+                caption: photoStudioMetaDraft.caption.trim(),
                 imageUrl: croppedDataUrl || photoAdjustUrl,
                 originalImageUrl: p.originalImageUrl || photoAdjustUrl,
                 adjustment: savedAdj,
@@ -1950,22 +1975,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           module: 'GALERI_FOTO',
           action: 'SIMPAN',
           status: 'SUCCESS',
-          summary: `Menyimpan hasil crop & posisi "${photoAdjustTarget.label}"`,
+          summary: `Menyimpan hasil crop, posisi & caption "${photoStudioMetaDraft.title.trim() || photoAdjustTarget.label}"`,
         });
         setPhotoAdjustTarget(null);
-        showToast('✓ Tersimpan: Hasil Crop & Posisi foto galeri berhasil diterapkan!');
+        showToast(
+          '✓ Tersimpan: Hasil Crop, Posisi & Caption foto galeri berhasil diterapkan!'
+        );
         return;
       }
 
       if (photoAdjustTarget.kind === 'new_gallery') {
         setNewPhotoForm((prev) => ({
           ...prev,
+          category: photoStudioMetaDraft.category.trim(),
+          title: photoStudioMetaDraft.title.trim() || prev.title,
+          caption: photoStudioMetaDraft.caption.trim() || prev.caption,
           imageUrl: croppedDataUrl || photoAdjustUrl,
           originalImageUrl: prev.originalImageUrl || photoAdjustUrl,
           adjustment: savedAdj,
         }));
         setPhotoAdjustTarget(null);
-        showToast('✓ Hasil crop siap! Klik Tambah Foto untuk menyimpan ke Galeri.');
+        showToast(
+          '✓ Hasil crop & caption siap! Klik Tambah Foto untuk menyimpan ke Galeri.'
+        );
       }
     } finally {
       setIsSavingPhotoCrop(false);
@@ -6473,12 +6505,63 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 7. EDITOR GALERI FOTO PREWEDDING */}
                                       {sec.key === 'showGallerySection' && (
                                         <div className="space-y-3">
+                                          {/* Editor Judul & Subjudul Seksi Galeri */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              Judul &amp; Subjudul Seksi Galeri di Undangan
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              <div>
+                                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                                  Subjudul Atas Seksi Galeri
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={
+                                                    settingsForm.gallerySectionSubtitle ??
+                                                    'Our Journey & Moments'
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      gallerySectionSubtitle:
+                                                        e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Our Journey & Moments"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                                  Judul Besar Seksi Galeri
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={
+                                                    settingsForm.gallerySectionTitle ??
+                                                    'Kisah Kasih & Galeri Momen'
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      gallerySectionTitle:
+                                                        e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Kisah Kasih & Galeri Momen"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-semibold"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                                Galeri Foto ({effectiveGalleryPhotos.length})
+                                                Daftar Foto Galeri ({effectiveGalleryPhotos.length})
                                               </p>
-                                              <InfoTooltip text="Klik 'Ganti Foto' untuk langsung mengganti gambar tanpa mengubah tulisan, klik 'Edit' untuk mengubah judul/caption, atau klik 'Atur' untuk posisi & zoom." />
+                                              <InfoTooltip text="Klik 'Edit Judul & Caption' untuk mengubah Label Atas (misal MOMEN BERSAMA), Judul Foto (misal Forever Begins Here), dan Caption bawah. Klik 'Ganti Foto' untuk mengganti gambarnya." />
                                             </div>
                                             {effectiveGalleryPhotos.length === 0 && (
                                               <button
@@ -6516,7 +6599,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                 ph
                                                               )
                                                             }
-                                                            title="Klik untuk atur Zoom & Geser posisi foto"
+                                                            title="Klik untuk atur Crop, Zoom, Posisi & Caption foto"
                                                             className="w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 relative"
                                                           >
                                                             <img
@@ -6528,7 +6611,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                               )}
                                                             />
                                                           </button>
-                                                          <div className="min-w-0">
+                                                          <div
+                                                            onClick={() =>
+                                                              handleStartEditGalleryPhotoItem(
+                                                                ph
+                                                              )
+                                                            }
+                                                            title="Klik untuk mengedit Label, Judul & Caption"
+                                                            className="min-w-0 cursor-pointer hover:opacity-80"
+                                                          >
+                                                            <span className="inline-block text-[9px] font-extrabold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-1.5 py-0.5 rounded border border-[#D4AF37]/35 mb-0.5">
+                                                              {ph.category && ph.category.trim() !== ''
+                                                                ? ph.category
+                                                                : 'Tanpa Label Atas'}
+                                                            </span>
                                                             <p className="font-bold text-stone-900 truncate">
                                                               {ph.title}
                                                             </p>
@@ -6547,7 +6643,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             <span>Ganti Foto</span>
                                                             <input
                                                               type="file"
-                                                              accept="image/*"
+                                                              accept="image/*,.svg"
                                                               className="hidden"
                                                               onChange={(e) =>
                                                                 handleReplaceGalleryPhotoFile(
@@ -6564,11 +6660,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                 ph
                                                               )
                                                             }
-                                                            title="Edit Judul & Caption foto ini"
+                                                            title="Edit Label Kategori (MOMEN BERSAMA), Judul & Caption foto ini"
                                                             className="px-2 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] inline-flex items-center gap-1"
                                                           >
                                                             <Edit3 className="w-3 h-3" />
-                                                            <span>Edit</span>
+                                                            <span>Edit Judul &amp; Caption</span>
                                                           </button>
                                                           <button
                                                             type="button"
@@ -6599,38 +6695,105 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       </div>
 
                                                       {isEditingPhoto && (
-                                                        <div className="pt-2 border-t border-stone-100 space-y-2">
+                                                        <div className="pt-2.5 border-t border-stone-200 space-y-2.5 bg-[#FAF8F5] p-3 rounded-xl">
+                                                          <div>
+                                                            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                                                              <label className="text-[10px] font-bold text-[#8B6914] uppercase tracking-wider">
+                                                                1. Label Kategori Atas (Contoh: MOMEN BERSAMA / PREWEDDING)
+                                                              </label>
+                                                              <div className="flex flex-wrap gap-1">
+                                                                {[
+                                                                  'Momen Bersama',
+                                                                  'Prewedding',
+                                                                  'Lamaran',
+                                                                  'Pemberkatan',
+                                                                  'Resepsi',
+                                                                ].map((cat) => (
+                                                                  <button
+                                                                    key={cat}
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                      setEditingPhotoDraft({
+                                                                        ...editingPhotoDraft,
+                                                                        category: cat,
+                                                                      })
+                                                                    }
+                                                                    className="px-2 py-0.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold text-[9px]"
+                                                                  >
+                                                                    {cat}
+                                                                  </button>
+                                                                ))}
+                                                                <button
+                                                                  type="button"
+                                                                  onClick={() =>
+                                                                    setEditingPhotoDraft({
+                                                                      ...editingPhotoDraft,
+                                                                      category: '',
+                                                                    })
+                                                                  }
+                                                                  className="px-2 py-0.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-[9px]"
+                                                                >
+                                                                  Kosongkan Label
+                                                                </button>
+                                                              </div>
+                                                            </div>
+                                                            <input
+                                                              type="text"
+                                                              value={
+                                                                editingPhotoDraft.category
+                                                              }
+                                                              onChange={(e) =>
+                                                                setEditingPhotoDraft({
+                                                                  ...editingPhotoDraft,
+                                                                  category:
+                                                                    e.target.value,
+                                                                })
+                                                              }
+                                                              placeholder="Ketik bebas (misal: Momen Bersama) atau kosongkan jika tidak ingin label"
+                                                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-bold text-xs text-[#8B6914]"
+                                                            />
+                                                          </div>
                                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                            <input
-                                                              type="text"
-                                                              value={
-                                                                editingPhotoDraft.title
-                                                              }
-                                                              onChange={(e) =>
-                                                                setEditingPhotoDraft({
-                                                                  ...editingPhotoDraft,
-                                                                  title:
-                                                                    e.target.value,
-                                                                })
-                                                              }
-                                                              placeholder="Judul Foto"
-                                                              className="px-2.5 py-1.5 rounded-lg border border-stone-300 font-semibold text-xs"
-                                                            />
-                                                            <input
-                                                              type="text"
-                                                              value={
-                                                                editingPhotoDraft.caption
-                                                              }
-                                                              onChange={(e) =>
-                                                                setEditingPhotoDraft({
-                                                                  ...editingPhotoDraft,
-                                                                  caption:
-                                                                    e.target.value,
-                                                                })
-                                                              }
-                                                              placeholder="Caption Singkat"
-                                                              className="px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs"
-                                                            />
+                                                            <div>
+                                                              <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                                                                2. Judul Utama Foto (Contoh: Forever Begins Here)
+                                                              </label>
+                                                              <input
+                                                                type="text"
+                                                                value={
+                                                                  editingPhotoDraft.title
+                                                                }
+                                                                onChange={(e) =>
+                                                                  setEditingPhotoDraft({
+                                                                    ...editingPhotoDraft,
+                                                                    title:
+                                                                      e.target.value,
+                                                                  })
+                                                                }
+                                                                placeholder="Judul Foto"
+                                                                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-xs"
+                                                              />
+                                                            </div>
+                                                            <div>
+                                                              <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                                                                3. Caption / Deskripsi Bawah
+                                                              </label>
+                                                              <input
+                                                                type="text"
+                                                                value={
+                                                                  editingPhotoDraft.caption
+                                                                }
+                                                                onChange={(e) =>
+                                                                  setEditingPhotoDraft({
+                                                                    ...editingPhotoDraft,
+                                                                    caption:
+                                                                      e.target.value,
+                                                                  })
+                                                                }
+                                                                placeholder="Caption Singkat"
+                                                                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                              />
+                                                            </div>
                                                           </div>
                                                           <div className="flex items-center justify-end gap-1.5">
                                                             <button
@@ -6652,7 +6815,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                               className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-[11px]"
                                                             >
                                                               <Check className="w-3 h-3" />
-                                                              <span>Simpan</span>
+                                                              <span>Simpan Teks Foto</span>
                                                             </button>
                                                           </div>
                                                         </div>
@@ -6689,31 +6852,61 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                           {/* Add Photo Form */}
                                           <div className="p-3 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                              <input
-                                                type="text"
-                                                value={newPhotoForm.title}
-                                                onChange={(e) =>
-                                                  setNewPhotoForm({
-                                                    ...newPhotoForm,
-                                                    title: e.target.value,
-                                                  })
-                                                }
-                                                placeholder="Judul Foto"
-                                                className="px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
-                                              />
-                                              <input
-                                                type="text"
-                                                value={newPhotoForm.caption}
-                                                onChange={(e) =>
-                                                  setNewPhotoForm({
-                                                    ...newPhotoForm,
-                                                    caption: e.target.value,
-                                                  })
-                                                }
-                                                placeholder="Caption Singkat"
-                                                className="px-3 py-1.5 rounded-lg border border-stone-300"
-                                              />
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              Tambah Foto Baru ke Galeri
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                              <div>
+                                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                                  Label Atas (Kategori)
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={newPhotoForm.category}
+                                                  onChange={(e) =>
+                                                    setNewPhotoForm({
+                                                      ...newPhotoForm,
+                                                      category: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Contoh: Momen Bersama / Prewedding"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 font-bold text-[#8B6914]"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                                  Judul Foto
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={newPhotoForm.title}
+                                                  onChange={(e) =>
+                                                    setNewPhotoForm({
+                                                      ...newPhotoForm,
+                                                      title: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Contoh: Forever Begins Here"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                                  Caption / Deskripsi Bawah
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={newPhotoForm.caption}
+                                                  onChange={(e) =>
+                                                    setNewPhotoForm({
+                                                      ...newPhotoForm,
+                                                      caption: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Caption Singkat"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300"
+                                                />
+                                              </div>
                                             </div>
                                             <div className="flex flex-col sm:flex-row gap-2">
                                               <input
@@ -6741,7 +6934,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 <span>Upload Foto</span>
                                                 <input
                                                   type="file"
-                                                  accept="image/*"
+                                                  accept="image/*,.svg"
                                                   className="hidden"
                                                   onChange={handleUploadGalleryFile}
                                                 />
@@ -11072,6 +11265,112 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 );
               })()}
+
+              {/* Form Edit Label Kategori, Judul & Caption (Khusus Foto Galeri) */}
+              {(photoAdjustTarget.kind === 'gallery_item' ||
+                photoAdjustTarget.kind === 'new_gallery') && (
+                <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-[#D4AF37]/45 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <label className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5 text-[#8B6914]" />
+                      <span>Teks Label, Judul &amp; Caption Foto</span>
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        'Momen Bersama',
+                        'Prewedding',
+                        'Lamaran',
+                        'Pemberkatan',
+                        'Resepsi',
+                      ].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() =>
+                            setPhotoStudioMetaDraft((prev) => ({
+                              ...prev,
+                              category: cat,
+                            }))
+                          }
+                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold border transition-all ${
+                            photoStudioMetaDraft.category === cat
+                              ? 'bg-[#B68D40] text-white border-[#B68D40]'
+                              : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPhotoStudioMetaDraft((prev) => ({
+                            ...prev,
+                            category: '',
+                          }))
+                        }
+                        className="px-2 py-0.5 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-700 font-bold text-[9px]"
+                      >
+                        Kosongkan Label
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                        1. Label Atas (MOMEN BERSAMA)
+                      </label>
+                      <input
+                        type="text"
+                        value={photoStudioMetaDraft.category}
+                        onChange={(e) =>
+                          setPhotoStudioMetaDraft((prev) => ({
+                            ...prev,
+                            category: e.target.value,
+                          }))
+                        }
+                        placeholder="Contoh: Momen Bersama"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-bold text-xs text-[#8B6914]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                        2. Judul Utama Foto
+                      </label>
+                      <input
+                        type="text"
+                        value={photoStudioMetaDraft.title}
+                        onChange={(e) =>
+                          setPhotoStudioMetaDraft((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="Contoh: Forever Begins Here"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-xs text-stone-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                        3. Caption / Deskripsi Bawah
+                      </label>
+                      <input
+                        type="text"
+                        value={photoStudioMetaDraft.caption}
+                        onChange={(e) =>
+                          setPhotoStudioMetaDraft((prev) => ({
+                            ...prev,
+                            caption: e.target.value,
+                          }))
+                        }
+                        placeholder="Contoh: Menyatukan dua hati..."
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs text-stone-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Preset Rasio Crop & Mode Tampilan */}
               <div className="bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/80 space-y-2">

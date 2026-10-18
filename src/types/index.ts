@@ -187,7 +187,7 @@ export interface GalleryPhotoItem {
   caption: string;
   imageUrl: string;
   originalImageUrl?: string;
-  category: 'Prewedding' | 'Momen Bersama' | 'Persiapan & Sidang' | 'Venue Semarang';
+  category: string;
   adjustment?: PhotoAdjustment;
 }
 
@@ -301,6 +301,8 @@ export interface WeddingSettings {
   // Love Story & Gallery
   loveStory: LoveStoryItem[];
   galleryPhotos: GalleryPhotoItem[];
+  gallerySectionSubtitle?: string;
+  gallerySectionTitle?: string;
 
   // Custom Background & Theme Settings
   coverBgUrl?: string;

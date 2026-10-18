@@ -952,14 +952,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="text-center mb-7 sm:mb-10">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              Our Journey &amp; Moments
+              {settings.gallerySectionSubtitle?.trim() || 'Our Journey & Moments'}
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              {showLoveStory && showGallery
-                ? 'Kisah Kasih & Galeri Momen'
-                : showLoveStory
-                ? 'Kisah Kasih Perjalanan Cinta'
-                : 'Galeri Momen Bahagia'}
+              {settings.gallerySectionTitle?.trim() ||
+                (showLoveStory && showGallery
+                  ? 'Kisah Kasih & Galeri Momen'
+                  : showLoveStory
+                  ? 'Kisah Kasih Perjalanan Cinta'
+                  : 'Galeri Momen Bahagia')}
             </h2>
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
           </div>
@@ -1074,11 +1075,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent pointer-events-none" />
 
                       {/* Top Category Pill */}
-                      <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 z-20 flex items-center gap-2 pointer-events-none">
-                        <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                          {photo.category || 'Prewedding'}
-                        </span>
-                      </div>
+                      {photo.category && photo.category.trim() !== '' && (
+                        <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 z-20 flex items-center gap-2 pointer-events-none">
+                          <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                            {photo.category}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Photo Title & Caption Centered Above the Bottom Dots */}
                       <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none">
@@ -1606,25 +1609,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden border border-[#D4AF37]/40 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full max-h-[72vh] bg-stone-950 overflow-hidden flex items-center justify-center">
+            <div className="relative w-full max-h-[72vh] bg-stone-950 overflow-hidden flex items-center justify-center">
               <img
                 src={selectedPhoto.imageUrl}
                 alt={selectedPhoto.title}
-                className="w-full max-h-[72vh] object-contain"
-                style={getPhotoAdjustStyle(selectedPhoto.adjustment)}
+                className="w-full max-h-[72vh] object-contain mx-auto block"
               />
             </div>
             <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <span className="text-[10px] uppercase tracking-widest text-[#9A742B] font-bold">
-                  {selectedPhoto.category}
-                </span>
-                <h4 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
-                  {selectedPhoto.title}
-                </h4>
-                <p className="text-xs text-stone-600 mt-0.5 line-clamp-2">
-                  {selectedPhoto.caption}
-                </p>
+                {selectedPhoto.category && selectedPhoto.category.trim() !== '' && (
+                  <span className="text-[10px] uppercase tracking-widest text-[#9A742B] font-bold block mb-0.5">
+                    {selectedPhoto.category}
+                  </span>
+                )}
+                {selectedPhoto.title && selectedPhoto.title.trim() !== '' && (
+                  <h4 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
+                    {selectedPhoto.title}
+                  </h4>
+                )}
+                {selectedPhoto.caption && selectedPhoto.caption.trim() !== '' && (
+                  <p className="text-xs text-stone-600 mt-0.5 line-clamp-2">
+                    {selectedPhoto.caption}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
