@@ -56,6 +56,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     useState<string>('client-utama');
   const [copiedClientId, setCopiedClientId] = useState<string | null>(null);
 
+  const developerUrl =
+    primarySettings.developerCreditUrl?.trim() ||
+    'https://github.com/omeko11/my_wedding_manager';
+  const rawWa =
+    primarySettings.contactWhatsappNumber?.trim() || '089638616516';
+  const whatsappUrl = /^https?:\/\//i.test(rawWa)
+    ? rawWa
+    : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
+
   const handleQuickLookupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = guestCodeInput.trim();
@@ -114,7 +123,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </span>
               </div>
               <p className="text-[10px] sm:text-[11px] font-bold text-[#8B6914] leading-tight">
-                by omeko11{' '}
+                by{' '}
+                <a
+                  href={developerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  omeko11
+                </a>{' '}
                 <span className="font-normal text-stone-500 hidden sm:inline">
                   &bull; Enterprise Wedding Planner &amp; Digital Invitation
                 </span>
@@ -179,7 +196,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest">
               <Sparkles className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span>My Wedding Manager (MWM) by omeko11</span>
+              <span>
+                My Wedding Manager (MWM) by{' '}
+                <a
+                  href={developerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-[#D4AF37]/60 underline-offset-2 hover:text-[#B68D40]"
+                >
+                  omeko11
+                </a>
+              </span>
             </div>
 
             <h2 className="font-serif text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.15]">
@@ -596,7 +623,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                 <div className="pt-6 mt-6 border-t border-[#D4AF37]/25">
                   <a
-                    href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+                    href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`w-full py-3 px-4 rounded-2xl font-extrabold text-xs inline-flex items-center justify-center gap-2 transition-all ${
@@ -625,7 +652,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div>
               <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                 My Wedding Manager by{' '}
-                <span className="text-[#8B6914]">omeko11</span> &copy; 2026
+                <a
+                  href={developerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
+                >
+                  omeko11
+                </a>{' '}
+                &copy; 2026
               </p>
               <p className="text-[11px] text-stone-500">
                 Multi-Client Wedding Readiness Tracker &amp; Interactive Digital Invitation Platform
@@ -638,9 +673,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               Contact Us:
             </span>
             <a
-              href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+              href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
+              title={`Hubungi Kontak WA My Wedding Manager (${rawWa})`}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-stone-900 text-xs font-bold transition-all"
             >
               <svg
@@ -654,7 +690,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               >
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
               </svg>
-              <span>Call Center</span>
+              <span>Kontak WA</span>
             </a>
 
             <a

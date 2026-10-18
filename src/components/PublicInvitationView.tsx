@@ -325,6 +325,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const renderDeveloperCreditBar = (compact = false) => {
     if (settings.showFooterCredit === false) return null;
+    const developerUrl =
+      settings.developerCreditUrl?.trim() ||
+      'https://github.com/omeko11/my_wedding_manager';
+    const rawWa = settings.contactWhatsappNumber?.trim() || '089638616516';
+    const whatsappUrl = /^https?:\/\//i.test(rawWa)
+      ? rawWa
+      : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
+
     return (
       <div
         className={`${
@@ -334,7 +342,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <p className="text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
           My Wedding Manager by{' '}
           <a
-            href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+            href={developerUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold"
@@ -349,15 +357,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             Contact Us:
           </span>
 
-          {/* Call Center / Layanan Platform Icon Pill */}
+          {/* Kontak WA / Layanan Platform Icon Pill */}
           <a
-            href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+            href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            title="Hubungi Call Center & Layanan My Wedding Manager (Eko Agung Krisdianto)"
+            title={`Hubungi Kontak WA My Wedding Manager (${rawWa})`}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
-            {/* Call Center Headset + Phone SVG Icon */}
             <svg
               className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
               viewBox="0 0 24 24"
@@ -367,10 +374,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
-              <path d="M21 16v2a4 4 0 0 1-4 4h-5" />
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
             </svg>
-            <span>Call Center</span>
+            <span>Kontak WA</span>
           </a>
 
           {/* LinkedIn Official Profile Badge Link */}

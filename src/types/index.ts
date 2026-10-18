@@ -349,6 +349,8 @@ export interface WeddingSettings {
   disableRsvpSubmission?: boolean;
   storageQuotaLimitMb?: number; // default 500 MB
   showFooterCredit?: boolean; // default true
+  developerCreditUrl?: string; // default https://github.com/omeko11/my_wedding_manager
+  contactWhatsappNumber?: string; // default 089638616516
 
   updatedAt: string;
   updatedBy: string;

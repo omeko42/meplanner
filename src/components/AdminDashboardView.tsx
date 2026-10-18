@@ -3714,7 +3714,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </span>
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate leading-tight mt-0.5">
-                  <span className="font-bold text-[#8B6914]">by omeko11</span>
+                  <span className="font-bold text-[#8B6914]">
+                    by{' '}
+                    <a
+                      href={
+                        (
+                          settingsForm.developerCreditUrl ??
+                          state.settings.developerCreditUrl
+                        )?.trim() ||
+                        'https://github.com/omeko11/my_wedding_manager'
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      omeko11
+                    </a>
+                  </span>
                   <span className="mx-1 text-stone-300">&bull;</span>
                   <span>
                     {state.settings.groomNickname} &amp;{' '}
@@ -9572,6 +9588,90 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
+                {/* Pengaturan Tautan Credit omeko11 & Kontak WA (Footer & Komersial) */}
+                <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-extrabold text-stone-900">
+                      Pengaturan Tautan Credit <span className="text-[#8B6914]">omeko11</span> &amp; Kontak WA (Footer)
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const nextSettings: WeddingSettings = {
+                          ...state.settings,
+                          ...settingsForm,
+                          developerCreditUrl:
+                            (
+                              settingsForm.developerCreditUrl ??
+                              state.settings.developerCreditUrl
+                            )?.trim() ||
+                            'https://github.com/omeko11/my_wedding_manager',
+                          contactWhatsappNumber:
+                            (
+                              settingsForm.contactWhatsappNumber ??
+                              state.settings.contactWhatsappNumber
+                            )?.trim() || '089638616516',
+                          updatedBy: adminUser.username,
+                        };
+                        setSettingsFormInternal(nextSettings);
+                        await commitImmediateSettings(nextSettings);
+                        showToast(
+                          '✓ Tautan Credit omeko11 & Nomor Kontak WA berhasil disimpan!'
+                        );
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-[11px] shrink-0 shadow-2xs"
+                    >
+                      Simpan Tautan Footer
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        Link Credit &ldquo;omeko11&rdquo; (GitHub / Website):
+                      </label>
+                      <input
+                        type="url"
+                        value={
+                          settingsForm.developerCreditUrl ??
+                          state.settings.developerCreditUrl ??
+                          'https://github.com/omeko11/my_wedding_manager'
+                        }
+                        onChange={(e) =>
+                          setSettingsForm((prev) => ({
+                            ...prev,
+                            developerCreditUrl: e.target.value,
+                          }))
+                        }
+                        placeholder="https://github.com/omeko11/my_wedding_manager"
+                        className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        Nomor / Link Kontak WA (&ldquo;Kontak WA&rdquo; Footer):
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          settingsForm.contactWhatsappNumber ??
+                          state.settings.contactWhatsappNumber ??
+                          '089638616516'
+                        }
+                        onChange={(e) =>
+                          setSettingsForm((prev) => ({
+                            ...prev,
+                            contactWhatsappNumber: e.target.value,
+                          }))
+                        }
+                        placeholder="089638616516"
+                        className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Saklar Moderasi Sesi & Credit Footer */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   {[
@@ -10001,7 +10101,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div>
                 <p className="text-xs font-extrabold text-stone-900 tracking-wide">
                   My Wedding Manager by{' '}
-                  <span className="text-[#8B6914]">omeko11</span> &copy; 2026
+                  <a
+                    href={
+                      (
+                        settingsForm.developerCreditUrl ??
+                        state.settings.developerCreditUrl
+                      )?.trim() ||
+                      'https://github.com/omeko11/my_wedding_manager'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
+                  >
+                    omeko11
+                  </a>{' '}
+                  &copy; 2026
                 </p>
                 <p className="text-[10px] text-stone-500">
                   Enterprise Multi-Client Wedding Planner &amp; Digital Invitation Suite
@@ -10014,10 +10128,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 Contact Us:
               </span>
               <a
-                href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+                href={(() => {
+                  const rawWa =
+                    (
+                      settingsForm.contactWhatsappNumber ??
+                      state.settings.contactWhatsappNumber
+                    )?.trim() || '089638616516';
+                  return /^https?:\/\//i.test(rawWa)
+                    ? rawWa
+                    : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
+                })()}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Call Center & Layanan Komersial My Wedding Manager"
+                title={`Hubungi Kontak WA My Wedding Manager (${
+                  (
+                    settingsForm.contactWhatsappNumber ??
+                    state.settings.contactWhatsappNumber
+                  )?.trim() || '089638616516'
+                })`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-[11px] font-bold transition-all shadow-2xs"
               >
                 <svg
@@ -10031,7 +10159,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 >
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
-                <span>Call Center</span>
+                <span>Kontak WA</span>
               </a>
 
               <a

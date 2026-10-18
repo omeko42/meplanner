@@ -196,6 +196,8 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   disableRsvpSubmission: false,
   storageQuotaLimitMb: 500,
   showFooterCredit: true,
+  developerCreditUrl: 'https://github.com/omeko11/my_wedding_manager',
+  contactWhatsappNumber: '089638616516',
 
   updatedAt: '2026-10-18T16:05:00+07:00',
   updatedBy: 'superadmin',

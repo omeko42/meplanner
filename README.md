@@ -97,9 +97,10 @@ npx tsc --noEmit
 
 ## 👨‍💻 Credit & Contact Us
 
-**My Wedding Manager by omeko11 © 2026**  
+**My Wedding Manager by [omeko11](https://github.com/omeko11/my_wedding_manager) © 2026**  
 All-in-One Enterprise Wedding Readiness Tracker & Digital Invitation Platform.
 
-- **Developer / Architect**: **Eko Agung Krisdianto (`omeko11`)**
-- **Call Center & Commercial Inquiry**: [Hubungi Layanan Klien & Komersial](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+- **Developer / Architect**: **Eko Agung Krisdianto ([`omeko11`](https://github.com/omeko11/my_wedding_manager))**
+- **Kontak WA & Commercial Inquiry**: [089638616516 (WhatsApp)](https://wa.me/6289638616516)
 - **Official LinkedIn Profile**: [www.linkedin.com/in/eko-agung-krisdianto-408955130](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+

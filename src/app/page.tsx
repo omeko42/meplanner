@@ -238,6 +238,11 @@ function projectStateForClient(
       clientGroups: rootState.settings.clientGroups,
       clientWorkspaces: rootState.settings.clientWorkspaces,
       storageQuotaLimitMb: rootState.settings.storageQuotaLimitMb,
+      developerCreditUrl:
+        ws.settings.developerCreditUrl || rootState.settings.developerCreditUrl,
+      contactWhatsappNumber:
+        ws.settings.contactWhatsappNumber ||
+        rootState.settings.contactWhatsappNumber,
     },
     tasks: ws.tasks || [],
     guests: ws.guests || [],
@@ -473,6 +478,12 @@ function WeddingAppContent() {
             clientGroups:
               updatedProjected.settings.clientGroups ||
               prevRoot.settings.clientGroups,
+            developerCreditUrl:
+              updatedProjected.settings.developerCreditUrl ??
+              prevRoot.settings.developerCreditUrl,
+            contactWhatsappNumber:
+              updatedProjected.settings.contactWhatsappNumber ??
+              prevRoot.settings.contactWhatsappNumber,
             clientWorkspaces: {
               ...(prevRoot.settings.clientWorkspaces || {}),
               ...(updatedProjected.settings.clientWorkspaces || {}),
