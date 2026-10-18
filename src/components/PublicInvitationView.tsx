@@ -174,6 +174,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     return weddingMusicPlayer.subscribe(syncPlayerState);
   }, [settings]);
 
+  useEffect(() => {
+    if (!isOpened) {
+      weddingMusicPlayer.stop();
+      setIsPlayingMusic(false);
+    }
+    return () => {
+      weddingMusicPlayer.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isOpened || settings.invitationModerationMode === 'MAINTENANCE') {
+      weddingMusicPlayer.stop();
+      setIsPlayingMusic(false);
+    }
+  }, [isOpened, settings.invitationModerationMode]);
+
   const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const pageBgUrl = settings.pageBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
@@ -824,7 +842,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
           <button
             type="button"
-            onClick={onOpenAdminPortal}
+            onClick={() => {
+              weddingMusicPlayer.stop();
+              setIsPlayingMusic(false);
+              onOpenAdminPortal();
+            }}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:text-[#8B6914] shadow-2xs"
           >
             <Lock className="w-3 h-3 text-[#B68D40]" />
@@ -899,7 +921,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             <button
               type="button"
-              onClick={onOpenAdminPortal}
+              onClick={() => {
+                weddingMusicPlayer.stop();
+                setIsPlayingMusic(false);
+                onOpenAdminPortal();
+              }}
               className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
               title="Login Portal Manajemen Pernikahan"
             >
@@ -1279,7 +1305,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             <button
               type="button"
-              onClick={onOpenAdminPortal}
+              onClick={() => {
+                weddingMusicPlayer.stop();
+                setIsPlayingMusic(false);
+                onOpenAdminPortal();
+              }}
               className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
             >
               <Lock className="w-3.5 h-3.5 text-[#B68D40]" />

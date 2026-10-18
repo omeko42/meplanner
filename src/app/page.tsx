@@ -38,6 +38,7 @@ import {
   saveStoredViewMode,
   analyzeWishModeration,
   appendInvitationAnalyticsEvent,
+  weddingMusicPlayer,
 } from '@/lib/clientSync';
 import {
   loadStateFromSupabase,
@@ -339,6 +340,12 @@ function WeddingAppContent() {
     saveStoredViewMode(mode);
   }, []);
 
+  useEffect(() => {
+    if (viewMode === 'ADMIN' || publicSelectedClientId === null) {
+      weddingMusicPlayer.stop();
+    }
+  }, [viewMode, publicSelectedClientId]);
+
   // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
   useEffect(() => {
     let isMounted = true;
@@ -512,6 +519,7 @@ function WeddingAppContent() {
   );
 
   const handleOpenAdminPortal = () => {
+    weddingMusicPlayer.stop();
     if (adminUser) {
       changeViewMode('ADMIN');
     } else {
@@ -567,6 +575,7 @@ function WeddingAppContent() {
   };
 
   const handleLogoutAdmin = async () => {
+    weddingMusicPlayer.stop();
     const actorName = adminUser?.username || 'admin';
     try {
       await fetch('/api/auth', {
@@ -598,6 +607,7 @@ function WeddingAppContent() {
   };
 
   const handleOpenLandingPage = () => {
+    weddingMusicPlayer.stop();
     setPreviewOverrideGuest(null);
     setManualGuestLookup({});
     setPublicSelectedClientId(null);

@@ -1252,6 +1252,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     | 'budget_cap'
   >(null);
 
+  // Auto-stop music testing whenever leaving Pengaturan -> Konten Undangan (Musik & Playlist)
+  useEffect(() => {
+    const isInMusicTestingMenu =
+      activeTab === 'settings' &&
+      settingsMenuTab === 'visibilitas' &&
+      activeSettingsModal === null;
+    if (!isInMusicTestingMenu) {
+      weddingMusicPlayer.stop();
+      setIsPlayingAdminMusic(false);
+    }
+  }, [activeTab, settingsMenuTab, activeSettingsModal]);
+
+  // Auto-stop music testing on AdminDashboardView unmount (e.g., switching to Katalog MWM, Pratinjau Undangan, or Keluar)
+  useEffect(
+    () => () => {
+      weddingMusicPlayer.stop();
+    },
+    []
+  );
+
   // Dynamic Schedule Events (Add/Edit/Delete like Panitia + Countdown Switch ON/OFF)
   const scheduleEvents = useMemo(
     () => getEffectiveScheduleEvents(settingsForm),
