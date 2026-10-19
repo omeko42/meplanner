@@ -2037,16 +2037,40 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       {lang === 'ID' ? 'Jumlah Orang (Pax)' : 'Number of Guests (Pax)'}
                     </label>
                     <select
-                      value={rsvpPax}
+                      value={Math.max(1, Number(rsvpPax) || 1)}
                       onChange={(e) => setRsvpPax(Number(e.target.value))}
                       disabled={rsvpStatus === 'Tidak Hadir'}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none disabled:opacity-50"
                     >
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <option key={n} value={n}>
-                          {n} {lang === 'ID' ? 'Orang' : 'Pax'}
-                        </option>
-                      ))}
+                      {Array.from(
+                        new Set([
+                          1,
+                          2,
+                          3,
+                          4,
+                          5,
+                          6,
+                          7,
+                          8,
+                          9,
+                          10,
+                          12,
+                          15,
+                          20,
+                          25,
+                          30,
+                          Math.max(1, Number(effectiveMatchedGuest?.pax) || 1),
+                          Math.max(1, Number(effectiveMatchedGuest?.confirmedPax) || 1),
+                          Math.max(1, Number(rsvpPax) || 1),
+                        ])
+                      )
+                        .filter((n) => n > 0)
+                        .sort((a, b) => a - b)
+                        .map((n) => (
+                          <option key={n} value={n}>
+                            {n} {lang === 'ID' ? 'Orang' : 'Pax'}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </div>

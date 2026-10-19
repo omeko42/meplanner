@@ -5791,6 +5791,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     const isLinkCopied = copiedGuestLinkId === guest.id;
                     const currentFormat = normalizeGuestFormat(guest.invitationFormat);
                     const isOnlineGuest = currentFormat === 'Online';
+                    const currentGuestPax = Math.max(1, Number(guest.pax) || 1);
+                    const paxOptions = Array.from(
+                      new Set([
+                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20,
+                        25, 30, 40, 50, 100, currentGuestPax,
+                      ])
+                    ).sort((a, b) => a - b);
 
                     return (
                       <div
@@ -5847,7 +5854,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   ...guest,
                                   rsvpStatus: nextRsvp,
                                   confirmedPax:
-                                    nextRsvp === 'Tidak Hadir' ? 0 : guest.pax,
+                                    nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
                                   updatedBy: adminUser.username,
                                 });
                                 showToast(
@@ -5870,9 +5877,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                             <select
                               aria-label={`Jumlah Pax ${guest.guestName}`}
-                              value={guest.pax}
+                              value={String(currentGuestPax)}
                               onChange={async (e) => {
-                                const nextPax = Number(e.target.value) || 1;
+                                if (e.target.value === 'CUSTOM') {
+                                  setEditingGuest(guest);
+                                  return;
+                                }
+                                const nextPax = Math.max(
+                                  1,
+                                  Number(e.target.value) || 1
+                                );
                                 await onUpsertGuest({
                                   ...guest,
                                   pax: nextPax,
@@ -5886,11 +5900,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }}
                               className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#FAF8F5] text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
                             >
-                              {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
-                                <option key={num} value={num}>
+                              {paxOptions.map((num) => (
+                                <option key={num} value={String(num)}>
                                   {num} Pax
                                 </option>
                               ))}
+                              <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
                             </select>
                           </div>
 
@@ -14562,9 +14577,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <label className="block font-medium text-stone-700 mb-1 truncate">Kuota Pax</label>
                   <input
                     type="number"
-                    value={editingGuest.pax ?? 2}
+                    min={1}
+                    value={editingGuest.pax ?? ''}
                     onChange={(e) =>
-                      setEditingGuest({ ...editingGuest, pax: Number(e.target.value) })
+                      setEditingGuest({
+                        ...editingGuest,
+                        pax:
+                          e.target.value === ''
+                            ? ('' as unknown as number)
+                            : Math.max(1, Number(e.target.value)),
+                      })
                     }
                     className="w-full px-3 py-2 rounded-lg border border-stone-300"
                   />
@@ -14641,9 +14663,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 type="button"
                 onClick={async () => {
                   if (!editingGuest.guestName?.trim()) return;
+                  const normalizedPax = Math.max(
+                    1,
+                    Number(editingGuest.pax) || 1
+                  );
                   await onUpsertGuest({
                     ...editingGuest,
                     guestName: editingGuest.guestName.trim(),
+                    pax: normalizedPax,
+                    confirmedPax:
+                      editingGuest.rsvpStatus === 'Tidak Hadir'
+                        ? 0
+                        : normalizedPax,
                     updatedBy: adminUser.username,
                   });
                   setEditingGuest(null);
