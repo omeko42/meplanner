@@ -276,6 +276,110 @@ export function markInitialCloudHydrationComplete(
   }
 }
 
+const explicitlyDeletedGuestIds = new Set<string>();
+const explicitlyDeletedTaskIds = new Set<string>();
+const explicitlyDeletedWishIds = new Set<string>();
+const explicitlyDeletedBudgetIds = new Set<string>();
+
+export function registerExplicitCloudDeletion(
+  collection: 'guests' | 'tasks' | 'wishes' | 'budgets',
+  id: string
+): void {
+  if (!id) return;
+  if (collection === 'guests') explicitlyDeletedGuestIds.add(id);
+  else if (collection === 'tasks') explicitlyDeletedTaskIds.add(id);
+  else if (collection === 'wishes') explicitlyDeletedWishIds.add(id);
+  else if (collection === 'budgets') explicitlyDeletedBudgetIds.add(id);
+}
+
+export function mergeGuestsMultiDevice(
+  primaryGuests: WeddingDatabaseSchema['guests'],
+  secondaryGuests: WeddingDatabaseSchema['guests'],
+  respectExplicitDeletes = true
+): WeddingDatabaseSchema['guests'] {
+  const safePrimary = Array.isArray(primaryGuests) ? primaryGuests : [];
+  const safeSecondary = Array.isArray(secondaryGuests) ? secondaryGuests : [];
+
+  const merged: WeddingDatabaseSchema['guests'] = [];
+  const usedIds = new Set<string>();
+  const usedNames = new Set<string>();
+  const usedCodes = new Set<string>();
+
+  const nextAvailableCode = (): string => {
+    let idx = merged.length + 1;
+    while (true) {
+      const candidate = `INV-${String(idx).padStart(4, '0')}`;
+      if (!usedCodes.has(candidate.toUpperCase())) {
+        return candidate;
+      }
+      idx++;
+    }
+  };
+
+  for (const g of safePrimary) {
+    if (!g || !g.id) continue;
+    if (respectExplicitDeletes && explicitlyDeletedGuestIds.has(g.id)) continue;
+    const normName = (g.guestName || '').trim().toLowerCase();
+    if (usedIds.has(g.id)) continue;
+    usedIds.add(g.id);
+    if (normName) usedNames.add(normName);
+    const codeUpper = (g.invitationCode || '').trim().toUpperCase();
+    if (codeUpper) usedCodes.add(codeUpper);
+    merged.push(g);
+  }
+
+  for (const g of safeSecondary) {
+    if (!g || !g.id) continue;
+    if (respectExplicitDeletes && explicitlyDeletedGuestIds.has(g.id)) continue;
+    const normName = (g.guestName || '').trim().toLowerCase();
+    if (usedIds.has(g.id) || (normName && usedNames.has(normName))) continue;
+
+    let finalCode = (g.invitationCode || '').trim();
+    if (!finalCode || usedCodes.has(finalCode.toUpperCase())) {
+      finalCode = nextAvailableCode();
+    }
+    usedIds.add(g.id);
+    if (normName) usedNames.add(normName);
+    usedCodes.add(finalCode.toUpperCase());
+    merged.push(
+      finalCode !== g.invitationCode ? { ...g, invitationCode: finalCode } : g
+    );
+  }
+
+  return merged;
+}
+
+async function fetchSupabaseWithRetry(
+  url: string,
+  init: RequestInit,
+  timeoutMs = 6500,
+  maxAttempts = 2
+): Promise<Response> {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        ...init,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      return res;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 450 * attempt));
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Gagal terhubung ke Supabase');
+}
+
 // ============================================================================
 // REAL-TIME AUDIT & ERROR LOG SYSTEM
 // ============================================================================
@@ -1461,15 +1565,72 @@ export async function loadStateFromSupabase(): Promise<{
   state: WeddingDatabaseSchema | null;
   tableExists: boolean;
 }> {
+  const tryLoadViaSameOriginProxy = async (): Promise<{
+    state: WeddingDatabaseSchema | null;
+    tableExists: boolean;
+  } | null> => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const proxyRes = await fetch('/api/supabase-sync', {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      if (!proxyRes.ok) return null;
+      const proxyJson = (await proxyRes.json()) as {
+        ok?: boolean;
+        rows?: Array<{
+          id: string;
+          data: Partial<WeddingDatabaseSchema>;
+          updated_at?: string;
+        }>;
+      };
+      const rows = proxyJson?.rows;
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+        const normalized = normalizeCloudState(rows[0].data, rows[0].updated_at);
+        const loaded = await recoverFromRelationalTablesIfNeeded(normalized);
+        markInitialCloudHydrationComplete(loaded);
+        setCloudStatus('SYNCED', loaded.lastSyncedAt || '');
+        return { state: loaded, tableExists: true };
+      }
+      if (Array.isArray(rows)) {
+        markInitialCloudHydrationComplete(null);
+        setCloudStatus('SYNCED', 'Tabel siap (belum ada baris)');
+        return { state: null, tableExists: true };
+      }
+    } catch {
+      // Ignore proxy fallback error and proceed
+    }
+    return null;
+  };
+
   try {
     const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`;
-    const res = await fetch(restUrl, {
-      method: 'GET',
-      headers: getSupabaseHeaders({
-        Accept: 'application/json',
-      }),
-      cache: 'no-store',
-    });
+    let res: Response | null = null;
+    let directFetchError: unknown = null;
+
+    try {
+      res = await fetchSupabaseWithRetry(
+        restUrl,
+        {
+          method: 'GET',
+          headers: getSupabaseHeaders({
+            Accept: 'application/json',
+          }),
+        },
+        6500,
+        2
+      );
+    } catch (fetchErr) {
+      directFetchError = fetchErr;
+    }
+
+    if (!res) {
+      const proxyResult = await tryLoadViaSameOriginProxy();
+      if (proxyResult) return proxyResult;
+      throw directFetchError instanceof Error
+        ? directFetchError
+        : new Error('Gagal terhubung ke Supabase');
+    }
 
     if (res.ok) {
       const rows = (await res.json()) as Array<{
@@ -1488,6 +1649,11 @@ export async function loadStateFromSupabase(): Promise<{
       markInitialCloudHydrationComplete(null);
       setCloudStatus('SYNCED', 'Tabel siap (belum ada baris)');
       return { state: null, tableExists: true };
+    }
+
+    if (res.status !== 404) {
+      const proxyResult = await tryLoadViaSameOriginProxy();
+      if (proxyResult) return proxyResult;
     }
 
     const errText = await res.text();
@@ -1725,14 +1891,14 @@ async function syncRelationalTablesInBackground(
         : []),
     ];
 
-    void fetch(`${SUPABASE_URL}/rest/v1/wedding_media?on_conflict=slot_key`, {
+    await fetch(`${SUPABASE_URL}/rest/v1/wedding_media?on_conflict=slot_key`, {
       method: 'POST',
       headers: getSupabaseHeaders({
         Prefer: 'resolution=merge-duplicates,return=minimal',
       }),
       body: JSON.stringify(mediaRows),
     }).catch(() => {});
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_media',
       'slot_key',
       mediaRows.map((m) => m.slot_key)
@@ -1751,7 +1917,7 @@ async function syncRelationalTablesInBackground(
         payload: t,
         updated_at: updatedAt,
       }));
-      void fetch(`${SUPABASE_URL}/rest/v1/wedding_tasks?on_conflict=id`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/wedding_tasks?on_conflict=id`, {
         method: 'POST',
         headers: getSupabaseHeaders({
           Prefer: 'resolution=merge-duplicates,return=minimal',
@@ -1759,7 +1925,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(taskRows),
       }).catch(() => {});
     }
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_tasks',
       'id',
       tasksList.map((t) => t.id)
@@ -1778,7 +1944,7 @@ async function syncRelationalTablesInBackground(
         payload: g,
         updated_at: updatedAt,
       }));
-      void fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?on_conflict=id`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?on_conflict=id`, {
         method: 'POST',
         headers: getSupabaseHeaders({
           Prefer: 'resolution=merge-duplicates,return=minimal',
@@ -1786,7 +1952,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(guestRows),
       }).catch(() => {});
     }
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_guests',
       'id',
       guestsList.map((g) => g.id)
@@ -1803,7 +1969,7 @@ async function syncRelationalTablesInBackground(
         payload: w,
         updated_at: updatedAt,
       }));
-      void fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
         method: 'POST',
         headers: getSupabaseHeaders({
           Prefer: 'resolution=merge-duplicates,return=minimal',
@@ -1811,7 +1977,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(wishRows),
       }).catch(() => {});
     }
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_wishes',
       'id',
       wishesList.map((w) => w.id)
@@ -1831,7 +1997,7 @@ async function syncRelationalTablesInBackground(
         payload: b,
         updated_at: updatedAt,
       }));
-      void fetch(`${SUPABASE_URL}/rest/v1/wedding_budgets?on_conflict=id`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/wedding_budgets?on_conflict=id`, {
         method: 'POST',
         headers: getSupabaseHeaders({
           Prefer: 'resolution=merge-duplicates,return=minimal',
@@ -1839,7 +2005,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(budgetRows),
       }).catch(() => {});
     }
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_budgets',
       'id',
       budgetsList.map((b) => b.id)
@@ -1857,7 +2023,7 @@ async function syncRelationalTablesInBackground(
         payload: u,
         updated_at: updatedAt,
       }));
-      void fetch(`${SUPABASE_URL}/rest/v1/wedding_users?on_conflict=id`, {
+      await fetch(`${SUPABASE_URL}/rest/v1/wedding_users?on_conflict=id`, {
         method: 'POST',
         headers: getSupabaseHeaders({
           Prefer: 'resolution=merge-duplicates,return=minimal',
@@ -1865,7 +2031,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(userRows),
       }).catch(() => {});
     }
-    void pruneDeletedRelationalRows(
+    await pruneDeletedRelationalRows(
       'wedding_users',
       'id',
       usersList.map((u) => u.id)
@@ -1918,10 +2084,11 @@ async function performActualSupabaseUpsert(
   setCloudStatus('SYNCING', 'Menyimpan ke Supabase...');
   let state = rawState;
 
-  // Anti-Wipe Guard: protect existing cloud collections & couple profile from accidental overwrite by unhydrated/seed state
-  if (!options?.forceOverwrite && lastKnownCloudState) {
+  // Anti-Wipe Guard & Multi-Device Guest Merge: protect existing cloud collections & couple profile from accidental overwrite
+  if (!options?.forceOverwrite) {
     const nextSettings: WeddingSettings = { ...state.settings };
     if (
+      lastKnownCloudState &&
       nextSettings.groomParents === 'Putra dari Bapak ... & Ibu ...' &&
       lastKnownCloudState.settings?.groomParents &&
       lastKnownCloudState.settings.groomParents !==
@@ -1990,26 +2157,21 @@ async function performActualSupabaseUpsert(
       }
     }
 
-    let effectiveGuests =
-      state.guests.length === 0 &&
-      (lastKnownCloudState.guests?.length || 0) > 0
-        ? lastKnownCloudState.guests
-        : state.guests;
+    let effectiveGuests = mergeGuestsMultiDevice(
+      state.guests,
+      lastKnownCloudState?.guests || [],
+      true
+    );
 
-    if (effectiveGuests.length > 0 && effectiveGuests.length < 15) {
-      const existingNames = new Set(
-        effectiveGuests.map((g) => (g.guestName || '').trim().toLowerCase())
+    if (
+      effectiveGuests.length > 0 &&
+      effectiveGuests.length < INITIAL_GUESTS.length
+    ) {
+      effectiveGuests = mergeGuestsMultiDevice(
+        effectiveGuests,
+        INITIAL_GUESTS,
+        true
       );
-      const existingIds = new Set(effectiveGuests.map((g) => g.id));
-      const baganevSeed = INITIAL_GUESTS.filter(
-        (g) =>
-          g.id.startsWith('gst_baganev_') &&
-          !existingIds.has(g.id) &&
-          !existingNames.has(g.guestName.trim().toLowerCase())
-      );
-      if (baganevSeed.length > 0) {
-        effectiveGuests = [...effectiveGuests, ...baganevSeed];
-      }
     }
 
     state = {
@@ -2018,18 +2180,24 @@ async function performActualSupabaseUpsert(
       guests: effectiveGuests,
       tasks:
         state.tasks.length === 0 &&
-        (lastKnownCloudState.tasks?.length || 0) > 0
-          ? lastKnownCloudState.tasks
+        (lastKnownCloudState?.tasks?.length || 0) > 0
+          ? lastKnownCloudState!.tasks.filter(
+              (t) => !explicitlyDeletedTaskIds.has(t.id)
+            )
           : state.tasks,
       wishes:
         state.wishes.length === 0 &&
-        (lastKnownCloudState.wishes?.length || 0) > 0
-          ? lastKnownCloudState.wishes
+        (lastKnownCloudState?.wishes?.length || 0) > 0
+          ? lastKnownCloudState!.wishes.filter(
+              (w) => !explicitlyDeletedWishIds.has(w.id)
+            )
           : state.wishes,
       budgetItems:
         state.budgetItems.length === 0 &&
-        (lastKnownCloudState.budgetItems?.length || 0) > 0
-          ? lastKnownCloudState.budgetItems
+        (lastKnownCloudState?.budgetItems?.length || 0) > 0
+          ? lastKnownCloudState!.budgetItems.filter(
+              (b) => !explicitlyDeletedBudgetIds.has(b.id)
+            )
           : state.budgetItems,
     };
   }
@@ -2040,17 +2208,53 @@ async function performActualSupabaseUpsert(
     dataToSave: WeddingDatabaseSchema
   ): Promise<Response> => {
     const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?on_conflict=id`;
-    return fetch(restUrl, {
-      method: 'POST',
-      headers: getSupabaseHeaders({
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      }),
-      body: JSON.stringify({
-        id: SUPABASE_ROW_ID,
-        data: dataToSave,
-        updated_at: updatedAt,
-      }),
-    });
+    return fetchSupabaseWithRetry(
+      restUrl,
+      {
+        method: 'POST',
+        headers: getSupabaseHeaders({
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        }),
+        body: JSON.stringify({
+          id: SUPABASE_ROW_ID,
+          data: dataToSave,
+          updated_at: updatedAt,
+        }),
+      },
+      6500,
+      2
+    );
+  };
+
+  const tryUpsertViaSameOriginProxy = async (
+    payloadToSave: WeddingDatabaseSchema
+  ): Promise<boolean> => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const proxyRes = await fetch('/api/supabase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: payloadToSave,
+          updatedAt,
+          forceOverwrite: Boolean(options?.forceOverwrite),
+          deletedGuestIds: Array.from(explicitlyDeletedGuestIds),
+        }),
+      });
+      if (proxyRes.ok) {
+        const proxyJson = await proxyRes.json().catch(() => null);
+        if (proxyJson?.data) {
+          lastKnownCloudState = normalizeCloudState(proxyJson.data, updatedAt);
+        } else {
+          lastKnownCloudState = payloadToSave;
+        }
+        setCloudStatus('SYNCED', updatedAt);
+        return true;
+      }
+    } catch {
+      // Ignore proxy fallback error
+    }
+    return false;
   };
 
   try {
@@ -2059,20 +2263,43 @@ async function performActualSupabaseUpsert(
       false
     );
 
-    let res = await tryUpsertTable(cloudSafePayload);
+    let res: Response | null = null;
+    let directUpsertError: unknown = null;
+
+    try {
+      res = await tryUpsertTable(cloudSafePayload);
+    } catch (upsertErr) {
+      directUpsertError = upsertErr;
+    }
 
     // If payload hit timeout (500 / 57014 / 504) or 413, retry with optimized payload
     if (
-      res.status === 413 ||
-      res.status === 500 ||
-      res.status === 502 ||
-      res.status === 504
+      res &&
+      (res.status === 413 ||
+        res.status === 500 ||
+        res.status === 502 ||
+        res.status === 504)
     ) {
       cloudSafePayload = await prepareCloudSafeState(
         { ...state, lastSyncedAt: updatedAt },
         true
       );
-      res = await tryUpsertTable(cloudSafePayload);
+      try {
+        res = await tryUpsertTable(cloudSafePayload);
+      } catch (retryErr) {
+        directUpsertError = retryErr;
+        res = null;
+      }
+    }
+
+    if (!res) {
+      const proxySaved = await tryUpsertViaSameOriginProxy(cloudSafePayload);
+      if (proxySaved) {
+        return true;
+      }
+      throw directUpsertError instanceof Error
+        ? directUpsertError
+        : new Error('Gagal menyimpan ke Supabase');
     }
 
     if (res.ok) {
@@ -2080,6 +2307,13 @@ async function performActualSupabaseUpsert(
       void syncRelationalTablesInBackground(cloudSafePayload, updatedAt);
       setCloudStatus('SYNCED', updatedAt);
       return true;
+    }
+
+    if (res.status !== 404) {
+      const proxySaved = await tryUpsertViaSameOriginProxy(cloudSafePayload);
+      if (proxySaved) {
+        return true;
+      }
     }
 
     const errText = await res.text();

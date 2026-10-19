@@ -53,6 +53,9 @@ import {
   appendAuditLog,
   upsertCommercialPaymentToSupabase,
   markInitialCloudHydrationComplete,
+  registerExplicitCloudDeletion,
+  mergeGuestsMultiDevice,
+  getCloudSyncStatus,
 } from '@/lib/supabaseCloud';
 
 function mergePreservingLocalMedia(
@@ -60,9 +63,15 @@ function mergePreservingLocalMedia(
   localState: WeddingDatabaseSchema
 ): WeddingDatabaseSchema {
   const localOriginalPhotos = localState.settings?.originalPhotos;
+  const mergedGuests = mergeGuestsMultiDevice(
+    serverState.guests || [],
+    localState.guests || [],
+    true
+  );
 
   return {
     ...serverState,
+    guests: mergedGuests,
     settings: {
       ...serverState.settings,
       ...(localOriginalPhotos
@@ -417,6 +426,9 @@ function WeddingAppContent() {
         isCloudHydratedRef.current = true;
         setState(merged);
         saveClientState(merged, false);
+        if (merged.guests.length > (cloudState.guests?.length || 0)) {
+          void saveStateToSupabase(merged);
+        }
       } else if (cloudResult.tableExists) {
         markInitialCloudHydrationComplete(null);
         isCloudHydratedRef.current = true;
@@ -437,6 +449,30 @@ function WeddingAppContent() {
       isMounted = false;
     };
   }, [urlMode, changeViewMode]);
+
+  useEffect(() => {
+    const handleReconnectOrVisible = () => {
+      if (!isCloudHydratedRef.current) return;
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'hidden'
+      ) {
+        return;
+      }
+      if (getCloudSyncStatus().status === 'OFFLINE') {
+        void saveStateToSupabase(state);
+      }
+    };
+    window.addEventListener('online', handleReconnectOrVisible);
+    document.addEventListener('visibilitychange', handleReconnectOrVisible);
+    return () => {
+      window.removeEventListener('online', handleReconnectOrVisible);
+      document.removeEventListener(
+        'visibilitychange',
+        handleReconnectOrVisible
+      );
+    };
+  }, [state]);
 
   const mutateServer = useCallback(
     async (action: string, payload: unknown): Promise<WeddingDatabaseSchema | null> => {
@@ -727,6 +763,7 @@ function WeddingAppContent() {
   };
 
   const handleDeleteTask = async (id: string) => {
+    registerExplicitCloudDeletion('tasks', id);
     const target = activeAdminState.tasks.find((t) => t.id === id);
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
@@ -798,6 +835,7 @@ function WeddingAppContent() {
   };
 
   const handleDeleteGuest = async (id: string) => {
+    registerExplicitCloudDeletion('guests', id);
     const target = activeAdminState.guests.find((g) => g.id === id);
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
@@ -1062,6 +1100,7 @@ function WeddingAppContent() {
   };
 
   const handleDeleteWish = async (id: string) => {
+    registerExplicitCloudDeletion('wishes', id);
     const target = activeAdminState.wishes.find((w) => w.id === id);
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
@@ -1125,6 +1164,7 @@ function WeddingAppContent() {
   };
 
   const handleDeleteBudget = async (id: string) => {
+    registerExplicitCloudDeletion('budgets', id);
     const target = activeAdminState.budgetItems.find((b) => b.id === id);
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
