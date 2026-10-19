@@ -54,6 +54,7 @@ import {
   upsertCommercialPaymentToSupabase,
   markInitialCloudHydrationComplete,
   registerExplicitCloudDeletion,
+  registerLocalItemTouch,
   mergeGuestsMultiDevice,
   getCloudSyncStatus,
 } from '@/lib/supabaseCloud';
@@ -69,9 +70,42 @@ function mergePreservingLocalMedia(
     true
   );
 
+  const serverWishes = Array.isArray(serverState.wishes)
+    ? serverState.wishes
+    : [];
+  const localWishes = Array.isArray(localState.wishes) ? localState.wishes : [];
+  const serverWishIds = new Set(serverWishes.map((w) => w.id));
+  const mergedWishes = [
+    ...serverWishes,
+    ...localWishes.filter((w) => w && w.id && !serverWishIds.has(w.id)),
+  ];
+
+  const serverTasks = Array.isArray(serverState.tasks) ? serverState.tasks : [];
+  const localTasks = Array.isArray(localState.tasks) ? localState.tasks : [];
+  const serverTaskIds = new Set(serverTasks.map((t) => t.id));
+  const mergedTasks = [
+    ...serverTasks,
+    ...localTasks.filter((t) => t && t.id && !serverTaskIds.has(t.id)),
+  ];
+
+  const serverBudgets = Array.isArray(serverState.budgetItems)
+    ? serverState.budgetItems
+    : [];
+  const localBudgets = Array.isArray(localState.budgetItems)
+    ? localState.budgetItems
+    : [];
+  const serverBudgetIds = new Set(serverBudgets.map((b) => b.id));
+  const mergedBudgets = [
+    ...serverBudgets,
+    ...localBudgets.filter((b) => b && b.id && !serverBudgetIds.has(b.id)),
+  ];
+
   return {
     ...serverState,
     guests: mergedGuests,
+    wishes: mergedWishes,
+    tasks: mergedTasks,
+    budgetItems: mergedBudgets,
     settings: {
       ...serverState.settings,
       ...(localOriginalPhotos
@@ -450,8 +484,10 @@ function WeddingAppContent() {
     };
   }, [urlMode, changeViewMode]);
 
+  const isReconcilingRef = useRef(false);
+
   useEffect(() => {
-    const handleReconnectOrVisible = () => {
+    const handleReconnectOrVisible = async () => {
       if (!isCloudHydratedRef.current) return;
       if (
         typeof document !== 'undefined' &&
@@ -459,14 +495,63 @@ function WeddingAppContent() {
       ) {
         return;
       }
-      if (getCloudSyncStatus().status === 'OFFLINE') {
+
+      const currentStatus = getCloudSyncStatus().status;
+      if (currentStatus === 'OFFLINE') {
         void saveStateToSupabase(state);
+        return;
+      }
+
+      if (currentStatus === 'SYNCED' && !isReconcilingRef.current) {
+        isReconcilingRef.current = true;
+        try {
+          const cloudRes = await loadStateFromSupabase();
+          if (cloudRes.state) {
+            const remote = cloudRes.state;
+            setState((prev) => {
+              const merged = mergePreservingLocalMedia(remote, prev);
+              const hasChanged =
+                merged.guests.length !== prev.guests.length ||
+                merged.wishes.length !== prev.wishes.length ||
+                merged.tasks.length !== prev.tasks.length ||
+                merged.budgetItems.length !== prev.budgetItems.length ||
+                merged.lastSyncedAt !== prev.lastSyncedAt ||
+                merged.settings.updatedAt !== prev.settings.updatedAt;
+
+              if (!hasChanged) {
+                return prev;
+              }
+
+              markInitialCloudHydrationComplete(merged);
+              saveClientState(merged, false);
+              if (
+                merged.guests.length > (remote.guests?.length || 0) ||
+                merged.wishes.length > (remote.wishes?.length || 0)
+              ) {
+                void saveStateToSupabase(merged);
+              }
+              return merged;
+            });
+          }
+        } catch {
+          // Ignore background reconcile network errors
+        } finally {
+          isReconcilingRef.current = false;
+        }
       }
     };
+
+    const intervalId = setInterval(() => {
+      void handleReconnectOrVisible();
+    }, 25000);
+
     window.addEventListener('online', handleReconnectOrVisible);
+    window.addEventListener('focus', handleReconnectOrVisible);
     document.addEventListener('visibilitychange', handleReconnectOrVisible);
     return () => {
+      clearInterval(intervalId);
       window.removeEventListener('online', handleReconnectOrVisible);
+      window.removeEventListener('focus', handleReconnectOrVisible);
       document.removeEventListener(
         'visibilitychange',
         handleReconnectOrVisible
@@ -709,6 +794,8 @@ function WeddingAppContent() {
 
   // Optimistic Local-First + Direct Supabase Cloud CRUD Handlers (Workspace-Scoped)
   const handleUpsertTask = async (task: Partial<WeddingTask> & { title: string }) => {
+    const targetId = task.id || `tsk_${Date.now().toString(36)}`;
+    registerLocalItemTouch(targetId);
     const isEdit = Boolean(
       task.id && activeAdminState.tasks.some((t) => t.id === task.id)
     );
@@ -731,7 +818,7 @@ function WeddingAppContent() {
         : [
             ...prev.tasks,
             {
-              id: task.id || `tsk_${Date.now().toString(36)}`,
+              id: targetId,
               category: task.category || 'Acara',
               timelinePhase: task.timelinePhase || 'H-60 s/d H-30',
               title: task.title,
@@ -758,7 +845,7 @@ function WeddingAppContent() {
       detail: `Kategori: ${task.category || 'Acara'} • Status: ${task.status || 'BELUM'}`,
     });
     if (activeWorkspaceClientId === 'client-utama') {
-      await mutateServer('UPSERT_TASK', task);
+      await mutateServer('UPSERT_TASK', { ...task, id: targetId });
     }
   };
 
@@ -784,6 +871,8 @@ function WeddingAppContent() {
   const handleUpsertGuest = async (
     guest: Partial<WeddingGuest> & { guestName: string }
   ) => {
+    const targetId = guest.id || `gst_${Date.now().toString(36)}`;
+    registerLocalItemTouch(targetId);
     const isEdit = Boolean(
       guest.id && activeAdminState.guests.some((g) => g.id === guest.id)
     );
@@ -796,7 +885,7 @@ function WeddingAppContent() {
         : [
             ...prev.guests,
             {
-              id: guest.id || `gst_${Date.now().toString(36)}`,
+              id: targetId,
               invitationCode:
                 guest.invitationCode ||
                 `INV-${String(prev.guests.length + 1).padStart(4, '0')}`,
@@ -830,7 +919,7 @@ function WeddingAppContent() {
       detail: `Format: ${guest.invitationFormat || 'Cetak Tebal'} • RSVP: ${guest.rsvpStatus || 'Belum Konfirmasi'}`,
     });
     if (activeWorkspaceClientId === 'client-utama') {
-      await mutateServer('UPSERT_GUEST', guest);
+      await mutateServer('UPSERT_GUEST', { ...guest, id: targetId });
     }
   };
 
@@ -1121,6 +1210,8 @@ function WeddingAppContent() {
   const handleUpsertBudget = async (
     item: Partial<BudgetVendorItem> & { itemName: string }
   ) => {
+    const targetId = item.id || `bgt_${Date.now().toString(36)}`;
+    registerLocalItemTouch(targetId);
     const isEdit = Boolean(
       item.id && activeAdminState.budgetItems.some((b) => b.id === item.id)
     );
@@ -1133,7 +1224,7 @@ function WeddingAppContent() {
         : [
             ...prev.budgetItems,
             {
-              id: item.id || `bgt_${Date.now().toString(36)}`,
+              id: targetId,
               category: item.category || 'Administrasi & Lainnya',
               itemName: item.itemName,
               vendorName: item.vendorName || '',
@@ -1159,7 +1250,7 @@ function WeddingAppContent() {
       detail: `Kategori: ${item.category || '-'} • Status: ${item.paymentStatus || 'BELUM_DP'}`,
     });
     if (activeWorkspaceClientId === 'client-utama') {
-      await mutateServer('UPSERT_BUDGET', item);
+      await mutateServer('UPSERT_BUDGET', { ...item, id: targetId });
     }
   };
 

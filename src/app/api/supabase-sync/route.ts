@@ -4,8 +4,9 @@ import {
   SUPABASE_ANON_KEY,
   SUPABASE_TABLE_NAME,
   SUPABASE_ROW_ID,
+  mergeFullDatabaseMultiDevice,
 } from '@/lib/supabaseCloud';
-import { WeddingDatabaseSchema, WeddingGuest } from '@/types';
+import { WeddingDatabaseSchema } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,34 +17,6 @@ function getSupabaseHeaders(extra?: Record<string, string>): Record<string, stri
     'Content-Type': 'application/json',
     ...(extra || {}),
   };
-}
-
-function normalizeGuestListWithUniqueCodes(guests: WeddingGuest[]): WeddingGuest[] {
-  const usedCodes = new Set<string>();
-  let maxNum = 0;
-
-  for (const g of guests) {
-    const m = /^INV-(\d+)$/i.exec((g.invitationCode || '').trim());
-    if (m) {
-      const n = parseInt(m[1], 10);
-      if (n > maxNum) maxNum = n;
-    }
-  }
-
-  return guests.map((g) => {
-    const code = (g.invitationCode || '').trim().toUpperCase();
-    if (code && !usedCodes.has(code)) {
-      usedCodes.add(code);
-      return g;
-    }
-    maxNum += 1;
-    const nextCode = `INV-${String(maxNum).padStart(4, '0')}`;
-    usedCodes.add(nextCode);
-    return {
-      ...g,
-      invitationCode: nextCode,
-    };
-  });
 }
 
 export async function GET() {
@@ -100,6 +73,9 @@ export async function POST(req: NextRequest) {
       updatedAt?: string;
       forceOverwrite?: boolean;
       deletedGuestIds?: string[];
+      deletedTaskIds?: string[];
+      deletedWishIds?: string[];
+      deletedBudgetIds?: string[];
     };
 
     if (!body || !body.data || typeof body.data !== 'object') {
@@ -119,8 +95,9 @@ export async function POST(req: NextRequest) {
       lastSyncedAt: syncTime,
     };
 
-    // Server-Side Multi-Device Guest Merge (prevents PC & Mobile from overwriting each other's newly added guests)
-    if (!body.forceOverwrite && Array.isArray(mergedData.guests)) {
+    // Server-Side Multi-Device Full Database Merge
+    // Protects guests, RSVP confirmations, wishes, tasks, budgets, adminUsers, and clientWorkspaces across concurrent users
+    if (!body.forceOverwrite) {
       try {
         const existingRes = await fetch(
           `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data`,
@@ -136,33 +113,28 @@ export async function POST(req: NextRequest) {
             data?: Partial<WeddingDatabaseSchema>;
           }>;
           const cloudData = existingRows?.[0]?.data;
-          if (cloudData && Array.isArray(cloudData.guests)) {
-            const deletedSet = new Set<string>(
-              Array.isArray(body.deletedGuestIds) ? body.deletedGuestIds : []
-            );
-
-            const clientGuests = mergedData.guests.filter(
-              (g) => g && g.id && !deletedSet.has(g.id)
-            );
-            const combined: WeddingGuest[] = [...clientGuests];
-
-            for (const cg of cloudData.guests) {
-              if (!cg || !cg.id || deletedSet.has(cg.id)) continue;
-              const cgNameNorm = (cg.guestName || '').trim().toLowerCase();
-              const alreadyExists = combined.some(
-                (g) =>
-                  g.id === cg.id ||
-                  (cgNameNorm &&
-                    (g.guestName || '').trim().toLowerCase() === cgNameNorm)
-              );
-              if (!alreadyExists) {
-                combined.push(cg);
+          if (cloudData && typeof cloudData === 'object') {
+            mergedData = mergeFullDatabaseMultiDevice(
+              mergedData,
+              cloudData,
+              true,
+              {
+                guests: new Set<string>(
+                  Array.isArray(body.deletedGuestIds) ? body.deletedGuestIds : []
+                ),
+                tasks: new Set<string>(
+                  Array.isArray(body.deletedTaskIds) ? body.deletedTaskIds : []
+                ),
+                wishes: new Set<string>(
+                  Array.isArray(body.deletedWishIds) ? body.deletedWishIds : []
+                ),
+                budgets: new Set<string>(
+                  Array.isArray(body.deletedBudgetIds) ? body.deletedBudgetIds : []
+                ),
               }
-            }
-
+            );
             mergedData = {
               ...mergedData,
-              guests: normalizeGuestListWithUniqueCodes(combined),
               lastSyncedAt: syncTime,
             };
           }
@@ -199,7 +171,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Best-effort relational table sync for public.wedding_guests
+    // Best-effort relational table sync for public.wedding_guests & public.wedding_wishes
     if (Array.isArray(mergedData.guests) && mergedData.guests.length > 0) {
       try {
         const guestRows = mergedData.guests.map((g) => ({
@@ -225,10 +197,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (Array.isArray(mergedData.wishes) && mergedData.wishes.length > 0) {
+      try {
+        const wishRows = mergedData.wishes.map((w) => ({
+          id: w.id,
+          project_id: 'main',
+          guest_name: w.guestName,
+          message: w.message || '',
+          rsvp_status: w.rsvpStatus,
+          payload: w,
+          updated_at: syncTime,
+        }));
+        await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
+          method: 'POST',
+          headers: getSupabaseHeaders({
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          }),
+          body: JSON.stringify(wishRows),
+        });
+      } catch {
+        // Ignore relational table errors
+      }
+    }
+
     return NextResponse.json({
       success: true,
       updatedAt: syncTime,
       guestsCount: Array.isArray(mergedData.guests) ? mergedData.guests.length : 0,
+      wishesCount: Array.isArray(mergedData.wishes) ? mergedData.wishes.length : 0,
       data: mergedData,
     });
   } catch (err) {

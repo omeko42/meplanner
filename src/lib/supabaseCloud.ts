@@ -1,5 +1,6 @@
 import {
   AuditLogEntry,
+  ClientWorkspaceData,
   CommercialPaymentTransaction,
   GalleryPhotoItem,
   WeddingDatabaseSchema,
@@ -281,6 +282,27 @@ const explicitlyDeletedTaskIds = new Set<string>();
 const explicitlyDeletedWishIds = new Set<string>();
 const explicitlyDeletedBudgetIds = new Set<string>();
 
+const locallyTouchedIds = new Map<string, number>();
+
+export function registerLocalItemTouch(id: string): void {
+  if (!id) return;
+  locallyTouchedIds.set(id, Date.now());
+}
+
+export function getExplicitlyDeletedIdsSnapshot(): {
+  guests: string[];
+  tasks: string[];
+  wishes: string[];
+  budgets: string[];
+} {
+  return {
+    guests: Array.from(explicitlyDeletedGuestIds),
+    tasks: Array.from(explicitlyDeletedTaskIds),
+    wishes: Array.from(explicitlyDeletedWishIds),
+    budgets: Array.from(explicitlyDeletedBudgetIds),
+  };
+}
+
 export function registerExplicitCloudDeletion(
   collection: 'guests' | 'tasks' | 'wishes' | 'budgets',
   id: string
@@ -295,10 +317,24 @@ export function registerExplicitCloudDeletion(
 export function mergeGuestsMultiDevice(
   primaryGuests: WeddingDatabaseSchema['guests'],
   secondaryGuests: WeddingDatabaseSchema['guests'],
-  respectExplicitDeletes = true
+  respectExplicitDeletes = true,
+  customDeletedGuestIds?: Set<string>
 ): WeddingDatabaseSchema['guests'] {
   const safePrimary = Array.isArray(primaryGuests) ? primaryGuests : [];
   const safeSecondary = Array.isArray(secondaryGuests) ? secondaryGuests : [];
+  const deletedSet = customDeletedGuestIds || explicitlyDeletedGuestIds;
+
+  const secondaryById = new Map<string, WeddingDatabaseSchema['guests'][number]>();
+  const secondaryByName = new Map<string, WeddingDatabaseSchema['guests'][number]>();
+  for (const cg of safeSecondary) {
+    if (!cg || !cg.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cg.id)) continue;
+    secondaryById.set(cg.id, cg);
+    const norm = (cg.guestName || '').trim().toLowerCase();
+    if (norm && !secondaryByName.has(norm)) {
+      secondaryByName.set(norm, cg);
+    }
+  }
 
   const merged: WeddingDatabaseSchema['guests'] = [];
   const usedIds = new Set<string>();
@@ -318,35 +354,499 @@ export function mergeGuestsMultiDevice(
 
   for (const g of safePrimary) {
     if (!g || !g.id) continue;
-    if (respectExplicitDeletes && explicitlyDeletedGuestIds.has(g.id)) continue;
+    if (respectExplicitDeletes && deletedSet.has(g.id)) continue;
     const normName = (g.guestName || '').trim().toLowerCase();
     if (usedIds.has(g.id)) continue;
-    usedIds.add(g.id);
+
+    const cg =
+      secondaryById.get(g.id) ||
+      (normName ? secondaryByName.get(normName) : undefined);
+
+    let resolvedGuest = g;
+    if (cg) {
+      const isLocallyTouched = locallyTouchedIds.has(g.id);
+      if (
+        !isLocallyTouched &&
+        cg.rsvpStatus &&
+        cg.rsvpStatus !== 'Belum Konfirmasi' &&
+        (!g.rsvpStatus || g.rsvpStatus === 'Belum Konfirmasi')
+      ) {
+        resolvedGuest = {
+          ...g,
+          rsvpStatus: cg.rsvpStatus,
+          confirmedPax: cg.confirmedPax ?? g.confirmedPax,
+          pax: cg.pax || g.pax,
+          wishes: cg.wishes || g.wishes,
+          sessionChoice: cg.sessionChoice || g.sessionChoice,
+          attendanceStatus:
+            cg.attendanceStatus && cg.attendanceStatus !== 'Belum Dicek'
+              ? cg.attendanceStatus
+              : g.attendanceStatus,
+          phone: cg.phone || g.phone,
+          institution: cg.institution || g.institution,
+          deliveryStatus:
+            cg.deliveryStatus && cg.deliveryStatus !== 'Belum Disiapkan'
+              ? cg.deliveryStatus
+              : g.deliveryStatus,
+          updatedAt:
+            (cg.updatedAt || '') > (g.updatedAt || '')
+              ? cg.updatedAt
+              : g.updatedAt,
+        };
+      } else if (
+        !isLocallyTouched &&
+        (cg.updatedAt || '') > (g.updatedAt || '')
+      ) {
+        resolvedGuest = {
+          ...g,
+          ...cg,
+          id: g.id,
+          invitationCode: g.invitationCode || cg.invitationCode,
+        };
+      }
+    }
+
+    usedIds.add(resolvedGuest.id);
     if (normName) usedNames.add(normName);
-    const codeUpper = (g.invitationCode || '').trim().toUpperCase();
+    const codeUpper = (resolvedGuest.invitationCode || '').trim().toUpperCase();
     if (codeUpper) usedCodes.add(codeUpper);
-    merged.push(g);
+    merged.push(resolvedGuest);
   }
 
-  for (const g of safeSecondary) {
-    if (!g || !g.id) continue;
-    if (respectExplicitDeletes && explicitlyDeletedGuestIds.has(g.id)) continue;
-    const normName = (g.guestName || '').trim().toLowerCase();
-    if (usedIds.has(g.id) || (normName && usedNames.has(normName))) continue;
+  for (const cg of safeSecondary) {
+    if (!cg || !cg.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cg.id)) continue;
+    const normName = (cg.guestName || '').trim().toLowerCase();
+    if (usedIds.has(cg.id) || (normName && usedNames.has(normName))) continue;
 
-    let finalCode = (g.invitationCode || '').trim();
+    let finalCode = (cg.invitationCode || '').trim();
     if (!finalCode || usedCodes.has(finalCode.toUpperCase())) {
       finalCode = nextAvailableCode();
     }
-    usedIds.add(g.id);
+    usedIds.add(cg.id);
     if (normName) usedNames.add(normName);
     usedCodes.add(finalCode.toUpperCase());
     merged.push(
-      finalCode !== g.invitationCode ? { ...g, invitationCode: finalCode } : g
+      finalCode !== cg.invitationCode ? { ...cg, invitationCode: finalCode } : cg
     );
   }
 
   return merged;
+}
+
+export function mergeWishesMultiDevice(
+  primaryWishes: WeddingDatabaseSchema['wishes'],
+  secondaryWishes: WeddingDatabaseSchema['wishes'],
+  respectExplicitDeletes = true,
+  customDeletedWishIds?: Set<string>
+): WeddingDatabaseSchema['wishes'] {
+  const safePrimary = Array.isArray(primaryWishes) ? primaryWishes : [];
+  const safeSecondary = Array.isArray(secondaryWishes) ? secondaryWishes : [];
+  const deletedSet = customDeletedWishIds || explicitlyDeletedWishIds;
+
+  const secondaryById = new Map<string, WeddingDatabaseSchema['wishes'][number]>();
+  for (const cw of safeSecondary) {
+    if (!cw || !cw.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cw.id)) continue;
+    secondaryById.set(cw.id, cw);
+  }
+
+  const merged: WeddingDatabaseSchema['wishes'] = [];
+  const usedIds = new Set<string>();
+
+  for (const w of safePrimary) {
+    if (!w || !w.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(w.id)) continue;
+    if (usedIds.has(w.id)) continue;
+
+    const cw = secondaryById.get(w.id);
+    let resolved = w;
+    if (cw && !locallyTouchedIds.has(w.id)) {
+      resolved = {
+        ...cw,
+        ...w,
+        replyFromCouple: w.replyFromCouple || cw.replyFromCouple,
+        isPinned: w.isPinned ?? cw.isPinned,
+        moderationStatus: w.moderationStatus || cw.moderationStatus,
+        flaggedReason: w.flaggedReason || cw.flaggedReason,
+      };
+    }
+    usedIds.add(resolved.id);
+    merged.push(resolved);
+  }
+
+  for (const cw of safeSecondary) {
+    if (!cw || !cw.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cw.id)) continue;
+    if (usedIds.has(cw.id)) continue;
+    usedIds.add(cw.id);
+    merged.push(cw);
+  }
+
+  return merged.sort((a, b) =>
+    String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+  );
+}
+
+export function mergeTasksMultiDevice(
+  primaryTasks: WeddingDatabaseSchema['tasks'],
+  secondaryTasks: WeddingDatabaseSchema['tasks'],
+  respectExplicitDeletes = true,
+  customDeletedTaskIds?: Set<string>
+): WeddingDatabaseSchema['tasks'] {
+  const safePrimary = Array.isArray(primaryTasks) ? primaryTasks : [];
+  const safeSecondary = Array.isArray(secondaryTasks) ? secondaryTasks : [];
+  const deletedSet = customDeletedTaskIds || explicitlyDeletedTaskIds;
+
+  const secondaryById = new Map<string, WeddingDatabaseSchema['tasks'][number]>();
+  for (const ct of safeSecondary) {
+    if (!ct || !ct.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(ct.id)) continue;
+    secondaryById.set(ct.id, ct);
+  }
+
+  const merged: WeddingDatabaseSchema['tasks'] = [];
+  const usedIds = new Set<string>();
+
+  for (const t of safePrimary) {
+    if (!t || !t.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(t.id)) continue;
+    if (usedIds.has(t.id)) continue;
+
+    const ct = secondaryById.get(t.id);
+    let resolved = t;
+    if (
+      ct &&
+      !locallyTouchedIds.has(t.id) &&
+      (ct.updatedAt || '') > (t.updatedAt || '')
+    ) {
+      resolved = ct;
+    }
+    usedIds.add(resolved.id);
+    merged.push(resolved);
+  }
+
+  for (const ct of safeSecondary) {
+    if (!ct || !ct.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(ct.id)) continue;
+    if (usedIds.has(ct.id)) continue;
+    usedIds.add(ct.id);
+    merged.push(ct);
+  }
+
+  return merged;
+}
+
+export function mergeBudgetsMultiDevice(
+  primaryBudgets: WeddingDatabaseSchema['budgetItems'],
+  secondaryBudgets: WeddingDatabaseSchema['budgetItems'],
+  respectExplicitDeletes = true,
+  customDeletedBudgetIds?: Set<string>
+): WeddingDatabaseSchema['budgetItems'] {
+  const safePrimary = Array.isArray(primaryBudgets) ? primaryBudgets : [];
+  const safeSecondary = Array.isArray(secondaryBudgets) ? secondaryBudgets : [];
+  const deletedSet = customDeletedBudgetIds || explicitlyDeletedBudgetIds;
+
+  const secondaryById = new Map<
+    string,
+    WeddingDatabaseSchema['budgetItems'][number]
+  >();
+  for (const cb of safeSecondary) {
+    if (!cb || !cb.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cb.id)) continue;
+    secondaryById.set(cb.id, cb);
+  }
+
+  const merged: WeddingDatabaseSchema['budgetItems'] = [];
+  const usedIds = new Set<string>();
+
+  for (const b of safePrimary) {
+    if (!b || !b.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(b.id)) continue;
+    if (usedIds.has(b.id)) continue;
+
+    const cb = secondaryById.get(b.id);
+    let resolved = b;
+    if (
+      cb &&
+      !locallyTouchedIds.has(b.id) &&
+      (cb.updatedAt || '') > (b.updatedAt || '')
+    ) {
+      resolved = cb;
+    }
+    usedIds.add(resolved.id);
+    merged.push(resolved);
+  }
+
+  for (const cb of safeSecondary) {
+    if (!cb || !cb.id) continue;
+    if (respectExplicitDeletes && deletedSet.has(cb.id)) continue;
+    if (usedIds.has(cb.id)) continue;
+    usedIds.add(cb.id);
+    merged.push(cb);
+  }
+
+  return merged;
+}
+
+export function mergeFullDatabaseMultiDevice(
+  localState: WeddingDatabaseSchema,
+  cloudState: Partial<WeddingDatabaseSchema> | null | undefined,
+  respectExplicitDeletes = true,
+  customDeletes?: {
+    guests?: Set<string>;
+    tasks?: Set<string>;
+    wishes?: Set<string>;
+    budgets?: Set<string>;
+  }
+): WeddingDatabaseSchema {
+  if (!cloudState) return localState;
+
+  const deletedGuests = customDeletes?.guests || explicitlyDeletedGuestIds;
+  const deletedTasks = customDeletes?.tasks || explicitlyDeletedTaskIds;
+  const deletedWishes = customDeletes?.wishes || explicitlyDeletedWishIds;
+  const deletedBudgets = customDeletes?.budgets || explicitlyDeletedBudgetIds;
+
+  // 1. Merge Guests (including RSVP protection & seed guest protection)
+  let mergedGuests = mergeGuestsMultiDevice(
+    localState.guests || [],
+    cloudState.guests || [],
+    respectExplicitDeletes,
+    deletedGuests
+  );
+  if (
+    mergedGuests.length > 0 &&
+    mergedGuests.length < INITIAL_GUESTS.length
+  ) {
+    mergedGuests = mergeGuestsMultiDevice(
+      mergedGuests,
+      INITIAL_GUESTS,
+      respectExplicitDeletes,
+      deletedGuests
+    );
+  }
+
+  // 2. Merge Wishes
+  const mergedWishes = mergeWishesMultiDevice(
+    localState.wishes || [],
+    cloudState.wishes || [],
+    respectExplicitDeletes,
+    deletedWishes
+  );
+
+  // 3. Merge Tasks
+  const mergedTasks = mergeTasksMultiDevice(
+    localState.tasks || [],
+    cloudState.tasks || [],
+    respectExplicitDeletes,
+    deletedTasks
+  );
+
+  // 4. Merge Budgets
+  const mergedBudgets = mergeBudgetsMultiDevice(
+    localState.budgetItems || [],
+    cloudState.budgetItems || [],
+    respectExplicitDeletes,
+    deletedBudgets
+  );
+
+  // 5. Merge Admin Users
+  const mergedUsers: WeddingDatabaseSchema['adminUsers'] = [];
+  const usedUserIds = new Set<string>();
+  const usedUsernames = new Set<string>();
+  for (const u of [
+    ...(Array.isArray(localState.adminUsers) ? localState.adminUsers : []),
+    ...(Array.isArray(cloudState.adminUsers) ? cloudState.adminUsers : []),
+  ]) {
+    if (!u || !u.id) continue;
+    const uname = (u.username || '').trim().toLowerCase();
+    if (usedUserIds.has(u.id) || (uname && usedUsernames.has(uname))) continue;
+    usedUserIds.add(u.id);
+    if (uname) usedUsernames.add(uname);
+    mergedUsers.push(u);
+  }
+
+  // 6. Merge Settings, Client Groups, Commercial Payments, & Secondary Client Workspaces
+  const nextSettings: WeddingSettings = { ...localState.settings };
+  const cs = cloudState.settings;
+  if (cs) {
+    if (
+      nextSettings.groomParents === 'Putra dari Bapak ... & Ibu ...' &&
+      cs.groomParents &&
+      cs.groomParents !== 'Putra dari Bapak ... & Ibu ...'
+    ) {
+      nextSettings.groomFullName = cs.groomFullName || nextSettings.groomFullName;
+      nextSettings.groomNickname = cs.groomNickname || nextSettings.groomNickname;
+      nextSettings.groomRankAndTitle =
+        cs.groomRankAndTitle ?? nextSettings.groomRankAndTitle;
+      nextSettings.groomUnit = cs.groomUnit ?? nextSettings.groomUnit;
+      nextSettings.groomParents = cs.groomParents || nextSettings.groomParents;
+      nextSettings.groomOrigin = cs.groomOrigin || nextSettings.groomOrigin;
+      nextSettings.groomInstagram =
+        cs.groomInstagram ?? nextSettings.groomInstagram;
+      nextSettings.groomPhotoUrl = cs.groomPhotoUrl || nextSettings.groomPhotoUrl;
+      nextSettings.brideFullName = cs.brideFullName || nextSettings.brideFullName;
+      nextSettings.brideNickname = cs.brideNickname || nextSettings.brideNickname;
+      nextSettings.brideTitle = cs.brideTitle ?? nextSettings.brideTitle;
+      nextSettings.brideParents = cs.brideParents || nextSettings.brideParents;
+      nextSettings.brideOrigin = cs.brideOrigin || nextSettings.brideOrigin;
+      nextSettings.brideInstagram =
+        cs.brideInstagram ?? nextSettings.brideInstagram;
+      nextSettings.bridePhotoUrl = cs.bridePhotoUrl || nextSettings.bridePhotoUrl;
+      nextSettings.coverBgUrl = cs.coverBgUrl || nextSettings.coverBgUrl;
+      nextSettings.heroPrewedUrl = cs.heroPrewedUrl || nextSettings.heroPrewedUrl;
+      nextSettings.pageBgUrl = cs.pageBgUrl || nextSettings.pageBgUrl;
+      nextSettings.qrisImageUrl = cs.qrisImageUrl ?? nextSettings.qrisImageUrl;
+      nextSettings.photoAdjustments =
+        cs.photoAdjustments || nextSettings.photoAdjustments;
+      if (
+        (!Array.isArray(nextSettings.galleryPhotos) ||
+          nextSettings.galleryPhotos.length === 0) &&
+        Array.isArray(cs.galleryPhotos) &&
+        cs.galleryPhotos.length > 0
+      ) {
+        nextSettings.galleryPhotos = cs.galleryPhotos;
+      }
+      if (
+        (!Array.isArray(nextSettings.bankAccounts) ||
+          nextSettings.bankAccounts.length === 0) &&
+        Array.isArray(cs.bankAccounts) &&
+        cs.bankAccounts.length > 0
+      ) {
+        nextSettings.bankAccounts = cs.bankAccounts;
+      }
+      if (
+        (!Array.isArray(nextSettings.loveStory) ||
+          nextSettings.loveStory.length === 0) &&
+        Array.isArray(cs.loveStory) &&
+        cs.loveStory.length > 0
+      ) {
+        nextSettings.loveStory = cs.loveStory;
+      }
+      if (
+        (!Array.isArray(nextSettings.musicPlaylist) ||
+          nextSettings.musicPlaylist.length === 0) &&
+        Array.isArray(cs.musicPlaylist) &&
+        cs.musicPlaylist.length > 0
+      ) {
+        nextSettings.musicPlaylist = cs.musicPlaylist;
+        nextSettings.activeMusicTrackId =
+          cs.activeMusicTrackId || nextSettings.activeMusicTrackId;
+        nextSettings.musicTitle = cs.musicTitle || nextSettings.musicTitle;
+        nextSettings.musicArtist = cs.musicArtist || nextSettings.musicArtist;
+      }
+    }
+
+    // Merge clientGroups by id
+    if (
+      Array.isArray(nextSettings.clientGroups) ||
+      Array.isArray(cs.clientGroups)
+    ) {
+      const groupMap = new Map<
+        string,
+        NonNullable<WeddingSettings['clientGroups']>[number]
+      >();
+      for (const g of cs.clientGroups || []) {
+        if (g && g.id) groupMap.set(g.id, g);
+      }
+      for (const g of nextSettings.clientGroups || []) {
+        if (g && g.id) groupMap.set(g.id, g);
+      }
+      nextSettings.clientGroups = Array.from(groupMap.values());
+    }
+
+    // Merge commercialPayments by idempotencyKey / id
+    if (
+      Array.isArray(nextSettings.commercialPayments) ||
+      Array.isArray(cs.commercialPayments)
+    ) {
+      const txList: CommercialPaymentTransaction[] = [];
+      const usedTxKeys = new Set<string>();
+      for (const tx of [
+        ...(nextSettings.commercialPayments || []),
+        ...(cs.commercialPayments || []),
+      ]) {
+        if (!tx || !tx.id) continue;
+        const key = tx.idempotencyKey || tx.id;
+        if (usedTxKeys.has(key) || usedTxKeys.has(tx.id)) continue;
+        usedTxKeys.add(key);
+        usedTxKeys.add(tx.id);
+        txList.push(tx);
+      }
+      nextSettings.commercialPayments = txList;
+    }
+
+    // Merge clientWorkspaces per clientId (merging guests, wishes, tasks, budgets inside each workspace)
+    if (nextSettings.clientWorkspaces || cs.clientWorkspaces) {
+      const localWsMap = nextSettings.clientWorkspaces || {};
+      const cloudWsMap = cs.clientWorkspaces || {};
+      const allClientIds = Array.from(
+        new Set([
+          ...Object.keys(localWsMap),
+          ...Object.keys(cloudWsMap),
+        ])
+      );
+      const mergedWorkspaces: Record<string, ClientWorkspaceData> = {};
+
+      for (const cid of allClientIds) {
+        const lws = localWsMap[cid];
+        const cws = cloudWsMap[cid];
+        if (lws && cws) {
+          mergedWorkspaces[cid] = {
+            ...cws,
+            ...lws,
+            settings: {
+              ...(cws.settings || {}),
+              ...(lws.settings || {}),
+            },
+            guests: mergeGuestsMultiDevice(
+              lws.guests || [],
+              cws.guests || [],
+              respectExplicitDeletes,
+              deletedGuests
+            ),
+            wishes: mergeWishesMultiDevice(
+              lws.wishes || [],
+              cws.wishes || [],
+              respectExplicitDeletes,
+              deletedWishes
+            ),
+            tasks: mergeTasksMultiDevice(
+              lws.tasks || [],
+              cws.tasks || [],
+              respectExplicitDeletes,
+              deletedTasks
+            ),
+            budgetItems: mergeBudgetsMultiDevice(
+              lws.budgetItems || [],
+              cws.budgetItems || [],
+              respectExplicitDeletes,
+              deletedBudgets
+            ),
+            updatedAt:
+              (lws.updatedAt || '') >= (cws.updatedAt || '')
+                ? lws.updatedAt
+                : cws.updatedAt,
+          };
+        } else if (lws) {
+          mergedWorkspaces[cid] = lws;
+        } else if (cws) {
+          mergedWorkspaces[cid] = cws;
+        }
+      }
+      nextSettings.clientWorkspaces = mergedWorkspaces;
+    }
+  }
+
+  return {
+    ...localState,
+    settings: nextSettings,
+    guests: mergedGuests,
+    wishes: mergedWishes,
+    tasks: mergedTasks,
+    budgetItems: mergedBudgets,
+    adminUsers: mergedUsers.length > 0 ? mergedUsers : localState.adminUsers,
+  };
 }
 
 async function fetchSupabaseWithRetry(
@@ -2084,122 +2584,46 @@ async function performActualSupabaseUpsert(
   setCloudStatus('SYNCING', 'Menyimpan ke Supabase...');
   let state = rawState;
 
-  // Anti-Wipe Guard & Multi-Device Guest Merge: protect existing cloud collections & couple profile from accidental overwrite
+  // Pre-Write Fresh Cloud Fetch & Multi-Device Full Database Merge:
+  // Ensures concurrent edits from PC, HP, Panitia, and dozens of RSVP Guests never overwrite each other
   if (!options?.forceOverwrite) {
-    const nextSettings: WeddingSettings = { ...state.settings };
-    if (
-      lastKnownCloudState &&
-      nextSettings.groomParents === 'Putra dari Bapak ... & Ibu ...' &&
-      lastKnownCloudState.settings?.groomParents &&
-      lastKnownCloudState.settings.groomParents !==
-        'Putra dari Bapak ... & Ibu ...'
-    ) {
-      const cs = lastKnownCloudState.settings;
-      nextSettings.groomFullName = cs.groomFullName || nextSettings.groomFullName;
-      nextSettings.groomNickname = cs.groomNickname || nextSettings.groomNickname;
-      nextSettings.groomRankAndTitle =
-        cs.groomRankAndTitle ?? nextSettings.groomRankAndTitle;
-      nextSettings.groomUnit = cs.groomUnit ?? nextSettings.groomUnit;
-      nextSettings.groomParents = cs.groomParents || nextSettings.groomParents;
-      nextSettings.groomOrigin = cs.groomOrigin || nextSettings.groomOrigin;
-      nextSettings.groomInstagram =
-        cs.groomInstagram ?? nextSettings.groomInstagram;
-      nextSettings.groomPhotoUrl = cs.groomPhotoUrl || nextSettings.groomPhotoUrl;
-      nextSettings.brideFullName = cs.brideFullName || nextSettings.brideFullName;
-      nextSettings.brideNickname = cs.brideNickname || nextSettings.brideNickname;
-      nextSettings.brideTitle = cs.brideTitle ?? nextSettings.brideTitle;
-      nextSettings.brideParents = cs.brideParents || nextSettings.brideParents;
-      nextSettings.brideOrigin = cs.brideOrigin || nextSettings.brideOrigin;
-      nextSettings.brideInstagram =
-        cs.brideInstagram ?? nextSettings.brideInstagram;
-      nextSettings.bridePhotoUrl = cs.bridePhotoUrl || nextSettings.bridePhotoUrl;
-      nextSettings.coverBgUrl = cs.coverBgUrl || nextSettings.coverBgUrl;
-      nextSettings.heroPrewedUrl = cs.heroPrewedUrl || nextSettings.heroPrewedUrl;
-      nextSettings.pageBgUrl = cs.pageBgUrl || nextSettings.pageBgUrl;
-      nextSettings.qrisImageUrl = cs.qrisImageUrl ?? nextSettings.qrisImageUrl;
-      nextSettings.photoAdjustments =
-        cs.photoAdjustments || nextSettings.photoAdjustments;
-      if (
-        (!Array.isArray(nextSettings.galleryPhotos) ||
-          nextSettings.galleryPhotos.length === 0) &&
-        Array.isArray(cs.galleryPhotos) &&
-        cs.galleryPhotos.length > 0
-      ) {
-        nextSettings.galleryPhotos = cs.galleryPhotos;
+    try {
+      const freshRes = await fetchSupabaseWithRetry(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data,updated_at`,
+        {
+          method: 'GET',
+          headers: getSupabaseHeaders({ Accept: 'application/json' }),
+        },
+        3500,
+        1
+      ).catch(() => null);
+      if (freshRes && freshRes.ok) {
+        const freshRows = (await freshRes.json().catch(() => null)) as Array<{
+          data?: Partial<WeddingDatabaseSchema>;
+          updated_at?: string;
+        }> | null;
+        if (Array.isArray(freshRows) && freshRows[0]?.data) {
+          lastKnownCloudState = normalizeCloudState(
+            freshRows[0].data,
+            freshRows[0].updated_at
+          );
+        }
       }
-      if (
-        (!Array.isArray(nextSettings.bankAccounts) ||
-          nextSettings.bankAccounts.length === 0) &&
-        Array.isArray(cs.bankAccounts) &&
-        cs.bankAccounts.length > 0
-      ) {
-        nextSettings.bankAccounts = cs.bankAccounts;
-      }
-      if (
-        (!Array.isArray(nextSettings.loveStory) ||
-          nextSettings.loveStory.length === 0) &&
-        Array.isArray(cs.loveStory) &&
-        cs.loveStory.length > 0
-      ) {
-        nextSettings.loveStory = cs.loveStory;
-      }
-      if (
-        (!Array.isArray(nextSettings.musicPlaylist) ||
-          nextSettings.musicPlaylist.length === 0) &&
-        Array.isArray(cs.musicPlaylist) &&
-        cs.musicPlaylist.length > 0
-      ) {
-        nextSettings.musicPlaylist = cs.musicPlaylist;
-        nextSettings.activeMusicTrackId =
-          cs.activeMusicTrackId || nextSettings.activeMusicTrackId;
-        nextSettings.musicTitle = cs.musicTitle || nextSettings.musicTitle;
-        nextSettings.musicArtist = cs.musicArtist || nextSettings.musicArtist;
-      }
+    } catch {
+      // Ignore pre-write fetch failure and fall back to existing lastKnownCloudState
     }
 
-    let effectiveGuests = mergeGuestsMultiDevice(
-      state.guests,
-      lastKnownCloudState?.guests || [],
-      true
-    );
-
-    if (
-      effectiveGuests.length > 0 &&
-      effectiveGuests.length < INITIAL_GUESTS.length
+    if (lastKnownCloudState) {
+      state = mergeFullDatabaseMultiDevice(state, lastKnownCloudState, true);
+    } else if (
+      state.guests.length > 0 &&
+      state.guests.length < INITIAL_GUESTS.length
     ) {
-      effectiveGuests = mergeGuestsMultiDevice(
-        effectiveGuests,
-        INITIAL_GUESTS,
-        true
-      );
+      state = {
+        ...state,
+        guests: mergeGuestsMultiDevice(state.guests, INITIAL_GUESTS, true),
+      };
     }
-
-    state = {
-      ...state,
-      settings: nextSettings,
-      guests: effectiveGuests,
-      tasks:
-        state.tasks.length === 0 &&
-        (lastKnownCloudState?.tasks?.length || 0) > 0
-          ? lastKnownCloudState!.tasks.filter(
-              (t) => !explicitlyDeletedTaskIds.has(t.id)
-            )
-          : state.tasks,
-      wishes:
-        state.wishes.length === 0 &&
-        (lastKnownCloudState?.wishes?.length || 0) > 0
-          ? lastKnownCloudState!.wishes.filter(
-              (w) => !explicitlyDeletedWishIds.has(w.id)
-            )
-          : state.wishes,
-      budgetItems:
-        state.budgetItems.length === 0 &&
-        (lastKnownCloudState?.budgetItems?.length || 0) > 0
-          ? lastKnownCloudState!.budgetItems.filter(
-              (b) => !explicitlyDeletedBudgetIds.has(b.id)
-            )
-          : state.budgetItems,
-    };
   }
 
   const updatedAt = state.lastSyncedAt || new Date().toISOString();
@@ -2231,6 +2655,7 @@ async function performActualSupabaseUpsert(
   ): Promise<boolean> => {
     if (typeof window === 'undefined') return false;
     try {
+      const deletedSnap = getExplicitlyDeletedIdsSnapshot();
       const proxyRes = await fetch('/api/supabase-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2238,7 +2663,10 @@ async function performActualSupabaseUpsert(
           data: payloadToSave,
           updatedAt,
           forceOverwrite: Boolean(options?.forceOverwrite),
-          deletedGuestIds: Array.from(explicitlyDeletedGuestIds),
+          deletedGuestIds: deletedSnap.guests,
+          deletedTaskIds: deletedSnap.tasks,
+          deletedWishIds: deletedSnap.wishes,
+          deletedBudgetIds: deletedSnap.budgets,
         }),
       });
       if (proxyRes.ok) {
