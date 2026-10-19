@@ -1990,14 +1990,32 @@ async function performActualSupabaseUpsert(
       }
     }
 
+    let effectiveGuests =
+      state.guests.length === 0 &&
+      (lastKnownCloudState.guests?.length || 0) > 0
+        ? lastKnownCloudState.guests
+        : state.guests;
+
+    if (effectiveGuests.length > 0 && effectiveGuests.length < 15) {
+      const existingNames = new Set(
+        effectiveGuests.map((g) => (g.guestName || '').trim().toLowerCase())
+      );
+      const existingIds = new Set(effectiveGuests.map((g) => g.id));
+      const baganevSeed = INITIAL_GUESTS.filter(
+        (g) =>
+          g.id.startsWith('gst_baganev_') &&
+          !existingIds.has(g.id) &&
+          !existingNames.has(g.guestName.trim().toLowerCase())
+      );
+      if (baganevSeed.length > 0) {
+        effectiveGuests = [...effectiveGuests, ...baganevSeed];
+      }
+    }
+
     state = {
       ...state,
       settings: nextSettings,
-      guests:
-        state.guests.length === 0 &&
-        (lastKnownCloudState.guests?.length || 0) > 0
-          ? lastKnownCloudState.guests
-          : state.guests,
+      guests: effectiveGuests,
       tasks:
         state.tasks.length === 0 &&
         (lastKnownCloudState.tasks?.length || 0) > 0
