@@ -351,7 +351,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       title: 'Golden Sunset Silhouette',
       caption: 'The Beginning',
       imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-1_jGiGcQCZEdH7.webp',
+        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-1_hd.webp',
       category: 'Prewedding',
     },
     {
@@ -359,7 +359,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       title: 'Sacred Promises',
       caption: 'Momen Bersama',
       imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-2_kv3KYcmbpz92.webp',
+        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-2_hd.webp',
       category: 'Momen Bersama',
     },
     {
@@ -367,7 +367,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       title: 'Timeless Elegance',
       caption: 'Momen bersama',
       imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-3_cpwHxflTQJ8y.webp',
+        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-3_hd.webp',
       category: 'Prewedding',
     },
     {
@@ -375,7 +375,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       title: 'Forever Begins Here',
       caption: 'Prewedding',
       imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-4_6exmkMDAAW72.webp',
+        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-4_hd.webp',
       category: 'Momen Bersama',
     },
   ],

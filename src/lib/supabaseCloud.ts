@@ -838,9 +838,11 @@ export function mergeFullDatabaseMultiDevice(
     }
   }
 
+  const healedSettings = healStalePlaceholderSettings(nextSettings);
+
   return {
     ...localState,
-    settings: nextSettings,
+    settings: healedSettings,
     guests: mergedGuests,
     wishes: mergedWishes,
     tasks: mergedTasks,
@@ -1066,30 +1068,68 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   }
   if (
     !next.groomPhotoUrl ||
-    next.groomPhotoUrl.includes('images.unsplash.com')
+    next.groomPhotoUrl.includes('images.unsplash.com') ||
+    (next.groomPhotoUrl.includes('.supabase.co/') &&
+      next.groomPhotoUrl.endsWith('.svg'))
   ) {
     next.groomPhotoUrl = INITIAL_SETTINGS.groomPhotoUrl;
   }
   if (
     !next.bridePhotoUrl ||
-    next.bridePhotoUrl.includes('images.unsplash.com')
+    next.bridePhotoUrl.includes('images.unsplash.com') ||
+    (next.bridePhotoUrl.includes('.supabase.co/') &&
+      next.bridePhotoUrl.endsWith('.svg'))
   ) {
     next.bridePhotoUrl = INITIAL_SETTINGS.bridePhotoUrl;
   }
-  if (!next.coverBgUrl || next.coverBgUrl.includes('images.unsplash.com')) {
+  if (
+    !next.coverBgUrl ||
+    next.coverBgUrl.includes('images.unsplash.com') ||
+    (next.coverBgUrl.includes('.supabase.co/') &&
+      next.coverBgUrl.endsWith('.svg'))
+  ) {
     next.coverBgUrl = INITIAL_SETTINGS.coverBgUrl;
   }
   if (
     !next.heroPrewedUrl ||
-    next.heroPrewedUrl.includes('images.unsplash.com')
+    next.heroPrewedUrl.includes('images.unsplash.com') ||
+    (next.heroPrewedUrl.includes('.supabase.co/') &&
+      next.heroPrewedUrl.endsWith('.svg'))
   ) {
     next.heroPrewedUrl = INITIAL_SETTINGS.heroPrewedUrl;
   }
-  if (!next.pageBgUrl || next.pageBgUrl.includes('images.unsplash.com')) {
+  if (
+    !next.pageBgUrl ||
+    next.pageBgUrl.includes('images.unsplash.com') ||
+    (next.pageBgUrl.includes('.supabase.co/') &&
+      next.pageBgUrl.endsWith('.svg'))
+  ) {
     next.pageBgUrl = INITIAL_SETTINGS.pageBgUrl;
   }
   if (!Array.isArray(next.galleryPhotos) || next.galleryPhotos.length === 0) {
     next.galleryPhotos = INITIAL_SETTINGS.galleryPhotos;
+  } else {
+    next.galleryPhotos = next.galleryPhotos.map((gp, idx) => {
+      const url = gp.imageUrl || '';
+      const isBrokenOrStale =
+        !url ||
+        url.includes('images.unsplash.com') ||
+        (url.includes('.supabase.co/') && url.endsWith('.svg')) ||
+        url.includes('gallery_gal-default-3_cpwHxflTQJ8y.webp') ||
+        url.includes('gallery_gal-default-4_6exmkMDAAW72.webp');
+      if (isBrokenOrStale) {
+        const seedMatch =
+          INITIAL_SETTINGS.galleryPhotos.find((sg) => sg.id === gp.id) ||
+          INITIAL_SETTINGS.galleryPhotos[idx];
+        if (seedMatch?.imageUrl) {
+          return {
+            ...gp,
+            imageUrl: seedMatch.imageUrl,
+          };
+        }
+      }
+      return gp;
+    });
   }
   if (!Array.isArray(next.loveStory) || next.loveStory.length === 0) {
     next.loveStory = INITIAL_SETTINGS.loveStory;
@@ -1269,14 +1309,24 @@ export async function uploadImageToSupabaseStorage(
     let cacheSig = '';
 
     if (typeof fileOrDataUrl === 'string') {
-      cacheSig = `${slotKey}_${fileOrDataUrl.length}_${fileOrDataUrl
+      let sourceDataUrl = fileOrDataUrl;
+      // Always unwrap SVG-embedded raster data URLs before uploading to Supabase Storage
+      // so Supabase CDN serves inline image/webp or image/jpeg instead of CSP-blocked image/svg+xml
+      if (sourceDataUrl.startsWith('data:image/svg+xml')) {
+        const unwrapped = unwrapSvgEmbeddedRasterUrl(sourceDataUrl);
+        if (unwrapped !== sourceDataUrl && unwrapped.startsWith('data:image/')) {
+          sourceDataUrl = unwrapped;
+        }
+      }
+
+      cacheSig = `${slotKey}_${sourceDataUrl.length}_${sourceDataUrl
         .slice(-48)
         .replace(/[^a-zA-Z0-9]/g, '')
         .slice(0, 14)}`;
       const cachedUrl = uploadedImageUrlCache.get(cacheSig);
       if (cachedUrl) return cachedUrl;
 
-      const mimeMatch = fileOrDataUrl.match(/^data:([^;,]+)[;,]/i);
+      const mimeMatch = sourceDataUrl.match(/^data:([^;,]+)[;,]/i);
       if (mimeMatch && mimeMatch[1]) {
         contentType = mimeMatch[1];
         if (contentType.includes('svg')) ext = 'svg';
@@ -1285,7 +1335,7 @@ export async function uploadImageToSupabaseStorage(
           ext = 'jpg';
         else if (contentType.includes('webp')) ext = 'webp';
       }
-      const res = await fetch(fileOrDataUrl);
+      const res = await fetch(sourceDataUrl);
       bodyBlob = await res.blob();
     } else {
       bodyBlob = fileOrDataUrl;
@@ -1301,9 +1351,9 @@ export async function uploadImageToSupabaseStorage(
     const shortHash = cacheSig
       .replace(/[^a-zA-Z0-9_-]/g, '')
       .slice(-16);
-    let objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
+    const objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
 
-    let upRes = await fetch(
+    const upRes = await fetch(
       `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
       {
         method: 'POST',
@@ -1316,28 +1366,6 @@ export async function uploadImageToSupabaseStorage(
         body: bodyBlob,
       }
     );
-
-    if (!upRes.ok && ext === 'svg' && typeof fileOrDataUrl === 'string') {
-      const innerRaster = unwrapSvgEmbeddedRasterUrl(fileOrDataUrl);
-      if (innerRaster !== fileOrDataUrl && innerRaster.startsWith('data:image/')) {
-        const innerRes = await fetch(innerRaster);
-        const innerBlob = await innerRes.blob();
-        objectPath = `photos/${safeSlot}_${shortHash}.webp`;
-        upRes = await fetch(
-          `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
-          {
-            method: 'POST',
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              'Content-Type': innerBlob.type || 'image/webp',
-              'x-upsert': 'true',
-            },
-            body: innerBlob,
-          }
-        );
-      }
-    }
 
     if (!upRes.ok) return null;
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
