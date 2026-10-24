@@ -332,6 +332,9 @@ export interface WeddingSettings {
   galleryPhotos: GalleryPhotoItem[];
   gallerySectionSubtitle?: string;
   gallerySectionTitle?: string;
+  gallerySlideDurationSeconds?: number; // Duration each photo stays on screen before auto-transition (default 6s, 0 = manual/off)
+  galleryTransitionDurationMs?: number; // Smoothing transition duration in milliseconds (default 1400ms)
+  galleryTransitionStyle?: 'CROSSFADE' | 'ZOOM_DISSOLVE' | 'SMOOTH_SLIDE'; // default 'CROSSFADE'
 
   // Custom Background & Theme Settings
   coverBgUrl?: string;

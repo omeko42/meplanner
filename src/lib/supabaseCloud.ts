@@ -700,6 +700,12 @@ export function mergeFullDatabaseMultiDevice(
       nextSettings.heroVideoUrl = cs.heroVideoUrl || nextSettings.heroVideoUrl;
       nextSettings.pageVideoUrl = cs.pageVideoUrl || nextSettings.pageVideoUrl;
       nextSettings.eventType = nextSettings.eventType || cs.eventType || 'WEDDING';
+      nextSettings.gallerySlideDurationSeconds =
+        cs.gallerySlideDurationSeconds ?? nextSettings.gallerySlideDurationSeconds;
+      nextSettings.galleryTransitionDurationMs =
+        cs.galleryTransitionDurationMs ?? nextSettings.galleryTransitionDurationMs;
+      nextSettings.galleryTransitionStyle =
+        cs.galleryTransitionStyle ?? nextSettings.galleryTransitionStyle;
       nextSettings.qrisImageUrl = cs.qrisImageUrl ?? nextSettings.qrisImageUrl;
       nextSettings.photoAdjustments =
         cs.photoAdjustments || nextSettings.photoAdjustments;

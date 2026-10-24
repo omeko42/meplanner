@@ -8013,6 +8013,225 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             </div>
                                           </div>
 
+                                          {/* Pengaturan Kehalusan (Smoothing) & Durasi Transisi Galeri */}
+                                          <div className="p-3 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-3">
+                                            <div className="flex items-center justify-between gap-2">
+                                              <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                                ✨ Pengaturan Kehalusan (Smoothing) &amp; Durasi Transisi Galeri
+                                              </p>
+                                              <InfoTooltip text="Atur gaya perpindahan foto galeri di halaman undangan agar terasa mengalir halus tanpa efek patah saat kembali dari foto terakhir ke foto pertama." />
+                                            </div>
+
+                                            {/* 1. Gaya Transisi Smoothing */}
+                                            <div className="space-y-1.5">
+                                              <label className="block text-[10px] font-bold text-stone-700">
+                                                Gaya Transisi Smoothing
+                                              </label>
+                                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                                {(
+                                                  [
+                                                    {
+                                                      key: 'CROSSFADE',
+                                                      label: '✨ Crossfade Halus (Melebur)',
+                                                      title:
+                                                        'Transisi melebur halus antar foto tanpa patah balik saat kembali ke foto pertama',
+                                                    },
+                                                    {
+                                                      key: 'ZOOM_DISSOLVE',
+                                                      label: '🎬 Zoom & Blur Sinematik',
+                                                      title:
+                                                        'Efek melebur dengan perbesaran lembut dan blur sinematik',
+                                                    },
+                                                    {
+                                                      key: 'SMOOTH_SLIDE',
+                                                      label: '↔️ Geser Horizontal Halus',
+                                                      title:
+                                                        'Efek geser samping dengan kurva akselerasi halus',
+                                                    },
+                                                  ] as const
+                                                ).map((mode) => {
+                                                  const currentStyle =
+                                                    settingsForm.galleryTransitionStyle ??
+                                                    'CROSSFADE';
+                                                  const isActive =
+                                                    currentStyle === mode.key;
+                                                  return (
+                                                    <button
+                                                      key={mode.key}
+                                                      type="button"
+                                                      title={mode.title}
+                                                      onClick={() =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          galleryTransitionStyle:
+                                                            mode.key,
+                                                        })
+                                                      }
+                                                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
+                                                        isActive
+                                                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
+                                                          : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37] hover:bg-[#FAF3E3]/50'
+                                                      }`}
+                                                    >
+                                                      {mode.label}
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+
+                                            {/* 2. 2-Column Controls for Timing */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              {/* Column 1: Lama Tampil per Foto */}
+                                              <div className="p-2.5 rounded-lg bg-white/90 border border-stone-200/80 space-y-1.5">
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                  <label className="text-[10px] font-bold text-stone-700">
+                                                    Jeda Pindah Foto Otomatis
+                                                  </label>
+                                                  <span className="px-1.5 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[10px]">
+                                                    {(settingsForm.gallerySlideDurationSeconds ??
+                                                      6) === 0
+                                                      ? 'Manual (Mati)'
+                                                      : `${settingsForm.gallerySlideDurationSeconds ?? 6} Detik`}
+                                                  </span>
+                                                </div>
+                                                <input
+                                                  type="range"
+                                                  min={0}
+                                                  max={15}
+                                                  step={1}
+                                                  value={
+                                                    settingsForm.gallerySlideDurationSeconds ??
+                                                    6
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      gallerySlideDurationSeconds:
+                                                        Number(e.target.value),
+                                                    })
+                                                  }
+                                                  className="w-full accent-[#B68D40] cursor-pointer h-1.5"
+                                                />
+                                                <div className="flex items-center flex-wrap gap-1">
+                                                  {[
+                                                    { val: 3, label: '3 dtk' },
+                                                    { val: 5, label: '5 dtk' },
+                                                    {
+                                                      val: 6,
+                                                      label: '6 dtk (Ideal)',
+                                                    },
+                                                    { val: 8, label: '8 dtk' },
+                                                    { val: 12, label: '12 dtk' },
+                                                    {
+                                                      val: 0,
+                                                      label: 'Mati (0)',
+                                                    },
+                                                  ].map((preset) => {
+                                                    const active =
+                                                      (settingsForm.gallerySlideDurationSeconds ??
+                                                        6) === preset.val;
+                                                    return (
+                                                      <button
+                                                        key={preset.val}
+                                                        type="button"
+                                                        onClick={() =>
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            gallerySlideDurationSeconds:
+                                                              preset.val,
+                                                          })
+                                                        }
+                                                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-all ${
+                                                          active
+                                                            ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                                                            : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-[#D4AF37]'
+                                                        }`}
+                                                      >
+                                                        {preset.label}
+                                                      </button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+
+                                              {/* Column 2: Durasi Efek Smoothing Transisi */}
+                                              <div className="p-2.5 rounded-lg bg-white/90 border border-stone-200/80 space-y-1.5">
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                  <label className="text-[10px] font-bold text-stone-700">
+                                                    Kehalusan / Durasi Transisi
+                                                  </label>
+                                                  <span className="px-1.5 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[10px]">
+                                                    {(
+                                                      (settingsForm.galleryTransitionDurationMs ??
+                                                        1400) / 1000
+                                                    ).toFixed(1)}{' '}
+                                                    Detik
+                                                  </span>
+                                                </div>
+                                                <input
+                                                  type="range"
+                                                  min={400}
+                                                  max={2600}
+                                                  step={100}
+                                                  value={
+                                                    settingsForm.galleryTransitionDurationMs ??
+                                                    1400
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      galleryTransitionDurationMs:
+                                                        Number(e.target.value),
+                                                    })
+                                                  }
+                                                  className="w-full accent-[#B68D40] cursor-pointer h-1.5"
+                                                />
+                                                <div className="flex items-center flex-wrap gap-1">
+                                                  {[
+                                                    {
+                                                      val: 800,
+                                                      label: '0.8 dtk (Cepat)',
+                                                    },
+                                                    {
+                                                      val: 1400,
+                                                      label: '1.4 dtk (Halus)',
+                                                    },
+                                                    {
+                                                      val: 2000,
+                                                      label:
+                                                        '2.0 dtk (Ultra Smooth)',
+                                                    },
+                                                  ].map((preset) => {
+                                                    const active =
+                                                      (settingsForm.galleryTransitionDurationMs ??
+                                                        1400) === preset.val;
+                                                    return (
+                                                      <button
+                                                        key={preset.val}
+                                                        type="button"
+                                                        onClick={() =>
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            galleryTransitionDurationMs:
+                                                              preset.val,
+                                                          })
+                                                        }
+                                                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-all ${
+                                                          active
+                                                            ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                                                            : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-[#D4AF37]'
+                                                        }`}
+                                                      >
+                                                        {preset.label}
+                                                      </button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">

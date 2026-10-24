@@ -438,20 +438,70 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [isGalleryHovered, setIsGalleryHovered] = useState(false);
   const safeGalleryIdx =
     effectiveGalleryPhotos.length > 0
       ? activeGalleryIdx % effectiveGalleryPhotos.length
       : 0;
 
+  const gallerySlideSeconds =
+    typeof (settings as WeddingSettings & { gallerySlideDurationSeconds?: number })
+      .gallerySlideDurationSeconds === 'number'
+      ? Math.max(
+          0,
+          Math.min(
+            30,
+            Number(
+              (settings as WeddingSettings & { gallerySlideDurationSeconds?: number })
+                .gallerySlideDurationSeconds
+            )
+          )
+        )
+      : 6;
+  const galleryTransitionMs =
+    typeof (settings as WeddingSettings & { galleryTransitionDurationMs?: number })
+      .galleryTransitionDurationMs === 'number'
+      ? Math.max(
+          300,
+          Math.min(
+            4000,
+            Number(
+              (settings as WeddingSettings & { galleryTransitionDurationMs?: number })
+                .galleryTransitionDurationMs
+            )
+          )
+        )
+      : 1400;
+  const galleryTransitionStyle: 'CROSSFADE' | 'ZOOM_DISSOLVE' | 'SMOOTH_SLIDE' =
+    ((settings as WeddingSettings & {
+      galleryTransitionStyle?: 'CROSSFADE' | 'ZOOM_DISSOLVE' | 'SMOOTH_SLIDE';
+    }).galleryTransitionStyle as
+      | 'CROSSFADE'
+      | 'ZOOM_DISSOLVE'
+      | 'SMOOTH_SLIDE') || 'CROSSFADE';
+
   useEffect(() => {
-    if (!showGallery || effectiveGalleryPhotos.length <= 1 || selectedPhoto) {
+    if (
+      !showGallery ||
+      effectiveGalleryPhotos.length <= 1 ||
+      selectedPhoto ||
+      isGalleryHovered ||
+      gallerySlideSeconds <= 0
+    ) {
       return;
     }
     const timer = setInterval(() => {
       setActiveGalleryIdx((prev) => (prev + 1) % effectiveGalleryPhotos.length);
-    }, 4200);
+    }, gallerySlideSeconds * 1000);
     return () => clearInterval(timer);
-  }, [showGallery, effectiveGalleryPhotos.length, selectedPhoto, safeGalleryIdx]);
+  }, [
+    showGallery,
+    effectiveGalleryPhotos.length,
+    selectedPhoto,
+    safeGalleryIdx,
+    isGalleryHovered,
+    gallerySlideSeconds,
+  ]);
 
   useEffect(() => {
     weddingMusicPlayer.syncFromSettings(settings);
@@ -2422,9 +2472,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {/* Smooth Auto-Sliding Photo Gallery Carousel + Interactive Thumbnail Strip */}
           {showGallery &&
             (effectiveGalleryPhotos.length > 0 ? (
-              <div className="inv-reveal inv-reveal-up space-y-3">
+              <div
+                className="inv-reveal inv-reveal-up rounded-[2rem] bg-white/75 backdrop-blur-2xl border border-white/90 p-3 sm:p-5 shadow-[0_24px_65px_rgba(160,130,85,0.16)] space-y-3.5"
+                onMouseEnter={() => setIsGalleryHovered(true)}
+                onMouseLeave={() => setIsGalleryHovered(false)}
+              >
                 <div
-                  className="relative w-full aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
+                  className="group/stage relative w-full aspect-[16/9] rounded-2xl sm:rounded-3xl overflow-hidden border border-[#D4AF37]/35 bg-stone-950 shadow-[0_18px_50px_rgba(28,25,23,0.22)] select-none"
                   onTouchStart={(e) => {
                     setTouchStartX(e.touches[0]?.clientX ?? null);
                   }}
@@ -2448,41 +2502,86 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     setTouchStartX(null);
                   }}
                 >
-                  {/* Horizontal Smooth Sliding Track */}
+                  {/* Adaptive Transition Stage: CROSSFADE / ZOOM_DISSOLVE / SMOOTH_SLIDE */}
                   <div
-                    className="flex w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-                    style={{
-                      transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
-                    }}
+                    className={
+                      galleryTransitionStyle === 'SMOOTH_SLIDE'
+                        ? 'flex w-full h-full transition-transform will-change-transform'
+                        : 'relative w-full h-full'
+                    }
+                    style={
+                      galleryTransitionStyle === 'SMOOTH_SLIDE'
+                        ? {
+                            transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
+                            transitionDuration: `${galleryTransitionMs}ms`,
+                            transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                          }
+                        : undefined
+                    }
                   >
                     {effectiveGalleryPhotos.map((photo, idx) => {
                       const isSlideActive = idx === safeGalleryIdx;
                       const slideFitMode = photo.adjustment?.fitMode;
+                      const isContainMode = slideFitMode === 'contain';
+                      const adjustStyle = getPhotoAdjustStyle(photo.adjustment);
                       return (
                         <div
                           key={photo.id || idx}
                           onClick={() => setSelectedPhoto(photo)}
-                          className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group bg-stone-950"
+                          style={
+                            galleryTransitionStyle !== 'SMOOTH_SLIDE'
+                              ? {
+                                  transitionDuration: `${galleryTransitionMs}ms`,
+                                  transitionTimingFunction:
+                                    'cubic-bezier(0.22, 1, 0.36, 1)',
+                                }
+                              : undefined
+                          }
+                          className={
+                            galleryTransitionStyle === 'SMOOTH_SLIDE'
+                              ? 'relative w-full h-full shrink-0 overflow-hidden cursor-pointer group bg-stone-950'
+                              : `absolute inset-0 w-full h-full overflow-hidden cursor-pointer group bg-stone-950 transition-all will-change-[opacity,transform,filter] ${
+                                  isSlideActive
+                                    ? 'opacity-100 scale-100 blur-0 z-10 pointer-events-auto'
+                                    : galleryTransitionStyle === 'ZOOM_DISSOLVE'
+                                    ? 'opacity-0 scale-105 blur-xs z-0 pointer-events-none'
+                                    : 'opacity-0 scale-[1.02] z-0 pointer-events-none'
+                                }`
+                          }
                         >
-                          {/* Ambient Blurred Backdrop so custom/portrait crops never have harsh black bars or get cut off */}
+                          {/* Ultra-Smooth Ambient Blurred Backdrop */}
                           <img
                             src={photo.imageUrl}
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-55 pointer-events-none"
+                            className="absolute inset-0 w-full h-full object-cover object-center blur-3xl scale-125 opacity-75 transition-all duration-1000 pointer-events-none"
                           />
                           <img
                             src={photo.imageUrl}
                             alt={photo.title}
-                            className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-1000 ease-out ${
-                              isSlideActive && slideFitMode !== 'contain'
-                                ? 'animate-ken-burns'
-                                : ''
+                            className={`relative z-10 w-full h-full transition-transform duration-1000 ease-out ${
+                              isContainMode
+                                ? 'object-contain object-center'
+                                : `object-cover ${isSlideActive ? 'animate-ken-burns' : ''}`
                             }`}
-                            style={getPhotoAdjustStyle(photo.adjustment)}
+                            style={
+                              isContainMode
+                                ? {
+                                    ...adjustStyle,
+                                    WebkitMaskImage:
+                                      'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+                                    maskImage:
+                                      'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+                                  }
+                                : {
+                                    objectPosition: '50% 25%',
+                                    ...adjustStyle,
+                                  }
+                            }
                           />
-                          {/* Soft Gradient Overlay for Caption & Bottom Dots */}
-                          <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent pointer-events-none" />
+                          {/* Soft Radial Edge Vignette & Silky Bottom Gradient */}
+                          <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(12,10,9,0.42)_100%)] pointer-events-none" />
+                          <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/15 to-transparent pointer-events-none" />
 
                           {/* Top Category Pill */}
                           {photo.category && photo.category.trim() !== '' && (
@@ -2494,7 +2593,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           )}
 
                           {/* Photo Title & Caption Centered Above the Bottom Dots */}
-                          <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none">
+                          <div
+                            className={`absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none transition-all duration-700 ${
+                              isSlideActive
+                                ? 'opacity-100 translate-y-0'
+                                : 'opacity-0 translate-y-2'
+                            }`}
+                          >
                             <h3 className="font-editorial text-base sm:text-2xl font-bold drop-shadow-sm truncate">
                               {photo.title}
                             </h3>
@@ -2507,6 +2612,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Subtle Translucent Timing Pill on Hover */}
+                  <div className="absolute top-3.5 sm:top-5 right-3.5 sm:right-5 z-20 pointer-events-none opacity-0 group-hover/stage:opacity-100 transition-opacity duration-500">
+                    <span className="px-2.5 py-1 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/20 text-white/90 text-[10px] font-semibold tracking-wide">
+                      ✨ {(galleryTransitionMs / 1000).toFixed(1)}s &bull;{' '}
+                      {gallerySlideSeconds > 0 ? `${gallerySlideSeconds}s` : 'Manual'}
+                    </span>
                   </div>
 
                   {/* Centered Small Dots Overlaid on Bottom of Photo (No Navigation Arrows) */}
@@ -2536,7 +2649,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {/* Interactive Thumbnail Strip Below Main Gallery Stage */}
                 {effectiveGalleryPhotos.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2 sm:gap-3 pt-1">
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3 pt-0.5">
                     {effectiveGalleryPhotos.map((photo, idx) => {
                       const isActive = idx === safeGalleryIdx;
                       return (
@@ -2546,7 +2659,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           onClick={() => setActiveGalleryIdx(idx)}
                           onDoubleClick={() => setSelectedPhoto(photo)}
                           title={`${photo.title} (Klik untuk melihat, klik 2x untuk memperbesar)`}
-                          className={`group relative aspect-[16/10] rounded-2xl overflow-hidden transition-all duration-300 ${
+                          className={`group relative aspect-[16/10] rounded-2xl overflow-hidden transition-all duration-500 ease-out ${
                             isActive
                               ? 'ring-2 ring-[#D4AF37] border-2 border-white shadow-[0_8px_22px_rgba(197,160,89,0.32)] scale-[1.02]'
                               : 'border border-white/80 opacity-70 hover:opacity-100 hover:scale-[1.01]'
@@ -2555,11 +2668,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           <img
                             src={photo.imageUrl}
                             alt={photo.title}
-                            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                            style={getPhotoAdjustStyle(photo.adjustment)}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            style={{
+                              objectPosition: '50% 25%',
+                              ...getPhotoAdjustStyle(photo.adjustment),
+                            }}
                           />
                           <div
-                            className={`absolute inset-0 transition-opacity ${
+                            className={`absolute inset-0 transition-opacity duration-500 ${
                               isActive
                                 ? 'bg-gradient-to-t from-stone-950/45 via-transparent to-transparent'
                                 : 'bg-stone-950/20 group-hover:bg-transparent'
