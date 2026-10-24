@@ -421,6 +421,8 @@ export interface WeddingSettings {
   // Music & Playlist
   musicTitle: string;
   musicArtist: string;
+  musicSourceType?: 'NCS_BUILTIN' | 'EXTERNAL_EMBED' | 'CUSTOM_UPLOAD';
+  musicExternalUrl?: string; // Official Spotify track/playlist URL or YouTube URL
   musicPlaylist?: MusicTrackItem[];
   activeMusicTrackId?: string;
   musicVolume?: number; // 0 to 100 (default 75)

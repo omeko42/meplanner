@@ -2041,7 +2041,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Hitung Mundur, Jadwal Acara Multi-Sesi, Google Maps & Simpan Kalender',
                   'Form Konfirmasi RSVP Real-Time & Buku Tamu Doa Restu',
                   'Amplop Digital Domestik (Transfer Bank Nasional & QRIS)',
-                  'Workspace Manager Dasar: Modul Tracker, Checklist H-6 Bulan & Tabel Tamu',
+                  'Workspace Planner Dasar: Modul Tracker, Checklist H-6 Bulan & Tabel Tamu',
                 ]
               : [
                   'Max 100 Invited Guests (Unique INV-xxxx Code) & Dedicated Link',
@@ -2049,7 +2049,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Live Countdown, Multi-Session Schedule, Google Maps & Save Calendar',
                   'Real-Time RSVP Form & Guestbook Wishes',
                   'Domestic Digital Envelope (Bank Transfer & QRIS)',
-                  'Basic Workspace Manager: Tracker, 6-Month Checklist & Guest Table',
+                  'Basic Workspace Planner: Tracker, 6-Month Checklist & Guest Table',
                 ],
         },
         {
@@ -2075,7 +2075,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Multi-Foto Smooth Slideshow (Crossfade, Zoom & Blur, Geser Halus) + Studio Crop',
                   'Seksi Kisah Perjalanan / Milestone & Galeri Foto HD (s/d 10 Foto) + Musik Latar',
                   'Amplop Digital Lengkap Domestik (Bank, E-Wallet, QRIS & Alamat Kado Fisik)',
-                  'Workspace Manager Lengkap: Buka Modul Moneter, Pagu Anggaran & Kontrak Vendor',
+                  'Workspace Planner Lengkap: Buka Modul Moneter, Pagu Anggaran & Kontrak Vendor',
                   'Multi-Akses 2 Akun Pengelola Inti & Sinkronisasi Cloud Otomatis',
                 ]
               : [
@@ -2083,8 +2083,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Multi-Photo Smooth Slideshow (Crossfade, Zoom & Blur, Slide) + Studio Crop',
                   'Milestone Love Story & HD Photo Gallery (up to 10 Photos) + Background Music',
                   'Full Domestic Digital Envelope (Bank, E-Wallet, QRIS & Physical Gift Address)',
-                  'Full Workspace Manager: Unlocks Budget Cap & Vendor Settlement Module',
-                  '2 Core Family Manager Accounts & Automatic Cloud Sync',
+                  'Full Workspace Planner: Unlocks Budget Cap & Vendor Settlement Module',
+                  '2 Core Family Planner Accounts & Automatic Cloud Sync',
                 ],
         },
         {
@@ -2795,7 +2795,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     Undangan
                   </button>
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs">
-                    Manager
+                    Planner
                   </span>
                 </div>
               </div>
@@ -3411,7 +3411,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             {g.name}
                           </p>
                           <p className="text-[10px] text-stone-500 truncate">
-                            {g.institution} • RSVP:{' '}
+                            {!g.institution ||
+                            g.institution.trim() === '' ||
+                            g.institution.trim() === '-'
+                              ? 'di Tempat'
+                              : g.institution}{' '}
+                            • RSVP:{' '}
                             <strong className="text-emerald-700">{g.rsvp}</strong>
                           </p>
                         </div>
@@ -4128,50 +4133,39 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   return (
     <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#090B14] text-slate-100 flex flex-col justify-between selection:bg-indigo-500/30">
-      {/* TOP FIXED NAVBAR — OFFICIAL MEPlan SaaS PLATFORM BRAND IDENTITY (MIDNIGHT NAVY & INDIGO) */}
+      {/* TOP FIXED NAVBAR — OFFICIAL MEPlan BRAND IDENTITY (COMPACT & MOBILE-FRIENDLY) */}
       <header className="fixed top-0 inset-x-0 z-50 bg-[#090B14]/95 backdrop-blur-xl border-b border-indigo-500/30 shadow-[0_8px_32px_rgba(9,11,20,0.75)]">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1 sm:gap-3 min-w-0">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
-          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
               className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-              title="MEPlan — My Event Planner SaaS Platform (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
+              title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
             >
               <WeddingRingsIcon
-                className="w-8 h-8 sm:w-10 sm:h-10"
+                className="w-7 h-7 sm:w-9 sm:h-9"
                 logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
-                  title="MEPlan — My Event Planner SaaS Platform"
-                  className="font-sans font-extrabold text-sm sm:text-lg lg:text-xl text-white truncate leading-tight text-left hover:text-[#00F0FF] transition-colors"
+                  title="MEPlan — My Event Planner"
+                  className="font-sans font-extrabold text-sm sm:text-lg text-white truncate leading-tight text-left hover:text-[#00F0FF] transition-colors"
                 >
-                  <span className="sm:hidden font-sans font-extrabold tracking-tight text-white">
+                  <span className="font-sans font-extrabold tracking-tight text-white">
                     ME
                     <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
                       Plan
                     </span>
                   </span>
-                  <span className="hidden sm:inline-flex items-baseline gap-2">
-                    <span className="font-sans font-extrabold tracking-tight text-white">
-                      ME
-                      <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
-                        Plan
-                      </span>
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#00F0FF]">
-                      SaaS Event Platform
-                    </span>
-                  </span>
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs font-bold text-indigo-300/90 leading-tight truncate">
+              <p className="text-[9px] sm:text-[11px] font-bold text-indigo-300/90 leading-tight truncate">
                 by{' '}
                 <a
                   href={developerUrl}
@@ -4193,14 +4187,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Lihat Katalog InteraktifReal Undangan & Demo Manager'
-                  : 'Explore Real Interactive Invitation & Demo Manager Showcase'
+                  ? 'Lihat Katalog Undangan & Demo Planner'
+                  : 'Explore Invitation Catalog & Demo Planner'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Eye className="w-4 h-4 text-[#00F0FF] shrink-0" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Katalog Live' : 'Live Catalog'}
+                {lang === 'ID' ? 'Katalog' : 'Catalog'}
               </span>
             </a>
 
@@ -4209,14 +4203,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Fitur & 6 Modul Manajemen Persiapan Multi-Acara'
-                  : 'Features & 6 Multi-Event Readiness Modules'
+                  ? 'Fitur & 6 Modul Persiapan Acara'
+                  : 'Features & 6 Event Readiness Modules'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <LayoutDashboard className="w-4 h-4 text-[#8B5CF6] shrink-0" />
+              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8B5CF6] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Fitur SaaS' : 'SaaS Features'}
+                {lang === 'ID' ? 'Fitur' : 'Features'}
               </span>
             </a>
 
@@ -4225,20 +4219,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Paket Lisensi Komersial (STARTER, EXCLUSIVE & ROYAL VIP)'
-                  : 'Commercial License Packages (STARTER, EXCLUSIVE & ROYAL VIP)'
+                  ? 'Pilihan Paket (STARTER, EXCLUSIVE & ROYAL VIP)'
+                  : 'Packages (STARTER, EXCLUSIVE & ROYAL VIP)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Award className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Paket Lisensi' : 'Pricing'}
+                {lang === 'ID' ? 'Paket' : 'Pricing'}
               </span>
             </a>
           </nav>
 
-          {/* Right Action Buttons — Language Switcher + Demo Manager + Login Manager */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Right Action Buttons — ID/EN + Demo + Planner */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Bilingual Language Switcher */}
             <button
               type="button"
@@ -4248,9 +4242,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Ganti Bahasa ke Bahasa Inggris (EN)'
                   : 'Switch Language to Indonesian (ID)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#111528] hover:bg-indigo-950/80 border border-indigo-500/35 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#111528] hover:bg-indigo-950/80 border border-indigo-500/35 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Globe className="w-4 h-4 text-[#00F0FF] shrink-0" />
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
               <span>{lang}</span>
             </button>
 
@@ -4262,39 +4256,37 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 }
                 title={
                   lang === 'ID'
-                    ? `Buka Demo Manager Asli dengan Tema ${activeDummyMeta.themeLabel}`
-                    : `Open Real Demo Manager with ${activeDummyMeta.themeLabel} Theme`
+                    ? `Buka Demo Planner Interaktif (Tema: ${activeDummyMeta.themeLabel})`
+                    : `Open Interactive Demo Planner (Theme: ${activeDummyMeta.themeLabel})`
                 }
-                className="hidden sm:inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/45 text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/45 text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {lang === 'ID' ? 'Demo Manager' : 'Demo Manager'}
-                </span>
+                <span>Demo</span>
               </button>
             )}
 
-            {/* Concise Manager Portal Button */}
+            {/* Concise Planner Portal Button */}
             <button
               type="button"
               onClick={onOpenAdminPortal}
               title={
                 isAdminLoggedIn
                   ? lang === 'ID'
-                    ? `Buka Workspace Manager (${adminUserName || 'Admin'})`
-                    : `Open Workspace Manager (${adminUserName || 'Admin'})`
+                    ? `Buka Ruang Kerja Planner (${adminUserName || 'Admin'})`
+                    : `Open Planner Workspace (${adminUserName || 'Admin'})`
                   : lang === 'ID'
-                    ? 'Masuk ke Portal Manager (Klien, EO/WO & Superadmin)'
-                    : 'Login to Manager Portal (Client, EO/WO & Superadmin)'
+                    ? 'Masuk ke Portal Planner (Klien, EO/WO & Superadmin)'
+                    : 'Login to Planner Portal (Client, EO/WO & Superadmin)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
             >
               {isAdminLoggedIn ? (
-                <LayoutDashboard className="w-4 h-4 shrink-0" />
+                <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               ) : (
-                <KeyRound className="w-4 h-4 shrink-0" />
+                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               )}
-              <span>Manager</span>
+              <span>Planner</span>
             </button>
           </div>
         </div>
@@ -5442,102 +5434,55 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           /* MAIN LANDING PAGE VIEW (COMPACT HERO + 1:1 SHOWCASE + FITUR + 3 PRICING CARDS) */
           <>
             {/* ================================================================= */}
-            {/* OFFICIAL MEPlan SaaS HERO + MULTI-CLIENT 21-CHAR HASH TOKEN GATE  */}
+            {/* OFFICIAL MEPlan HERO + MULTI-CLIENT HASH TOKEN GATE               */}
             {/* ================================================================= */}
-            <section className="relative overflow-hidden py-8 sm:py-12 border-b border-indigo-500/30 bg-gradient-to-b from-[#090B14] via-[#111528] to-[#090B14]">
-              {/* Subtle SaaS Ambient Radial Glows (Distinct from Wedding Ornaments) */}
+            <section className="relative overflow-hidden py-6 sm:py-10 border-b border-indigo-500/30 bg-gradient-to-b from-[#090B14] via-[#111528] to-[#090B14]">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#6366F1]/20 blur-3xl"
+                className="pointer-events-none absolute -top-24 left-1/4 w-80 h-80 rounded-full bg-[#6366F1]/20 blur-3xl"
               />
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -bottom-24 right-1/4 w-96 h-96 rounded-full bg-[#EC4899]/15 blur-3xl"
+                className="pointer-events-none absolute -bottom-24 right-1/4 w-80 h-80 rounded-full bg-[#EC4899]/15 blur-3xl"
               />
 
-              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
+              <div className="relative z-10 max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 text-center space-y-4">
                 <div
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111528]/95 border border-indigo-500/40 shadow-[0_0_24px_rgba(99,102,241,0.25)] text-[#00F0FF] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
-                  title="MEPlan — Official Multi-Client SaaS Event & Digital Invitation Platform by omeko42"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111528]/95 border border-indigo-500/40 text-[#00F0FF] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  title="MEPlan — My Event Planner by omeko42"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                   <span className="whitespace-nowrap truncate">
-                    MEPlan SaaS Platform (Multi-Client Event Suite) by{' '}
-                    <a
-                      href={developerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white underline decoration-[#00F0FF]/70 underline-offset-2 hover:text-[#00F0FF]"
-                    >
-                      omeko42
-                    </a>
+                    MEPlan &bull; My Event Planner
                   </span>
                 </div>
 
-                <h2 className="font-sans text-2xl sm:text-4xl lg:text-[46px] font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-[1.14]">
+                <h2 className="font-sans text-xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-tight max-w-3xl mx-auto leading-[1.16]">
                   {lang === 'ID' ? (
                     <>
-                      Platform SaaS Manajemen Multi-Acara &amp;{' '}
+                      Platform Persiapan Acara &amp;{' '}
                       <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
-                        Ekosistem Undangan Digital Multi-Client
+                        Undangan Digital Eksklusif
                       </span>
                     </>
                   ) : (
                     <>
-                      Multi-Client SaaS Event Planner &amp;{' '}
+                      All-in-One Event Planner &amp;{' '}
                       <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
-                        Digital Invitation Cloud Ecosystem
+                        Luxury Digital Invitations
                       </span>
                     </>
                   )}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-indigo-200/85 max-w-3xl mx-auto leading-relaxed">
-                  {lang === 'ID' ? (
-                    <>
-                      Arsitektur 3-Permukaan Terpisah:{' '}
-                      <strong className="text-[#00F0FF]">
-                        1. Website Katalog SaaS (MEPlan)
-                      </strong>
-                      ,{' '}
-                      <strong className="text-[#EC4899]">
-                        2. Manager / Planner Berbasis Tema Undangan Klien
-                      </strong>
-                      , dan{' '}
-                      <strong className="text-[#D4AF37]">
-                        3. Undangan Tamu Real (&lt;PublicInvitationView /&gt;)
-                      </strong>{' '}
-                      dengan routing{' '}
-                      <strong className="text-white">
-                        Kode Hash 21 Karakter
-                      </strong>{' '}
-                      lintas klien.
-                    </>
-                  ) : (
-                    <>
-                      Distinct 3-Surface Architecture:{' '}
-                      <strong className="text-[#00F0FF]">
-                        1. MEPlan SaaS Catalog
-                      </strong>
-                      ,{' '}
-                      <strong className="text-[#EC4899]">
-                        2. Theme-Adaptive Client Manager / Planner
-                      </strong>
-                      , and{' '}
-                      <strong className="text-[#D4AF37]">
-                        3. Real Guest Invitations (&lt;PublicInvitationView /&gt;)
-                      </strong>{' '}
-                      powered by{' '}
-                      <strong className="text-white">
-                        21-Char Multi-Client Hash Tokens
-                      </strong>
-                      .
-                    </>
-                  )}
+                <p className="text-xs sm:text-sm text-indigo-200/85 max-w-2xl mx-auto leading-relaxed">
+                  {lang === 'ID'
+                    ? 'Kelola kesiapan acara, anggaran vendor, tamu VIP, dan undangan digital dalam satu platform terpadu.'
+                    : 'Manage event readiness, vendor budgets, VIP guests, and digital invitations in one unified platform.'}
                 </p>
 
-                {/* 5 Separated Dummy Client Quick Pills + Real Demo Manager CTA */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5 max-w-5xl mx-auto">
+                {/* 5 Concise Event Category Pills */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
                   {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
                     const isCurrentSim =
                       showcaseViewMode === 'invitation_sim' &&
@@ -5551,12 +5496,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           setShowcaseViewMode('invitation_sim');
                           scrollToShowcase();
                         }}
-                        title={`${
-                          lang === 'ID' ? meta.labelId : meta.labelEn
-                        } • Tema: ${meta.themeLabel} • Hash: ${
-                          meta.sampleHashToken
-                        }`}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all ${
+                        title={`${meta.coupleLabel} (${meta.badgeId}) • Tema: ${meta.themeLabel}`}
+                        className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all ${
                           isCurrentSim
                             ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF] shadow-[0_0_16px_rgba(99,102,241,0.5)]'
                             : 'bg-[#111528]/90 hover:bg-indigo-950/90 border-indigo-500/35 text-indigo-100 hover:text-[#00F0FF]'
@@ -5568,54 +5509,45 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </button>
                     );
                   })}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onOpenDemoManager) {
-                        onOpenDemoManager(activeDummyMeta.id, simPackageTier);
-                      } else {
-                        setShowcaseViewMode('dashboard_modules');
-                        scrollToShowcase();
-                      }
-                    }}
-                    title={
-                      lang === 'ID'
-                        ? `Buka Demo Manager Asli dengan Tema ${activeDummyMeta.themeLabel}`
-                        : `Open Real Demo Manager with ${activeDummyMeta.themeLabel} Theme`
-                    }
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#EC4899]/55 bg-[#EC4899]/15 hover:bg-[#EC4899]/25 text-[#EC4899] hover:text-white text-[11px] font-extrabold whitespace-nowrap transition-all"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? `🎨 Demo Manager (${activeDummyMeta.themeLabel})`
-                        : `🎨 Demo Manager (${activeDummyMeta.themeLabel})`}
-                    </span>
-                  </button>
                 </div>
 
-                {/* ================================================================= */}
-                {/* MULTI-CLIENT 21-CHAR HASH TOKEN GATE + QUICK SAMPLE HASH CHIPS    */}
-                {/* ================================================================= */}
-                <div className="relative max-w-4xl mx-auto pt-2 space-y-2.5">
+                {/* Compact Multi-Client Hash Token Gate */}
+                <div className="relative max-w-2xl mx-auto pt-1 space-y-2">
                   <form
                     onSubmit={handleQuickLookupSubmit}
-                    className="p-2.5 sm:px-4 sm:py-2.5 rounded-2xl bg-[#111528]/95 border-2 border-indigo-500/45 shadow-[0_12px_36px_rgba(0,0,0,0.55)] flex flex-col sm:flex-row sm:items-center gap-2.5 text-left"
+                    className="p-2 sm:px-3 sm:py-2 rounded-2xl bg-[#111528]/95 border border-indigo-500/45 shadow-[0_12px_36px_rgba(0,0,0,0.55)] flex flex-col sm:flex-row sm:items-center gap-2 text-left"
                   >
-                    <div
-                      className="flex items-center gap-2 px-1.5 shrink-0"
-                      title={
-                        lang === 'ID'
-                          ? 'Setiap tamu di setiap klien memiliki Kode Hash 21 karakter unik (contoh: JHi4b3XgT2RQIDhZ9coLw untuk Fiorencia di Client Demo Wedding).'
-                          : 'Every guest across all clients has a unique 21-char Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw for Fiorencia).'
-                      }
-                    >
-                      <Search className="w-4 h-4 text-[#00F0FF] shrink-0" />
-                      <span className="text-[11px] font-extrabold text-white whitespace-nowrap">
-                        {lang === 'ID'
-                          ? 'Akses Tamu (Multi-Client Hash Gate):'
-                          : 'Guest Hash Token Gate:'}
-                      </span>
+                    <div className="flex items-center justify-between sm:justify-start gap-1.5 px-1 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <Search className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                        <span className="text-[11px] font-extrabold text-white whitespace-nowrap">
+                          {lang === 'ID' ? 'Kode Tamu:' : 'Guest Code:'}
+                        </span>
+                        <InfoTooltip
+                          text={
+                            lang === 'ID'
+                              ? 'Masukkan Kode Hash 21 karakter (contoh: JHi4b3XgT2RQIDhZ9coLw) atau nama tamu terdaftar untuk membuka undangan.'
+                              : 'Enter your 21-char Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw) or registered guest name to open the invitation.'
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sample = SHOWCASE_DUMMY_CLIENT_METAS[0];
+                          setGuestCodeInput(sample.sampleHashToken);
+                          setLookupGateError(null);
+                          onSelectClientInvitation(
+                            sample.id,
+                            sample.sampleGuestName,
+                            sample.sampleHashToken
+                          );
+                        }}
+                        title="Klik untuk uji kode contoh Fiorencia (JHi4b3XgT2RQIDhZ9coLw)"
+                        className="sm:hidden px-2 py-0.5 rounded-md bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[9px] font-extrabold whitespace-nowrap"
+                      >
+                        Contoh: Fiorencia
+                      </button>
                     </div>
 
                     <div className="relative flex-1 min-w-0">
@@ -5636,26 +5568,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         }}
                         placeholder={
                           lang === 'ID'
-                            ? 'Masukkan Kode Hash Undangan (contoh: JHi4b3XgT2RQIDhZ9coLw)...'
-                            : 'Enter Invitation Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw)...'
+                            ? 'Contoh: JHi4b3XgT2RQIDhZ9coLw...'
+                            : 'Example: JHi4b3XgT2RQIDhZ9coLw...'
                         }
-                        className="w-full px-3.5 py-2 rounded-xl border border-indigo-500/40 bg-[#090B14] text-xs font-mono font-semibold text-white placeholder:text-slate-400 focus:border-[#00F0FF] focus:outline-none"
+                        className="w-full px-3 py-1.5 rounded-xl border border-indigo-500/40 bg-[#090B14] text-xs font-mono font-semibold text-white placeholder:text-slate-400 focus:border-[#00F0FF] focus:outline-none"
                       />
                       {showLookupSuggestions &&
                         filteredLookupGuests.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-[#111528] border border-indigo-500/50 shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
-                            <div className="px-3.5 py-2 bg-[#090B14] border-b border-indigo-500/30 text-[10px] font-extrabold text-[#00F0FF] flex items-center justify-between">
-                              <span>
-                                {lang === 'ID'
-                                  ? 'Tamu & Workspace Klien Cocok (Multi-Client Hash)'
-                                  : 'Matching Multi-Client Guest & Hash Token'}
-                              </span>
-                              <span>
-                                {lang === 'ID'
-                                  ? 'Klik untuk Buka Undangan'
-                                  : 'Click to Open Invite'}
-                              </span>
-                            </div>
+                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-[#111528] border border-indigo-500/50 shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
                             {filteredLookupGuests.map((item) => (
                               <button
                                 key={`${item.clientId}-${item.hashToken}-${item.guest.id}`}
@@ -5671,20 +5591,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     item.hashToken
                                   );
                                 }}
-                                className="w-full text-left px-3.5 py-2.5 hover:bg-indigo-950/80 border-b border-indigo-500/20 last:border-b-0 transition-colors flex items-center justify-between gap-2"
+                                className="w-full text-left px-3 py-2 hover:bg-indigo-950/80 border-b border-indigo-500/20 last:border-b-0 transition-colors flex items-center justify-between gap-2"
                               >
                                 <div className="min-w-0">
                                   <p className="text-xs font-extrabold text-white truncate">
                                     {item.guest.guestName}
                                   </p>
                                   <p className="text-[10px] text-indigo-300 truncate">
-                                    {item.clientLabel} &bull;{' '}
-                                    {item.guest.institution ||
-                                      item.guest.guestType}
+                                    {item.clientLabel}
                                   </p>
                                 </div>
-                                <span className="shrink-0 px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
-                                  {item.hashToken}
+                                <span className="shrink-0 px-2 py-0.5 rounded bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[9px] font-extrabold">
+                                  {item.hashToken.slice(0, 10)}…
                                 </span>
                               </button>
                             ))}
@@ -5692,59 +5610,41 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         )}
                     </div>
 
-                    <button
-                      type="submit"
-                      title={
-                        lang === 'ID'
-                          ? 'Resolusi Kode Hash 21 Karakter & Buka Undangan Klien Terkait'
-                          : 'Resolve 21-Char Hash Token & Open Target Client Invitation'
-                      }
-                      className="py-2 px-4 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white font-extrabold text-xs shadow-[0_6px_20px_rgba(99,102,241,0.4)] transition-all whitespace-nowrap shrink-0"
-                    >
-                      {lang === 'ID' ? 'Buka Undangan' : 'Open Invite'}
-                    </button>
-                  </form>
-
-                  {/* Quick Sample Hash Chips for 1-Click Multi-Client Hash Routing Test */}
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300">
-                      {lang === 'ID'
-                        ? 'Uji Cepat Kode Hash Multi-Client:'
-                        : 'Quick Multi-Client Hash Test:'}
-                    </span>
-                    {SHOWCASE_DUMMY_CLIENT_METAS.map((meta, idx) => (
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
-                        key={meta.sampleHashToken}
                         type="button"
                         onClick={() => {
-                          setGuestCodeInput(meta.sampleHashToken);
+                          const sample = SHOWCASE_DUMMY_CLIENT_METAS[0];
+                          setGuestCodeInput(sample.sampleHashToken);
                           setLookupGateError(null);
                           onSelectClientInvitation(
-                            meta.id,
-                            meta.sampleGuestName,
-                            meta.sampleHashToken
+                            sample.id,
+                            sample.sampleGuestName,
+                            sample.sampleHashToken
                           );
                         }}
-                        title={`Klik untuk membuka undangan ${meta.coupleLabel} (${meta.id}) atas nama tamu ${meta.sampleGuestName} dengan Hash ${meta.sampleHashToken}`}
-                        className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-extrabold border transition-all inline-flex items-center gap-1.5 ${
-                          idx === 0
-                            ? 'bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 text-[#00F0FF] border-[#00F0FF]/50 shadow-2xs'
-                            : 'bg-[#111528] hover:bg-indigo-950/90 text-indigo-200 hover:text-white border-indigo-500/35'
-                        }`}
+                        title={`Uji kode contoh: ${SHOWCASE_DUMMY_CLIENT_METAS[0].sampleHashToken} (${SHOWCASE_DUMMY_CLIENT_METAS[0].sampleGuestName})`}
+                        className="hidden sm:inline-flex items-center gap-1 py-1.5 px-2.5 rounded-xl bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 border border-[#00F0FF]/45 text-[#00F0FF] font-mono text-[10px] font-extrabold transition-all whitespace-nowrap"
                       >
-                        <span>
-                          {idx === 0
-                            ? `🔑 Uji Hash: ${meta.sampleHashToken} (Fiorencia • Client Demo Wedding)`
-                            : `🔑 ${meta.sampleHashToken.slice(0, 8)}… (${
-                                meta.sampleGuestName.split(' ')[0]
-                              } • ${meta.eventType})`}
-                        </span>
+                        <span>Contoh</span>
                       </button>
-                    ))}
-                  </div>
+
+                      <button
+                        type="submit"
+                        title={
+                          lang === 'ID'
+                            ? 'Buka Undangan Tamu'
+                            : 'Open Guest Invitation'
+                        }
+                        className="w-full sm:w-auto py-1.5 px-4 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white font-extrabold text-xs shadow-sm transition-all whitespace-nowrap"
+                      >
+                        {lang === 'ID' ? 'Buka' : 'Open'}
+                      </button>
+                    </div>
+                  </form>
 
                   {lookupGateError && (
-                    <div className="mt-1.5 px-3.5 py-2 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-[11px] font-semibold flex items-center justify-center gap-2">
+                    <div className="mt-1 px-3 py-1.5 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-[11px] font-semibold flex items-center justify-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                       <span>{lookupGateError}</span>
                     </div>
@@ -5754,201 +5654,110 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 1: REAL <PublicInvitationView /> & SEPARATED DUMMY CLIENTS */}
+            {/* SECTION 1: REAL <PublicInvitationView /> & PLANNER SHOWCASE       */}
             {/* ================================================================= */}
             <section
               id="showcase"
-              className="py-10 sm:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+              className="py-8 sm:py-12 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-4"
             >
-              {/* 3-SURFACE ARCHITECTURE EXPLANATION BANNER */}
-              <div className="rounded-3xl bg-[#111528] border border-indigo-500/35 p-4 sm:p-5 shadow-[0_16px_48px_rgba(0,0,0,0.45)] space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] text-[10px] font-extrabold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Arsitektur 3-Permukaan Berbeda (Katalog SaaS ≠ Manager Tema ≠ Undangan Tamu)'
-                        : '3-Surface Distinct Architecture (SaaS Catalog ≠ Themed Manager ≠ Guest Invitation)'}
-                    </span>
-                  </span>
-                  <span className="text-[11px] font-mono font-bold text-indigo-300">
-                    Dummy Client Aktif: {activeDummyMeta.id} (
-                    {activeDummyMeta.sampleHashToken})
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* Surface 1 */}
-                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-indigo-500/30 space-y-1">
-                    <p className="text-xs font-extrabold text-[#00F0FF]">
-                      1. 🌐 Website Katalog (MEPlan SaaS Branding)
-                    </p>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {lang === 'ID'
-                        ? 'Halaman ini menonjolkan identitas platform SaaS MEPlan (Midnight Navy & Indigo) beserta gerbang Kode Hash 21 karakter multi-client.'
-                        : 'This surface highlights the official MEPlan SaaS brand identity (Midnight Navy & Indigo) and the 21-char multi-client hash gate.'}
-                    </p>
-                  </div>
-
-                  {/* Surface 2 */}
-                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-[#EC4899]/35 space-y-1.5 flex flex-col justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-extrabold text-[#EC4899]">
-                        2. 🎨 Manager / Planner (Menonjolkan Tema Invitation)
-                      </p>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        {lang === 'ID'
-                          ? `Dashboard Manager (<AdminDashboardView /> asli) otomatis beradaptasi dengan palet tema undangan klien (${activeDummyMeta.themeLabel}).`
-                          : `The real <AdminDashboardView /> dynamically adapts to the client's invitation theme palette (${activeDummyMeta.themeLabel}).`}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (onOpenDemoManager) {
-                          onOpenDemoManager(activeDummyMeta.id, simPackageTier);
-                        } else {
-                          onOpenAdminPortal();
-                        }
-                      }}
-                      className="self-start px-3 py-1 rounded-lg bg-[#EC4899]/20 hover:bg-[#EC4899]/30 border border-[#EC4899]/50 text-[#EC4899] hover:text-white text-[10px] font-extrabold transition-all"
-                    >
-                      {lang === 'ID'
-                        ? `Buka Demo Manager Asli (${activeDummyMeta.themeLabel}) →`
-                        : `Open Real Demo Manager (${activeDummyMeta.themeLabel}) →`}
-                    </button>
-                  </div>
-
-                  {/* Surface 3 */}
-                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-[#D4AF37]/40 space-y-1.5 flex flex-col justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-extrabold text-[#D4AF37]">
-                        3. 💌 Undangan Tamu (Real &lt;PublicInvitationView /&gt;)
-                      </p>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        {lang === 'ID'
-                          ? 'Ditampilkan secara REAL (komponen undangan asli, bukan gambar mockup) dari 5 Dummy Client terpisah & tersinkron dengan pilihan paket.'
-                          : 'Rendered using the REAL <PublicInvitationView /> component from 5 separated dummy clients synced live with package tiers.'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectClientInvitation(
-                          activeDummyMeta.id,
-                          activeDummyMeta.sampleGuestName,
-                          activeDummyMeta.sampleHashToken
-                        )
-                      }
-                      className="self-start px-3 py-1 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/50 text-[#D4AF37] hover:text-white text-[10px] font-extrabold transition-all"
-                    >
-                      {lang === 'ID'
-                        ? `Buka Undangan Layar Penuh (${activeDummyMeta.sampleGuestName}) →`
-                        : `Open Fullscreen Invite (${activeDummyMeta.sampleGuestName}) →`}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section Header + 2-Tab Mode Switcher */}
-              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
-                      Real Existing Invitation Component &bull; 5 Separated Dummy Clients
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 max-w-full">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111528] border border-indigo-500/40 text-indigo-200 text-[10px] font-extrabold whitespace-nowrap truncate max-w-full">
-                        {lang === 'ID'
-                          ? 'Data Klien Asli Terisolasi Penuh'
-                          : 'Real Client Data 100% Isolated'}
-                      </span>
-                      <InfoTooltip
-                        text={
-                          lang === 'ID'
-                            ? 'Katalog ini merender komponen <PublicInvitationView /> asli menggunakan 5 workspace Dummy Client terpisah (Rayhan & Clarissa, Aurelia, Dr. Bagaskara, Nusantara Global, Wijaya Kusuma).'
-                            : 'This catalog renders the real <PublicInvitationView /> component using 5 isolated Dummy Client workspaces.'
-                        }
-                      />
-                    </span>
-                  </div>
-                  <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white">
-                    {lang === 'ID'
-                      ? 'Katalog Live — Real Undangan Tamu & Demo Manager'
-                      : 'Live Showcase — Real Guest Invitation & Demo Manager'}
+              {/* Compact Header + 2-Tab Mode Switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="font-sans text-lg sm:text-2xl font-extrabold text-white truncate">
+                    {lang === 'ID' ? 'Katalog Interaktif' : 'Interactive Catalog'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 max-w-3xl leading-relaxed">
-                    {lang === 'ID'
-                      ? 'Pilih salah satu dari 5 Dummy Client terpisah dan uji langsung komponen undangan asli beserta perbedaan fitur paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
-                      : 'Select any of the 5 separated Dummy Clients and interact with the real invitation component across STARTER, EXCLUSIVE, and ROYAL VIP tiers.'}
-                  </p>
+                  <InfoTooltip
+                    text={
+                      lang === 'ID'
+                        ? 'Menampilkan komponen undangan asli dari 5 Dummy Client terpisah yang tersinkron langsung dengan pilihan paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
+                        : 'Displays the real invitation component from 5 separated Dummy Clients synced live with STARTER, EXCLUSIVE, and ROYAL VIP tiers.'
+                    }
+                  />
                 </div>
 
-                {/* Prominent 2-Tab Segmented Switcher */}
-                <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1.5 rounded-2xl bg-[#111528] border border-indigo-500/40 shadow-2xs shrink-0">
+                {/* Concise 2-Tab Switcher */}
+                <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[#111528] border border-indigo-500/40 shrink-0 self-start sm:self-auto">
                   <button
                     type="button"
                     onClick={() => setShowcaseViewMode('invitation_sim')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                    title={
+                      lang === 'ID'
+                        ? 'Tampilkan Pratinjau Undangan Asli'
+                        : 'Show Real Invitation Preview'
+                    }
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       showcaseViewMode === 'invitation_sim'
                         ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
-                        : 'text-indigo-200 hover:text-white hover:bg-white/5'
+                        : 'text-indigo-200 hover:text-white'
                     }`}
                   >
-                    <span>
-                      {lang === 'ID'
-                        ? '💌 Real Undangan Tamu (5 Dummy Client)'
-                        : '💌 Real Guest Invitation (5 Dummy Clients)'}
-                    </span>
+                    <span>{lang === 'ID' ? '💌 Undangan' : '💌 Invitation'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowcaseViewMode('dashboard_modules')}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                    title={
+                      lang === 'ID'
+                        ? 'Tampilkan Pratinjau 5 Modul Planner'
+                        : 'Show 5 Planner Modules Preview'
+                    }
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       showcaseViewMode === 'dashboard_modules'
                         ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
-                        : 'text-indigo-200 hover:text-white hover:bg-white/5'
+                        : 'text-indigo-200 hover:text-white'
                     }`}
                   >
-                    <span>
-                      {lang === 'ID'
-                        ? '📊 Pratinjau 5 Modul Manager'
-                        : '📊 5 Manager Modules Preview'}
-                    </span>
+                    <span>{lang === 'ID' ? '📊 Modul Planner' : '📊 Planner'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* ================================================================= */}
-              {/* INTERACTIVE PACKAGE TIER SIMULATOR BAR (STARTER • EXCLUSIVE • VIP) */}
-              {/* ================================================================= */}
-              <div className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-[#111528] via-[#171C36] to-[#111528] text-white border border-indigo-500/45 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#00F0FF] flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Simulasi Paket Lisensi:'
-                        : 'Simulate License Tier:'}
-                    </span>
-                  </span>
-                  <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-[#090B14] border border-indigo-500/30">
+              {/* Single Unified Compact Toolbar: 5 Dummy Clients + 3 Package Tiers + Quick Actions */}
+              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#111528] border border-indigo-500/40 shadow-md space-y-2.5">
+                {/* Row 1: 5 Event Pills + 3 Tier Pills */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+                  {/* 5 Dummy Clients */}
+                  <div className="flex flex-wrap items-center gap-1">
+                    {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
+                      const isSelected = activeDummyMeta.id === meta.id;
+                      return (
+                        <button
+                          key={meta.id}
+                          type="button"
+                          onClick={() => handleSelectDummyClient(meta.id)}
+                          title={`${meta.coupleLabel} • Tema: ${meta.themeLabel}`}
+                          className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-extrabold transition-all inline-flex items-center gap-1 whitespace-nowrap ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
+                              : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
+                          }`}
+                        >
+                          <span>
+                            {lang === 'ID' ? meta.labelId : meta.labelEn}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 3 Package Tier Pills */}
+                  <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[#090B14] border border-indigo-500/30 self-start lg:self-auto">
                     {(
                       [
                         {
                           tier: 'STARTER' as const,
-                          label: 'STARTER • Rp 50rb',
-                          badge: 'Statis • Domestik',
+                          label: 'STARTER',
+                          tip: 'Rp 50rb • 1 Slide Statis • Domestik',
                         },
                         {
                           tier: 'EXCLUSIVE' as const,
-                          label: 'EXCLUSIVE • Rp 299rb',
-                          badge: 'Slideshow • Galeri & Kisah',
+                          label: 'EXCLUSIVE',
+                          tip: 'Rp 299rb • Slideshow • Galeri & Musik',
                         },
                         {
                           tier: 'ROYAL VIP' as const,
-                          label: 'ROYAL VIP • Rp 599rb',
-                          badge: 'Unlimited • PayPal & Crypto',
+                          label: 'ROYAL VIP',
+                          tip: 'Rp 599rb • Unlimited • PayPal & Crypto',
                         },
                       ] as const
                     ).map((tItem) => {
@@ -5958,396 +5767,94 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           key={tItem.tier}
                           type="button"
                           onClick={() => setSimPackageTier(tItem.tier)}
-                          title={`${tItem.label} (${tItem.badge})`}
-                          className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all flex items-center gap-1.5 ${
+                          title={tItem.tip}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
                             isTierActive
                               ? tItem.tier === 'ROYAL VIP'
-                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#F3D77D] text-stone-950 shadow-2xs'
-                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-2xs'
-                              : 'text-indigo-200 hover:text-white hover:bg-white/10'
+                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#F3D77D] text-stone-950'
+                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
+                              : 'text-indigo-200 hover:text-white'
                           }`}
                         >
-                          <span>{tItem.label}</span>
+                          {tItem.label}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Live Active Tier Capabilities Summary Strip */}
-                <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 text-[11px]">
-                  <span className="px-2.5 py-1 rounded-xl bg-[#090B14] border border-indigo-500/35 text-indigo-200 font-bold">
-                    {simPackageTier === 'STARTER'
-                      ? lang === 'ID'
-                        ? 'STARTER: 1 Slide Statis • Kisah & Galeri OFF • Amplop Bank/QRIS'
-                        : 'STARTER: 1 Static Slide • Story & Gallery OFF • Domestic Envelope'
-                      : simPackageTier === 'EXCLUSIVE'
-                        ? lang === 'ID'
-                          ? 'EXCLUSIVE: 2 Slide • Kisah, Galeri HD & Musik ON • Moneter ON'
-                          : 'EXCLUSIVE: 2 Slides • Story, HD Gallery & Music ON • Budget ON'
-                        : lang === 'ID'
-                          ? 'ROYAL VIP: 3 Slide Penuh • Amplop Global PayPal & Crypto USDT ON'
-                          : 'ROYAL VIP: 3 Full Slides • Global PayPal & Crypto USDT Envelope ON'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleSelectPackageForCheckout(simPackageTier)
-                    }
-                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-[11px] whitespace-nowrap shadow-2xs transition-all"
-                  >
-                    {lang === 'ID'
-                      ? `Pesan Paket ${simPackageTier}`
-                      : `Order ${simPackageTier}`}
-                  </button>
-                </div>
-              </div>
-
-              {showcaseViewMode === 'invitation_sim' ? (
-                /* ================================================================= */
-                /* TAB 1: REAL <PublicInvitationView /> WITH 5 DUMMY CLIENTS         */
-                /* ================================================================= */
-                <div className="space-y-5">
-                  {/* Top Control Bar: 5 Separated Dummy Client Pills + Cover/Opened Toggle + Action Buttons */}
-                  <div className="p-3.5 sm:p-4 rounded-3xl bg-[#111528] border border-indigo-500/40 shadow-md flex flex-col gap-3.5">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
-                          const isSelected = activeDummyMeta.id === meta.id;
-                          return (
-                            <button
-                              key={meta.id}
-                              type="button"
-                              onClick={() => handleSelectDummyClient(meta.id)}
-                              className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
-                                isSelected
-                                  ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white border-[#00F0FF] shadow-[0_0_20px_rgba(99,102,241,0.45)]'
-                                  : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
-                              }`}
-                            >
-                              <span>
-                                {lang === 'ID' ? meta.labelId : meta.labelEn}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Cover Gate vs Opened View Toggle */}
-                      <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
-                        <span className="text-[11px] font-bold text-indigo-300 hidden sm:inline">
-                          {lang === 'ID' ? 'Mode Tampilan:' : 'View Mode:'}
-                        </span>
-                        <div className="inline-flex items-center p-1 rounded-2xl bg-[#090B14] border border-indigo-500/35">
-                          <button
-                            type="button"
-                            onClick={() => setSimIsOpened(false)}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
-                              !simIsOpened
-                                ? 'bg-[#6366F1] text-white shadow-2xs'
-                                : 'text-indigo-300 hover:text-white'
-                            }`}
-                          >
-                            {lang === 'ID'
-                              ? '🚪 Sampul Pembuka (Cover Gate)'
-                              : '🚪 Cover Gate'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSimIsOpened(true)}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
-                              simIsOpened
-                                ? 'bg-[#6366F1] text-white shadow-2xs'
-                                : 'text-indigo-300 hover:text-white'
-                            }`}
-                          >
-                            {lang === 'ID'
-                              ? '📖 Isi Undangan Terbuka (Real View)'
-                              : '📖 Opened Invitation (Real View)'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Prominent Action Bar: Open Fullscreen Real Invitation & Open Real Themed Demo Manager */}
-                    <div className="pt-3 border-t border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[11px] font-extrabold">
-                          Tamu Demo: {activeDummyMeta.sampleGuestName}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-indigo-500/35 text-indigo-200 font-mono text-[11px] font-bold">
-                          Hash: {activeDummyMeta.sampleHashToken}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#D4AF37]/40 text-[#D4AF37] text-[11px] font-extrabold">
-                          Tema: {activeDummyMeta.themeLabel}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onSelectClientInvitation(
-                              activeDummyMeta.id,
-                              activeDummyMeta.sampleGuestName,
-                              activeDummyMeta.sampleHashToken
-                            )
-                          }
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {lang === 'ID'
-                              ? '💌 Buka Undangan Dummy Layar Penuh (Real View)'
-                              : '💌 Open Fullscreen Dummy Invitation (Real View)'}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onOpenDemoManager) {
-                              onOpenDemoManager(
-                                activeDummyMeta.id,
-                                simPackageTier
-                              );
-                            } else {
-                              onOpenAdminPortal();
-                            }
-                          }}
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all"
-                        >
-                          <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {lang === 'ID'
-                              ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
-                              : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
+                {/* Row 2: Active Client Info + Concise Action Buttons */}
+                <div className="pt-2 border-t border-indigo-500/25 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span
+                      title={`Klien Dummy: ${activeDummyMeta.coupleLabel}`}
+                      className="px-2 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/35 text-white font-bold truncate max-w-[180px] sm:max-w-none"
+                    >
+                      {activeDummyMeta.coupleLabel}
+                    </span>
+                    <span
+                      title={`Tema Planner & Undangan: ${activeDummyMeta.themeLabel}`}
+                      className="px-2 py-0.5 rounded-md bg-[#090B14] border border-[#D4AF37]/40 text-[#D4AF37] font-bold whitespace-nowrap"
+                    >
+                      {activeDummyMeta.themeLabel}
+                    </span>
+                    <span
+                      title={`Kode Hash Tamu Demo (${activeDummyMeta.sampleGuestName}): ${activeDummyMeta.sampleHashToken}`}
+                      className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-[#090B14] border border-[#00F0FF]/35 text-[#00F0FF] font-mono text-[10px] font-bold"
+                    >
+                      {activeDummyMeta.sampleHashToken}
+                    </span>
                   </div>
 
-                  {/* Main Grid: REAL <PublicInvitationView /> Contained Viewport (8 Cols) + Dummy Client Info Card (4 Cols) */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* LEFT / MAIN (8 Cols): REAL <PublicInvitationView /> Component */}
-                    <div className="lg:col-span-8 space-y-2">
-                      <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
-                        <div className="h-[760px] overflow-y-auto overflow-x-hidden">
-                          <PublicInvitationView
-                            key={`${activeDummyMeta.id}-${simPackageTier}-${
-                              simIsOpened ? 'open' : 'cover'
-                            }`}
-                            settings={activeDummyState.settings}
-                            guests={activeDummyState.guests}
-                            wishes={effectiveDummyWishes}
-                            guestParamName={activeDummyMeta.sampleGuestName}
-                            guestParamCode={activeDummyMeta.sampleHashToken}
-                            defaultOpened={simIsOpened}
-                            isAdminLoggedIn={false}
-                            onOpenAdminPortal={() => {
-                              if (onOpenDemoManager) {
-                                onOpenDemoManager(
-                                  activeDummyMeta.id,
-                                  simPackageTier
-                                );
-                              } else {
-                                onOpenAdminPortal();
-                              }
-                            }}
-                            onSubmitRsvp={handleDummyLiveRsvpSubmit}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* RIGHT (4 Cols): Dummy Client Inspector & Surface Switcher Card */}
-                    <div className="lg:col-span-4 rounded-3xl bg-[#111528] border-2 border-indigo-500/40 p-5 sm:p-6 shadow-[0_18px_48px_rgba(0,0,0,0.45)] space-y-5">
-                      <div className="space-y-1.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] text-[10px] font-extrabold uppercase tracking-wider">
-                          <Sparkles className="w-3 h-3 text-[#00F0FF]" />
-                          <span>
-                            {lang === 'ID'
-                              ? `Workspace Dummy: ${activeDummyMeta.id}`
-                              : `Dummy Workspace: ${activeDummyMeta.id}`}
-                          </span>
-                        </span>
-                        <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-white">
-                          {activeDummyMeta.coupleLabel}
-                        </h4>
-                        <p className="text-xs text-indigo-200/85 leading-relaxed">
-                          {activeDummyMeta.dateSummary} &bull;{' '}
-                          {activeDummyMeta.venueSummary}
-                        </p>
-                      </div>
-
-                      {/* Dummy Client Hash & Theme Metadata Box */}
-                      <div className="p-3.5 rounded-2xl bg-[#090B14] border border-indigo-500/35 space-y-2 text-xs">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-indigo-300 font-bold">
-                            Tema Undangan &amp; Manager:
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] font-extrabold text-[11px]">
-                            {activeDummyMeta.themeLabel}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-indigo-300 font-bold">
-                            Tamu VVIP Sampel:
-                          </span>
-                          <span className="text-white font-extrabold truncate">
-                            {activeDummyMeta.sampleGuestName}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-indigo-300 font-bold">
-                            Kode Hash 21-Char:
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-950 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
-                            {activeDummyMeta.sampleHashToken}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-indigo-300 font-bold">
-                            Simulasi Paket Aktif:
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-400/40 text-white font-extrabold text-[10px]">
-                            {simPackageTier}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Other Guests in this Dummy Client Workspace */}
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300">
-                          {lang === 'ID'
-                            ? 'Daftar Kode Hash Tamu di Dummy Client Ini (Klik untuk Buka):'
-                            : 'Sample Guest Hash Tokens in This Dummy Client:'}
-                        </p>
-                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                          {activeDummyState.guests.slice(0, 5).map((g) => {
-                            const gHash = computeGuestInvitationHash(
-                              activeDummyMeta.id,
-                              g
-                            );
-                            return (
-                              <button
-                                key={g.id}
-                                type="button"
-                                onClick={() =>
-                                  onSelectClientInvitation(
-                                    activeDummyMeta.id,
-                                    g.guestName,
-                                    gHash
-                                  )
-                                }
-                                className="w-full text-left p-2.5 rounded-xl bg-[#090B14] hover:bg-indigo-950/80 border border-indigo-500/30 transition-all flex items-center justify-between gap-2"
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-[11px] font-extrabold text-white truncate">
-                                    {g.guestName}
-                                  </p>
-                                  <p className="text-[10px] text-indigo-300 truncate">
-                                    {g.institution} ({g.pax} Pax)
-                                  </p>
-                                </div>
-                                <span className="shrink-0 px-2 py-0.5 rounded bg-indigo-950 border border-[#00F0FF]/35 text-[#00F0FF] font-mono text-[9px] font-extrabold">
-                                  {gHash}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-indigo-500/30 space-y-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {showcaseViewMode === 'invitation_sim' && (
+                      <div className="inline-flex items-center p-0.5 rounded-xl bg-[#090B14] border border-indigo-500/35">
                         <button
                           type="button"
-                          onClick={() =>
-                            onSelectClientInvitation(
-                              activeDummyMeta.id,
-                              activeDummyMeta.sampleGuestName,
-                              activeDummyMeta.sampleHashToken
-                            )
-                          }
-                          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                          onClick={() => setSimIsOpened(false)}
+                          title="Tampilkan Sampul Pembuka (Cover Gate)"
+                          className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                            !simIsOpened
+                              ? 'bg-[#6366F1] text-white'
+                              : 'text-indigo-300 hover:text-white'
+                          }`}
                         >
-                          <ExternalLink className="w-4 h-4 shrink-0" />
-                          <span className="truncate">
-                            {lang === 'ID'
-                              ? '💌 Buka Undangan Dummy Layar Penuh (Real View)'
-                              : '💌 Open Fullscreen Dummy Invitation (Real View)'}
-                          </span>
+                          {lang === 'ID' ? 'Sampul' : 'Cover'}
                         </button>
-
                         <button
                           type="button"
-                          onClick={() => {
-                            if (onOpenDemoManager) {
-                              onOpenDemoManager(
-                                activeDummyMeta.id,
-                                simPackageTier
-                              );
-                            } else {
-                              onOpenAdminPortal();
-                            }
-                          }}
-                          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                          onClick={() => setSimIsOpened(true)}
+                          title="Tampilkan Isi Undangan Terbuka"
+                          className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                            simIsOpened
+                              ? 'bg-[#6366F1] text-white'
+                              : 'text-indigo-300 hover:text-white'
+                          }`}
                         >
-                          <LayoutDashboard className="w-4 h-4 shrink-0" />
-                          <span className="truncate">
-                            {lang === 'ID'
-                              ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
-                              : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSelectPackageForCheckout(simPackageTier)
-                          }
-                          className="w-full py-2.5 px-4 rounded-2xl bg-[#090B14] hover:bg-indigo-950 text-[#00F0FF] border border-[#00F0FF]/40 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <Wallet className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">
-                            {lang === 'ID'
-                              ? `Pesan Paket ${simPackageTier} Sekarang`
-                              : `Order ${simPackageTier} Plan Now`}
-                          </span>
+                          {lang === 'ID' ? 'Isi' : 'Inside'}
                         </button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* ================================================================= */
-                /* TAB 2: 1:1 ADMIN DASHBOARD REPLICA + 5 INTERACTIVE MODULES        */
-                /* ================================================================= */
-                <>
-                  {/* Top Action Bar for Manager Preview: Switch Dummy Client & Open Real Themed Demo Manager */}
-                  <div className="p-3.5 sm:p-4 rounded-3xl bg-[#111528] border border-indigo-500/40 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
-                        const isSelected = activeDummyMeta.id === meta.id;
-                        return (
-                          <button
-                            key={meta.id}
-                            type="button"
-                            onClick={() => handleSelectDummyClient(meta.id)}
-                            className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white border-[#00F0FF] shadow-[0_0_20px_rgba(99,102,241,0.45)]'
-                                : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
-                            }`}
-                          >
-                            <span>
-                              {lang === 'ID' ? meta.labelId : meta.labelEn}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectClientInvitation(
+                          activeDummyMeta.id,
+                          activeDummyMeta.sampleGuestName,
+                          activeDummyMeta.sampleHashToken
+                        )
+                      }
+                      title={
+                        lang === 'ID'
+                          ? `Buka Undangan ${activeDummyMeta.coupleLabel} di Layar Penuh`
+                          : `Open ${activeDummyMeta.coupleLabel} Invitation Fullscreen`
+                      }
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] text-stone-950 font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      <span>{lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}</span>
+                    </button>
 
                     <button
                       type="button"
@@ -6358,16 +5865,53 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           onOpenAdminPortal();
                         }
                       }}
-                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all shrink-0"
+                      title={
+                        lang === 'ID'
+                          ? `Buka Demo Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
+                          : `Open Real Demo Planner (Theme: ${activeDummyMeta.themeLabel})`
+                      }
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
                     >
-                      <LayoutDashboard className="w-4 h-4 shrink-0" />
-                      <span>
-                        {lang === 'ID'
-                          ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
-                          : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
-                      </span>
+                      <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                      <span>Demo</span>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {showcaseViewMode === 'invitation_sim' ? (
+                /* ================================================================= */
+                /* TAB 1: FULL-WIDTH REAL <PublicInvitationView /> VIEWPORT          */
+                /* ================================================================= */
+                <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
+                  <div className="h-[680px] sm:h-[760px] overflow-y-auto overflow-x-hidden">
+                    <PublicInvitationView
+                      key={`${activeDummyMeta.id}-${simPackageTier}-${
+                        simIsOpened ? 'open' : 'cover'
+                      }`}
+                      settings={activeDummyState.settings}
+                      guests={activeDummyState.guests}
+                      wishes={effectiveDummyWishes}
+                      guestParamName={activeDummyMeta.sampleGuestName}
+                      guestParamCode={activeDummyMeta.sampleHashToken}
+                      defaultOpened={simIsOpened}
+                      isAdminLoggedIn={false}
+                      onOpenAdminPortal={() => {
+                        if (onOpenDemoManager) {
+                          onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                        } else {
+                          onOpenAdminPortal();
+                        }
+                      }}
+                      onSubmitRsvp={handleDummyLiveRsvpSubmit}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ================================================================= */
+                /* TAB 2: 1:1 PLANNER REPLICA + 5 INTERACTIVE MODULES                */
+                /* ================================================================= */
+                <>
 
                   {/* Featured Interactive Browser Frame Preview (1:1 AdminDashboardView Replica) */}
                   {(() => {
@@ -6393,10 +5937,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {currentShot.badge}
                             </span>
                             <span className="hidden md:inline-block font-mono text-[11px] text-indigo-300 truncate">
-                              https://meplan.app/manager/{currentShot.id}
+                              https://meplan.app/planner/{currentShot.id}
                             </span>
                             <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
-                              ● 1:1 MANAGER WORKSPACE ({simPackageTier})
+                              ● 1:1 PLANNER WORKSPACE ({simPackageTier})
                             </span>
                           </div>
 

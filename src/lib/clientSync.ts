@@ -577,11 +577,11 @@ export function generateWhatsAppMessage(
     ? settings.waTemplateRegular
     : DEFAULT_WA_TEMPLATE_REGULAR;
 
-  const instansiFormatted = guest.institution
-    ? isVipPolri
-      ? `(${guest.institution})`
-      : `_${guest.institution}_`
-    : '';
+  const rawInstansi = (guest.institution || '').trim();
+  const effectiveInstansi = rawInstansi && rawInstansi !== '-' ? rawInstansi : 'di Tempat';
+  const instansiFormatted = isVipPolri
+    ? `(${effectiveInstansi})`
+    : `_${effectiveInstansi}_`;
 
   const guestHashToken = computeGuestInvitationHash(
     settings.activeClientId || 'client-utama',
@@ -759,43 +759,75 @@ export function triggerFileDownload(filename: string, content: string, mimeType:
 
 export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [
   {
-    id: 'track-shane-beautiful-in-white',
-    title: 'Beautiful In White',
-    artist: 'Shane Filan',
-    url: '/musik/beautiful-in-white.mp3',
+    id: 'track-default-1',
+    title: 'NCS — Eternal Promise (Canon Acoustic)',
+    artist: 'NoCopyrightSounds • Royalty-Free Instrumental',
+    url: 'synth:canon-in-d',
     isDefault: true,
   },
   {
-    id: 'track-mltr-paint-my-love',
-    title: 'Paint My Love',
-    artist: 'Michael Learns To Rock',
-    url: '/musik/paint-my-love.mp3',
+    id: 'track-default-2',
+    title: 'NCS — Golden Hour Harmony',
+    artist: 'NoCopyrightSounds • Free Royalty Arpeggio',
+    url: 'synth:thousand-years',
     isDefault: true,
   },
   {
-    id: 'track-denny-cundamani',
-    title: 'Cundamani',
-    artist: 'Denny Caknan',
-    url: '/musik/cundamani.mp3',
-    isDefault: true,
-  },
-  {
-    id: 'track-ilham-jalaraning-tresna',
-    title: 'Jalaraning Tresna',
-    artist: 'Ilham Pradana',
-    url: '/musik/jalaraning-tresna.mp3',
+    id: 'track-default-3',
+    title: 'NCS — Symphony of Grace',
+    artist: 'NoCopyrightSounds • Free Royalty Piano',
+    url: 'synth:beautiful-in-white',
     isDefault: true,
   },
 ];
 
+export const NCS_ROYALTY_FREE_PRESETS: MusicTrackItem[] = [
+  ...DEFAULT_MUSIC_PLAYLIST,
+  {
+    id: 'track-ncs-4',
+    title: 'NCS — Serenade of Dawn (Classic Harp)',
+    artist: 'NoCopyrightSounds • Free Commercial Use',
+    url: 'synth:canon-in-d',
+    isDefault: true,
+  },
+  {
+    id: 'track-ncs-5',
+    title: 'NCS — Velvet Starlight (Romantic Acoustic)',
+    artist: 'NoCopyrightSounds • Bebas Hak Cipta',
+    url: 'synth:thousand-years',
+    isDefault: true,
+  },
+];
+
+export function parseExternalMusicEmbedUrl(rawUrl?: string): {
+  provider: 'SPOTIFY' | 'YOUTUBE' | null;
+  embedUrl: string | null;
+} {
+  const url = (rawUrl || '').trim();
+  if (!url) return { provider: null, embedUrl: null };
+  const spotifyMatch = url.match(
+    /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album)\/([a-zA-Z0-9]+)/i
+  );
+  if (spotifyMatch) {
+    return {
+      provider: 'SPOTIFY',
+      embedUrl: `https://open.spotify.com/embed/${spotifyMatch[1].toLowerCase()}/${spotifyMatch[2]}?utm_source=generator&theme=0`,
+    };
+  }
+  const ytMatch = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|music\.youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{6,})/i
+  );
+  if (ytMatch) {
+    return {
+      provider: 'YOUTUBE',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?rel=0`,
+    };
+  }
+  return { provider: null, embedUrl: null };
+}
+
 export function getEffectiveMusicPlaylist(settings: WeddingSettings): MusicTrackItem[] {
-  if (Array.isArray(settings.musicPlaylist)) {
-    const isLegacySynthOnly =
-      settings.musicPlaylist.length > 0 &&
-      settings.musicPlaylist.every((t) => t.url.startsWith('synth:'));
-    if (isLegacySynthOnly) {
-      return DEFAULT_MUSIC_PLAYLIST;
-    }
+  if (Array.isArray(settings.musicPlaylist) && settings.musicPlaylist.length > 0) {
     return settings.musicPlaylist;
   }
   return DEFAULT_MUSIC_PLAYLIST;

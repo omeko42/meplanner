@@ -382,6 +382,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
 
   musicTitle: 'Pernikahan Kita - Tiara Andini feat Arsy Widianto',
   musicArtist: 'Tiara Andini ft. Arsy Widianto',
+  musicSourceType: 'CUSTOM_UPLOAD',
   activeMusicTrackId: 'music_mvdp2f7y',
   musicPlaylist: [
     {
@@ -397,6 +398,27 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       artist: 'Woro Endah ft. Ilham Pradana',
       url: 'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3',
       isDefault: false,
+    },
+    {
+      id: 'track-default-1',
+      title: 'NCS — Eternal Promise (Canon Acoustic)',
+      artist: 'NoCopyrightSounds • Royalty-Free Instrumental',
+      url: 'synth:canon-in-d',
+      isDefault: true,
+    },
+    {
+      id: 'track-default-2',
+      title: 'NCS — Golden Hour Harmony',
+      artist: 'NoCopyrightSounds • Free Royalty Arpeggio',
+      url: 'synth:thousand-years',
+      isDefault: true,
+    },
+    {
+      id: 'track-default-3',
+      title: 'NCS — Symphony of Grace',
+      artist: 'NoCopyrightSounds • Free Royalty Piano',
+      url: 'synth:beautiful-in-white',
+      isDefault: true,
     },
   ],
   musicVolume: 100,

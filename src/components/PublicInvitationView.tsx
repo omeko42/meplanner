@@ -498,7 +498,7 @@ const EditorialSectionHeader: React.FC<{
   title: string;
   subtitle?: string;
 }> = ({ badge, title, subtitle }) => (
-  <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto py-2 text-center mb-7 sm:mb-10 relative">
+  <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto py-2 text-center mb-9 sm:mb-12 relative">
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-8 -inset-y-2 rounded-full bg-white/55 blur-2xl -z-10"
@@ -753,6 +753,33 @@ const BackgroundSlideshowLayer: React.FC<BackgroundSlideshowLayerProps> = ({
   );
 };
 
+function resolveExternalMusicEmbed(rawUrl?: string): {
+  provider: 'SPOTIFY' | 'YOUTUBE' | null;
+  embedUrl: string | null;
+} {
+  const url = (rawUrl || '').trim();
+  if (!url) return { provider: null, embedUrl: null };
+  const spotifyMatch = url.match(
+    /open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album)\/([a-zA-Z0-9]+)/i
+  );
+  if (spotifyMatch) {
+    return {
+      provider: 'SPOTIFY',
+      embedUrl: `https://open.spotify.com/embed/${spotifyMatch[1].toLowerCase()}/${spotifyMatch[2]}?utm_source=generator&theme=0`,
+    };
+  }
+  const ytMatch = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|music\.youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{6,})/i
+  );
+  if (ytMatch) {
+    return {
+      provider: 'YOUTUBE',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?rel=0`,
+    };
+  }
+  return { provider: null, embedUrl: null };
+}
+
 export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   settings,
   guests,
@@ -794,6 +821,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     getEffectiveMusicPlaylist(settings)
   );
   const [isMusicPopoverOpen, setIsMusicPopoverOpen] = useState(false);
+  const externalEmbed = useMemo(
+    () =>
+      resolveExternalMusicEmbed(
+        settings.musicExternalUrl || currentTrack?.url
+      ),
+    [settings.musicExternalUrl, currentTrack?.url]
+  );
   const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
   const [showQrisModal, setShowQrisModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhotoItem | null>(null);
@@ -2102,12 +2136,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
                 title={
                   isAdminLoggedIn
-                    ? 'Buka Workspace Manager My Event Planner'
-                    : 'Masuk ke Portal Manager My Event Planner'
+                    ? 'Buka Workspace Planner (My Event Planner)'
+                    : 'Masuk ke Portal Planner (My Event Planner)'
                 }
               >
                 <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-                <span className="hidden sm:inline">Manager</span>
+                <span className="hidden sm:inline">Planner</span>
               </button>
             </div>
           </div>
@@ -2159,11 +2193,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
               </h2>
 
-              {(effectiveMatchedGuest?.institution || matchedGuest?.institution) && (
-                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1 break-words">
-                  {effectiveMatchedGuest?.institution || matchedGuest?.institution}
-                </p>
-              )}
+              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1.5 break-words">
+                {(() => {
+                  const rawInst = (
+                    effectiveMatchedGuest?.institution ||
+                    matchedGuest?.institution ||
+                    ''
+                  ).trim();
+                  return rawInst && rawInst !== '-'
+                    ? rawInst
+                    : lang === 'ID'
+                      ? 'di Tempat'
+                      : 'In Place';
+                })()}
+              </p>
 
               {effectiveMatchedGuest && matchedGuestHashToken && (
                 <div className="mt-2 flex justify-center">
@@ -2232,7 +2275,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             {guest.guestName}
                           </p>
                           <p className="text-[10px] text-stone-500 truncate">
-                            {guest.institution || guest.guestType} &bull; {guest.pax} Pax
+                            {guest.institution || 'di Tempat'} &bull; {guest.pax} Pax
                           </p>
                         </div>
                         <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
@@ -2405,6 +2448,37 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </button>
                 </div>
 
+                {/* Official Spotify / YouTube External Embed Player (when configured) */}
+                {externalEmbed.embedUrl && (
+                  <div className="mt-2.5">
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5 px-0.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                        Koneksi Resmi {externalEmbed.provider}
+                      </span>
+                      {settings.musicExternalUrl && (
+                        <a
+                          href={settings.musicExternalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-[#B68D40] hover:underline"
+                        >
+                          <span>Buka App</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
+                    <iframe
+                      src={externalEmbed.embedUrl}
+                      title={`Official ${externalEmbed.provider} Embed Player`}
+                      width="100%"
+                      height={externalEmbed.provider === 'SPOTIFY' ? 152 : 160}
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                      className="rounded-xl border border-[#D4AF37]/40 mb-2.5"
+                    />
+                  </div>
+                )}
+
                 {/* Transport Controls: Prev / Play-Pause / Next */}
                 <div className="flex items-center justify-center gap-3 py-2.5 bg-white">
                   <button
@@ -2512,6 +2586,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     );
                   })}
                 </div>
+
+                <div className="mt-2.5 pt-2 border-t border-stone-200/80 text-[9.5px] leading-snug text-stone-500">
+                  <span className="font-bold text-[#8B6914]">Info Musik:</span> Lagu bawaan menggunakan instrumen <span className="font-semibold">NCS (NoCopyrightSounds)</span> bebas royalti. Penggunaan lagu kustom merupakan pilihan &amp; tanggung jawab penyelenggara acara.
+                </div>
               </div>
             )}
 
@@ -2535,21 +2613,21 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
               title={
                 isAdminLoggedIn
-                  ? 'Buka Workspace Manager My Event Planner'
-                  : 'Masuk ke Portal Manager My Event Planner'
+                  ? 'Buka Workspace Planner (My Event Planner)'
+                  : 'Masuk ke Portal Planner (My Event Planner)'
               }
             >
               <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span className="hidden sm:inline">Manager</span>
+              <span className="hidden sm:inline">Planner</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* HERO PREWEDDING SILHOUETTE BANNER & LIVE COUNTDOWN */}
-      <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-8 sm:pb-12 px-3 sm:px-4">
+      <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-10 sm:pb-14 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-[#FFFDF9]/90 backdrop-blur-xl">
+          <div className="inv-reveal inv-reveal-up relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-[#FFFDF9] backdrop-blur-xl">
             <FloralCornerOrnament position="top-left" enabled={showFloral} />
             <FloralCornerOrnament position="top-right" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
@@ -2557,14 +2635,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Prewedding Silhouette Image / Motion Video Header with Feathered Mist Fade */}
             {(heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim())) && (
-              <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden bg-[#FFFDF9]">
+              <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden">
                 <div
                   className="absolute inset-0"
                   style={{
                     WebkitMaskImage:
-                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                      'linear-gradient(to bottom, black 0%, black 58%, rgba(0,0,0,0.38) 80%, transparent 100%)',
                     maskImage:
-                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                      'linear-gradient(to bottom, black 0%, black 58%, rgba(0,0,0,0.38) 80%, transparent 100%)',
                   }}
                 >
                   {settings.heroVideoUrl?.trim() ? (
@@ -2585,7 +2663,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     />
                   )}
                 </div>
-                <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/65 to-transparent pointer-events-none" />
                 {settings.showHeroBadge === true &&
                   Boolean(settings.heroBadgeText?.trim()) && (
                     <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
@@ -2601,15 +2679,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Hero Content Overlapping Soft Feathered Fade */}
             <div
-              className={`px-4 sm:px-6 pb-7 sm:pb-10 text-center relative z-20 ${
+              className={`px-5 sm:px-10 md:px-14 pb-10 sm:pb-14 text-center relative z-20 ${
                 heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim())
-                  ? 'pt-2 -mt-8 sm:-mt-12'
-                  : 'pt-7 sm:pt-10'
+                  ? 'pt-2 -mt-10 sm:-mt-16'
+                  : 'pt-10 sm:pt-14'
               }`}
             >
               <div
                 aria-hidden="true"
-                className="flex items-center justify-center gap-3 mb-2"
+                className="flex items-center justify-center gap-3 mb-4 sm:mb-6"
               >
                 <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
                 <EventCrestIcon
@@ -2619,17 +2697,38 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
               </div>
 
-              <h1 className="font-editorial text-2xl sm:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-2.5 break-words">
-                {displayTitleFull}
-              </h1>
+              {hasSecondProfile ? (
+                <h1 className="max-w-3xl mx-auto mb-6 sm:mb-8 flex flex-col items-center justify-center">
+                  <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
+                    {settings.groomFullName}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="flex items-center justify-center gap-3 my-2 sm:my-3.5"
+                  >
+                    <span className="w-8 sm:w-14 h-px bg-gradient-to-r from-transparent to-[#D4AF37]/70" />
+                    <span className="font-script text-2xl sm:text-4xl text-[#B68D40] leading-none px-1">
+                      &amp;
+                    </span>
+                    <span className="w-8 sm:w-14 h-px bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
+                  </span>
+                  <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
+                    {settings.brideFullName}
+                  </span>
+                </h1>
+              ) : (
+                <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-6 sm:mb-8 break-words">
+                  {displayTitleFull}
+                </h1>
+              )}
 
-              <p className="max-w-2xl mx-auto text-xs sm:text-sm text-stone-600 leading-relaxed mb-6 sm:mb-8">
+              <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8 sm:mb-10">
                 {settings.invitationOpeningText}
               </p>
 
               {/* Countdown Timer Boxes (Conditional via enableCountdown Switch) */}
               {activeCountdownEvent && (
-                <div className="max-w-lg mx-auto mb-6 sm:mb-8 space-y-3.5">
+                <div className="max-w-xl mx-auto mb-8 sm:mb-10 space-y-4 sm:space-y-5">
                   <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
                     <Clock className="w-3.5 h-3.5" />
                     <span>
@@ -2662,7 +2761,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-4 gap-2 sm:gap-4 items-stretch">
+                  <div className="grid grid-cols-4 gap-2.5 sm:gap-4 items-stretch">
                     {[
                       { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
                       { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
@@ -2691,7 +2790,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                   {/* Save The Date (Google Calendar) Interactive Pill Button */}
                   {settings.showSaveToCalendarButton !== false && (
-                    <div className="pt-1 flex justify-center">
+                    <div className="pt-2 flex justify-center">
                       <a
                         href={googleCalendarUrl}
                         target="_blank"
@@ -2716,7 +2815,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
               {/* Verse / Quote Card (Conditional via showQuoteSection) */}
               {settings.showQuoteSection !== false && settings.quoteVerse && (
-                <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-4 sm:p-6 shadow-2xs">
+                <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-5 sm:p-8 shadow-2xs mb-8 sm:mb-10">
                   <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
                     &ldquo;{settings.quoteVerse}&rdquo;
                   </p>
@@ -2729,7 +2828,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               )}
 
               {/* Animated Scroll-Down Mouse Indicator Pill */}
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 sm:mt-10 flex justify-center">
                 <a
                   href="#mempelai"
                   title={
@@ -2754,7 +2853,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: PROFIL MEMPELAI / HOST (1-COL SPOTLIGHT OR 2-COL SYMMETRICAL CARDS) */}
       {settings.showCoupleSection !== false && (
-        <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+        <section id="mempelai" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
             badge={coverBadgeLabel}
             title={profileTitle}
@@ -2934,7 +3033,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
-        <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+        <section id="acara" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
             badge={lang === 'ID' ? 'Agenda & Waktu' : 'Date & Venue'}
             title={scheduleTitle}
@@ -3046,7 +3145,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {(showLoveStory || showGallery) && (
-        <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+        <section id="galeri" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
             badge={lang === 'ID' ? 'Momen Berharga' : 'Precious Moments'}
             title={
@@ -3385,7 +3484,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
-        <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+        <section id="rsvp" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
             badge={lang === 'ID' ? 'RSVP & Buku Tamu' : 'RSVP & Guestbook'}
             title={rsvpTitle}
@@ -3914,7 +4013,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: AMPLOP DIGITAL & TANDA KASIH (CUSTOMIZABLE + CRYPTO / PAYPAL / BANK / E-WALLET / PHYSICAL GIFT) */}
       {settings.showGiftSection !== false && (
-        <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
+        <section id="gift" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up relative min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
             <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
             <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
@@ -4246,17 +4345,31 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </p>
 
           {/* Inner Champagne Gold Couple Signature Box */}
-          <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs relative z-10">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-1">
+          <div className="max-w-lg mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 sm:px-8 py-5 sm:py-7 shadow-2xs relative z-10">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-2">
               {closingSignature}
             </p>
             <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-1">
               {displayTitleShort}
             </p>
             {displayTitleFull !== displayTitleShort && (
-              <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-1">
-                {displayTitleFull}
-              </p>
+              hasSecondProfile ? (
+                <div className="mt-3 pt-3 border-t border-[#D4AF37]/25 flex flex-col items-center justify-center">
+                  <span className="font-editorial text-xs sm:text-base text-stone-800 font-bold leading-snug break-words">
+                    {settings.groomFullName}
+                  </span>
+                  <span className="block font-script text-2xl sm:text-3xl text-[#B68D40] my-1">
+                    &amp;
+                  </span>
+                  <span className="font-editorial text-xs sm:text-base text-stone-800 font-bold leading-snug break-words">
+                    {settings.brideFullName}
+                  </span>
+                </div>
+              ) : (
+                <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-2">
+                  {displayTitleFull}
+                </p>
+              )
             )}
           </div>
 

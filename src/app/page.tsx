@@ -1923,14 +1923,14 @@ function WeddingAppContent() {
   }, [demoManagerClientId, demoPackageTier]);
 
   const demoSandboxBar = activeDummyClientIdForSandbox ? (
-    <div className="fixed bottom-4 left-4 z-50 flex flex-wrap items-center gap-1.5 rounded-2xl bg-stone-900/95 px-2.5 py-2 text-[#FAF3E3] border border-[#D4AF37]/60 shadow-[0_14px_34px_rgba(12,10,9,0.55)] backdrop-blur-md max-w-[calc(100vw-2rem)]">
+    <div className="fixed bottom-3 left-3 z-50 flex flex-wrap items-center gap-1 rounded-2xl bg-stone-900/95 px-2 py-1.5 text-[#FAF3E3] border border-[#D4AF37]/60 shadow-[0_14px_34px_rgba(12,10,9,0.55)] backdrop-blur-md max-w-[calc(100vw-1.5rem)]">
       <button
         type="button"
         onClick={handleOpenLandingPage}
-        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-[#FAF3E3] border border-stone-700 text-[11px] font-extrabold transition-all"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-stone-800 hover:bg-stone-700 text-[#FAF3E3] border border-stone-700 text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap"
         title="Kembali ke Katalog MEPlan"
       >
-        <span>&larr; Katalog MEPlan</span>
+        <span>&larr; Katalog</span>
       </button>
 
       <div className="inline-flex items-center rounded-xl bg-stone-950/90 p-0.5 border border-stone-800">
@@ -1940,26 +1940,28 @@ function WeddingAppContent() {
             setDemoManagerClientId(null);
             setPublicSelectedClientId(activeDummyClientIdForSandbox);
           }}
-          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
+          title="Lihat tampilan Undangan Dummy"
+          className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
             !isDemoManagerActive
               ? 'bg-[#D4AF37] text-stone-950 shadow-sm'
               : 'text-stone-300 hover:text-white'
           }`}
         >
-          💌 Undangan Dummy
+          Undangan
         </button>
         <button
           type="button"
           onClick={() =>
             handleOpenDemoManager(activeDummyClientIdForSandbox, demoPackageTier)
           }
-          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
+          title="Buka Demo Planner untuk Dummy Client ini"
+          className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
             isDemoManagerActive
               ? 'bg-[#D4AF37] text-stone-950 shadow-sm'
               : 'text-stone-300 hover:text-white'
           }`}
         >
-          🎨 Manager Dummy
+          Demo
         </button>
       </div>
 
@@ -1970,14 +1972,14 @@ function WeddingAppContent() {
               key={tierOpt}
               type="button"
               onClick={() => setDemoPackageTier(tierOpt)}
-              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+              className={`px-1.5 sm:px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-extrabold transition-all whitespace-nowrap ${
                 demoPackageTier === tierOpt
                   ? 'bg-amber-500/25 text-[#F6E27A] border border-[#D4AF37]/60'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
               title={`Simulasikan Paket ${tierOpt}`}
             >
-              {tierOpt}
+              {tierOpt === 'ROYAL VIP' ? 'VIP' : tierOpt}
             </button>
           )
         )}

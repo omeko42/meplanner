@@ -1269,18 +1269,44 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleResetDefaultMusicPlaylist = async () => {
-    const customTracks = effectivePlaylist.filter((t) => !t.isDefault);
-    const nextList = [...DEFAULT_MUSIC_PLAYLIST, ...customTracks];
+    const ncsBuiltinTracks: MusicTrackItem[] = [
+      {
+        id: 'track-default-1',
+        title: 'NCS — Eternal Promise (Canon Acoustic)',
+        artist: 'NoCopyrightSounds • Royalty-Free Instrumental',
+        url: 'synth:canon_romantic',
+        isDefault: true,
+      },
+      {
+        id: 'track-default-2',
+        title: 'NCS — Golden Hour Harmony',
+        artist: 'NoCopyrightSounds • Royalty-Free Instrumental',
+        url: 'synth:golden_hour',
+        isDefault: true,
+      },
+      {
+        id: 'track-default-3',
+        title: 'NCS — Symphony of Grace',
+        artist: 'NoCopyrightSounds • Royalty-Free Instrumental',
+        url: 'synth:symphony_grace',
+        isDefault: true,
+      },
+    ];
+    const customTracks = effectivePlaylist.filter(
+      (t) => !t.isDefault && !t.id.startsWith('track-default-')
+    );
+    const nextList = [...ncsBuiltinTracks, ...customTracks];
     const first = nextList[0];
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
+      musicSourceType: 'NCS_BUILTIN',
       musicPlaylist: nextList,
-      activeMusicTrackId: first.id,
+      activeMusicTrackId: 'track-default-1',
       musicTitle: first.title,
       musicArtist: first.artist,
       updatedBy: adminUser.username,
-    };
+    } as WeddingSettings;
     await commitImmediateSettings(nextSettings);
     weddingMusicPlayer.syncFromSettings(nextSettings);
     appendAuditLog({
@@ -1288,9 +1314,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       module: 'MUSIK_PLAYLIST',
       action: 'RESET',
       status: 'SUCCESS',
-      summary: 'Memulihkan 3 lagu romantis bawaan ke playlist',
+      summary: 'Memulihkan 3 lagu NCS (NoCopyrightSounds) bebas royalti ke playlist',
     });
-    showToast('3 Lagu Romantis Bawaan berhasil dipulihkan ke Playlist!');
+    showToast('✓ 3 Lagu NCS (NoCopyrightSounds) Bebas Copyright berhasil dimuat ke Playlist!');
   };
 
   const handleAdminVolumeChange = (vol: number) => {
@@ -4231,6 +4257,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const currentLoadedMeta = adminCurrentTrack
       ? weddingMusicPlayer.getTrackMeta(adminCurrentTrack.id)
       : null;
+    const activeMusicSourceType: 'NCS_BUILTIN' | 'EXTERNAL_EMBED' | 'CUSTOM_UPLOAD' =
+      (settingsForm as any).musicSourceType || 'NCS_BUILTIN';
+    const rawExternalMusicUrl: string =
+      ((settingsForm as any).musicExternalUrl || '').trim();
+
+    const resolveExternalMusicEmbed = (
+      rawUrl: string
+    ): { platform: 'SPOTIFY' | 'YOUTUBE'; embedUrl: string } | null => {
+      const url = rawUrl.trim();
+      if (!url) return null;
+      const spotifyMatch = url.match(
+        /open\.spotify\.com\/(?:intl-[a-z]{2}\/)?(track|playlist|album)\/([a-zA-Z0-9]+)/i
+      );
+      if (spotifyMatch) {
+        const kind = spotifyMatch[1].toLowerCase();
+        const itemId = spotifyMatch[2];
+        return {
+          platform: 'SPOTIFY',
+          embedUrl: `https://open.spotify.com/embed/${kind}/${itemId}?utm_source=generator&theme=0`,
+        };
+      }
+      const ytMatch = url.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/i
+      );
+      if (ytMatch) {
+        return {
+          platform: 'YOUTUBE',
+          embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}`,
+        };
+      }
+      return null;
+    };
+
+    const resolvedEmbedPreview = resolveExternalMusicEmbed(rawExternalMusicUrl);
 
     return (
       <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5 text-xs">
@@ -4261,7 +4321,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               type="button"
               onClick={handleResetDefaultMusicPlaylist}
               className="px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 font-bold text-[11px] inline-flex items-center gap-1"
-              title="Pulihkan Lagu Romantis Bawaan"
+              title="Pulihkan 3 Lagu NCS (NoCopyrightSounds) Bebas Copyright"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Bawaan</span>
@@ -4277,6 +4337,168 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 className="hidden"
               />
             </label>
+          </div>
+        </div>
+
+        {/* A. Sumber Musik & Koneksi Platform (NCS / Spotify / YouTube / Upload) Card */}
+        <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p className="font-extrabold text-stone-900 text-xs flex items-center gap-1.5">
+                <span>Sumber Musik &amp; Koneksi Platform (NCS / Spotify / YouTube / Upload)</span>
+              </p>
+              <p className="text-[11px] text-stone-500">
+                Pilih musik bawaan NCS bebas klaim, hubungkan link resmi Spotify / YouTube, atau unggah lisensi pribadi.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetDefaultMusicPlaylist}
+              className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold text-[11px] inline-flex items-center gap-1.5 shrink-0 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>+ Muat 3 Lagu NCS (NoCopyrightSounds)</span>
+            </button>
+          </div>
+
+          {/* 3 Source Mode Pills */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              {
+                key: 'NCS_BUILTIN' as const,
+                label: '🛡️ Bawaan NCS (Bebas Copyright)',
+                desc: 'Katalog Royalty-Free 100% Aman',
+              },
+              {
+                key: 'EXTERNAL_EMBED' as const,
+                label: '🟢 Koneksi Spotify / ▶️ YouTube',
+                desc: 'Streaming / Embed Resmi Platform',
+              },
+              {
+                key: 'CUSTOM_UPLOAD' as const,
+                label: '📤 Upload MP3 Pribadi',
+                desc: 'File Lisensi / Unduhan Pribadi',
+              },
+            ].map((mode) => {
+              const isModeActive = activeMusicSourceType === mode.key;
+              return (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={async () => {
+                    const nextSettings = {
+                      ...state.settings,
+                      ...settingsForm,
+                      musicSourceType: mode.key,
+                      updatedBy: adminUser.username,
+                    } as WeddingSettings;
+                    setSettingsFormInternal(nextSettings);
+                    await commitImmediateSettings(nextSettings);
+                    showToast(`Sumber musik diatur ke: ${mode.label}`);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    isModeActive
+                      ? 'bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border-[#B68D40] text-[#8B6914] shadow-2xs'
+                      : 'bg-[#FAF8F5] hover:bg-stone-100 border-stone-200 text-stone-700'
+                  }`}
+                >
+                  <p className="font-extrabold text-[11px] truncate">{mode.label}</p>
+                  <p className="text-[10px] text-stone-500 mt-0.5 truncate">{mode.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Koneksi Link Resmi Spotify / YouTube (musicExternalUrl) */}
+          <div className="pt-2 border-t border-stone-100 space-y-2">
+            <label className="block font-bold text-stone-800 text-[11px]">
+              Link Lagu / Playlist Spotify atau YouTube (Embed Resmi Bebas Klaim)
+            </label>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="text"
+                value={(settingsForm as any).musicExternalUrl || ''}
+                onChange={(e) =>
+                  setSettingsForm((prev) => ({
+                    ...prev,
+                    musicExternalUrl: e.target.value,
+                    musicSourceType: e.target.value.trim()
+                      ? 'EXTERNAL_EMBED'
+                      : (prev as any).musicSourceType || 'NCS_BUILTIN',
+                  } as WeddingSettings))
+                }
+                placeholder="Contoh: https://open.spotify.com/track/... atau https://youtu.be/..."
+                className="flex-1 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+              />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const urlVal = ((settingsForm as any).musicExternalUrl || '').trim();
+                    const nextSettings = {
+                      ...state.settings,
+                      ...settingsForm,
+                      musicExternalUrl: urlVal,
+                      musicSourceType: urlVal ? 'EXTERNAL_EMBED' : 'NCS_BUILTIN',
+                      updatedBy: adminUser.username,
+                    } as WeddingSettings;
+                    setSettingsFormInternal(nextSettings);
+                    await commitImmediateSettings(nextSettings);
+                    showToast(
+                      urlVal
+                        ? '✓ Koneksi musik Spotify / YouTube berhasil disimpan!'
+                        : 'Koneksi link eksternal dikosongkan.'
+                    );
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs whitespace-nowrap"
+                >
+                  Simpan Koneksi
+                </button>
+                {rawExternalMusicUrl && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const nextSettings = {
+                        ...state.settings,
+                        ...settingsForm,
+                        musicExternalUrl: '',
+                        musicSourceType: 'NCS_BUILTIN',
+                        updatedBy: adminUser.username,
+                      } as WeddingSettings;
+                      setSettingsFormInternal(nextSettings);
+                      await commitImmediateSettings(nextSettings);
+                      showToast('Link musik Spotify / YouTube berhasil dihapus.');
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs whitespace-nowrap"
+                  >
+                    Hapus Link
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {resolvedEmbedPreview && (
+              <div className="pt-1.5 space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <span>
+                    ✓ Preview Embed Resmi{' '}
+                    {resolvedEmbedPreview.platform === 'SPOTIFY' ? 'Spotify' : 'YouTube'}{' '}
+                    Aktif (Tampil di Pemutar Musik Undangan)
+                  </span>
+                </div>
+                <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-950">
+                  <iframe
+                    src={resolvedEmbedPreview.embedUrl}
+                    title="Spotify or YouTube Official Music Embed Preview"
+                    width="100%"
+                    height={resolvedEmbedPreview.platform === 'SPOTIFY' ? 80 : 160}
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="w-full border-0"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -4578,6 +4800,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* B. Mandatory Legal Copyright Disclaimer Section */}
+        <div className="rounded-xl bg-amber-50/90 border border-amber-300/80 p-3.5 sm:p-4 space-y-2 text-left">
+          <p className="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
+            <span>⚠️ Disclaimer Hak Cipta &amp; Tanggung Jawab Penggunaan Musik (Penting)</span>
+          </p>
+          <ul className="list-disc pl-4 space-y-1.5 text-[11px] text-amber-900/95 leading-relaxed">
+            <li>
+              <strong>Musik Bawaan Bebas Royalti (NCS):</strong> Seluruh instrumen bawaan platform menggunakan katalog{' '}
+              <strong>NCS (NoCopyrightSounds) / Royalty-Free</strong> yang 100% aman dari klaim hak cipta.
+            </li>
+            <li>
+              <strong>Rekomendasi Koneksi Resmi &amp; Lisensi Pribadi:</strong> Pengguna sangat disarankan menghubungkan musik melalui fitur{' '}
+              <strong>Embed Resmi Spotify / YouTube</strong> di atas, atau menggunakan file audio berlisensi yang diunduh secara sah dari akun berlangganan pribadi (seperti{' '}
+              <strong>Spotify Premium</strong> / lisensi resmi milik pengguna sendiri).
+            </li>
+            <li>
+              <strong>Pelepasan Tanggung Jawab Manajemen Web (&ldquo;Risiko Ditanggung Pengguna&rdquo;):</strong> Apabila pengguna mengunggah file MP3 kustom atau meminta lagu komersial berhak cipta, maka{' '}
+              <strong>seluruh risiko klaim hak cipta, royalti, pemblokiran audio, maupun konsekuensi hukum sepenuhnya menjadi tanggung jawab dan pilihan pengguna/klien sendiri</strong>. Pihak manajemen web{' '}
+              <strong>MEPlan</strong> hanya menyediakan layanan teknis pembuatan &amp; pengelolaan website undangan.
+            </li>
+          </ul>
         </div>
       </div>
     );
@@ -6608,7 +6853,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
                             <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                             <span>
-                              {guest.institution || guest.guestType} &bull; {guest.side}
+                              {!guest.institution ||
+                              guest.institution.trim() === '' ||
+                              guest.institution.trim() === '-'
+                                ? 'di Tempat'
+                                : guest.institution}{' '}
+                              &bull; {guest.guestType} &bull; {guest.side}
                             </span>
                             {!isOnlineGuest && guest.address && (
                               <span>&bull; {guest.address}</span>
@@ -6822,7 +7072,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </span>
                             </div>
                             <p className="text-xs text-stone-500">
-                              {w.institution || w.relation}
+                              {!w.institution ||
+                              w.institution.trim() === '' ||
+                              w.institution.trim() === '-'
+                                ? w.relation || 'di Tempat'
+                                : w.institution}
                             </p>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -17246,6 +17500,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   await onUpsertGuest({
                     ...editingGuest,
                     guestName: editingGuest.guestName.trim(),
+                    institution:
+                      !editingGuest.institution ||
+                      editingGuest.institution.trim() === '' ||
+                      editingGuest.institution.trim() === '-'
+                        ? 'di Tempat'
+                        : editingGuest.institution.trim(),
                     pax: normalizedPax,
                     confirmedPax:
                       editingGuest.rsvpStatus === 'Tidak Hadir'
