@@ -303,6 +303,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   >('ALL');
   const [commentAuditSearch, setCommentAuditSearch] = useState('');
   const isPanitia = adminUser.role === 'PANITIA';
+  const isSuperadmin =
+    adminUser.role === 'SUPERADMIN' ||
+    adminUser.username.trim().toLowerCase() === 'superadmin';
+  const userClientId = adminUser.clientId || 'client-utama';
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem('my_wedding_admin_active_tab_v2');
@@ -312,7 +316,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         savedTab === 'budget' ||
         savedTab === 'guests' ||
         savedTab === 'settings' ||
-        (savedTab === 'superadmin' && !isPanitia)
+        (savedTab === 'superadmin' && isSuperadmin)
       ) {
         return savedTab;
       }
@@ -329,6 +333,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
     }
   };
+  useEffect(() => {
+    if (activeTab === 'superadmin' && !isSuperadmin) {
+      setActiveTab('readiness');
+    } else if (activeTab === 'budget' && isPanitia) {
+      setActiveTab('readiness');
+    }
+  }, [activeTab, isSuperadmin, isPanitia]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
 
@@ -4177,7 +4188,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </>
               )}
 
-              {(!adminUser.clientId || adminUser.clientId === 'client-utama') &&
+              {isSuperadmin &&
                 onSwitchWorkspaceClient &&
                 effectiveClientGroups.length > 0 && (
                   <select
@@ -4285,7 +4296,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Pengaturan',
                 icon: Settings,
               },
-              ...(!isPanitia
+              ...(isSuperadmin
                 ? [
                     {
                       id: 'superadmin' as AdminModuleTab,
@@ -9094,83 +9105,95 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                          Akun &amp; Grouping Multi-Client
+                          {isSuperadmin
+                            ? 'Akun & Grouping Multi-Client'
+                            : 'Akun Inti Keluarga & Panitia'}
                         </h3>
-                        <InfoTooltip text="User Default dikelompokkan berdasarkan Grup Client agar 1 Dashboard dapat mengelola banyak klien komersial oleh Superadmin." />
+                        <InfoTooltip
+                          text={
+                            isSuperadmin
+                              ? 'User Default dikelompokkan berdasarkan Grup Client agar 1 Dashboard dapat mengelola banyak klien komersial oleh Superadmin.'
+                              : 'Kelola kata sandi akun inti keluarga serta akun Panitia / WO untuk acara pernikahan Anda.'
+                          }
+                        />
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap max-w-full">
-                        <button
-                          type="button"
-                          onClick={() => setIsAddClientModalOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-xs"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Grup Client Baru</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab('superadmin')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px]"
-                        >
-                          <Shield className="w-3 h-3" />
-                          <span>Modul Superadmin</span>
-                        </button>
-                      </div>
+                      {isSuperadmin && (
+                        <div className="flex items-center gap-1.5 flex-wrap max-w-full">
+                          <button
+                            type="button"
+                            onClick={() => setIsAddClientModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Grup Client Baru</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('superadmin')}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px]"
+                          >
+                            <Shield className="w-3 h-3" />
+                            <span>Modul Superadmin</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Client Group Filter Pills */}
-                    <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
-                          Filter Grouping Client ({effectiveClientGroups.length} Klien)
-                        </span>
-                        <span className="text-[10px] text-stone-500">
-                          Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedClientGroupFilter('ALL')}
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                            selectedClientGroupFilter === 'ALL'
-                              ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
-                              : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
-                          }`}
-                        >
-                          Semua Grup ({effectiveClientGroups.length})
-                        </button>
-                        {effectiveClientGroups.map((cg) => {
-                          const countDefault = defaultSystemUsers.filter(
-                            (u) => (u.clientId || 'client-utama') === cg.id
-                          ).length;
-                          const isSelected = selectedClientGroupFilter === cg.id;
-                          return (
-                            <button
-                              key={cg.id}
-                              type="button"
-                              onClick={() => setSelectedClientGroupFilter(cg.id)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                                isSelected
-                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
-                                  : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
-                              }`}
-                            >
-                              <span>{cg.coupleLabel || cg.clientName}</span>
-                              <span
-                                className={`px-1.5 py-0.2 rounded-full text-[9px] ${
+                    {isSuperadmin && (
+                      <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
+                            Filter Grouping Client ({effectiveClientGroups.length} Klien)
+                          </span>
+                          <span className="text-[10px] text-stone-500">
+                            Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedClientGroupFilter('ALL')}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                              selectedClientGroupFilter === 'ALL'
+                                ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
+                                : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
+                            }`}
+                          >
+                            Semua Grup ({effectiveClientGroups.length})
+                          </button>
+                          {effectiveClientGroups.map((cg) => {
+                            const countDefault = defaultSystemUsers.filter(
+                              (u) => (u.clientId || 'client-utama') === cg.id
+                            ).length;
+                            const isSelected = selectedClientGroupFilter === cg.id;
+                            return (
+                              <button
+                                key={cg.id}
+                                type="button"
+                                onClick={() => setSelectedClientGroupFilter(cg.id)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
                                   isSelected
-                                    ? 'bg-white/25 text-white'
-                                    : 'bg-[#FAF3E3] text-[#8B6914]'
+                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                                    : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
                                 }`}
                               >
-                                {countDefault} Inti
-                              </span>
-                            </button>
-                          );
-                        })}
+                                <span>{cg.coupleLabel || cg.clientName}</span>
+                                <span
+                                  className={`px-1.5 py-0.2 rounded-full text-[9px] ${
+                                    isSelected
+                                      ? 'bg-white/25 text-white'
+                                      : 'bg-[#FAF3E3] text-[#8B6914]'
+                                  }`}
+                                >
+                                  {countDefault} Inti
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Champagne Gold Pill Sub-Tabs */}
                     <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
@@ -9185,7 +9208,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       >
                         <KeyRound className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">
-                          Grup User Default ({defaultSystemUsers.length})
+                          Grup User Default (
+                          {
+                            (isSuperadmin
+                              ? defaultSystemUsers
+                              : defaultSystemUsers.filter(
+                                  (u) => (u.clientId || 'client-utama') === userClientId
+                                )
+                            ).length
+                          }
+                          )
                         </span>
                       </button>
                       <button
@@ -9198,7 +9230,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         <Users className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Panitia ({panitiaUsers.length})</span>
+                        <span className="truncate">
+                          Panitia (
+                          {
+                            (isSuperadmin
+                              ? panitiaUsers
+                              : panitiaUsers.filter(
+                                  (pu) => (pu.clientId || 'client-utama') === userClientId
+                                )
+                            ).length
+                          }
+                          )
+                        </span>
                       </button>
                     </div>
 
@@ -9206,10 +9249,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {keamananSubTab === 'utama' && (
                       <div className="space-y-4">
                         {effectiveClientGroups
-                          .filter(
-                            (cg) =>
-                              selectedClientGroupFilter === 'ALL' ||
-                              cg.id === selectedClientGroupFilter
+                          .filter((cg) =>
+                            isSuperadmin
+                              ? selectedClientGroupFilter === 'ALL' ||
+                                cg.id === selectedClientGroupFilter
+                              : cg.id === userClientId
                           )
                           .map((cg) => {
                             const groupUsers = defaultSystemUsers.filter(
@@ -9234,11 +9278,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       </span>
                                     </div>
                                     <p className="text-[11px] text-stone-500 mt-0.5">
-                                      {groupUsers.length} Akun Default Inti (Mempelai &amp; Orang Tua) &bull; Dikelola Superadmin
+                                      {isSuperadmin
+                                        ? `${groupUsers.length} Akun Default Inti (Mempelai & Orang Tua) • Dikelola Superadmin`
+                                        : `${groupUsers.length} Akun Default Inti (Mempelai & Orang Tua)`}
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    {cg.id !== 'client-utama' && (
+                                    {isSuperadmin && cg.id !== 'client-utama' && (
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteClientGroup(cg)}
@@ -9320,9 +9366,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setPanitiaNama('');
                               setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
                               setPanitiaClientId(
-                                selectedClientGroupFilter !== 'ALL'
-                                  ? selectedClientGroupFilter
-                                  : 'client-utama'
+                                !isSuperadmin
+                                  ? userClientId
+                                  : selectedClientGroupFilter !== 'ALL'
+                                    ? selectedClientGroupFilter
+                                    : 'client-utama'
                               );
                               setPanitiaPassword('');
                               setActiveSettingsModal('panitia_user');
@@ -9334,11 +9382,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </button>
                         </div>
 
-                        {panitiaUsers.filter(
-                          (pu) =>
-                            selectedClientGroupFilter === 'ALL' ||
-                            (pu.clientId || 'client-utama') ===
-                              selectedClientGroupFilter
+                        {panitiaUsers.filter((pu) =>
+                          isSuperadmin
+                            ? selectedClientGroupFilter === 'ALL' ||
+                              (pu.clientId || 'client-utama') ===
+                                selectedClientGroupFilter
+                            : (pu.clientId || 'client-utama') === userClientId
                         ).length === 0 ? (
                           <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
                             Belum ada akun Panitia / WO pada grup klien ini. Klik <strong>+ Tambah Panitia</strong> untuk membuat akun.
@@ -9346,11 +9395,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         ) : (
                           <div className="divide-y divide-stone-100">
                             {panitiaUsers
-                              .filter(
-                                (pu) =>
-                                  selectedClientGroupFilter === 'ALL' ||
-                                  (pu.clientId || 'client-utama') ===
-                                    selectedClientGroupFilter
+                              .filter((pu) =>
+                                isSuperadmin
+                                  ? selectedClientGroupFilter === 'ALL' ||
+                                    (pu.clientId || 'client-utama') ===
+                                      selectedClientGroupFilter
+                                  : (pu.clientId || 'client-utama') === userClientId
                               )
                               .map((pu) => (
                                 <div
@@ -9613,7 +9663,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
 
                       {/* Reset Seed Default */}
-                      {!isPanitia && (
+                      {isSuperadmin && (
                         <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
@@ -9660,7 +9710,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {/* ===================================================================
             TAB 6: MODUL KHUSUS SUPERADMIN (2-COLUMN SIDEBAR LAYOUT)
            =================================================================== */}
-        {activeTab === 'superadmin' && !isPanitia && (
+        {activeTab === 'superadmin' && isSuperadmin && (
           <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5">
             {/* TOP HEADER BANNER CARD (MATCHING PENGATURAN THEME) */}
             <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
@@ -17964,7 +18014,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       >
         <div
           className={`grid ${
-            isPanitia ? 'grid-cols-4' : 'grid-cols-6'
+            isPanitia ? 'grid-cols-4' : isSuperadmin ? 'grid-cols-6' : 'grid-cols-5'
           } gap-1 items-stretch`}
         >
           {[
@@ -17997,7 +18047,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Pengaturan',
               icon: Settings,
             },
-            ...(!isPanitia
+            ...(isSuperadmin
               ? [
                   {
                     id: 'superadmin' as AdminModuleTab,

@@ -352,11 +352,11 @@ function WeddingAppContent() {
     });
 
   const activeWorkspaceClientId = useMemo(() => {
-    if (
-      adminUser?.clientId &&
-      adminUser.clientId !== 'client-utama'
-    ) {
-      return adminUser.clientId;
+    const isSuper =
+      adminUser?.role === 'SUPERADMIN' ||
+      adminUser?.username?.trim().toLowerCase() === 'superadmin';
+    if (!isSuper) {
+      return adminUser?.clientId || 'client-utama';
     }
     return selectedAdminWorkspaceId || 'client-utama';
   }, [adminUser, selectedAdminWorkspaceId]);

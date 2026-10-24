@@ -91,6 +91,241 @@ interface PublicInvitationViewProps {
 const DEFAULT_PREWED_BG =
   'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
+interface FloralCornerOrnamentProps {
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
+  position,
+  size = 'md',
+  className = '',
+}) => {
+  const posClasses =
+    position === 'top-left'
+      ? 'top-0 left-0'
+      : position === 'top-right'
+      ? 'top-0 right-0 -scale-x-100'
+      : position === 'bottom-left'
+      ? 'bottom-0 left-0 -scale-y-100'
+      : 'bottom-0 right-0 -scale-x-100 -scale-y-100';
+
+  const sizeClasses =
+    size === 'sm'
+      ? 'w-16 h-16 sm:w-20 sm:h-20'
+      : size === 'lg'
+      ? 'w-28 h-28 sm:w-36 sm:h-36'
+      : 'w-20 h-20 sm:w-28 sm:h-28';
+
+  const swayClass =
+    position === 'top-left' || position === 'bottom-right'
+      ? 'animate-floral-sway'
+      : 'animate-floral-sway-reverse';
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none select-none absolute z-10 ${posClasses} ${sizeClasses} ${className}`}
+    >
+      <svg
+        viewBox="0 0 120 120"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={`w-full h-full opacity-85 ${swayClass}`}
+      >
+        {/* Soft Pearl & Champagne Glow Backdrop */}
+        <circle cx="24" cy="24" r="22" fill="#D4AF37" fillOpacity="0.10" />
+        {/* Main Curved Botanical Stems */}
+        <path
+          d="M6 108C8 64 34 32 106 8"
+          stroke="#C5A059"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M4 76C18 46 44 24 84 12"
+          stroke="#D4AF37"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeDasharray="2 2"
+        />
+        {/* Delicate Gold Leaves Along Stem */}
+        <path
+          d="M22 72C12 64 12 50 24 46C30 56 28 66 22 72Z"
+          fill="#E6C994"
+          fillOpacity="0.65"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <path
+          d="M42 50C34 38 38 24 52 22C54 34 50 44 42 50Z"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1.1"
+        />
+        <path
+          d="M68 28C64 18 70 10 82 10C82 18 76 25 68 28Z"
+          fill="#E6C994"
+          fillOpacity="0.6"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <path
+          d="M34 62C46 58 56 64 58 76C46 76 38 70 34 62Z"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1"
+        />
+        <path
+          d="M56 38C68 36 76 42 78 52C67 52 60 46 56 38Z"
+          fill="#E6C994"
+          fillOpacity="0.55"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        {/* Corner Rose / Jasmine Blossom */}
+        <circle
+          cx="28"
+          cy="28"
+          r="11"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1.3"
+        />
+        <circle
+          cx="28"
+          cy="28"
+          r="6.5"
+          fill="#E6C994"
+          fillOpacity="0.75"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <circle cx="28" cy="28" r="2.8" fill="#9A742B" />
+        {/* Pearl & Gold Berries */}
+        <circle cx="16" cy="46" r="3" fill="#FFFDF9" stroke="#C5A059" strokeWidth="1" />
+        <circle cx="48" cy="18" r="3.2" fill="#FFFDF9" stroke="#C5A059" strokeWidth="1" />
+        <circle cx="18" cy="88" r="2.5" fill="#D4AF37" />
+        <circle cx="88" cy="16" r="2.5" fill="#D4AF37" />
+        <circle cx="62" cy="56" r="2" fill="#C5A059" />
+      </svg>
+    </div>
+  );
+};
+
+const FLOATING_PETALS_DATA = [
+  { id: 1, left: '6%', duration: '13s', delay: '0s', size: 14, isSparkle: false },
+  { id: 2, left: '14%', duration: '16s', delay: '2.5s', size: 10, isSparkle: true },
+  { id: 3, left: '23%', duration: '12s', delay: '1.2s', size: 16, isSparkle: false },
+  { id: 4, left: '32%', duration: '18s', delay: '4.5s', size: 11, isSparkle: true },
+  { id: 5, left: '41%', duration: '14s', delay: '0.8s', size: 15, isSparkle: false },
+  { id: 6, left: '50%', duration: '17s', delay: '6.0s', size: 12, isSparkle: false },
+  { id: 7, left: '59%', duration: '11s', delay: '3.2s', size: 10, isSparkle: true },
+  { id: 8, left: '68%', duration: '15s', delay: '1.8s', size: 15, isSparkle: false },
+  { id: 9, left: '76%', duration: '19s', delay: '5.4s', size: 11, isSparkle: true },
+  { id: 10, left: '84%', duration: '13.5s', delay: '2.1s', size: 14, isSparkle: false },
+  { id: 11, left: '91%', duration: '16.5s', delay: '7.5s', size: 12, isSparkle: false },
+  { id: 12, left: '96%', duration: '12.5s', delay: '4.0s', size: 10, isSparkle: true },
+];
+
+const FloatingPetalsAmbient: React.FC = () => (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none fixed inset-0 z-20 overflow-hidden select-none"
+  >
+    {FLOATING_PETALS_DATA.map((p) => (
+      <div
+        key={p.id}
+        className="absolute -top-8 animate-float-petal"
+        style={{
+          left: p.left,
+          animationDuration: p.duration,
+          animationDelay: p.delay,
+        }}
+      >
+        {p.isSparkle ? (
+          <div
+            style={{ width: p.size, height: p.size }}
+            className="rounded-full bg-gradient-to-br from-[#FFFDF9] via-[#F3D77D] to-[#C5A059] shadow-[0_0_12px_rgba(212,175,55,0.75)] opacity-75"
+          />
+        ) : (
+          <svg
+            width={p.size}
+            height={p.size}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="drop-shadow-[0_2px_6px_rgba(197,160,89,0.35)]"
+          >
+            <path
+              d="M12 2C6.5 6.5 4 12.5 7.5 18C10 21.5 14 21.5 16.5 18C20 12.5 17.5 6.5 12 2Z"
+              fill="url(#petalGrad)"
+              stroke="#D4AF37"
+              strokeWidth="0.8"
+              strokeOpacity="0.65"
+            />
+            <defs>
+              <linearGradient id="petalGrad" x1="6" y1="2" x2="18" y2="21" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#FFFDF9" />
+                <stop offset="0.55" stopColor="#FAF3E3" />
+                <stop offset="1" stopColor="#E6C994" />
+              </linearGradient>
+            </defs>
+          </svg>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+const GoldEmvChipIcon: React.FC<{ className?: string }> = ({ className = 'w-10 h-8' }) => (
+  <svg
+    viewBox="0 0 48 36"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`shrink-0 ${className}`}
+    aria-hidden="true"
+  >
+    <rect
+      x="1"
+      y="1"
+      width="46"
+      height="34"
+      rx="6"
+      fill="url(#emvGoldGrad)"
+      stroke="#9A742B"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M16 1V35M32 1V35M1 12H16M32 12H47M1 24H16M32 24H47"
+      stroke="#8B6914"
+      strokeWidth="1"
+      strokeOpacity="0.65"
+    />
+    <rect
+      x="16"
+      y="8"
+      width="16"
+      height="20"
+      rx="3"
+      stroke="#8B6914"
+      strokeWidth="1"
+      strokeOpacity="0.7"
+      fill="#F3D77D"
+      fillOpacity="0.25"
+    />
+    <defs>
+      <linearGradient id="emvGoldGrad" x1="0" y1="0" x2="48" y2="36" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#FAF0CA" />
+        <stop offset="0.45" stopColor="#D4AF37" />
+        <stop offset="0.8" stopColor="#C5A059" />
+        <stop offset="1" stopColor="#9A742B" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
 export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   settings,
   guests,
@@ -103,9 +338,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   onSubmitRsvp,
 }) => {
   const [isOpened, setIsOpened] = useState(false);
+  const [isOpeningTransition, setIsOpeningTransition] = useState(false);
   const [lang, setLang] = useState<'ID' | 'EN'>(settings.defaultLanguage || 'ID');
   const [shareCopiedToast, setShareCopiedToast] = useState(false);
   const hasTrackedPageViewRef = useRef(false);
+  const invitationContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (settings.defaultLanguage) {
@@ -186,11 +423,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isOpened || settings.invitationModerationMode === 'MAINTENANCE') {
+    if (
+      (!isOpened && !isOpeningTransition) ||
+      settings.invitationModerationMode === 'MAINTENANCE'
+    ) {
       weddingMusicPlayer.stop();
       setIsPlayingMusic(false);
     }
-  }, [isOpened, settings.invitationModerationMode]);
+  }, [isOpened, isOpeningTransition, settings.invitationModerationMode]);
 
   const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
@@ -584,11 +824,99 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       resolvedGuestForOpen?.guestName,
       resolvedGuestForOpen?.invitationCode
     );
-    setIsOpened(true);
-    weddingMusicPlayer.start();
+    const initialTrackId = currentTrack?.id || playlist[0]?.id;
+    if (initialTrackId) {
+      weddingMusicPlayer.playTrack(initialTrackId);
+    } else {
+      weddingMusicPlayer.start();
+    }
     setIsPlayingMusic(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsOpeningTransition(true);
+    setTimeout(() => {
+      setIsOpened(true);
+      setIsOpeningTransition(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 720);
   };
+
+  const googleCalendarUrl = useMemo(() => {
+    const groomNick =
+      settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+        ? settings.groomNickname
+        : 'Eko';
+    const brideNick =
+      settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+        ? settings.brideNickname
+        : 'Selo';
+    const evTitle = activeCountdownEvent?.title || 'Pernikahan';
+    const title = `The Wedding of ${groomNick} & ${brideNick} (${evTitle})`;
+    const rawIso =
+      activeCountdownEvent?.datetime ||
+      settings.weddingDatetime ||
+      '2026-12-19T09:00:00+07:00';
+    const parsedStart = new Date(rawIso);
+    const start = Number.isNaN(parsedStart.getTime())
+      ? new Date('2026-12-19T09:00:00+07:00')
+      : parsedStart;
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000);
+    const fmt = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const dates = `${fmt(start)}/${fmt(end)}`;
+    const location = activeCountdownEvent
+      ? `${activeCountdownEvent.venue}, ${activeCountdownEvent.address}`
+      : `${settings.event2Venue || ''}, ${settings.event2Address || ''}`;
+    const details = `Undangan Pernikahan ${settings.groomFullName} & ${settings.brideFullName} — ${evTitle} (${
+      activeCountdownEvent?.dateLabel || settings.event2DateLabel
+    } • ${activeCountdownEvent?.timeLabel || settings.event2TimeLabel}).`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      title
+    )}&dates=${dates}&details=${encodeURIComponent(
+      details
+    )}&location=${encodeURIComponent(location)}`;
+  }, [activeCountdownEvent, settings]);
+
+  useEffect(() => {
+    if (!isOpened) return;
+    const rootEl = invitationContainerRef.current ?? document;
+    const elements = Array.from(rootEl.querySelectorAll('.inv-reveal'));
+    if (elements.length === 0) return;
+
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      elements.forEach((el) => el.classList.add('inv-revealed'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('inv-revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -30px 0px' }
+    );
+
+    elements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
+        el.classList.add('inv-revealed');
+      } else {
+        observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [
+    isOpened,
+    showLoveStory,
+    showGallery,
+    visibleEvents.length,
+    settings.showCoupleSection,
+    settings.showRsvpSection,
+    settings.showGiftSection,
+  ]);
 
   const handleSharePublicLink = async () => {
     const shareUrl =
@@ -883,14 +1211,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // 1. COVER PEMBUKA (BRIGHT PREWEDDING SILHOUETTE & FROSTED GLASS GATE)
   // ============================================================================
   if (!isOpened) {
+    const coverFitMode = settings.photoAdjustments?.coverBgUrl?.fitMode;
     return (
-      <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
+      <div
+        className={`min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none transition-all duration-700 ease-in-out ${
+          isOpeningTransition
+            ? '-translate-y-full opacity-0 scale-105 pointer-events-none'
+            : 'translate-y-0 opacity-100 scale-100'
+        }`}
+      >
+        <FloatingPetalsAmbient />
+
         {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <img
             src={coverBgUrl}
             alt="Cover Background"
-            className="w-full h-full object-cover object-center transition-transform duration-1000"
+            className={`w-full h-full object-cover object-center transition-transform duration-1000 ${
+              coverFitMode !== 'contain' ? 'animate-ken-burns' : ''
+            }`}
             style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
           />
         </div>
@@ -944,23 +1283,31 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         {/* Center Cover Invitation Frosted Glass Card */}
         <div className="relative z-10 max-w-xl mx-auto px-3.5 sm:px-5 py-4 sm:py-6 text-center flex flex-col items-center my-auto w-full">
           <div className="w-full rounded-3xl sm:rounded-[2.25rem] bg-white/75 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-5 sm:p-10 relative overflow-hidden">
+            <FloralCornerOrnament position="top-left" />
+            <FloralCornerOrnament position="top-right" />
+            <FloralCornerOrnament position="bottom-left" />
+            <FloralCornerOrnament position="bottom-right" />
+
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
             {/* Pure Neutral Interlocking Wedding Rings Emblem */}
-            <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5 relative z-10">
               <WeddingRingsIcon className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]" />
             </div>
 
-            <p className="text-[11px] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#9A742B] font-semibold mb-1.5 sm:mb-2">
+            <p className="text-[11px] sm:text-xs uppercase tracking-[0.28em] sm:tracking-[0.34em] text-[#9A742B] font-bold mb-1">
+              The Wedding Of
+            </p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-stone-500 font-semibold mb-2">
               {lang === 'ID' ? 'Undangan Pernikahan' : 'Wedding Invitation'}
             </p>
 
-            <h1 className="font-serif text-2xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight mb-1.5 sm:mb-2 break-words">
+            <h1 className="font-script text-4xl sm:text-6xl font-normal tracking-normal text-stone-900 leading-tight mb-2 break-words py-1">
               {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
                 ? settings.groomNickname
                 : 'Eko'}{' '}
-              <span className="text-[#C5A059] font-normal italic">&amp;</span>{' '}
+              <span className="text-[#C5A059]">&amp;</span>{' '}
               {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
                 ? settings.brideNickname
                 : 'Selo'}
@@ -1085,8 +1432,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // ============================================================================
   // 2. MAIN OPENED INVITATION VIEW (SYMMETRICAL CARDS & CUSTOMIZABLE BG)
   // ============================================================================
+  const heroFitMode = settings.photoAdjustments?.heroPrewedUrl?.fitMode;
   return (
-    <div className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pt-14 sm:pt-16 pb-28 sm:pb-24 overflow-x-clip selection:bg-[#D4AF37]/25 selection:text-stone-900">
+    <div
+      ref={invitationContainerRef}
+      className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pt-14 sm:pt-16 pb-28 sm:pb-24 overflow-x-clip selection:bg-[#D4AF37]/25 selection:text-stone-900"
+    >
+      <FloatingPetalsAmbient />
+
       {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <img
@@ -1111,7 +1464,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <WeddingRingsIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="truncate">
-              <p className="font-serif text-xs sm:text-base font-bold text-stone-900 truncate">
+              <p className="font-editorial text-xs sm:text-base font-bold text-stone-900 truncate">
                 {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
                   ? settings.groomNickname
                   : 'Eko'}{' '}
@@ -1127,7 +1480,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
-            {/* Button 1: Individual Play/Pause Pill */}
+            {/* Button 1: Individual Play/Pause Pill with Spinning Vinyl & Equalizer Bars */}
             <button
               type="button"
               onClick={handleToggleMusic}
@@ -1139,13 +1492,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               title={isPlayingMusic ? 'Jeda Musik (Pause)' : 'Putar Musik (Play)'}
             >
               {isPlayingMusic ? (
-                <Pause className="w-3.5 h-3.5 text-[#B68D40]" />
+                <span className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-[#D4AF37] via-[#8B6914] to-stone-900 animate-spin-vinyl shrink-0 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FAF3E3]" />
+                </span>
               ) : (
                 <Play className="w-3.5 h-3.5 text-[#B68D40]" />
               )}
               <span className="hidden sm:inline max-w-[130px] truncate">
                 {currentTrack?.title || settings.musicTitle || 'Musik'}
               </span>
+              {isPlayingMusic && (
+                <span
+                  aria-hidden="true"
+                  className="inline-flex items-end gap-0.5 h-3 ml-0.5 shrink-0"
+                >
+                  <span className="w-0.5 h-3 rounded-full bg-[#B68D40] animate-eq-1" />
+                  <span className="w-0.5 h-3 rounded-full bg-[#D4AF37] animate-eq-2" />
+                  <span className="w-0.5 h-3 rounded-full bg-[#9A742B] animate-eq-3" />
+                </span>
+              )}
             </button>
 
             {/* Button 2: Individual Playlist & Volume Pill */}
@@ -1331,19 +1696,39 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* HERO PREWEDDING SILHOUETTE BANNER & LIVE COUNTDOWN */}
       <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
+          <div className="inv-reveal inv-reveal-up relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
+            <FloralCornerOrnament position="top-left" />
+            <FloralCornerOrnament position="top-right" />
+            <FloralCornerOrnament position="bottom-left" />
+            <FloralCornerOrnament position="bottom-right" />
+
             {/* Prewedding Silhouette Image Header (16:9 matching Crop Studio) */}
             <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-stone-900">
               <img
                 src={heroBgUrl}
                 alt="Prewedding Banner"
-                className="w-full h-full object-cover object-center"
+                className={`w-full h-full object-cover object-center ${
+                  heroFitMode !== 'contain' ? 'animate-ken-burns' : ''
+                }`}
                 style={getPhotoAdjustStyle(settings.photoAdjustments?.heroPrewedUrl)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-stone-950/20 to-transparent pointer-events-none" />
               <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
                 <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Holy Matrimony &amp; Reception</span>
+              </div>
+
+              {/* Romantic Script Nickname Accent Over Hero Photo */}
+              <div className="absolute bottom-14 sm:bottom-16 inset-x-0 text-center pointer-events-none px-4">
+                <p className="font-script text-3xl sm:text-5xl text-[#F5E6C8] drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]">
+                  {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                    ? settings.groomNickname
+                    : 'Eko'}{' '}
+                  &amp;{' '}
+                  {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                    ? settings.brideNickname
+                    : 'Selo'}
+                </p>
               </div>
             </div>
 
@@ -1353,9 +1738,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <WeddingRingsIcon className="w-8 h-8 sm:w-9 sm:h-9" />
               </div>
 
-              <h1 className="font-serif text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
+              <h1 className="font-editorial text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
                 {settings.groomFullName}
-                <span className="block text-lg sm:text-3xl font-normal italic text-[#B68D40] my-1 sm:my-1.5">
+                <span className="block font-script text-3xl sm:text-5xl font-normal text-[#B68D40] my-1 sm:my-1.5">
                   &amp;
                 </span>
                 {settings.brideFullName}
@@ -1367,7 +1752,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
               {/* Countdown Timer Boxes (Conditional via enableCountdown Switch) */}
               {activeCountdownEvent && (
-                <div className="max-w-lg mx-auto mb-6 sm:mb-8 space-y-3">
+                <div className="max-w-lg mx-auto mb-6 sm:mb-8 space-y-3.5">
                   <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
                     <Clock className="w-3.5 h-3.5" />
                     <span>
@@ -1417,9 +1802,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     ].map((item) => (
                       <div
                         key={item.label}
-                        className="h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
+                        className="inv-reveal inv-reveal-zoom h-full rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)] flex flex-col items-center justify-center"
                       >
-                        <div className="font-serif text-xl sm:text-4xl font-bold text-[#9A742B]">
+                        <div className="font-editorial text-xl sm:text-4xl font-bold text-[#9A742B]">
                           {String(item.value).padStart(2, '0')}
                         </div>
                         <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-stone-500 font-semibold mt-0.5">
@@ -1428,13 +1813,31 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       </div>
                     ))}
                   </div>
+
+                  {/* Save The Date (Google Calendar) Interactive Pill Button */}
+                  <div className="pt-1 flex justify-center">
+                    <a
+                      href={googleCalendarUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? '📅 Simpan Tanggal di Google Calendar (Save The Date)'
+                          : '📅 Save The Date to Google Calendar'}
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-[#B68D40] shrink-0" />
+                    </a>
+                  </div>
                 </div>
               )}
 
               {/* Verse / Quote Card (Conditional via showQuoteSection) */}
               {settings.showQuoteSection !== false && settings.quoteVerse && (
-                <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-4 sm:p-6 shadow-2xs">
-                  <p className="font-serif italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
+                <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/90 border border-[#D4AF37]/35 p-4 sm:p-6 shadow-2xs">
+                  <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
                     &ldquo;{settings.quoteVerse}&rdquo;
                   </p>
                   {settings.quoteSource && (
@@ -1444,30 +1847,69 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Animated Scroll-Down Mouse Indicator Pill */}
+              <div className="mt-6 flex justify-center">
+                <a
+                  href="#mempelai"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#D4AF37]/35 text-[10px] sm:text-xs font-semibold text-[#8B6914] shadow-2xs hover:bg-[#FAF3E3] transition-all"
+                >
+                  <span className="w-4 h-6 rounded-full border-2 border-[#B68D40] flex items-start justify-center p-0.5">
+                    <span className="w-1 h-1.5 rounded-full bg-[#B68D40] animate-bounce" />
+                  </span>
+                  <span>
+                    {lang === 'ID'
+                      ? 'Gulir untuk melihat rangkaian acara'
+                      : 'Scroll down to explore'}
+                  </span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS) */}
+      {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS WITH ARCH PORTRAITS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
+          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               The Happy Couple
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               {lang === 'ID' ? 'Mempelai yang Berbahagia' : 'The Happy Couple'}
             </h2>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
+            <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mt-1">
+              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                ? settings.groomNickname
+                : 'Eko'}{' '}
+              &amp;{' '}
+              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                ? settings.brideNickname
+                : 'Selo'}
+            </p>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Groom Card */}
-            <div className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-              <div className="flex flex-col items-center w-full">
-                <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
+            <div className="inv-reveal inv-reveal-left relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+              <FloralCornerOrnament position="top-left" size="sm" />
+              <FloralCornerOrnament position="top-right" size="sm" />
+
+              <div className="flex flex-col items-center w-full relative z-10">
+                <div className="relative mb-5 sm:mb-6 shrink-0">
+                  <FloralCornerOrnament
+                    position="bottom-left"
+                    size="sm"
+                    className="-bottom-3 -left-6 opacity-90"
+                  />
+                  <FloralCornerOrnament
+                    position="bottom-right"
+                    size="sm"
+                    className="-bottom-3 -right-6 opacity-90"
+                  />
+                  <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
                     <img
                       src={settings.groomPhotoUrl}
                       alt={settings.groomFullName}
@@ -1476,10 +1918,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     />
                   </div>
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
                   {settings.groomRankAndTitle || (lang === 'ID' ? 'Mempelai Pria' : 'The Groom')}
                 </span>
-                <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
+                <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mb-0.5">
+                  {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
+                    ? settings.groomNickname
+                    : 'Eko'}
+                </p>
+                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.groomFullName}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
@@ -1489,17 +1936,48 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {settings.groomParents}
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto">
+              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
                 <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
                 <span>{settings.groomOrigin}</span>
               </div>
             </div>
 
+            {/* Calligraphic "&" Separator Between Groom & Bride */}
+            <div
+              aria-hidden="true"
+              className="flex md:hidden items-center justify-center -my-1"
+            >
+              <span className="font-script text-4xl text-[#B68D40] px-4 py-1 rounded-full bg-white/90 border border-[#D4AF37]/45 shadow-sm">
+                &amp;
+              </span>
+            </div>
+            <div
+              aria-hidden="true"
+              className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+            >
+              <span className="w-14 h-14 rounded-full bg-white/95 border-2 border-[#D4AF37]/60 shadow-[0_10px_30px_rgba(197,160,89,0.28)] flex items-center justify-center font-script text-4xl sm:text-5xl text-[#B68D40]">
+                &amp;
+              </span>
+            </div>
+
             {/* Bride Card */}
-            <div className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-              <div className="flex flex-col items-center w-full">
-                <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-br from-[#E6C994] via-[#D4AF37] to-[#B68D40] shadow-lg mb-4 sm:mb-5 overflow-hidden shrink-0">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
+            <div className="inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+              <FloralCornerOrnament position="top-left" size="sm" />
+              <FloralCornerOrnament position="top-right" size="sm" />
+
+              <div className="flex flex-col items-center w-full relative z-10">
+                <div className="relative mb-5 sm:mb-6 shrink-0">
+                  <FloralCornerOrnament
+                    position="bottom-left"
+                    size="sm"
+                    className="-bottom-3 -left-6 opacity-90"
+                  />
+                  <FloralCornerOrnament
+                    position="bottom-right"
+                    size="sm"
+                    className="-bottom-3 -right-6 opacity-90"
+                  />
+                  <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
                     <img
                       src={settings.bridePhotoUrl}
                       alt={settings.brideFullName}
@@ -1508,10 +1986,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     />
                   </div>
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
                   {settings.brideTitle || (lang === 'ID' ? 'Mempelai Wanita' : 'The Bride')}
                 </span>
-                <h3 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
+                <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mb-0.5">
+                  {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
+                    ? settings.brideNickname
+                    : 'Selo'}
+                </p>
+                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.brideFullName}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
@@ -1521,7 +2004,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {settings.brideParents}
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto">
+              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
                 <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
                 <span>{settings.brideOrigin}</span>
               </div>
@@ -1533,11 +2016,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
         <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
+          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               Save The Date
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               {lang === 'ID'
                 ? 'Rangkaian Acara Pernikahan'
                 : 'Wedding Events Schedule'}
@@ -1560,13 +2043,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {visibleEvents.map((ev, idx) => (
               <div
                 key={idx}
-                className={`h-full min-w-0 overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
+                className={`inv-reveal inv-reveal-up relative h-full min-w-0 overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
                   ev.highlight
                     ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
                     : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
                 }`}
               >
-                <div className="flex flex-col flex-1">
+                <FloralCornerOrnament position="top-right" size="sm" />
+                <div className="flex flex-col flex-1 relative z-10">
                   <div className="flex items-center justify-between gap-2 mb-4">
                     <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
                       {ev.badge}
@@ -1574,7 +2058,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <WeddingRingsIcon className="w-5 h-5 text-[#C5A059]" />
                   </div>
 
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 mb-1">
+                  <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1">
                     {ev.title}
                   </h3>
                   <p className="text-xs text-stone-500 mb-4 sm:mb-5 min-h-[2rem]">
@@ -1633,7 +2117,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {(showLoveStory || showGallery) && (
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
+          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               {settings.gallerySectionSubtitle?.trim() ||
                 (showLoveStory && !showGallery
@@ -1642,7 +2126,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     : 'Our Love Story'
                   : 'Our Journey & Moments')}
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               {settings.gallerySectionTitle?.trim() ||
                 (showLoveStory && !showGallery
                   ? lang === 'ID'
@@ -1655,58 +2139,75 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
           </div>
 
-          {/* Love Story Timeline Cards */}
+          {/* Love Story Timeline Cards with Connected Vertical Golden Timeline */}
           {showLoveStory &&
             (effectiveLoveStory.length > 0 ? (
-              <div className="mb-8 sm:mb-10 space-y-3">
+              <div className="mb-8 sm:mb-10 space-y-4">
                 <div className="flex items-center justify-center gap-2">
                   <Heart className="w-3.5 h-3.5 text-[#C5A059]" />
                   <span className="text-xs font-bold uppercase tracking-widest text-[#8B6914]">
                     {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
                   </span>
                 </div>
-                <div
-                  className={`grid grid-cols-1 gap-4 sm:gap-5 items-stretch ${
-                    effectiveLoveStory.length === 1
-                      ? 'max-w-lg mx-auto'
-                      : effectiveLoveStory.length === 3
-                      ? 'md:grid-cols-3'
-                      : 'sm:grid-cols-2'
-                  }`}
-                >
-                  {effectiveLoveStory.map((story, i) => (
-                    <div
-                      key={story.id || i}
-                      className="h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2 mb-2.5">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
-                            {story.dateLabel}
-                          </span>
-                          <Heart className="w-4 h-4 text-[#C5A059]" />
+                <div className="relative">
+                  {/* Decorative Vertical Golden Timeline Connector Line */}
+                  <div
+                    aria-hidden="true"
+                    className="hidden md:block absolute left-1/2 top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-[#D4AF37]/60 to-transparent -translate-x-1/2 pointer-events-none"
+                  />
+                  <div
+                    className={`grid grid-cols-1 gap-4 sm:gap-5 items-stretch ${
+                      effectiveLoveStory.length === 1
+                        ? 'max-w-lg mx-auto'
+                        : effectiveLoveStory.length === 3
+                        ? 'md:grid-cols-3'
+                        : 'sm:grid-cols-2'
+                    }`}
+                  >
+                    {effectiveLoveStory.map((story, i) => (
+                      <div
+                        key={story.id || i}
+                        className={`inv-reveal ${
+                          i % 2 === 0 ? 'inv-reveal-left' : 'inv-reveal-right'
+                        } relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between`}
+                      >
+                        <FloralCornerOrnament position="bottom-right" size="sm" />
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between gap-2 mb-2.5">
+                            <div className="inline-flex items-center gap-1.5">
+                              <span className="w-6 h-6 rounded-full bg-gradient-to-br from-[#C5A059] to-[#9A742B] text-white text-[10px] font-extrabold flex items-center justify-center shadow-2xs">
+                                {String(i + 1).padStart(2, '0')}
+                              </span>
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A742B] bg-[#FAF3E3] px-3 py-0.5 rounded-full border border-[#D4AF37]/35">
+                                {story.dateLabel}
+                              </span>
+                            </div>
+                            <span className="w-7 h-7 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 flex items-center justify-center text-[#C5A059]">
+                              <Heart className="w-3.5 h-3.5 fill-[#C5A059]/25" />
+                            </span>
+                          </div>
+                          <h3 className="font-editorial text-lg font-bold text-stone-900 mb-1.5">
+                            {story.title}
+                          </h3>
+                          <p className="text-xs text-stone-600 leading-relaxed">
+                            {story.description}
+                          </p>
                         </div>
-                        <h3 className="font-serif text-lg font-bold text-stone-900 mb-1.5">
-                          {story.title}
-                        </h3>
-                        <p className="text-xs text-stone-600 leading-relaxed">
-                          {story.description}
-                        </p>
+                        {story.location && (
+                          <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5 relative z-10">
+                            <MapPin className="w-3 h-3 text-[#B68D40]" />
+                            <span>{story.location}</span>
+                          </div>
+                        )}
                       </div>
-                      {story.location && (
-                        <div className="pt-3 mt-4 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-[#B68D40]" />
-                          <span>{story.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="max-w-xl mx-auto mb-8 sm:mb-10 rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
+              <div className="inv-reveal inv-reveal-up max-w-xl mx-auto mb-8 sm:mb-10 rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
                 <Heart className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
-                <p className="font-serif font-bold text-stone-800 text-base">
+                <p className="font-editorial font-bold text-stone-800 text-base">
                   {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
@@ -1717,115 +2218,165 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
             ))}
 
-          {/* Smooth Auto-Sliding Photo Gallery Carousel (Steam-Style with Bottom-Center Dots Over Photo, No Navigation Arrows) */}
+          {/* Smooth Auto-Sliding Photo Gallery Carousel + Interactive Thumbnail Strip */}
           {showGallery &&
             (effectiveGalleryPhotos.length > 0 ? (
-              <div
-                className="relative w-full aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
-                onTouchStart={(e) => {
-                  setTouchStartX(e.touches[0]?.clientX ?? null);
-                }}
-                onTouchEnd={(e) => {
-                  if (touchStartX === null || effectiveGalleryPhotos.length <= 1) return;
-                  const endX = e.changedTouches[0]?.clientX ?? touchStartX;
-                  const diff = touchStartX - endX;
-                  if (Math.abs(diff) > 40) {
-                    if (diff > 0) {
-                      setActiveGalleryIdx(
-                        (prev) => (prev + 1) % effectiveGalleryPhotos.length
-                      );
-                    } else {
-                      setActiveGalleryIdx(
-                        (prev) =>
-                          (prev - 1 + effectiveGalleryPhotos.length) %
-                          effectiveGalleryPhotos.length
-                      );
-                    }
-                  }
-                  setTouchStartX(null);
-                }}
-              >
-                {/* Horizontal Smooth Sliding Track */}
+              <div className="inv-reveal inv-reveal-up space-y-3">
                 <div
-                  className="flex w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-                  style={{
-                    transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
+                  className="relative w-full aspect-[16/9] rounded-3xl overflow-hidden border-2 border-white/95 bg-stone-900 shadow-[0_22px_60px_rgba(160,130,85,0.18)] select-none"
+                  onTouchStart={(e) => {
+                    setTouchStartX(e.touches[0]?.clientX ?? null);
+                  }}
+                  onTouchEnd={(e) => {
+                    if (touchStartX === null || effectiveGalleryPhotos.length <= 1) return;
+                    const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+                    const diff = touchStartX - endX;
+                    if (Math.abs(diff) > 40) {
+                      if (diff > 0) {
+                        setActiveGalleryIdx(
+                          (prev) => (prev + 1) % effectiveGalleryPhotos.length
+                        );
+                      } else {
+                        setActiveGalleryIdx(
+                          (prev) =>
+                            (prev - 1 + effectiveGalleryPhotos.length) %
+                            effectiveGalleryPhotos.length
+                        );
+                      }
+                    }
+                    setTouchStartX(null);
                   }}
                 >
-                  {effectiveGalleryPhotos.map((photo, idx) => (
-                    <div
-                      key={photo.id || idx}
-                      onClick={() => setSelectedPhoto(photo)}
-                      className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group bg-stone-950"
-                    >
-                      {/* Ambient Blurred Backdrop so custom/portrait crops never have harsh black bars or get cut off */}
-                      <img
-                        src={photo.imageUrl}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-55 pointer-events-none"
-                      />
-                      <img
-                        src={photo.imageUrl}
-                        alt={photo.title}
-                        className="relative z-10 w-full h-full object-contain object-center transition-transform duration-1000 ease-out"
-                        style={getPhotoAdjustStyle(photo.adjustment)}
-                      />
-                      {/* Soft Gradient Overlay for Caption & Bottom Dots */}
-                      <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent pointer-events-none" />
+                  {/* Horizontal Smooth Sliding Track */}
+                  <div
+                    className="flex w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+                    style={{
+                      transform: `translate3d(-${safeGalleryIdx * 100}%, 0, 0)`,
+                    }}
+                  >
+                    {effectiveGalleryPhotos.map((photo, idx) => {
+                      const isSlideActive = idx === safeGalleryIdx;
+                      const slideFitMode = photo.adjustment?.fitMode;
+                      return (
+                        <div
+                          key={photo.id || idx}
+                          onClick={() => setSelectedPhoto(photo)}
+                          className="relative w-full h-full shrink-0 overflow-hidden cursor-pointer group bg-stone-950"
+                        >
+                          {/* Ambient Blurred Backdrop so custom/portrait crops never have harsh black bars or get cut off */}
+                          <img
+                            src={photo.imageUrl}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-55 pointer-events-none"
+                          />
+                          <img
+                            src={photo.imageUrl}
+                            alt={photo.title}
+                            className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-1000 ease-out ${
+                              isSlideActive && slideFitMode !== 'contain'
+                                ? 'animate-ken-burns'
+                                : ''
+                            }`}
+                            style={getPhotoAdjustStyle(photo.adjustment)}
+                          />
+                          {/* Soft Gradient Overlay for Caption & Bottom Dots */}
+                          <div className="absolute inset-0 z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent pointer-events-none" />
 
-                      {/* Top Category Pill */}
-                      {photo.category && photo.category.trim() !== '' && (
-                        <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 z-20 flex items-center gap-2 pointer-events-none">
-                          <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                            {photo.category}
-                          </span>
+                          {/* Top Category Pill */}
+                          {photo.category && photo.category.trim() !== '' && (
+                            <div className="absolute top-3.5 sm:top-5 left-3.5 sm:left-5 z-20 flex items-center gap-2 pointer-events-none">
+                              <span className="px-3 py-1 rounded-full bg-stone-950/55 backdrop-blur-md border border-[#D4AF37]/45 text-[#F3D77D] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                                {photo.category}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Photo Title & Caption Centered Above the Bottom Dots */}
+                          <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none">
+                            <h3 className="font-editorial text-base sm:text-2xl font-bold drop-shadow-sm truncate">
+                              {photo.title}
+                            </h3>
+                            {photo.caption && (
+                              <p className="text-[11px] sm:text-sm text-stone-200/95 mt-0.5 line-clamp-1 drop-shadow-xs">
+                                {photo.caption}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      );
+                    })}
+                  </div>
 
-                      {/* Photo Title & Caption Centered Above the Bottom Dots */}
-                      <div className="absolute bottom-11 sm:bottom-14 left-4 sm:left-8 right-4 sm:right-8 z-20 text-center text-white pointer-events-none">
-                        <h3 className="font-serif text-base sm:text-2xl font-bold drop-shadow-sm truncate">
-                          {photo.title}
-                        </h3>
-                        {photo.caption && (
-                          <p className="text-[11px] sm:text-sm text-stone-200/95 mt-0.5 line-clamp-1 drop-shadow-xs">
-                            {photo.caption}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {/* Centered Small Dots Overlaid on Bottom of Photo (No Navigation Arrows) */}
+                  <div
+                    className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/25 shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {effectiveGalleryPhotos.map((photo, idx) => {
+                      const isActive = idx === safeGalleryIdx;
+                      return (
+                        <button
+                          key={photo.id || idx}
+                          type="button"
+                          aria-label={`Pilih foto ${idx + 1}: ${photo.title}`}
+                          onClick={() => setActiveGalleryIdx(idx)}
+                          title={photo.title}
+                          className={`rounded-full transition-all duration-500 cursor-pointer focus:outline-none ${
+                            isActive
+                              ? 'w-3 h-3 sm:w-3.5 sm:h-3.5 bg-[#F3D77D] ring-2 ring-[#D4AF37]/70 scale-110 shadow-[0_0_10px_rgba(243,215,125,0.85)]'
+                              : 'w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white/55 hover:bg-white/95 hover:scale-110'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Centered Small Dots Overlaid on Bottom of Photo (No Navigation Arrows) */}
-                <div
-                  className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/25 shadow-lg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {effectiveGalleryPhotos.map((photo, idx) => {
-                    const isActive = idx === safeGalleryIdx;
-                    return (
-                      <button
-                        key={photo.id || idx}
-                        type="button"
-                        aria-label={`Pilih foto ${idx + 1}: ${photo.title}`}
-                        onClick={() => setActiveGalleryIdx(idx)}
-                        title={photo.title}
-                        className={`rounded-full transition-all duration-500 cursor-pointer focus:outline-none ${
-                          isActive
-                            ? 'w-3 h-3 sm:w-3.5 sm:h-3.5 bg-[#F3D77D] ring-2 ring-[#D4AF37]/70 scale-110 shadow-[0_0_10px_rgba(243,215,125,0.85)]'
-                            : 'w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white/55 hover:bg-white/95 hover:scale-110'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
+                {/* Interactive Thumbnail Strip Below Main Gallery Stage */}
+                {effectiveGalleryPhotos.length > 1 && (
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3 pt-1">
+                    {effectiveGalleryPhotos.map((photo, idx) => {
+                      const isActive = idx === safeGalleryIdx;
+                      return (
+                        <button
+                          key={`thumb-${photo.id || idx}`}
+                          type="button"
+                          onClick={() => setActiveGalleryIdx(idx)}
+                          onDoubleClick={() => setSelectedPhoto(photo)}
+                          title={`${photo.title} (Klik untuk melihat, klik 2x untuk memperbesar)`}
+                          className={`group relative aspect-[16/10] rounded-2xl overflow-hidden transition-all duration-300 ${
+                            isActive
+                              ? 'ring-2 ring-[#D4AF37] border-2 border-white shadow-[0_8px_22px_rgba(197,160,89,0.32)] scale-[1.02]'
+                              : 'border border-white/80 opacity-70 hover:opacity-100 hover:scale-[1.01]'
+                          }`}
+                        >
+                          <img
+                            src={photo.imageUrl}
+                            alt={photo.title}
+                            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                            style={getPhotoAdjustStyle(photo.adjustment)}
+                          />
+                          <div
+                            className={`absolute inset-0 transition-opacity ${
+                              isActive
+                                ? 'bg-gradient-to-t from-stone-950/45 via-transparent to-transparent'
+                                : 'bg-stone-950/20 group-hover:bg-transparent'
+                            }`}
+                          />
+                          <span className="absolute bottom-1.5 left-2 right-2 text-[10px] font-bold text-white truncate drop-shadow-xs text-left hidden sm:block">
+                            {photo.title}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="max-w-xl mx-auto rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
+              <div className="inv-reveal inv-reveal-up max-w-xl mx-auto rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
                 <Sparkles className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
-                <p className="font-serif font-bold text-stone-800 text-base">
+                <p className="font-editorial font-bold text-stone-800 text-base">
                   {lang === 'ID' ? 'Galeri Momen Bahagia' : 'Moments of Happiness'}
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
@@ -1841,11 +2392,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
         <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
+          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
               RSVP &amp; Wedding Wishes
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
               {lang === 'ID'
                 ? 'Konfirmasi Kehadiran & Doa Restu'
                 : 'RSVP & Wedding Wishes'}
@@ -1862,13 +2413,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {/* Left Card: RSVP Form (Exact same width & height as Right Card) */}
             <form
               onSubmit={handleRsvpFormSubmit}
-              className="h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
+              className="inv-reveal inv-reveal-left h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm"
             >
               <div className="space-y-3.5 sm:space-y-4">
                 <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-200/80 flex-wrap">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Users className="w-5 h-5 text-[#B68D40] shrink-0" />
-                    <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
+                    <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
                       {lang === 'ID' ? 'Form RSVP Kehadiran' : 'RSVP Attendance Form'}
                     </h3>
                   </div>
@@ -2146,11 +2697,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </form>
 
             {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
-            <div className="h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
+            <div className="inv-reveal inv-reveal-right h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between">
               <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-200/80 shrink-0 flex-wrap">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40] shrink-0" />
-                  <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
+                  <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
                     {lang === 'ID'
                       ? 'Buku Tamu & Doa Restu'
                       : 'Wedding Guestbook & Wishes'}{' '}
@@ -2346,20 +2897,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: AMPLOP DIGITAL & TANDA KASIH (CUSTOMIZABLE + CRYPTO / PAYPAL / BANK / E-WALLET / PHYSICAL GIFT) */}
       {settings.showGiftSection !== false && (
         <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-            <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B]">
+          <div className="inv-reveal inv-reveal-up relative min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+            <FloralCornerOrnament position="top-left" size="sm" />
+            <FloralCornerOrnament position="top-right" size="sm" />
+
+            <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B] relative z-10">
               <Gift className="w-6 h-6" />
             </div>
-            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
+            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold relative z-10">
               Wedding Gift
             </span>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2">
+            <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2 relative z-10">
               {settings.giftSectionTitle?.trim() ||
                 (lang === 'ID'
                   ? 'Amplop Digital & Tanda Kasih'
                   : 'Digital Envelope & Wedding Gift')}
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed relative z-10">
               {settings.giftSectionSubtitle?.trim() ||
                 (lang === 'ID'
                   ? 'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui informasi resmi berikut:'
@@ -2368,7 +2922,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {settings.bankAccounts.length > 0 && (
               <div
-                className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch ${
+                className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch relative z-10 ${
                   settings.bankAccounts.length === 1
                     ? 'max-w-md mx-auto'
                     : settings.bankAccounts.length === 2
@@ -2400,16 +2954,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   return (
                     <div
                       key={acc.id}
-                      className={`h-full min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xs border transition-all ${
+                      className={`inv-reveal inv-reveal-zoom relative h-full min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-[0_12px_32px_rgba(175,145,95,0.14)] border transition-all ${
                         isCrypto
-                          ? 'bg-gradient-to-b from-[#FAF8F5] to-amber-50/60 border-amber-300/70'
+                          ? 'bg-gradient-to-br from-[#FFFDF9] via-amber-50/70 to-[#F3E5C8]/65 border-amber-300/75'
                           : isPaypal
-                          ? 'bg-gradient-to-b from-[#FAF8F5] to-sky-50/60 border-sky-200/80'
-                          : 'bg-[#FAF8F5] border-[#D4AF37]/30'
+                          ? 'bg-gradient-to-br from-[#FFFDF9] via-sky-50/70 to-[#FAF3E3]/70 border-sky-200/85'
+                          : 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3]/80 to-[#F3E5C8]/60 border-[#D4AF37]/45'
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between gap-1.5 flex-wrap mb-2">
+                      {/* Subtle Metallic Card Watermark Circle */}
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -right-8 -top-8 w-28 h-28 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-transparent blur-md"
+                      />
+
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap mb-2.5">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
                               isCrypto
@@ -2439,9 +2999,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           )}
                         </div>
 
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-[#9A742B] block mb-1">
-                          {acc.bankName || (isPaypal ? 'PayPal' : 'Bank')}
-                        </span>
+                        {/* Luxury Metallic VIP Card Row: EMV Smart Chip + Bank/Issuer Name */}
+                        <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <GoldEmvChipIcon className="w-10 h-7 drop-shadow-2xs" />
+                          <span className="font-editorial text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#8B6914] text-right">
+                            {acc.bankName || (isPaypal ? 'PayPal' : 'Bank')}
+                          </span>
+                        </div>
 
                         {isCrypto ? (
                           <div className="rounded-xl bg-white/90 border border-amber-200/90 px-3 py-2 mb-1.5">
@@ -2450,13 +3014,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             </p>
                           </div>
                         ) : (
-                          <p className="font-mono text-base sm:text-lg font-bold text-stone-900 tracking-wider mb-1 break-all">
+                          <p className="font-mono text-base sm:text-lg font-extrabold text-stone-900 tracking-[0.12em] drop-shadow-[0_1px_0_rgba(255,255,255,0.95)] mb-1 break-all">
                             {acc.accountNumber}
                           </p>
                         )}
 
                         {acc.accountHolder && (
-                          <p className="text-xs font-semibold text-stone-700">
+                          <p className="text-xs font-bold uppercase tracking-wider text-stone-700">
                             {isCrypto ? acc.accountHolder : `a.n. ${acc.accountHolder}`}
                           </p>
                         )}
@@ -2638,37 +3202,42 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* CLOSING FOOTER CARD (HIGH-CONTRAST PEARL & CHAMPAGNE GOLD CARD) */}
       <footer className="relative z-10 pt-2 pb-10 sm:pb-12 px-3 sm:px-4 max-w-5xl mx-auto">
-        <div className="relative overflow-hidden rounded-3xl bg-white/92 backdrop-blur-xl border border-white/95 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
-          {/* Subtle Top & Bottom Champagne Gold Accent Lines */}
-          <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5" />
+        <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl bg-white/92 backdrop-blur-xl border border-white/95 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
+          <FloralCornerOrnament position="top-left" />
+          <FloralCornerOrnament position="top-right" />
+          <FloralCornerOrnament position="bottom-left" />
+          <FloralCornerOrnament position="bottom-right" />
 
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5">
+          {/* Subtle Top & Bottom Champagne Gold Accent Lines */}
+          <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5 relative z-10" />
+
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5 relative z-10">
             <WeddingRingsIcon className="w-7 h-7" />
           </div>
 
-          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2">
+          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2 relative z-10">
             Thank You &amp; Blessing
           </span>
 
-          <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-6">
+          <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-6 relative z-10">
             {settings.invitationClosingText}
           </p>
 
           {/* Inner Champagne Gold Couple Signature Box */}
-          <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs">
+          <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs relative z-10">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-1">
               {lang === 'ID' ? 'Kami yang berbahagia,' : 'With love & gratitude,'}
             </p>
-            <p className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-wide">
+            <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-1">
               {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
                 ? settings.groomNickname
                 : 'Eko'}{' '}
-              <span className="text-[#C5A059] font-normal">&amp;</span>{' '}
+              <span className="text-[#C5A059]">&amp;</span>{' '}
               {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
                 ? settings.brideNickname
                 : 'Selo'}
             </p>
-            <p className="text-[11px] sm:text-xs text-stone-600 font-medium mt-1.5">
+            <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-1">
               {settings.groomFullName} &amp; {settings.brideFullName}
             </p>
           </div>

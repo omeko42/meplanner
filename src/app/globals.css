@@ -33,3 +33,149 @@ body {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0.5rem);
 }
+
+/* ============================================================================
+ * Public Wedding Invitation — Typography, Scroll-Reveal & Ambient Animations
+ * ============================================================================ */
+
+.font-script {
+  font-family: var(--font-script), 'Brush Script MT', cursive;
+}
+
+.font-editorial {
+  font-family: var(--font-display-serif), Georgia, 'Times New Roman', serif;
+}
+
+/* Scroll-Reveal Animations */
+.inv-reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.inv-reveal-up {
+  transform: translate3d(0, 42px, 0) scale(0.97);
+}
+
+.inv-reveal-left {
+  transform: translate3d(-44px, 0, 0) scale(0.97);
+}
+
+.inv-reveal-right {
+  transform: translate3d(44px, 0, 0) scale(0.97);
+}
+
+.inv-reveal-zoom {
+  transform: scale(0.88);
+}
+
+.inv-reveal.inv-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* Ken Burns Slow Zoom & Pan */
+@keyframes invKenBurns {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.11) translate3d(-1%, -1%, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: invKenBurns 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Gentle Floral Wind Sway */
+@keyframes invFloralSway {
+  0%, 100% {
+    transform: rotate(-2.5deg) scale(1);
+  }
+  50% {
+    transform: rotate(2.5deg) scale(1.03);
+  }
+}
+
+@keyframes invFloralSwayReverse {
+  0%, 100% {
+    transform: rotate(2.5deg) scale(1);
+  }
+  50% {
+    transform: rotate(-2.5deg) scale(1.03);
+  }
+}
+
+.animate-floral-sway {
+  animation: invFloralSway 5.5s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-floral-sway-reverse {
+  animation: invFloralSwayReverse 6.2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Floating Petals & Golden Bokeh Sparkles */
+@keyframes invFloatPetal {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate3d(28px, 108vh, 0) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+.animate-float-petal {
+  animation: invFloatPetal linear infinite;
+  will-change: transform, opacity;
+}
+
+/* Spinning Vinyl & Audio Equalizer Bars */
+@keyframes invSpinVinyl {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-vinyl {
+  animation: invSpinVinyl 4.5s linear infinite;
+}
+
+@keyframes invEqBar {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-eq-1 {
+  animation: invEqBar 0.75s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.animate-eq-2 {
+  animation: invEqBar 0.55s ease-in-out 0.15s infinite;
+  transform-origin: bottom;
+}
+
+.animate-eq-3 {
+  animation: invEqBar 0.85s ease-in-out 0.3s infinite;
+  transform-origin: bottom;
+}
+
