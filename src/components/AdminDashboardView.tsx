@@ -4528,9 +4528,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Neutral Event Crest / Custom Brand Logo */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
                 <WeddingRingsIcon
-                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  className="w-6 h-6 sm:w-6.5 sm:h-6.5"
                   logoUrl={
                     (settingsForm as any).brandLogoUrl ||
                     (state.settings as any).brandLogoUrl
@@ -4540,13 +4540,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate leading-tight">
-                    <span className="sm:hidden tracking-wider">MEP</span>
+                    <span className="sm:hidden font-sans font-extrabold tracking-tight">MEPlan</span>
                     <span className="hidden sm:inline">
                       {!state.settings.siteTitle ||
-                      /wedding\s*readiness\s*tracker|my\s*wedding\s*manager/i.test(
+                      /wedding\s*readiness\s*tracker|my\s*wedding\s*manager|my\s*event\s*planner/i.test(
                         state.settings.siteTitle
                       )
-                        ? 'My Event Planner'
+                        ? 'MEPlan — My Event Planner'
                         : state.settings.siteTitle}
                     </span>
                   </h1>
@@ -14682,18 +14682,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <div className="flex items-center justify-between gap-2">
                           <div>
                             <label className="block text-[11px] font-extrabold text-stone-800">
-                              Logo Merk Aplikasi (My Event Planner)
+                              Logo Merk Aplikasi (MEPlan — My Event Planner)
                             </label>
                             <p className="text-[10px] text-stone-500">
-                              Logo ini tampil di pojok kiri atas Katalog Komersial, Halaman Login Admin, Header Dasbor, dan Footer.
+                              Logo resmi Konsep 1 (3D Ribbon M + Sparkle) tampil di Katalog Komersial, Halaman Login Admin, Header Dasbor, dan Footer.
                             </p>
                           </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-stone-900 border border-[#D4AF37]/60 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-1.5">
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/50 flex items-center justify-center shrink-0 shadow-sm overflow-hidden p-2">
                             <WeddingRingsIcon
-                              className="w-6 h-6 text-[#D4AF37]"
+                              className="w-9 h-9"
                               logoUrl={
                                 (settingsForm as any).brandLogoUrl ||
                                 (state.settings as any).brandLogoUrl
@@ -14716,7 +14716,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     if (!file) return;
                                     try {
                                       showToast(
-                                        'Mengompresi & menyimpan Logo Merk Aplikasi (My Event Planner)...'
+                                        'Mengompresi & menyimpan Logo Merk Aplikasi (MEPlan — My Event Planner)...'
                                       );
                                       const dataUrl =
                                         await compressImageFileToDataUrl(
@@ -14740,10 +14740,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         action: 'EDIT',
                                         status: 'SUCCESS',
                                         summary:
-                                          'Meng-upload Logo Merk Aplikasi (My Event Planner)',
+                                          'Meng-upload Logo Merk Aplikasi (MEPlan — My Event Planner)',
                                       });
                                       showToast(
-                                        '✓ Logo Merk Aplikasi (My Event Planner) berhasil diperbarui!'
+                                        '✓ Logo Merk Aplikasi (MEPlan — My Event Planner) berhasil diperbarui!'
                                       );
                                     } catch (err) {
                                       showToast(
@@ -14770,12 +14770,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     setSettingsFormInternal(nextSettings);
                                     await commitImmediateSettings(nextSettings);
                                     showToast(
-                                      '✓ Logo aplikasi dikembalikan ke Logo Default MEP.'
+                                      '✓ Logo aplikasi dikembalikan ke Logo Resmi MEPlan (Konsep 1: 3D Ribbon M + Sparkle).'
                                     );
                                   }}
                                   className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs transition-all"
                                 >
-                                  Reset ke Logo Default MEP
+                                  Reset ke Logo Default MEPlan
                                 </button>
                               )}
                             </div>
@@ -14809,10 +14809,72 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   ''
                                 ).startsWith('data:')
                                   ? '✓ File logo kustom aktif (atau tempel URL logo merk aplikasi di sini)'
-                                  : 'Upload file logo PNG/SVG/WebP atau tempel URL logo merk aplikasi...'
+                                  : 'Kosongkan untuk memakai Logo Resmi MEPlan (Konsep 1) atau tempel URL logo kustom...'
                               }
                               className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                             />
+                          </div>
+                        </div>
+
+                        {/* Official MEPlan Brand Kit (Konsep 1: 3D Ribbon M + Sparkle) Showcase Strip */}
+                        <div className="pt-2 border-t border-stone-200/80 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-950">
+                              Official MEPlan Brand Kit (Konsep 1: 3D Ribbon M + Sparkle)
+                            </span>
+                            <span className="text-[10px] font-semibold text-stone-500">
+                              Vector SVG Ready &bull; Klik untuk unduh aset resmi
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <a
+                              href="/branding/meplan-logo-full-dark.svg"
+                              download="meplan-logo-full-dark.svg"
+                              className="group p-2 rounded-xl bg-[#0D0F1A] border border-indigo-500/30 flex flex-col items-center justify-between gap-1.5 hover:border-amber-400/60 transition-all"
+                              title="Download MEPlan Full Logo (Dark Background SVG)"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src="/branding/meplan-logo-full-dark.svg"
+                                alt="MEPlan Full Logo Dark"
+                                className="h-10 w-auto object-contain"
+                              />
+                              <span className="text-[9px] font-bold text-amber-300 group-hover:underline">
+                                Unduh Full Logo (Dark SVG)
+                              </span>
+                            </a>
+                            <a
+                              href="/branding/meplan-logo-full-light.svg"
+                              download="meplan-logo-full-light.svg"
+                              className="group p-2 rounded-xl bg-[#FAF8F5] border border-stone-200 flex flex-col items-center justify-between gap-1.5 hover:border-[#C5A059] transition-all"
+                              title="Download MEPlan Full Logo (Light Background SVG)"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src="/branding/meplan-logo-full-light.svg"
+                                alt="MEPlan Full Logo Light"
+                                className="h-10 w-auto object-contain"
+                              />
+                              <span className="text-[9px] font-bold text-[#8B6914] group-hover:underline">
+                                Unduh Full Logo (Light SVG)
+                              </span>
+                            </a>
+                            <a
+                              href="/branding/meplan-icon-badge.svg"
+                              download="meplan-icon-badge.svg"
+                              className="group p-2 rounded-xl bg-stone-900/95 border border-purple-500/30 flex flex-col items-center justify-between gap-1.5 hover:border-amber-400/60 transition-all"
+                              title="Download MEPlan App Icon Badge (1:1 SVG)"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src="/branding/meplan-icon-badge.svg"
+                                alt="MEPlan App Icon Badge"
+                                className="h-10 w-10 object-contain rounded-lg"
+                              />
+                              <span className="text-[9px] font-bold text-amber-300 group-hover:underline">
+                                Unduh App Icon Badge (SVG)
+                              </span>
+                            </a>
                           </div>
                         </div>
                       </div>

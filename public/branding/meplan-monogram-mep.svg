@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Deep Midnight Squircle -->
+    <linearGradient id="mep-sq-bg" x1="10" y1="10" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A1D36" />
+      <stop offset="100%" stop-color="#0A0D1E" />
+    </linearGradient>
+
+    <!-- Neon Violet-Magenta Outer Rim -->
+    <linearGradient id="mep-sq-rim" x1="6" y1="6" x2="114" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="50%" stop-color="#C026D3" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+
+    <!-- Isometric "M" + "E" Left Shield Gradient -->
+    <linearGradient id="mep-left-grad" x1="26" y1="28" x2="60" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A855F7" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+
+    <!-- Isometric "P" Right Shield Gradient -->
+    <linearGradient id="mep-right-grad" x1="60" y1="28" x2="94" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#EC4899" />
+      <stop offset="50%" stop-color="#D946EF" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#D946EF" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Glowing Squircle Container -->
+  <rect x="6" y="6" width="108" height="108" rx="28" fill="url(#mep-sq-bg)" stroke="url(#mep-sq-rim)" stroke-width="3.5" filter="url(#neon-glow)" />
+  <rect x="12" y="12" width="96" height="96" rx="22" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1.5" />
+
+  <!-- Isometric Shield Monogram "M + E + P" -->
+  <g filter="url(#neon-glow)">
+    <!-- Upper M Crown + Left Pillar -->
+    <path d="M28 74V38C28 33.5 33 31 36.8 33.5L60 48.5L83.2 33.5C87 31 92 33.5 92 38V62C92 65.5 90 68.5 87 70.5L68 83V90L60 95V59.5L70 53V61.5L81 54.5V45L60 58.5L39 45V81L28 74Z" fill="url(#mep-left-grad)" />
+
+    <!-- Inner Isometric "E" Bars (Left Side) -->
+    <path d="M44 54L56 62V70L44 62V54Z" fill="#C084FC" />
+    <path d="M44 67L56 75V83L44 75V67Z" fill="#A855F7" />
+    <path d="M44 80L56 88V95L44 87V80Z" fill="#818CF8" />
+
+    <!-- Right Isometric "P" Loop & Stem -->
+    <path d="M60 48.5L83.2 33.5C87 31 92 33.5 92 38V62C92 65.5 90 68.5 87 70.5L70 81.5V70.5L81 63.5V45L69 52.8V90L60 95V48.5Z" fill="url(#mep-right-grad)" />
+  </g>
+</svg>

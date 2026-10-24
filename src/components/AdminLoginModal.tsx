@@ -83,16 +83,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </button>
 
           <div className="flex items-center gap-3.5 pr-8">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#F7E7CE] to-[#E6C994] border border-[#D4AF37]/50 flex items-center justify-center text-[#8B6914] shadow-xs shrink-0">
-              <WeddingRingsIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-sm shrink-0">
+              <WeddingRingsIcon className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" /> Portal Login Resmi
               </span>
               <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                <span className="sm:hidden">MEP — My Event Planner</span>
-                <span className="hidden sm:inline">My Event Planner</span>
+                MEPlan — My Event Planner
               </h3>
               <p className="text-[10px] font-semibold text-[#8B6914]">
                 by omeko11

@@ -1140,11 +1140,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center shadow-2xs shrink-0 hover:scale-105 transition-transform"
-              title="My Event Planner — Wedding, Birthday, Graduation, Rapat & Gala Dinner"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-sm shrink-0 hover:scale-105 transition-transform"
+              title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
             >
               <WeddingRingsIcon
-                className="w-5 h-5 sm:w-6 sm:h-6"
+                className="w-6 h-6 sm:w-7 sm:h-7"
                 logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </button>
@@ -1153,11 +1153,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
-                  title="My Event Planner — Wedding, Birthday, Graduation, Rapat & Gala Dinner"
+                  title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
                   className="font-serif font-extrabold text-sm sm:text-lg lg:text-xl text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
                 >
-                  <span className="sm:hidden tracking-wider">MEP</span>
-                  <span className="hidden sm:inline">My Event Planner</span>
+                  <span className="sm:hidden font-sans font-extrabold tracking-tight text-stone-900">
+                    ME<span className="font-semibold text-indigo-950">Plan</span>
+                  </span>
+                  <span className="hidden sm:inline-flex items-baseline gap-2">
+                    <span className="font-sans font-extrabold tracking-tight text-stone-900">
+                      ME<span className="font-semibold text-indigo-950">Plan</span>
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8B6914]">
+                      My Event Planner
+                    </span>
+                  </span>
                 </button>
               </div>
               <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight truncate">
@@ -3471,7 +3480,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       <footer className="bg-white border-t border-[#D4AF37]/35 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="w-9 h-9 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shrink-0 shadow-xs">
               <WeddingRingsIcon
                 className="w-5 h-5"
                 logoUrl={(primarySettings as any).brandLogoUrl}
@@ -3480,7 +3489,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                  My Event Planner by{' '}
+                  MEPlan — My Event Planner by{' '}
                   <a
                     href={developerUrl}
                     target="_blank"

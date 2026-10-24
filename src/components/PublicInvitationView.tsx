@@ -1356,11 +1356,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       >
         <p className="inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
           <WeddingRingsIcon
-            className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
+            className="w-4 h-4 shrink-0"
             logoUrl={brandLogoUrl}
           />
           <span>
-            My Event Planner by{' '}
+            MEPlan &bull; My Event Planner by{' '}
             <a
               href={developerUrl}
               target="_blank"
