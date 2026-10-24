@@ -164,11 +164,11 @@ export const INITIAL_SETTINGS: WeddingSettings = {
     'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/bridePhotoUrl_8powMHC94Aql.webp',
 
   coverBgUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/coverBgUrl_f5VJClBqBsg9.webp',
+    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/cover_slide_cover_2_3_FlWCY4lLxJp77h.webp',
   heroPrewedUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/heroPrewedUrl_gAhzMtGo6gAA.webp',
+    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
   pageBgUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/pageBgUrl_2v8ytGWdJ4ex.webp',
+    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/pageBgUrl_9_wIjjmzLppiJL5K.webp',
   bgOverlayOpacity: 45,
   bgBlurIntensity: 'sm',
   themePreset: 'pearl-champagne',

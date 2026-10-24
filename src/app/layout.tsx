@@ -33,12 +33,35 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title:
-    'My Event Planner — All-in-One Event Planner & Digital Invitation Suite',
+    'MEPlan — My Event Planner & Digital Invitation Suite',
   description:
-    'Platform Manajemen Acara & Undangan Digital Terpadu (Wedding, Birthday, Graduation, Meeting, Gala Dinner — Readiness Tracker, Checklist, Budget, CRM Tamu WA & Studio Undangan).',
+    'Platform Persiapan Acara & Undangan Digital Eksklusif (Wedding, Birthday, Graduation, Rapat & Gala Dinner).',
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+  },
+  openGraph: {
+    title: 'Undangan Pernikahan Agung & Selo • MEPlan Digital Invitation',
+    description:
+      'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
+    type: 'website',
+    images: [
+      {
+        url: 'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Undangan Pernikahan Agung & Selo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Undangan Pernikahan Agung & Selo • MEPlan Digital Invitation',
+    description:
+      'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
+    images: [
+      'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
+    ],
   },
 };
 
