@@ -221,10 +221,19 @@ export interface WeddingScheduleEvent {
   showOnInvitation?: boolean; // Switch ON/OFF for visibility on invitation
 }
 
+export type EventCategoryType =
+  | 'WEDDING'
+  | 'BIRTHDAY'
+  | 'GRADUATION'
+  | 'MEETING'
+  | 'GALA_DINNER';
+
 export interface WeddingSettings {
   // Core Settings
   siteTitle: string;
   subtitle: string;
+  eventType?: EventCategoryType; // default 'WEDDING'
+  eventHostRoleLabel?: string; // custom label for host/celebrant in non-wedding events
   weddingDatetime: string;
   bistonDatetime: string;
   timezone: string;
@@ -328,6 +337,11 @@ export interface WeddingSettings {
   coverBgUrl?: string;
   heroPrewedUrl?: string;
   pageBgUrl?: string;
+  coverVideoUrl?: string; // Up to 25 MB MP4/WebM/MOV in Supabase Storage
+  heroVideoUrl?: string;
+  pageVideoUrl?: string;
+  videoFocusY?: number; // 0 to 100 (default 28: upper-center highlight focus when 9:16 mobile video stretches on 16:9 PC)
+  videoDesktopMode?: 'HIGHLIGHT_COVER' | 'CINEMA_BLUR'; // default 'HIGHLIGHT_COVER'
   bgOverlayOpacity?: number; // 40 to 95 (percentage of bright pearl overlay)
   bgBlurIntensity?: 'none' | 'sm' | 'md' | 'lg';
   themePreset?: 'pearl-champagne' | 'ivory-rose' | 'sage-garden' | 'royal-navy';
@@ -520,6 +534,8 @@ export interface ClientGroupItem {
   coupleLabel: string;
   packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL_VIP';
   status: 'ACTIVE' | 'PREVIEW' | 'SUSPENDED';
+  eventType?: EventCategoryType;
+  isPublicShowcaseVisible?: boolean;
   eventDate?: string;
   notes?: string;
   createdAt: string;

@@ -30,6 +30,10 @@ import {
   AlertTriangle,
   FileCheck2,
   Clock,
+  Maximize2,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import {
@@ -45,6 +49,74 @@ import {
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
 
 const IDEMPOTENT_TX_STORAGE_KEY = 'mwm_active_idempotent_tx_v1';
+
+const OFFICIAL_PRODUCT_SCREENSHOTS = [
+  {
+    id: 'tracker',
+    tabId: '1. Tracker',
+    tabEn: '1. Tracker',
+    badge: 'MODUL 1 • EXECUTIVE TRACKER',
+    titleId: 'Dashboard Readiness Tracker & Countdown Multi-Acara',
+    titleEn: 'Executive Readiness Tracker & Multi-Event Countdown',
+    descId:
+      'Pantau hitung mundur hari/jam/menit/detik tiap sesi acara, persentase kesiapan, ringkasan moneter, dan statistik kehadiran tamu secara real-time.',
+    descEn:
+      'Monitor live countdowns across event sessions, readiness percentage, budget overview, and guest attendance in real time.',
+    imageUrl: '/showcase/showcase-1-tracker.png',
+  },
+  {
+    id: 'checklist',
+    tabId: '2. Checklist',
+    tabEn: '2. Checklist',
+    badge: 'MODUL 2 • TIMELINE & PIC',
+    titleId: 'Checklist Persiapan Bertahap (H-6 Bulan s/d Hari-H)',
+    titleEn: 'Phased Preparation Checklist (6 Months Prior to Event Day)',
+    descId:
+      'Kelola daftar tugas dan dokumen penting berdasarkan fase waktu, kategori, status penyelesaian, serta pembagian PIC tim/keluarga.',
+    descEn:
+      'Organize critical tasks and documents by timeline phase, category, status, and PIC assignment.',
+    imageUrl: '/showcase/showcase-2-checklist.png',
+  },
+  {
+    id: 'moneter',
+    tabId: '3. Moneter',
+    tabEn: '3. Budget',
+    badge: 'MODUL 3 • ANGGARAN & VENDOR',
+    titleId: 'Kalkulator Pagu Moneter, Realisasi & Pelunasan Vendor',
+    titleEn: 'Budget Cap Calculator, Vendor Contracts & Payment Tracking',
+    descId:
+      'Kontrol target pagu anggaran, realisasi kontrak vendor, nominal DP yang sudah dibayar, hingga sisa pelunasan secara transparan.',
+    descEn:
+      'Control target budget caps, actual vendor contracts, paid deposits, and remaining balances transparently.',
+    imageUrl: '/showcase/showcase-3-moneter.png',
+  },
+  {
+    id: 'tamu',
+    tabId: '4. Tamu & WA',
+    tabEn: '4. Guests & WA',
+    badge: 'MODUL 4 • CRM TAMU & BLAST WA',
+    titleId: 'Manajemen Tamu VIP, Kuota Pax & Blast WhatsApp 1-Klik',
+    titleEn: 'VIP Guest CRM, Pax Quota & 1-Click WhatsApp Blast',
+    descId:
+      'Kelola ribuan daftar tamu (Cetak & Online), kode unik INV-xxxx, kuota Pax fleksibel, status RSVP, serta kirim pesan WhatsApp personal 1-klik.',
+    descEn:
+      'Manage thousands of guests, unique INV-xxxx codes, flexible Pax quotas, RSVP statuses, and 1-click personalized WhatsApp links.',
+    imageUrl: '/showcase/showcase-4-tamu.png',
+  },
+  {
+    id: 'pengaturan',
+    tabId: '5. Studio Undangan',
+    tabEn: '5. Invitation Studio',
+    badge: 'MODUL 5 • STUDIO UNDANGAN & VIDEO',
+    titleId: 'Studio Kustomisasi Konten, Tema, Musik & Video Background',
+    titleEn: 'Custom Invitation Studio, Themes, Music & Video Background',
+    descId:
+      'Atur seksi undangan, kutipan, galeri foto HD, jadwal acara, amplop digital (Bank/QRIS/PayPal/Crypto), hingga background video adaptif HP ke PC.',
+    descEn:
+      'Customize invitation sections, quotes, HD photo gallery, schedules, digital envelopes, and adaptive mobile-to-PC video backgrounds.',
+    imageUrl: '/showcase/showcase-5-pengaturan.png',
+  },
+] as const;
 
 type ExtendedPaymentTransaction = CommercialPaymentTransaction & {
   onChainVerified?: boolean;
@@ -291,7 +363,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [selectedLookupClientId, setSelectedLookupClientId] =
     useState<string>('client-utama');
   const [showLookupSuggestions, setShowLookupSuggestions] = useState(false);
-  const [copiedClientId, setCopiedClientId] = useState<string | null>(null);
+  const [lookupGateError, setLookupGateError] = useState<string | null>(null);
+  const [activeShowcaseIdx, setActiveShowcaseIdx] = useState<number>(0);
+  const [lightboxScreenshot, setLightboxScreenshot] = useState<{
+    title: string;
+    badge: string;
+    desc: string;
+    imageUrl: string;
+  } | null>(null);
 
   const activeLookupClientGuests = useMemo<WeddingGuest[]>(() => {
     if (selectedLookupClientId === 'client-utama') {
@@ -302,8 +381,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   const filteredLookupGuests = useMemo<WeddingGuest[]>(() => {
     const q = guestCodeInput.trim().toLowerCase();
-    if (!q) {
-      return activeLookupClientGuests.slice(0, 6);
+    if (q.length < 3) {
+      return [];
     }
     return activeLookupClientGuests
       .filter(
@@ -975,12 +1054,47 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     }
   };
 
+  const openLightboxAt = (idx: number) => {
+    const safeIdx =
+      ((idx % OFFICIAL_PRODUCT_SCREENSHOTS.length) +
+        OFFICIAL_PRODUCT_SCREENSHOTS.length) %
+      OFFICIAL_PRODUCT_SCREENSHOTS.length;
+    setActiveShowcaseIdx(safeIdx);
+    const shot = OFFICIAL_PRODUCT_SCREENSHOTS[safeIdx];
+    setLightboxScreenshot({
+      title: lang === 'ID' ? shot.titleId : shot.titleEn,
+      badge: shot.badge,
+      desc: lang === 'ID' ? shot.descId : shot.descEn,
+      imageUrl: shot.imageUrl,
+    });
+  };
+
+  const scrollToShowcase = () => {
+    setIsCheckoutPageOpen(false);
+    if (typeof document !== 'undefined') {
+      window.setTimeout(() => {
+        document
+          .getElementById('showcase')
+          ?.scrollIntoView({ behavior: 'smooth' });
+      }, 40);
+    }
+  };
+
   const handleQuickLookupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowLookupSuggestions(false);
     const trimmed = guestCodeInput.trim();
-    if (!trimmed) {
-      onSelectClientInvitation(selectedLookupClientId);
+    if (trimmed.length < 3) {
+      if (isAdminLoggedIn) {
+        setLookupGateError(null);
+        onSelectClientInvitation(selectedLookupClientId);
+        return;
+      }
+      setLookupGateError(
+        lang === 'ID'
+          ? 'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu yang terdaftar untuk membuka undangan privat.'
+          : 'Enter a registered Invitation Code (e.g., INV-0001) or Guest Name to open this private invitation.'
+      );
       return;
     }
     const lower = trimmed.toLowerCase();
@@ -996,6 +1110,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           g.invitationCode.toLowerCase().includes(lower)
       );
     if (matched) {
+      setLookupGateError(null);
       onSelectClientInvitation(
         selectedLookupClientId,
         matched.guestName,
@@ -1003,34 +1118,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       );
       return;
     }
-    if (/^INV-/i.test(trimmed)) {
-      onSelectClientInvitation(
-        selectedLookupClientId,
-        undefined,
-        trimmed.toUpperCase()
-      );
-    } else {
+    if (isAdminLoggedIn) {
+      setLookupGateError(null);
       onSelectClientInvitation(selectedLookupClientId, trimmed, undefined);
+      return;
     }
-  };
-
-  const getClientSlug = (cg: ClientGroupItem) => {
-    if (cg.id === 'client-utama') return 'agung_selo';
-    return cg.clientCode.toLowerCase();
-  };
-
-  const handleCopyClientUrl = (cg: ClientGroupItem) => {
-    const origin =
-      typeof window !== 'undefined'
-        ? window.location.origin
-        : 'https://my-wedding-manager.vercel.app';
-    const slug = getClientSlug(cg);
-    const url = `${origin}/?client=${encodeURIComponent(slug)}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      void navigator.clipboard.writeText(url);
-      setCopiedClientId(cg.id);
-      window.setTimeout(() => setCopiedClientId(null), 2000);
-    }
+    setLookupGateError(
+      lang === 'ID'
+        ? 'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu yang terdaftar untuk membuka undangan privat.'
+        : 'Enter a registered Invitation Code (e.g., INV-0001) or Guest Name to open this private invitation.'
+    );
   };
 
   return (
@@ -1044,7 +1141,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center shadow-2xs shrink-0 hover:scale-105 transition-transform"
-              title="My Wedding Manager Home"
+              title="My Event Planner — Wedding, Birthday, Graduation, Rapat & Gala Dinner"
             >
               <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
@@ -1053,10 +1150,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
+                  title="My Event Planner — Wedding, Birthday, Graduation, Rapat & Gala Dinner"
                   className="font-serif font-extrabold text-sm sm:text-lg lg:text-xl text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
                 >
-                  <span className="sm:hidden tracking-wider">MWM</span>
-                  <span className="hidden sm:inline">My Wedding Manager</span>
+                  <span className="sm:hidden tracking-wider">MEP</span>
+                  <span className="hidden sm:inline">My Event Planner</span>
                 </button>
               </div>
               <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight truncate">
@@ -1073,8 +1171,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <span className="font-normal text-stone-500 hidden xl:inline">
                   &bull;{' '}
                   {lang === 'ID'
-                    ? 'Manajemen Persiapan & Undangan Digital'
-                    : 'Wedding Readiness & Digital Invitation'}
+                    ? 'Wedding, Birthday, Graduation, Rapat & Gala Dinner'
+                    : 'Wedding, Birthday, Graduation, Corporate & Gala Dinner'}
                 </span>
               </p>
             </div>
@@ -1085,19 +1183,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <a
               href="#showcase"
               onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? `Katalog Undangan Klien Aktif (${clientGroups.length})`
-                  : `Active Client Invitation Catalog (${clientGroups.length})`
-              }
+              title="Lihat Katalog Screenshot 5 Modul My Event Planner"
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Eye className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden md:inline">
-                {lang === 'ID' ? 'Katalog' : 'Catalog'}
-              </span>
-              <span className="hidden lg:inline-block px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30">
-                {clientGroups.length}
+              <span className="hidden md:inline whitespace-nowrap truncate">
+                {lang === 'ID' ? 'Katalog Fitur' : 'Showcase'}
               </span>
             </a>
 
@@ -1106,13 +1197,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Fitur & 6 Modul Manajemen Persiapan Pernikahan'
-                  : 'Features & 6 Wedding Readiness Modules'
+                  ? 'Fitur & 6 Modul Manajemen Persiapan Multi-Acara'
+                  : 'Features & 6 Multi-Event Readiness Modules'
               }
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <LayoutDashboard className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden md:inline">
+              <span className="hidden md:inline whitespace-nowrap truncate">
                 {lang === 'ID' ? 'Fitur' : 'Features'}
               </span>
             </a>
@@ -1128,7 +1219,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden md:inline">
+              <span className="hidden md:inline whitespace-nowrap truncate">
                 {lang === 'ID' ? 'Paket' : 'Pricing'}
               </span>
             </a>
@@ -1154,19 +1245,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <span className="sm:hidden text-[10px]">{lang}</span>
             </button>
 
-            {/* Live Demo Individual Button */}
+            {/* Live Demo Individual Button -> Scrolls to #showcase & Opens Official Product Tour */}
             <button
               type="button"
-              onClick={() => onSelectClientInvitation('client-utama')}
+              onClick={() => {
+                scrollToShowcase();
+                openLightboxAt(activeShowcaseIdx);
+              }}
               title={
                 lang === 'ID'
-                  ? 'Buka Contoh Undangan Digital Interaktif (Live Demo)'
-                  : 'Open Interactive Digital Invitation Showcase (Live Demo)'
+                  ? 'Lihat Tur Screenshot 5 Modul My Event Planner (Layar Penuh)'
+                  : 'Open 5-Module Product Screenshot Tour (Fullscreen)'
               }
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap shadow-2xs transition-all"
             >
               <Sparkles className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:inline">Live Demo</span>
+              <span className="hidden lg:inline whitespace-nowrap truncate">
+                {lang === 'ID' ? 'Tur Produk' : 'Product Tour'}
+              </span>
             </button>
 
             {/* Login Klien / Dashboard Individual Button */}
@@ -1179,8 +1275,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? `Buka Workspace Dashboard (${adminUserName || 'Admin'})`
                     : `Open Workspace Dashboard (${adminUserName || 'Admin'})`
                   : lang === 'ID'
-                    ? 'Masuk ke Portal Klien Mempelai, Panitia WO, atau Superadmin'
-                    : 'Login to Couple, Wedding Organizer, or Superadmin Portal'
+                    ? 'Masuk ke Portal Klien, Panitia EO/WO, atau Superadmin'
+                    : 'Login to Client, Event Organizer, or Superadmin Portal'
               }
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
             >
@@ -2311,10 +2407,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* HERO SECTION */}
             <section className="relative py-12 sm:py-16 lg:py-20 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/45 to-[#FAF8F5]">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest">
-                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40]" />
-                  <span>
-                    My Wedding Manager (MWM) by{' '}
+                <div
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko11"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                  <span className="whitespace-nowrap truncate">
+                    My Event Planner (Multi-Event Suite) by{' '}
                     <a
                       href={developerUrl}
                       target="_blank"
@@ -2329,14 +2428,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <h2 className="font-serif text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.15]">
                   {lang === 'ID' ? (
                     <>
-                      Platform Manajemen Persiapan Pernikahan &amp;{' '}
+                      Platform Manajemen Persiapan Acara &amp;{' '}
                       <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
-                        Undangan Digital Eksklusif
+                        Undangan Digital Multi-Event
                       </span>
                     </>
                   ) : (
                     <>
-                      All-in-One Wedding Readiness &amp;{' '}
+                      All-in-One Multi-Event Readiness &amp;{' '}
                       <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
                         Luxury Digital Invitation Suite
                       </span>
@@ -2344,84 +2443,168 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   )}
                 </h2>
 
-                <p className="text-xs sm:text-base text-stone-600 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-xs sm:text-base text-stone-600 max-w-3xl mx-auto leading-relaxed">
                   {lang === 'ID' ? (
                     <>
                       Satu sistem terpadu untuk mengelola{' '}
-                      <strong>Readiness Tracker 8 Domain</strong>,{' '}
+                      <strong>Executive Readiness Tracker</strong>,{' '}
                       <strong>Checklist Timeline H-6 Bulan s/d Hari-H</strong>,{' '}
-                      <strong>Anggaran &amp; Kontrak Vendor</strong>,{' '}
-                      <strong>Generator WhatsApp Tamu VIP</strong>, serta{' '}
-                      <strong>Undangan Digital Interaktif Real-Time</strong>{' '}
-                      untuk setiap pasangan klien.
+                      <strong>Pagu Anggaran &amp; Kontrak Vendor</strong>,{' '}
+                      <strong>CRM Tamu VIP &amp; Blast WhatsApp 1-Klik</strong>,
+                      serta{' '}
+                      <strong>
+                        Studio Undangan Digital Interaktif &amp; Video Background
+                      </strong>{' '}
+                      untuk berbagai jenis acara.
                     </>
                   ) : (
                     <>
                       One unified platform to manage your{' '}
-                      <strong>8-Domain Wedding Readiness Tracker</strong>,{' '}
+                      <strong>Executive Readiness Tracker</strong>,{' '}
                       <strong>6-Month Countdown Checklist</strong>,{' '}
                       <strong>Vendor Budget &amp; Contracts</strong>,{' '}
                       <strong>1-Click VIP WhatsApp Invitations</strong>, and{' '}
-                      <strong>Interactive Real-Time Digital Invitations</strong>{' '}
-                      with Digital Envelopes (Bank, PayPal &amp; Crypto USDT).
+                      <strong>
+                        Interactive Digital Invitations with Adaptive Video
+                        Backgrounds
+                      </strong>{' '}
+                      &amp; Digital Envelopes (Bank, PayPal &amp; Crypto USDT).
                     </>
                   )}
                 </p>
+
+                {/* Supported Multi-Event Category Pills + 25 MB Video Background Pill */}
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 max-w-4xl mx-auto">
+                  {[
+                    {
+                      label: '💍 Wedding',
+                      title:
+                        lang === 'ID'
+                          ? 'Manajemen Persiapan Pernikahan (Akad, Pemberkatan, Adat & Resepsi) + Undangan Digital'
+                          : 'Wedding Readiness Management (Ceremony, Custom & Reception) + Digital Invitation',
+                    },
+                    {
+                      label: '🎂 Birthday',
+                      title:
+                        lang === 'ID'
+                          ? 'Manajemen Acara & Undangan Digital Ulang Tahun / Sweet Seventeen / Milestone'
+                          : 'Birthday Party, Sweet 17 & Milestone Event Management + Digital Invitation',
+                    },
+                    {
+                      label: '🎓 Graduation',
+                      title:
+                        lang === 'ID'
+                          ? 'Acara Wisuda, Syukuran Kelulusan & Perayaan Akademik'
+                          : 'Graduation Ceremony, Academic Celebration & Alumni Gathering',
+                    },
+                    {
+                      label: '🏛️ Rapat / Corporate',
+                      title:
+                        lang === 'ID'
+                          ? 'Rapat Kerja, Konferensi, Seminar, Townhall & Acara Resmi Instansi/Korporat'
+                          : 'Corporate Meetings, Conferences, Seminars, Townhalls & Official Institutional Events',
+                    },
+                    {
+                      label: '🥂 Gala Dinner',
+                      title:
+                        lang === 'ID'
+                          ? 'Gala Dinner VIP, Malam Penghargaan, Charity & Jamuan Eksklusif'
+                          : 'VIP Gala Dinners, Award Nights, Charity Galas & Exclusive Banquets',
+                    },
+                    {
+                      label: '🎬 Video Background 25 MB (HP ↔ PC Auto-Stretch)',
+                      title:
+                        lang === 'ID'
+                          ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif dari Layar HP ke Layar Lebar PC'
+                          : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive Mobile-to-PC Auto-Stretch',
+                    },
+                  ].map((pill) => (
+                    <span
+                      key={pill.label}
+                      title={pill.title}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/95 border border-[#D4AF37]/45 text-stone-800 text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full"
+                    >
+                      {pill.label}
+                    </span>
+                  ))}
+                </div>
 
                 {/* Primary Hero CTAs */}
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => onSelectClientInvitation('client-utama')}
-                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all"
+                    onClick={scrollToShowcase}
+                    title={
+                      lang === 'ID'
+                        ? 'Lihat 5 Screenshot Resmi Modul My Event Planner (Tanpa Membuka Undangan Privat Klien)'
+                        : 'Inspect 5 Official Module Screenshots of My Event Planner (Privacy & Copyright Safe)'
+                    }
+                    className="w-full sm:w-auto max-w-full justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all whitespace-nowrap truncate"
                   >
                     <Eye className="w-4 h-4 shrink-0" />
-                    <span>
+                    <span className="whitespace-nowrap truncate">
                       {lang === 'ID'
-                        ? `Buka Live Showcase (${primarySettings.groomNickname} & ${primarySettings.brideNickname})`
-                        : `Open Live Showcase (${primarySettings.groomNickname} & ${primarySettings.brideNickname})`}
+                        ? 'Lihat Katalog Tampilan & Fitur (5 Modul)'
+                        : 'Explore Product Screenshots (5 Modules)'}
                     </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={onOpenAdminPortal}
-                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 font-extrabold text-xs sm:text-sm shadow-sm transition-all"
+                    title={
+                      isAdminLoggedIn
+                        ? lang === 'ID'
+                          ? 'Masuk ke Workspace Dashboard'
+                          : 'Enter Workspace Dashboard'
+                        : lang === 'ID'
+                          ? 'Masuk ke Portal Login Klien, Panitia EO/WO, atau Superadmin'
+                          : 'Login to Client, Event Organizer, or Superadmin Portal'
+                    }
+                    className="w-full sm:w-auto max-w-full justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 font-extrabold text-xs sm:text-sm shadow-sm transition-all whitespace-nowrap truncate"
                   >
                     <KeyRound className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                    <span>
+                    <span className="whitespace-nowrap truncate">
                       {isAdminLoggedIn
                         ? lang === 'ID'
                           ? 'Masuk ke Workspace Dashboard'
                           : 'Enter Workspace Dashboard'
                         : lang === 'ID'
-                          ? 'Portal Login Mempelai / WO'
-                          : 'Couple / WO Login Portal'}
+                          ? 'Portal Login Klien / EO / WO'
+                          : 'Client / EO / WO Login Portal'}
                     </span>
                   </button>
                 </div>
 
-                {/* Quick Guest Invitation Lookup Card */}
+                {/* Quick Guest Invitation Lookup Card (Private Guest Gate) */}
                 <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/40 shadow-[0_12px_36px_rgba(182,141,64,0.12)] text-left">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                    <p className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5">
-                      <Search className="w-4 h-4 text-[#B68D40]" />
-                      <span>
+                    <p
+                      className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5 whitespace-nowrap truncate"
+                      title={
+                        lang === 'ID'
+                          ? 'Gerbang Privat Tamu Undangan — Masukkan Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar'
+                          : 'Private Guest Invitation Gate — Enter Registered Invitation Code (INV-xxxx) or Guest Name'
+                      }
+                    >
+                      <Search className="w-4 h-4 text-[#B68D40] shrink-0" />
+                      <span className="whitespace-nowrap truncate">
                         {lang === 'ID'
-                          ? 'Akses Cepat Tamu Undangan'
-                          : 'Quick Guest Invitation Lookup'}
+                          ? 'Akses Cepat Tamu Undangan (Private Guest Gate)'
+                          : 'Quick Guest Invitation Lookup (Private Guest Gate)'}
                       </span>
                     </p>
-                    <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30">
-                      <span className="sm:hidden">
-                        {activeLookupClientGuests.length}{' '}
-                        {lang === 'ID' ? 'Tamu Terdaftar' : 'Registered Guests'}
-                      </span>
-                      <span className="hidden sm:inline">
-                        {lang === 'ID'
-                          ? `Pilih Mempelai & Masukkan Nama / Kode VIP (${activeLookupClientGuests.length} Tamu Terdaftar)`
-                          : `Select Couple & Enter Guest Name / VIP Code (${activeLookupClientGuests.length} Registered Guests)`}
-                      </span>
+                    <span
+                      title={
+                        lang === 'ID'
+                          ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
+                          : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
+                      }
+                      className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
+                    >
+                      {lang === 'ID'
+                        ? '🔒 Wajib Kode INV-xxxx / Nama Terdaftar'
+                        : '🔒 Requires INV-xxxx Code / Registered Name'}
                     </span>
                   </div>
                   <form
@@ -2434,8 +2617,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         onChange={(e) => {
                           setSelectedLookupClientId(e.target.value);
                           setGuestCodeInput('');
+                          setLookupGateError(null);
                         }}
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                        title={
+                          lang === 'ID'
+                            ? 'Pilih Acara / Klien Tujuan'
+                            : 'Select Target Event / Client'
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none truncate"
                       >
                         {clientGroups.map((cg) => (
                           <option key={cg.id} value={cg.id}>
@@ -2457,12 +2646,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         }
                         onChange={(e) => {
                           setGuestCodeInput(e.target.value);
+                          setLookupGateError(null);
                           setShowLookupSuggestions(true);
                         }}
                         placeholder={
                           lang === 'ID'
-                            ? 'Kode INV-0001 / Nama Tamu...'
-                            : 'Code INV-0001 / Guest Name...'
+                            ? 'Ketik min. 3 huruf / INV-0001...'
+                            : 'Type min. 3 chars / INV-0001...'
                         }
                         className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
                       />
@@ -2472,8 +2662,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
                               <span>
                                 {lang === 'ID'
-                                  ? 'Tamu Terdaftar di Database'
-                                  : 'Registered Guests in Database'}
+                                  ? 'Tamu Terdaftar Cocok'
+                                  : 'Matching Registered Guests'}
                               </span>
                               <span>
                                 {lang === 'ID'
@@ -2488,6 +2678,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 onMouseDown={(e) => {
                                   e.preventDefault();
                                   setGuestCodeInput(guest.guestName);
+                                  setLookupGateError(null);
                                   setShowLookupSuggestions(false);
                                   onSelectClientInvitation(
                                     selectedLookupClientId,
@@ -2516,186 +2707,374 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <div className="sm:col-span-3">
                       <button
                         type="submit"
-                        className="w-full h-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all"
+                        title={
+                          lang === 'ID'
+                            ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
+                            : 'Verify Guest Code & Open Private Invitation'
+                        }
+                        className="w-full h-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap truncate"
                       >
                         {lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}
                       </button>
                     </div>
                   </form>
+                  {lookupGateError && (
+                    <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>{lookupGateError}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
 
-            {/* SECTION 1: SHOWCASE & KATALOG UNDANGAN KLIEN AKTIF */}
+            {/* SECTION 1: INTERACTIVE PRODUCT SCREENSHOT CATALOG (5 OFFICIAL MODULES) */}
             <section
               id="showcase"
-              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
             >
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-                <div>
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                    Multi-Client Live Showcase
-                  </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
+              {/* Section Header + Privacy Note Pill */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                      Official Product Tour &bull; Copyright-Safe Preview
+                    </span>
+                    <span
+                      title="Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold whitespace-nowrap truncate max-w-full"
+                    >
+                      {lang === 'ID'
+                        ? '🔒 Undangan Klien Bersifat Privat (Dilindungi Kode Tamu)'
+                        : '🔒 Client Invitations Are Private & Guest-Protected'}
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900">
                     {lang === 'ID'
-                      ? `Katalog Undangan Klien Aktif (${clientGroups.length} Pasangan)`
-                      : `Active Client Invitation Catalog (${clientGroups.length} Couples)`}
+                      ? 'Katalog Tampilan & Fitur My Event Planner (5 Modul Inti)'
+                      : 'My Event Planner Interface & Feature Showcase (5 Core Modules)'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                    {lang === 'ID' ? (
-                      <>
-                        Setiap pasangan klien memiliki{' '}
-                        <strong>Link Undangan Mandiri</strong> dan{' '}
-                        <strong>Workspace Dashboard Terisolasi</strong>{' '}
-                        (Mempelai, Foto, Tamu, Checklist &amp; Budget terpisah).
-                      </>
-                    ) : (
-                      <>
-                        Every couple receives a{' '}
-                        <strong>Dedicated Invitation URL</strong> and an{' '}
-                        <strong>Isolated Dashboard Workspace</strong> (Separate
-                        Profile, Gallery, Guests, Checklist &amp; Budget).
-                      </>
-                    )}
+                  <p className="text-xs sm:text-sm text-stone-600 max-w-3xl leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Jelajahi tangkapan layar asli dari 5 modul utama sistem manajemen acara & undangan digital kami. Klik tab modul atau tombol Perbesar Layar Penuh untuk melihat detail antarmuka resolusi tinggi.'
+                      : 'Explore authentic interface screenshots across our 5 core event management and digital invitation modules. Click any module tab or Zoom Fullscreen to inspect high-resolution details.'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={onOpenAdminPortal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#D4AF37]/45 text-[#8B6914] hover:bg-[#FAF3E3] text-xs font-bold self-start sm:self-auto shadow-2xs"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>
-                    {lang === 'ID'
-                      ? 'Kelola Klien di Modul Superadmin'
-                      : 'Manage Clients in Superadmin Module'}
-                  </span>
-                </button>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openLightboxAt(activeShowcaseIdx)}
+                    title={
+                      lang === 'ID'
+                        ? 'Perbesar Screenshot Modul Aktif ke Layar Penuh'
+                        : 'Zoom Active Module Screenshot to Fullscreen'
+                    }
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45 text-xs font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                    <span className="whitespace-nowrap truncate">
+                      {lang === 'ID'
+                        ? '🔍 Perbesar Layar Penuh'
+                        : '🔍 Zoom Fullscreen'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onOpenAdminPortal}
+                    title={
+                      lang === 'ID'
+                        ? 'Masuk ke Portal Klien / EO / WO / Superadmin'
+                        : 'Login to Client / EO / WO / Superadmin Portal'
+                    }
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#D4AF37]/45 text-[#8B6914] hover:bg-[#FAF3E3] text-xs font-bold whitespace-nowrap truncate shadow-2xs transition-all"
+                  >
+                    <Shield className="w-3.5 h-3.5 shrink-0" />
+                    <span className="whitespace-nowrap truncate">
+                      {lang === 'ID' ? 'Buka Portal Login' : 'Open Login Portal'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
-                {clientGroups.map((cg, idx) => {
-                  const wsSettings =
-                    cg.id === 'client-utama'
-                      ? primarySettings
-                      : clientWorkspaces?.[cg.id]?.settings;
-                  const groomNick =
-                    wsSettings?.groomNickname ||
-                    cg.coupleLabel.split('&')[0]?.trim() ||
-                    (lang === 'ID' ? 'Mempelai Pria' : 'Groom');
-                  const brideNick =
-                    wsSettings?.brideNickname ||
-                    cg.coupleLabel.split('&')[1]?.trim() ||
-                    (lang === 'ID' ? 'Mempelai Wanita' : 'Bride');
-                  const subtitleText =
-                    wsSettings?.subtitle ||
-                    (lang === 'ID'
-                      ? `Tanggal Acara: ${cg.eventDate || '19 Desember 2026'}`
-                      : `Wedding Date: ${cg.eventDate || 'December 19, 2026'}`);
-                  const slug = getClientSlug(cg);
-
+              {/* Row of 5 Interactive Module Tabs */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
+                  const isActive = activeShowcaseIdx === idx;
+                  const tabLabel = lang === 'ID' ? shot.tabId : shot.tabEn;
+                  const fullTitle = lang === 'ID' ? shot.titleId : shot.titleEn;
                   return (
-                    <div
-                      key={cg.id}
-                      className="min-w-0 rounded-3xl bg-white border border-[#D4AF37]/40 shadow-[0_12px_32px_rgba(28,25,23,0.06)] overflow-hidden flex flex-col justify-between transition-all hover:shadow-[0_16px_44px_rgba(182,141,64,0.16)] hover:-translate-y-0.5"
+                    <button
+                      key={shot.id}
+                      type="button"
+                      onClick={() => setActiveShowcaseIdx(idx)}
+                      title={`${shot.badge} — ${fullTitle}`}
+                      className={`px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap truncate shadow-2xs ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/35'
+                          : 'bg-white hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] border-[#D4AF37]/35'
+                      }`}
                     >
-                      <div className="min-w-0">
-                        {/* Top Card Banner */}
-                        <div className="p-5 bg-gradient-to-br from-[#FAF3E3] via-[#FFFDF9] to-[#F3E5C8] border-b border-[#D4AF37]/30">
-                          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                            <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
-                              {idx === 0
-                                ? '★ FEATURED SHOWCASE'
-                                : cg.clientCode}
-                            </span>
-                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold">
-                              {cg.packageTier}
-                            </span>
-                          </div>
+                      <span className="whitespace-nowrap truncate">
+                        {tabLabel}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-12 h-12 rounded-2xl bg-white border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shadow-2xs shrink-0">
-                              <WeddingRingsIcon className="w-6 h-6" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B6914]">
-                                The Wedding Of
-                              </p>
-                              <h4 className="font-serif text-xl font-extrabold text-stone-900 truncate">
-                                {groomNick} &amp; {brideNick}
-                              </h4>
-                            </div>
-                          </div>
+              {/* Featured Interactive Browser Frame Preview */}
+              {(() => {
+                const currentShot =
+                  OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx] ||
+                  OFFICIAL_PRODUCT_SCREENSHOTS[0];
+                const currentTitle =
+                  lang === 'ID' ? currentShot.titleId : currentShot.titleEn;
+                const currentDesc =
+                  lang === 'ID' ? currentShot.descId : currentShot.descEn;
+
+                return (
+                  <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.10)] overflow-hidden">
+                    {/* Browser Window Top Bar */}
+                    <div className="px-3.5 sm:px-5 py-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
                         </div>
-
-                        {/* Card Details */}
-                        <div className="p-5 space-y-3 text-xs min-w-0">
-                          <p className="text-stone-600 line-clamp-2 leading-relaxed">
-                            {subtitleText}
-                          </p>
-
-                          <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex items-center justify-between gap-2 min-w-0">
-                            <div className="min-w-0">
-                              <p className="text-[10px] text-stone-400 font-semibold">
-                                {lang === 'ID'
-                                  ? 'Tautan Undangan Khusus Klien:'
-                                  : 'Dedicated Client Invitation Link:'}
-                              </p>
-                              <p className="font-mono text-[11px] font-bold text-[#8B6914] truncate">
-                                /?client={slug}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyClientUrl(cg)}
-                              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold text-[11px] inline-flex items-center gap-1 shrink-0"
-                            >
-                              {copiedClientId === cg.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>
-                                    {lang === 'ID' ? 'Tersalin' : 'Copied'}
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>
-                                    {lang === 'ID' ? 'Salin Link' : 'Copy Link'}
-                                  </span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
+                        <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
+                          {currentShot.badge}
+                        </span>
+                        <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
+                          https://my-event-planner.app/workspace/
+                          {currentShot.id}
+                        </span>
                       </div>
 
-                      {/* Card Footer Buttons */}
-                      <div className="px-5 py-3.5 bg-[#FAF8F5] border-t border-stone-200/70 flex flex-wrap items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
-                          onClick={() => onSelectClientInvitation(cg.id)}
-                          className="flex-1 min-w-[140px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all"
+                          onClick={() =>
+                            setActiveShowcaseIdx(
+                              (prev) =>
+                                (prev - 1 + OFFICIAL_PRODUCT_SCREENSHOTS.length) %
+                                OFFICIAL_PRODUCT_SCREENSHOTS.length
+                            )
+                          }
+                          title={
+                            lang === 'ID'
+                              ? 'Modul Sebelumnya'
+                              : 'Previous Module'
+                          }
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
                         >
-                          <Eye className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">
-                            {lang === 'ID'
-                              ? 'Buka Undangan Live'
-                              : 'Open Live Invitation'}
-                          </span>
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-[11px] font-mono font-bold text-[#E6C76B] px-1.5">
+                          {activeShowcaseIdx + 1} /{' '}
+                          {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveShowcaseIdx(
+                              (prev) =>
+                                (prev + 1) % OFFICIAL_PRODUCT_SCREENSHOTS.length
+                            )
+                          }
+                          title={
+                            lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
+                          }
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                        >
+                          <ChevronRight className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
-                          onClick={onOpenAdminPortal}
-                          className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold text-xs inline-flex items-center justify-center gap-1"
+                          onClick={() => openLightboxAt(activeShowcaseIdx)}
                           title={
                             lang === 'ID'
-                              ? 'Login ke Workspace Klien Ini'
-                              : 'Login to This Client Workspace'
+                              ? 'Perbesar Layar Penuh'
+                              : 'Zoom Fullscreen'
                           }
+                          className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
                         >
-                          <KeyRound className="w-3.5 h-3.5 shrink-0" />
-                          <span>Login</span>
+                          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                          <span className="whitespace-nowrap truncate">
+                            {lang === 'ID'
+                              ? '🔍 Perbesar Layar Penuh'
+                              : '🔍 Zoom Fullscreen'}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Screenshot Image Viewport */}
+                    <div
+                      onClick={() => openLightboxAt(activeShowcaseIdx)}
+                      title={
+                        lang === 'ID'
+                          ? 'Klik gambar untuk memperbesar ke layar penuh'
+                          : 'Click image to zoom fullscreen'
+                      }
+                      className="relative bg-stone-950/95 cursor-zoom-in group overflow-hidden max-h-[540px] flex items-center justify-center"
+                    >
+                      <img
+                        src={currentShot.imageUrl}
+                        alt={currentTitle}
+                        className="w-full h-auto max-h-[540px] object-contain object-top transition-transform duration-300 group-hover:scale-[1.01]"
+                      />
+                      <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs border border-[#D4AF37]/50 text-[#FAF3E3] text-[11px] font-bold inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Klik untuk Layar Penuh'
+                            : 'Click for Fullscreen'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Active Screenshot Description & Prev/Next Footer */}
+                    <div className="p-4 sm:p-5 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                            {currentShot.badge}
+                          </span>
+                          <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
+                            {currentTitle}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
+                          {currentDesc}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveShowcaseIdx(
+                              (prev) =>
+                                (prev - 1 + OFFICIAL_PRODUCT_SCREENSHOTS.length) %
+                                OFFICIAL_PRODUCT_SCREENSHOTS.length
+                            )
+                          }
+                          title={
+                            lang === 'ID'
+                              ? 'Lihat Screenshot Modul Sebelumnya'
+                              : 'View Previous Module Screenshot'
+                          }
+                          className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
+                          <span>{lang === 'ID' ? 'Sebelumnya' : 'Prev'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveShowcaseIdx(
+                              (prev) =>
+                                (prev + 1) % OFFICIAL_PRODUCT_SCREENSHOTS.length
+                            )
+                          }
+                          title={
+                            lang === 'ID'
+                              ? 'Lihat Screenshot Modul Berikutnya'
+                              : 'View Next Module Screenshot'
+                          }
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                        >
+                          <span>{lang === 'ID' ? 'Berikutnya' : 'Next'}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 5-Card Thumbnail Grid Below Featured Frame */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 min-w-0">
+                {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
+                  const isSelected = activeShowcaseIdx === idx;
+                  const shotTitle =
+                    lang === 'ID' ? shot.titleId : shot.titleEn;
+                  const shotDesc = lang === 'ID' ? shot.descId : shot.descEn;
+                  return (
+                    <div
+                      key={shot.id}
+                      onClick={() => setActiveShowcaseIdx(idx)}
+                      className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
+                        isSelected
+                          ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
+                          : 'border-[#D4AF37]/35 hover:border-[#B68D40] shadow-2xs hover:-translate-y-0.5'
+                      }`}
+                    >
+                      <div>
+                        <div className="relative h-28 bg-stone-900 overflow-hidden border-b border-stone-200/80">
+                          <img
+                            src={shot.imageUrl}
+                            alt={shotTitle}
+                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-900/90 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
+                            {lang === 'ID' ? shot.tabId : shot.tabEn}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openLightboxAt(idx);
+                            }}
+                            title={
+                              lang === 'ID'
+                                ? `Perbesar ${shotTitle}`
+                                : `Zoom ${shotTitle}`
+                            }
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
+                          >
+                            <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
+                          </button>
+                        </div>
+                        <div className="p-3 space-y-1">
+                          <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
+                            {shot.badge}
+                          </p>
+                          <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
+                            {shotTitle}
+                          </h5>
+                          <p className="text-[11px] text-stone-500 line-clamp-2 leading-relaxed">
+                            {shotDesc}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
+                          {isSelected
+                            ? lang === 'ID'
+                              ? '● Sedang Ditampilkan'
+                              : '● Currently Viewing'
+                            : lang === 'ID'
+                              ? 'Klik untuk Pratinjau'
+                              : 'Click to Preview'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openLightboxAt(idx);
+                          }}
+                          title={
+                            lang === 'ID'
+                              ? 'Buka Layar Penuh'
+                              : 'Open Fullscreen'
+                          }
+                          className="text-[10px] font-extrabold text-stone-800 hover:text-[#8B6914] underline whitespace-nowrap"
+                        >
+                          {lang === 'ID' ? 'Zoom' : 'Zoom'}
                         </button>
                       </div>
                     </div>
@@ -2982,6 +3361,109 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         )}
       </main>
 
+      {/* FULLSCREEN SCREENSHOT LIGHTBOX MODAL */}
+      {lightboxScreenshot && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          onClick={() => setLightboxScreenshot(null)}
+        >
+          <div
+            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-stone-950 border border-[#D4AF37]/50 shadow-2xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-4 sm:px-6 py-3.5 bg-stone-900 border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex items-center gap-2.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                  {lightboxScreenshot.badge}
+                </span>
+                <h4 className="font-serif text-sm sm:text-base font-extrabold text-[#FAF3E3] truncate">
+                  {lightboxScreenshot.title}
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openLightboxAt(activeShowcaseIdx - 1)}
+                  title={
+                    lang === 'ID'
+                      ? 'Screenshot Sebelumnya'
+                      : 'Previous Screenshot'
+                  }
+                  className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
+                  </span>
+                </button>
+                <span className="text-xs font-mono font-bold text-[#E6C76B] px-1">
+                  {activeShowcaseIdx + 1} / {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openLightboxAt(activeShowcaseIdx + 1)}
+                  title={
+                    lang === 'ID' ? 'Screenshot Berikutnya' : 'Next Screenshot'
+                  }
+                  className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                >
+                  <span className="hidden sm:inline">
+                    {lang === 'ID' ? 'Berikutnya' : 'Next'}
+                  </span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxScreenshot(null)}
+                  title={
+                    lang === 'ID' ? 'Tutup Layar Penuh' : 'Close Fullscreen'
+                  }
+                  className="ml-1 px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                >
+                  <X className="w-4 h-4" />
+                  <span>{lang === 'ID' ? 'Tutup' : 'Close'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* High-Res Image Body */}
+            <div className="flex-1 overflow-auto bg-black flex items-center justify-center p-2 sm:p-4">
+              <img
+                src={lightboxScreenshot.imageUrl}
+                alt={lightboxScreenshot.title}
+                className="max-w-full max-h-[74vh] w-auto h-auto object-contain rounded-xl border border-stone-800 shadow-lg"
+              />
+            </div>
+
+            {/* Modal Footer Caption */}
+            <div className="px-4 sm:px-6 py-3 bg-stone-900 border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <p className="text-xs text-stone-300 leading-relaxed">
+                {lightboxScreenshot.desc}
+              </p>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {OFFICIAL_PRODUCT_SCREENSHOTS.map((s, idx) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => openLightboxAt(idx)}
+                    title={lang === 'ID' ? s.titleId : s.titleEn}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold whitespace-nowrap transition-all ${
+                      activeShowcaseIdx === idx
+                        ? 'bg-[#D4AF37] text-stone-950'
+                        : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* OFFICIAL FOOTER CREDIT & CONTACT US (With Subtle Commercial SaaS Suite Badge; Post-Payment Email Only Shown If Unlocked) */}
       <footer className="bg-white border-t border-[#D4AF37]/35 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -2992,7 +3474,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                  My Wedding Manager by{' '}
+                  My Event Planner by{' '}
                   <a
                     href={developerUrl}
                     target="_blank"
@@ -3006,14 +3488,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] text-[10px] font-bold">
                   <Sparkles className="w-2.5 h-2.5" />
                   <span>
-                    Commercial SaaS &amp; All-in-One Wedding Planner Suite
+                    Commercial SaaS &amp; All-in-One Multi-Event Planner Suite
                   </span>
                 </span>
               </div>
               <p className="text-[11px] text-stone-500 mt-0.5">
                 {lang === 'ID'
-                  ? 'Platform Multi-Klien Readiness Tracker Pernikahan & Undangan Digital Interaktif'
-                  : 'Multi-Client Wedding Readiness Tracker & Interactive Digital Invitation Platform'}
+                  ? 'Platform Multi-Event Readiness Tracker & Undangan Digital Interaktif (Wedding, Birthday, Graduation, Rapat & Gala Dinner)'
+                  : 'Multi-Event Readiness Tracker & Interactive Digital Invitation Platform (Wedding, Birthday, Graduation, Corporate & Gala Dinner)'}
               </p>
             </div>
           </div>
@@ -3026,7 +3508,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              title={`Hubungi Kontak WA My Wedding Manager (${rawWa})`}
+              title={`Hubungi Kontak WA My Event Planner (${rawWa})`}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-stone-900 text-xs font-bold transition-all"
             >
               <svg

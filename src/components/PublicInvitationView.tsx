@@ -326,6 +326,61 @@ const GoldEmvChipIcon: React.FC<{ className?: string }> = ({ className = 'w-10 h
   </svg>
 );
 
+interface AdaptiveVideoLayerProps {
+  videoUrl?: string;
+  posterUrl?: string;
+  focusY?: number;
+  desktopMode?: 'HIGHLIGHT_COVER' | 'CINEMA_BLUR';
+  className?: string;
+}
+
+const AdaptiveVideoLayer: React.FC<AdaptiveVideoLayerProps> = ({
+  videoUrl,
+  posterUrl,
+  focusY = 28,
+  desktopMode = 'HIGHLIGHT_COVER',
+  className = '',
+}) => {
+  if (!videoUrl || videoUrl.trim() === '') return null;
+  const clampedFocusY = Math.min(100, Math.max(0, focusY));
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+    >
+      {desktopMode === 'CINEMA_BLUR' && (
+        <video
+          src={videoUrl}
+          poster={posterUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="hidden md:block absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-55 pointer-events-none"
+          style={{ objectPosition: `50% ${clampedFocusY}%` }}
+        />
+      )}
+      <video
+        src={videoUrl}
+        poster={posterUrl}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        className={`relative z-10 w-full h-full pointer-events-none ${
+          desktopMode === 'CINEMA_BLUR'
+            ? 'object-cover md:object-contain'
+            : 'object-cover'
+        }`}
+        style={{ objectPosition: `50% ${clampedFocusY}%` }}
+      />
+    </div>
+  );
+};
+
 export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   settings,
   guests,
@@ -435,6 +490,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const pageBgUrl = settings.pageBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
+  const videoFocusY =
+    typeof settings.videoFocusY === 'number'
+      ? Math.min(100, Math.max(0, settings.videoFocusY))
+      : 28;
+  const videoDesktopMode = settings.videoDesktopMode || 'HIGHLIGHT_COVER';
   const overlayOpacity = Math.min(96, Math.max(40, settings.bgOverlayOpacity ?? 88));
   const blurClass =
     settings.bgBlurIntensity === 'none'
@@ -444,6 +504,175 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       : settings.bgBlurIntensity === 'lg'
       ? 'backdrop-blur-xl'
       : 'backdrop-blur-[2px]';
+
+  const eventType = settings.eventType || 'WEDDING';
+  const isWeddingEvent = eventType === 'WEDDING';
+  const hasSecondProfile =
+    isWeddingEvent ||
+    Boolean(
+      settings.brideFullName &&
+        settings.brideFullName.trim() !== '' &&
+        settings.brideFullName !== '-'
+    );
+
+  const eventMeta = useMemo(() => {
+    switch (eventType) {
+      case 'BIRTHDAY':
+        return {
+          coverBadge:
+            lang === 'ID' ? 'Undangan Ulang Tahun' : 'Birthday Celebration',
+          heroBadge:
+            lang === 'ID' ? 'Perayaan Ulang Tahun' : 'Birthday Party',
+          profileSectionTitle:
+            lang === 'ID' ? 'Profil Yang Berulang Tahun' : 'The Celebrant',
+          primaryRoleBadge:
+            settings.eventHostRoleLabel ||
+            (lang === 'ID' ? 'Yang Berulang Tahun' : 'Birthday Celebrant'),
+          secondaryRoleBadge:
+            lang === 'ID' ? 'Co-Host / Keluarga' : 'Co-Host / Family',
+          scheduleTitle:
+            lang === 'ID' ? 'Susunan Acara Perayaan' : 'Party Schedule',
+          storyTitle:
+            lang === 'ID' ? 'Milestone & Perjalanan Hidup' : 'Life Milestones',
+          rsvpTitle:
+            lang === 'ID'
+              ? 'Konfirmasi Kehadiran & Ucapan Selamat'
+              : 'RSVP & Birthday Wishes',
+          wishesTitle:
+            lang === 'ID' ? 'Ucapan & Doa Ulang Tahun' : 'Birthday Wishes',
+        };
+      case 'GRADUATION':
+        return {
+          coverBadge:
+            lang === 'ID'
+              ? 'Syukuran Wisuda & Kelulusan'
+              : 'Graduation Celebration',
+          heroBadge:
+            lang === 'ID' ? 'Perayaan Kelulusan' : 'Graduation Ceremony',
+          profileSectionTitle:
+            lang === 'ID' ? 'Profil Wisudawan' : 'The Graduate',
+          primaryRoleBadge:
+            settings.eventHostRoleLabel ||
+            (lang === 'ID' ? 'Wisudawan / Lulusan' : 'The Graduate'),
+          secondaryRoleBadge:
+            lang === 'ID' ? 'Keluarga / Pendamping' : 'Family / Co-Host',
+          scheduleTitle:
+            lang === 'ID'
+              ? 'Jadwal Acara Syukuran'
+              : 'Graduation Event Schedule',
+          storyTitle:
+            lang === 'ID'
+              ? 'Perjalanan Akademik & Pencapaian'
+              : 'Academic Journey',
+          rsvpTitle:
+            lang === 'ID'
+              ? 'Konfirmasi Kehadiran & Ucapan'
+              : 'RSVP & Congratulatory Wishes',
+          wishesTitle:
+            lang === 'ID'
+              ? 'Ucapan Selamat & Sukses'
+              : 'Congratulatory Wishes',
+        };
+      case 'MEETING':
+        return {
+          coverBadge:
+            lang === 'ID'
+              ? 'Undangan Rapat & Agenda Resmi'
+              : 'Official Meeting Invitation',
+          heroBadge:
+            lang === 'ID'
+              ? 'Agenda Resmi & Konferensi'
+              : 'Official Meeting & Forum',
+          profileSectionTitle:
+            lang === 'ID'
+              ? 'Penyelenggara & Pimpinan Acara'
+              : 'Host & Keynote Speaker',
+          primaryRoleBadge:
+            settings.eventHostRoleLabel ||
+            (lang === 'ID' ? 'Pimpinan / Penyelenggara' : 'Keynote / Host'),
+          secondaryRoleBadge:
+            lang === 'ID' ? 'Narasumber / Co-Host' : 'Co-Host / Speaker',
+          scheduleTitle:
+            lang === 'ID'
+              ? 'Susunan Agenda & Waktu'
+              : 'Meeting Agenda & Schedule',
+          storyTitle:
+            lang === 'ID'
+              ? 'Latar Belakang & Pokok Bahasan'
+              : 'Background & Highlights',
+          rsvpTitle:
+            lang === 'ID'
+              ? 'Registrasi Kehadiran Peserta'
+              : 'Participant Attendance Registration',
+          wishesTitle:
+            lang === 'ID'
+              ? 'Daftar Konfirmasi & Catatan Peserta'
+              : 'Attendance Notes',
+        };
+      case 'GALA_DINNER':
+        return {
+          coverBadge:
+            lang === 'ID'
+              ? 'Undangan Eksklusif Gala Dinner'
+              : 'Exclusive Gala Dinner Invitation',
+          heroBadge:
+            lang === 'ID'
+              ? 'Malam Apresiasi & Gala Dinner'
+              : 'Gala Dinner & Soirée',
+          profileSectionTitle:
+            lang === 'ID' ? 'Tuan Rumah & Penyelenggara' : 'Event Hosts',
+          primaryRoleBadge:
+            settings.eventHostRoleLabel ||
+            (lang === 'ID' ? 'Host Utama' : 'Primary Host'),
+          secondaryRoleBadge:
+            lang === 'ID' ? 'Co-Host Kehormatan' : 'Co-Host',
+          scheduleTitle:
+            lang === 'ID'
+              ? 'Rundown Malam Gala Dinner'
+              : 'Gala Dinner Rundown',
+          storyTitle:
+            lang === 'ID' ? 'Sorotan & Sejarah Acara' : 'Event Highlights',
+          rsvpTitle:
+            lang === 'ID'
+              ? 'Reservasi Kursi (RSVP) & Konfirmasi'
+              : 'Table Reservation & RSVP',
+          wishesTitle:
+            lang === 'ID' ? 'Buku Tamu Kehormatan' : 'VIP Guestbook',
+        };
+      case 'WEDDING':
+      default:
+        return {
+          coverBadge:
+            lang === 'ID' ? 'Undangan Pernikahan' : 'The Wedding Celebration',
+          heroBadge:
+            lang === 'ID' ? 'Pernikahan Suci' : 'Holy Matrimony & Reception',
+          profileSectionTitle:
+            lang === 'ID' ? 'Profil Mempelai' : 'The Happy Couple',
+          primaryRoleBadge:
+            settings.eventHostRoleLabel ||
+            (lang === 'ID' ? 'Mempelai Pria' : 'The Groom'),
+          secondaryRoleBadge:
+            lang === 'ID' ? 'Mempelai Wanita' : 'The Bride',
+          scheduleTitle:
+            lang === 'ID' ? 'Rangkaian Acara' : 'Event Schedule',
+          storyTitle:
+            lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story',
+          rsvpTitle:
+            lang === 'ID'
+              ? 'Konfirmasi Kehadiran & Ucapan'
+              : 'RSVP & Best Wishes',
+          wishesTitle:
+            lang === 'ID' ? 'Buku Tamu & Doa Restu' : 'Guestbook & Wishes',
+        };
+    }
+  }, [eventType, lang, settings.eventHostRoleLabel]);
+
+  const displayTitleShort = hasSecondProfile
+    ? `${settings.groomNickname} & ${settings.brideNickname}`
+    : settings.groomNickname || settings.groomFullName;
+  const displayTitleFull = hasSecondProfile
+    ? `${settings.groomFullName} & ${settings.brideFullName}`
+    : settings.groomFullName;
 
   // Lookup matched guest from DB if ?code= or ?to= matches (exact or partial)
   const matchedGuest = useMemo(() => {
@@ -706,8 +935,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const matchingGuestSuggestions = useMemo(() => {
     if (guests.length === 0) return [];
     const query = rsvpName.trim().toLowerCase();
-    if (!query) {
-      return guests.slice(0, 6);
+    if (query.length < 3) {
+      return [];
     }
     return guests
       .filter(
@@ -729,8 +958,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     )
       .trim()
       .toLowerCase();
-    if (!rawQuery) {
-      return guests.slice(0, 6);
+    if (rawQuery.length < 3) {
+      return [];
     }
     return guests
       .filter(
@@ -824,6 +1053,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       resolvedGuestForOpen?.guestName,
       resolvedGuestForOpen?.invitationCode
     );
+    if (weddingMusicPlayer.getVolume() <= 5) {
+      weddingMusicPlayer.setVolume(
+        settings.musicVolume && settings.musicVolume > 5 ? settings.musicVolume : 80
+      );
+    }
     const initialTrackId = currentTrack?.id || playlist[0]?.id;
     if (initialTrackId) {
       weddingMusicPlayer.playTrack(initialTrackId);
@@ -840,16 +1074,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   };
 
   const googleCalendarUrl = useMemo(() => {
-    const groomNick =
-      settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-        ? settings.groomNickname
-        : 'Eko';
-    const brideNick =
-      settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-        ? settings.brideNickname
-        : 'Selo';
-    const evTitle = activeCountdownEvent?.title || 'Pernikahan';
-    const title = `The Wedding of ${groomNick} & ${brideNick} (${evTitle})`;
+    const evTitle = activeCountdownEvent?.title || eventMeta.coverBadge;
+    const title = `${eventMeta.coverBadge}: ${displayTitleShort} (${evTitle})`;
     const rawIso =
       activeCountdownEvent?.datetime ||
       settings.weddingDatetime ||
@@ -865,7 +1091,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     const location = activeCountdownEvent
       ? `${activeCountdownEvent.venue}, ${activeCountdownEvent.address}`
       : `${settings.event2Venue || ''}, ${settings.event2Address || ''}`;
-    const details = `Undangan Pernikahan ${settings.groomFullName} & ${settings.brideFullName} — ${evTitle} (${
+    const details = `${eventMeta.coverBadge} ${displayTitleFull} — ${evTitle} (${
       activeCountdownEvent?.dateLabel || settings.event2DateLabel
     } • ${activeCountdownEvent?.timeLabel || settings.event2TimeLabel}).`;
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
@@ -873,7 +1099,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     )}&dates=${dates}&details=${encodeURIComponent(
       details
     )}&location=${encodeURIComponent(location)}`;
-  }, [activeCountdownEvent, settings]);
+  }, [activeCountdownEvent, settings, eventMeta.coverBadge, displayTitleShort, displayTitleFull]);
 
   useEffect(() => {
     if (!isOpened) return;
@@ -1193,7 +1419,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <Clock className="w-3.5 h-3.5" /> Mode Penyesuaian / Segera Hadir
             </span>
             <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900">
-              {settings.groomNickname || 'Eko'} &amp; {settings.brideNickname || 'Selo'}
+              {displayTitleShort}
             </h1>
             <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-md mx-auto">
               {settings.invitationMaintenanceMessage ||
@@ -1222,7 +1448,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       >
         <FloatingPetalsAmbient />
 
-        {/* Background Prewedding Silhouette Photo + Adjustable Luminous Pearl Veil */}
+        {/* Background Prewedding Silhouette Photo / Adaptive Video + Adjustable Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <img
             src={coverBgUrl}
@@ -1231,6 +1457,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               coverFitMode !== 'contain' ? 'animate-ken-burns' : ''
             }`}
             style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
+          />
+          <AdaptiveVideoLayer
+            videoUrl={settings.coverVideoUrl}
+            posterUrl={coverBgUrl}
+            focusY={videoFocusY}
+            desktopMode={videoDesktopMode}
           />
         </div>
         <div
@@ -1247,7 +1479,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
               <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
               <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
-                The Wedding Celebration
+                {eventMeta.coverBadge}
               </span>
             </div>
 
@@ -1296,21 +1528,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <WeddingRingsIcon className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]" />
             </div>
 
-            <p className="text-[11px] sm:text-xs uppercase tracking-[0.28em] sm:tracking-[0.34em] text-[#9A742B] font-bold mb-1">
-              The Wedding Of
-            </p>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-stone-500 font-semibold mb-2">
-              {lang === 'ID' ? 'Undangan Pernikahan' : 'Wedding Invitation'}
-            </p>
+            <div className="mb-2">
+              <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#8B6914] font-bold">
+                {eventMeta.coverBadge}
+              </span>
+            </div>
 
             <h1 className="font-script text-4xl sm:text-6xl font-normal tracking-normal text-stone-900 leading-tight mb-2 break-words py-1">
-              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                ? settings.groomNickname
-                : 'Eko'}{' '}
-              <span className="text-[#C5A059]">&amp;</span>{' '}
-              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                ? settings.brideNickname
-                : 'Selo'}
+              {displayTitleShort}
             </h1>
 
             <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-4 sm:mb-6">
@@ -1448,8 +1673,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           className="absolute inset-0 w-full h-full object-cover object-center"
           style={getPhotoAdjustStyle(settings.photoAdjustments?.pageBgUrl)}
         />
+        <AdaptiveVideoLayer
+          videoUrl={settings.pageVideoUrl}
+          posterUrl={pageBgUrl}
+          focusY={videoFocusY}
+          desktopMode={videoDesktopMode}
+        />
         <div
-          className={`absolute inset-0 ${blurClass}`}
+          className={`absolute inset-0 z-20 ${blurClass}`}
           style={{
             backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
@@ -1465,13 +1696,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
             <div className="truncate">
               <p className="font-editorial text-xs sm:text-base font-bold text-stone-900 truncate">
-                {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                  ? settings.groomNickname
-                  : 'Eko'}{' '}
-                &amp;{' '}
-                {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                  ? settings.brideNickname
-                  : 'Selo'}
+                {displayTitleShort}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
                 {settings.event2DateLabel}
@@ -1702,7 +1927,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <FloralCornerOrnament position="bottom-left" />
             <FloralCornerOrnament position="bottom-right" />
 
-            {/* Prewedding Silhouette Image Header (16:9 matching Crop Studio) */}
+            {/* Prewedding Silhouette Image / Motion Video Header (16:9 matching Crop Studio) */}
             <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-stone-900">
               <img
                 src={heroBgUrl}
@@ -1712,23 +1937,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 }`}
                 style={getPhotoAdjustStyle(settings.photoAdjustments?.heroPrewedUrl)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-stone-950/20 to-transparent pointer-events-none" />
-              <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
+              <AdaptiveVideoLayer
+                videoUrl={settings.heroVideoUrl}
+                posterUrl={heroBgUrl}
+                focusY={videoFocusY}
+                desktopMode={videoDesktopMode}
+              />
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-white via-stone-950/20 to-transparent pointer-events-none" />
+              <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
                 <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span>Holy Matrimony &amp; Reception</span>
-              </div>
-
-              {/* Romantic Script Nickname Accent Over Hero Photo */}
-              <div className="absolute bottom-14 sm:bottom-16 inset-x-0 text-center pointer-events-none px-4">
-                <p className="font-script text-3xl sm:text-5xl text-[#F5E6C8] drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]">
-                  {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                    ? settings.groomNickname
-                    : 'Eko'}{' '}
-                  &amp;{' '}
-                  {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                    ? settings.brideNickname
-                    : 'Selo'}
-                </p>
+                <span>{eventMeta.heroBadge}</span>
               </div>
             </div>
 
@@ -1739,11 +1957,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
 
               <h1 className="font-editorial text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
-                {settings.groomFullName}
-                <span className="block font-script text-3xl sm:text-5xl font-normal text-[#B68D40] my-1 sm:my-1.5">
-                  &amp;
-                </span>
-                {settings.brideFullName}
+                {displayTitleFull}
               </h1>
 
               <p className="max-w-2xl mx-auto text-xs sm:text-sm text-stone-600 leading-relaxed mb-6 sm:mb-8">
@@ -1820,13 +2034,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       href={googleCalendarUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
+                      title={
+                        lang === 'ID'
+                          ? 'Simpan jadwal acara ini ke Google Calendar (Save The Date)'
+                          : 'Save this event to Google Calendar'
+                      }
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold whitespace-nowrap shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
                     >
                       <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                      <span>
-                        {lang === 'ID'
-                          ? '📅 Simpan Tanggal di Google Calendar (Save The Date)'
-                          : '📅 Save The Date to Google Calendar'}
+                      <span className="whitespace-nowrap truncate">
+                        {lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}
                       </span>
                       <ExternalLink className="w-3 h-3 text-[#B68D40] shrink-0" />
                     </a>
@@ -1852,15 +2069,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="mt-6 flex justify-center">
                 <a
                   href="#mempelai"
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#D4AF37]/35 text-[10px] sm:text-xs font-semibold text-[#8B6914] shadow-2xs hover:bg-[#FAF3E3] transition-all"
+                  title={
+                    lang === 'ID'
+                      ? 'Gulir ke bawah untuk melihat rangkaian acara lengkap'
+                      : 'Scroll down to view full event schedule'
+                  }
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#D4AF37]/35 text-[10px] sm:text-xs font-semibold text-[#8B6914] whitespace-nowrap shadow-2xs hover:bg-[#FAF3E3] transition-all"
                 >
-                  <span className="w-4 h-6 rounded-full border-2 border-[#B68D40] flex items-start justify-center p-0.5">
+                  <span className="w-4 h-6 rounded-full border-2 border-[#B68D40] flex items-start justify-center p-0.5 shrink-0">
                     <span className="w-1 h-1.5 rounded-full bg-[#B68D40] animate-bounce" />
                   </span>
-                  <span>
-                    {lang === 'ID'
-                      ? 'Gulir untuk melihat rangkaian acara'
-                      : 'Scroll down to explore'}
+                  <span className="whitespace-nowrap truncate">
+                    {lang === 'ID' ? 'Lihat Rangkaian Acara' : 'Explore Schedule'}
                   </span>
                 </a>
               </div>
@@ -1869,30 +2089,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
       </section>
 
-      {/* SECTION: PROFIL MEMPELAI (100% SYMMETRICAL 2-COLUMN CARDS WITH ARCH PORTRAITS) */}
+      {/* SECTION: PROFIL MEMPELAI / HOST (1-COL SPOTLIGHT OR 2-COL SYMMETRICAL CARDS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              The Happy Couple
-            </span>
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              {lang === 'ID' ? 'Mempelai yang Berbahagia' : 'The Happy Couple'}
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+              {eventMeta.profileSectionTitle}
             </h2>
-            <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mt-1">
-              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                ? settings.groomNickname
-                : 'Eko'}{' '}
-              &amp;{' '}
-              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                ? settings.brideNickname
-                : 'Selo'}
-            </p>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2" />
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
           </div>
 
-          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-            {/* Groom Card */}
+          <div
+            className={
+              hasSecondProfile
+                ? 'relative grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch'
+                : 'relative max-w-lg mx-auto'
+            }
+          >
+            {/* Primary Host / Groom Card */}
             <div className="inv-reveal inv-reveal-left relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
               <FloralCornerOrnament position="top-left" size="sm" />
               <FloralCornerOrnament position="top-right" size="sm" />
@@ -1918,14 +2132,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     />
                   </div>
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
-                  {settings.groomRankAndTitle || (lang === 'ID' ? 'Mempelai Pria' : 'The Groom')}
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                  {settings.eventHostRoleLabel ||
+                    (settings.groomRankAndTitle &&
+                    settings.groomRankAndTitle !== 'Mempelai Pria'
+                      ? settings.groomRankAndTitle
+                      : eventMeta.primaryRoleBadge)}
                 </span>
-                <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mb-0.5">
-                  {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                    ? settings.groomNickname
-                    : 'Eko'}
-                </p>
                 <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.groomFullName}
                 </h3>
@@ -1936,79 +2149,86 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {settings.groomParents}
                 </p>
               </div>
-              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
-                <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
-                <span>{settings.groomOrigin}</span>
-              </div>
+              {Boolean(
+                settings.groomUnit &&
+                  settings.groomUnit.trim() !== '' &&
+                  settings.groomOrigin &&
+                  settings.groomOrigin.trim() !== ''
+              ) && (
+                <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
+                  <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
+                  <span>{settings.groomOrigin}</span>
+                </div>
+              )}
             </div>
 
-            {/* Calligraphic "&" Separator Between Groom & Bride */}
-            <div
-              aria-hidden="true"
-              className="flex md:hidden items-center justify-center -my-1"
-            >
-              <span className="font-script text-4xl text-[#B68D40] px-4 py-1 rounded-full bg-white/90 border border-[#D4AF37]/45 shadow-sm">
-                &amp;
-              </span>
-            </div>
-            <div
-              aria-hidden="true"
-              className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-            >
-              <span className="w-14 h-14 rounded-full bg-white/95 border-2 border-[#D4AF37]/60 shadow-[0_10px_30px_rgba(197,160,89,0.28)] flex items-center justify-center font-script text-4xl sm:text-5xl text-[#B68D40]">
-                &amp;
-              </span>
-            </div>
+            {hasSecondProfile && (
+              <>
+                {/* Calligraphic "&" Separator Between Groom & Bride */}
+                <div
+                  aria-hidden="true"
+                  className="flex md:hidden items-center justify-center -my-1"
+                >
+                  <span className="font-script text-4xl text-[#B68D40] px-4 py-1 rounded-full bg-white/90 border border-[#D4AF37]/45 shadow-sm">
+                    &amp;
+                  </span>
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                >
+                  <span className="w-14 h-14 rounded-full bg-white/95 border-2 border-[#D4AF37]/60 shadow-[0_10px_30px_rgba(197,160,89,0.28)] flex items-center justify-center font-script text-4xl sm:text-5xl text-[#B68D40]">
+                    &amp;
+                  </span>
+                </div>
 
-            {/* Bride Card */}
-            <div className="inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-              <FloralCornerOrnament position="top-left" size="sm" />
-              <FloralCornerOrnament position="top-right" size="sm" />
+                {/* Secondary Host / Bride Card */}
+                <div className="inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
+                  <FloralCornerOrnament position="top-left" size="sm" />
+                  <FloralCornerOrnament position="top-right" size="sm" />
 
-              <div className="flex flex-col items-center w-full relative z-10">
-                <div className="relative mb-5 sm:mb-6 shrink-0">
-                  <FloralCornerOrnament
-                    position="bottom-left"
-                    size="sm"
-                    className="-bottom-3 -left-6 opacity-90"
-                  />
-                  <FloralCornerOrnament
-                    position="bottom-right"
-                    size="sm"
-                    className="-bottom-3 -right-6 opacity-90"
-                  />
-                  <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
-                    <img
-                      src={settings.bridePhotoUrl}
-                      alt={settings.brideFullName}
-                      className="w-full h-full object-cover object-center"
-                      style={getPhotoAdjustStyle(settings.photoAdjustments?.bridePhotoUrl)}
-                    />
+                  <div className="flex flex-col items-center w-full relative z-10">
+                    <div className="relative mb-5 sm:mb-6 shrink-0">
+                      <FloralCornerOrnament
+                        position="bottom-left"
+                        size="sm"
+                        className="-bottom-3 -left-6 opacity-90"
+                      />
+                      <FloralCornerOrnament
+                        position="bottom-right"
+                        size="sm"
+                        className="-bottom-3 -right-6 opacity-90"
+                      />
+                      <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
+                        <img
+                          src={settings.bridePhotoUrl}
+                          alt={settings.brideFullName}
+                          className="w-full h-full object-cover object-center"
+                          style={getPhotoAdjustStyle(
+                            settings.photoAdjustments?.bridePhotoUrl
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                      {settings.brideTitle &&
+                      settings.brideTitle !== 'Mempelai Wanita'
+                        ? settings.brideTitle
+                        : eventMeta.secondaryRoleBadge}
+                    </span>
+                    <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
+                      {settings.brideFullName}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                      {settings.brideOrigin}
+                    </p>
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                      {settings.brideParents}
+                    </p>
                   </div>
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2">
-                  {settings.brideTitle || (lang === 'ID' ? 'Mempelai Wanita' : 'The Bride')}
-                </span>
-                <p className="font-script text-3xl sm:text-4xl text-[#B68D40] mb-0.5">
-                  {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                    ? settings.brideNickname
-                    : 'Selo'}
-                </p>
-                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
-                  {settings.brideFullName}
-                </h3>
-                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
-                  {settings.brideOrigin}
-                </p>
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                  {settings.brideParents}
-                </p>
-              </div>
-              <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
-                <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
-                <span>{settings.brideOrigin}</span>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </section>
       )}
@@ -2017,13 +2237,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {visibleEvents.length > 0 && (
         <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              Save The Date
-            </span>
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              {lang === 'ID'
-                ? 'Rangkaian Acara Pernikahan'
-                : 'Wedding Events Schedule'}
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+              {eventMeta.scheduleTitle}
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
               {settings.subtitle}
@@ -2118,23 +2333,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {(showLoveStory || showGallery) && (
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              {settings.gallerySectionSubtitle?.trim() ||
-                (showLoveStory && !showGallery
-                  ? lang === 'ID'
-                    ? 'Kisah Perjalanan Cinta'
-                    : 'Our Love Story'
-                  : 'Our Journey & Moments')}
-            </span>
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              {settings.gallerySectionTitle?.trim() ||
-                (showLoveStory && !showGallery
-                  ? lang === 'ID'
-                    ? 'Kisah Perjalanan Cinta'
-                    : 'Our Love Story'
-                  : lang === 'ID'
-                  ? 'Galeri Momen Bahagia'
-                  : 'Moments of Happiness')}
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+              {settings.showLoveStorySection && settings.showGallerySection
+                ? `${eventMeta.storyTitle} & ${
+                    settings.gallerySectionTitle || (lang === 'ID' ? 'Galeri' : 'Gallery')
+                  }`
+                : settings.showLoveStorySection
+                ? eventMeta.storyTitle
+                : settings.gallerySectionTitle ||
+                  (lang === 'ID' ? 'Galeri Momen' : 'Photo Gallery')}
             </h2>
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
           </div>
@@ -2143,12 +2350,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {showLoveStory &&
             (effectiveLoveStory.length > 0 ? (
               <div className="mb-8 sm:mb-10 space-y-4">
-                <div className="flex items-center justify-center gap-2">
-                  <Heart className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#8B6914]">
-                    {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
-                  </span>
-                </div>
                 <div className="relative">
                   {/* Decorative Vertical Golden Timeline Connector Line */}
                   <div
@@ -2393,13 +2594,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {settings.showRsvpSection !== false && (
         <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold">
-              RSVP &amp; Wedding Wishes
-            </span>
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
-              {lang === 'ID'
-                ? 'Konfirmasi Kehadiran & Doa Restu'
-                : 'RSVP & Wedding Wishes'}
+            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+              {eventMeta.rsvpTitle}
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
               {lang === 'ID'
@@ -2447,18 +2643,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 )}
 
                 <div className="relative">
-                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                    <label className="block text-xs font-bold text-stone-700">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 truncate">
                       {lang === 'ID'
                         ? 'Nama Lengkap / Gelar *'
                         : 'Full Name / Title *'}
                     </label>
-                    {guests.length > 0 && (
-                      <span className="text-[10px] font-semibold text-[#9A742B]">
-                        {lang === 'ID'
-                          ? `🔍 Ketik nama untuk cari dari ${guests.length} tamu terdaftar`
-                          : `🔍 Type your name to search ${guests.length} registered guests`}
+                    {effectiveMatchedGuest ? (
+                      <span
+                        title={`Data tamu terhubung otomatis dengan kode undangan ${effectiveMatchedGuest.invitationCode}`}
+                        className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap truncate shrink-0"
+                      >
+                        ✓ {effectiveMatchedGuest.invitationCode}
                       </span>
+                    ) : (
+                      guests.length > 0 && (
+                        <span
+                          title={`Ketik minimal 3 huruf nama atau kode undangan dari ${guests.length} tamu terdaftar`}
+                          className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
+                        >
+                          {lang === 'ID'
+                            ? `🔍 Cari (${guests.length} Tamu)`
+                            : `🔍 Search (${guests.length} Guests)`}
+                        </span>
+                      )
                     )}
                   </div>
                   <input
@@ -2627,14 +2835,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                    <label className="block text-xs font-bold text-stone-700">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 truncate">
                       {lang === 'ID' ? 'Sesi Kehadiran' : 'Event Session'}
                     </label>
-                    <span className="text-[10px] font-semibold text-[#9A742B]">
+                    <span
+                      title={`Opsi kehadiran otomatis mengikuti ${visibleEvents.length} jadwal acara aktif di database`}
+                      className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
+                    >
                       {lang === 'ID'
-                        ? `Sinkron Jadwal Acara Database (${visibleEvents.length} Sesi)`
-                        : `Synced Event Schedule (${visibleEvents.length} Sessions)`}
+                        ? `✓ ${visibleEvents.length} Sesi`
+                        : `✓ ${visibleEvents.length} Sessions`}
                     </span>
                   </div>
                   <select
@@ -2702,10 +2913,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40] shrink-0" />
                   <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
-                    {lang === 'ID'
-                      ? 'Buku Tamu & Doa Restu'
-                      : 'Wedding Guestbook & Wishes'}{' '}
-                    ({publicVisibleWishes.length})
+                    {eventMeta.wishesTitle} ({publicVisibleWishes.length})
                   </h3>
                 </div>
                 <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
@@ -3229,17 +3437,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               {lang === 'ID' ? 'Kami yang berbahagia,' : 'With love & gratitude,'}
             </p>
             <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-1">
-              {settings.groomNickname && settings.groomNickname !== 'Mempelai Pria'
-                ? settings.groomNickname
-                : 'Eko'}{' '}
-              <span className="text-[#C5A059]">&amp;</span>{' '}
-              {settings.brideNickname && settings.brideNickname !== 'Mempelai Wanita'
-                ? settings.brideNickname
-                : 'Selo'}
+              {displayTitleShort}
             </p>
-            <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-1">
-              {settings.groomFullName} &amp; {settings.brideFullName}
-            </p>
+            {displayTitleFull !== displayTitleShort && (
+              <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-1">
+                {displayTitleFull}
+              </p>
+            )}
           </div>
 
           <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-6 mb-2.5" />
@@ -3343,7 +3547,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               a.n.{' '}
               {settings.giftRecipientName && settings.giftRecipientName !== 'Mempelai'
                 ? settings.giftRecipientName
-                : `${settings.groomFullName} & ${settings.brideFullName}`}
+                : displayTitleFull}
             </p>
             {settings.qrisImageUrl && settings.qrisImageUrl.trim() !== '' ? (
               <div className="w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-2xl border-2 border-[#D4AF37]/60 bg-white flex flex-col items-center justify-center p-2.5 mb-4 shadow-inner overflow-hidden">

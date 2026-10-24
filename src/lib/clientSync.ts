@@ -185,6 +185,15 @@ function normalizeParsedState(
   }
 
   if (
+    typeof mergedSettings.musicVolume !== 'number' ||
+    !Number.isFinite(mergedSettings.musicVolume)
+  ) {
+    mergedSettings.musicVolume = 80;
+  } else if (mergedSettings.musicVolume > 0 && mergedSettings.musicVolume <= 5) {
+    mergedSettings.musicVolume = 80;
+  }
+
+  if (
     !mergedSettings.subtitle ||
     mergedSettings.subtitle.includes('Biston: 18 Desember 2026')
   ) {
@@ -951,7 +960,13 @@ class AmbientWeddingPlayer {
     this.probePlaylistMetadata(list);
 
     if (typeof settings.musicVolume === 'number' && Number.isFinite(settings.musicVolume)) {
-      this.volume = Math.max(0, Math.min(100, settings.musicVolume));
+      const rawVol =
+        settings.musicVolume > 0 && settings.musicVolume <= 5
+          ? settings.musicVolume === 1
+            ? 80
+            : Math.round(settings.musicVolume * 100)
+          : settings.musicVolume;
+      this.volume = Math.max(0, Math.min(100, rawVol));
       if (this.audioEl) {
         this.audioEl.volume = this.isMuted ? 0 : this.volume / 100;
       }

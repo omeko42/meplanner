@@ -143,6 +143,7 @@ import {
   clearAuditLogs,
   appendAuditLog,
   uploadAudioToSupabaseStorage,
+  uploadVideoToSupabaseStorage,
   deleteAudioFromSupabaseStorage,
   deleteMediaFromSupabaseStorage,
   fetchSupabaseStorageCapacity,
@@ -2545,6 +2546,91 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   };
 
+  const [uploadingVideoSlot, setUploadingVideoSlot] = useState<
+    'coverVideoUrl' | 'heroVideoUrl' | 'pageVideoUrl' | 'all_video' | null
+  >(null);
+
+  const handleUploadThemeVideo = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: 'coverVideoUrl' | 'heroVideoUrl' | 'pageVideoUrl' | 'all_video'
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      showToast(
+        'Ukuran video maksimal 25 MB. Silakan kompres video terlebih dahulu.'
+      );
+      return;
+    }
+    setUploadingVideoSlot(slot);
+    showToast('Mengunggah video ke Supabase Storage CDN...');
+    try {
+      const res = await uploadVideoToSupabaseStorage(
+        file,
+        slot === 'all_video' ? 'bg_video' : slot
+      );
+      if (res.url) {
+        if (slot === 'all_video') {
+          void deleteMediaFromSupabaseStorage(
+            settingsForm.coverVideoUrl || state.settings.coverVideoUrl
+          );
+          void deleteMediaFromSupabaseStorage(
+            settingsForm.heroVideoUrl || state.settings.heroVideoUrl
+          );
+          void deleteMediaFromSupabaseStorage(
+            settingsForm.pageVideoUrl || state.settings.pageVideoUrl
+          );
+        } else {
+          void deleteMediaFromSupabaseStorage(
+            settingsForm[slot] || state.settings[slot]
+          );
+        }
+        const videoPatch =
+          slot === 'all_video'
+            ? {
+                coverVideoUrl: res.url,
+                heroVideoUrl: res.url,
+                pageVideoUrl: res.url,
+              }
+            : { [slot]: res.url };
+        setSettingsForm((prev) => ({
+          ...prev,
+          ...videoPatch,
+        }));
+        await commitImmediateSettings({
+          ...state.settings,
+          ...settingsForm,
+          ...videoPatch,
+          updatedBy: adminUser.username,
+        });
+        appendAuditLog({
+          actor: adminUser.username,
+          module: 'VIDEO_TEMA',
+          action: 'EDIT',
+          status: 'SUCCESS',
+          summary: `Upload Video Background (${slot}: ${(
+            file.size /
+            (1024 * 1024)
+          ).toFixed(1)} MB)`,
+        });
+        showToast(
+          '✓ Video Background berhasil diunggah ke Supabase Storage & diterapkan!'
+        );
+      } else if (res.error) {
+        showToast(res.error);
+      }
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'Gagal mengunggah video ke Supabase Storage.'
+      );
+    } finally {
+      setUploadingVideoSlot(null);
+    }
+  };
+
   const handleUploadQrisFile = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -4266,12 +4352,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {
                 id: 'readiness' as AdminModuleTab,
                 label: 'Tracker',
+                title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
                 icon: LayoutDashboard,
                 badge: `${metrics.readinessPercent}%`,
               },
               {
                 id: 'checklist' as AdminModuleTab,
                 label: 'Checklist',
+                title: 'Daftar Tugas & Persiapan Acara per Timeline',
                 icon: CheckSquare,
                 badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
               },
@@ -4280,6 +4368,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {
                       id: 'budget' as AdminModuleTab,
                       label: 'Moneter',
+                      title: 'Manajemen Anggaran, Vendor & Pembayaran',
                       icon: Wallet,
                       badge: `${state.budgetItems.length} Item`,
                     },
@@ -4288,12 +4377,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {
                 id: 'guests' as AdminModuleTab,
                 label: 'Tamu',
+                title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
                 icon: Users,
                 badge: `${metrics.totalGuests} (${metrics.totalPaxQuota} Pax)`,
               },
               {
                 id: 'settings' as AdminModuleTab,
                 label: 'Pengaturan',
+                title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
                 icon: Settings,
               },
               ...(isSuperadmin
@@ -4301,6 +4392,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {
                       id: 'superadmin' as AdminModuleTab,
                       label: 'Superadmin',
+                      title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                       icon: Shield,
                       badge: `${effectiveClientGroups.length} Klien`,
                     },
@@ -4313,15 +4405,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   key={tab.id}
                   type="button"
+                  title={tab.title}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap truncate transition-all ${
                     active
                       ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                       : 'text-stone-600 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span>{tab.label}</span>
+                  <span className="truncate">{tab.label}</span>
                   {tab.badge && (
                     <span
                       className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
@@ -6238,30 +6331,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {
                     id: 'visibilitas' as const,
                     label: 'Konten Undangan',
+                    title: 'Atur seksi undangan, kategori acara (My Event Planner), profil, kisah kasih, galeri & amplop digital',
                     icon: Eye,
                     show: true,
                   },
                   {
                     id: 'background' as const,
                     label: 'Tema & Latar',
+                    title: 'Atur foto & video background interaktif (maks. 25 MB), efek blur, serta musik undangan',
                     icon: Sparkles,
                     show: true,
                   },
                   {
                     id: 'jadwal' as const,
                     label: 'Jadwal Acara',
+                    title: 'Kelola daftar rangkaian acara, lokasi Google Maps & waktu hitung mundur (Countdown)',
                     icon: Calendar,
                     show: true,
                   },
                   {
                     id: 'keamanan' as const,
                     label: 'Akun & Akses',
+                    title: 'Kelola akun admin, panitia, kata sandi & hak akses',
                     icon: Lock,
                     show: !isPanitia,
                   },
                   {
                     id: 'database' as const,
                     label: 'Database',
+                    title: 'Sinkronisasi Supabase Cloud, Google Sheets, Backup/Restore JSON & Kapasitas Storage',
                     icon: FileSpreadsheet,
                     show: true,
                   },
@@ -6274,8 +6372,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         key={menu.id}
                         type="button"
+                        title={menu.title}
                         onClick={() => setSettingsMenuTab(menu.id)}
-                        className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
+                        className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left whitespace-nowrap truncate transition-all ${
                           isActive
                             ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-2 border-[#B68D40] shadow-xs lg:shadow-none lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
                             : 'bg-white lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-[#D4AF37]/35 shadow-2xs lg:shadow-none lg:border-0'
@@ -6287,7 +6386,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               isActive ? 'text-[#B68D40]' : 'text-stone-400'
                             }`}
                           />
-                          <span className="text-[11px] sm:text-xs lg:text-sm truncate">{menu.label}</span>
+                          <span className="text-[11px] sm:text-xs lg:text-sm whitespace-nowrap truncate">{menu.label}</span>
                         </div>
                         <ChevronRight
                           className={`hidden lg:block w-4 h-4 shrink-0 ${
@@ -6321,8 +6420,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
+                        title="Tampilkan seluruh 9 seksi konten undangan"
                         onClick={() => setVisibilitasSubTab('semua')}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all ${
                           visibilitasSubTab === 'semua'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
@@ -6333,11 +6433,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </button>
                       <button
                         type="button"
+                        title="Kelola momen Kisah Kasih dan foto Galeri Prewedding"
                         onClick={() => {
                           setVisibilitasSubTab('media');
                           setExpandedSectionKey('showLoveStorySection');
                         }}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all ${
                           visibilitasSubTab === 'media'
                             ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
                             : 'text-stone-600 hover:text-[#8B6914]'
@@ -6360,8 +6461,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         },
                         {
                           key: 'showCoupleSection' as const,
-                          title: 'Profil Mempelai',
-                          preview: `${state.settings.groomFullName} & ${state.settings.brideFullName}`,
+                          title:
+                            state.settings.eventType &&
+                            state.settings.eventType !== 'WEDDING'
+                              ? 'Profil Mempelai / Acara (My Event Planner)'
+                              : 'Profil Mempelai / Acara',
+                          preview: state.settings.brideFullName
+                            ? `${state.settings.groomFullName} & ${state.settings.brideFullName}`
+                            : state.settings.groomFullName,
                           icon: Users,
                           group: 'semua',
                         },
@@ -6717,17 +6824,141 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         </form>
                                       )}
 
-                                      {/* 2. EDITOR PROFIL KEDUA MEMPELAI */}
+                                      {/* 2. EDITOR PROFIL KEDUA MEMPELAI / TOKOH ACARA */}
                                       {sec.key === 'showCoupleSection' && (
                                         <form
                                           onSubmit={handleSaveSettingsModal}
                                           className="space-y-3"
                                         >
+                                          {/* Kategori Acara (My Event Planner) Selector */}
+                                          <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/40 space-y-2.5">
+                                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                              <div className="flex items-center gap-1.5 min-w-0">
+                                                <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                                <p className="font-bold text-[#8B6914] uppercase text-[11px] truncate">
+                                                  Kategori Acara (My Event Planner)
+                                                </p>
+                                                <InfoTooltip text="Pilih jenis acara untuk menyesuaikan label profil, judul undangan, dan tata letak (mendukung 1 tokoh maupun 2 mempelai)." />
+                                              </div>
+                                              <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                                {settingsForm.eventType || 'WEDDING'}
+                                              </span>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-1.5">
+                                              {[
+                                                {
+                                                  id: 'WEDDING' as const,
+                                                  label: '💍 Wedding',
+                                                  title:
+                                                    'Acara Pernikahan (2 Profil: Mempelai Pria & Wanita)',
+                                                  defaultRole: 'Mempelai Pria',
+                                                },
+                                                {
+                                                  id: 'BIRTHDAY' as const,
+                                                  label: '🎂 Birthday',
+                                                  title:
+                                                    'Perayaan Ulang Tahun (1 Profil Utama / Co-Host Opsional)',
+                                                  defaultRole: 'Yang Berulang Tahun',
+                                                },
+                                                {
+                                                  id: 'GRADUATION' as const,
+                                                  label: '🎓 Graduation',
+                                                  title:
+                                                    'Syukuran Wisuda & Kelulusan',
+                                                  defaultRole: 'Wisudawan',
+                                                },
+                                                {
+                                                  id: 'MEETING' as const,
+                                                  label: '🏛️ Rapat / Corporate',
+                                                  title:
+                                                    'Rapat Resmi, Seminar, atau Forum Instansi',
+                                                  defaultRole:
+                                                    'Penyelenggara / Pimpinan',
+                                                },
+                                                {
+                                                  id: 'GALA_DINNER' as const,
+                                                  label: '🥂 Gala Dinner',
+                                                  title:
+                                                    'Malam Apresiasi, Gathering, atau Gala Dinner Eksklusif',
+                                                  defaultRole: 'Host Gala Dinner',
+                                                },
+                                              ].map((cat) => {
+                                                const activeCat =
+                                                  (settingsForm.eventType ||
+                                                    'WEDDING') === cat.id;
+                                                return (
+                                                  <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    title={cat.title}
+                                                    onClick={() =>
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        eventType: cat.id,
+                                                        eventHostRoleLabel:
+                                                          settingsForm.eventHostRoleLabel ||
+                                                          cat.defaultRole,
+                                                      })
+                                                    }
+                                                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap truncate transition-all border ${
+                                                      activeCat
+                                                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                                        : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] border-[#D4AF37]/35'
+                                                    }`}
+                                                  >
+                                                    {cat.label}
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+
+                                            <div className="pt-1">
+                                              <label className="block text-stone-600 mb-1 truncate font-semibold text-[11px]">
+                                                Label Peran Tokoh Utama
+                                              </label>
+                                              <input
+                                                type="text"
+                                                value={
+                                                  settingsForm.eventHostRoleLabel ||
+                                                  ''
+                                                }
+                                                onChange={(e) =>
+                                                  setSettingsForm({
+                                                    ...settingsForm,
+                                                    eventHostRoleLabel:
+                                                      e.target.value,
+                                                  })
+                                                }
+                                                placeholder={
+                                                  settingsForm.eventType ===
+                                                  'BIRTHDAY'
+                                                    ? 'Contoh: Yang Berulang Tahun'
+                                                    : settingsForm.eventType ===
+                                                      'GRADUATION'
+                                                    ? 'Contoh: Wisudawan'
+                                                    : settingsForm.eventType ===
+                                                      'MEETING'
+                                                    ? 'Contoh: Penyelenggara / Pimpinan'
+                                                    : settingsForm.eventType ===
+                                                      'GALA_DINNER'
+                                                    ? 'Contoh: Host Gala Dinner'
+                                                    : 'Contoh: Mempelai Pria'
+                                                }
+                                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-medium text-stone-800"
+                                              />
+                                            </div>
+                                          </div>
+
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Pria */}
+                                            {/* Pria / Profil Utama */}
                                             <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                                              <p className="font-bold text-[#8B6914] uppercase text-[11px]">
-                                                Mempelai Pria
+                                              <p className="font-bold text-[#8B6914] uppercase text-[11px] truncate">
+                                                {settingsForm.eventType &&
+                                                settingsForm.eventType !==
+                                                  'WEDDING'
+                                                  ? 'Profil Utama / Host Acara'
+                                                  : 'Mempelai Pria'}
                                               </p>
                                               <div>
                                                 <label className="block text-stone-600 mb-0.5 truncate">
@@ -6890,10 +7121,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </div>
                                             </div>
 
-                                            {/* Wanita */}
+                                            {/* Wanita / Profil Pendamping */}
                                             <div className="p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5">
-                                              <p className="font-bold text-[#8B6914] uppercase text-[11px]">
-                                                Mempelai Wanita
+                                              <p className="font-bold text-[#8B6914] uppercase text-[11px] truncate">
+                                                {settingsForm.eventType &&
+                                                settingsForm.eventType !==
+                                                  'WEDDING'
+                                                  ? 'Profil Pendamping / Co-Host (Opsional — Kosongkan jika 1 Tokoh)'
+                                                  : 'Mempelai Wanita'}
                                               </p>
                                               <div>
                                                 <label className="block text-stone-600 mb-0.5 truncate">
@@ -8845,6 +9080,271 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 : 'URL gambar atau klik Upload...'
                             }
                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* =============================================================
+                        MOTION VIDEO BACKGROUND STUDIO (UP TO 25 MB) + MOBILE-TO-PC HIGHLIGHT STRETCH CONTROLS
+                       ============================================================= */}
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/45 space-y-3.5">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
+                            🎬 Video Background Interaktif (Maks. 25 MB &bull; Adaptif HP 9:16 ke Layar PC 16:9)
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-white text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0">
+                            MP4 / WebM / MOV &le; 25 MB
+                          </span>
+                        </div>
+
+                        <label
+                          title="Upload 1 file video (maksimal 25 MB) untuk diterapkan sekaligus ke Sampul, Banner Hero, dan Wallpaper Latar"
+                          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
+                            uploadingVideoSlot === 'all_video' ? 'opacity-60 pointer-events-none' : ''
+                          }`}
+                        >
+                          <Upload className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {uploadingVideoSlot === 'all_video'
+                              ? 'Mengunggah Video...'
+                              : 'Upload Video ke Semua Latar'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                            className="hidden"
+                            onChange={(e) => handleUploadThemeVideo(e, 'all_video')}
+                          />
+                        </label>
+                      </div>
+
+                      {/* 3 Video Background Slots */}
+                      <div className="space-y-2.5">
+                        {(
+                          [
+                            {
+                              slot: 'coverVideoUrl' as const,
+                              label: '1. Video Sampul (Cover)',
+                              uploadTitle:
+                                'Upload video maksimal 25 MB untuk latar Sampul Pembuka',
+                            },
+                            {
+                              slot: 'heroVideoUrl' as const,
+                              label: '2. Video Banner Hero',
+                              uploadTitle:
+                                'Upload video maksimal 25 MB untuk latar Banner Utama (Hero)',
+                            },
+                            {
+                              slot: 'pageVideoUrl' as const,
+                              label: '3. Video Wallpaper Latar',
+                              uploadTitle:
+                                'Upload video maksimal 25 MB untuk latar Wallpaper halaman undangan',
+                            },
+                          ] as const
+                        ).map((vItem) => {
+                          const currentVideoUrl = settingsForm[vItem.slot] || '';
+                          const isUploadingThis = uploadingVideoSlot === vItem.slot;
+                          return (
+                            <div
+                              key={vItem.slot}
+                              className="p-3 rounded-xl bg-white border border-stone-200 space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <label className="block font-bold text-xs text-stone-800 truncate">
+                                    {vItem.label}
+                                  </label>
+                                  {currentVideoUrl && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                      ✓ Video Aktif
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {currentVideoUrl && (
+                                    <button
+                                      type="button"
+                                      title={`Hapus ${vItem.label} dari undangan dan Supabase Storage`}
+                                      onClick={async () => {
+                                        void deleteMediaFromSupabaseStorage(currentVideoUrl);
+                                        const nextSettings: WeddingSettings = {
+                                          ...state.settings,
+                                          ...settingsForm,
+                                          [vItem.slot]: '',
+                                          updatedBy: adminUser.username,
+                                        };
+                                        await commitImmediateSettings(nextSettings);
+                                        showToast(`${vItem.label} berhasil dihapus.`);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
+                                    >
+                                      <Trash2 className="w-3 h-3 shrink-0" />
+                                      <span>Hapus Video</span>
+                                    </button>
+                                  )}
+                                  <label
+                                    title={vItem.uploadTitle}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
+                                      isUploadingThis ? 'opacity-60 pointer-events-none' : ''
+                                    }`}
+                                  >
+                                    <Upload className="w-3.5 h-3.5 shrink-0" />
+                                    <span>
+                                      {isUploadingThis ? 'Mengunggah...' : 'Upload Video'}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                                      className="hidden"
+                                      onChange={(e) =>
+                                        handleUploadThemeVideo(e, vItem.slot)
+                                      }
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                value={currentVideoUrl}
+                                onChange={(e) =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    [vItem.slot]: e.target.value,
+                                  })
+                                }
+                                placeholder="Tempel URL video (.mp4 / .webm) atau klik Upload Video (maks. 25 MB)..."
+                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs bg-[#FAF8F5]"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Pengaturan Stretch & Highlight Otomatis (Format HP 9:16 ➔ Layar PC 16:9) */}
+                      <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-stone-800 truncate">
+                            Pengaturan Stretch &amp; Highlight Otomatis (Format HP 9:16 &#10132; Layar PC 16:9)
+                          </span>
+                          <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-full border border-[#D4AF37]/40 whitespace-nowrap">
+                            Fokus Y: {settingsForm.videoFocusY ?? 28}%
+                          </span>
+                        </div>
+
+                        {/* Mode Tampilan di PC */}
+                        <div className="space-y-1.5">
+                          <label className="block text-[11px] font-semibold text-stone-600 truncate">
+                            Mode Tampilan di PC (Widescreen 16:9)
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {(
+                              [
+                                {
+                                  mode: 'HIGHLIGHT_COVER' as const,
+                                  label:
+                                    'Stretch Penuh Fokus Highlight (Otomatis Penuhi Layar PC)',
+                                  title:
+                                    'Video vertikal HP otomatis di-stretch memenuhi layar lebar PC dengan menjaga titik fokus highlight tetap di tengah',
+                                },
+                                {
+                                  mode: 'CINEMA_BLUR' as const,
+                                  label:
+                                    'Cinema Spotlight (Tengah Utuh + Blur Artistik Kiri-Kanan)',
+                                  title:
+                                    'Menampilkan rasio asli video di tengah dengan latar blur sinematik di sisi kiri dan kanan layar PC',
+                                },
+                              ] as const
+                            ).map((m) => {
+                              const isSelectedMode =
+                                (settingsForm.videoDesktopMode ||
+                                  'HIGHLIGHT_COVER') === m.mode;
+                              return (
+                                <button
+                                  key={m.mode}
+                                  type="button"
+                                  title={m.title}
+                                  onClick={() =>
+                                    setSettingsForm({
+                                      ...settingsForm,
+                                      videoDesktopMode: m.mode,
+                                    })
+                                  }
+                                  className={`px-3 py-2 rounded-xl border text-[11px] font-bold text-left whitespace-nowrap truncate transition-all ${
+                                    isSelectedMode
+                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-[#D4AF37]/35'
+                                  }`}
+                                >
+                                  {m.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Slider Titik Fokus Vertikal Highlight di PC */}
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <label className="font-semibold text-[11px] text-stone-700 truncate">
+                              Titik Fokus Vertikal Highlight di PC (0% Atas &ndash; 100% Bawah)
+                            </label>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {[
+                                {
+                                  label: 'Wajah/Atas (25%)',
+                                  val: 25,
+                                  title:
+                                    'Fokuskan area wajah/kepala subjek di bagian atas video (25%) saat di-stretch di layar PC',
+                                },
+                                {
+                                  label: 'Tengah (50%)',
+                                  val: 50,
+                                  title:
+                                    'Fokuskan bagian tengah video (50%) saat ditampilkan di layar PC',
+                                },
+                                {
+                                  label: 'Bawah (75%)',
+                                  val: 75,
+                                  title:
+                                    'Fokuskan bagian bawah video (75%) saat ditampilkan di layar PC',
+                                },
+                              ].map((preset) => (
+                                <button
+                                  key={preset.val}
+                                  type="button"
+                                  title={preset.title}
+                                  onClick={() =>
+                                    setSettingsForm({
+                                      ...settingsForm,
+                                      videoFocusY: preset.val,
+                                    })
+                                  }
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap truncate border transition-all ${
+                                    (settingsForm.videoFocusY ?? 28) ===
+                                    preset.val
+                                      ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                                      : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
+                                  }`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={settingsForm.videoFocusY ?? 28}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                videoFocusY: Number(e.target.value),
+                              })
+                            }
+                            className="w-full accent-[#B68D40]"
                           />
                         </div>
                       </div>
@@ -18021,11 +18521,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {
               id: 'readiness' as AdminModuleTab,
               label: 'Tracker',
+              title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
               icon: LayoutDashboard,
             },
             {
               id: 'checklist' as AdminModuleTab,
               label: 'Checklist',
+              title: 'Daftar Tugas & Persiapan Acara per Timeline',
               icon: CheckSquare,
             },
             ...(!isPanitia
@@ -18033,6 +18535,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {
                     id: 'budget' as AdminModuleTab,
                     label: 'Moneter',
+                    title: 'Manajemen Anggaran, Vendor & Pembayaran',
                     icon: Wallet,
                   },
                 ]
@@ -18040,11 +18543,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {
               id: 'guests' as AdminModuleTab,
               label: 'Tamu',
+              title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
               icon: Users,
             },
             {
               id: 'settings' as AdminModuleTab,
               label: 'Pengaturan',
+              title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
               icon: Settings,
             },
             ...(isSuperadmin
@@ -18052,6 +18557,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {
                     id: 'superadmin' as AdminModuleTab,
                     label: 'Superadmin',
+                    title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                     icon: Shield,
                   },
                 ]
@@ -18063,11 +18569,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 key={tab.id}
                 type="button"
+                title={tab.title}
                 onClick={() => {
                   setActiveTab(tab.id);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all ${
+                className={`py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 whitespace-nowrap truncate transition-all ${
                   active
                     ? 'bg-gradient-to-b from-[#FAF3E3] to-[#F3E3C3] text-[#8B6914] font-extrabold border border-[#D4AF37]/45 shadow-2xs'
                     : 'text-stone-500 hover:text-[#8B6914] font-semibold'
@@ -18078,7 +18585,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     active ? 'text-[#B68D40]' : 'text-stone-400'
                   }`}
                 />
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight truncate max-w-full px-0.5">
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight whitespace-nowrap truncate max-w-full px-0.5">
                   {tab.label}
                 </span>
               </button>

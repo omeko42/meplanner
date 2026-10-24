@@ -696,6 +696,10 @@ export function mergeFullDatabaseMultiDevice(
       nextSettings.coverBgUrl = cs.coverBgUrl || nextSettings.coverBgUrl;
       nextSettings.heroPrewedUrl = cs.heroPrewedUrl || nextSettings.heroPrewedUrl;
       nextSettings.pageBgUrl = cs.pageBgUrl || nextSettings.pageBgUrl;
+      nextSettings.coverVideoUrl = cs.coverVideoUrl || nextSettings.coverVideoUrl;
+      nextSettings.heroVideoUrl = cs.heroVideoUrl || nextSettings.heroVideoUrl;
+      nextSettings.pageVideoUrl = cs.pageVideoUrl || nextSettings.pageVideoUrl;
+      nextSettings.eventType = nextSettings.eventType || cs.eventType || 'WEDDING';
       nextSettings.qrisImageUrl = cs.qrisImageUrl ?? nextSettings.qrisImageUrl;
       nextSettings.photoAdjustments =
         cs.photoAdjustments || nextSettings.photoAdjustments;
@@ -1170,6 +1174,13 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       next.musicArtist = next.musicPlaylist[0].artist;
     }
   }
+  if (
+    typeof next.musicVolume !== 'number' ||
+    !Number.isFinite(next.musicVolume) ||
+    (next.musicVolume > 0 && next.musicVolume <= 5)
+  ) {
+    next.musicVolume = 80;
+  }
   if (!next.subtitle || next.subtitle.includes('Biston: 18 Desember 2026')) {
     if (Array.isArray(next.scheduleEvents) && next.scheduleEvents.length > 0) {
       const activeEvents = next.scheduleEvents.filter(
@@ -1378,9 +1389,77 @@ export async function uploadImageToSupabaseStorage(
   }
 }
 
+export const MAX_VIDEO_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB
+
+export async function uploadVideoToSupabaseStorage(
+  file: File,
+  slotKey: string
+): Promise<{ url: string | null; error?: string }> {
+  if (!file) return { url: null, error: 'File video tidak ditemukan.' };
+  if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      url: null,
+      error: `Ukuran video (${sizeMb} MB) melebihi batas maksimal 25 MB.`,
+    };
+  }
+  try {
+    let ext = 'mp4';
+    const nameExt = file.name.split('.').pop()?.toLowerCase() || '';
+    if (['mp4', 'webm', 'mov', 'm4v'].includes(nameExt)) {
+      ext = nameExt === 'm4v' ? 'mp4' : nameExt;
+    } else if (file.type.includes('webm')) {
+      ext = 'webm';
+    } else if (file.type.includes('quicktime')) {
+      ext = 'mov';
+    }
+    const contentType =
+      file.type && file.type.startsWith('video/')
+        ? file.type
+        : ext === 'webm'
+          ? 'video/webm'
+          : 'video/mp4';
+
+    const safeSlot = slotKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const stamp = `${file.size.toString(36)}_${Date.now().toString(36)}`;
+    const objectPath = `videos/${safeSlot}_${stamp}.${ext}`;
+
+    const upRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': contentType,
+          'x-upsert': 'true',
+        },
+        body: file,
+      }
+    );
+    if (!upRes.ok) {
+      const errText = await upRes.text().catch(() => '');
+      return {
+        url: null,
+        error: `Gagal mengunggah video ke Supabase Storage (HTTP ${upRes.status}): ${errText.slice(0, 120)}`,
+      };
+    }
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+    return { url: publicUrl };
+  } catch (err) {
+    return {
+      url: null,
+      error:
+        err instanceof Error
+          ? err.message
+          : 'Gagal mengunggah video ke Supabase Storage.',
+    };
+  }
+}
+
 /**
  * Automatic Zero-Trace Garbage Collector for Supabase Storage (`wedding-media`).
- * Deletes any file in `photos/` or `music/` that is no longer referenced by the current settings.
+ * Deletes any file in `photos/`, `music/`, or `videos/` that is no longer referenced by the current settings.
  */
 export async function cleanupOrphanedStorageMedia(
   settings: WeddingSettings
@@ -1396,32 +1475,49 @@ export async function cleanupOrphanedStorageMedia(
       if (p) activeObjectPaths.add(p);
     };
 
-    registerUrl(settings.groomPhotoUrl);
-    registerUrl(settings.bridePhotoUrl);
-    registerUrl(settings.coverBgUrl);
-    registerUrl(settings.heroPrewedUrl);
-    registerUrl(settings.pageBgUrl);
-    registerUrl(settings.qrisImageUrl);
+    const registerSettingsMedia = (s?: Partial<WeddingSettings>) => {
+      if (!s) return;
+      registerUrl(s.groomPhotoUrl);
+      registerUrl(s.bridePhotoUrl);
+      registerUrl(s.coverBgUrl);
+      registerUrl(s.heroPrewedUrl);
+      registerUrl(s.pageBgUrl);
+      registerUrl(s.coverVideoUrl);
+      registerUrl(s.heroVideoUrl);
+      registerUrl(s.pageVideoUrl);
+      registerUrl(s.qrisImageUrl);
+      registerUrl(s.commercialQrisImageUrl);
 
-    if (settings.originalPhotos) {
-      Object.values(settings.originalPhotos).forEach((u) => registerUrl(u));
-    }
-    if (Array.isArray(settings.galleryPhotos)) {
-      settings.galleryPhotos.forEach((gp) => {
-        registerUrl(gp.imageUrl);
-        registerUrl(gp.originalImageUrl);
-      });
-    }
-    if (Array.isArray(settings.musicPlaylist)) {
-      settings.musicPlaylist.forEach((m) => registerUrl(m.url));
-    }
+      if (s.originalPhotos) {
+        Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
+      }
+      if (Array.isArray(s.galleryPhotos)) {
+        s.galleryPhotos.forEach((gp) => {
+          registerUrl(gp.imageUrl);
+          registerUrl(gp.originalImageUrl);
+        });
+      }
+      if (Array.isArray(s.musicPlaylist)) {
+        s.musicPlaylist.forEach((m) => registerUrl(m.url));
+      }
+      if (Array.isArray(s.commercialPaymentChannels)) {
+        s.commercialPaymentChannels.forEach((ch) =>
+          registerUrl(ch.qrCodeImageUrl)
+        );
+      }
+    };
+
+    registerSettingsMedia(settings);
+    Object.values(settings.clientWorkspaces || {}).forEach((ws) => {
+      if (ws?.settings) registerSettingsMedia(ws.settings);
+    });
 
     // Extra safety guard: never delete anything if settings contain 0 wedding-media URLs
     if (activeObjectPaths.size === 0) {
       return;
     }
 
-    for (const folder of ['photos', 'music']) {
+    for (const folder of ['photos', 'music', 'videos']) {
       const listRes = await fetch(
         `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
         {
@@ -1468,7 +1564,7 @@ export async function cleanupOrphanedStorageMedia(
 }
 
 export interface SupabaseStorageFileEntry {
-  folder: 'photos' | 'music';
+  folder: 'photos' | 'music' | 'videos';
   name: string;
   objectPath: string;
   sizeBytes: number;
@@ -1482,6 +1578,8 @@ export interface SupabaseStorageCapacityReport {
   photoBytes: number;
   musicCount: number;
   musicBytes: number;
+  videoCount?: number;
+  videoBytes?: number;
   totalStorageBytes: number;
   orphanCount: number;
   orphanBytes: number;
@@ -1502,35 +1600,54 @@ export async function fetchSupabaseStorageCapacity(
     if (p) activeObjectPaths.add(p);
   };
 
-  registerUrl(settings.groomPhotoUrl);
-  registerUrl(settings.bridePhotoUrl);
-  registerUrl(settings.coverBgUrl);
-  registerUrl(settings.heroPrewedUrl);
-  registerUrl(settings.pageBgUrl);
-  registerUrl(settings.qrisImageUrl);
+  const registerSettingsMedia = (s?: Partial<WeddingSettings>) => {
+    if (!s) return;
+    registerUrl(s.groomPhotoUrl);
+    registerUrl(s.bridePhotoUrl);
+    registerUrl(s.coverBgUrl);
+    registerUrl(s.heroPrewedUrl);
+    registerUrl(s.pageBgUrl);
+    registerUrl(s.coverVideoUrl);
+    registerUrl(s.heroVideoUrl);
+    registerUrl(s.pageVideoUrl);
+    registerUrl(s.qrisImageUrl);
+    registerUrl(s.commercialQrisImageUrl);
 
-  if (settings.originalPhotos) {
-    Object.values(settings.originalPhotos).forEach((u) => registerUrl(u));
-  }
-  if (Array.isArray(settings.galleryPhotos)) {
-    settings.galleryPhotos.forEach((gp) => {
-      registerUrl(gp.imageUrl);
-      registerUrl(gp.originalImageUrl);
-    });
-  }
-  if (Array.isArray(settings.musicPlaylist)) {
-    settings.musicPlaylist.forEach((m) => registerUrl(m.url));
-  }
+    if (s.originalPhotos) {
+      Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
+    }
+    if (Array.isArray(s.galleryPhotos)) {
+      s.galleryPhotos.forEach((gp) => {
+        registerUrl(gp.imageUrl);
+        registerUrl(gp.originalImageUrl);
+      });
+    }
+    if (Array.isArray(s.musicPlaylist)) {
+      s.musicPlaylist.forEach((m) => registerUrl(m.url));
+    }
+    if (Array.isArray(s.commercialPaymentChannels)) {
+      s.commercialPaymentChannels.forEach((ch) =>
+        registerUrl(ch.qrCodeImageUrl)
+      );
+    }
+  };
+
+  registerSettingsMedia(settings);
+  Object.values(settings.clientWorkspaces || {}).forEach((ws) => {
+    if (ws?.settings) registerSettingsMedia(ws.settings);
+  });
 
   let photoCount = 0;
   let photoBytes = 0;
   let musicCount = 0;
   let musicBytes = 0;
+  let videoCount = 0;
+  let videoBytes = 0;
   let orphanCount = 0;
   let orphanBytes = 0;
   const files: SupabaseStorageFileEntry[] = [];
 
-  for (const folder of ['photos', 'music'] as const) {
+  for (const folder of ['photos', 'music', 'videos'] as const) {
     try {
       const listRes = await fetch(
         `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
@@ -1565,13 +1682,20 @@ export async function fetchSupabaseStorageCapacity(
         const sizeBytes = Number(item.metadata?.size || 0);
         const mimeType =
           item.metadata?.mimetype ||
-          (folder === 'photos' ? 'image/webp' : 'audio/mpeg');
+          (folder === 'photos'
+            ? 'image/webp'
+            : folder === 'videos'
+              ? 'video/mp4'
+              : 'audio/mpeg');
         const isReferenced = activeObjectPaths.has(objectPath);
         const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
 
         if (folder === 'photos') {
           photoCount += 1;
           photoBytes += sizeBytes;
+        } else if (folder === 'videos') {
+          videoCount += 1;
+          videoBytes += sizeBytes;
         } else {
           musicCount += 1;
           musicBytes += sizeBytes;
@@ -1602,7 +1726,9 @@ export async function fetchSupabaseStorageCapacity(
     photoBytes,
     musicCount,
     musicBytes,
-    totalStorageBytes: photoBytes + musicBytes,
+    videoCount,
+    videoBytes,
+    totalStorageBytes: photoBytes + musicBytes + videoBytes,
     orphanCount,
     orphanBytes,
     files,
