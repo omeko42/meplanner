@@ -34,6 +34,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  MapPin,
+  Music,
+  BookOpen,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -44,12 +47,564 @@ import {
   CommercialPaymentChannel,
   CommercialPaymentStatus,
   CommercialPaymentTransaction,
+  EventCategoryType,
   WeddingGuest,
   WeddingSettings,
 } from '@/types';
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
 
 const IDEMPOTENT_TX_STORAGE_KEY = 'mwm_active_idempotent_tx_v1';
+
+interface CatalogFloralCornerProps {
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  enabled?: boolean;
+}
+
+const CatalogFloralCorner: React.FC<CatalogFloralCornerProps> = ({
+  position,
+  size = 'md',
+  className = '',
+  enabled = true,
+}) => {
+  if (!enabled) return null;
+
+  const posClasses =
+    position === 'top-left'
+      ? 'top-0 left-0'
+      : position === 'top-right'
+        ? 'top-0 right-0 -scale-x-100'
+        : position === 'bottom-left'
+          ? 'bottom-0 left-0 -scale-y-100'
+          : 'bottom-0 right-0 -scale-x-100 -scale-y-100';
+
+  const sizeClasses =
+    size === 'sm'
+      ? 'w-14 h-14 sm:w-18 sm:h-18'
+      : size === 'lg'
+        ? 'w-24 h-24 sm:w-32 sm:h-32'
+        : 'w-20 h-20 sm:w-24 sm:h-24';
+
+  const swayClass =
+    position === 'top-left' || position === 'bottom-right'
+      ? 'animate-floral-sway'
+      : 'animate-floral-sway-reverse';
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none select-none absolute z-10 ${posClasses} ${sizeClasses} ${className}`}
+    >
+      <svg
+        viewBox="0 0 120 120"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={`w-full h-full opacity-85 ${swayClass}`}
+      >
+        <circle cx="24" cy="24" r="22" fill="#D4AF37" fillOpacity="0.10" />
+        <path
+          d="M6 108C8 64 34 32 106 8"
+          stroke="#C5A059"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M4 76C18 46 44 24 84 12"
+          stroke="#D4AF37"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeDasharray="2 2"
+        />
+        <path
+          d="M22 72C12 64 12 50 24 46C30 56 28 66 22 72Z"
+          fill="#E6C994"
+          fillOpacity="0.65"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <path
+          d="M42 50C34 38 38 24 52 22C54 34 50 44 42 50Z"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1.1"
+        />
+        <path
+          d="M68 28C64 18 70 10 82 10C82 18 76 25 68 28Z"
+          fill="#E6C994"
+          fillOpacity="0.6"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <path
+          d="M34 62C46 58 56 64 58 76C46 76 38 70 34 62Z"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1"
+        />
+        <path
+          d="M56 38C68 36 76 42 78 52C67 52 60 46 56 38Z"
+          fill="#E6C994"
+          fillOpacity="0.55"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <circle
+          cx="28"
+          cy="28"
+          r="11"
+          fill="#FAF3E3"
+          stroke="#C5A059"
+          strokeWidth="1.3"
+        />
+        <circle
+          cx="28"
+          cy="28"
+          r="6.5"
+          fill="#E6C994"
+          fillOpacity="0.75"
+          stroke="#B68D40"
+          strokeWidth="1"
+        />
+        <circle cx="28" cy="28" r="2.8" fill="#9A742B" />
+        <circle
+          cx="16"
+          cy="46"
+          r="3"
+          fill="#FFFDF9"
+          stroke="#C5A059"
+          strokeWidth="1"
+        />
+        <circle
+          cx="48"
+          cy="18"
+          r="3.2"
+          fill="#FFFDF9"
+          stroke="#C5A059"
+          strokeWidth="1"
+        />
+        <circle cx="18" cy="88" r="2.5" fill="#D4AF37" />
+        <circle cx="88" cy="16" r="2.5" fill="#D4AF37" />
+        <circle cx="62" cy="56" r="2" fill="#C5A059" />
+      </svg>
+    </div>
+  );
+};
+
+const CatalogEventCrest: React.FC<{
+  eventType?: EventCategoryType;
+  className?: string;
+}> = ({ eventType = 'WEDDING', className = 'w-6 h-6' }) => {
+  switch (eventType) {
+    case 'BIRTHDAY':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M4.5 20.5L6.5 9.5L11.5 14L14 7L16.5 14L21.5 9.5L23.5 20.5H4.5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <path
+            d="M5 23H23"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <circle cx="14" cy="4.2" r="1.3" fill="currentColor" />
+          <circle cx="6.2" cy="7.2" r="1.1" fill="currentColor" />
+          <circle cx="21.8" cy="7.2" r="1.1" fill="currentColor" />
+        </svg>
+      );
+    case 'GRADUATION':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M14 5L3 10.5L14 16L25 10.5L14 5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <path
+            d="M7.5 13V19.5C7.5 21.5 10.5 23 14 23C17.5 23 20.5 21.5 20.5 19.5V13"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M23.5 11.2V18.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <circle cx="23.5" cy="19.5" r="1.2" fill="currentColor" />
+        </svg>
+      );
+    case 'MEETING':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          <circle
+            cx="14"
+            cy="14"
+            r="9.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <path
+            d="M14 3.5L16.8 11.2L24.5 14L16.8 16.8L14 24.5L11.2 16.8L3.5 14L11.2 11.2L14 3.5Z"
+            stroke="currentColor"
+            strokeWidth="1.35"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <circle cx="14" cy="14" r="1.8" fill="currentColor" />
+        </svg>
+      );
+    case 'GALA_DINNER':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M14 2.5L16.6 9.8L23.8 6.2L20.2 13.4L27.5 16L20.2 18.6L23.8 25.8L16.6 22.2L14 27.5L11.4 22.2L4.2 25.8L7.8 18.6L0.5 16L7.8 13.4L4.2 6.2L11.4 9.8L14 2.5Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <circle
+            cx="14"
+            cy="15.5"
+            r="3"
+            stroke="currentColor"
+            strokeWidth="1.2"
+          />
+        </svg>
+      );
+    case 'WEDDING':
+    default:
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M14 2.8L15.1 5.6L17.9 6.7L15.1 7.8L14 10.6L12.9 7.8L10.1 6.7L12.9 5.6L14 2.8Z"
+            fill="currentColor"
+            fillOpacity="0.85"
+          />
+          <circle
+            cx="10.8"
+            cy="17"
+            r="6.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="currentColor"
+            fillOpacity="0.06"
+          />
+          <circle
+            cx="17.2"
+            cy="17"
+            r="6.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="currentColor"
+            fillOpacity="0.06"
+          />
+        </svg>
+      );
+  }
+};
+
+const CatalogGoldEmvChip: React.FC<{ className?: string }> = ({
+  className = 'w-9 h-7',
+}) => (
+  <svg
+    viewBox="0 0 48 36"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`shrink-0 ${className}`}
+    aria-hidden="true"
+  >
+    <rect
+      x="1"
+      y="1"
+      width="46"
+      height="34"
+      rx="6"
+      fill="url(#catalogEmvGoldGrad)"
+      stroke="#9A742B"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M16 1V35M32 1V35M1 12H16M32 12H47M1 24H16M32 24H47"
+      stroke="#8B6914"
+      strokeWidth="1"
+      strokeOpacity="0.65"
+    />
+    <rect
+      x="16"
+      y="8"
+      width="16"
+      height="20"
+      rx="3"
+      stroke="#8B6914"
+      strokeWidth="1"
+      strokeOpacity="0.7"
+      fill="#F3D77D"
+      fillOpacity="0.25"
+    />
+    <defs>
+      <linearGradient
+        id="catalogEmvGoldGrad"
+        x1="0"
+        y1="0"
+        x2="48"
+        y2="36"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#FAF0CA" />
+        <stop offset="0.45" stopColor="#D4AF37" />
+        <stop offset="0.8" stopColor="#C5A059" />
+        <stop offset="1" stopColor="#9A742B" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+interface SimulationHostItem {
+  name: string;
+  role: string;
+  parents: string;
+  photo: string;
+}
+
+interface SimulationEventPreset {
+  eventType: EventCategoryType;
+  tabLabelId: string;
+  tabLabelEn: string;
+  badgeId: string;
+  badgeEn: string;
+  monogram: string;
+  titleShort: string;
+  titleFull: string;
+  sectionTitleId: string;
+  sectionTitleEn: string;
+  quote: string;
+  heroImage: string;
+  profileCount: 1 | 2;
+  frameStyle: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT';
+  showFloral: boolean;
+  host1: SimulationHostItem;
+  host2?: SimulationHostItem;
+  eventTitle: string;
+  eventDate: string;
+  eventVenue: string;
+  musicTrackLabel: string;
+}
+
+const SIMULATION_EVENT_PRESETS: Record<
+  EventCategoryType,
+  SimulationEventPreset
+> = {
+  WEDDING: {
+    eventType: 'WEDDING',
+    tabLabelId: '💍 Pernikahan',
+    tabLabelEn: '💍 Wedding',
+    badgeId: 'Undangan Pernikahan',
+    badgeEn: 'The Wedding Celebration',
+    monogram: 'R & C',
+    titleShort: 'Rayhan & Clarissa',
+    titleFull:
+      'AKP Rayhan Dirgantara, S.Tr.K., S.I.K. & dr. Clarissa Aurelia, Sp.DV',
+    sectionTitleId: 'Mempelai yang Berbahagia',
+    sectionTitleEn: 'The Bride & Groom',
+    quote:
+      '"Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan." — Kolose 3 : 14',
+    heroImage:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+    profileCount: 2,
+    frameStyle: 'ARCH_DOME',
+    showFloral: true,
+    host1: {
+      name: 'AKP Rayhan Dirgantara, S.Tr.K., S.I.K.',
+      role: 'Mempelai Pria',
+      parents: 'Putra dari Bapak Ir. H. Baskoro & Ibu Hj. Ratna Sari',
+      photo:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80',
+    },
+    host2: {
+      name: 'dr. Clarissa Aurelia, Sp.DV',
+      role: 'Mempelai Wanita',
+      parents: 'Putri dari Bapak Prof. Dr. Hendra Wijaya & Ibu Dra. Sylvia',
+      photo:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80',
+    },
+    eventTitle: 'Pemberkatan & Grand Resepsi',
+    eventDate: 'Sabtu, 24 Oktober 2026 • 18.30 WIB',
+    eventVenue: 'Grand Ballroom Hotel Mulia Senayan, Jakarta',
+    musicTrackLabel: 'Romantic Strings Serenade (Royalty-Free Preview)',
+  },
+  BIRTHDAY: {
+    eventType: 'BIRTHDAY',
+    tabLabelId: '🎂 Ulang Tahun',
+    tabLabelEn: '🎂 Birthday',
+    badgeId: 'Sweet 17th Birthday Soirée',
+    badgeEn: 'Sweet 17th Birthday Soirée',
+    monogram: 'A • 17',
+    titleShort: 'Aurelia Putri',
+    titleFull: 'Aurelia Maharani Putri — 17th Milestone Celebration',
+    sectionTitleId: 'Profil Yang Berulang Tahun',
+    sectionTitleEn: 'The Celebrant Spotlight',
+    quote:
+      '"Mensyukuri setiap langkah perjalanan usia baru bersama keluarga dan sahabat tercinta."',
+    heroImage:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=80',
+    profileCount: 1,
+    frameStyle: 'CIRCLE',
+    showFloral: true,
+    host1: {
+      name: 'Aurelia Maharani Putri',
+      role: 'The Celebrant • Sweet 17th',
+      parents: 'Putri Tercinta dari Bapak Pratama & Ibu Indah',
+      photo:
+        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80',
+    },
+    eventTitle: 'Birthday Dinner & Candle Ceremony',
+    eventDate: 'Minggu, 15 November 2026 • 19.00 WIB',
+    eventVenue: 'The Glasshouse Rooftop Lounge, Surabaya',
+    musicTrackLabel: 'Champagne Waltz & Acoustic Piano',
+  },
+  GRADUATION: {
+    eventType: 'GRADUATION',
+    tabLabelId: '🎓 Wisuda',
+    tabLabelEn: '🎓 Graduation',
+    badgeId: 'Syukuran Wisuda & Sumpah Dokter',
+    badgeEn: 'Graduation & Medical Oath Celebration',
+    monogram: 'K • P',
+    titleShort: 'dr. Kevin Pratama',
+    titleFull: 'dr. Kevin Pratama, S.Ked. — Fakultas Kedokteran',
+    sectionTitleId: 'Profil Wisudawan',
+    sectionTitleEn: 'The Graduate Profile',
+    quote:
+      '"Sebuah awal pengabdian baru dari perjalanan panjang menuntut ilmu."',
+    heroImage:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80',
+    profileCount: 1,
+    frameStyle: 'ARCH_DOME',
+    showFloral: false,
+    host1: {
+      name: 'dr. Kevin Pratama, S.Ked.',
+      role: 'Wisudawan • Cum Laude',
+      parents: 'Putra dari Bapak Drs. Santoso & Ibu Dewi',
+      photo:
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',
+    },
+    eventTitle: 'Tasyakuran Kelulusan & Ramah Tamah',
+    eventDate: 'Sabtu, 28 November 2026 • 12.00 WIB',
+    eventVenue: 'Padma Hotel Grand Ballroom, Semarang',
+    musicTrackLabel: 'Grand Academic Orchestra Suite',
+  },
+  MEETING: {
+    eventType: 'MEETING',
+    tabLabelId: '🏛️ Rapat Resmi',
+    tabLabelEn: '🏛️ Corporate',
+    badgeId: 'Undangan Rapat & Agenda Eksekutif',
+    badgeEn: 'Official Corporate & Executive Agenda',
+    monogram: 'R • D',
+    titleShort: 'Rakornas Digital 2026',
+    titleFull: 'Rapat Koordinasi Nasional & Forum Eksekutif 2026',
+    sectionTitleId: 'Penyelenggara & Keynote Utama',
+    sectionTitleEn: 'Executive Host & Keynote',
+    quote:
+      '"Sinergi kepemimpinan dan akselerasi transformasi menuju tata kelola berstandar global."',
+    heroImage:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1000&q=80',
+    profileCount: 1,
+    frameStyle: 'EDITORIAL_RECT',
+    showFloral: false,
+    host1: {
+      name: 'Komite Eksekutif & Keynote Speaker',
+      role: 'Penyelenggara Utama',
+      parents: 'Dewan Transformasi Digital & Mitra Strategis Nasional',
+      photo:
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=500&q=80',
+    },
+    eventTitle: 'Plenary Session & Executive Forum',
+    eventDate: 'Kamis, 10 Desember 2026 • 08.30 WIB',
+    eventVenue: 'Jakarta International Convention Center (JICC)',
+    musicTrackLabel: 'Ambient Executive Lounge Instrumental',
+  },
+  GALA_DINNER: {
+    eventType: 'GALA_DINNER',
+    tabLabelId: '🥂 Gala Dinner',
+    tabLabelEn: '🥂 Gala Dinner',
+    badgeId: 'Exclusive VIP Gala Dinner & Award Night',
+    badgeEn: 'Exclusive VIP Gala Dinner & Award Night',
+    monogram: 'R • S',
+    titleShort: 'Royal Sapphire Gala',
+    titleFull: 'Royal Sapphire Annual Appreciation Gala 2026',
+    sectionTitleId: 'Tuan Rumah Kehormatan',
+    sectionTitleEn: 'VIP Hosts & Board of Directors',
+    quote:
+      '"Malam apresiasi tertinggi bagi para mitra strategis dan tamu kehormatan."',
+    heroImage:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1000&q=80',
+    profileCount: 1,
+    frameStyle: 'EDITORIAL_RECT',
+    showFloral: false,
+    host1: {
+      name: 'Board of Directors & VIP Hosts',
+      role: 'Tuan Rumah Kehormatan',
+      parents: 'Royal Sapphire Enterprise & Executive Philanthropy Council',
+      photo:
+        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80',
+    },
+    eventTitle: 'Red Carpet, Fine Dining & Awarding Night',
+    eventDate: 'Jumat, 18 Desember 2026 • 19.00 WIB',
+    eventVenue: 'The Ritz-Carlton Pacific Place Ballroom, Jakarta',
+    musicTrackLabel: 'Luxury Jazz & Velvet Evening Quartet',
+  },
+};
+
+const SIMULATION_EVENT_KEYS: EventCategoryType[] = [
+  'WEDDING',
+  'BIRTHDAY',
+  'GRADUATION',
+  'MEETING',
+  'GALA_DINNER',
+];
 
 const OFFICIAL_PRODUCT_SCREENSHOTS = [
   {
@@ -366,12 +921,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [showLookupSuggestions, setShowLookupSuggestions] = useState(false);
   const [lookupGateError, setLookupGateError] = useState<string | null>(null);
   const [activeShowcaseIdx, setActiveShowcaseIdx] = useState<number>(0);
+  const [showcaseViewMode, setShowcaseViewMode] = useState<
+    'invitation_sim' | 'dashboard_modules'
+  >('invitation_sim');
+  const [simEventType, setSimEventType] = useState<
+    'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
+  >('WEDDING');
+  const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
+  const [simIsOpeningAnim, setSimIsOpeningAnim] = useState<boolean>(false);
   const [lightboxScreenshot, setLightboxScreenshot] = useState<{
     title: string;
     badge: string;
     desc: string;
     imageUrl: string;
   } | null>(null);
+
+  const handleTriggerSimCoverOpen = () => {
+    if (simIsOpeningAnim) return;
+    setSimIsOpeningAnim(true);
+    window.setTimeout(() => {
+      setSimIsOpened(true);
+      setSimIsOpeningAnim(false);
+    }, 520);
+  };
 
   const activeLookupClientGuests = useMemo<WeddingGuest[]>(() => {
     if (selectedLookupClientId === 'client-utama') {
@@ -2458,10 +3030,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           /* MAIN LANDING PAGE VIEW (HERO + SHOWCASE + FITUR + 3 PRICING CARDS) */
           <>
             {/* HERO SECTION */}
-            <section className="relative py-12 sm:py-16 lg:py-20 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/45 to-[#FAF8F5]">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/55 to-[#FAF8F5]">
+              {/* Luxury Editorial Corner Ornaments on Hero */}
+              <CatalogFloralCorner
+                position="top-left"
+                size="lg"
+                className="opacity-80"
+              />
+              <CatalogFloralCorner
+                position="top-right"
+                size="lg"
+                className="opacity-80"
+              />
+
+              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
                 <div
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest max-w-full"
                   title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko42"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
@@ -2478,23 +3062,36 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </span>
                 </div>
 
-                <h2 className="font-serif text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.15]">
+                <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[54px] font-bold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.12]">
                   {lang === 'ID' ? (
                     <>
                       Platform Manajemen Persiapan Acara &amp;{' '}
                       <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
-                        Undangan Digital Multi-Event
+                        Undangan Digital Editorial Mewah
                       </span>
                     </>
                   ) : (
                     <>
                       All-in-One Multi-Event Readiness &amp;{' '}
                       <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
-                        Luxury Digital Invitation Suite
+                        Luxury Editorial Digital Invitations
                       </span>
                     </>
                   )}
                 </h2>
+
+                {/* Gold Filigree Crest Divider under Hero Heading */}
+                <div
+                  aria-hidden="true"
+                  className="flex items-center justify-center gap-3 text-[#B68D40]"
+                >
+                  <span className="w-14 sm:w-24 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                  <CatalogEventCrest
+                    eventType={simEventType}
+                    className="w-6 h-6 text-[#B68D40]"
+                  />
+                  <span className="w-14 sm:w-24 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                </div>
 
                 <p className="text-xs sm:text-base text-stone-600 max-w-3xl mx-auto leading-relaxed">
                   {lang === 'ID' ? (
@@ -2506,9 +3103,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <strong>CRM Tamu VIP &amp; Blast WhatsApp 1-Klik</strong>,
                       serta{' '}
                       <strong>
-                        Studio Undangan Digital Interaktif &amp; Video Background
+                        Studio Undangan Digital Editorial Interaktif (5 Jenis
+                        Event)
                       </strong>{' '}
-                      untuk berbagai jenis acara.
+                      dengan privasi penuh.
                     </>
                   ) : (
                     <>
@@ -2518,90 +3116,117 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <strong>Vendor Budget &amp; Contracts</strong>,{' '}
                       <strong>1-Click VIP WhatsApp Invitations</strong>, and{' '}
                       <strong>
-                        Interactive Digital Invitations with Adaptive Video
-                        Backgrounds
+                        Interactive Luxury Editorial Digital Invitations (5
+                        Event Types)
                       </strong>{' '}
-                      &amp; Digital Envelopes (Bank, PayPal &amp; Crypto USDT).
+                      with full client privacy.
                     </>
                   )}
                 </p>
 
-                {/* Supported Multi-Event Category Pills + 25 MB Video Background Pill */}
+                {/* Supported Multi-Event Category Pills (Click to preview live simulation in #showcase) */}
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1 max-w-4xl mx-auto">
-                  {[
-                    {
-                      label: '💍 Wedding',
-                      title:
-                        lang === 'ID'
-                          ? 'Manajemen Persiapan Pernikahan (Akad, Pemberkatan, Adat & Resepsi) + Undangan Digital'
-                          : 'Wedding Readiness Management (Ceremony, Custom & Reception) + Digital Invitation',
-                    },
-                    {
-                      label: '🎂 Birthday',
-                      title:
-                        lang === 'ID'
-                          ? 'Manajemen Acara & Undangan Digital Ulang Tahun / Sweet Seventeen / Milestone'
-                          : 'Birthday Party, Sweet 17 & Milestone Event Management + Digital Invitation',
-                    },
-                    {
-                      label: '🎓 Graduation',
-                      title:
-                        lang === 'ID'
-                          ? 'Acara Wisuda, Syukuran Kelulusan & Perayaan Akademik'
-                          : 'Graduation Ceremony, Academic Celebration & Alumni Gathering',
-                    },
-                    {
-                      label: '🏛️ Rapat / Corporate',
-                      title:
-                        lang === 'ID'
-                          ? 'Rapat Kerja, Konferensi, Seminar, Townhall & Acara Resmi Instansi/Korporat'
-                          : 'Corporate Meetings, Conferences, Seminars, Townhalls & Official Institutional Events',
-                    },
-                    {
-                      label: '🥂 Gala Dinner',
-                      title:
-                        lang === 'ID'
-                          ? 'Gala Dinner VIP, Malam Penghargaan, Charity & Jamuan Eksklusif'
-                          : 'VIP Gala Dinners, Award Nights, Charity Galas & Exclusive Banquets',
-                    },
-                    {
-                      label:
-                        lang === 'ID'
-                          ? '🎬 Video Latar 25 MB'
-                          : '🎬 25 MB Video Bg',
-                      title:
-                        lang === 'ID'
-                          ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif (9:16 HP ↔ 16:9 PC)'
-                          : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive 9:16 Mobile to 16:9 PC Auto-Stretch',
-                    },
-                  ].map((pill) => (
-                    <span
-                      key={pill.label}
-                      title={pill.title}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/95 border border-[#D4AF37]/45 text-stone-800 text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full"
-                    >
-                      {pill.label}
-                    </span>
-                  ))}
+                  {(
+                    [
+                      {
+                        eventType: 'WEDDING' as const,
+                        label: '💍 Wedding',
+                        title:
+                          lang === 'ID'
+                            ? 'Klik untuk Simulasi Undangan Pernikahan (2 Profil Arch-Dome & Ornamen Floral)'
+                            : 'Click to preview Wedding Invitation Simulation (2 Arch-Dome Profiles & Floral Ornaments)',
+                      },
+                      {
+                        eventType: 'BIRTHDAY' as const,
+                        label: '🎂 Birthday',
+                        title:
+                          lang === 'ID'
+                            ? 'Klik untuk Simulasi Undangan Ulang Tahun / Sweet 17th (1 Profil Spotlight)'
+                            : 'Click to preview Birthday / Sweet 17th Simulation (1 Spotlight Profile)',
+                      },
+                      {
+                        eventType: 'GRADUATION' as const,
+                        label: '🎓 Graduation',
+                        title:
+                          lang === 'ID'
+                            ? 'Klik untuk Simulasi Undangan Wisuda & Syukuran Akademik'
+                            : 'Click to preview Graduation & Academic Celebration Simulation',
+                      },
+                      {
+                        eventType: 'MEETING' as const,
+                        label: '🏛️ Rapat / Corporate',
+                        title:
+                          lang === 'ID'
+                            ? 'Klik untuk Simulasi Undangan Rapat Resmi & Forum Eksekutif'
+                            : 'Click to preview Official Corporate & Executive Meeting Simulation',
+                      },
+                      {
+                        eventType: 'GALA_DINNER' as const,
+                        label: '🥂 Gala Dinner',
+                        title:
+                          lang === 'ID'
+                            ? 'Klik untuk Simulasi Undangan VIP Gala Dinner & Award Night'
+                            : 'Click to preview VIP Gala Dinner & Award Night Simulation',
+                      },
+                    ] as const
+                  ).map((pill) => {
+                    const isCurrentSim =
+                      showcaseViewMode === 'invitation_sim' &&
+                      simEventType === pill.eventType;
+                    return (
+                      <button
+                        key={pill.label}
+                        type="button"
+                        onClick={() => {
+                          setSimEventType(pill.eventType);
+                          setShowcaseViewMode('invitation_sim');
+                          scrollToShowcase();
+                        }}
+                        title={pill.title}
+                        className={`inline-flex items-center px-3.5 py-1.5 rounded-full border text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full transition-all ${
+                          isCurrentSim
+                            ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/30'
+                            : 'bg-white/95 hover:bg-[#FAF3E3] border-[#D4AF37]/45 text-stone-800 hover:text-[#8B6914]'
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                  <span
+                    title={
+                      lang === 'ID'
+                        ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif (9:16 HP ↔ 16:9 PC)'
+                        : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive 9:16 Mobile to 16:9 PC Auto-Stretch'
+                    }
+                    className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full"
+                  >
+                    {lang === 'ID'
+                      ? '🎬 Video Latar 25 MB'
+                      : '🎬 25 MB Video Bg'}
+                  </span>
                 </div>
 
                 {/* Primary Hero CTAs */}
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={scrollToShowcase}
+                    onClick={() => {
+                      setShowcaseViewMode('invitation_sim');
+                      scrollToShowcase();
+                    }}
                     title={
                       lang === 'ID'
-                        ? 'Lihat 5 Screenshot Resmi Modul My Event Planner (Tanpa Membuka Undangan Privat Klien)'
-                        : 'Inspect 5 Official Module Screenshots of My Event Planner (Privacy & Copyright Safe)'
+                        ? 'Coba Simulasi Undangan Digital Editorial Interaktif (5 Jenis Event) & Lihat 5 Modul Dashboard'
+                        : 'Try the Interactive Luxury Invitation Simulator (5 Event Types) & Inspect 5 Dashboard Modules'
                     }
                     className="w-full sm:w-auto max-w-full justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all whitespace-nowrap truncate"
                   >
-                    <Eye className="w-4 h-4 shrink-0" />
+                    <Sparkles className="w-4 h-4 shrink-0" />
                     <span className="whitespace-nowrap truncate">
                       {lang === 'ID'
-                        ? 'Lihat Katalog Tampilan & Fitur (5 Modul)'
-                        : 'Explore Product Screenshots (5 Modules)'}
+                        ? 'Coba Simulasi Undangan & 5 Modul'
+                        : 'Try Live Invitation Sim & 5 Modules'}
                     </span>
                   </button>
 
@@ -2632,178 +3257,190 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </button>
                 </div>
 
-                {/* Quick Guest Invitation Lookup Card (Private Guest Gate) */}
-                <div className="max-w-2xl mx-auto mt-8 p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/40 shadow-[0_12px_36px_rgba(182,141,64,0.12)] text-left">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                    <p
-                      className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5 whitespace-nowrap truncate"
-                      title={
-                        lang === 'ID'
-                          ? 'Gerbang Privat Tamu Undangan — Masukkan Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar'
-                          : 'Private Guest Invitation Gate — Enter Registered Invitation Code (INV-xxxx) or Guest Name'
-                      }
+                {/* Quick Guest Invitation Lookup Card (Private Guest Gate with Floral Corners) */}
+                <div className="relative overflow-hidden max-w-2xl mx-auto mt-8 p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-[0_12px_36px_rgba(182,141,64,0.14)] text-left">
+                  <CatalogFloralCorner
+                    position="top-left"
+                    size="sm"
+                    className="opacity-45"
+                  />
+                  <CatalogFloralCorner
+                    position="bottom-right"
+                    size="sm"
+                    className="opacity-45"
+                  />
+                  <div className="relative z-20">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                      <p
+                        className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5 whitespace-nowrap truncate"
+                        title={
+                          lang === 'ID'
+                            ? 'Gerbang Privat Tamu Undangan — Masukkan Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar'
+                            : 'Private Guest Invitation Gate — Enter Registered Invitation Code (INV-xxxx) or Guest Name'
+                        }
+                      >
+                        <Search className="w-4 h-4 text-[#B68D40] shrink-0" />
+                        <span className="whitespace-nowrap truncate">
+                          {lang === 'ID'
+                            ? 'Akses Cepat Tamu Undangan (Private Guest Gate)'
+                            : 'Quick Guest Invitation Lookup (Private Guest Gate)'}
+                        </span>
+                      </p>
+                      <span className="inline-flex items-center gap-1.5 max-w-full">
+                        <span
+                          title={
+                            lang === 'ID'
+                              ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
+                              : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
+                          }
+                          className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
+                        >
+                          {lang === 'ID'
+                            ? 'Kode Tamu Wajib'
+                            : 'Guest Code Required'}
+                        </span>
+                        <InfoTooltip
+                          text={
+                            lang === 'ID'
+                              ? 'Undangan klien bersifat privat. Masukkan minimal 3 huruf Nama Tamu yang terdaftar atau Kode INV-xxxx untuk membuka undangan.'
+                              : 'Client invitations are private. Enter at least 3 characters of a registered guest name or INV-xxxx code to open.'
+                          }
+                        />
+                      </span>
+                    </div>
+                    <form
+                      onSubmit={handleQuickLookupSubmit}
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-2"
                     >
-                      <Search className="w-4 h-4 text-[#B68D40] shrink-0" />
-                      <span className="whitespace-nowrap truncate">
-                        {lang === 'ID'
-                          ? 'Akses Cepat Tamu Undangan (Private Guest Gate)'
-                          : 'Quick Guest Invitation Lookup (Private Guest Gate)'}
-                      </span>
-                    </p>
-                    <span className="inline-flex items-center gap-1.5 max-w-full">
-                      <span
-                        title={
-                          lang === 'ID'
-                            ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
-                            : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
-                        }
-                        className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
-                      >
-                        {lang === 'ID'
-                          ? 'Kode Tamu Wajib'
-                          : 'Guest Code Required'}
-                      </span>
-                      <InfoTooltip
-                        text={
-                          lang === 'ID'
-                            ? 'Undangan klien bersifat privat. Masukkan minimal 3 huruf Nama Tamu yang terdaftar atau Kode INV-xxxx untuk membuka undangan.'
-                            : 'Client invitations are private. Enter at least 3 characters of a registered guest name or INV-xxxx code to open.'
-                        }
-                      />
-                    </span>
-                  </div>
-                  <form
-                    onSubmit={handleQuickLookupSubmit}
-                    className="grid grid-cols-1 sm:grid-cols-12 gap-2"
-                  >
-                    <div className="sm:col-span-5">
-                      <select
-                        value={selectedLookupClientId}
-                        onChange={(e) => {
-                          setSelectedLookupClientId(e.target.value);
-                          setGuestCodeInput('');
-                          setLookupGateError(null);
-                        }}
-                        title={
-                          lang === 'ID'
-                            ? 'Pilih Acara / Klien Tujuan'
-                            : 'Select Target Event / Client'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none truncate"
-                      >
-                        {clientGroups.map((cg) => (
-                          <option key={cg.id} value={cg.id}>
-                            💍 {cg.coupleLabel || cg.clientName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="sm:col-span-4 relative">
-                      <input
-                        type="text"
-                        value={guestCodeInput}
-                        onFocus={() => setShowLookupSuggestions(true)}
-                        onBlur={() =>
-                          window.setTimeout(
-                            () => setShowLookupSuggestions(false),
-                            180
-                          )
-                        }
-                        onChange={(e) => {
-                          setGuestCodeInput(e.target.value);
-                          setLookupGateError(null);
-                          setShowLookupSuggestions(true);
-                        }}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'Ketik min. 3 huruf / INV-0001...'
-                            : 'Type min. 3 chars / INV-0001...'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                      />
-                      {showLookupSuggestions &&
-                        filteredLookupGuests.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-white border border-[#D4AF37]/45 shadow-xl overflow-hidden max-h-60 overflow-y-auto">
-                            <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
-                              <span>
-                                {lang === 'ID'
-                                  ? 'Tamu Terdaftar Cocok'
-                                  : 'Matching Registered Guests'}
-                              </span>
-                              <span>
-                                {lang === 'ID'
-                                  ? 'Klik untuk Buka'
-                                  : 'Click to Open'}
-                              </span>
-                            </div>
-                            {filteredLookupGuests.map((guest) => (
-                              <button
-                                key={guest.id}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setGuestCodeInput(guest.guestName);
-                                  setLookupGateError(null);
-                                  setShowLookupSuggestions(false);
-                                  onSelectClientInvitation(
-                                    selectedLookupClientId,
-                                    guest.guestName,
-                                    guest.invitationCode
-                                  );
-                                }}
-                                className="w-full text-left px-3 py-2 hover:bg-[#FAF3E3]/60 border-b border-stone-100 last:border-b-0 transition-colors flex items-center justify-between gap-2"
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-stone-900 truncate">
-                                    {guest.guestName}
-                                  </p>
-                                  <p className="text-[10px] text-stone-500 truncate">
-                                    {guest.institution || guest.guestType}
-                                  </p>
-                                </div>
-                                <span className="shrink-0 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] font-mono text-[10px] font-bold">
-                                  {guest.invitationCode}
+                      <div className="sm:col-span-5">
+                        <select
+                          value={selectedLookupClientId}
+                          onChange={(e) => {
+                            setSelectedLookupClientId(e.target.value);
+                            setGuestCodeInput('');
+                            setLookupGateError(null);
+                          }}
+                          title={
+                            lang === 'ID'
+                              ? 'Pilih Acara / Klien Tujuan'
+                              : 'Select Target Event / Client'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none truncate"
+                        >
+                          {clientGroups.map((cg) => (
+                            <option key={cg.id} value={cg.id}>
+                              💍 {cg.coupleLabel || cg.clientName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-4 relative">
+                        <input
+                          type="text"
+                          value={guestCodeInput}
+                          onFocus={() => setShowLookupSuggestions(true)}
+                          onBlur={() =>
+                            window.setTimeout(
+                              () => setShowLookupSuggestions(false),
+                              180
+                            )
+                          }
+                          onChange={(e) => {
+                            setGuestCodeInput(e.target.value);
+                            setLookupGateError(null);
+                            setShowLookupSuggestions(true);
+                          }}
+                          placeholder={
+                            lang === 'ID'
+                              ? 'Ketik min. 3 huruf / INV-0001...'
+                              : 'Type min. 3 chars / INV-0001...'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                        />
+                        {showLookupSuggestions &&
+                          filteredLookupGuests.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-white border border-[#D4AF37]/45 shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                              <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
+                                <span>
+                                  {lang === 'ID'
+                                    ? 'Tamu Terdaftar Cocok'
+                                    : 'Matching Registered Guests'}
                                 </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-                    <div className="sm:col-span-3">
-                      <button
-                        type="submit"
-                        title={
-                          lang === 'ID'
-                            ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
-                            : 'Verify Guest Code & Open Private Invitation'
-                        }
-                        className="w-full h-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap truncate"
-                      >
-                        {lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}
-                      </button>
-                    </div>
-                  </form>
-                  {lookupGateError && (
-                    <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center gap-2">
-                      <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                      <span>{lookupGateError}</span>
-                    </div>
-                  )}
+                                <span>
+                                  {lang === 'ID'
+                                    ? 'Klik untuk Buka'
+                                    : 'Click to Open'}
+                                </span>
+                              </div>
+                              {filteredLookupGuests.map((guest) => (
+                                <button
+                                  key={guest.id}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setGuestCodeInput(guest.guestName);
+                                    setLookupGateError(null);
+                                    setShowLookupSuggestions(false);
+                                    onSelectClientInvitation(
+                                      selectedLookupClientId,
+                                      guest.guestName,
+                                      guest.invitationCode
+                                    );
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-[#FAF3E3]/60 border-b border-stone-100 last:border-b-0 transition-colors flex items-center justify-between gap-2"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-stone-900 truncate">
+                                      {guest.guestName}
+                                    </p>
+                                    <p className="text-[10px] text-stone-500 truncate">
+                                      {guest.institution || guest.guestType}
+                                    </p>
+                                  </div>
+                                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] font-mono text-[10px] font-bold">
+                                    {guest.invitationCode}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                      <div className="sm:col-span-3">
+                        <button
+                          type="submit"
+                          title={
+                            lang === 'ID'
+                              ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
+                              : 'Verify Guest Code & Open Private Invitation'
+                          }
+                          className="w-full h-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap truncate"
+                        >
+                          {lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}
+                        </button>
+                      </div>
+                    </form>
+                    {lookupGateError && (
+                      <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center gap-2">
+                        <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                        <span>{lookupGateError}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* SECTION 1: INTERACTIVE PRODUCT SCREENSHOT CATALOG (5 OFFICIAL MODULES) */}
+            {/* SECTION 1: DUAL-EXPERIENCE INTERACTIVE SHOWCASE (LIVE INVITATION SIMULATOR + 5 DASHBOARD MODULES) */}
             <section
               id="showcase"
               className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
             >
-              {/* Section Header + Privacy Note Pill */}
+              {/* Section Header + Privacy Note Pill + 2-Tab Mode Switcher */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                      Official Product Tour &bull; Copyright-Safe Preview
+                      Official Interactive Showcase &bull; 100% Privacy-Safe
                     </span>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
                       <span
@@ -2821,340 +3458,1055 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <InfoTooltip
                         text={
                           lang === 'ID'
-                            ? 'Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio.'
-                            : 'Active client invitations and custom music are private to protect event privacy and audio copyright.'
+                            ? 'Simulasi di bawah menggunakan data sampel fiktif resmi. Undangan asli klien (seperti Agung & Selo) beserta musik kustom tetap 100% privat di balik Guest Code Gate.'
+                            : 'The simulation below uses official fictional sample data. Real client invitations and custom audio remain 100% private behind the Guest Code Gate.'
                         }
                       />
                     </span>
                   </div>
-                  <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900">
+                  <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Katalog Tampilan & Fitur My Event Planner (5 Modul Inti)'
-                      : 'My Event Planner Interface & Feature Showcase (5 Core Modules)'}
+                      ? 'Simulasi Undangan Editorial Mewah & 5 Modul Dashboard'
+                      : 'Luxury Editorial Invitation Simulator & 5 Dashboard Modules'}
                   </h3>
                   <p className="text-xs sm:text-sm text-stone-600 max-w-3xl leading-relaxed">
                     {lang === 'ID'
-                      ? 'Jelajahi tangkapan layar asli dari 5 modul utama sistem manajemen acara & undangan digital kami. Klik tab modul atau tombol Perbesar Layar Penuh untuk melihat detail antarmuka resolusi tinggi.'
-                      : 'Explore authentic interface screenshots across our 5 core event management and digital invitation modules. Click any module tab or Zoom Fullscreen to inspect high-resolution details.'}
+                      ? 'Rasakan langsung keindahan sampul pembuka, kurva leher kubah (Arch-Dome), tata letak adaptif 1 atau 2 profil, hingga kartu amplop ber-chip emas—atau jelajahi 5 modul dashboard pengelola acara.'
+                      : 'Experience the interactive cover curtain-lift, Arch-Dome portraits, adaptive 1 or 2 host layouts, and metallic EMV digital envelope—or inspect the 5 admin dashboard modules.'}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {/* Prominent 2-Tab Segmented Switcher */}
+                <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1.5 rounded-2xl bg-[#FAF3E3]/90 border border-[#D4AF37]/45 shadow-2xs shrink-0">
                   <button
                     type="button"
-                    onClick={() => openLightboxAt(activeShowcaseIdx)}
+                    onClick={() => setShowcaseViewMode('invitation_sim')}
                     title={
                       lang === 'ID'
-                        ? 'Perbesar Screenshot Modul Aktif ke Layar Penuh'
-                        : 'Zoom Active Module Screenshot to Fullscreen'
+                        ? 'Coba Simulasi Undangan Digital Interaktif untuk 5 Jenis Event'
+                        : 'Try Interactive Digital Invitation Simulator across 5 Event Types'
                     }
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45 text-xs font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                      showcaseViewMode === 'invitation_sim'
+                        ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border border-[#D4AF37] shadow-sm'
+                        : 'text-stone-800 hover:text-[#8B6914] hover:bg-white/70'
+                    }`}
                   >
-                    <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                    <span className="whitespace-nowrap truncate">
-                      {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
+                    <span>
+                      {lang === 'ID'
+                        ? '✨ Simulasi Undangan Interaktif (5 Jenis Event)'
+                        : '✨ Interactive Invitation Simulator (5 Events)'}
                     </span>
                   </button>
-
                   <button
                     type="button"
-                    onClick={onOpenAdminPortal}
+                    onClick={() => setShowcaseViewMode('dashboard_modules')}
                     title={
                       lang === 'ID'
-                        ? 'Masuk ke Portal Klien / EO / WO / Superadmin'
-                        : 'Login to Client / EO / WO / Superadmin Portal'
+                        ? 'Lihat 5 Screenshot Resolusi Tinggi Modul Dashboard Pengelola'
+                        : 'Inspect 5 High-Resolution Admin Dashboard Module Screenshots'
                     }
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#D4AF37]/45 text-[#8B6914] hover:bg-[#FAF3E3] text-xs font-bold whitespace-nowrap truncate shadow-2xs transition-all"
+                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                      showcaseViewMode === 'dashboard_modules'
+                        ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border border-[#D4AF37] shadow-sm'
+                        : 'text-stone-800 hover:text-[#8B6914] hover:bg-white/70'
+                    }`}
                   >
-                    <Shield className="w-3.5 h-3.5 shrink-0" />
-                    <span className="whitespace-nowrap truncate">
-                      {lang === 'ID' ? 'Buka Portal Login' : 'Open Login Portal'}
+                    <span>
+                      {lang === 'ID'
+                        ? '📊 5 Modul Dashboard Pengelola'
+                        : '📊 5 Admin Dashboard Modules'}
                     </span>
                   </button>
                 </div>
               </div>
 
-              {/* Row of 5 Interactive Module Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
-                  const isActive = activeShowcaseIdx === idx;
-                  const tabLabel = lang === 'ID' ? shot.tabId : shot.tabEn;
-                  const fullTitle = lang === 'ID' ? shot.titleId : shot.titleEn;
+              {showcaseViewMode === 'invitation_sim' ? (
+                /* ================================================================= */
+                /* TAB 1: LIVE INTERACTIVE EDITORIAL INVITATION SIMULATOR (5 EVENTS) */
+                /* ================================================================= */
+                (() => {
+                  const simPreset =
+                    SIMULATION_EVENT_PRESETS[simEventType] ||
+                    SIMULATION_EVENT_PRESETS.WEDDING;
+                  const simBadge =
+                    lang === 'ID' ? simPreset.badgeId : simPreset.badgeEn;
+                  const simSectionTitle =
+                    lang === 'ID'
+                      ? simPreset.sectionTitleId
+                      : simPreset.sectionTitleEn;
+
+                  const frameClassForHost =
+                    simPreset.frameStyle === 'CIRCLE'
+                      ? 'w-36 h-36 sm:w-44 sm:h-44 rounded-full'
+                      : simPreset.frameStyle === 'EDITORIAL_RECT'
+                        ? 'w-44 h-52 sm:w-52 sm:h-60 rounded-2xl'
+                        : 'w-36 h-48 sm:w-44 sm:h-56 rounded-t-[999px] rounded-b-2xl';
+
                   return (
-                    <button
-                      key={shot.id}
-                      type="button"
-                      onClick={() => setActiveShowcaseIdx(idx)}
-                      title={`${shot.badge} — ${fullTitle}`}
-                      className={`px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap truncate shadow-2xs ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/35'
-                          : 'bg-white hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] border-[#D4AF37]/35'
-                      }`}
-                    >
-                      <span className="whitespace-nowrap truncate">
-                        {tabLabel}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Featured Interactive Browser Frame Preview */}
-              {(() => {
-                const currentShot =
-                  OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx] ||
-                  OFFICIAL_PRODUCT_SCREENSHOTS[0];
-                const currentTitle =
-                  lang === 'ID' ? currentShot.titleId : currentShot.titleEn;
-                const currentDesc =
-                  lang === 'ID' ? currentShot.descId : currentShot.descEn;
-
-                return (
-                  <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.10)] overflow-hidden">
-                    {/* Browser Window Top Bar */}
-                    <div className="px-3.5 sm:px-5 py-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
+                    <div className="space-y-5">
+                      {/* Top Control Bar: 5 Event Category Pills + Cover/Inside Toggle */}
+                      <div className="p-3 sm:p-4 rounded-3xl bg-white border border-[#D4AF37]/40 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {SIMULATION_EVENT_KEYS.map((evKey) => {
+                            const presetItem = SIMULATION_EVENT_PRESETS[evKey];
+                            const isSelected = simEventType === evKey;
+                            return (
+                              <button
+                                key={evKey}
+                                type="button"
+                                onClick={() => {
+                                  setSimEventType(evKey);
+                                }}
+                                className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
+                                  isSelected
+                                    ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/30 shadow-2xs'
+                                    : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 border-[#D4AF37]/30'
+                                }`}
+                              >
+                                <span>
+                                  {lang === 'ID'
+                                    ? presetItem.tabLabelId
+                                    : presetItem.tabLabelEn}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
-                          {currentShot.badge}
-                        </span>
-                        <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
-                          https://my-event-planner.app/workspace/
-                          {currentShot.id}
-                        </span>
+
+                        {/* Cover Gate vs Opened Editorial View Switcher */}
+                        <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
+                          <span className="text-[11px] font-bold text-stone-500 hidden sm:inline">
+                            {lang === 'ID' ? 'Mode Layar:' : 'Stage Mode:'}
+                          </span>
+                          <div className="inline-flex items-center p-1 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSimIsOpeningAnim(false);
+                                setSimIsOpened(false);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                                !simIsOpened
+                                  ? 'bg-[#C5A059] text-white shadow-2xs'
+                                  : 'text-stone-700 hover:text-[#8B6914]'
+                              }`}
+                            >
+                              {lang === 'ID'
+                                ? '🚪 Sampul Pembuka'
+                                : '🚪 Cover Gate'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSimIsOpeningAnim(false);
+                                setSimIsOpened(true);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                                simIsOpened
+                                  ? 'bg-[#C5A059] text-white shadow-2xs'
+                                  : 'text-stone-700 hover:text-[#8B6914]'
+                              }`}
+                            >
+                              {lang === 'ID'
+                                ? '📖 Isi Undangan Editorial'
+                                : '📖 Editorial Inside'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveShowcaseIdx(
-                              (prev) =>
-                                (prev - 1 + OFFICIAL_PRODUCT_SCREENSHOTS.length) %
-                                OFFICIAL_PRODUCT_SCREENSHOTS.length
-                            )
-                          }
-                          title={
-                            lang === 'ID'
-                              ? 'Modul Sebelumnya'
-                              : 'Previous Module'
-                          }
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-[11px] font-mono font-bold text-[#E6C76B] px-1.5">
-                          {activeShowcaseIdx + 1} /{' '}
-                          {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                      {/* Main Grid: Live Interactive Invitation Stage (8 Cols) + Editorial Highlights Card (4 Cols) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* LEFT / MAIN: Interactive Editorial Invitation Stage */}
+                        <div className="lg:col-span-8 rounded-3xl bg-[#FAF6EE] border-2 border-[#D4AF37]/55 shadow-[0_22px_56px_rgba(28,25,23,0.14)] overflow-hidden relative">
+                          {/* Top Floating Luxury Bar inside Simulator */}
+                          <div className="px-4 py-3 bg-white/90 backdrop-blur-md border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2 z-30 relative">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-7 h-7 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0">
+                                <CatalogEventCrest
+                                  eventType={simPreset.eventType}
+                                  className="w-4 h-4"
+                                />
+                              </span>
+                              <span className="font-editorial text-sm sm:text-base font-bold text-stone-900 tracking-wide truncate">
+                                {simPreset.monogram} &mdash;{' '}
+                                {simPreset.titleShort}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* Spinning Vinyl Audio Indicator */}
+                              <div
+                                title={simPreset.musicTrackLabel}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold"
+                              >
+                                <span className="w-4 h-4 rounded-full bg-stone-900 text-[#D4AF37] flex items-center justify-center animate-spin-slow">
+                                  <Music className="w-2.5 h-2.5" />
+                                </span>
+                                <span className="hidden sm:inline truncate max-w-[140px]">
+                                  {simPreset.musicTrackLabel}
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (simIsOpened) {
+                                    setSimIsOpeningAnim(false);
+                                    setSimIsOpened(false);
+                                  } else {
+                                    handleTriggerSimCoverOpen();
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 text-[11px] font-extrabold transition-all whitespace-nowrap"
+                              >
+                                {simIsOpened
+                                  ? lang === 'ID'
+                                    ? 'Lihat Sampul'
+                                    : 'View Cover'
+                                  : lang === 'ID'
+                                    ? 'Buka Undangan'
+                                    : 'Open Invitation'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {!simIsOpened ? (
+                            /* ======================================================= */
+                            /* COVER CURTAIN-LIFT GATE VIEW (!simIsOpened)             */
+                            /* ======================================================= */
+                            <div
+                              className={`relative min-h-[540px] sm:min-h-[600px] flex flex-col items-center justify-center text-center px-5 py-12 overflow-hidden transition-all duration-500 ease-out ${
+                                simIsOpeningAnim
+                                  ? '-translate-y-full scale-105 opacity-0'
+                                  : 'translate-y-0 scale-100 opacity-100'
+                              }`}
+                            >
+                              {/* Background Hero Photo with Soft Editorial Warm Overlay */}
+                              <img
+                                src={simPreset.heroImage}
+                                alt={simPreset.titleShort}
+                                className="absolute inset-0 w-full h-full object-cover animate-ken-burns"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-900/55 to-stone-950/80 backdrop-blur-[1.5px]" />
+
+                              {/* Optional Floral Corners on Cover Gate */}
+                              <CatalogFloralCorner
+                                position="top-left"
+                                size="lg"
+                                enabled={simPreset.showFloral}
+                              />
+                              <CatalogFloralCorner
+                                position="top-right"
+                                size="lg"
+                                enabled={simPreset.showFloral}
+                              />
+                              <CatalogFloralCorner
+                                position="bottom-left"
+                                size="lg"
+                                enabled={simPreset.showFloral}
+                              />
+                              <CatalogFloralCorner
+                                position="bottom-right"
+                                size="lg"
+                                enabled={simPreset.showFloral}
+                              />
+
+                              <div className="relative z-20 max-w-lg mx-auto space-y-5 text-[#FFFDF9]">
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-[#D4AF37]/55 text-[#F3D77D] text-[11px] font-extrabold uppercase tracking-[0.2em]">
+                                  <CatalogEventCrest
+                                    eventType={simPreset.eventType}
+                                    className="w-4 h-4 text-[#F3D77D]"
+                                  />
+                                  <span>{simBadge}</span>
+                                </div>
+
+                                <h4
+                                  className={`${
+                                    simPreset.eventType === 'WEDDING' ||
+                                    simPreset.eventType === 'BIRTHDAY'
+                                      ? 'font-script text-4xl sm:text-6xl'
+                                      : 'font-editorial text-3xl sm:text-5xl font-bold'
+                                  } text-[#FFFDF9] drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)] leading-tight`}
+                                >
+                                  {simPreset.titleShort}
+                                </h4>
+
+                                <p className="text-xs sm:text-sm text-[#FAF3E3]/90 font-medium tracking-wide">
+                                  {simPreset.eventDate} &bull;{' '}
+                                  {simPreset.eventVenue}
+                                </p>
+
+                                {/* Sample VIP Guest Pass Card */}
+                                <div className="mx-auto max-w-sm p-4 rounded-2xl bg-white/12 backdrop-blur-md border border-[#D4AF37]/50 text-center space-y-1.5 shadow-lg">
+                                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#E6C76B] font-bold">
+                                    {lang === 'ID'
+                                      ? 'Kepada Yth. Bapak / Ibu / Saudara/i'
+                                      : 'Dear Honored VIP Guest'}
+                                  </p>
+                                  <p className="font-editorial text-lg sm:text-xl font-bold text-white">
+                                    Bapak/Ibu Tamu Kehormatan
+                                  </p>
+                                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D4AF37]/25 border border-[#D4AF37]/60 text-[#F3D77D] font-mono text-[10px] font-extrabold">
+                                    VIP PASS &bull; INV-0001 (2 Pax)
+                                  </span>
+                                </div>
+
+                                <div className="pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={handleTriggerSimCoverOpen}
+                                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-[0_10px_30px_rgba(212,175,55,0.45)] transition-all hover:scale-105 cursor-pointer"
+                                  >
+                                    <BookOpen className="w-4 h-4 shrink-0" />
+                                    <span>
+                                      {lang === 'ID'
+                                        ? 'Buka Undangan (Efek Tirai)'
+                                        : 'Open Invitation (Curtain Lift)'}
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* ======================================================= */
+                            /* OPENED EDITORIAL INVITATION STAGE (simIsOpened === true)*/
+                            /* ======================================================= */
+                            <div className="max-h-[680px] overflow-y-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE2] relative">
+                              {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS */}
+                              <div className="relative">
+                                <CatalogFloralCorner
+                                  position="top-left"
+                                  size="md"
+                                  enabled={simPreset.showFloral}
+                                />
+                                <CatalogFloralCorner
+                                  position="top-right"
+                                  size="md"
+                                  enabled={simPreset.showFloral}
+                                />
+
+                                <div
+                                  className="relative h-64 sm:h-80 w-full overflow-hidden"
+                                  style={{
+                                    maskImage:
+                                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                    WebkitMaskImage:
+                                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                  }}
+                                >
+                                  <img
+                                    src={simPreset.heroImage}
+                                    alt={simPreset.titleFull}
+                                    className="w-full h-full object-cover animate-ken-burns"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-[#FAF6EE] via-transparent to-black/25" />
+                                </div>
+
+                                {/* Editorial Title & Crest Overlapping Feathered Bottom */}
+                                <div className="relative z-10 -mt-12 sm:-mt-16 px-4 sm:px-8 text-center space-y-3">
+                                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
+                                    <CatalogEventCrest
+                                      eventType={simPreset.eventType}
+                                      className="w-3.5 h-3.5 text-[#B68D40]"
+                                    />
+                                    <span>{simBadge}</span>
+                                  </div>
+
+                                  <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
+                                    {simPreset.titleFull}
+                                  </h4>
+
+                                  {/* Gold Filigree Divider */}
+                                  <div
+                                    aria-hidden="true"
+                                    className="flex items-center justify-center gap-2.5 text-[#B68D40]"
+                                  >
+                                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                    <CatalogEventCrest
+                                      eventType={simPreset.eventType}
+                                      className="w-5 h-5"
+                                    />
+                                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                  </div>
+
+                                  <p className="text-xs sm:text-sm italic text-stone-600 max-w-xl mx-auto leading-relaxed">
+                                    {simPreset.quote}
+                                  </p>
+
+                                  {/* 4-Box Countdown + Save to Calendar Pill */}
+                                  <div className="pt-2 flex flex-col items-center gap-3">
+                                    <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
+                                      {[
+                                        {
+                                          val: '14',
+                                          lbl: lang === 'ID' ? 'Hari' : 'Days',
+                                        },
+                                        {
+                                          val: '08',
+                                          lbl: lang === 'ID' ? 'Jam' : 'Hours',
+                                        },
+                                        {
+                                          val: '45',
+                                          lbl: lang === 'ID' ? 'Menit' : 'Mins',
+                                        },
+                                        {
+                                          val: '22',
+                                          lbl: lang === 'ID' ? 'Detik' : 'Secs',
+                                        },
+                                      ].map((cd) => (
+                                        <div
+                                          key={cd.lbl}
+                                          className="py-2 px-2 rounded-2xl bg-white/90 border border-[#D4AF37]/45 shadow-2xs text-center"
+                                        >
+                                          <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
+                                            {cd.val}
+                                          </span>
+                                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
+                                            {cd.lbl}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
+                                      <Calendar className="w-3.5 h-3.5" />
+                                      <span>
+                                        {lang === 'ID'
+                                          ? 'Simpan ke Google Calendar'
+                                          : 'Save to Google Calendar'}
+                                      </span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 2. OPEN EDITORIAL SECTION HEADER + ADAPTIVE PROFILE SECTION */}
+                              <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-6">
+                                {/* Open Editorial Header (No Rigid Box!) */}
+                                <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                  <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                    {simBadge}
+                                  </p>
+                                  <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                    {simSectionTitle}
+                                  </h5>
+                                  <div
+                                    aria-hidden="true"
+                                    className="flex items-center justify-center gap-2 pt-1"
+                                  >
+                                    <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                    <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                    <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                  </div>
+                                </div>
+
+                                {simPreset.profileCount === 2 &&
+                                simPreset.host2 ? (
+                                  /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
+                                  <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
+                                    {/* Host 1 */}
+                                    <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                      <CatalogFloralCorner
+                                        position="top-left"
+                                        size="sm"
+                                        enabled={simPreset.showFloral}
+                                      />
+                                      <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                        <img
+                                          src={simPreset.host1.photo}
+                                          alt={simPreset.host1.name}
+                                          className={`${frameClassForHost} object-cover`}
+                                        />
+                                      </div>
+                                      <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                        {simPreset.host1.role}
+                                      </span>
+                                      <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                        {simPreset.host1.name}
+                                      </h6>
+                                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                                        {simPreset.host1.parents}
+                                      </p>
+                                    </div>
+
+                                    {/* Center Script Ampersand */}
+                                    <div className="md:col-span-1 flex items-center justify-center py-1">
+                                      <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
+                                        &amp;
+                                      </span>
+                                    </div>
+
+                                    {/* Host 2 */}
+                                    <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                      <CatalogFloralCorner
+                                        position="top-right"
+                                        size="sm"
+                                        enabled={simPreset.showFloral}
+                                      />
+                                      <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                        <img
+                                          src={simPreset.host2.photo}
+                                          alt={simPreset.host2.name}
+                                          className={`${frameClassForHost} object-cover`}
+                                        />
+                                      </div>
+                                      <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                        {simPreset.host2.role}
+                                      </span>
+                                      <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                        {simPreset.host2.name}
+                                      </h6>
+                                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                                        {simPreset.host2.parents}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT (BIRTHDAY / GRADUATION / MEETING / GALA) */
+                                  <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                    <CatalogFloralCorner
+                                      position="top-left"
+                                      size="sm"
+                                      enabled={simPreset.showFloral}
+                                    />
+                                    <CatalogFloralCorner
+                                      position="top-right"
+                                      size="sm"
+                                      enabled={simPreset.showFloral}
+                                    />
+                                    <div
+                                      className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
+                                        simPreset.frameStyle === 'CIRCLE'
+                                          ? 'rounded-full'
+                                          : simPreset.frameStyle ===
+                                              'EDITORIAL_RECT'
+                                            ? 'rounded-2xl'
+                                            : 'rounded-t-[999px] rounded-b-2xl'
+                                      }`}
+                                    >
+                                      <img
+                                        src={simPreset.host1.photo}
+                                        alt={simPreset.host1.name}
+                                        className={`${frameClassForHost} object-cover`}
+                                      />
+                                    </div>
+                                    <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                      {simPreset.host1.role}
+                                    </span>
+                                    <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
+                                      {simPreset.host1.name}
+                                    </h6>
+                                    {simPreset.host1.parents && (
+                                      <p className="text-xs text-stone-600 leading-relaxed">
+                                        {simPreset.host1.parents}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* 3. SCHEDULE & LUXURY METALLIC EMV CHIP DIGITAL ENVELOPE PREVIEW */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 max-w-3xl mx-auto">
+                                  {/* Schedule Card */}
+                                  <div className="p-4 sm:p-5 rounded-3xl bg-white/90 border border-[#D4AF37]/40 shadow-2xs space-y-2.5 flex flex-col justify-between">
+                                    <div className="space-y-1.5">
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                                        <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                                        <span>
+                                          {lang === 'ID'
+                                            ? 'Rangkaian Acara Utama'
+                                            : 'Primary Event Schedule'}
+                                        </span>
+                                      </span>
+                                      <h6 className="font-editorial text-lg font-bold text-stone-900">
+                                        {simPreset.eventTitle}
+                                      </h6>
+                                      <p className="text-xs font-bold text-[#8B6914]">
+                                        {simPreset.eventDate}
+                                      </p>
+                                      <p className="text-xs text-stone-600 flex items-start gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
+                                        <span>{simPreset.eventVenue}</span>
+                                      </p>
+                                    </div>
+                                    <div className="pt-2 flex items-center justify-between gap-2 border-t border-stone-200/70">
+                                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                        ✓ Google Maps &amp; RSVP Live
+                                      </span>
+                                      <span className="text-[10px] font-extrabold text-[#8B6914]">
+                                        INV-0001
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Luxury Metallic EMV Chip Digital Envelope Card */}
+                                  <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border border-[#D4AF37]/65 shadow-md space-y-3 flex flex-col justify-between relative overflow-hidden">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <CatalogGoldEmvChip className="w-9 h-7" />
+                                      <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[9px] font-extrabold uppercase tracking-widest">
+                                        Digital Envelope &bull; Multi-Currency
+                                      </span>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      <p className="text-[10px] uppercase tracking-widest text-[#E6C76B]/80 font-bold">
+                                        Bank / QRIS / PayPal / USDT
+                                      </p>
+                                      <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white">
+                                        8820 &bull;&bull;&bull;&bull;
+                                        &bull;&bull;&bull;&bull; 2026
+                                      </p>
+                                      <p className="text-[11px] text-[#FAF3E3]/80 truncate">
+                                        a.n. {simPreset.titleShort}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 text-[10px] text-[#E6C76B] font-bold">
+                                      <span>1-Click Copy Rekening</span>
+                                      <span>QRIS &amp; Crypto Ready</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RIGHT: Fitur Desain Editorial & Multi-Event Summary Card (4 Cols) */}
+                        <div className="lg:col-span-4 rounded-3xl bg-white border-2 border-[#D4AF37]/45 p-5 sm:p-6 shadow-[0_14px_38px_rgba(28,25,23,0.08)] space-y-5 relative overflow-hidden">
+                          <CatalogFloralCorner
+                            position="top-right"
+                            size="sm"
+                            className="opacity-45"
+                          />
+                          <div className="space-y-1.5 relative z-10">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                              <Sparkles className="w-3 h-3 text-[#B68D40]" />
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Standar Desain Editorial 2026'
+                                  : '2026 Luxury Editorial Standard'}
+                              </span>
+                            </span>
+                            <h4 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
+                              {lang === 'ID'
+                                ? 'Fitur Desain Editorial & Multi-Event'
+                                : 'Editorial & Multi-Event Design Features'}
+                            </h4>
+                            <p className="text-xs text-stone-600 leading-relaxed">
+                              {lang === 'ID'
+                                ? 'Setiap klien mendapatkan Studio Kustomisasi penuh untuk mengatur tampilan undangan sesuai jenis acara:'
+                                : 'Every client gets a full Customization Studio to tailor their invitation for any event category:'}
+                            </p>
+                          </div>
+
+                          <ul className="space-y-2.5 text-xs text-stone-700 relative z-10">
+                            {(lang === 'ID'
+                              ? [
+                                  'Feathered Hero Banner dengan transisi alpha-mask halus & animasi Ken Burns.',
+                                  'Bingkai Foto Kubah (Arch-Dome), Lingkaran (Circle), atau Editorial Tegak.',
+                                  'Otomatis 2 Profil (Pernikahan) atau 1 Profil Spotlight (Birthday, Wisuda, Rapat & Gala).',
+                                  'Ornamen Sudut Bunga Emas (Floral Corner) yang dapat dinyalakan/dimatikan.',
+                                  'Kartu Amplop Digital Metalik ber-Chip Emas (Bank, QRIS, PayPal & Crypto USDT).',
+                                  'Mendukung Background Video Sinematik s/d 25 MB (Auto-Stretch HP ke PC).',
+                                ]
+                              : [
+                                  'Feathered Hero Banner with seamless alpha-mask & slow Ken Burns motion.',
+                                  'Selectable Arch-Dome, Circle, or Editorial Rectangle portrait frames.',
+                                  'Adaptive 2-Profile (Wedding) or 1-Profile Spotlight (Birthday, Graduation, Corporate & Gala).',
+                                  'Toggleable animated gold-leaf Floral Corner Ornaments.',
+                                  'Luxury Metallic EMV Chip Digital Envelope (Bank, QRIS, PayPal & Crypto USDT).',
+                                  'Supports up to 25 MB Cinematic Video Backgrounds (9:16 Mobile to 16:9 PC).',
+                                ]
+                            ).map((item) => (
+                              <li key={item} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                                <span className="leading-relaxed">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+
+                          <div className="pt-3 border-t border-[#D4AF37]/30 space-y-2.5 relative z-10">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowcaseViewMode('dashboard_modules')
+                              }
+                              className="w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                            >
+                              <LayoutDashboard className="w-4 h-4 shrink-0" />
+                              <span className="truncate">
+                                {lang === 'ID'
+                                  ? '📊 Lihat 5 Modul Dashboard Pengelola'
+                                  : '📊 View 5 Admin Dashboard Modules'}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSelectPackageForCheckout('EXCLUSIVE')
+                              }
+                              className="w-full py-2.5 px-4 rounded-2xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                            >
+                              <Wallet className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
+                                {lang === 'ID'
+                                  ? 'Pesan Undangan & Workspace Sekarang'
+                                  : 'Order Invitation & Workspace Now'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                /* ================================================================= */
+                /* TAB 2: 5 ADMIN DASHBOARD MODULE SCREENSHOTS + FULLSCREEN LIGHTBOX */
+                /* ================================================================= */
+                <>
+                  {/* Quick Action Row for Screenshots */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-bold text-stone-600">
+                      {lang === 'ID'
+                        ? 'Klik tab modul di bawah atau klik gambar untuk memperbesar ke Layar Penuh:'
+                        : 'Click any module tab below or click the screenshot to zoom Fullscreen:'}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openLightboxAt(activeShowcaseIdx)}
+                        title={
+                          lang === 'ID'
+                            ? 'Perbesar Screenshot Modul Aktif ke Layar Penuh'
+                            : 'Zoom Active Module Screenshot to Fullscreen'
+                        }
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45 text-xs font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                        <span className="whitespace-nowrap truncate">
+                          {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
                         </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={onOpenAdminPortal}
+                        title={
+                          lang === 'ID'
+                            ? 'Masuk ke Portal Klien / EO / WO / Superadmin'
+                            : 'Login to Client / EO / WO / Superadmin Portal'
+                        }
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#D4AF37]/45 text-[#8B6914] hover:bg-[#FAF3E3] text-xs font-bold whitespace-nowrap truncate shadow-2xs transition-all"
+                      >
+                        <Shield className="w-3.5 h-3.5 shrink-0" />
+                        <span className="whitespace-nowrap truncate">
+                          {lang === 'ID'
+                            ? 'Buka Portal Login'
+                            : 'Open Login Portal'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Row of 5 Interactive Module Tabs */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
+                      const isActive = activeShowcaseIdx === idx;
+                      const tabLabel = lang === 'ID' ? shot.tabId : shot.tabEn;
+                      const fullTitle =
+                        lang === 'ID' ? shot.titleId : shot.titleEn;
+                      return (
                         <button
+                          key={shot.id}
                           type="button"
-                          onClick={() =>
-                            setActiveShowcaseIdx(
-                              (prev) =>
-                                (prev + 1) % OFFICIAL_PRODUCT_SCREENSHOTS.length
-                            )
-                          }
-                          title={
-                            lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
-                          }
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                          onClick={() => setActiveShowcaseIdx(idx)}
+                          title={`${shot.badge} — ${fullTitle}`}
+                          className={`px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap truncate shadow-2xs ${
+                            isActive
+                              ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/35'
+                              : 'bg-white hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] border-[#D4AF37]/35'
+                          }`}
                         >
-                          <ChevronRight className="w-4 h-4" />
+                          <span className="whitespace-nowrap truncate">
+                            {tabLabel}
+                          </span>
                         </button>
-                        <button
-                          type="button"
+                      );
+                    })}
+                  </div>
+
+                  {/* Featured Interactive Browser Frame Preview */}
+                  {(() => {
+                    const currentShot =
+                      OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx] ||
+                      OFFICIAL_PRODUCT_SCREENSHOTS[0];
+                    const currentTitle =
+                      lang === 'ID' ? currentShot.titleId : currentShot.titleEn;
+                    const currentDesc =
+                      lang === 'ID' ? currentShot.descId : currentShot.descEn;
+
+                    return (
+                      <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.10)] overflow-hidden">
+                        {/* Browser Window Top Bar */}
+                        <div className="px-3.5 sm:px-5 py-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
+                            </div>
+                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
+                              {currentShot.badge}
+                            </span>
+                            <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
+                              https://my-event-planner.app/workspace/
+                              {currentShot.id}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveShowcaseIdx(
+                                  (prev) =>
+                                    (prev -
+                                      1 +
+                                      OFFICIAL_PRODUCT_SCREENSHOTS.length) %
+                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
+                                )
+                              }
+                              title={
+                                lang === 'ID'
+                                  ? 'Modul Sebelumnya'
+                                  : 'Previous Module'
+                              }
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <span className="text-[11px] font-mono font-bold text-[#E6C76B] px-1.5">
+                              {activeShowcaseIdx + 1} /{' '}
+                              {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveShowcaseIdx(
+                                  (prev) =>
+                                    (prev + 1) %
+                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
+                                )
+                              }
+                              title={
+                                lang === 'ID'
+                                  ? 'Modul Berikutnya'
+                                  : 'Next Module'
+                              }
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openLightboxAt(activeShowcaseIdx)}
+                              title={
+                                lang === 'ID'
+                                  ? 'Perbesar Layar Penuh'
+                                  : 'Zoom Fullscreen'
+                              }
+                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="whitespace-nowrap truncate">
+                                {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Screenshot Image Viewport */}
+                        <div
                           onClick={() => openLightboxAt(activeShowcaseIdx)}
                           title={
                             lang === 'ID'
-                              ? 'Perbesar Layar Penuh'
-                              : 'Zoom Fullscreen'
+                              ? 'Klik gambar untuk memperbesar ke layar penuh'
+                              : 'Click image to zoom fullscreen'
                           }
-                          className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                          className="relative bg-stone-950/95 cursor-zoom-in group overflow-hidden max-h-[540px] flex items-center justify-center"
                         >
-                          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                          <span className="whitespace-nowrap truncate">
-                            {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Screenshot Image Viewport */}
-                    <div
-                      onClick={() => openLightboxAt(activeShowcaseIdx)}
-                      title={
-                        lang === 'ID'
-                          ? 'Klik gambar untuk memperbesar ke layar penuh'
-                          : 'Click image to zoom fullscreen'
-                      }
-                      className="relative bg-stone-950/95 cursor-zoom-in group overflow-hidden max-h-[540px] flex items-center justify-center"
-                    >
-                      <img
-                        src={currentShot.imageUrl}
-                        alt={currentTitle}
-                        className="w-full h-auto max-h-[540px] object-contain object-top transition-transform duration-300 group-hover:scale-[1.01]"
-                      />
-                      <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs border border-[#D4AF37]/50 text-[#FAF3E3] text-[11px] font-bold inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
-                        <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                        <span>
-                          {lang === 'ID'
-                            ? 'Klik untuk Layar Penuh'
-                            : 'Click for Fullscreen'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Active Screenshot Description & Prev/Next Footer */}
-                    <div className="p-4 sm:p-5 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold whitespace-nowrap">
-                            {currentShot.badge}
-                          </span>
-                          <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
-                            {currentTitle}
-                          </h4>
-                        </div>
-                        <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
-                          {currentDesc}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveShowcaseIdx(
-                              (prev) =>
-                                (prev - 1 + OFFICIAL_PRODUCT_SCREENSHOTS.length) %
-                                OFFICIAL_PRODUCT_SCREENSHOTS.length
-                            )
-                          }
-                          title={
-                            lang === 'ID'
-                              ? 'Lihat Screenshot Modul Sebelumnya'
-                              : 'View Previous Module Screenshot'
-                          }
-                          className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
-                        >
-                          <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
-                          <span>{lang === 'ID' ? 'Sebelumnya' : 'Prev'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveShowcaseIdx(
-                              (prev) =>
-                                (prev + 1) % OFFICIAL_PRODUCT_SCREENSHOTS.length
-                            )
-                          }
-                          title={
-                            lang === 'ID'
-                              ? 'Lihat Screenshot Modul Berikutnya'
-                              : 'View Next Module Screenshot'
-                          }
-                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
-                        >
-                          <span>{lang === 'ID' ? 'Berikutnya' : 'Next'}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* 5-Card Thumbnail Grid Below Featured Frame */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 min-w-0">
-                {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
-                  const isSelected = activeShowcaseIdx === idx;
-                  const shotTitle =
-                    lang === 'ID' ? shot.titleId : shot.titleEn;
-                  const shotDesc = lang === 'ID' ? shot.descId : shot.descEn;
-                  return (
-                    <div
-                      key={shot.id}
-                      onClick={() => setActiveShowcaseIdx(idx)}
-                      className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
-                        isSelected
-                          ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
-                          : 'border-[#D4AF37]/35 hover:border-[#B68D40] shadow-2xs hover:-translate-y-0.5'
-                      }`}
-                    >
-                      <div>
-                        <div className="relative h-28 bg-stone-900 overflow-hidden border-b border-stone-200/80">
                           <img
-                            src={shot.imageUrl}
-                            alt={shotTitle}
-                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            src={currentShot.imageUrl}
+                            alt={currentTitle}
+                            className="w-full h-auto max-h-[540px] object-contain object-top transition-transform duration-300 group-hover:scale-[1.01]"
                           />
-                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-900/90 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
-                            {lang === 'ID' ? shot.tabId : shot.tabEn}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openLightboxAt(idx);
-                            }}
-                            title={
-                              lang === 'ID'
-                                ? `Perbesar ${shotTitle}`
-                                : `Zoom ${shotTitle}`
-                            }
-                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
-                          >
-                            <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
-                          </button>
+                          <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs border border-[#D4AF37]/50 text-[#FAF3E3] text-[11px] font-bold inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                            <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'Klik untuk Layar Penuh'
+                                : 'Click for Fullscreen'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="p-3 space-y-1">
-                          <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
-                            {shot.badge}
-                          </p>
-                          <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
-                            {shotTitle}
-                          </h5>
-                          <p className="text-[11px] text-stone-500 line-clamp-2 leading-relaxed">
-                            {shotDesc}
-                          </p>
+
+                        {/* Active Screenshot Description & Prev/Next Footer */}
+                        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                                {currentShot.badge}
+                              </span>
+                              <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
+                                {currentTitle}
+                              </h4>
+                            </div>
+                            <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
+                              {currentDesc}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveShowcaseIdx(
+                                  (prev) =>
+                                    (prev -
+                                      1 +
+                                      OFFICIAL_PRODUCT_SCREENSHOTS.length) %
+                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
+                                )
+                              }
+                              title={
+                                lang === 'ID'
+                                  ? 'Lihat Screenshot Modul Sebelumnya'
+                                  : 'View Previous Module Screenshot'
+                              }
+                              className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                            >
+                              <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
+                              <span>
+                                {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveShowcaseIdx(
+                                  (prev) =>
+                                    (prev + 1) %
+                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
+                                )
+                              }
+                              title={
+                                lang === 'ID'
+                                  ? 'Lihat Screenshot Modul Berikutnya'
+                                  : 'View Next Module Screenshot'
+                              }
+                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                            >
+                              <span>
+                                {lang === 'ID' ? 'Berikutnya' : 'Next'}
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/60 flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
-                          {isSelected
-                            ? lang === 'ID'
-                              ? '● Sedang Ditampilkan'
-                              : '● Currently Viewing'
-                            : lang === 'ID'
-                              ? 'Klik untuk Pratinjau'
-                              : 'Click to Preview'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openLightboxAt(idx);
-                          }}
-                          title={
-                            lang === 'ID'
-                              ? 'Buka Layar Penuh'
-                              : 'Open Fullscreen'
-                          }
-                          className="text-[10px] font-extrabold text-stone-800 hover:text-[#8B6914] underline whitespace-nowrap"
+                    );
+                  })()}
+
+                  {/* 5-Card Thumbnail Grid Below Featured Frame */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 min-w-0">
+                    {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
+                      const isSelected = activeShowcaseIdx === idx;
+                      const shotTitle =
+                        lang === 'ID' ? shot.titleId : shot.titleEn;
+                      const shotDesc =
+                        lang === 'ID' ? shot.descId : shot.descEn;
+                      return (
+                        <div
+                          key={shot.id}
+                          onClick={() => setActiveShowcaseIdx(idx)}
+                          className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
+                            isSelected
+                              ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
+                              : 'border-[#D4AF37]/35 hover:border-[#B68D40] shadow-2xs hover:-translate-y-0.5'
+                          }`}
                         >
-                          {lang === 'ID' ? 'Zoom' : 'Zoom'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          <div>
+                            <div className="relative h-28 bg-stone-900 overflow-hidden border-b border-stone-200/80">
+                              <img
+                                src={shot.imageUrl}
+                                alt={shotTitle}
+                                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-900/90 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
+                                {lang === 'ID' ? shot.tabId : shot.tabEn}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openLightboxAt(idx);
+                                }}
+                                title={
+                                  lang === 'ID'
+                                    ? `Perbesar ${shotTitle}`
+                                    : `Zoom ${shotTitle}`
+                                }
+                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
+                              >
+                                <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
+                              </button>
+                            </div>
+                            <div className="p-3 space-y-1">
+                              <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
+                                {shot.badge}
+                              </p>
+                              <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
+                                {shotTitle}
+                              </h5>
+                              <p className="text-[11px] text-stone-500 line-clamp-2 leading-relaxed">
+                                {shotDesc}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/60 flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
+                              {isSelected
+                                ? lang === 'ID'
+                                  ? '● Sedang Ditampilkan'
+                                  : '● Currently Viewing'
+                                : lang === 'ID'
+                                  ? 'Klik untuk Pratinjau'
+                                  : 'Click to Preview'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openLightboxAt(idx);
+                              }}
+                              title={
+                                lang === 'ID'
+                                  ? 'Buka Layar Penuh'
+                                  : 'Open Fullscreen'
+                              }
+                              className="text-[10px] font-extrabold text-stone-800 hover:text-[#8B6914] underline whitespace-nowrap"
+                            >
+                              {lang === 'ID' ? 'Zoom' : 'Zoom'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </section>
 
             {/* SECTION 2: 6 MODUL UNGGULAN MY EVENT PLANNER */}
@@ -3169,23 +4521,30 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       ? 'Arsitektur Cloud Enterprise'
                       : 'Enterprise Cloud Architecture'}
                   </span>
-                  <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
+                  <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
                     {lang === 'ID'
                       ? '6 Modul Terintegrasi dalam 1 Ekosistem'
                       : '6 Integrated Modules in 1 Ecosystem'}
                   </h3>
+                  <div
+                    aria-hidden="true"
+                    className="flex items-center justify-center gap-2.5 my-2.5 text-[#B68D40]"
+                  >
+                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                    <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                  </div>
                   <p className="text-xs sm:text-sm text-stone-500 mt-1">
                     {lang === 'ID' ? (
                       <>
-                        Dirancang khusus agar calon pengantin, keluarga besar,
-                        dan tim Wedding Organizer (WO) dapat berkolaborasi
-                        secara <em>real-time</em>.
+                        Dirancang khusus agar penyelenggara acara, keluarga, dan
+                        tim Event/Wedding Organizer dapat berkolaborasi secara{' '}
+                        <em>real-time</em>.
                       </>
                     ) : (
                       <>
-                        Purpose-built so couples, families, and Wedding
-                        Organizer (WO) teams can collaborate in{' '}
-                        <em>real-time</em>.
+                        Purpose-built so hosts, families, and Event/Wedding
+                        Organizer teams can collaborate in <em>real-time</em>.
                       </>
                     )}
                   </p>
@@ -3291,11 +4650,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? 'Lisensi & Layanan Komersial (QRIS • Transfer Bank • Kartu Kredit • PayPal • Crypto)'
                     : 'Commercial Plans & Licensing (Credit Card • PayPal • Crypto USDT)'}
                 </span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
+                <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
                   {lang === 'ID'
                     ? 'Pilihan Paket My Event Planner'
                     : 'My Event Planner Packages'}
                 </h3>
+                <div
+                  aria-hidden="true"
+                  className="flex items-center justify-center gap-2.5 my-2.5 text-[#B68D40]"
+                >
+                  <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                  <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                  <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                </div>
                 <p className="text-xs sm:text-sm text-stone-500 mt-1">
                   {lang === 'ID'
                     ? 'Klik tombol Pilih Paket di bawah untuk membuka halaman pembayaran multi-wallet & verifikasi lisensi idempoten.'
