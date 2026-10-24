@@ -64,48 +64,15 @@ function mergePreservingLocalMedia(
   localState: WeddingDatabaseSchema
 ): WeddingDatabaseSchema {
   const localOriginalPhotos = localState.settings?.originalPhotos;
-  const mergedGuests = mergeGuestsMultiDevice(
-    serverState.guests || [],
-    localState.guests || [],
-    true
-  );
-
-  const serverWishes = Array.isArray(serverState.wishes)
-    ? serverState.wishes
-    : [];
-  const localWishes = Array.isArray(localState.wishes) ? localState.wishes : [];
-  const serverWishIds = new Set(serverWishes.map((w) => w.id));
-  const mergedWishes = [
-    ...serverWishes,
-    ...localWishes.filter((w) => w && w.id && !serverWishIds.has(w.id)),
-  ];
-
-  const serverTasks = Array.isArray(serverState.tasks) ? serverState.tasks : [];
-  const localTasks = Array.isArray(localState.tasks) ? localState.tasks : [];
-  const serverTaskIds = new Set(serverTasks.map((t) => t.id));
-  const mergedTasks = [
-    ...serverTasks,
-    ...localTasks.filter((t) => t && t.id && !serverTaskIds.has(t.id)),
-  ];
-
-  const serverBudgets = Array.isArray(serverState.budgetItems)
-    ? serverState.budgetItems
-    : [];
-  const localBudgets = Array.isArray(localState.budgetItems)
-    ? localState.budgetItems
-    : [];
-  const serverBudgetIds = new Set(serverBudgets.map((b) => b.id));
-  const mergedBudgets = [
-    ...serverBudgets,
-    ...localBudgets.filter((b) => b && b.id && !serverBudgetIds.has(b.id)),
-  ];
 
   return {
     ...serverState,
-    guests: mergedGuests,
-    wishes: mergedWishes,
-    tasks: mergedTasks,
-    budgetItems: mergedBudgets,
+    guests: Array.isArray(serverState.guests) ? serverState.guests : [],
+    wishes: Array.isArray(serverState.wishes) ? serverState.wishes : [],
+    tasks: Array.isArray(serverState.tasks) ? serverState.tasks : [],
+    budgetItems: Array.isArray(serverState.budgetItems)
+      ? serverState.budgetItems
+      : [],
     settings: {
       ...serverState.settings,
       ...(localOriginalPhotos
@@ -855,6 +822,16 @@ function WeddingAppContent() {
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
       tasks: prev.tasks.filter((t) => t.id !== id),
+      settings: {
+        ...prev.settings,
+        deletedIdsRegistry: {
+          ...(prev.settings.deletedIdsRegistry || {}),
+          tasks: Array.from(
+            new Set([...(prev.settings.deletedIdsRegistry?.tasks || []), id])
+          ),
+        },
+        updatedAt: new Date().toISOString(),
+      },
     }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -929,6 +906,16 @@ function WeddingAppContent() {
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
       guests: prev.guests.filter((g) => g.id !== id),
+      settings: {
+        ...prev.settings,
+        deletedIdsRegistry: {
+          ...(prev.settings.deletedIdsRegistry || {}),
+          guests: Array.from(
+            new Set([...(prev.settings.deletedIdsRegistry?.guests || []), id])
+          ),
+        },
+        updatedAt: new Date().toISOString(),
+      },
     }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -1194,6 +1181,16 @@ function WeddingAppContent() {
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
       wishes: prev.wishes.filter((w) => w.id !== id),
+      settings: {
+        ...prev.settings,
+        deletedIdsRegistry: {
+          ...(prev.settings.deletedIdsRegistry || {}),
+          wishes: Array.from(
+            new Set([...(prev.settings.deletedIdsRegistry?.wishes || []), id])
+          ),
+        },
+        updatedAt: new Date().toISOString(),
+      },
     }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',
@@ -1260,6 +1257,16 @@ function WeddingAppContent() {
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
       ...prev,
       budgetItems: prev.budgetItems.filter((b) => b.id !== id),
+      settings: {
+        ...prev.settings,
+        deletedIdsRegistry: {
+          ...(prev.settings.deletedIdsRegistry || {}),
+          budgets: Array.from(
+            new Set([...(prev.settings.deletedIdsRegistry?.budgets || []), id])
+          ),
+        },
+        updatedAt: new Date().toISOString(),
+      },
     }));
     appendAuditLog({
       actor: adminUser?.username || 'admin',

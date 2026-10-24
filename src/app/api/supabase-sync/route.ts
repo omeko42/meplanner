@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Best-effort relational table sync for public.wedding_guests & public.wedding_wishes
+    // Best-effort relational table sync & deletion pruning for public.wedding_guests & public.wedding_wishes
     if (Array.isArray(mergedData.guests) && mergedData.guests.length > 0) {
       try {
         const guestRows = mergedData.guests.map((g) => ({
@@ -192,29 +192,64 @@ export async function POST(req: NextRequest) {
           }),
           body: JSON.stringify(guestRows),
         });
+        const cleanGuestIds = mergedData.guests
+          .map((g) => String(g.id || '').trim())
+          .filter(Boolean);
+        if (cleanGuestIds.length > 0) {
+          const filterExpr = `id=not.in.(${cleanGuestIds
+            .map((k) => `"${k.replace(/"/g, '')}"`)
+            .join(',')})`;
+          await fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?${filterExpr}`, {
+            method: 'DELETE',
+            headers: getSupabaseHeaders(),
+          });
+        }
       } catch {
         // Ignore relational table errors
       }
     }
 
-    if (Array.isArray(mergedData.wishes) && mergedData.wishes.length > 0) {
+    if (Array.isArray(mergedData.wishes)) {
       try {
-        const wishRows = mergedData.wishes.map((w) => ({
-          id: w.id,
-          project_id: 'main',
-          guest_name: w.guestName,
-          message: w.message || '',
-          rsvp_status: w.rsvpStatus,
-          payload: w,
-          updated_at: syncTime,
-        }));
-        await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
-          method: 'POST',
-          headers: getSupabaseHeaders({
-            Prefer: 'resolution=merge-duplicates,return=minimal',
-          }),
-          body: JSON.stringify(wishRows),
-        });
+        if (mergedData.wishes.length > 0) {
+          const wishRows = mergedData.wishes.map((w) => ({
+            id: w.id,
+            project_id: 'main',
+            name: w.guestName,
+            attendance: w.rsvpStatus,
+            message: w.message || '',
+            created_at_label: w.createdAt || '',
+            payload: w,
+            updated_at: syncTime,
+          }));
+          await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
+            method: 'POST',
+            headers: getSupabaseHeaders({
+              Prefer: 'resolution=merge-duplicates,return=minimal',
+            }),
+            body: JSON.stringify(wishRows),
+          });
+          const cleanWishIds = mergedData.wishes
+            .map((w) => String(w.id || '').trim())
+            .filter(Boolean);
+          if (cleanWishIds.length > 0) {
+            const filterExpr = `id=not.in.(${cleanWishIds
+              .map((k) => `"${k.replace(/"/g, '')}"`)
+              .join(',')})`;
+            await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?${filterExpr}`, {
+              method: 'DELETE',
+              headers: getSupabaseHeaders(),
+            });
+          }
+        } else {
+          await fetch(
+            `${SUPABASE_URL}/rest/v1/wedding_wishes?project_id=eq.main`,
+            {
+              method: 'DELETE',
+              headers: getSupabaseHeaders(),
+            }
+          );
+        }
       } catch {
         // Ignore relational table errors
       }

@@ -872,6 +872,73 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     [settingsForm]
   );
 
+  const effectiveBackgroundSlides = useMemo<
+    Array<{
+      id: string;
+      imageUrl: string;
+      originalImageUrl?: string;
+      adjustment?: PhotoAdjustment;
+    }>
+  >(() => {
+    const rawSlides =
+      (settingsForm as any).backgroundSlides ??
+      (state.settings as any).backgroundSlides;
+    if (Array.isArray(rawSlides)) {
+      return rawSlides.filter(
+        (s: any) =>
+          s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
+      );
+    }
+    const legacyEntries: Array<{
+      field: 'coverBgUrl' | 'heroPrewedUrl' | 'pageBgUrl';
+      url: string;
+    }> = [
+      {
+        field: 'coverBgUrl',
+        url: (
+          settingsForm.coverBgUrl ??
+          state.settings.coverBgUrl ??
+          ''
+        ).trim(),
+      },
+      {
+        field: 'heroPrewedUrl',
+        url: (
+          settingsForm.heroPrewedUrl ??
+          state.settings.heroPrewedUrl ??
+          ''
+        ).trim(),
+      },
+      {
+        field: 'pageBgUrl',
+        url: (settingsForm.pageBgUrl ?? state.settings.pageBgUrl ?? '').trim(),
+      },
+    ];
+    const seen = new Set<string>();
+    const result: Array<{
+      id: string;
+      imageUrl: string;
+      originalImageUrl?: string;
+      adjustment?: PhotoAdjustment;
+    }> = [];
+    for (const item of legacyEntries) {
+      if (!item.url || seen.has(item.url)) continue;
+      seen.add(item.url);
+      result.push({
+        id: `bg_slide_${result.length + 1}`,
+        imageUrl: item.url,
+        originalImageUrl:
+          settingsForm.originalPhotos?.[item.field] ||
+          state.settings.originalPhotos?.[item.field] ||
+          item.url,
+        adjustment:
+          settingsForm.photoAdjustments?.[item.field] ||
+          state.settings.photoAdjustments?.[item.field],
+      });
+    }
+    return result;
+  }, [settingsForm, state.settings]);
+
   useEffect(() => {
     weddingMusicPlayer.syncFromSettings(settingsForm);
     const syncPlayer = () => {
@@ -2022,6 +2089,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           | 'pageBgUrl';
         label: string;
         shape: 'circle' | 'banner' | 'portrait';
+        slideIndex?: number;
       }
     | {
         kind: 'gallery_item';
@@ -2181,6 +2249,74 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       : { x: 0, y: 0, w: 100, h: 100 },
   });
 
+  const syncBackgroundSlidesToLegacyFields = (
+    slides: Array<{
+      id: string;
+      imageUrl: string;
+      originalImageUrl?: string;
+      adjustment?: PhotoAdjustment;
+    }>,
+    baseSettings: WeddingSettings = { ...state.settings, ...settingsForm }
+  ): WeddingSettings => {
+    const cleanSlides = slides.filter(
+      (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
+    );
+    const s0 = cleanSlides[0];
+    const s1 = cleanSlides[1] || s0;
+    const s2 = cleanSlides[2] || s0;
+    const nextOriginalPhotos = {
+      ...(state.settings.originalPhotos || {}),
+      ...(baseSettings.originalPhotos || {}),
+      coverBgUrl: s0?.originalImageUrl || s0?.imageUrl || '',
+      heroPrewedUrl: s1?.originalImageUrl || s1?.imageUrl || '',
+      pageBgUrl: s2?.originalImageUrl || s2?.imageUrl || '',
+    };
+    const nextAdjustments = {
+      ...(state.settings.photoAdjustments || {}),
+      ...(baseSettings.photoAdjustments || {}),
+      ...(s0?.adjustment ? { coverBgUrl: s0.adjustment } : {}),
+      ...(s1?.adjustment ? { heroPrewedUrl: s1.adjustment } : {}),
+      ...(s2?.adjustment ? { pageBgUrl: s2.adjustment } : {}),
+    };
+    return {
+      ...baseSettings,
+      backgroundSlides: cleanSlides,
+      coverBgUrl: s0?.imageUrl || '',
+      heroPrewedUrl: s1?.imageUrl || '',
+      pageBgUrl: s2?.imageUrl || '',
+      originalPhotos: nextOriginalPhotos,
+      photoAdjustments: nextAdjustments,
+      updatedBy: adminUser.username,
+    } as WeddingSettings;
+  };
+
+  const openBackgroundSlideAdjust = (
+    slide: {
+      id: string;
+      imageUrl: string;
+      originalImageUrl?: string;
+      adjustment?: PhotoAdjustment;
+    },
+    slideIndex: number
+  ) => {
+    const sourceUrl = slide.originalImageUrl || slide.imageUrl;
+    if (!sourceUrl) {
+      showToast('Upload atau masukkan foto terlebih dahulu.');
+      return;
+    }
+    setPhotoAdjustTarget({
+      kind: 'setting',
+      field: 'coverBgUrl',
+      label: `Foto Latar #${slideIndex + 1}`,
+      shape: 'portrait',
+      slideIndex,
+    });
+    setPhotoAdjustUrl(sourceUrl);
+    setPhotoAdjustDraft(normalizeDraftAdjust(slide.adjustment));
+    setPhotoStudioToolMode('crop');
+    setInspectorMediaTab('photo');
+  };
+
   const openSettingPhotoAdjust = (
     field:
       | 'groomPhotoUrl'
@@ -2191,7 +2327,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     label: string,
     shape: 'circle' | 'banner' | 'portrait',
     overrideUrl?: string,
-    overrideAdj?: PhotoAdjustment
+    overrideAdj?: PhotoAdjustment,
+    slideIndex?: number
   ) => {
     const sourceUrl =
       overrideUrl ||
@@ -2208,7 +2345,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       overrideAdj ||
       settingsForm.photoAdjustments?.[field] ||
       state.settings.photoAdjustments?.[field];
-    setPhotoAdjustTarget({ kind: 'setting', field, label, shape });
+    setPhotoAdjustTarget({ kind: 'setting', field, label, shape, slideIndex });
     setPhotoAdjustUrl(sourceUrl);
     setPhotoAdjustDraft(normalizeDraftAdjust(existingAdj));
     setPhotoStudioToolMode('crop');
@@ -2328,29 +2465,59 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
       if (photoAdjustTarget.kind === 'setting') {
         const field = photoAdjustTarget.field;
-        const prevUrl = settingsForm[field] || state.settings[field];
-        if (prevUrl && prevUrl !== photoAdjustUrl) {
-          void deleteMediaFromSupabaseStorage(prevUrl);
+        const isBgField =
+          field === 'coverBgUrl' ||
+          field === 'heroPrewedUrl' ||
+          field === 'pageBgUrl';
+
+        if (isBgField) {
+          const idx = photoAdjustTarget.slideIndex ?? 0;
+          const nextSlides = [...effectiveBackgroundSlides];
+          const prevSlide = nextSlides[idx];
+          if (
+            prevSlide?.imageUrl &&
+            prevSlide.imageUrl !== (prevSlide.originalImageUrl || photoAdjustUrl)
+          ) {
+            void deleteMediaFromSupabaseStorage(prevSlide.imageUrl);
+          }
+          const updatedSlide = {
+            id: prevSlide?.id || `bg_slide_${idx + 1}`,
+            imageUrl: croppedDataUrl || photoAdjustUrl,
+            originalImageUrl: prevSlide?.originalImageUrl || photoAdjustUrl,
+            adjustment: savedAdj,
+          };
+          if (idx < nextSlides.length) {
+            nextSlides[idx] = updatedSlide;
+          } else {
+            nextSlides.push(updatedSlide);
+          }
+          const nextSettings = syncBackgroundSlidesToLegacyFields(nextSlides);
+          await commitImmediateSettings(nextSettings);
+        } else {
+          const prevUrl = settingsForm[field] || state.settings[field];
+          if (prevUrl && prevUrl !== photoAdjustUrl) {
+            void deleteMediaFromSupabaseStorage(prevUrl);
+          }
+          const nextOriginalPhotos = {
+            ...(state.settings.originalPhotos || {}),
+            ...(settingsForm.originalPhotos || {}),
+            [field]: photoAdjustUrl,
+          };
+          const nextAdjustments = {
+            ...(state.settings.photoAdjustments || {}),
+            ...(settingsForm.photoAdjustments || {}),
+            [field]: savedAdj,
+          };
+          const nextSettings: WeddingSettings = {
+            ...state.settings,
+            ...settingsForm,
+            [field]: croppedDataUrl || photoAdjustUrl,
+            originalPhotos: nextOriginalPhotos,
+            photoAdjustments: nextAdjustments,
+            updatedBy: adminUser.username,
+          };
+          await commitImmediateSettings(nextSettings);
         }
-        const nextOriginalPhotos = {
-          ...(state.settings.originalPhotos || {}),
-          ...(settingsForm.originalPhotos || {}),
-          [field]: photoAdjustUrl,
-        };
-        const nextAdjustments = {
-          ...(state.settings.photoAdjustments || {}),
-          ...(settingsForm.photoAdjustments || {}),
-          [field]: savedAdj,
-        };
-        const nextSettings: WeddingSettings = {
-          ...state.settings,
-          ...settingsForm,
-          [field]: croppedDataUrl || photoAdjustUrl,
-          originalPhotos: nextOriginalPhotos,
-          photoAdjustments: nextAdjustments,
-          updatedBy: adminUser.username,
-        };
-        await commitImmediateSettings(nextSettings);
         appendAuditLog({
           actor: adminUser.username,
           module: 'FOTO_TEMA',
@@ -2735,6 +2902,132 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     showToast(
       'Format file tidak didukung. Pilih file Foto (JPG/PNG/WEBP/HEIC/RAW) atau Video (MP4/WebM/MOV maks. 25 MB).'
     );
+  };
+
+  const handleUploadUnifiedBackgroundMedia = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    replaceSlideIndex?: number
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (e.target) {
+      e.target.value = '';
+    }
+    if (files.length === 0) return;
+
+    const videoFile = files.find(isSupportedVideoFile);
+    if (videoFile) {
+      await handleUploadThemeVideo(e, 'all_video', videoFile);
+      return;
+    }
+
+    const photoFiles = files.filter(isSupportedPhotoFile);
+    if (photoFiles.length === 0) {
+      showToast(
+        'Format file tidak didukung. Pilih file Foto (JPG/PNG/WEBP/HEIC/RAW) atau Video (MP4/WebM/MOV maks. 25 MB).'
+      );
+      return;
+    }
+
+    try {
+      showToast(
+        photoFiles.length > 1
+          ? `Mengompresi & mengunggah ${photoFiles.length} foto latar untuk Slideshow Smooth...`
+          : 'Mengompresi & mengonversi foto latar ke .SVG HD...'
+      );
+
+      const defaultAdj: PhotoAdjustment = {
+        zoom: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: false,
+        fitMode: 'cover',
+        aspectRatio: 'auto',
+        cropBox: { x: 0, y: 0, w: 100, h: 100 },
+        baked: false,
+      };
+
+      const uploadedSlides: Array<{
+        id: string;
+        imageUrl: string;
+        originalImageUrl?: string;
+        adjustment?: PhotoAdjustment;
+      }> = [];
+
+      for (let i = 0; i < photoFiles.length; i++) {
+        const f = photoFiles[i];
+        const dataUrl = await compressImageFileToDataUrl(f, 1800, 0.86);
+        uploadedSlides.push({
+          id: `bg_slide_${Date.now()}_${i + 1}_${Math.random()
+            .toString(36)
+            .slice(2, 6)}`,
+          imageUrl: dataUrl,
+          originalImageUrl: dataUrl,
+          adjustment: defaultAdj,
+        });
+      }
+
+      // Clear any active background video from Supabase Storage
+      void deleteMediaFromSupabaseStorage(
+        settingsForm.coverVideoUrl || state.settings.coverVideoUrl
+      );
+      void deleteMediaFromSupabaseStorage(
+        settingsForm.heroVideoUrl || state.settings.heroVideoUrl
+      );
+      void deleteMediaFromSupabaseStorage(
+        settingsForm.pageVideoUrl || state.settings.pageVideoUrl
+      );
+
+      const nextSlides = [...effectiveBackgroundSlides];
+      let targetInspectorIndex = 0;
+
+      if (
+        typeof replaceSlideIndex === 'number' &&
+        nextSlides[replaceSlideIndex]
+      ) {
+        void deleteMediaFromSupabaseStorage(
+          nextSlides[replaceSlideIndex].imageUrl
+        );
+        nextSlides.splice(replaceSlideIndex, 1, ...uploadedSlides);
+        targetInspectorIndex = replaceSlideIndex;
+      } else {
+        targetInspectorIndex = nextSlides.length;
+        nextSlides.push(...uploadedSlides);
+      }
+
+      const nextSettings = syncBackgroundSlidesToLegacyFields(nextSlides, {
+        ...state.settings,
+        ...settingsForm,
+        coverVideoUrl: '',
+        heroVideoUrl: '',
+        pageVideoUrl: '',
+      });
+      setSettingsFormInternal(nextSettings);
+      await commitImmediateSettings(nextSettings);
+
+      appendAuditLog({
+        actor: adminUser.username,
+        module: 'FOTO_TEMA',
+        action: 'EDIT',
+        status: 'SUCCESS',
+        summary: `Upload ${uploadedSlides.length} Foto Latar Undangan (Total: ${nextSlides.length} foto latar)`,
+      });
+
+      if (uploadedSlides.length === 1) {
+        showToast(
+          '✓ Foto latar berhasil ditambahkan! Silakan atur Crop & Posisi di Sidebar Kanan.'
+        );
+        openBackgroundSlideAdjust(uploadedSlides[0], targetInspectorIndex);
+      } else {
+        showToast(
+          `✓ ${uploadedSlides.length} Foto Latar berhasil ditambahkan! Mode Slideshow Smooth otomatis aktif (${nextSlides.length} foto).`
+        );
+      }
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Gagal meng-upload foto latar.'
+      );
+    }
   };
 
   const handleUploadQrisFile = async (
@@ -6282,11 +6575,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             ) : (
               /* SUB-TAB BUKU TAMU, KONFIRMASI RSVP & BALASAN UCAPAN DOA */
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-                <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                     <span>Buku Tamu &amp; RSVP ({state.wishes.length})</span>
                     <InfoTooltip text="Semua konfirmasi kehadiran (RSVP + jumlah Pax) dan doa dari tamu masuk ke sini. Klik Balas untuk menjawab ucapan tamu." />
                   </h2>
+                  {state.wishes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        requestConfirm({
+                          title: 'Bersihkan Semua Buku Tamu?',
+                          message: `Seluruh ${state.wishes.length} ucapan doa & konfirmasi RSVP pada Buku Tamu akan dihapus permanen dari database Supabase.`,
+                          confirmLabel: 'Ya, Bersihkan Semua',
+                          variant: 'danger',
+                          onConfirm: async () => {
+                            for (const w of state.wishes) {
+                              await onDeleteWish(w.id);
+                            }
+                            showToast(
+                              '✓ Seluruh ucapan Buku Tamu berhasil dibersihkan dari database.'
+                            );
+                          },
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>🗑️ Bersihkan Semua Buku Tamu</span>
+                    </button>
+                  )}
                 </div>
                 {state.wishes.length === 0 ? (
                   <div className="p-8 text-center text-xs text-stone-500">
@@ -9126,52 +9444,46 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Quick Preset Selector + Unified Auto-Detect Upload untuk Semua Latar */}
+                    {/* Quick Preset Selector */}
                     <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <p className="font-bold text-xs text-stone-800 truncate">
-                            Preset Tema &amp; Upload Semua Latar
+                            Preset Tema Latar Undangan
                           </p>
-                          <InfoTooltip text="Pilih preset tema di bawah, atau klik Upload Semua Latar (Foto / Video) — sistem otomatis mengenali format file dan membuka Sidebar Kanan untuk pengaturan spesifik." />
+                          <InfoTooltip text="Klik salah satu preset tema di bawah untuk langsung menerapkannya ke latar undangan, atau upload foto/video sendiri pada kartu Media Latar di bawah." />
                         </div>
-                        <label
-                          title="Upload 1 file Foto atau Video (otomatis terdeteksi) untuk diterapkan ke Sampul, Banner Hero, dan Wallpaper sekaligus"
-                          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
-                            uploadingVideoSlot === 'all_video' ? 'opacity-60 pointer-events-none' : ''
-                          }`}
-                        >
-                          <Upload className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">
-                            {uploadingVideoSlot === 'all_video'
-                              ? 'Mengunggah...'
-                              : 'Upload Semua Latar (Foto / Video)'}
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                            className="hidden"
-                            onChange={(e) => handleUploadUnifiedThemeMedia(e, 'all_bg')}
-                          />
-                        </label>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {BACKGROUND_PRESETS.map((preset) => (
                           <button
                             key={preset.label}
                             type="button"
-                            title={`Terapkan tema "${preset.label}" ke seluruh latar undangan`}
-                            onClick={() =>
-                              setSettingsForm({
-                                ...settingsForm,
-                                coverBgUrl: preset.url,
-                                heroPrewedUrl: preset.url,
-                                pageBgUrl: preset.url,
-                                coverVideoUrl: '',
-                                heroVideoUrl: '',
-                                pageVideoUrl: '',
-                              })
-                            }
+                            title={`Terapkan tema "${preset.label}" ke latar undangan`}
+                            onClick={async () => {
+                              const nextSettings =
+                                syncBackgroundSlidesToLegacyFields(
+                                  [
+                                    {
+                                      id: 'bg_preset_1',
+                                      imageUrl: preset.url,
+                                      originalImageUrl: preset.url,
+                                    },
+                                  ],
+                                  {
+                                    ...state.settings,
+                                    ...settingsForm,
+                                    coverVideoUrl: '',
+                                    heroVideoUrl: '',
+                                    pageVideoUrl: '',
+                                  }
+                                );
+                              setSettingsFormInternal(nextSettings);
+                              await commitImmediateSettings(nextSettings);
+                              showToast(
+                                `✓ Preset tema "${preset.label}" berhasil diterapkan ke latar undangan!`
+                              );
+                            }}
                             className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-2.5"
                           >
                             <img
@@ -9192,244 +9504,570 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Unified 3 Background Slots (Auto-Detects Photo or Video + Opens Right Sidebar Inspector) */}
-                    <div className="space-y-3">
-                      {(
-                        [
-                          {
-                            photoField: 'coverBgUrl' as const,
-                            videoField: 'coverVideoUrl' as const,
-                            label: '1. Sampul Pembuka (Cover)',
-                            cleanLabel: 'Sampul Pembuka (Cover)',
-                            shape: 'portrait' as const,
-                          },
-                          {
-                            photoField: 'heroPrewedUrl' as const,
-                            videoField: 'heroVideoUrl' as const,
-                            label: '2. Banner Utama (Hero)',
-                            cleanLabel: 'Banner Utama (Hero)',
-                            shape: 'banner' as const,
-                          },
-                          {
-                            photoField: 'pageBgUrl' as const,
-                            videoField: 'pageVideoUrl' as const,
-                            label: '3. Wallpaper Latar',
-                            cleanLabel: 'Wallpaper Latar',
-                            shape: 'portrait' as const,
-                          },
-                        ] as const
-                      ).map((item) => {
-                        const activeVideoUrl = (
-                          settingsForm[item.videoField] || ''
-                        ).trim();
-                        const activePhotoUrl = (
-                          settingsForm[item.photoField] || ''
-                        ).trim();
-                        const isVideoActive = Boolean(activeVideoUrl);
-                        const isUploadingThisVideo =
-                          uploadingVideoSlot === item.videoField;
+                    {/* Single Unified Background Media & Slideshow Card */}
+                    {(() => {
+                      const activeUnifiedVideoUrl = (
+                        settingsForm.coverVideoUrl ||
+                        settingsForm.heroVideoUrl ||
+                        settingsForm.pageVideoUrl ||
+                        ''
+                      ).trim();
+                      const isVideoActive = Boolean(activeUnifiedVideoUrl);
+                      const isUploadingUnifiedVideo =
+                        Boolean(uploadingVideoSlot);
 
-                        return (
-                          <div
-                            key={item.photoField}
-                            className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5"
-                          >
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <label className="block font-bold text-xs text-stone-800 truncate">
-                                  {item.label}
-                                </label>
-                                {isVideoActive ? (
-                                  <span
-                                    title="Slot ini sedang menggunakan Video Background. Klik Atur & Crop untuk mengatur fokus layar PC/HP di Sidebar Kanan"
-                                    className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0"
-                                  >
-                                    🎬 Video Aktif
+                      return (
+                        <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-3.5">
+                          {/* Header Bar */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap pb-2.5 border-b border-stone-100">
+                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                              <p className="font-extrabold text-xs sm:text-sm text-stone-900">
+                                Media Latar Undangan (Foto / Slideshow / Video)
+                              </p>
+                              {isVideoActive ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                  🎬 1 Video Latar Aktif
+                                </span>
+                              ) : effectiveBackgroundSlides.length > 1 ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                  🖼️ {effectiveBackgroundSlides.length} Foto Latar (Slideshow Smooth Aktif)
+                                </span>
+                              ) : effectiveBackgroundSlides.length === 1 ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                  🖼️ 1 Foto Latar Aktif
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                  Belum Ada Media Latar
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <label
+                                title="Pilih 1 Video (maks. 25 MB) ATAU pilih 1 / beberapa Foto sekaligus untuk dijadikan Latar / Slideshow Smooth"
+                                className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all ${
+                                  isUploadingUnifiedVideo
+                                    ? 'opacity-60 pointer-events-none'
+                                    : ''
+                                }`}
+                              >
+                                <Upload className="w-3.5 h-3.5 shrink-0" />
+                                <span>
+                                  {isUploadingUnifiedVideo
+                                    ? 'Mengunggah Video...'
+                                    : '+ Upload File (Foto / Video)'}
+                                </span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    handleUploadUnifiedBackgroundMedia(e)
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Active Video Card (when a video is active) */}
+                          {isVideoActive && (
+                            <div className="p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2.5">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
+                                    VIDEO LATAR UTAMA
                                   </span>
-                                ) : activePhotoUrl ? (
-                                  <span
-                                    title="Slot ini sedang menggunakan Foto Latar. Klik Atur & Crop untuk mengatur posisi & potongan di Sidebar Kanan"
-                                    className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0"
-                                  >
-                                    🖼️ Foto Aktif
+                                  <span className="text-[11px] font-semibold text-stone-600">
+                                    Diterapkan otomatis ke Sampul, Hero &amp; Latar Undangan
                                   </span>
-                                ) : null}
-                              </div>
+                                </div>
 
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {isVideoActive && (
-                                  <button
-                                    type="button"
-                                    title="Hapus video dari slot ini dan kembali ke Foto Latar"
-                                    onClick={async () => {
-                                      void deleteMediaFromSupabaseStorage(
-                                        activeVideoUrl
-                                      );
-                                      const nextSettings: WeddingSettings = {
-                                        ...state.settings,
-                                        ...settingsForm,
-                                        [item.videoField]: '',
-                                        updatedBy: adminUser.username,
-                                      };
-                                      await commitImmediateSettings(
-                                        nextSettings
-                                      );
-                                      showToast(
-                                        `Video pada ${item.cleanLabel} dihapus — kembali menggunakan Foto Latar.`
-                                      );
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                    <span>Hapus Video</span>
-                                  </button>
-                                )}
-
-                                {(activePhotoUrl || isVideoActive) && (
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() =>
                                       openMediaSidebarInspector(
-                                        item.photoField,
-                                        item.cleanLabel,
-                                        item.shape,
-                                        isVideoActive ? 'video' : 'photo'
+                                        'coverBgUrl',
+                                        'Media Latar Undangan',
+                                        'portrait',
+                                        'video'
                                       )
                                     }
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
-                                    title="Buka Sidebar Pengaturan Spesifik (Crop Foto / Fokus Highlight Video HP ke PC)"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                    title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
                                   >
                                     <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                    <span>Atur &amp; Crop</span>
+                                    <span>Atur Fokus PC/HP (Sidebar)</span>
                                   </button>
-                                )}
 
-                                <label
-                                  title="Pilih file Foto atau Video (maks. 25 MB) — format otomatis dikenali sistem"
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
-                                    isUploadingThisVideo
-                                      ? 'opacity-60 pointer-events-none'
-                                      : ''
-                                  }`}
-                                >
-                                  <Upload className="w-3.5 h-3.5 shrink-0" />
-                                  <span>
-                                    {isUploadingThisVideo
-                                      ? 'Mengunggah...'
-                                      : 'Upload File'}
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                    className="hidden"
-                                    onChange={(e) =>
-                                      handleUploadUnifiedThemeMedia(
-                                        e,
-                                        item.photoField
-                                      )
-                                    }
-                                  />
-                                </label>
+                                  <button
+                                    type="button"
+                                    title="Hapus video latar dari database & storage"
+                                    onClick={async () => {
+                                      void deleteMediaFromSupabaseStorage(
+                                        settingsForm.coverVideoUrl ||
+                                          state.settings.coverVideoUrl
+                                      );
+                                      void deleteMediaFromSupabaseStorage(
+                                        settingsForm.heroVideoUrl ||
+                                          state.settings.heroVideoUrl
+                                      );
+                                      void deleteMediaFromSupabaseStorage(
+                                        settingsForm.pageVideoUrl ||
+                                          state.settings.pageVideoUrl
+                                      );
+                                      const nextSettings: WeddingSettings = {
+                                        ...state.settings,
+                                        ...settingsForm,
+                                        coverVideoUrl: '',
+                                        heroVideoUrl: '',
+                                        pageVideoUrl: '',
+                                        updatedBy: adminUser.username,
+                                      };
+                                      setSettingsFormInternal(nextSettings);
+                                      await commitImmediateSettings(
+                                        nextSettings
+                                      );
+                                      showToast(
+                                        '✓ Video latar berhasil dihapus dari database.'
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                    <span>🗑️ Hapus Video</span>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="flex items-center gap-2.5">
-                              {(activePhotoUrl || isVideoActive) && (
+                              <div className="flex items-center gap-2.5">
                                 <button
                                   type="button"
                                   onClick={() =>
                                     openMediaSidebarInspector(
-                                      item.photoField,
-                                      item.cleanLabel,
-                                      item.shape,
-                                      isVideoActive ? 'video' : 'photo'
+                                      'coverBgUrl',
+                                      'Media Latar Undangan',
+                                      'portrait',
+                                      'video'
                                     )
                                   }
-                                  title="Klik untuk membuka Sidebar Kanan: Crop Foto atau Fokus Video"
-                                  className="w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900 group"
+                                  title="Klik untuk atur Fokus Video di Sidebar Kanan"
+                                  className="w-14 h-14 rounded-lg overflow-hidden border border-emerald-300 shrink-0 relative bg-stone-900"
                                 >
-                                  {isVideoActive ? (
-                                    <>
-                                      <video
-                                        src={activeVideoUrl}
-                                        poster={activePhotoUrl || undefined}
-                                        muted
-                                        loop
-                                        autoPlay
-                                        playsInline
-                                        className="w-full h-full object-cover"
-                                        style={{
-                                          objectPosition: `50% ${
-                                            settingsForm.videoFocusY ?? 28
-                                          }%`,
-                                        }}
-                                      />
-                                      <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
-                                        MP4
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <img
-                                      src={activePhotoUrl}
-                                      alt={item.cleanLabel}
-                                      className="w-full h-full object-cover object-center"
-                                      style={getPhotoAdjustStyle(
-                                        settingsForm.photoAdjustments?.[
-                                          item.photoField
-                                        ] ||
-                                          state.settings.photoAdjustments?.[
-                                            item.photoField
-                                          ]
-                                      )}
-                                    />
-                                  )}
+                                  <video
+                                    src={activeUnifiedVideoUrl}
+                                    poster={
+                                      effectiveBackgroundSlides[0]?.imageUrl ||
+                                      undefined
+                                    }
+                                    muted
+                                    loop
+                                    autoPlay
+                                    playsInline
+                                    className="w-full h-full object-cover"
+                                    style={{
+                                      objectPosition: `50% ${
+                                        settingsForm.videoFocusY ?? 28
+                                      }%`,
+                                    }}
+                                  />
+                                  <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
+                                    MP4
+                                  </span>
                                 </button>
-                              )}
 
-                              <input
-                                type="text"
-                                value={
-                                  isVideoActive
-                                    ? activeVideoUrl
-                                    : activePhotoUrl?.startsWith('data:image/')
-                                    ? ''
-                                    : activePhotoUrl
-                                }
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  const isVideoLink =
-                                    /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(
-                                      val.trim()
-                                    ) || val.includes('/wedding-media/videos/');
-                                  if (isVideoLink) {
+                                <input
+                                  type="text"
+                                  value={activeUnifiedVideoUrl}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
                                     setSettingsForm({
                                       ...settingsForm,
-                                      [item.videoField]: val,
+                                      coverVideoUrl: val,
+                                      heroVideoUrl: val,
+                                      pageVideoUrl: val,
                                     });
-                                  } else {
-                                    setSettingsForm({
-                                      ...settingsForm,
-                                      [item.photoField]: val,
-                                      ...(isVideoActive
-                                        ? { [item.videoField]: '' }
-                                        : {}),
-                                    });
-                                  }
-                                }}
-                                placeholder={
-                                  isVideoActive
-                                    ? '✓ Video aktif (Klik Atur & Crop untuk atur fokus di Sidebar)'
-                                    : activePhotoUrl?.startsWith('data:image/')
-                                    ? `✓ Foto ${item.cleanLabel} tersimpan (Klik Atur & Crop / Upload File)`
-                                    : 'Tempel URL Foto / Video (.mp4) atau klik Upload File (otomatis dikenali)...'
-                                }
-                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
-                              />
+                                  }}
+                                  placeholder="URL Video Latar (.mp4 / .webm)..."
+                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
+                                />
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          )}
+
+                          {/* Active Photo / Slideshow List View */}
+                          {effectiveBackgroundSlides.length === 0 &&
+                          !isVideoActive ? (
+                            <div className="p-4 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center space-y-2">
+                              <p className="text-xs text-stone-600 font-semibold">
+                                Belum ada foto atau video latar. Klik{' '}
+                                <strong>+ Upload File (Foto / Video)</strong> di
+                                atas atau pilih <strong>Preset Tema</strong>.
+                              </p>
+                              <p className="text-[11px] text-stone-400">
+                                💡 Upload 1 foto untuk latar statis, atau pilih
+                                beberapa foto sekaligus untuk membuat Slideshow
+                                Latar dengan transisi smooth.
+                              </p>
+                            </div>
+                          ) : (
+                            effectiveBackgroundSlides.length > 0 && (
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between gap-2 flex-wrap bg-[#FAF8F5] px-3 py-2 rounded-lg border border-stone-200/80">
+                                  <p className="text-[11px] text-stone-600 font-medium">
+                                    💡 <strong>Tips:</strong> Upload 1 foto
+                                    untuk latar statis, atau upload 2+ foto agar
+                                    latar otomatis menjadi{' '}
+                                    <strong className="text-[#8B6914]">
+                                      Slideshow dengan transisi smooth
+                                    </strong>
+                                    .
+                                  </p>
+                                  <button
+                                    type="button"
+                                    title="Hapus seluruh foto latar yang ada dari database & storage"
+                                    onClick={async () => {
+                                      for (const s of effectiveBackgroundSlides) {
+                                        void deleteMediaFromSupabaseStorage(
+                                          s.imageUrl
+                                        );
+                                        if (
+                                          s.originalImageUrl &&
+                                          s.originalImageUrl !== s.imageUrl
+                                        ) {
+                                          void deleteMediaFromSupabaseStorage(
+                                            s.originalImageUrl
+                                          );
+                                        }
+                                      }
+                                      const nextSettings =
+                                        syncBackgroundSlidesToLegacyFields([], {
+                                          ...state.settings,
+                                          ...settingsForm,
+                                        });
+                                      setSettingsFormInternal(nextSettings);
+                                      await commitImmediateSettings(
+                                        nextSettings
+                                      );
+                                      showToast(
+                                        '✓ Seluruh foto latar berhasil dihapus dari database.'
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-[11px] shrink-0 transition-all"
+                                  >
+                                    <Trash2 className="w-3 h-3 shrink-0" />
+                                    <span>🗑️ Hapus Semua Foto</span>
+                                  </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {effectiveBackgroundSlides.map(
+                                    (slide, idx) => (
+                                      <div
+                                        key={slide.id || `slide_${idx}`}
+                                        className="p-2.5 sm:p-3 rounded-xl bg-[#FAF8F5]/70 border border-stone-200 flex flex-col gap-2"
+                                      >
+                                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <span className="font-bold text-xs text-stone-800">
+                                              Foto Latar #{idx + 1}
+                                            </span>
+                                            <span
+                                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                                idx === 0
+                                                  ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
+                                                  : 'bg-white text-stone-600 border-stone-200'
+                                              }`}
+                                            >
+                                              {idx === 0
+                                                ? 'Utama (Sampul & Latar)'
+                                                : `Slide #${idx + 1}`}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex items-center gap-1.5 shrink-0">
+                                            <label
+                                              title="Ganti foto pada slide ini"
+                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer transition-all"
+                                            >
+                                              <Upload className="w-3.5 h-3.5 shrink-0" />
+                                              <span>Ganti</span>
+                                              <input
+                                                type="file"
+                                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                                className="hidden"
+                                                onChange={(e) =>
+                                                  handleUploadUnifiedBackgroundMedia(
+                                                    e,
+                                                    idx
+                                                  )
+                                                }
+                                              />
+                                            </label>
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                openBackgroundSlideAdjust(
+                                                  slide,
+                                                  idx
+                                                )
+                                              }
+                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                              title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto latar ini"
+                                            >
+                                              <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                              <span>Atur &amp; Crop</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              title="Hapus foto latar ini dari database & storage"
+                                              onClick={async () => {
+                                                void deleteMediaFromSupabaseStorage(
+                                                  slide.imageUrl
+                                                );
+                                                if (
+                                                  slide.originalImageUrl &&
+                                                  slide.originalImageUrl !==
+                                                    slide.imageUrl
+                                                ) {
+                                                  void deleteMediaFromSupabaseStorage(
+                                                    slide.originalImageUrl
+                                                  );
+                                                }
+                                                const remainingSlides =
+                                                  effectiveBackgroundSlides.filter(
+                                                    (_, i) => i !== idx
+                                                  );
+                                                const nextSettings =
+                                                  syncBackgroundSlidesToLegacyFields(
+                                                    remainingSlides,
+                                                    {
+                                                      ...state.settings,
+                                                      ...settingsForm,
+                                                    }
+                                                  );
+                                                setSettingsFormInternal(
+                                                  nextSettings
+                                                );
+                                                await commitImmediateSettings(
+                                                  nextSettings
+                                                );
+                                                showToast(
+                                                  '✓ Foto latar berhasil dihapus dari database.'
+                                                );
+                                              }}
+                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                              <span>🗑️ Hapus Foto</span>
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2.5">
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              openBackgroundSlideAdjust(
+                                                slide,
+                                                idx
+                                              )
+                                            }
+                                            title="Klik untuk membuka Sidebar Kanan: Crop & Posisi Foto"
+                                            className="w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900"
+                                          >
+                                            <img
+                                              src={slide.imageUrl}
+                                              alt={`Foto Latar #${idx + 1}`}
+                                              className="w-full h-full object-cover object-center"
+                                              style={getPhotoAdjustStyle(
+                                                slide.adjustment
+                                              )}
+                                            />
+                                          </button>
+
+                                          <input
+                                            type="text"
+                                            value={
+                                              slide.imageUrl.startsWith(
+                                                'data:image/'
+                                              )
+                                                ? ''
+                                                : slide.imageUrl
+                                            }
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              const nextSlides =
+                                                effectiveBackgroundSlides.map(
+                                                  (s, i) =>
+                                                    i === idx
+                                                      ? {
+                                                          ...s,
+                                                          imageUrl: val,
+                                                          originalImageUrl: val,
+                                                        }
+                                                      : s
+                                                );
+                                              const nextSettings =
+                                                syncBackgroundSlidesToLegacyFields(
+                                                  nextSlides,
+                                                  {
+                                                    ...state.settings,
+                                                    ...settingsForm,
+                                                  }
+                                                );
+                                              setSettingsForm(nextSettings);
+                                            }}
+                                            placeholder={
+                                              slide.imageUrl.startsWith(
+                                                'data:image/'
+                                              )
+                                                ? `✓ Foto Latar #${idx + 1} tersimpan (Klik Atur & Crop / Ganti)`
+                                                : 'Tempel URL Foto Latar atau gunakan tombol Upload...'
+                                            }
+                                            className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                          />
+                                        </div>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+
+                                {/* Inline Slideshow Transition Controls when 2+ Background Photos */}
+                                {effectiveBackgroundSlides.length > 1 && (
+                                  <div className="p-3 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                        ✨ Pengaturan Transisi Smooth Slideshow Latar ({effectiveBackgroundSlides.length} Foto)
+                                      </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                      {(
+                                        [
+                                          {
+                                            key: 'CROSSFADE',
+                                            label: '✨ Crossfade Halus',
+                                          },
+                                          {
+                                            key: 'ZOOM_DISSOLVE',
+                                            label: '🎬 Zoom & Blur Sinematik',
+                                          },
+                                          {
+                                            key: 'SMOOTH_SLIDE',
+                                            label: '↔️ Geser Horizontal Halus',
+                                          },
+                                        ] as const
+                                      ).map((mode) => {
+                                        const currentStyle =
+                                          settingsForm.galleryTransitionStyle ??
+                                          'CROSSFADE';
+                                        const isActive =
+                                          currentStyle === mode.key;
+                                        return (
+                                          <button
+                                            key={mode.key}
+                                            type="button"
+                                            onClick={() =>
+                                              setSettingsForm({
+                                                ...settingsForm,
+                                                galleryTransitionStyle:
+                                                  mode.key,
+                                              })
+                                            }
+                                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
+                                              isActive
+                                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
+                                                : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
+                                            }`}
+                                          >
+                                            {mode.label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
+                                        <div className="flex items-center justify-between text-[10px] font-bold">
+                                          <span className="text-stone-700">
+                                            Jeda Slide Latar
+                                          </span>
+                                          <span className="text-[#8B6914]">
+                                            {(settingsForm.gallerySlideDurationSeconds ??
+                                              6) === 0
+                                              ? 'Manual (Mati)'
+                                              : `${settingsForm.gallerySlideDurationSeconds ?? 6} dtk`}
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="range"
+                                          min={2}
+                                          max={15}
+                                          step={1}
+                                          value={
+                                            settingsForm.gallerySlideDurationSeconds ||
+                                            6
+                                          }
+                                          onChange={(e) =>
+                                            setSettingsForm({
+                                              ...settingsForm,
+                                              gallerySlideDurationSeconds:
+                                                Number(e.target.value),
+                                            })
+                                          }
+                                          className="w-full accent-[#B68D40] h-1.5"
+                                        />
+                                      </div>
+
+                                      <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
+                                        <div className="flex items-center justify-between text-[10px] font-bold">
+                                          <span className="text-stone-700">
+                                            Durasi Smoothing
+                                          </span>
+                                          <span className="text-[#8B6914]">
+                                            {(
+                                              (settingsForm.galleryTransitionDurationMs ??
+                                                1400) / 1000
+                                            ).toFixed(1)}{' '}
+                                            dtk (
+                                            {settingsForm.galleryTransitionDurationMs ??
+                                              1400}{' '}
+                                            ms)
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="range"
+                                          min={400}
+                                          max={2600}
+                                          step={100}
+                                          value={
+                                            settingsForm.galleryTransitionDurationMs ??
+                                            1400
+                                          }
+                                          onChange={(e) =>
+                                            setSettingsForm({
+                                              ...settingsForm,
+                                              galleryTransitionDurationMs:
+                                                Number(e.target.value),
+                                            })
+                                          }
+                                          className="w-full accent-[#B68D40] h-1.5"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Opacity & Blur */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -12939,7 +13577,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </button>
                           </div>
 
-                          {/* Pencarian Pelaku / Isi Komentar */}
+                          {/* Pencarian Pelaku / Isi Komentar + Bersihkan Semua Buku Tamu */}
                           <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative flex-1">
                               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -12958,6 +13596,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-100"
                               >
                                 Reset
+                              </button>
+                            )}
+                            {state.wishes.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestConfirm({
+                                    title: 'Bersihkan Semua Buku Tamu?',
+                                    message: `Seluruh ${state.wishes.length} ucapan doa & konfirmasi RSVP pada Buku Tamu akan dihapus permanen dari database Supabase.`,
+                                    confirmLabel: 'Ya, Bersihkan Semua',
+                                    variant: 'danger',
+                                    onConfirm: async () => {
+                                      for (const w of state.wishes) {
+                                        await onDeleteWish(w.id);
+                                      }
+                                      showToast(
+                                        '✓ Seluruh ucapan Buku Tamu berhasil dibersihkan dari database.'
+                                      );
+                                    },
+                                  })
+                                }
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>🗑️ Bersihkan Semua ({state.wishes.length})</span>
                               </button>
                             )}
                           </div>

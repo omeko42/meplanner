@@ -1,5 +1,6 @@
 import {
   AuditLogEntry,
+  BackgroundSlideItem,
   ClientWorkspaceData,
   CommercialPaymentTransaction,
   GalleryPhotoItem,
@@ -277,16 +278,90 @@ export function markInitialCloudHydrationComplete(
   }
 }
 
+const DELETED_IDS_STORAGE_KEY = 'mep_deleted_ids_registry_v1';
+
 const explicitlyDeletedGuestIds = new Set<string>();
 const explicitlyDeletedTaskIds = new Set<string>();
 const explicitlyDeletedWishIds = new Set<string>();
 const explicitlyDeletedBudgetIds = new Set<string>();
+
+function loadDeletedIdsRegistryFromLocal(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(DELETED_IDS_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as WeddingSettings['deletedIdsRegistry'];
+    if (!parsed || typeof parsed !== 'object') return;
+    (parsed.guests || []).forEach((id) => id && explicitlyDeletedGuestIds.add(id));
+    (parsed.tasks || []).forEach((id) => id && explicitlyDeletedTaskIds.add(id));
+    (parsed.wishes || []).forEach((id) => id && explicitlyDeletedWishIds.add(id));
+    (parsed.budgets || []).forEach((id) => id && explicitlyDeletedBudgetIds.add(id));
+  } catch {
+    // Ignore storage read errors
+  }
+}
+
+function persistDeletedIdsRegistryToLocal(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(
+      DELETED_IDS_STORAGE_KEY,
+      JSON.stringify({
+        guests: Array.from(explicitlyDeletedGuestIds),
+        tasks: Array.from(explicitlyDeletedTaskIds),
+        wishes: Array.from(explicitlyDeletedWishIds),
+        budgets: Array.from(explicitlyDeletedBudgetIds),
+      })
+    );
+  } catch {
+    // Ignore storage write errors
+  }
+}
+
+export function hydrateDeletedIdsFromRegistry(
+  reg?: WeddingSettings['deletedIdsRegistry']
+): void {
+  loadDeletedIdsRegistryFromLocal();
+  if (!reg || typeof reg !== 'object') return;
+  let changed = false;
+  for (const id of reg.guests || []) {
+    if (id && !explicitlyDeletedGuestIds.has(id)) {
+      explicitlyDeletedGuestIds.add(id);
+      changed = true;
+    }
+  }
+  for (const id of reg.tasks || []) {
+    if (id && !explicitlyDeletedTaskIds.has(id)) {
+      explicitlyDeletedTaskIds.add(id);
+      changed = true;
+    }
+  }
+  for (const id of reg.wishes || []) {
+    if (id && !explicitlyDeletedWishIds.has(id)) {
+      explicitlyDeletedWishIds.add(id);
+      changed = true;
+    }
+  }
+  for (const id of reg.budgets || []) {
+    if (id && !explicitlyDeletedBudgetIds.has(id)) {
+      explicitlyDeletedBudgetIds.add(id);
+      changed = true;
+    }
+  }
+  if (changed) {
+    persistDeletedIdsRegistryToLocal();
+  }
+}
 
 const locallyTouchedIds = new Map<string, number>();
 
 export function registerLocalItemTouch(id: string): void {
   if (!id) return;
   locallyTouchedIds.set(id, Date.now());
+  explicitlyDeletedGuestIds.delete(id);
+  explicitlyDeletedTaskIds.delete(id);
+  explicitlyDeletedWishIds.delete(id);
+  explicitlyDeletedBudgetIds.delete(id);
 }
 
 export function getExplicitlyDeletedIdsSnapshot(): {
@@ -295,6 +370,7 @@ export function getExplicitlyDeletedIdsSnapshot(): {
   wishes: string[];
   budgets: string[];
 } {
+  loadDeletedIdsRegistryFromLocal();
   return {
     guests: Array.from(explicitlyDeletedGuestIds),
     tasks: Array.from(explicitlyDeletedTaskIds),
@@ -308,10 +384,36 @@ export function registerExplicitCloudDeletion(
   id: string
 ): void {
   if (!id) return;
-  if (collection === 'guests') explicitlyDeletedGuestIds.add(id);
-  else if (collection === 'tasks') explicitlyDeletedTaskIds.add(id);
-  else if (collection === 'wishes') explicitlyDeletedWishIds.add(id);
-  else if (collection === 'budgets') explicitlyDeletedBudgetIds.add(id);
+  loadDeletedIdsRegistryFromLocal();
+  let relationalTable = '';
+  if (collection === 'guests') {
+    explicitlyDeletedGuestIds.add(id);
+    relationalTable = 'wedding_guests';
+  } else if (collection === 'tasks') {
+    explicitlyDeletedTaskIds.add(id);
+    relationalTable = 'wedding_tasks';
+  } else if (collection === 'wishes') {
+    explicitlyDeletedWishIds.add(id);
+    relationalTable = 'wedding_wishes';
+  } else if (collection === 'budgets') {
+    explicitlyDeletedBudgetIds.add(id);
+    relationalTable = 'wedding_budgets';
+  }
+  persistDeletedIdsRegistryToLocal();
+
+  // Immediately delete from relational table in Supabase so deleted items never resurrect
+  if (relationalTable) {
+    void fetch(
+      `${SUPABASE_URL}/rest/v1/${relationalTable}?id=eq.${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    ).catch(() => {});
+  }
 }
 
 export function mergeGuestsMultiDevice(
@@ -602,29 +704,41 @@ export function mergeFullDatabaseMultiDevice(
 ): WeddingDatabaseSchema {
   if (!cloudState) return localState;
 
-  const deletedGuests = customDeletes?.guests || explicitlyDeletedGuestIds;
-  const deletedTasks = customDeletes?.tasks || explicitlyDeletedTaskIds;
-  const deletedWishes = customDeletes?.wishes || explicitlyDeletedWishIds;
-  const deletedBudgets = customDeletes?.budgets || explicitlyDeletedBudgetIds;
+  hydrateDeletedIdsFromRegistry(localState.settings?.deletedIdsRegistry);
+  hydrateDeletedIdsFromRegistry(cloudState.settings?.deletedIdsRegistry);
 
-  // 1. Merge Guests (including RSVP protection & seed guest protection)
-  let mergedGuests = mergeGuestsMultiDevice(
+  const deletedGuests = new Set<string>([
+    ...Array.from(explicitlyDeletedGuestIds),
+    ...(customDeletes?.guests ? Array.from(customDeletes.guests) : []),
+    ...(localState.settings?.deletedIdsRegistry?.guests || []),
+    ...(cloudState.settings?.deletedIdsRegistry?.guests || []),
+  ]);
+  const deletedTasks = new Set<string>([
+    ...Array.from(explicitlyDeletedTaskIds),
+    ...(customDeletes?.tasks ? Array.from(customDeletes.tasks) : []),
+    ...(localState.settings?.deletedIdsRegistry?.tasks || []),
+    ...(cloudState.settings?.deletedIdsRegistry?.tasks || []),
+  ]);
+  const deletedWishes = new Set<string>([
+    ...Array.from(explicitlyDeletedWishIds),
+    ...(customDeletes?.wishes ? Array.from(customDeletes.wishes) : []),
+    ...(localState.settings?.deletedIdsRegistry?.wishes || []),
+    ...(cloudState.settings?.deletedIdsRegistry?.wishes || []),
+  ]);
+  const deletedBudgets = new Set<string>([
+    ...Array.from(explicitlyDeletedBudgetIds),
+    ...(customDeletes?.budgets ? Array.from(customDeletes.budgets) : []),
+    ...(localState.settings?.deletedIdsRegistry?.budgets || []),
+    ...(cloudState.settings?.deletedIdsRegistry?.budgets || []),
+  ]);
+
+  // 1. Merge Guests (never resurrect deleted seed guests)
+  const mergedGuests = mergeGuestsMultiDevice(
     localState.guests || [],
     cloudState.guests || [],
     respectExplicitDeletes,
     deletedGuests
   );
-  if (
-    mergedGuests.length > 0 &&
-    mergedGuests.length < INITIAL_GUESTS.length
-  ) {
-    mergedGuests = mergeGuestsMultiDevice(
-      mergedGuests,
-      INITIAL_GUESTS,
-      respectExplicitDeletes,
-      deletedGuests
-    );
-  }
 
   // 2. Merge Wishes
   const mergedWishes = mergeWishesMultiDevice(
@@ -701,6 +815,8 @@ export function mergeFullDatabaseMultiDevice(
       nextSettings.pageVideoUrl = cs.pageVideoUrl || nextSettings.pageVideoUrl;
       nextSettings.eventType = nextSettings.eventType || cs.eventType || 'WEDDING';
       nextSettings.brandLogoUrl = nextSettings.brandLogoUrl ?? cs.brandLogoUrl;
+      nextSettings.backgroundSlides =
+        nextSettings.backgroundSlides ?? cs.backgroundSlides;
       nextSettings.gallerySlideDurationSeconds =
         cs.gallerySlideDurationSeconds ?? nextSettings.gallerySlideDurationSeconds;
       nextSettings.galleryTransitionDurationMs =
@@ -847,7 +963,18 @@ export function mergeFullDatabaseMultiDevice(
       }
       nextSettings.clientWorkspaces = mergedWorkspaces;
     }
+
+    if (nextSettings.backgroundSlides === undefined && cs.backgroundSlides) {
+      nextSettings.backgroundSlides = cs.backgroundSlides;
+    }
   }
+
+  nextSettings.deletedIdsRegistry = {
+    guests: Array.from(deletedGuests),
+    tasks: Array.from(deletedTasks),
+    wishes: Array.from(deletedWishes),
+    budgets: Array.from(deletedBudgets),
+  };
 
   const healedSettings = healStalePlaceholderSettings(nextSettings);
 
@@ -1093,27 +1220,31 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   ) {
     next.bridePhotoUrl = INITIAL_SETTINGS.bridePhotoUrl;
   }
+  const hasUnifiedBgSlides = Array.isArray(next.backgroundSlides);
   if (
-    !next.coverBgUrl ||
-    next.coverBgUrl.includes('images.unsplash.com') ||
-    (next.coverBgUrl.includes('.supabase.co/') &&
-      next.coverBgUrl.endsWith('.svg'))
+    !hasUnifiedBgSlides &&
+    (!next.coverBgUrl ||
+      next.coverBgUrl.includes('images.unsplash.com') ||
+      (next.coverBgUrl.includes('.supabase.co/') &&
+        next.coverBgUrl.endsWith('.svg')))
   ) {
     next.coverBgUrl = INITIAL_SETTINGS.coverBgUrl;
   }
   if (
-    !next.heroPrewedUrl ||
-    next.heroPrewedUrl.includes('images.unsplash.com') ||
-    (next.heroPrewedUrl.includes('.supabase.co/') &&
-      next.heroPrewedUrl.endsWith('.svg'))
+    !hasUnifiedBgSlides &&
+    (!next.heroPrewedUrl ||
+      next.heroPrewedUrl.includes('images.unsplash.com') ||
+      (next.heroPrewedUrl.includes('.supabase.co/') &&
+        next.heroPrewedUrl.endsWith('.svg')))
   ) {
     next.heroPrewedUrl = INITIAL_SETTINGS.heroPrewedUrl;
   }
   if (
-    !next.pageBgUrl ||
-    next.pageBgUrl.includes('images.unsplash.com') ||
-    (next.pageBgUrl.includes('.supabase.co/') &&
-      next.pageBgUrl.endsWith('.svg'))
+    !hasUnifiedBgSlides &&
+    (!next.pageBgUrl ||
+      next.pageBgUrl.includes('images.unsplash.com') ||
+      (next.pageBgUrl.includes('.supabase.co/') &&
+        next.pageBgUrl.endsWith('.svg')))
   ) {
     next.pageBgUrl = INITIAL_SETTINGS.pageBgUrl;
   }
@@ -1500,6 +1631,12 @@ export async function cleanupOrphanedStorageMedia(
       if (s.originalPhotos) {
         Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
       }
+      if (Array.isArray(s.backgroundSlides)) {
+        s.backgroundSlides.forEach((bs) => {
+          registerUrl(bs.imageUrl);
+          registerUrl(bs.originalImageUrl);
+        });
+      }
       if (Array.isArray(s.galleryPhotos)) {
         s.galleryPhotos.forEach((gp) => {
           registerUrl(gp.imageUrl);
@@ -1626,6 +1763,12 @@ export async function fetchSupabaseStorageCapacity(
     if (s.originalPhotos) {
       Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
     }
+    if (Array.isArray(s.backgroundSlides)) {
+      s.backgroundSlides.forEach((bs) => {
+        registerUrl(bs.imageUrl);
+        registerUrl(bs.originalImageUrl);
+      });
+    }
     if (Array.isArray(s.galleryPhotos)) {
       s.galleryPhotos.forEach((gp) => {
         registerUrl(gp.imageUrl);
@@ -1750,12 +1893,36 @@ function normalizeCloudState(
   parsed: Partial<WeddingDatabaseSchema>,
   fallbackTimestamp?: string
 ): WeddingDatabaseSchema {
+  hydrateDeletedIdsFromRegistry(parsed.settings?.deletedIdsRegistry);
+
   const cleanTasks = Array.isArray(parsed.tasks)
-    ? parsed.tasks.filter((t) => !/^g\d+$/i.test(String(t.id || '')))
+    ? parsed.tasks.filter(
+        (t) =>
+          t &&
+          t.id &&
+          !/^g\d+$/i.test(String(t.id || '')) &&
+          !explicitlyDeletedTaskIds.has(t.id)
+      )
     : INITIAL_TASKS;
   const cleanGuests = Array.isArray(parsed.guests)
-    ? parsed.guests.filter((g) => !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')))
+    ? parsed.guests.filter(
+        (g) =>
+          g &&
+          g.id &&
+          !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')) &&
+          !explicitlyDeletedGuestIds.has(g.id)
+      )
     : INITIAL_GUESTS;
+  const cleanWishes = Array.isArray(parsed.wishes)
+    ? parsed.wishes.filter(
+        (w) => w && w.id && !explicitlyDeletedWishIds.has(w.id)
+      )
+    : INITIAL_WISHES;
+  const cleanBudgets = Array.isArray(parsed.budgetItems)
+    ? parsed.budgetItems.filter(
+        (b) => b && b.id && !explicitlyDeletedBudgetIds.has(b.id)
+      )
+    : INITIAL_BUDGET_ITEMS;
 
   return {
     settings: parsed.settings
@@ -1763,10 +1930,8 @@ function normalizeCloudState(
       : INITIAL_SETTINGS,
     tasks: cleanTasks,
     guests: cleanGuests,
-    wishes: Array.isArray(parsed.wishes) ? parsed.wishes : INITIAL_WISHES,
-    budgetItems: Array.isArray(parsed.budgetItems)
-      ? parsed.budgetItems
-      : INITIAL_BUDGET_ITEMS,
+    wishes: cleanWishes,
+    budgetItems: cleanBudgets,
     adminUsers:
       Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
         ? parsed.adminUsers
@@ -1967,6 +2132,25 @@ async function prepareCloudSafeState(
   if (pageBgUrl) rawSettings.pageBgUrl = pageBgUrl;
   if (qrisImageUrl) rawSettings.qrisImageUrl = qrisImageUrl;
 
+  if (Array.isArray(rawSettings.backgroundSlides)) {
+    const cleanedSlides: BackgroundSlideItem[] = await Promise.all(
+      rawSettings.backgroundSlides.map(async (bs, idx) => {
+        const copy: BackgroundSlideItem = { ...bs };
+        delete copy.originalImageUrl;
+        const resolvedUrl = await resolveCloudImageSlot(
+          copy.imageUrl,
+          `bg_slide_${copy.id || idx}`,
+          bannerDim,
+          qual,
+          maxChars
+        );
+        if (resolvedUrl) copy.imageUrl = resolvedUrl;
+        return copy;
+      })
+    );
+    rawSettings.backgroundSlides = cleanedSlides;
+  }
+
   if (Array.isArray(rawSettings.galleryPhotos)) {
     const cleanedGallery: GalleryPhotoItem[] = await Promise.all(
       rawSettings.galleryPhotos.map(async (gp, idx) => {
@@ -1985,6 +2169,8 @@ async function prepareCloudSafeState(
     );
     rawSettings.galleryPhotos = cleanedGallery;
   }
+
+  rawSettings.deletedIdsRegistry = getExplicitlyDeletedIdsSnapshot();
 
   return {
     ...state,
@@ -2079,6 +2265,17 @@ async function recoverStateFromSupabaseBySlices(): Promise<WeddingDatabaseSchema
 async function recoverFromRelationalTablesIfNeeded(
   base: WeddingDatabaseSchema
 ): Promise<WeddingDatabaseSchema> {
+  hydrateDeletedIdsFromRegistry(base.settings?.deletedIdsRegistry);
+
+  // If `base` came from an existing `public.wedding_state` row, its empty arrays (`wishes: []`, `tasks: []`, `budgetItems: []`)
+  // are intentional user states (e.g., user cleared Buku Tamu or Tasks). Never resurrect deleted items from relational tables!
+  const hasExistingCloudSnapshot = Boolean(
+    base.lastSyncedAt && base.lastSyncedAt !== '2026-01-01T00:00:00.000Z'
+  );
+  if (hasExistingCloudSnapshot) {
+    return base;
+  }
+
   const needsGuests = base.guests.length === 0;
   const needsTasks = base.tasks.length === 0;
   const needsWishes = base.wishes.length === 0;
@@ -2127,36 +2324,44 @@ async function recoverFromRelationalTablesIfNeeded(
     };
 
     if (Array.isArray(guestsRows) && guestsRows.length > 0) {
-      const recoveredGuests = guestsRows
-        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
-        .filter(Boolean) as WeddingDatabaseSchema['guests'];
+      const recoveredGuests = (
+        guestsRows
+          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .filter(Boolean) as WeddingDatabaseSchema['guests']
+      ).filter((g) => g && g.id && !explicitlyDeletedGuestIds.has(g.id));
       if (recoveredGuests.length > 0) {
         nextState.guests = recoveredGuests;
       }
     }
 
     if (Array.isArray(tasksRows) && tasksRows.length > 0) {
-      const recoveredTasks = tasksRows
-        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
-        .filter(Boolean) as WeddingDatabaseSchema['tasks'];
+      const recoveredTasks = (
+        tasksRows
+          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .filter(Boolean) as WeddingDatabaseSchema['tasks']
+      ).filter((t) => t && t.id && !explicitlyDeletedTaskIds.has(t.id));
       if (recoveredTasks.length > 0) {
         nextState.tasks = recoveredTasks;
       }
     }
 
     if (Array.isArray(wishesRows) && wishesRows.length > 0) {
-      const recoveredWishes = wishesRows
-        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
-        .filter(Boolean) as WeddingDatabaseSchema['wishes'];
+      const recoveredWishes = (
+        wishesRows
+          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .filter(Boolean) as WeddingDatabaseSchema['wishes']
+      ).filter((w) => w && w.id && !explicitlyDeletedWishIds.has(w.id));
       if (recoveredWishes.length > 0) {
         nextState.wishes = recoveredWishes;
       }
     }
 
     if (Array.isArray(budgetsRows) && budgetsRows.length > 0) {
-      const recoveredBudgets = budgetsRows
-        .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
-        .filter(Boolean) as WeddingDatabaseSchema['budgetItems'];
+      const recoveredBudgets = (
+        budgetsRows
+          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .filter(Boolean) as WeddingDatabaseSchema['budgetItems']
+      ).filter((b) => b && b.id && !explicitlyDeletedBudgetIds.has(b.id));
       if (recoveredBudgets.length > 0) {
         nextState.budgetItems = recoveredBudgets;
       }
@@ -2401,8 +2606,23 @@ async function pruneDeletedRelationalRows(
     const cleanKeys = activeKeys
       .map((k) => String(k || '').trim())
       .filter(Boolean);
-    // Anti-Wipe Guard: never execute a full-table delete when cleanKeys is empty
-    if (cleanKeys.length === 0) return;
+    if (cleanKeys.length === 0) {
+      // When wishes, tasks, or budgets are intentionally cleared to [], delete all rows for project_id=eq.main
+      if (
+        tableName === 'wedding_wishes' ||
+        tableName === 'wedding_tasks' ||
+        tableName === 'wedding_budgets'
+      ) {
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/${tableName}?project_id=eq.main`,
+          {
+            method: 'DELETE',
+            headers: getSupabaseHeaders(),
+          }
+        );
+      }
+      return;
+    }
     const filterExpr = `${pkColumn}=not.in.(${cleanKeys
       .map((k) => `"${k.replace(/"/g, '')}"`)
       .join(',')})`;
@@ -2423,6 +2643,38 @@ async function syncRelationalTablesInBackground(
 
   try {
     const s = state.settings;
+    const tasksList = Array.isArray(state.tasks) ? state.tasks : [];
+    const guestsList = Array.isArray(state.guests) ? state.guests : [];
+    const wishesList = Array.isArray(state.wishes) ? state.wishes : [];
+    const budgetsList = Array.isArray(state.budgetItems)
+      ? state.budgetItems
+      : [];
+
+    // 0. Prune deleted relational rows FIRST so any database trigger on wedding_settings / wedding_guests / wedding_wishes
+    // never resurrects deleted rows back into public.wedding_state!
+    await Promise.all([
+      pruneDeletedRelationalRows(
+        'wedding_tasks',
+        'id',
+        tasksList.map((t) => t.id)
+      ),
+      pruneDeletedRelationalRows(
+        'wedding_guests',
+        'id',
+        guestsList.map((g) => g.id)
+      ),
+      pruneDeletedRelationalRows(
+        'wedding_wishes',
+        'id',
+        wishesList.map((w) => w.id)
+      ),
+      pruneDeletedRelationalRows(
+        'wedding_budgets',
+        'id',
+        budgetsList.map((b) => b.id)
+      ),
+    ]);
+
     // 1. Upsert into public.wedding_settings
     const lightSettingsCopy: Record<string, unknown> = { ...s };
     delete lightSettingsCopy.originalPhotos;
@@ -2569,7 +2821,6 @@ async function syncRelationalTablesInBackground(
     );
 
     // 3. Upsert & hard-delete removed rows in Tasks, Guests, Wishes, Budgets, Users
-    const tasksList = Array.isArray(state.tasks) ? state.tasks : [];
     if (tasksList.length > 0) {
       const taskRows = tasksList.map((t) => ({
         id: t.id,
@@ -2589,13 +2840,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(taskRows),
       }).catch(() => {});
     }
-    await pruneDeletedRelationalRows(
-      'wedding_tasks',
-      'id',
-      tasksList.map((t) => t.id)
-    );
 
-    const guestsList = Array.isArray(state.guests) ? state.guests : [];
     if (guestsList.length > 0) {
       const guestRows = guestsList.map((g) => ({
         id: g.id,
@@ -2616,20 +2861,15 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(guestRows),
       }).catch(() => {});
     }
-    await pruneDeletedRelationalRows(
-      'wedding_guests',
-      'id',
-      guestsList.map((g) => g.id)
-    );
 
-    const wishesList = Array.isArray(state.wishes) ? state.wishes : [];
     if (wishesList.length > 0) {
       const wishRows = wishesList.map((w) => ({
         id: w.id,
         project_id: 'main',
-        guest_name: w.guestName,
+        name: w.guestName,
+        attendance: w.rsvpStatus,
         message: w.message || '',
-        rsvp_status: w.rsvpStatus,
+        created_at_label: w.createdAt || '',
         payload: w,
         updated_at: updatedAt,
       }));
@@ -2641,15 +2881,7 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(wishRows),
       }).catch(() => {});
     }
-    await pruneDeletedRelationalRows(
-      'wedding_wishes',
-      'id',
-      wishesList.map((w) => w.id)
-    );
 
-    const budgetsList = Array.isArray(state.budgetItems)
-      ? state.budgetItems
-      : [];
     if (budgetsList.length > 0) {
       const budgetRows = budgetsList.map((b) => ({
         id: b.id,
@@ -2669,11 +2901,6 @@ async function syncRelationalTablesInBackground(
         body: JSON.stringify(budgetRows),
       }).catch(() => {});
     }
-    await pruneDeletedRelationalRows(
-      'wedding_budgets',
-      'id',
-      budgetsList.map((b) => b.id)
-    );
 
     const usersList = Array.isArray(state.adminUsers) ? state.adminUsers : [];
     if (usersList.length > 0) {
@@ -2779,14 +3006,6 @@ async function performActualSupabaseUpsert(
 
     if (lastKnownCloudState) {
       state = mergeFullDatabaseMultiDevice(state, lastKnownCloudState, true);
-    } else if (
-      state.guests.length > 0 &&
-      state.guests.length < INITIAL_GUESTS.length
-    ) {
-      state = {
-        ...state,
-        guests: mergeGuestsMultiDevice(state.guests, INITIAL_GUESTS, true),
-      };
     }
   }
 

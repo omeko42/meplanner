@@ -228,6 +228,14 @@ export type EventCategoryType =
   | 'MEETING'
   | 'GALA_DINNER';
 
+export interface BackgroundSlideItem {
+  id: string;
+  imageUrl: string;
+  originalImageUrl?: string;
+  title?: string;
+  adjustment?: PhotoAdjustment;
+}
+
 export interface WeddingSettings {
   // Core Settings
   siteTitle: string;
@@ -338,6 +346,7 @@ export interface WeddingSettings {
   galleryTransitionStyle?: 'CROSSFADE' | 'ZOOM_DISSOLVE' | 'SMOOTH_SLIDE'; // default 'CROSSFADE'
 
   // Custom Background & Theme Settings
+  backgroundSlides?: BackgroundSlideItem[]; // Unified 1-or-many background photos (auto-slideshows when >= 2)
   coverBgUrl?: string;
   heroPrewedUrl?: string;
   pageBgUrl?: string;
@@ -401,6 +410,12 @@ export interface WeddingSettings {
   autoHideFlaggedWishes?: boolean; // default true
   moderationBlockedKeywords?: string; // custom comma-separated negative keywords
   invitationAnalytics?: InvitationAnalyticsData;
+  deletedIdsRegistry?: {
+    guests?: string[];
+    tasks?: string[];
+    wishes?: string[];
+    budgets?: string[];
+  };
 
   updatedAt: string;
   updatedBy: string;

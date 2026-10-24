@@ -40,6 +40,7 @@ import {
   GuestWish,
   RsvpStatus,
   GalleryPhotoItem,
+  BackgroundSlideItem,
   MusicTrackItem,
   InvitationInteractionType,
 } from '@/types';
@@ -87,9 +88,6 @@ interface PublicInvitationViewProps {
     devicePlatform?: string;
   }) => Promise<void>;
 }
-
-const DEFAULT_PREWED_BG =
-  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85';
 
 interface FloralCornerOrnamentProps {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -537,14 +535,129 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
   }, [isOpened, isOpeningTransition, settings.invitationModerationMode]);
 
-  const coverBgUrl = settings.coverBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
-  const heroBgUrl = settings.heroPrewedUrl || DEFAULT_PREWED_BG;
-  const pageBgUrl = settings.pageBgUrl || settings.heroPrewedUrl || DEFAULT_PREWED_BG;
   const videoFocusY =
     typeof settings.videoFocusY === 'number'
       ? Math.min(100, Math.max(0, settings.videoFocusY))
       : 28;
   const videoDesktopMode = settings.videoDesktopMode || 'HIGHLIGHT_COVER';
+  const unifiedVideoUrl = (
+    settings.coverVideoUrl ||
+    settings.heroVideoUrl ||
+    settings.pageVideoUrl ||
+    ''
+  ).trim();
+
+  const effectiveBackgroundSlides = useMemo<BackgroundSlideItem[]>(() => {
+    if (Array.isArray(settings.backgroundSlides)) {
+      return settings.backgroundSlides.filter(
+        (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
+      );
+    }
+    const fallbackEntries: {
+      field: 'coverBgUrl' | 'heroPrewedUrl' | 'pageBgUrl';
+      url?: string;
+    }[] = [
+      { field: 'coverBgUrl', url: settings.coverBgUrl },
+      { field: 'heroPrewedUrl', url: settings.heroPrewedUrl },
+      { field: 'pageBgUrl', url: settings.pageBgUrl },
+    ];
+    const seen = new Set<string>();
+    const deduplicated: BackgroundSlideItem[] = [];
+    fallbackEntries.forEach(({ field, url }, idx) => {
+      const clean = (url || '').trim();
+      if (!clean || seen.has(clean)) return;
+      seen.add(clean);
+      deduplicated.push({
+        id: `bg-fallback-${field}-${idx}`,
+        imageUrl: clean,
+        adjustment: settings.photoAdjustments?.[field],
+      });
+    });
+    return deduplicated;
+  }, [
+    settings.backgroundSlides,
+    settings.coverBgUrl,
+    settings.heroPrewedUrl,
+    settings.pageBgUrl,
+    settings.photoAdjustments,
+  ]);
+
+  const [activeBgSlideIdx, setActiveBgSlideIdx] = useState(0);
+
+  useEffect(() => {
+    if (effectiveBackgroundSlides.length <= 1) return;
+    const intervalMs = (gallerySlideSeconds > 0 ? gallerySlideSeconds : 6) * 1000;
+    const timer = setInterval(() => {
+      setActiveBgSlideIdx((prev) => (prev + 1) % effectiveBackgroundSlides.length);
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }, [effectiveBackgroundSlides.length, gallerySlideSeconds]);
+
+  const renderUnifiedBackgroundLayer = (altLabel = 'Event Background') => {
+    if (unifiedVideoUrl) {
+      return (
+        <AdaptiveVideoLayer
+          videoUrl={unifiedVideoUrl}
+          posterUrl={effectiveBackgroundSlides[0]?.imageUrl || ''}
+          focusY={videoFocusY}
+          desktopMode={videoDesktopMode}
+        />
+      );
+    }
+
+    if (effectiveBackgroundSlides.length === 1) {
+      const slide = effectiveBackgroundSlides[0];
+      const fitMode = slide.adjustment?.fitMode;
+      return (
+        <img
+          src={slide.imageUrl}
+          alt={slide.title || altLabel}
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-all ease-out ${
+            fitMode !== 'contain' ? 'animate-ken-burns' : ''
+          }`}
+          style={{
+            ...getPhotoAdjustStyle(slide.adjustment),
+            transitionDuration: `${galleryTransitionMs}ms`,
+          }}
+        />
+      );
+    }
+
+    if (effectiveBackgroundSlides.length > 1) {
+      const currentIdx = activeBgSlideIdx % effectiveBackgroundSlides.length;
+      return (
+        <>
+          {effectiveBackgroundSlides.map((slide, idx) => {
+            const isCurrent = idx === currentIdx;
+            return (
+              <div
+                key={slide.id || `${slide.imageUrl}-${idx}`}
+                className={`absolute inset-0 transition-all ease-in-out ${
+                  isCurrent ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 z-0'
+                }`}
+                style={{ transitionDuration: `${galleryTransitionMs}ms` }}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt={slide.title || `${altLabel} ${idx + 1}`}
+                  className="w-full h-full object-cover object-center"
+                  style={getPhotoAdjustStyle(slide.adjustment)}
+                />
+              </div>
+            );
+          })}
+        </>
+      );
+    }
+
+    return (
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-br from-[#FAF8F5] via-[#F5E6C8]/60 to-[#E8D5B5]/50"
+      />
+    );
+  };
+
   const overlayOpacity = Math.min(96, Math.max(40, settings.bgOverlayOpacity ?? 88));
   const blurClass =
     settings.bgBlurIntensity === 'none'
@@ -1432,12 +1545,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     return (
       <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <img
-            src={coverBgUrl}
-            alt="Background"
-            className="w-full h-full object-cover object-center"
-            style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
-          />
+          {renderUnifiedBackgroundLayer('Background')}
         </div>
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
@@ -1498,7 +1606,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // 1. COVER PEMBUKA (BRIGHT PREWEDDING SILHOUETTE & FROSTED GLASS GATE)
   // ============================================================================
   if (!isOpened) {
-    const coverFitMode = settings.photoAdjustments?.coverBgUrl?.fitMode;
     return (
       <div
         className={`min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none transition-all duration-700 ease-in-out ${
@@ -1509,22 +1616,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       >
         <FloatingPetalsAmbient />
 
-        {/* Background Prewedding Silhouette Photo / Adaptive Video + Adjustable Luminous Pearl Veil */}
+        {/* Unified Background Layer (1-or-Many Photo Slideshow / Video / Champagne Fallback) + Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <img
-            src={coverBgUrl}
-            alt="Cover Background"
-            className={`w-full h-full object-cover object-center transition-transform duration-1000 ${
-              coverFitMode !== 'contain' ? 'animate-ken-burns' : ''
-            }`}
-            style={getPhotoAdjustStyle(settings.photoAdjustments?.coverBgUrl)}
-          />
-          <AdaptiveVideoLayer
-            videoUrl={settings.coverVideoUrl}
-            posterUrl={coverBgUrl}
-            focusY={videoFocusY}
-            desktopMode={videoDesktopMode}
-          />
+          {renderUnifiedBackgroundLayer('Cover Background')}
         </div>
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
@@ -1724,7 +1818,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // ============================================================================
   // 2. MAIN OPENED INVITATION VIEW (SYMMETRICAL CARDS & CUSTOMIZABLE BG)
   // ============================================================================
-  const heroFitMode = settings.photoAdjustments?.heroPrewedUrl?.fitMode;
   return (
     <div
       ref={invitationContainerRef}
@@ -1732,20 +1825,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     >
       <FloatingPetalsAmbient />
 
-      {/* FIXED CUSTOM WALLPAPER / PREWEDDING BACKGROUND WITH ADJUSTABLE PEARL VEIL */}
+      {/* FIXED CUSTOM WALLPAPER / UNIFIED BACKGROUND LAYER WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <img
-          src={pageBgUrl}
-          alt="Page Wallpaper"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={getPhotoAdjustStyle(settings.photoAdjustments?.pageBgUrl)}
-        />
-        <AdaptiveVideoLayer
-          videoUrl={settings.pageVideoUrl}
-          posterUrl={pageBgUrl}
-          focusY={videoFocusY}
-          desktopMode={videoDesktopMode}
-        />
+        {renderUnifiedBackgroundLayer('Page Wallpaper')}
         <div
           className={`absolute inset-0 z-20 ${blurClass}`}
           style={{
@@ -1998,22 +2080,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <FloralCornerOrnament position="bottom-right" />
 
             {/* Prewedding Silhouette Image / Motion Video Header (16:9 matching Crop Studio) */}
-            <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-stone-900">
-              <img
-                src={heroBgUrl}
-                alt="Prewedding Banner"
-                className={`w-full h-full object-cover object-center ${
-                  heroFitMode !== 'contain' ? 'animate-ken-burns' : ''
-                }`}
-                style={getPhotoAdjustStyle(settings.photoAdjustments?.heroPrewedUrl)}
-              />
-              <AdaptiveVideoLayer
-                videoUrl={settings.heroVideoUrl}
-                posterUrl={heroBgUrl}
-                focusY={videoFocusY}
-                desktopMode={videoDesktopMode}
-              />
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-white via-stone-950/20 to-transparent pointer-events-none" />
+            <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-[#FAF8F5]">
+              {renderUnifiedBackgroundLayer('Prewedding Banner')}
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-white via-stone-950/15 to-transparent pointer-events-none" />
               <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
                 <WeddingRingsIcon
                   className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"
