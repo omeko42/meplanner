@@ -1662,6 +1662,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
   >('WEDDING');
   const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
+  const [simThemeOverride, setSimThemeOverride] = useState<
+    | 'champagne_gold'
+    | 'sage_botanical'
+    | 'blush_rose'
+    | 'royal_navy'
+    | 'terracotta_rust'
+    | null
+  >(null);
 
   // Sync selectedDemoClientId whenever simEventType changes
   useEffect(() => {
@@ -1671,11 +1679,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     if (matched && matched.id !== selectedDemoClientId) {
       setSelectedDemoClientId(matched.id);
     }
+    setSimThemeOverride(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simEventType]);
 
   const handleSelectDummyClient = (dummyClientId: string) => {
     setSelectedDemoClientId(dummyClientId);
+    setSimThemeOverride(null);
     const matched = SHOWCASE_DUMMY_CLIENT_METAS.find(
       (m) => m.id === dummyClientId
     );
@@ -1692,10 +1702,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     [selectedDemoClientId, simEventType]
   );
 
-  const activeDummyState = useMemo(
-    () => getShowcaseDummyClientState(activeDummyMeta.id, simPackageTier),
-    [activeDummyMeta.id, simPackageTier]
-  );
+  const effectiveSimThemePreset =
+    simThemeOverride || activeDummyMeta.themePreset;
+
+  const activeDummyState = useMemo(() => {
+    const base = getShowcaseDummyClientState(activeDummyMeta.id, simPackageTier);
+    if (!simThemeOverride) return base;
+    return {
+      ...base,
+      settings: {
+        ...base.settings,
+        themePreset: simThemeOverride,
+      },
+    };
+  }, [activeDummyMeta.id, simPackageTier, simThemeOverride]);
 
   const effectiveDummyWishes = useMemo(
     () => [
@@ -5734,12 +5754,70 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     >
                       {activeDummyMeta.coupleLabel}
                     </span>
-                    <span
-                      title={`Tema Planner & Undangan: ${activeDummyMeta.themeLabel}`}
-                      className="px-2 py-0.5 rounded-md bg-[#090B14] border border-[#D4AF37]/40 text-[#D4AF37] font-bold whitespace-nowrap"
+
+                    {/* Interactive 5-Palette Theme Switcher for Both Undangan & Planner */}
+                    <div
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/35"
+                      title="Klik warna untuk menguji 5 Palet Tema pada Undangan & Planner secara langsung"
                     >
-                      {activeDummyMeta.themeLabel}
-                    </span>
+                      <span className="text-[10px] font-bold text-indigo-300 hidden sm:inline">
+                        Palet:
+                      </span>
+                      {(
+                        [
+                          {
+                            id: 'champagne_gold' as const,
+                            label: 'Champagne Gold',
+                            color: '#D4AF37',
+                          },
+                          {
+                            id: 'sage_botanical' as const,
+                            label: 'Sage Botanical',
+                            color: '#5E8C6A',
+                          },
+                          {
+                            id: 'blush_rose' as const,
+                            label: 'Blush Rose',
+                            color: '#D88290',
+                          },
+                          {
+                            id: 'royal_navy' as const,
+                            label: 'Royal Navy',
+                            color: '#3B669E',
+                          },
+                          {
+                            id: 'terracotta_rust' as const,
+                            label: 'Terracotta Rust',
+                            color: '#CC704E',
+                          },
+                        ] as const
+                      ).map((pal) => {
+                        const isPalActive = effectiveSimThemePreset === pal.id;
+                        return (
+                          <button
+                            key={pal.id}
+                            type="button"
+                            onClick={() => setSimThemeOverride(pal.id)}
+                            title={`Terapkan Palet Tema: ${pal.label}`}
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                              isPalActive
+                                ? 'bg-white/15 ring-1 ring-white text-white font-extrabold'
+                                : 'opacity-70 hover:opacity-100 text-indigo-200'
+                            }`}
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-white/80 shrink-0"
+                              style={{ backgroundColor: pal.color }}
+                            />
+                            {isPalActive && (
+                              <span className="text-[10px] whitespace-nowrap">
+                                {pal.label}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -5822,7 +5900,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
                   <div className="h-[680px] sm:h-[760px] overflow-y-auto overflow-x-hidden">
                     <PublicInvitationView
-                      key={`${activeDummyMeta.id}-${simPackageTier}-${
+                      key={`${activeDummyMeta.id}-${simPackageTier}-${effectiveSimThemePreset}-${
                         simIsOpened ? 'open' : 'cover'
                       }`}
                       settings={activeDummyState.settings}
@@ -5942,7 +6020,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Live Vector-Sharp Interactive React UI Viewport (1:1 AdminDashboardView) */}
-                        <div className="relative bg-[#FAF8F5] overflow-hidden">
+                        <div
+                          data-inv-theme={effectiveSimThemePreset}
+                          className="relative bg-[#FAF8F5] overflow-hidden"
+                        >
                           {renderLiveDashboardModule(currentShot.id)}
                         </div>
 

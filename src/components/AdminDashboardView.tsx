@@ -4978,7 +4978,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   return (
-    <div className={`min-h-screen ${activeManagerTheme.pageBg} text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24 transition-colors duration-300`}>
+    <div
+      data-inv-theme={activeThemePresetId}
+      className={`min-h-screen ${activeManagerTheme.pageBg} text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24 transition-colors duration-300`}
+    >
       {/* Global Hidden JSON Backup File Input (Accessible from Header & Settings) */}
       <input
         ref={fileInputRef}

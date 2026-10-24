@@ -179,3 +179,472 @@ body {
   transform-origin: bottom;
 }
 
+/* ============================================================================
+ * 5-Theme Palette Engine for Public Invitation & Planner ([data-inv-theme])
+ * ============================================================================ */
+
+:root,
+[data-inv-theme="champagne_gold"] {
+  --inv-primary: #D4AF37;
+  --inv-primary-rgb: 212, 175, 55;
+  --inv-mid: #C5A059;
+  --inv-mid-rgb: 197, 160, 89;
+  --inv-dark: #B68D40;
+  --inv-text-strong: #8B6914;
+  --inv-text-muted: #9A742B;
+  --inv-text-muted-rgb: 154, 116, 43;
+  --inv-soft-bg: #FAF3E3;
+  --inv-soft-bg-rgb: 250, 243, 227;
+  --inv-soft-hover: #F3E5C8;
+  --inv-soft-hover-rgb: 243, 229, 200;
+  --inv-soft-alt: #EFE1C6;
+  --inv-soft-alt-rgb: 239, 225, 198;
+  --inv-card-tint: #FFFDF9;
+  --inv-card-tint-rgb: 255, 253, 249;
+  --inv-page-bg: #FAF8F5;
+  --inv-page-bg-rgb: 250, 248, 245;
+  --inv-leaf-fill: #E6C994;
+  --inv-glow-light: #F3D77D;
+}
+
+[data-inv-theme="sage_botanical"] {
+  --inv-primary: #5E8C6A;
+  --inv-primary-rgb: 94, 140, 106;
+  --inv-mid: #4A6B53;
+  --inv-mid-rgb: 74, 107, 83;
+  --inv-dark: #3B5943;
+  --inv-text-strong: #23422C;
+  --inv-text-muted: #395F44;
+  --inv-text-muted-rgb: 57, 95, 68;
+  --inv-soft-bg: #EBF3ED;
+  --inv-soft-bg-rgb: 235, 243, 237;
+  --inv-soft-hover: #DCE9DF;
+  --inv-soft-hover-rgb: 220, 233, 223;
+  --inv-soft-alt: #CBE0D0;
+  --inv-soft-alt-rgb: 203, 224, 208;
+  --inv-card-tint: #FAFDFB;
+  --inv-card-tint-rgb: 250, 253, 251;
+  --inv-page-bg: #F2F7F3;
+  --inv-page-bg-rgb: 242, 247, 243;
+  --inv-leaf-fill: #9BBAA3;
+  --inv-glow-light: #A8C9B0;
+}
+
+[data-inv-theme="blush_rose"] {
+  --inv-primary: #D88290;
+  --inv-primary-rgb: 216, 130, 144;
+  --inv-mid: #C86D7C;
+  --inv-mid-rgb: 200, 109, 124;
+  --inv-dark: #B05464;
+  --inv-text-strong: #8E3546;
+  --inv-text-muted: #A84456;
+  --inv-text-muted-rgb: 168, 68, 86;
+  --inv-soft-bg: #FCECEF;
+  --inv-soft-bg-rgb: 252, 236, 239;
+  --inv-soft-hover: #F8DCE2;
+  --inv-soft-hover-rgb: 248, 220, 226;
+  --inv-soft-alt: #F2C9D2;
+  --inv-soft-alt-rgb: 242, 201, 210;
+  --inv-card-tint: #FFFAFB;
+  --inv-card-tint-rgb: 255, 250, 251;
+  --inv-page-bg: #FDF5F6;
+  --inv-page-bg-rgb: 253, 245, 246;
+  --inv-leaf-fill: #E8A5B0;
+  --inv-glow-light: #F2B8C2;
+}
+
+[data-inv-theme="royal_navy"] {
+  --inv-primary: #3B669E;
+  --inv-primary-rgb: 59, 102, 158;
+  --inv-mid: #284B7A;
+  --inv-mid-rgb: 40, 75, 122;
+  --inv-dark: #1E3A5F;
+  --inv-text-strong: #162F50;
+  --inv-text-muted: #254670;
+  --inv-text-muted-rgb: 37, 70, 112;
+  --inv-soft-bg: #EBF1F8;
+  --inv-soft-bg-rgb: 235, 241, 248;
+  --inv-soft-hover: #DCE7F3;
+  --inv-soft-hover-rgb: 220, 231, 243;
+  --inv-soft-alt: #C9DAEC;
+  --inv-soft-alt-rgb: 201, 218, 236;
+  --inv-card-tint: #FAFCFF;
+  --inv-card-tint-rgb: 250, 252, 255;
+  --inv-page-bg: #F2F5FA;
+  --inv-page-bg-rgb: 242, 245, 250;
+  --inv-leaf-fill: #8CA8C8;
+  --inv-glow-light: #A5C0DF;
+}
+
+[data-inv-theme="terracotta_rust"] {
+  --inv-primary: #CC704E;
+  --inv-primary-rgb: 204, 112, 78;
+  --inv-mid: #B85D3B;
+  --inv-mid-rgb: 184, 93, 59;
+  --inv-dark: #9A4829;
+  --inv-text-strong: #7D341A;
+  --inv-text-muted: #964225;
+  --inv-text-muted-rgb: 150, 66, 37;
+  --inv-soft-bg: #F9EBE4;
+  --inv-soft-bg-rgb: 249, 235, 228;
+  --inv-soft-hover: #F3DDD2;
+  --inv-soft-hover-rgb: 243, 221, 210;
+  --inv-soft-alt: #E9C9BA;
+  --inv-soft-alt-rgb: 233, 201, 186;
+  --inv-card-tint: #FFFBF9;
+  --inv-card-tint-rgb: 255, 251, 249;
+  --inv-page-bg: #FBF4F0;
+  --inv-page-bg-rgb: 251, 244, 240;
+  --inv-leaf-fill: #DFA085;
+  --inv-glow-light: #EAB39C;
+}
+
+/* Text Color Overrides */
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#8B6914\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:text-\[\#8B6914\]:hover,
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .group:hover .group-hover\:text-\[\#8B6914\] {
+  color: var(--inv-text-strong) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#9A742B\] {
+  color: var(--inv-text-muted) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#9A742B\]\/80 {
+  color: rgba(var(--inv-text-muted-rgb), 0.8) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#B68D40\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:text-\[\#B68D40\]:hover,
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .group:hover .group-hover\:text-\[\#B68D40\] {
+  color: var(--inv-dark) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#C5A059\] {
+  color: var(--inv-mid) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#D4AF37\] {
+  color: var(--inv-primary) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .text-\[\#F3D77D\] {
+  color: var(--inv-glow-light) !important;
+}
+
+/* Background Color Overrides */
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#9A742B\] {
+  background-color: var(--inv-text-muted) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#B68D40\] {
+  background-color: var(--inv-dark) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#D4AF37\] {
+  background-color: var(--inv-primary) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#D4AF37\]\/15 {
+  background-color: rgba(var(--inv-primary-rgb), 0.15) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#D4AF37\]\/20 {
+  background-color: rgba(var(--inv-primary-rgb), 0.2) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#F3D77D\] {
+  background-color: var(--inv-glow-light) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF3E3\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:bg-\[\#FAF3E3\]:hover {
+  background-color: var(--inv-soft-bg) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF3E3\]\/40 {
+  background-color: rgba(var(--inv-soft-bg-rgb), 0.4) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF3E3\]\/50 {
+  background-color: rgba(var(--inv-soft-bg-rgb), 0.5) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF3E3\]\/60,
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:bg-\[\#FAF3E3\]\/60:hover {
+  background-color: rgba(var(--inv-soft-bg-rgb), 0.6) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#F3E5C8\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:bg-\[\#F3E5C8\]:hover {
+  background-color: var(--inv-soft-hover) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF6EE\] {
+  background-color: var(--inv-soft-bg) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF6EE\]\/95 {
+  background-color: rgba(var(--inv-soft-bg-rgb), 0.95) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF8F5\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:bg-\[\#FAF8F5\]:hover {
+  background-color: var(--inv-page-bg) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FAF8F5\]\/80 {
+  background-color: rgba(var(--inv-page-bg-rgb), 0.8) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FFFDF9\] {
+  background-color: var(--inv-card-tint) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FFFDF9\]\/95,
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .bg-\[\#FFFDF9\]\/96 {
+  background-color: rgba(var(--inv-card-tint-rgb), 0.96) !important;
+}
+
+/* Border Color Overrides */
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#9A742B\] {
+  border-color: var(--inv-text-muted) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#B68D40\] {
+  border-color: var(--inv-dark) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\] {
+  border-color: var(--inv-primary) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/20 {
+  border-color: rgba(var(--inv-primary-rgb), 0.2) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/25 {
+  border-color: rgba(var(--inv-primary-rgb), 0.25) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/30 {
+  border-color: rgba(var(--inv-primary-rgb), 0.3) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/35 {
+  border-color: rgba(var(--inv-primary-rgb), 0.35) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/40 {
+  border-color: rgba(var(--inv-primary-rgb), 0.4) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/45 {
+  border-color: rgba(var(--inv-primary-rgb), 0.45) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/50 {
+  border-color: rgba(var(--inv-primary-rgb), 0.5) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .border-\[\#D4AF37\]\/60 {
+  border-color: rgba(var(--inv-primary-rgb), 0.6) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .focus\:border-\[\#8B6914\]:focus {
+  border-color: var(--inv-text-strong) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .focus\:border-\[\#C5A059\]:focus {
+  border-color: var(--inv-mid) !important;
+}
+
+/* Ring, Fill, Accent & Text Decoration Overrides */
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .ring-\[\#D4AF37\] {
+  --tw-ring-color: var(--inv-primary) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .ring-\[\#D4AF37\]\/70 {
+  --tw-ring-color: rgba(var(--inv-primary-rgb), 0.7) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .ring-\[\#FAF3E3\] {
+  --tw-ring-color: var(--inv-soft-bg) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .fill-\[\#C5A059\]\/25 {
+  fill: rgba(var(--inv-mid-rgb), 0.25) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .accent-\[\#B68D40\] {
+  accent-color: var(--inv-dark) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .decoration-\[\#D4AF37\]\/60 {
+  text-decoration-color: rgba(var(--inv-primary-rgb), 0.6) !important;
+}
+
+/* Gradient Stop Overrides (from / via / to) */
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#C5A059\] {
+  --tw-gradient-from: var(--inv-mid) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-mid-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#D4AF37\] {
+  --tw-gradient-from: var(--inv-primary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#D4AF37\]\/20 {
+  --tw-gradient-from: rgba(var(--inv-primary-rgb), 0.2) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#FAF3E3\] {
+  --tw-gradient-from: var(--inv-soft-bg) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#FAF8F5\] {
+  --tw-gradient-from: var(--inv-page-bg) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-page-bg-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .from-\[\#FFFDF9\] {
+  --tw-gradient-from: var(--inv-card-tint) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-card-tint-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:from-\[\#B68D40\]:hover {
+  --tw-gradient-from: var(--inv-dark) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-mid-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:from-\[\#F3E5C8\]:hover {
+  --tw-gradient-from: var(--inv-soft-hover) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--inv-soft-hover-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#8B6914\] {
+  --tw-gradient-to: rgba(var(--inv-text-muted-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--inv-text-strong) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#C5A059\] {
+  --tw-gradient-to: rgba(var(--inv-mid-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--inv-mid) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#D4AF37\] {
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--inv-primary) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#D4AF37\]\/60 {
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--inv-primary-rgb), 0.6) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#F3D77D\] {
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--inv-glow-light) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#F5E6C8\]\/60 {
+  --tw-gradient-to: rgba(var(--inv-soft-hover-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--inv-soft-hover-rgb), 0.6) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#FAF3E3\]\/80 {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--inv-soft-bg-rgb), 0.8) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#FAF6EE\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#FAF8F5\] {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--inv-soft-bg) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#FFFDF9\]\/65 {
+  --tw-gradient-to: rgba(var(--inv-card-tint-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--inv-card-tint-rgb), 0.65) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .via-\[\#FFFDF9\]\/95 {
+  --tw-gradient-to: rgba(var(--inv-card-tint-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(var(--inv-card-tint-rgb), 0.95) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#9A742B\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:to-\[\#9A742B\]:hover {
+  --tw-gradient-to: var(--inv-text-muted) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#B68D40\] {
+  --tw-gradient-to: var(--inv-dark) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#C5A059\] {
+  --tw-gradient-to: var(--inv-mid) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#D4AF37\] {
+  --tw-gradient-to: var(--inv-primary) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#D4AF37\]\/70 {
+  --tw-gradient-to: rgba(var(--inv-primary-rgb), 0.7) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#E8D5B5\]\/50 {
+  --tw-gradient-to: rgba(var(--inv-soft-alt-rgb), 0.5) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#EFE1C6\] {
+  --tw-gradient-to: var(--inv-soft-alt) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#F3E5C8\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#F3E7D3\] {
+  --tw-gradient-to: var(--inv-soft-hover) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#F3E5C8\]\/60 {
+  --tw-gradient-to: rgba(var(--inv-soft-hover-rgb), 0.6) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#F3E5C8\]\/65 {
+  --tw-gradient-to: rgba(var(--inv-soft-hover-rgb), 0.65) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\],
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .hover\:to-\[\#FAF3E3\]:hover {
+  --tw-gradient-to: var(--inv-soft-bg) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\]\/50 {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0.5) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\]\/70 {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0.7) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\]\/75 {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0.75) var(--tw-gradient-to-position) !important;
+}
+
+[data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\]\/90 {
+  --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0.9) var(--tw-gradient-to-position) !important;
+}
+
+

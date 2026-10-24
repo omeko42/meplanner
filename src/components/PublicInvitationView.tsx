@@ -97,6 +97,39 @@ interface PublicInvitationViewProps {
   }) => Promise<void>;
 }
 
+type InvitationThemeKey =
+  | 'champagne_gold'
+  | 'sage_botanical'
+  | 'blush_rose'
+  | 'royal_navy'
+  | 'terracotta_rust';
+
+function resolveInvitationThemePreset(raw?: string): InvitationThemeKey {
+  if (!raw) return 'champagne_gold';
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'sage_botanical' || normalized === 'sage-garden') {
+    return 'sage_botanical';
+  }
+  if (normalized === 'blush_rose' || normalized === 'ivory-rose') {
+    return 'blush_rose';
+  }
+  if (normalized === 'royal_navy' || normalized === 'royal-navy') {
+    return 'royal_navy';
+  }
+  if (normalized === 'terracotta_rust' || normalized === 'terracotta-rust') {
+    return 'terracotta_rust';
+  }
+  return 'champagne_gold';
+}
+
+const INVITATION_THEME_VEIL_RGB: Record<InvitationThemeKey, string> = {
+  champagne_gold: '250, 248, 245',
+  sage_botanical: '242, 247, 243',
+  blush_rose: '253, 245, 246',
+  royal_navy: '242, 245, 250',
+  terracotta_rust: '251, 244, 240',
+};
+
 interface FloralCornerOrnamentProps {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   size?: 'sm' | 'md' | 'lg';
@@ -144,54 +177,70 @@ const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         className={`w-full h-full opacity-85 ${swayClass}`}
       >
-        {/* Soft Pearl & Champagne Glow Backdrop */}
-        <circle cx="24" cy="24" r="22" fill="#D4AF37" fillOpacity="0.10" />
+        {/* Soft Theme Glow Backdrop */}
+        <circle
+          cx="24"
+          cy="24"
+          r="22"
+          style={{ fill: 'var(--inv-primary, #D4AF37)' }}
+          fillOpacity="0.10"
+        />
         {/* Main Curved Botanical Stems */}
         <path
           d="M6 108C8 64 34 32 106 8"
-          stroke="#C5A059"
+          style={{ stroke: 'var(--inv-mid, #C5A059)' }}
           strokeWidth="1.6"
           strokeLinecap="round"
         />
         <path
           d="M4 76C18 46 44 24 84 12"
-          stroke="#D4AF37"
+          style={{ stroke: 'var(--inv-primary, #D4AF37)' }}
           strokeWidth="1.2"
           strokeLinecap="round"
           strokeDasharray="2 2"
         />
-        {/* Delicate Gold Leaves Along Stem */}
+        {/* Delicate Botanical Leaves Along Stem */}
         <path
           d="M22 72C12 64 12 50 24 46C30 56 28 66 22 72Z"
-          fill="#E6C994"
+          style={{
+            fill: 'var(--inv-leaf-fill, #E6C994)',
+            stroke: 'var(--inv-dark, #B68D40)',
+          }}
           fillOpacity="0.65"
-          stroke="#B68D40"
           strokeWidth="1"
         />
         <path
           d="M42 50C34 38 38 24 52 22C54 34 50 44 42 50Z"
-          fill="#FAF3E3"
-          stroke="#C5A059"
+          style={{
+            fill: 'var(--inv-soft-bg, #FAF3E3)',
+            stroke: 'var(--inv-mid, #C5A059)',
+          }}
           strokeWidth="1.1"
         />
         <path
           d="M68 28C64 18 70 10 82 10C82 18 76 25 68 28Z"
-          fill="#E6C994"
+          style={{
+            fill: 'var(--inv-leaf-fill, #E6C994)',
+            stroke: 'var(--inv-dark, #B68D40)',
+          }}
           fillOpacity="0.6"
-          stroke="#B68D40"
           strokeWidth="1"
         />
         <path
           d="M34 62C46 58 56 64 58 76C46 76 38 70 34 62Z"
-          fill="#FAF3E3"
-          stroke="#C5A059"
+          style={{
+            fill: 'var(--inv-soft-bg, #FAF3E3)',
+            stroke: 'var(--inv-mid, #C5A059)',
+          }}
           strokeWidth="1"
         />
         <path
           d="M56 38C68 36 76 42 78 52C67 52 60 46 56 38Z"
-          fill="#E6C994"
+          style={{
+            fill: 'var(--inv-leaf-fill, #E6C994)',
+            stroke: 'var(--inv-dark, #B68D40)',
+          }}
           fillOpacity="0.55"
-          stroke="#B68D40"
           strokeWidth="1"
         />
         {/* Corner Rose / Jasmine Blossom */}
@@ -199,26 +248,68 @@ const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
           cx="28"
           cy="28"
           r="11"
-          fill="#FAF3E3"
-          stroke="#C5A059"
+          style={{
+            fill: 'var(--inv-soft-bg, #FAF3E3)',
+            stroke: 'var(--inv-mid, #C5A059)',
+          }}
           strokeWidth="1.3"
         />
         <circle
           cx="28"
           cy="28"
           r="6.5"
-          fill="#E6C994"
+          style={{
+            fill: 'var(--inv-leaf-fill, #E6C994)',
+            stroke: 'var(--inv-dark, #B68D40)',
+          }}
           fillOpacity="0.75"
-          stroke="#B68D40"
           strokeWidth="1"
         />
-        <circle cx="28" cy="28" r="2.8" fill="#9A742B" />
-        {/* Pearl & Gold Berries */}
-        <circle cx="16" cy="46" r="3" fill="#FFFDF9" stroke="#C5A059" strokeWidth="1" />
-        <circle cx="48" cy="18" r="3.2" fill="#FFFDF9" stroke="#C5A059" strokeWidth="1" />
-        <circle cx="18" cy="88" r="2.5" fill="#D4AF37" />
-        <circle cx="88" cy="16" r="2.5" fill="#D4AF37" />
-        <circle cx="62" cy="56" r="2" fill="#C5A059" />
+        <circle
+          cx="28"
+          cy="28"
+          r="2.8"
+          style={{ fill: 'var(--inv-text-muted, #9A742B)' }}
+        />
+        {/* Pearl & Theme Berries */}
+        <circle
+          cx="16"
+          cy="46"
+          r="3"
+          style={{
+            fill: 'var(--inv-card-tint, #FFFDF9)',
+            stroke: 'var(--inv-mid, #C5A059)',
+          }}
+          strokeWidth="1"
+        />
+        <circle
+          cx="48"
+          cy="18"
+          r="3.2"
+          style={{
+            fill: 'var(--inv-card-tint, #FFFDF9)',
+            stroke: 'var(--inv-mid, #C5A059)',
+          }}
+          strokeWidth="1"
+        />
+        <circle
+          cx="18"
+          cy="88"
+          r="2.5"
+          style={{ fill: 'var(--inv-primary, #D4AF37)' }}
+        />
+        <circle
+          cx="88"
+          cy="16"
+          r="2.5"
+          style={{ fill: 'var(--inv-primary, #D4AF37)' }}
+        />
+        <circle
+          cx="62"
+          cy="56"
+          r="2"
+          style={{ fill: 'var(--inv-mid, #C5A059)' }}
+        />
       </svg>
     </div>
   );
@@ -270,16 +361,29 @@ const FloatingPetalsAmbient: React.FC = () => (
           >
             <path
               d="M12 2C6.5 6.5 4 12.5 7.5 18C10 21.5 14 21.5 16.5 18C20 12.5 17.5 6.5 12 2Z"
-              fill="url(#petalGrad)"
-              stroke="#D4AF37"
+              fill={`url(#petalGrad-${p.id})`}
+              style={{ stroke: 'var(--inv-primary, #D4AF37)' }}
               strokeWidth="0.8"
               strokeOpacity="0.65"
             />
             <defs>
-              <linearGradient id="petalGrad" x1="6" y1="2" x2="18" y2="21" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#FFFDF9" />
-                <stop offset="0.55" stopColor="#FAF3E3" />
-                <stop offset="1" stopColor="#E6C994" />
+              <linearGradient
+                id={`petalGrad-${p.id}`}
+                x1="6"
+                y1="2"
+                x2="18"
+                y2="21"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop style={{ stopColor: 'var(--inv-card-tint, #FFFDF9)' }} />
+                <stop
+                  offset="0.55"
+                  style={{ stopColor: 'var(--inv-soft-bg, #FAF3E3)' }}
+                />
+                <stop
+                  offset="1"
+                  style={{ stopColor: 'var(--inv-leaf-fill, #E6C994)' }}
+                />
               </linearGradient>
             </defs>
           </svg>
@@ -1915,12 +2019,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     );
   }, [publicVisibleWishes, coverGuestSearch]);
 
+  const activeThemeKey = resolveInvitationThemePreset(settings.themePreset);
+  const activeVeilRgb = INVITATION_THEME_VEIL_RGB[activeThemeKey];
+
   // ============================================================================
   // 0. SUPERADMIN MODERATION: MAINTENANCE / PAUSED VIEW MODE
   // ============================================================================
   if (settings.invitationModerationMode === 'MAINTENANCE') {
     return (
-      <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
+      <div
+        data-inv-theme={activeThemeKey}
+        className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none"
+      >
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           {settings.coverVideoUrl?.trim() ? (
             <AdaptiveVideoLayer
@@ -1943,7 +2053,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
           style={{
-            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+            backgroundColor: `rgba(${activeVeilRgb}, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
         />
         <header className="fixed top-0 inset-x-0 z-40 bg-white/80 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
@@ -1998,6 +2108,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   if (!isOpened) {
     return (
       <div
+        data-inv-theme={activeThemeKey}
         className={`min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none transition-all duration-700 ease-in-out ${
           isOpeningTransition
             ? '-translate-y-full opacity-0 scale-105 pointer-events-none'
@@ -2029,10 +2140,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
           style={{
-            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+            backgroundColor: `rgba(${activeVeilRgb}, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
         />
-        <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.20)_0%,rgba(250,248,245,0.80)_100%)] pointer-events-none" />
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at center, rgba(255,255,255,0.20) 0%, rgba(${activeVeilRgb}, 0.80) 100%)`,
+          }}
+        />
 
         {/* Subtle Top Bar */}
         <header className="fixed top-0 inset-x-0 z-40 bg-white/75 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
@@ -2188,6 +2304,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   return (
     <div
       ref={invitationContainerRef}
+      data-inv-theme={activeThemeKey}
       className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pt-14 sm:pt-16 pb-28 sm:pb-24 overflow-x-clip selection:bg-[#D4AF37]/25 selection:text-stone-900"
     >
       {showPetals && <FloatingPetalsAmbient />}
@@ -2214,7 +2331,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div
           className={`absolute inset-0 z-20 ${blurClass}`}
           style={{
-            backgroundColor: `rgba(250, 248, 245, ${(overlayOpacity / 100).toFixed(2)})`,
+            backgroundColor: `rgba(${activeVeilRgb}, ${(overlayOpacity / 100).toFixed(2)})`,
           }}
         />
       </div>
