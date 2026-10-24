@@ -28,6 +28,7 @@ import {
   isInitialCloudHydrationComplete,
   SUPABASE_URL,
 } from '@/lib/supabaseCloud';
+import { computeGuestInvitationHash } from '@/lib/guestTokenHash';
 
 const STORAGE_KEY = 'my_wedding_manager_state_v6';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
@@ -439,7 +440,10 @@ export function formatRupiah(amount: number): string {
 }
 
 export function buildGuestInvitationUrl(
-  guest: Pick<WeddingGuest, 'guestName' | 'invitationCode'>,
+  guest: Pick<WeddingGuest, 'guestName' | 'invitationCode'> & {
+    id?: string;
+    invitationToken?: string;
+  },
   originUrl?: string,
   clientSlug?: string
 ): string {
@@ -448,6 +452,10 @@ export function buildGuestInvitationUrl(
     (typeof window !== 'undefined'
       ? window.location.origin
       : process.env.NEXT_PUBLIC_SITE_URL || 'https://meplan.vercel.app');
+  const hashToken = computeGuestInvitationHash(
+    clientSlug || 'client-utama',
+    guest
+  );
   const params = new URLSearchParams();
   if (
     clientSlug &&
@@ -457,9 +465,7 @@ export function buildGuestInvitationUrl(
     params.set('client', clientSlug.replace(/^client-/i, '').toLowerCase());
   }
   params.set('to', guest.guestName);
-  if (guest.invitationCode) {
-    params.set('code', guest.invitationCode);
-  }
+  params.set('code', hashToken);
   return `${base}/?${params.toString()}`;
 }
 
@@ -480,6 +486,7 @@ export const DEFAULT_WA_TEMPLATE_VIP = [
   '',
   'Tautan Undangan Resmi & Konfirmasi Kehadiran:',
   '{link_undangan}',
+  '🔑 *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.',
   '',
@@ -503,6 +510,7 @@ export const DEFAULT_WA_TEMPLATE_REGULAR = [
   '',
   'Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:',
   '👉 {link_undangan}',
+  '🔑 *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.',
   '',
@@ -575,6 +583,11 @@ export function generateWhatsAppMessage(
       : `_${guest.institution}_`
     : '';
 
+  const guestHashToken = computeGuestInvitationHash(
+    settings.activeClientId || 'client-utama',
+    guest
+  );
+
   const messageText = rawTemplate
     .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
     .replace(/\{instansi\}/g, instansiFormatted)
@@ -585,7 +598,7 @@ export function generateWhatsAppMessage(
     .replace(/\{panggilan_wanita\}/g, settings.brideNickname || 'Mempelai Wanita')
     .replace(/\{jadwal_acara\}/g, jadwalAcaraText)
     .replace(/\{lokasi_utama\}/g, lokasiUtamaText)
-    .replace(/\{kode_undangan\}/g, guest.invitationCode || '')
+    .replace(/\{kode_undangan\}/g, guestHashToken)
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 

@@ -78,6 +78,7 @@ export type AttendanceStatus =
 export interface WeddingGuest {
   id: string;
   invitationCode: string; // e.g., INV-0001
+  invitationToken?: string; // Unique 21-char Base62 multi-client hash token (e.g., JHi4b3XgT2RQIDhZ9coLw)
   guestName: string;
   guestType: GuestType;
   side: GuestSide;
@@ -236,6 +237,17 @@ export interface BackgroundSlideItem {
   adjustment?: PhotoAdjustment;
 }
 
+export type InvitationThemePresetId =
+  | 'champagne_gold'
+  | 'sage_botanical'
+  | 'blush_rose'
+  | 'royal_navy'
+  | 'terracotta_rust'
+  | 'pearl-champagne'
+  | 'ivory-rose'
+  | 'sage-garden'
+  | 'royal-navy';
+
 export interface WeddingSettings {
   // Core Settings
   siteTitle: string;
@@ -386,7 +398,7 @@ export interface WeddingSettings {
   videoDesktopMode?: 'HIGHLIGHT_COVER' | 'CINEMA_BLUR'; // default 'HIGHLIGHT_COVER'
   bgOverlayOpacity?: number; // 40 to 95 (percentage of bright pearl overlay)
   bgBlurIntensity?: 'none' | 'sm' | 'md' | 'lg';
-  themePreset?: 'pearl-champagne' | 'ivory-rose' | 'sage-garden' | 'royal-navy';
+  themePreset?: InvitationThemePresetId;
 
   // Photo Zoom & Pan Adjustments for Couple, Backgrounds, etc.
   photoAdjustments?: {

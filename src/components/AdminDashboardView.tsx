@@ -101,6 +101,7 @@ import {
 
 type BackgroundSectionKey = 'cover' | 'hero' | 'page';
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
+import { computeGuestInvitationHash } from '@/lib/guestTokenHash';
 import {
   formatRupiah,
   generateWhatsAppMessage,
@@ -247,6 +248,124 @@ const BACKGROUND_PRESETS = [
     url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2000&q=85',
   },
 ];
+
+type ManagerThemePresetKey =
+  | 'champagne_gold'
+  | 'sage_botanical'
+  | 'blush_rose'
+  | 'royal_navy'
+  | 'terracotta_rust';
+
+const MANAGER_THEME_PALETTES: Record<
+  ManagerThemePresetKey,
+  {
+    id: ManagerThemePresetKey;
+    name: string;
+    subtitle: string;
+    swatches: [string, string, string];
+    pageBg: string;
+    headerGrad: string;
+    accentPillBg: string;
+    accentPillText: string;
+    accentDot: string;
+    bannerGrad: string;
+    inactiveTabHover: string;
+    badgeIdle: string;
+  }
+> = {
+  champagne_gold: {
+    id: 'champagne_gold',
+    name: 'Champagne Gold',
+    subtitle: 'Klasik Mewah & Hangat',
+    swatches: ['#D4AF37', '#8B6914', '#FAF3E3'],
+    pageBg: 'bg-[#FAF6EE]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FFFDF7]/95 to-[#FAF3E3]/90 border-[#D4AF37]/35',
+    accentPillBg: 'bg-[#FAF3E3] hover:bg-[#F3E5C8] border-[#D4AF37]/50',
+    accentPillText: 'text-[#8B6914]',
+    accentDot: 'bg-[#D4AF37]',
+    bannerGrad: 'bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40]',
+    inactiveTabHover: 'hover:bg-[#FAF3E3] hover:text-[#8B6914]',
+    badgeIdle: 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/35',
+  },
+  sage_botanical: {
+    id: 'sage_botanical',
+    name: 'Sage Botanical',
+    subtitle: 'Hijau Taman & Organik',
+    swatches: ['#4A6B53', '#7A9A82', '#EBF3ED'],
+    pageBg: 'bg-[#F3F7F3]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#F7FAF7]/95 to-[#EBF3ED]/90 border-[#4A6B53]/30',
+    accentPillBg: 'bg-[#EBF3ED] hover:bg-[#DCE9DF] border-[#4A6B53]/45',
+    accentPillText: 'text-[#2F5238]',
+    accentDot: 'bg-[#4A6B53]',
+    bannerGrad: 'bg-gradient-to-r from-[#4A6B53] via-[#5C8266] to-[#3B5943]',
+    inactiveTabHover: 'hover:bg-[#EBF3ED] hover:text-[#2F5238]',
+    badgeIdle: 'bg-[#EBF3ED] text-[#2F5238] border-[#4A6B53]/35',
+  },
+  blush_rose: {
+    id: 'blush_rose',
+    name: 'Blush Rose',
+    subtitle: 'Romantis Pink & Ivory',
+    swatches: ['#C86D7C', '#E8A5B0', '#FDF0F2'],
+    pageBg: 'bg-[#FDF5F6]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FFF9FA]/95 to-[#FCECEF]/90 border-[#C86D7C]/30',
+    accentPillBg: 'bg-[#FCECEF] hover:bg-[#F8DCE2] border-[#C86D7C]/45',
+    accentPillText: 'text-[#9E3F50]',
+    accentDot: 'bg-[#C86D7C]',
+    bannerGrad: 'bg-gradient-to-r from-[#C86D7C] via-[#D88290] to-[#B05464]',
+    inactiveTabHover: 'hover:bg-[#FCECEF] hover:text-[#9E3F50]',
+    badgeIdle: 'bg-[#FCECEF] text-[#9E3F50] border-[#C86D7C]/35',
+  },
+  royal_navy: {
+    id: 'royal_navy',
+    name: 'Royal Navy',
+    subtitle: 'Biru Malam & Gold Elegan',
+    swatches: ['#1E3A5F', '#C5A059', '#EDF2F8'],
+    pageBg: 'bg-[#F2F5FA]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#F6F9FC]/95 to-[#E8EFF7]/90 border-[#1E3A5F]/30',
+    accentPillBg: 'bg-[#EBF1F8] hover:bg-[#DCE7F3] border-[#1E3A5F]/45',
+    accentPillText: 'text-[#1E3A5F]',
+    accentDot: 'bg-[#1E3A5F]',
+    bannerGrad: 'bg-gradient-to-r from-[#1E3A5F] via-[#2B4F7E] to-[#152A47]',
+    inactiveTabHover: 'hover:bg-[#EBF1F8] hover:text-[#1E3A5F]',
+    badgeIdle: 'bg-[#EBF1F8] text-[#1E3A5F] border-[#1E3A5F]/35',
+  },
+  terracotta_rust: {
+    id: 'terracotta_rust',
+    name: 'Terracotta Rust',
+    subtitle: 'Earthy Hangat & Rustik',
+    swatches: ['#B85D3B', '#D98A6C', '#FBF0EB'],
+    pageBg: 'bg-[#FBF4F0]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FFF9F6]/95 to-[#F9EBE4]/90 border-[#B85D3B]/30',
+    accentPillBg: 'bg-[#F9EBE4] hover:bg-[#F3DDD2] border-[#B85D3B]/45',
+    accentPillText: 'text-[#8C3D20]',
+    accentDot: 'bg-[#B85D3B]',
+    bannerGrad: 'bg-gradient-to-r from-[#B85D3B] via-[#CC704E] to-[#9A4829]',
+    inactiveTabHover: 'hover:bg-[#F9EBE4] hover:text-[#8C3D20]',
+    badgeIdle: 'bg-[#F9EBE4] text-[#8C3D20] border-[#B85D3B]/35',
+  },
+};
+
+function resolveManagerThemePresetKey(raw?: string): ManagerThemePresetKey {
+  const clean = (raw || '').trim().toLowerCase();
+  if (clean === 'sage_botanical' || clean === 'sage-garden') {
+    return 'sage_botanical';
+  }
+  if (clean === 'blush_rose' || clean === 'ivory-rose') {
+    return 'blush_rose';
+  }
+  if (clean === 'royal_navy' || clean === 'royal-navy') {
+    return 'royal_navy';
+  }
+  if (clean === 'terracotta_rust' || clean === 'terracotta-rust') {
+    return 'terracotta_rust';
+  }
+  return 'champagne_gold';
+}
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   state,
@@ -611,6 +730,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           g.guestName.toLowerCase().includes(q) ||
           (g.institution || '').toLowerCase().includes(q) ||
           (g.invitationCode || '').toLowerCase().includes(q) ||
+          computeGuestInvitationHash(state.settings.activeClientId || 'client-utama', g)
+            .toLowerCase()
+            .includes(q) ||
           (g.notes || '').toLowerCase().includes(q);
         if (!match) return false;
       }
@@ -618,6 +740,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     });
   }, [
     state.guests,
+    state.settings.activeClientId,
     guestTypeFilter,
     guestPriorityFilter,
     guestRsvpFilter,
@@ -631,6 +754,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [settingsForm, setSettingsFormInternal] = useState<WeddingSettings>(
     state.settings
   );
+  const activeThemePresetId = resolveManagerThemePresetKey(
+    (settingsForm.themePreset as string | undefined) ||
+      (state.settings.themePreset as string | undefined) ||
+      'champagne_gold'
+  );
+  const activeManagerTheme =
+    MANAGER_THEME_PALETTES[activeThemePresetId] ||
+    MANAGER_THEME_PALETTES.champagne_gold;
   const isEditingSettingsRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -4453,7 +4584,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24">
+    <div className={`min-h-screen ${activeManagerTheme.pageBg} text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24 transition-colors duration-300`}>
       {/* Global Hidden JSON Backup File Input (Accessible from Header & Settings) */}
       <input
         ref={fileInputRef}
@@ -4555,8 +4686,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* TOP FIXED HEADER BAR (BRIGHT PEARL & CHAMPAGNE GLASSMORPHISM) */}
-      <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
+      {/* TOP FIXED HEADER BAR (DYNAMIC INVITATION THEME ATMOSPHERE) */}
+      <header className={`fixed top-0 inset-x-0 z-40 ${activeManagerTheme.headerGrad} backdrop-blur-xl text-stone-900 border-b shadow-xs transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
@@ -4584,8 +4715,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </span>
                   </h1>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-[#9A742B] font-medium truncate leading-tight mt-0.5">
-                  <span className="font-bold text-[#8B6914]">
+                <p className={`text-[10px] sm:text-[11px] ${activeManagerTheme.accentPillText} font-medium truncate leading-tight mt-0.5`}>
+                  <span className="font-bold">
                     by{' '}
                     <a
                       href={(() => {
@@ -4619,8 +4750,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Workspace Switcher (Superadmin), Katalog MEP, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Active Theme Ribbon, Workspace Switcher (Superadmin), Katalog MEP, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Active Invitation Theme Ribbon / Pill */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('settings');
+                  setSettingsMenuTab('background');
+                }}
+                title={`Tema Undangan: ${activeManagerTheme.name} — Klik untuk kustomisasi Tema & Latar Undangan`}
+                className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} text-[10px] sm:text-[11px] font-bold transition-all shadow-2xs`}
+              >
+                <span className="inline-flex items-center -space-x-1 shrink-0">
+                  {activeManagerTheme.swatches.map((hex, idx) => (
+                    <span
+                      key={hex + idx}
+                      className="w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ))}
+                </span>
+                <span className="hidden xl:inline">Tema Undangan:</span>
+                <span className="hidden sm:inline truncate max-w-[130px]">
+                  {activeManagerTheme.name}
+                </span>
+              </button>
+
               {isSuperadmin &&
                 onSwitchWorkspaceClient &&
                 effectiveClientGroups.length > 0 && (
@@ -4653,7 +4809,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenLandingPage}
-                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-all"
+                  className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} font-bold text-xs transition-all`}
                   title="Buka Halaman Depan Komersial My Event Planner (MEP)"
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -4664,7 +4820,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => onSwitchToPublicPreview()}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all"
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl ${activeManagerTheme.bannerGrad} hover:opacity-95 text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all`}
                 title="Buka Pratinjau Undangan Publik"
               >
                 <Eye className="w-3.5 h-3.5 shrink-0" />
@@ -4676,7 +4832,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <p className="text-xs font-bold text-stone-800 truncate max-w-[160px]">
                     {adminUser.nama}
                   </p>
-                  <p className="text-[10px] text-[#9A742B] font-semibold truncate max-w-[160px]">
+                  <p className={`text-[10px] ${activeManagerTheme.accentPillText} font-semibold truncate max-w-[160px]`}>
                     {isPanitia ? 'Panitia (Non-Budgeting)' : adminUser.jabatan}
                   </p>
                 </div>
@@ -4807,8 +4963,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   }}
                   className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap truncate transition-all ${
                     active
-                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                      : 'text-stone-600 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
+                      ? `${activeManagerTheme.bannerGrad} text-white shadow-xs`
+                      : `text-stone-600 ${activeManagerTheme.inactiveTabHover}`
                   }`}
                 >
                   {statusDot ? (
@@ -4836,7 +4992,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : statusDot === 'error'
                           ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30'
+                          : `border ${activeManagerTheme.badgeIdle}`
                       }`}
                     >
                       {tab.badge}
@@ -6308,6 +6464,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="divide-y divide-stone-200 px-4 sm:px-6">
                   {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
                     const waData = generateWhatsAppMessage(guest, state.settings);
+                    const guestHashToken = computeGuestInvitationHash(
+                      state.settings.activeClientId || 'client-utama',
+                      guest
+                    );
                     const isLinkCopied = copiedGuestLinkId === guest.id;
                     const currentFormat = normalizeGuestFormat(guest.invitationFormat);
                     const isOnlineGuest = currentFormat === 'Online';
@@ -6332,6 +6492,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914]">
                               {guest.invitationCode}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                  void navigator.clipboard.writeText(guestHashToken);
+                                  showToast(
+                                    `✓ Kode Hash Undangan "${guest.guestName}" (${guestHashToken}) berhasil disalin!`
+                                  );
+                                }
+                              }}
+                              title={`Klik untuk menyalin Kode Hash Unik Multi-Client: ${guestHashToken}`}
+                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer"
+                            >
+                              <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
+                              <span>{guestHashToken}</span>
+                            </button>
                             <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                               {guest.priority}
                             </span>
@@ -10162,11 +10338,85 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
                           Tema &amp; Latar
                         </h3>
-                        <InfoTooltip text="Pilih preset tema default atau upload foto sendiri untuk Cover, Banner Utama, dan Wallpaper Latar. Foto otomatis dikompres agar ringan." />
+                        <InfoTooltip text="Pilih palet tema warna undangan & planner, preset latar default, atau upload foto/video sendiri untuk Cover, Banner Utama, dan Wallpaper Latar." />
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] whitespace-nowrap shrink-0">
-                        &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
+                      <span className={`px-2.5 py-1 rounded-full border ${activeManagerTheme.badgeIdle} font-bold text-[11px] whitespace-nowrap shrink-0`}>
+                        &bull; {activeManagerTheme.name} &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
                       </span>
+                    </div>
+
+                    {/* 5 Invitation Theme Color Palettes (Syncs Undangan & Manager Atmosphere) */}
+                    <div className={`p-3.5 sm:p-4 rounded-xl ${activeManagerTheme.pageBg} border border-stone-200/80 space-y-3 transition-colors`}>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="font-bold text-xs text-stone-800 truncate">
+                            Palet Tema Warna Undangan &amp; Planner (5 Karakter)
+                          </p>
+                          <InfoTooltip text="Pilih 1 dari 5 palet tema warna. Tema yang dipilih langsung menghiasi tampilan Undangan Publik sekaligus menyelaraskan atmosfer warna di ruang kerja Manager/Planner ini." />
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full border ${activeManagerTheme.badgeIdle} text-[10px] font-extrabold`}>
+                          Aktif: {activeManagerTheme.name}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                        {(
+                          Object.values(MANAGER_THEME_PALETTES) as Array<
+                            (typeof MANAGER_THEME_PALETTES)[ManagerThemePresetKey]
+                          >
+                        ).map((palette) => {
+                          const isSelected = activeThemePresetId === palette.id;
+                          return (
+                            <button
+                              key={palette.id}
+                              type="button"
+                              onClick={async () => {
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  themePreset: palette.id as any,
+                                  updatedBy: adminUser.username,
+                                };
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                showToast(
+                                  `✓ Palet Tema Undangan & Planner diubah ke "${palette.name}"!`
+                                );
+                              }}
+                              className={`p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-2 ${
+                                isSelected
+                                  ? `bg-white ring-2 ring-offset-1 ring-stone-800 border-stone-800 shadow-xs`
+                                  : 'bg-white/90 hover:bg-white border-stone-200/90 hover:border-stone-400'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1.5">
+                                <div className="flex items-center -space-x-1">
+                                  {palette.swatches.map((hex, i) => (
+                                    <span
+                                      key={hex + i}
+                                      className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs"
+                                      style={{ backgroundColor: hex }}
+                                    />
+                                  ))}
+                                </div>
+                                {isSelected && (
+                                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold border ${palette.badgeIdle}`}>
+                                    Dipakai
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-xs text-stone-900 truncate">
+                                  {palette.name}
+                                </p>
+                                <p className="text-[10px] text-stone-500 truncate">
+                                  {palette.subtitle}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Quick Preset Selector */}
@@ -20811,13 +21061,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 }}
                 className={`py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 whitespace-nowrap truncate transition-all ${
                   active
-                    ? 'bg-gradient-to-b from-[#FAF3E3] to-[#F3E3C3] text-[#8B6914] font-extrabold border border-[#D4AF37]/45 shadow-2xs'
-                    : 'text-stone-500 hover:text-[#8B6914] font-semibold'
+                    ? `${activeManagerTheme.bannerGrad} text-white font-extrabold shadow-2xs`
+                    : `text-stone-500 ${activeManagerTheme.inactiveTabHover} font-semibold`
                 }`}
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 ${
-                    active ? 'text-[#B68D40]' : 'text-stone-400'
+                    active ? 'text-white' : 'text-stone-400'
                   }`}
                 />
                 <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight whitespace-nowrap truncate max-w-full px-0.5">

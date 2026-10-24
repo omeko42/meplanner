@@ -59,6 +59,10 @@ import {
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import {
+  computeGuestInvitationHash,
+  matchGuestWithinSingleClient,
+} from '@/lib/guestTokenHash';
 
 interface PublicInvitationViewProps {
   settings: WeddingSettings;
@@ -67,6 +71,7 @@ interface PublicInvitationViewProps {
   guestParamName: string;
   guestParamCode: string;
   isAdminLoggedIn: boolean;
+  defaultOpened?: boolean;
   onOpenAdminPortal: () => void;
   onTrackAnalytics?: (payload: {
     type: InvitationInteractionType;
@@ -755,11 +760,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   guestParamName,
   guestParamCode,
   isAdminLoggedIn,
+  defaultOpened = false,
   onOpenAdminPortal,
   onTrackAnalytics,
   onSubmitRsvp,
 }) => {
-  const [isOpened, setIsOpened] = useState(false);
+  const [isOpened, setIsOpened] = useState(Boolean(defaultOpened));
   const [isOpeningTransition, setIsOpeningTransition] = useState(false);
   const [lang, setLang] = useState<'ID' | 'EN'>(settings.defaultLanguage || 'ID');
   const [shareCopiedToast, setShareCopiedToast] = useState(false);
@@ -1214,8 +1220,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         : 'Hormat kami,'
       : 'With love & gratitude,');
 
-  // Lookup matched guest from DB if ?code= or ?to= matches (exact or partial)
+  const activeClientId = settings.activeClientId || 'client-utama';
+
+  // Lookup matched guest from DB if ?code= or ?to= matches (21-char Base62 hash token, INV-xxxx, or guest name)
   const matchedGuest = useMemo(() => {
+    if (guestParamCode?.trim()) {
+      const byCodeOrHash = matchGuestWithinSingleClient(
+        guestParamCode,
+        activeClientId,
+        guests
+      );
+      if (byCodeOrHash) return byCodeOrHash;
+    }
+    if (guestParamName?.trim()) {
+      const byNameOrHash = matchGuestWithinSingleClient(
+        guestParamName,
+        activeClientId,
+        guests
+      );
+      if (byNameOrHash) return byNameOrHash;
+    }
     const cleanCode = (guestParamCode || '').trim().toLowerCase();
     const cleanName = (guestParamName || '').trim().toLowerCase();
     if (!cleanCode && !cleanName) return null;
@@ -1234,7 +1258,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       );
     }
     return null;
-  }, [guests, guestParamCode, guestParamName]);
+  }, [guests, guestParamCode, guestParamName, activeClientId]);
 
   const [selectedGuestFromSearch, setSelectedGuestFromSearch] =
     useState<WeddingGuest | null>(null);
@@ -1266,6 +1290,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const effectiveMatchedGuest =
     selectedGuestFromSearch || verifiedGuestByCode || matchedGuest;
+
+  const matchedGuestHashToken = effectiveMatchedGuest
+    ? computeGuestInvitationHash(activeClientId, effectiveMatchedGuest)
+    : '';
 
   const resolvedGuestDisplayName =
     effectiveMatchedGuest?.guestName ||
@@ -1358,7 +1386,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
     setShowGuestSuggestions(false);
     setShowCoverGuestSuggestions(false);
-    setVipCodeInput(guest.invitationCode);
+    setVipCodeInput(computeGuestInvitationHash(activeClientId, guest));
     setVipCodeError('');
   };
 
@@ -1483,10 +1511,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         (g) =>
           g.guestName.toLowerCase().includes(query) ||
           g.invitationCode.toLowerCase().includes(query) ||
+          computeGuestInvitationHash(activeClientId, g).toLowerCase().includes(query) ||
           (g.institution || '').toLowerCase().includes(query)
       )
       .slice(0, 8);
-  }, [guests, rsvpName]);
+  }, [guests, rsvpName, activeClientId]);
 
   const requiresVipCodeGate =
     settings.invitationModerationMode === 'VIP_CODE_ONLY' && !effectiveMatchedGuest;
@@ -1506,10 +1535,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         (g) =>
           g.guestName.toLowerCase().includes(rawQuery) ||
           g.invitationCode.toLowerCase().includes(rawQuery) ||
+          computeGuestInvitationHash(activeClientId, g).toLowerCase().includes(rawQuery) ||
           (g.institution || '').toLowerCase().includes(rawQuery)
       )
       .slice(0, 8);
-  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate, isOpened]);
+  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate, isOpened, activeClientId]);
 
   const emitAnalytics = (
     type: InvitationInteractionType,
@@ -1563,17 +1593,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       const cleanInput = vipCodeInput.trim().toLowerCase();
       if (!cleanInput) {
         setVipCodeError(
-          'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu terdaftar untuk membuka undangan.'
+          'Masukkan Kode Hash Undangan (contoh: JHi4b3XgT2RQIDhZ9coLw) atau Nama Tamu terdaftar untuk membuka undangan.'
         );
         return;
       }
-      const found = guests.find(
-        (g) =>
-          (g.invitationCode || '').trim().toLowerCase() === cleanInput ||
-          g.guestName.trim().toLowerCase() === cleanInput ||
-          (cleanInput.length >= 3 &&
-            g.guestName.trim().toLowerCase().includes(cleanInput))
-      );
+      const found =
+        matchGuestWithinSingleClient(vipCodeInput, activeClientId, guests) ||
+        guests.find(
+          (g) =>
+            (g.invitationCode || '').trim().toLowerCase() === cleanInput ||
+            g.guestName.trim().toLowerCase() === cleanInput ||
+            (cleanInput.length >= 3 &&
+              g.guestName.trim().toLowerCase().includes(cleanInput))
+        );
       if (!found && guests.length > 0) {
         setVipCodeError(
           'Kode Undangan atau Nama Tamu tidak ditemukan dalam daftar tamu terdaftar.'
@@ -2133,6 +2165,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               )}
 
+              {effectiveMatchedGuest && matchedGuestHashToken && (
+                <div className="mt-2 flex justify-center">
+                  <span
+                    title={`Kode Hash Unik: ${matchedGuestHashToken}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 font-mono text-[10px] font-bold text-[#8B6914]"
+                  >
+                    ✓ {effectiveMatchedGuest.invitationCode} •{' '}
+                    {matchedGuestHashToken.slice(0, 10)}…
+                  </span>
+                </div>
+              )}
+
               {coverApology && coverApology !== '-' && (
                 <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
                   {coverApology}
@@ -2165,8 +2209,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   }}
                   placeholder={
                     lang === 'ID'
-                      ? 'Contoh: INV-0001 atau ketik nama Anda'
-                      : 'Example: INV-0001 or type your name'
+                      ? 'Contoh: JHi4b3XgT2RQIDhZ9coLw atau ketik nama Anda'
+                      : 'Example: JHi4b3XgT2RQIDhZ9coLw or type your name'
                   }
                   className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D4AF37]/50 font-mono text-xs sm:text-sm font-bold text-stone-900 focus:outline-none focus:border-[#8B6914]"
                 />
@@ -3396,16 +3440,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     {effectiveMatchedGuest ? (
                       <span className="inline-flex items-center gap-1 shrink-0">
                         <span
-                          title={`Data tamu terhubung otomatis dengan kode undangan ${effectiveMatchedGuest.invitationCode}`}
+                          title={`Kode Hash Unik: ${matchedGuestHashToken}`}
                           className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap truncate shrink-0"
                         >
-                          ✓ {effectiveMatchedGuest.invitationCode}
+                          ✓ {effectiveMatchedGuest.invitationCode} •{' '}
+                          {matchedGuestHashToken.slice(0, 10)}…
                         </span>
                         <InfoTooltip
                           text={
                             lang === 'ID'
-                              ? `Ketik minimal 3 huruf nama Anda atau kode INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
-                              : `Type at least 3 characters of your name or INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
+                              ? `Ketik minimal 3 huruf nama Anda atau kode Hash / INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
+                              : `Type at least 3 characters of your name or Hash / INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
                           }
                         />
                       </span>
@@ -3423,8 +3468,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           <InfoTooltip
                             text={
                               lang === 'ID'
-                                ? `Ketik minimal 3 huruf nama Anda atau kode INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
-                                : `Type at least 3 characters of your name or INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
+                                ? `Ketik minimal 3 huruf nama Anda atau kode Hash / INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
+                                : `Type at least 3 characters of your name or Hash / INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
                             }
                           />
                         </span>
@@ -3443,12 +3488,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       const val = e.target.value;
                       setRsvpName(val);
                       setShowGuestSuggestions(true);
-                      const exact = guests.find(
-                        (g) =>
-                          g.guestName.trim().toLowerCase() ===
-                            val.trim().toLowerCase() ||
-                          g.invitationCode.trim().toLowerCase() ===
-                            val.trim().toLowerCase()
+                      const exact = matchGuestWithinSingleClient(
+                        val,
+                        activeClientId,
+                        guests
                       );
                       if (exact) {
                         applyGuestToForm(exact);
@@ -3705,12 +3748,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       const val = e.target.value;
                       setCoverGuestSearch(val);
                       setShowCoverGuestSuggestions(true);
-                      const exact = guests.find(
-                        (g) =>
-                          g.guestName.trim().toLowerCase() ===
-                            val.trim().toLowerCase() ||
-                          g.invitationCode.trim().toLowerCase() ===
-                            val.trim().toLowerCase()
+                      const exact = matchGuestWithinSingleClient(
+                        val,
+                        activeClientId,
+                        guests
                       );
                       if (exact) {
                         applyGuestToForm(exact);

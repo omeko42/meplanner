@@ -48,10 +48,22 @@ import {
   CommercialPaymentStatus,
   CommercialPaymentTransaction,
   EventCategoryType,
+  GuestWish,
+  RsvpStatus,
   WeddingGuest,
   WeddingSettings,
 } from '@/types';
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
+import {
+  computeGuestInvitationHash,
+  resolveGuestByHashTokenAcrossWorkspaces,
+} from '@/lib/guestTokenHash';
+import {
+  SHOWCASE_DUMMY_CLIENT_METAS,
+  getShowcaseDummyClientState,
+  ShowcasePackageTier,
+} from '@/data/showcaseDummyClients';
+import { PublicInvitationView } from '@/components/PublicInvitationView';
 
 const IDEMPOTENT_TX_STORAGE_KEY = 'mwm_active_idempotent_tx_v1';
 
@@ -1384,6 +1396,7 @@ interface CommercialLandingViewProps {
   isAdminLoggedIn: boolean;
   adminUserName?: string;
   onOpenAdminPortal: () => void;
+  onOpenDemoManager?: (dummyClientId: string, tier: ShowcasePackageTier) => void;
   onSelectClientInvitation: (
     clientId: string,
     guestTo?: string,
@@ -1407,6 +1420,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   isAdminLoggedIn,
   adminUserName,
   onOpenAdminPortal,
+  onOpenDemoManager,
   onSelectClientInvitation,
   onUpsertCommercialPayment,
 }) => {
@@ -1591,6 +1605,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [simPackageTier, setSimPackageTier] = useState<
     'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
   >('ROYAL VIP');
+  const [selectedDemoClientId, setSelectedDemoClientId] = useState<string>(
+    'client-demo-wedding'
+  );
+  const [customDummyWishesByClient, setCustomDummyWishesByClient] = useState<
+    Record<string, GuestWish[]>
+  >({});
   const [simSectionToggles, setSimSectionToggles] = useState<{
     cover: boolean;
     quote: boolean;
@@ -1616,6 +1636,84 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
   >('WEDDING');
   const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
+
+  // Sync selectedDemoClientId whenever simEventType changes
+  useEffect(() => {
+    const matched = SHOWCASE_DUMMY_CLIENT_METAS.find(
+      (m) => m.eventType === simEventType
+    );
+    if (matched && matched.id !== selectedDemoClientId) {
+      setSelectedDemoClientId(matched.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simEventType]);
+
+  const handleSelectDummyClient = (dummyClientId: string) => {
+    setSelectedDemoClientId(dummyClientId);
+    const matched = SHOWCASE_DUMMY_CLIENT_METAS.find(
+      (m) => m.id === dummyClientId
+    );
+    if (matched && matched.eventType !== simEventType) {
+      setSimEventType(matched.eventType);
+    }
+  };
+
+  const activeDummyMeta = useMemo(
+    () =>
+      SHOWCASE_DUMMY_CLIENT_METAS.find((m) => m.id === selectedDemoClientId) ||
+      SHOWCASE_DUMMY_CLIENT_METAS.find((m) => m.eventType === simEventType) ||
+      SHOWCASE_DUMMY_CLIENT_METAS[0],
+    [selectedDemoClientId, simEventType]
+  );
+
+  const activeDummyState = useMemo(
+    () => getShowcaseDummyClientState(activeDummyMeta.id, simPackageTier),
+    [activeDummyMeta.id, simPackageTier]
+  );
+
+  const effectiveDummyWishes = useMemo(
+    () => [
+      ...(customDummyWishesByClient[activeDummyMeta.id] || []),
+      ...activeDummyState.wishes,
+    ],
+    [customDummyWishesByClient, activeDummyMeta.id, activeDummyState.wishes]
+  );
+
+  const handleDummyLiveRsvpSubmit = async (payload: {
+    guestName: string;
+    invitationCode?: string;
+    institution?: string;
+    relation?: string;
+    phone?: string;
+    rsvpStatus: RsvpStatus;
+    pax: number;
+    sessionChoice?: WeddingGuest['sessionChoice'];
+    message?: string;
+  }) => {
+    const newWish: GuestWish = {
+      id: `wsh_live_${Date.now()}`,
+      invitationCode: payload.invitationCode || activeDummyMeta.sampleHashToken,
+      guestName: payload.guestName || activeDummyMeta.sampleGuestName,
+      institution: payload.institution || 'Tamu Simulasi Katalog',
+      relation: payload.relation || 'Tamu Kehormatan',
+      rsvpStatus: payload.rsvpStatus,
+      sessionChoice: payload.sessionChoice || 'Semua Sesi',
+      pax: payload.pax || 2,
+      message:
+        payload.message ||
+        `Selamat & sukses untuk acara ${activeDummyMeta.coupleLabel}!`,
+      createdAt: new Date().toISOString(),
+      isPinned: false,
+      replyFromCouple: `Terima kasih banyak ${
+        payload.guestName || activeDummyMeta.sampleGuestName
+      } atas konfirmasi RSVP dan doa terbaiknya!`,
+      moderationStatus: 'APPROVED',
+    };
+    setCustomDummyWishesByClient((prev) => ({
+      ...prev,
+      [activeDummyMeta.id]: [newWish, ...(prev[activeDummyMeta.id] || [])],
+    }));
+  };
   const [simIsOpeningAnim, setSimIsOpeningAnim] = useState<boolean>(false);
   const [simGalleryIdx, setSimGalleryIdx] = useState<number>(0);
   const [simRsvpStatus, setSimRsvpStatus] = useState<'HADIR' | 'BERHALANGAN'>(
@@ -1757,46 +1855,133 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     window.setTimeout(() => setSimWishFeedback(null), 3200);
   };
 
-  // Discreet Private Guest Lookup across ALL client workspaces (never exposes client names publicly)
-  const allSearchableClientGuests = useMemo<
-    Array<{ clientId: string; guest: WeddingGuest }>
+  // Combined Multi-Client Workspaces for 21-Char Hash Token Lookup
+  const allWorkspacesForHashLookup = useMemo<
+    Array<{
+      clientId: string;
+      clientLabel: string;
+      guests: WeddingGuest[];
+    }>
   >(() => {
-    const list: Array<{ clientId: string; guest: WeddingGuest }> = [];
-    const seenKeys = new Set<string>();
-    for (const g of primaryGuests || []) {
-      const k = `client-utama:${g.id || g.invitationCode}`;
-      if (!seenKeys.has(k)) {
-        seenKeys.add(k);
-        list.push({ clientId: 'client-utama', guest: g });
-      }
-    }
+    const workspaces: Array<{
+      clientId: string;
+      clientLabel: string;
+      guests: WeddingGuest[];
+    }> = [];
+    const seenClientIds = new Set<string>();
+
+    // 1. Primary Client ('client-utama')
+    const primaryLabel = `${primarySettings.groomNickname || 'Agung'} & ${
+      primarySettings.brideNickname || 'Selo'
+    } (Client Utama)`;
+    workspaces.push({
+      clientId: 'client-utama',
+      clientLabel: primaryLabel,
+      guests: primaryGuests || [],
+    });
+    seenClientIds.add('client-utama');
+
+    // 2. All configured clientWorkspaces
     if (clientWorkspaces) {
       for (const [cid, ws] of Object.entries(clientWorkspaces)) {
-        for (const g of ws?.guests || []) {
-          const k = `${cid}:${g.id || g.invitationCode}`;
-          if (!seenKeys.has(k)) {
-            seenKeys.add(k);
-            list.push({ clientId: cid, guest: g });
-          }
+        if (seenClientIds.has(cid)) continue;
+        seenClientIds.add(cid);
+        const grp = clientGroups.find((g) => g.id === cid);
+        const label =
+          grp?.coupleLabel ||
+          grp?.clientName ||
+          (ws?.settings?.groomNickname
+            ? `${ws.settings.groomNickname}${
+                ws.settings.brideNickname && ws.settings.brideNickname !== '-'
+                  ? ` & ${ws.settings.brideNickname}`
+                  : ''
+              }`
+            : cid);
+        workspaces.push({
+          clientId: cid,
+          clientLabel: label,
+          guests: ws?.guests || [],
+        });
+      }
+    }
+
+    // 3. All 5 Separated Showcase Dummy Clients
+    for (const meta of SHOWCASE_DUMMY_CLIENT_METAS) {
+      if (seenClientIds.has(meta.id)) continue;
+      seenClientIds.add(meta.id);
+      const dummyState = getShowcaseDummyClientState(meta.id, simPackageTier);
+      workspaces.push({
+        clientId: meta.id,
+        clientLabel: `${meta.coupleLabel} (${meta.badgeId})`,
+        guests: dummyState.guests || [],
+      });
+    }
+
+    return workspaces;
+  }, [
+    primarySettings.groomNickname,
+    primarySettings.brideNickname,
+    primaryGuests,
+    clientWorkspaces,
+    clientGroups,
+    simPackageTier,
+  ]);
+
+  // Flatten all searchable guests with their deterministic 21-char Hash Token
+  const allSearchableClientGuests = useMemo<
+    Array<{
+      clientId: string;
+      clientLabel: string;
+      guest: WeddingGuest;
+      hashToken: string;
+    }>
+  >(() => {
+    const list: Array<{
+      clientId: string;
+      clientLabel: string;
+      guest: WeddingGuest;
+      hashToken: string;
+    }> = [];
+    const seenKeys = new Set<string>();
+
+    for (const ws of allWorkspacesForHashLookup) {
+      for (const g of ws.guests || []) {
+        const hashToken = computeGuestInvitationHash(ws.clientId, g);
+        const k = `${ws.clientId}:${hashToken}:${g.id || g.invitationCode}`;
+        if (!seenKeys.has(k)) {
+          seenKeys.add(k);
+          list.push({
+            clientId: ws.clientId,
+            clientLabel: ws.clientLabel,
+            guest: g,
+            hashToken,
+          });
         }
       }
     }
     return list;
-  }, [primaryGuests, clientWorkspaces]);
+  }, [allWorkspacesForHashLookup]);
 
   const filteredLookupGuests = useMemo<
-    Array<{ clientId: string; guest: WeddingGuest }>
+    Array<{
+      clientId: string;
+      clientLabel: string;
+      guest: WeddingGuest;
+      hashToken: string;
+    }>
   >(() => {
     const q = guestCodeInput.trim().toLowerCase();
-    if (q.length < 3) {
+    if (q.length < 2) {
       return [];
     }
     return allSearchableClientGuests
       .filter(
-        ({ guest: g }) =>
+        ({ guest: g, hashToken, clientLabel }) =>
+          hashToken.toLowerCase().includes(q) ||
           g.guestName.toLowerCase().includes(q) ||
           g.invitationCode.toLowerCase().includes(q) ||
-          (g.institution || '').toLowerCase().includes(q)
+          (g.institution || '').toLowerCase().includes(q) ||
+          clientLabel.toLowerCase().includes(q)
       )
       .slice(0, 6);
   }, [allSearchableClientGuests, guestCodeInput]);
@@ -3884,29 +4069,48 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       }
       setLookupGateError(
         lang === 'ID'
-          ? 'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu yang terdaftar untuk membuka undangan privat.'
-          : 'Enter a registered Invitation Code (e.g., INV-0001) or Guest Name to open this private invitation.'
+          ? 'Masukkan Kode Hash Undangan 21 Karakter (contoh: JHi4b3XgT2RQIDhZ9coLw) atau Nama Tamu Terdaftar untuk membuka undangan klien.'
+          : 'Enter a 21-Char Invitation Hash Token (e.g., JHi4b3XgT2RQIDhZ9coLw) or Registered Guest Name to open the client invitation.'
       );
       return;
     }
+
+    // 1. Primary Multi-Client 21-Char Hash Token Resolution across ALL Workspaces + Dummy Clients
+    const hashResolved = resolveGuestByHashTokenAcrossWorkspaces(
+      trimmed,
+      allWorkspacesForHashLookup
+    );
+    if (hashResolved) {
+      setLookupGateError(null);
+      onSelectClientInvitation(
+        hashResolved.clientId,
+        hashResolved.guest.guestName,
+        hashResolved.hashToken
+      );
+      return;
+    }
+
+    // 2. Fallback: Match by exact/partial hashToken, invitationCode, or guestName across searchable guests
     const lower = trimmed.toLowerCase();
     const matchedItem =
       allSearchableClientGuests.find(
-        ({ guest: g }) =>
-          g.invitationCode.toLowerCase() === lower ||
-          g.guestName.toLowerCase() === lower
+        (item) =>
+          item.hashToken.toLowerCase() === lower ||
+          item.guest.invitationCode.toLowerCase() === lower ||
+          item.guest.guestName.toLowerCase() === lower
       ) ||
       allSearchableClientGuests.find(
-        ({ guest: g }) =>
-          g.guestName.toLowerCase().includes(lower) ||
-          g.invitationCode.toLowerCase().includes(lower)
+        (item) =>
+          item.hashToken.toLowerCase().includes(lower) ||
+          item.guest.guestName.toLowerCase().includes(lower) ||
+          item.guest.invitationCode.toLowerCase().includes(lower)
       );
     if (matchedItem) {
       setLookupGateError(null);
       onSelectClientInvitation(
         matchedItem.clientId,
         matchedItem.guest.guestName,
-        matchedItem.guest.invitationCode
+        matchedItem.hashToken
       );
       return;
     }
@@ -3917,15 +4121,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     }
     setLookupGateError(
       lang === 'ID'
-        ? 'Masukkan Kode Undangan (contoh: INV-0001) atau Nama Tamu yang terdaftar untuk membuka undangan privat.'
-        : 'Enter a registered Invitation Code (e.g., INV-0001) or Guest Name to open this private invitation.'
+        ? 'Kode Hash tidak ditemukan. Gunakan Kode Hash 21 karakter (contoh: JHi4b3XgT2RQIDhZ9coLw) atau klik salah satu Chip Uji Hash di bawah.'
+        : 'Hash Token not found. Enter a valid 21-character Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw) or click a Sample Hash Chip below.'
     );
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#FAF8F5] text-stone-800 flex flex-col justify-between selection:bg-[#D4AF37]/30">
-      {/* TOP FIXED NAVBAR (Clean Brand Subtitle, Concise Links, Clean Language Pill & Manager Button) */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#D4AF37]/30 shadow-2xs">
+    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#090B14] text-slate-100 flex flex-col justify-between selection:bg-indigo-500/30">
+      {/* TOP FIXED NAVBAR — OFFICIAL MEPlan SaaS PLATFORM BRAND IDENTITY (MIDNIGHT NAVY & INDIGO) */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-[#090B14]/95 backdrop-blur-xl border-b border-indigo-500/30 shadow-[0_8px_32px_rgba(9,11,20,0.75)]">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -3933,7 +4137,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
               className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-              title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
+              title="MEPlan — My Event Planner SaaS Platform (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
             >
               <WeddingRingsIcon
                 className="w-8 h-8 sm:w-10 sm:h-10"
@@ -3945,29 +4149,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
-                  title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
-                  className="font-serif font-extrabold text-sm sm:text-lg lg:text-xl text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
+                  title="MEPlan — My Event Planner SaaS Platform"
+                  className="font-sans font-extrabold text-sm sm:text-lg lg:text-xl text-white truncate leading-tight text-left hover:text-[#00F0FF] transition-colors"
                 >
-                  <span className="sm:hidden font-sans font-extrabold tracking-tight text-stone-900">
-                    ME<span className="font-semibold text-indigo-950">Plan</span>
+                  <span className="sm:hidden font-sans font-extrabold tracking-tight text-white">
+                    ME
+                    <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
+                      Plan
+                    </span>
                   </span>
                   <span className="hidden sm:inline-flex items-baseline gap-2">
-                    <span className="font-sans font-extrabold tracking-tight text-stone-900">
-                      ME<span className="font-semibold text-indigo-950">Plan</span>
+                    <span className="font-sans font-extrabold tracking-tight text-white">
+                      ME
+                      <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
+                        Plan
+                      </span>
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8B6914]">
-                      My Event Planner
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#00F0FF]">
+                      SaaS Event Platform
                     </span>
                   </span>
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs font-bold text-[#8B6914] leading-tight truncate">
+              <p className="text-[10px] sm:text-xs font-bold text-indigo-300/90 leading-tight truncate">
                 by{' '}
                 <a
                   href={developerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:underline"
+                  className="text-[#00F0FF] hover:underline"
                   title="GitHub Profile @omeko42"
                 >
                   omeko42
@@ -3983,14 +4193,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Lihat Katalog Interaktif Undangan & 5 Modul Manager'
-                  : 'Explore Interactive Invitation & 5 Manager Modules Showcase'
+                  ? 'Lihat Katalog InteraktifReal Undangan & Demo Manager'
+                  : 'Explore Real Interactive Invitation & Demo Manager Showcase'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Eye className="w-4 h-4 text-[#B68D40] shrink-0" />
+              <Eye className="w-4 h-4 text-[#00F0FF] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Katalog' : 'Showcase'}
+                {lang === 'ID' ? 'Katalog Live' : 'Live Catalog'}
               </span>
             </a>
 
@@ -4002,11 +4212,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Fitur & 6 Modul Manajemen Persiapan Multi-Acara'
                   : 'Features & 6 Multi-Event Readiness Modules'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <LayoutDashboard className="w-4 h-4 text-[#B68D40] shrink-0" />
+              <LayoutDashboard className="w-4 h-4 text-[#8B5CF6] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Fitur' : 'Features'}
+                {lang === 'ID' ? 'Fitur SaaS' : 'SaaS Features'}
               </span>
             </a>
 
@@ -4018,18 +4228,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Paket Lisensi Komersial (STARTER, EXCLUSIVE & ROYAL VIP)'
                   : 'Commercial License Packages (STARTER, EXCLUSIVE & ROYAL VIP)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
+              <Award className="w-4 h-4 text-[#D4AF37] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Paket' : 'Pricing'}
+                {lang === 'ID' ? 'Paket Lisensi' : 'Pricing'}
               </span>
             </a>
           </nav>
 
-          {/* Right Action Buttons — Language Switcher + Concise Manager Button */}
+          {/* Right Action Buttons — Language Switcher + Demo Manager + Login Manager */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Bilingual Language Switcher (No broken Windows flag emoji) */}
+            {/* Bilingual Language Switcher */}
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
@@ -4038,11 +4248,31 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Ganti Bahasa ke Bahasa Inggris (EN)'
                   : 'Switch Language to Indonesian (ID)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#111528] hover:bg-indigo-950/80 border border-indigo-500/35 text-slate-100 hover:text-[#00F0FF] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Globe className="w-4 h-4 text-[#B68D40] shrink-0" />
+              <Globe className="w-4 h-4 text-[#00F0FF] shrink-0" />
               <span>{lang}</span>
             </button>
+
+            {onOpenDemoManager && (
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenDemoManager(activeDummyMeta.id, simPackageTier)
+                }
+                title={
+                  lang === 'ID'
+                    ? `Buka Demo Manager Asli dengan Tema ${activeDummyMeta.themeLabel}`
+                    : `Open Real Demo Manager with ${activeDummyMeta.themeLabel} Theme`
+                }
+                className="hidden sm:inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/45 text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {lang === 'ID' ? 'Demo Manager' : 'Demo Manager'}
+                </span>
+              </button>
+            )}
 
             {/* Concise Manager Portal Button */}
             <button
@@ -4057,7 +4287,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? 'Masuk ke Portal Manager (Klien, EO/WO & Superadmin)'
                     : 'Login to Manager Portal (Client, EO/WO & Superadmin)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
             >
               {isAdminLoggedIn ? (
                 <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -5211,199 +5441,180 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         ) : (
           /* MAIN LANDING PAGE VIEW (COMPACT HERO + 1:1 SHOWCASE + FITUR + 3 PRICING CARDS) */
           <>
-            {/* STREAMLINED HERO SECTION + SLEEK 1-LINE PRIVATE GUEST GATE BAR */}
-            <section className="relative overflow-hidden py-6 sm:py-8 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/55 to-[#FAF8F5]">
-              {/* Luxury Editorial Corner Ornaments on Hero */}
-              <CatalogFloralCorner
-                position="top-left"
-                size="md"
-                className="opacity-75"
+            {/* ================================================================= */}
+            {/* OFFICIAL MEPlan SaaS HERO + MULTI-CLIENT 21-CHAR HASH TOKEN GATE  */}
+            {/* ================================================================= */}
+            <section className="relative overflow-hidden py-8 sm:py-12 border-b border-indigo-500/30 bg-gradient-to-b from-[#090B14] via-[#111528] to-[#090B14]">
+              {/* Subtle SaaS Ambient Radial Glows (Distinct from Wedding Ornaments) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#6366F1]/20 blur-3xl"
               />
-              <CatalogFloralCorner
-                position="top-right"
-                size="md"
-                className="opacity-75"
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-24 right-1/4 w-96 h-96 rounded-full bg-[#EC4899]/15 blur-3xl"
               />
 
-              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
                 <div
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
-                  title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko42"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111528]/95 border border-indigo-500/40 shadow-[0_0_24px_rgba(99,102,241,0.25)] text-[#00F0FF] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  title="MEPlan — Official Multi-Client SaaS Event & Digital Invitation Platform by omeko42"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                   <span className="whitespace-nowrap truncate">
-                    My Event Planner (Multi-Event Suite) by{' '}
+                    MEPlan SaaS Platform (Multi-Client Event Suite) by{' '}
                     <a
                       href={developerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline decoration-[#D4AF37]/60 underline-offset-2 hover:text-[#B68D40]"
+                      className="text-white underline decoration-[#00F0FF]/70 underline-offset-2 hover:text-[#00F0FF]"
                     >
                       omeko42
                     </a>
                   </span>
                 </div>
 
-                <h2 className="font-editorial text-2xl sm:text-4xl lg:text-[44px] font-bold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.14]">
+                <h2 className="font-sans text-2xl sm:text-4xl lg:text-[46px] font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-[1.14]">
                   {lang === 'ID' ? (
                     <>
-                      Platform Manajemen Persiapan Acara &amp;{' '}
-                      <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
-                        Undangan Digital Editorial Mewah
+                      Platform SaaS Manajemen Multi-Acara &amp;{' '}
+                      <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
+                        Ekosistem Undangan Digital Multi-Client
                       </span>
                     </>
                   ) : (
                     <>
-                      All-in-One Multi-Event Readiness &amp;{' '}
-                      <span className="bg-gradient-to-r from-[#8B6914] via-[#B68D40] to-[#8B6914] bg-clip-text text-transparent">
-                        Luxury Editorial Digital Invitations
+                      Multi-Client SaaS Event Planner &amp;{' '}
+                      <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
+                        Digital Invitation Cloud Ecosystem
                       </span>
                     </>
                   )}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-stone-600 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xs sm:text-sm text-indigo-200/85 max-w-3xl mx-auto leading-relaxed">
                   {lang === 'ID' ? (
                     <>
-                      Satu sistem terpadu untuk{' '}
-                      <strong>Readiness Tracker</strong>,{' '}
-                      <strong>Checklist Timeline</strong>,{' '}
-                      <strong>Pagu Moneter &amp; Kontrak Vendor</strong>,{' '}
-                      <strong>CRM Tamu VIP &amp; Blast WhatsApp</strong>, serta{' '}
-                      <strong>
-                        Studio Undangan Digital Editorial (5 Jenis Event)
+                      Arsitektur 3-Permukaan Terpisah:{' '}
+                      <strong className="text-[#00F0FF]">
+                        1. Website Katalog SaaS (MEPlan)
+                      </strong>
+                      ,{' '}
+                      <strong className="text-[#EC4899]">
+                        2. Manager / Planner Berbasis Tema Undangan Klien
+                      </strong>
+                      , dan{' '}
+                      <strong className="text-[#D4AF37]">
+                        3. Undangan Tamu Real (&lt;PublicInvitationView /&gt;)
                       </strong>{' '}
-                      dengan privasi penuh.
+                      dengan routing{' '}
+                      <strong className="text-white">
+                        Kode Hash 21 Karakter
+                      </strong>{' '}
+                      lintas klien.
                     </>
                   ) : (
                     <>
-                      One unified suite for{' '}
-                      <strong>Readiness Tracking</strong>,{' '}
-                      <strong>Phased Checklists</strong>,{' '}
-                      <strong>Vendor Contracts</strong>,{' '}
-                      <strong>1-Click VIP WhatsApp Invitations</strong>, and{' '}
-                      <strong>
-                        Luxury Editorial Digital Invitations (5 Event Types)
+                      Distinct 3-Surface Architecture:{' '}
+                      <strong className="text-[#00F0FF]">
+                        1. MEPlan SaaS Catalog
+                      </strong>
+                      ,{' '}
+                      <strong className="text-[#EC4899]">
+                        2. Theme-Adaptive Client Manager / Planner
+                      </strong>
+                      , and{' '}
+                      <strong className="text-[#D4AF37]">
+                        3. Real Guest Invitations (&lt;PublicInvitationView /&gt;)
                       </strong>{' '}
-                      with 100% client privacy.
+                      powered by{' '}
+                      <strong className="text-white">
+                        21-Char Multi-Client Hash Tokens
+                      </strong>
+                      .
                     </>
                   )}
                 </p>
 
-                {/* Supported Multi-Event Category Pills + Quick CTAs */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5 max-w-4xl mx-auto">
-                  {(
-                    [
-                      {
-                        eventType: 'WEDDING' as const,
-                        label: '💍 Wedding',
-                        title:
-                          lang === 'ID'
-                            ? 'Klik untuk Simulasi Undangan Pernikahan (2 Profil Arch-Dome & Ornamen Floral)'
-                            : 'Click to preview Wedding Invitation Simulation (2 Arch-Dome Profiles & Floral Ornaments)',
-                      },
-                      {
-                        eventType: 'BIRTHDAY' as const,
-                        label: '🎂 Birthday',
-                        title:
-                          lang === 'ID'
-                            ? 'Klik untuk Simulasi Undangan Ulang Tahun / Sweet 17th (1 Profil Spotlight)'
-                            : 'Click to preview Birthday / Sweet 17th Simulation (1 Spotlight Profile)',
-                      },
-                      {
-                        eventType: 'GRADUATION' as const,
-                        label: '🎓 Graduation',
-                        title:
-                          lang === 'ID'
-                            ? 'Klik untuk Simulasi Undangan Wisuda & Syukuran Akademik'
-                            : 'Click to preview Graduation & Academic Celebration Simulation',
-                      },
-                      {
-                        eventType: 'MEETING' as const,
-                        label: '🏛️ Rapat / Corporate',
-                        title:
-                          lang === 'ID'
-                            ? 'Klik untuk Simulasi Undangan Rapat Resmi & Forum Eksekutif'
-                            : 'Click to preview Official Corporate & Executive Meeting Simulation',
-                      },
-                      {
-                        eventType: 'GALA_DINNER' as const,
-                        label: '🥂 Gala Dinner',
-                        title:
-                          lang === 'ID'
-                            ? 'Klik untuk Simulasi Undangan VIP Gala Dinner & Award Night'
-                            : 'Click to preview VIP Gala Dinner & Award Night Simulation',
-                      },
-                    ] as const
-                  ).map((pill) => {
+                {/* 5 Separated Dummy Client Quick Pills + Real Demo Manager CTA */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5 max-w-5xl mx-auto">
+                  {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
                     const isCurrentSim =
                       showcaseViewMode === 'invitation_sim' &&
-                      simEventType === pill.eventType;
+                      activeDummyMeta.id === meta.id;
                     return (
                       <button
-                        key={pill.label}
+                        key={meta.id}
                         type="button"
                         onClick={() => {
-                          setSimEventType(pill.eventType);
+                          handleSelectDummyClient(meta.id);
                           setShowcaseViewMode('invitation_sim');
                           scrollToShowcase();
                         }}
-                        title={pill.title}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-full border text-[11px] font-extrabold shadow-2xs whitespace-nowrap transition-all ${
+                        title={`${
+                          lang === 'ID' ? meta.labelId : meta.labelEn
+                        } • Tema: ${meta.themeLabel} • Hash: ${
+                          meta.sampleHashToken
+                        }`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all ${
                           isCurrentSim
-                            ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/30'
-                            : 'bg-white/95 hover:bg-[#FAF3E3] border-[#D4AF37]/45 text-stone-800 hover:text-[#8B6914]'
+                            ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF] shadow-[0_0_16px_rgba(99,102,241,0.5)]'
+                            : 'bg-[#111528]/90 hover:bg-indigo-950/90 border-indigo-500/35 text-indigo-100 hover:text-[#00F0FF]'
                         }`}
                       >
-                        {pill.label}
+                        <span>
+                          {lang === 'ID' ? meta.labelId : meta.labelEn}
+                        </span>
                       </button>
                     );
                   })}
                   <button
                     type="button"
                     onClick={() => {
-                      setShowcaseViewMode('dashboard_modules');
-                      scrollToShowcase();
+                      if (onOpenDemoManager) {
+                        onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                      } else {
+                        setShowcaseViewMode('dashboard_modules');
+                        scrollToShowcase();
+                      }
                     }}
                     title={
                       lang === 'ID'
-                        ? 'Buka Simulasi 5 Modul Manager Dashboard (Tracker, Checklist, Moneter, Tamu, Studio)'
-                        : 'Open 5 Manager Dashboard Modules Simulation'
+                        ? `Buka Demo Manager Asli dengan Tema ${activeDummyMeta.themeLabel}`
+                        : `Open Real Demo Manager with ${activeDummyMeta.themeLabel} Theme`
                     }
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-extrabold shadow-2xs whitespace-nowrap transition-all ${
-                      showcaseViewMode === 'dashboard_modules'
-                        ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
-                        : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] border-[#D4AF37]/50 text-[#8B6914]'
-                    }`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#EC4899]/55 bg-[#EC4899]/15 hover:bg-[#EC4899]/25 text-[#EC4899] hover:text-white text-[11px] font-extrabold whitespace-nowrap transition-all"
                   >
                     <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
                     <span>
                       {lang === 'ID'
-                        ? 'Simulasi Manager'
-                        : 'Manager Sim'}
+                        ? `🎨 Demo Manager (${activeDummyMeta.themeLabel})`
+                        : `🎨 Demo Manager (${activeDummyMeta.themeLabel})`}
                     </span>
                   </button>
                 </div>
 
-                {/* SLEEK 1-LINE PRIVATE GUEST GATE BAR (100% Discreet — Zero Public Client Dropdown) */}
-                <div className="relative max-w-3xl mx-auto pt-1">
+                {/* ================================================================= */}
+                {/* MULTI-CLIENT 21-CHAR HASH TOKEN GATE + QUICK SAMPLE HASH CHIPS    */}
+                {/* ================================================================= */}
+                <div className="relative max-w-4xl mx-auto pt-2 space-y-2.5">
                   <form
                     onSubmit={handleQuickLookupSubmit}
-                    className="p-2 sm:px-3.5 sm:py-2 rounded-2xl bg-white/95 border border-[#D4AF37]/50 shadow-[0_8px_28px_rgba(182,141,64,0.12)] flex flex-col sm:flex-row sm:items-center gap-2 text-left"
+                    className="p-2.5 sm:px-4 sm:py-2.5 rounded-2xl bg-[#111528]/95 border-2 border-indigo-500/45 shadow-[0_12px_36px_rgba(0,0,0,0.55)] flex flex-col sm:flex-row sm:items-center gap-2.5 text-left"
                   >
                     <div
-                      className="flex items-center gap-1.5 px-1.5 shrink-0"
+                      className="flex items-center gap-2 px-1.5 shrink-0"
                       title={
                         lang === 'ID'
-                          ? 'Undangan klien bersifat 100% privat dan tidak dipajang di publik. Ketik Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar untuk membuka undangan.'
-                          : 'Client invitations are 100% private. Enter your Invitation Code (INV-xxxx) or Registered Guest Name to open.'
+                          ? 'Setiap tamu di setiap klien memiliki Kode Hash 21 karakter unik (contoh: JHi4b3XgT2RQIDhZ9coLw untuk Fiorencia di Client Demo Wedding).'
+                          : 'Every guest across all clients has a unique 21-char Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw for Fiorencia).'
                       }
                     >
-                      <Lock className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                      <span className="text-[11px] font-extrabold text-stone-800 whitespace-nowrap">
+                      <Search className="w-4 h-4 text-[#00F0FF] shrink-0" />
+                      <span className="text-[11px] font-extrabold text-white whitespace-nowrap">
                         {lang === 'ID'
-                          ? 'Punya Kode Undangan Tamu VIP?'
-                          : 'Have a VIP Guest Code?'}
+                          ? 'Akses Tamu (Multi-Client Hash Gate):'
+                          : 'Guest Hash Token Gate:'}
                       </span>
                     </div>
 
@@ -5415,7 +5626,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         onBlur={() =>
                           window.setTimeout(
                             () => setShowLookupSuggestions(false),
-                            180
+                            200
                           )
                         }
                         onChange={(e) => {
@@ -5425,54 +5636,55 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         }}
                         placeholder={
                           lang === 'ID'
-                            ? 'Ketik Kode INV-xxxx / Nama Terdaftar (min. 3 huruf)...'
-                            : 'Type INV-xxxx Code / Registered Name (min. 3 chars)...'
+                            ? 'Masukkan Kode Hash Undangan (contoh: JHi4b3XgT2RQIDhZ9coLw)...'
+                            : 'Enter Invitation Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw)...'
                         }
-                        className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                        className="w-full px-3.5 py-2 rounded-xl border border-indigo-500/40 bg-[#090B14] text-xs font-mono font-semibold text-white placeholder:text-slate-400 focus:border-[#00F0FF] focus:outline-none"
                       />
                       {showLookupSuggestions &&
                         filteredLookupGuests.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-white border border-[#D4AF37]/45 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
-                            <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
+                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-[#111528] border border-indigo-500/50 shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                            <div className="px-3.5 py-2 bg-[#090B14] border-b border-indigo-500/30 text-[10px] font-extrabold text-[#00F0FF] flex items-center justify-between">
                               <span>
                                 {lang === 'ID'
-                                  ? 'Tamu Terdaftar Cocok'
-                                  : 'Matching Registered Guest'}
+                                  ? 'Tamu & Workspace Klien Cocok (Multi-Client Hash)'
+                                  : 'Matching Multi-Client Guest & Hash Token'}
                               </span>
                               <span>
                                 {lang === 'ID'
-                                  ? 'Klik untuk Buka'
-                                  : 'Click to Open'}
+                                  ? 'Klik untuk Buka Undangan'
+                                  : 'Click to Open Invite'}
                               </span>
                             </div>
                             {filteredLookupGuests.map((item) => (
                               <button
-                                key={`${item.clientId}-${item.guest.id}`}
+                                key={`${item.clientId}-${item.hashToken}-${item.guest.id}`}
                                 type="button"
                                 onMouseDown={(e) => {
                                   e.preventDefault();
-                                  setGuestCodeInput(item.guest.guestName);
+                                  setGuestCodeInput(item.hashToken);
                                   setLookupGateError(null);
                                   setShowLookupSuggestions(false);
                                   onSelectClientInvitation(
                                     item.clientId,
                                     item.guest.guestName,
-                                    item.guest.invitationCode
+                                    item.hashToken
                                   );
                                 }}
-                                className="w-full text-left px-3 py-2 hover:bg-[#FAF3E3]/60 border-b border-stone-100 last:border-b-0 transition-colors flex items-center justify-between gap-2"
+                                className="w-full text-left px-3.5 py-2.5 hover:bg-indigo-950/80 border-b border-indigo-500/20 last:border-b-0 transition-colors flex items-center justify-between gap-2"
                               >
                                 <div className="min-w-0">
-                                  <p className="text-xs font-bold text-stone-900 truncate">
+                                  <p className="text-xs font-extrabold text-white truncate">
                                     {item.guest.guestName}
                                   </p>
-                                  <p className="text-[10px] text-stone-500 truncate">
+                                  <p className="text-[10px] text-indigo-300 truncate">
+                                    {item.clientLabel} &bull;{' '}
                                     {item.guest.institution ||
                                       item.guest.guestType}
                                   </p>
                                 </div>
-                                <span className="shrink-0 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] font-mono text-[10px] font-bold">
-                                  {item.guest.invitationCode}
+                                <span className="shrink-0 px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
+                                  {item.hashToken}
                                 </span>
                               </button>
                             ))}
@@ -5484,18 +5696,56 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       type="submit"
                       title={
                         lang === 'ID'
-                          ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
-                          : 'Verify Guest Code & Open Private Invitation'
+                          ? 'Resolusi Kode Hash 21 Karakter & Buka Undangan Klien Terkait'
+                          : 'Resolve 21-Char Hash Token & Open Target Client Invitation'
                       }
-                      className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap shrink-0"
+                      className="py-2 px-4 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white font-extrabold text-xs shadow-[0_6px_20px_rgba(99,102,241,0.4)] transition-all whitespace-nowrap shrink-0"
                     >
                       {lang === 'ID' ? 'Buka Undangan' : 'Open Invite'}
                     </button>
                   </form>
 
+                  {/* Quick Sample Hash Chips for 1-Click Multi-Client Hash Routing Test */}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300">
+                      {lang === 'ID'
+                        ? 'Uji Cepat Kode Hash Multi-Client:'
+                        : 'Quick Multi-Client Hash Test:'}
+                    </span>
+                    {SHOWCASE_DUMMY_CLIENT_METAS.map((meta, idx) => (
+                      <button
+                        key={meta.sampleHashToken}
+                        type="button"
+                        onClick={() => {
+                          setGuestCodeInput(meta.sampleHashToken);
+                          setLookupGateError(null);
+                          onSelectClientInvitation(
+                            meta.id,
+                            meta.sampleGuestName,
+                            meta.sampleHashToken
+                          );
+                        }}
+                        title={`Klik untuk membuka undangan ${meta.coupleLabel} (${meta.id}) atas nama tamu ${meta.sampleGuestName} dengan Hash ${meta.sampleHashToken}`}
+                        className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-extrabold border transition-all inline-flex items-center gap-1.5 ${
+                          idx === 0
+                            ? 'bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 text-[#00F0FF] border-[#00F0FF]/50 shadow-2xs'
+                            : 'bg-[#111528] hover:bg-indigo-950/90 text-indigo-200 hover:text-white border-indigo-500/35'
+                        }`}
+                      >
+                        <span>
+                          {idx === 0
+                            ? `🔑 Uji Hash: ${meta.sampleHashToken} (Fiorencia • Client Demo Wedding)`
+                            : `🔑 ${meta.sampleHashToken.slice(0, 8)}… (${
+                                meta.sampleGuestName.split(' ')[0]
+                              } • ${meta.eventType})`}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
                   {lookupGateError && (
-                    <div className="mt-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center justify-center gap-2">
-                      <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <div className="mt-1.5 px-3.5 py-2 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-[11px] font-semibold flex items-center justify-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                       <span>{lookupGateError}</span>
                     </div>
                   )}
@@ -5503,92 +5753,167 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
             </section>
 
-            {/* SECTION 1: DUAL-EXPERIENCE INTERACTIVE SHOWCASE (1:1 INVITATION SIMULATOR + 1:1 MANAGER WORKSPACE) */}
+            {/* ================================================================= */}
+            {/* SECTION 1: REAL <PublicInvitationView /> & SEPARATED DUMMY CLIENTS */}
+            {/* ================================================================= */}
             <section
               id="showcase"
-              className="py-10 sm:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5"
+              className="py-10 sm:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
             >
-              {/* Section Header + Privacy Note Pill + 2-Tab Mode Switcher */}
+              {/* 3-SURFACE ARCHITECTURE EXPLANATION BANNER */}
+              <div className="rounded-3xl bg-[#111528] border border-indigo-500/35 p-4 sm:p-5 shadow-[0_16px_48px_rgba(0,0,0,0.45)] space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] text-[10px] font-extrabold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Arsitektur 3-Permukaan Berbeda (Katalog SaaS ≠ Manager Tema ≠ Undangan Tamu)'
+                        : '3-Surface Distinct Architecture (SaaS Catalog ≠ Themed Manager ≠ Guest Invitation)'}
+                    </span>
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-indigo-300">
+                    Dummy Client Aktif: {activeDummyMeta.id} (
+                    {activeDummyMeta.sampleHashToken})
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Surface 1 */}
+                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-indigo-500/30 space-y-1">
+                    <p className="text-xs font-extrabold text-[#00F0FF]">
+                      1. 🌐 Website Katalog (MEPlan SaaS Branding)
+                    </p>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {lang === 'ID'
+                        ? 'Halaman ini menonjolkan identitas platform SaaS MEPlan (Midnight Navy & Indigo) beserta gerbang Kode Hash 21 karakter multi-client.'
+                        : 'This surface highlights the official MEPlan SaaS brand identity (Midnight Navy & Indigo) and the 21-char multi-client hash gate.'}
+                    </p>
+                  </div>
+
+                  {/* Surface 2 */}
+                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-[#EC4899]/35 space-y-1.5 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <p className="text-xs font-extrabold text-[#EC4899]">
+                        2. 🎨 Manager / Planner (Menonjolkan Tema Invitation)
+                      </p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {lang === 'ID'
+                          ? `Dashboard Manager (<AdminDashboardView /> asli) otomatis beradaptasi dengan palet tema undangan klien (${activeDummyMeta.themeLabel}).`
+                          : `The real <AdminDashboardView /> dynamically adapts to the client's invitation theme palette (${activeDummyMeta.themeLabel}).`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenDemoManager) {
+                          onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                        } else {
+                          onOpenAdminPortal();
+                        }
+                      }}
+                      className="self-start px-3 py-1 rounded-lg bg-[#EC4899]/20 hover:bg-[#EC4899]/30 border border-[#EC4899]/50 text-[#EC4899] hover:text-white text-[10px] font-extrabold transition-all"
+                    >
+                      {lang === 'ID'
+                        ? `Buka Demo Manager Asli (${activeDummyMeta.themeLabel}) →`
+                        : `Open Real Demo Manager (${activeDummyMeta.themeLabel}) →`}
+                    </button>
+                  </div>
+
+                  {/* Surface 3 */}
+                  <div className="p-3.5 rounded-2xl bg-[#090B14]/90 border border-[#D4AF37]/40 space-y-1.5 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <p className="text-xs font-extrabold text-[#D4AF37]">
+                        3. 💌 Undangan Tamu (Real &lt;PublicInvitationView /&gt;)
+                      </p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Ditampilkan secara REAL (komponen undangan asli, bukan gambar mockup) dari 5 Dummy Client terpisah & tersinkron dengan pilihan paket.'
+                          : 'Rendered using the REAL <PublicInvitationView /> component from 5 separated dummy clients synced live with package tiers.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectClientInvitation(
+                          activeDummyMeta.id,
+                          activeDummyMeta.sampleGuestName,
+                          activeDummyMeta.sampleHashToken
+                        )
+                      }
+                      className="self-start px-3 py-1 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/50 text-[#D4AF37] hover:text-white text-[10px] font-extrabold transition-all"
+                    >
+                      {lang === 'ID'
+                        ? `Buka Undangan Layar Penuh (${activeDummyMeta.sampleGuestName}) →`
+                        : `Open Fullscreen Invite (${activeDummyMeta.sampleGuestName}) →`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Header + 2-Tab Mode Switcher */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                      Official 1:1 Interactive Tour &bull; 100% Privacy-Safe
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      Real Existing Invitation Component &bull; 5 Separated Dummy Clients
                     </span>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
-                      <span
-                        title={
-                          lang === 'ID'
-                            ? 'Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio'
-                            : 'Active client invitations and custom music are private to protect event privacy and audio copyright'
-                        }
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold whitespace-nowrap truncate max-w-full"
-                      >
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111528] border border-indigo-500/40 text-indigo-200 text-[10px] font-extrabold whitespace-nowrap truncate max-w-full">
                         {lang === 'ID'
-                          ? 'Privasi Klien Terlindungi'
-                          : 'Client Privacy Protected'}
+                          ? 'Data Klien Asli Terisolasi Penuh'
+                          : 'Real Client Data 100% Isolated'}
                       </span>
                       <InfoTooltip
                         text={
                           lang === 'ID'
-                            ? 'Simulasi di bawah menggunakan antarmuka asli 1:1 aplikasi (Undangan Publik & Manager Dashboard) dengan data sampel fiktif resmi.'
-                            : 'The simulation below uses the exact 1:1 application interface (Public Invitation & Manager Dashboard) with official fictional sample data.'
+                            ? 'Katalog ini merender komponen <PublicInvitationView /> asli menggunakan 5 workspace Dummy Client terpisah (Rayhan & Clarissa, Aurelia, Dr. Bagaskara, Nusantara Global, Wijaya Kusuma).'
+                            : 'This catalog renders the real <PublicInvitationView /> component using 5 isolated Dummy Client workspaces.'
                         }
                       />
                     </span>
                   </div>
-                  <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                  <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white">
                     {lang === 'ID'
-                      ? 'Katalog Interaktif 1:1 — Undangan Editorial & Manager'
-                      : '1:1 Interactive Showcase — Editorial Invitation & Manager'}
+                      ? 'Katalog Live — Real Undangan Tamu & Demo Manager'
+                      : 'Live Showcase — Real Guest Invitation & Demo Manager'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-stone-600 max-w-3xl leading-relaxed">
+                  <p className="text-xs sm:text-sm text-indigo-200/80 max-w-3xl leading-relaxed">
                     {lang === 'ID'
-                      ? 'Uji coba langsung tampilan Undangan Tamu dan ruang kerja Manager persis sampai ke akar-akarnya, lengkap dengan simulasi perbedaan paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
-                      : 'Test the exact 1:1 Guest Invitation and Manager Workspace down to every detail, complete with live STARTER, EXCLUSIVE, and ROYAL VIP plan simulation.'}
+                      ? 'Pilih salah satu dari 5 Dummy Client terpisah dan uji langsung komponen undangan asli beserta perbedaan fitur paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
+                      : 'Select any of the 5 separated Dummy Clients and interact with the real invitation component across STARTER, EXCLUSIVE, and ROYAL VIP tiers.'}
                   </p>
                 </div>
 
                 {/* Prominent 2-Tab Segmented Switcher */}
-                <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1.5 rounded-2xl bg-[#FAF3E3]/90 border border-[#D4AF37]/45 shadow-2xs shrink-0">
+                <div className="inline-flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1.5 rounded-2xl bg-[#111528] border border-indigo-500/40 shadow-2xs shrink-0">
                   <button
                     type="button"
                     onClick={() => setShowcaseViewMode('invitation_sim')}
-                    title={
-                      lang === 'ID'
-                        ? 'Coba Simulasi Undangan Digital Interaktif 1:1 untuk 5 Jenis Event'
-                        : 'Try 1:1 Interactive Digital Invitation Simulator across 5 Event Types'
-                    }
                     className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
                       showcaseViewMode === 'invitation_sim'
-                        ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border border-[#D4AF37] shadow-sm'
-                        : 'text-stone-800 hover:text-[#8B6914] hover:bg-white/70'
+                        ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
+                        : 'text-indigo-200 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <span>
                       {lang === 'ID'
-                        ? '✨ Simulasi Undangan 1:1 (5 Event)'
-                        : '✨ 1:1 Invitation Sim (5 Events)'}
+                        ? '💌 Real Undangan Tamu (5 Dummy Client)'
+                        : '💌 Real Guest Invitation (5 Dummy Clients)'}
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowcaseViewMode('dashboard_modules')}
-                    title={
-                      lang === 'ID'
-                        ? 'Coba Simulasi 5 Modul Manager Dashboard 1:1 (Tracker, Checklist, Moneter, Tamu, Studio)'
-                        : 'Try 1:1 5 Manager Dashboard Modules Simulation'
-                    }
                     className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
                       showcaseViewMode === 'dashboard_modules'
-                        ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border border-[#D4AF37] shadow-sm'
-                        : 'text-stone-800 hover:text-[#8B6914] hover:bg-white/70'
+                        ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
+                        : 'text-indigo-200 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <span>
                       {lang === 'ID'
-                        ? '📊 5 Modul Manager 1:1'
-                        : '📊 1:1 5 Manager Modules'}
+                        ? '📊 Pratinjau 5 Modul Manager'
+                        : '📊 5 Manager Modules Preview'}
                     </span>
                   </button>
                 </div>
@@ -5597,33 +5922,33 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               {/* ================================================================= */}
               {/* INTERACTIVE PACKAGE TIER SIMULATOR BAR (STARTER • EXCLUSIVE • VIP) */}
               {/* ================================================================= */}
-              <div className="p-3 sm:p-4 rounded-3xl bg-gradient-to-r from-[#1C1613] via-[#241B15] to-[#1C1613] text-[#FAF3E3] border border-[#D4AF37]/55 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-[#111528] via-[#171C36] to-[#111528] text-white border border-indigo-500/45 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#E6C76B] flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#00F0FF] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                     <span>
                       {lang === 'ID'
                         ? 'Simulasi Paket Lisensi:'
                         : 'Simulate License Tier:'}
                     </span>
                   </span>
-                  <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/15">
+                  <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-[#090B14] border border-indigo-500/30">
                     {(
                       [
                         {
                           tier: 'STARTER' as const,
                           label: 'STARTER • Rp 50rb',
-                          badge: '50 Tamu',
+                          badge: 'Statis • Domestik',
                         },
                         {
                           tier: 'EXCLUSIVE' as const,
                           label: 'EXCLUSIVE • Rp 299rb',
-                          badge: '350 Tamu + Video 25MB',
+                          badge: 'Slideshow • Galeri & Kisah',
                         },
                         {
                           tier: 'ROYAL VIP' as const,
                           label: 'ROYAL VIP • Rp 599rb',
-                          badge: 'Unlimited + PayPal/Crypto',
+                          badge: 'Unlimited • PayPal & Crypto',
                         },
                       ] as const
                     ).map((tItem) => {
@@ -5636,8 +5961,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           title={`${tItem.label} (${tItem.badge})`}
                           className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all flex items-center gap-1.5 ${
                             isTierActive
-                              ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-2xs'
-                              : 'text-[#FAF3E3]/85 hover:text-white hover:bg-white/10'
+                              ? tItem.tier === 'ROYAL VIP'
+                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#F3D77D] text-stone-950 shadow-2xs'
+                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-2xs'
+                              : 'text-indigo-200 hover:text-white hover:bg-white/10'
                           }`}
                         >
                           <span>{tItem.label}</span>
@@ -5649,25 +5976,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                 {/* Live Active Tier Capabilities Summary Strip */}
                 <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 text-[11px]">
-                  <span className="px-2.5 py-1 rounded-xl bg-white/10 border border-[#D4AF37]/35 text-[#E6C76B] font-bold">
+                  <span className="px-2.5 py-1 rounded-xl bg-[#090B14] border border-indigo-500/35 text-indigo-200 font-bold">
                     {simPackageTier === 'STARTER'
                       ? lang === 'ID'
-                        ? 'Mode STARTER: Maks 50 Tamu • 2 Login Inti • Galeri HD & Video 25MB Terkunci'
-                        : 'STARTER Mode: Max 50 Guests • 2 Logins • HD Gallery & 25MB Video Locked'
+                        ? 'STARTER: 1 Slide Statis • Kisah & Galeri OFF • Amplop Bank/QRIS'
+                        : 'STARTER: 1 Static Slide • Story & Gallery OFF • Domestic Envelope'
                       : simPackageTier === 'EXCLUSIVE'
                         ? lang === 'ID'
-                          ? 'Mode EXCLUSIVE: 350 Tamu • 4 Login + 3 WO • Galeri 12 Foto & Video 25MB Aktif'
-                          : 'EXCLUSIVE Mode: 350 Guests • 4 Logins + 3 WO • 12-Photo Gallery & 25MB Video Active'
+                          ? 'EXCLUSIVE: 2 Slide • Kisah, Galeri HD & Musik ON • Moneter ON'
+                          : 'EXCLUSIVE: 2 Slides • Story, HD Gallery & Music ON • Budget ON'
                         : lang === 'ID'
-                          ? 'Mode ROYAL VIP: Unlimited Tamu & WO • Video 25MB • Amplop PayPal & Crypto Aktif'
-                          : 'ROYAL VIP Mode: Unlimited Guests & WO • 25MB Video • PayPal & Crypto Active'}
+                          ? 'ROYAL VIP: 3 Slide Penuh • Amplop Global PayPal & Crypto USDT ON'
+                          : 'ROYAL VIP: 3 Full Slides • Global PayPal & Crypto USDT Envelope ON'}
                   </span>
                   <button
                     type="button"
                     onClick={() =>
                       handleSelectPackageForCheckout(simPackageTier)
                     }
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] whitespace-nowrap shadow-2xs transition-all"
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-[11px] whitespace-nowrap shadow-2xs transition-all"
                   >
                     {lang === 'ID'
                       ? `Pesan Paket ${simPackageTier}`
@@ -5678,1382 +6005,370 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
               {showcaseViewMode === 'invitation_sim' ? (
                 /* ================================================================= */
-                /* TAB 1: 1:1 REPLICA OF PublicInvitationView.tsx (5 EVENT PRESETS)  */
+                /* TAB 1: REAL <PublicInvitationView /> WITH 5 DUMMY CLIENTS         */
                 /* ================================================================= */
-                (() => {
-                  const simPreset =
-                    SIMULATION_EVENT_PRESETS[simEventType] ||
-                    SIMULATION_EVENT_PRESETS.WEDDING;
-                  const simBadge =
-                    lang === 'ID' ? simPreset.badgeId : simPreset.badgeEn;
-                  const simSectionTitle =
-                    lang === 'ID'
-                      ? simPreset.sectionTitleId
-                      : simPreset.sectionTitleEn;
+                <div className="space-y-5">
+                  {/* Top Control Bar: 5 Separated Dummy Client Pills + Cover/Opened Toggle + Action Buttons */}
+                  <div className="p-3.5 sm:p-4 rounded-3xl bg-[#111528] border border-indigo-500/40 shadow-md flex flex-col gap-3.5">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
+                          const isSelected = activeDummyMeta.id === meta.id;
+                          return (
+                            <button
+                              key={meta.id}
+                              type="button"
+                              onClick={() => handleSelectDummyClient(meta.id)}
+                              className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white border-[#00F0FF] shadow-[0_0_20px_rgba(99,102,241,0.45)]'
+                                  : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
+                              }`}
+                            >
+                              <span>
+                                {lang === 'ID' ? meta.labelId : meta.labelEn}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                  const frameClassForHost =
-                    simPreset.frameStyle === 'CIRCLE'
-                      ? 'w-36 h-36 sm:w-44 sm:h-44 rounded-full'
-                      : simPreset.frameStyle === 'EDITORIAL_RECT'
-                        ? 'w-44 h-52 sm:w-52 sm:h-60 rounded-2xl'
-                        : 'w-36 h-48 sm:w-44 sm:h-56 rounded-t-[999px] rounded-b-2xl';
+                      {/* Cover Gate vs Opened View Toggle */}
+                      <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
+                        <span className="text-[11px] font-bold text-indigo-300 hidden sm:inline">
+                          {lang === 'ID' ? 'Mode Tampilan:' : 'View Mode:'}
+                        </span>
+                        <div className="inline-flex items-center p-1 rounded-2xl bg-[#090B14] border border-indigo-500/35">
+                          <button
+                            type="button"
+                            onClick={() => setSimIsOpened(false)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                              !simIsOpened
+                                ? 'bg-[#6366F1] text-white shadow-2xs'
+                                : 'text-indigo-300 hover:text-white'
+                            }`}
+                          >
+                            {lang === 'ID'
+                              ? '🚪 Sampul Pembuka (Cover Gate)'
+                              : '🚪 Cover Gate'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSimIsOpened(true)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
+                              simIsOpened
+                                ? 'bg-[#6366F1] text-white shadow-2xs'
+                                : 'text-indigo-300 hover:text-white'
+                            }`}
+                          >
+                            {lang === 'ID'
+                              ? '📖 Isi Undangan Terbuka (Real View)'
+                              : '📖 Opened Invitation (Real View)'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-                  return (
-                    <div className="space-y-5">
-                      {/* Top Control Bar: 5 Event Category Pills + Cover/Inside Toggle */}
-                      <div className="p-3 sm:p-4 rounded-3xl bg-white border border-[#D4AF37]/40 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {SIMULATION_EVENT_KEYS.map((evKey) => {
-                            const presetItem = SIMULATION_EVENT_PRESETS[evKey];
-                            const isSelected = simEventType === evKey;
+                    {/* Prominent Action Bar: Open Fullscreen Real Invitation & Open Real Themed Demo Manager */}
+                    <div className="pt-3 border-t border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[11px] font-extrabold">
+                          Tamu Demo: {activeDummyMeta.sampleGuestName}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-indigo-500/35 text-indigo-200 font-mono text-[11px] font-bold">
+                          Hash: {activeDummyMeta.sampleHashToken}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-[#090B14] border border-[#D4AF37]/40 text-[#D4AF37] text-[11px] font-extrabold">
+                          Tema: {activeDummyMeta.themeLabel}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSelectClientInvitation(
+                              activeDummyMeta.id,
+                              activeDummyMeta.sampleGuestName,
+                              activeDummyMeta.sampleHashToken
+                            )
+                          }
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {lang === 'ID'
+                              ? '💌 Buka Undangan Dummy Layar Penuh (Real View)'
+                              : '💌 Open Fullscreen Dummy Invitation (Real View)'}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenDemoManager) {
+                              onOpenDemoManager(
+                                activeDummyMeta.id,
+                                simPackageTier
+                              );
+                            } else {
+                              onOpenAdminPortal();
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {lang === 'ID'
+                              ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
+                              : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Grid: REAL <PublicInvitationView /> Contained Viewport (8 Cols) + Dummy Client Info Card (4 Cols) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* LEFT / MAIN (8 Cols): REAL <PublicInvitationView /> Component */}
+                    <div className="lg:col-span-8 space-y-2">
+                      <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
+                        <div className="h-[760px] overflow-y-auto overflow-x-hidden">
+                          <PublicInvitationView
+                            key={`${activeDummyMeta.id}-${simPackageTier}-${
+                              simIsOpened ? 'open' : 'cover'
+                            }`}
+                            settings={activeDummyState.settings}
+                            guests={activeDummyState.guests}
+                            wishes={effectiveDummyWishes}
+                            guestParamName={activeDummyMeta.sampleGuestName}
+                            guestParamCode={activeDummyMeta.sampleHashToken}
+                            defaultOpened={simIsOpened}
+                            isAdminLoggedIn={false}
+                            onOpenAdminPortal={() => {
+                              if (onOpenDemoManager) {
+                                onOpenDemoManager(
+                                  activeDummyMeta.id,
+                                  simPackageTier
+                                );
+                              } else {
+                                onOpenAdminPortal();
+                              }
+                            }}
+                            onSubmitRsvp={handleDummyLiveRsvpSubmit}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT (4 Cols): Dummy Client Inspector & Surface Switcher Card */}
+                    <div className="lg:col-span-4 rounded-3xl bg-[#111528] border-2 border-indigo-500/40 p-5 sm:p-6 shadow-[0_18px_48px_rgba(0,0,0,0.45)] space-y-5">
+                      <div className="space-y-1.5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] text-[10px] font-extrabold uppercase tracking-wider">
+                          <Sparkles className="w-3 h-3 text-[#00F0FF]" />
+                          <span>
+                            {lang === 'ID'
+                              ? `Workspace Dummy: ${activeDummyMeta.id}`
+                              : `Dummy Workspace: ${activeDummyMeta.id}`}
+                          </span>
+                        </span>
+                        <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-white">
+                          {activeDummyMeta.coupleLabel}
+                        </h4>
+                        <p className="text-xs text-indigo-200/85 leading-relaxed">
+                          {activeDummyMeta.dateSummary} &bull;{' '}
+                          {activeDummyMeta.venueSummary}
+                        </p>
+                      </div>
+
+                      {/* Dummy Client Hash & Theme Metadata Box */}
+                      <div className="p-3.5 rounded-2xl bg-[#090B14] border border-indigo-500/35 space-y-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-indigo-300 font-bold">
+                            Tema Undangan &amp; Manager:
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] font-extrabold text-[11px]">
+                            {activeDummyMeta.themeLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-indigo-300 font-bold">
+                            Tamu VVIP Sampel:
+                          </span>
+                          <span className="text-white font-extrabold truncate">
+                            {activeDummyMeta.sampleGuestName}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-indigo-300 font-bold">
+                            Kode Hash 21-Char:
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-950 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
+                            {activeDummyMeta.sampleHashToken}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-indigo-300 font-bold">
+                            Simulasi Paket Aktif:
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-400/40 text-white font-extrabold text-[10px]">
+                            {simPackageTier}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Other Guests in this Dummy Client Workspace */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300">
+                          {lang === 'ID'
+                            ? 'Daftar Kode Hash Tamu di Dummy Client Ini (Klik untuk Buka):'
+                            : 'Sample Guest Hash Tokens in This Dummy Client:'}
+                        </p>
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                          {activeDummyState.guests.slice(0, 5).map((g) => {
+                            const gHash = computeGuestInvitationHash(
+                              activeDummyMeta.id,
+                              g
+                            );
                             return (
                               <button
-                                key={evKey}
+                                key={g.id}
                                 type="button"
-                                onClick={() => {
-                                  setSimEventType(evKey);
-                                }}
-                                className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
-                                  isSelected
-                                    ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/30 shadow-2xs'
-                                    : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 border-[#D4AF37]/30'
-                                }`}
+                                onClick={() =>
+                                  onSelectClientInvitation(
+                                    activeDummyMeta.id,
+                                    g.guestName,
+                                    gHash
+                                  )
+                                }
+                                className="w-full text-left p-2.5 rounded-xl bg-[#090B14] hover:bg-indigo-950/80 border border-indigo-500/30 transition-all flex items-center justify-between gap-2"
                               >
-                                <span>
-                                  {lang === 'ID'
-                                    ? presetItem.tabLabelId
-                                    : presetItem.tabLabelEn}
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-extrabold text-white truncate">
+                                    {g.guestName}
+                                  </p>
+                                  <p className="text-[10px] text-indigo-300 truncate">
+                                    {g.institution} ({g.pax} Pax)
+                                  </p>
+                                </div>
+                                <span className="shrink-0 px-2 py-0.5 rounded bg-indigo-950 border border-[#00F0FF]/35 text-[#00F0FF] font-mono text-[9px] font-extrabold">
+                                  {gHash}
                                 </span>
                               </button>
                             );
                           })}
                         </div>
-
-                        {/* Cover Gate vs Opened Editorial View Switcher */}
-                        <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
-                          <span className="text-[11px] font-bold text-stone-500 hidden sm:inline">
-                            {lang === 'ID' ? 'Mode Layar:' : 'Stage Mode:'}
-                          </span>
-                          <div className="inline-flex items-center p-1 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSimIsOpeningAnim(false);
-                                setSimIsOpened(false);
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
-                                !simIsOpened
-                                  ? 'bg-[#C5A059] text-white shadow-2xs'
-                                  : 'text-stone-700 hover:text-[#8B6914]'
-                              }`}
-                            >
-                              {lang === 'ID'
-                                ? '🚪 Sampul Pembuka'
-                                : '🚪 Cover Gate'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSimIsOpeningAnim(false);
-                                setSimIsOpened(true);
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
-                                simIsOpened
-                                  ? 'bg-[#C5A059] text-white shadow-2xs'
-                                  : 'text-stone-700 hover:text-[#8B6914]'
-                              }`}
-                            >
-                              {lang === 'ID'
-                                ? '📖 Isi Undangan 1:1'
-                                : '📖 1:1 Inside View'}
-                            </button>
-                          </div>
-                        </div>
                       </div>
 
-                      {/* Main Grid: Live 1:1 PublicInvitationView Stage (8 Cols) + Editorial & Tier Highlights Card (4 Cols) */}
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* LEFT / MAIN: 1:1 PublicInvitationView Stage */}
-                        <div className="lg:col-span-8 rounded-3xl bg-[#F7F1E5] border-2 border-[#D4AF37]/55 shadow-[0_22px_56px_rgba(28,25,23,0.14)] overflow-hidden relative">
-                          {/* 1:1 REPLICA OF PublicInvitationView.tsx TOP STICKY HEADER */}
-                          <div className="px-3.5 sm:px-5 py-2.5 bg-white/95 backdrop-blur-md border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2 z-30 relative shadow-2xs">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FBF6EA] to-[#EFE1C6] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center font-serif text-xs font-extrabold shrink-0 shadow-2xs">
-                                {simPreset.monogram}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-serif text-xs sm:text-sm font-bold text-stone-800 tracking-wide truncate">
-                                  {simPreset.titleShort}
-                                </p>
-                                <p className="text-[10px] text-[#9A742B] font-semibold truncate">
-                                  {simPreset.eventDate}
-                                </p>
-                              </div>
-                            </div>
+                      <div className="pt-3 border-t border-indigo-500/30 space-y-2.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSelectClientInvitation(
+                              activeDummyMeta.id,
+                              activeDummyMeta.sampleGuestName,
+                              activeDummyMeta.sampleHashToken
+                            )
+                          }
+                          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] hover:from-[#C5A059] hover:to-[#9A742B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <ExternalLink className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {lang === 'ID'
+                              ? '💌 Buka Undangan Dummy Layar Penuh (Real View)'
+                              : '💌 Open Fullscreen Dummy Invitation (Real View)'}
+                          </span>
+                        </button>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Spinning Vinyl Audio Pill + Equalizer Bars (Matching PublicInvitationView 1:1) */}
-                              <div
-                                title={simPreset.musicTrackLabel}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white text-[10px] font-extrabold shadow-2xs"
-                              >
-                                <span className="w-4 h-4 rounded-full bg-stone-950 text-[#E6C76B] flex items-center justify-center animate-spin-slow shrink-0">
-                                  <Music className="w-2.5 h-2.5" />
-                                </span>
-                                <span className="hidden sm:inline truncate max-w-[115px]">
-                                  {simPreset.musicTrackLabel}
-                                </span>
-                              </div>
-
-                              <span
-                                title="3 Lagu Latar Tersedia di Playlist"
-                                className="hidden md:inline-flex items-center px-2 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold"
-                              >
-                                🎵 3
-                              </span>
-
-                              <button
-                                type="button"
-                                onClick={openSimInvitationLightbox}
-                                title={
-                                  lang === 'ID'
-                                    ? 'Buka Simulasi Undangan di Layar Penuh'
-                                    : 'Open Invitation Simulator in Fullscreen'
-                                }
-                                className="p-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 transition-all"
-                              >
-                                <Maximize2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Manager Switch Pill (Matching PublicInvitationView's Manager Button) */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setShowcaseViewMode('dashboard_modules')
-                                }
-                                title="Buka Simulasi Manager Dashboard (Pengaturan Studio, Tamu, Moneter, Checklist)"
-                                className="px-2.5 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 text-[10px] font-extrabold inline-flex items-center gap-1 transition-all whitespace-nowrap"
-                              >
-                                <Lock className="w-3 h-3 text-[#D4AF37]" />
-                                <span>Manager</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {!simIsOpened ? (
-                            /* ======================================================= */
-                            /* COVER CURTAIN-LIFT GATE VIEW (!simIsOpened)             */
-                            /* ======================================================= */
-                            <div
-                              className={`relative min-h-[540px] sm:min-h-[600px] flex flex-col items-center justify-center text-center px-5 py-12 overflow-hidden transition-all duration-500 ease-out ${
-                                simIsOpeningAnim
-                                  ? '-translate-y-full scale-105 opacity-0'
-                                  : 'translate-y-0 scale-100 opacity-100'
-                              }`}
-                            >
-                              {/* Background Hero Photo with Soft Editorial Warm Overlay */}
-                              <img
-                                src={simPreset.heroImage}
-                                alt={simPreset.titleShort}
-                                className="absolute inset-0 w-full h-full object-cover animate-ken-burns"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-900/55 to-stone-950/80 backdrop-blur-[1.5px]" />
-
-                              {/* Optional Floral Corners on Cover Gate (Controlled by simStudioOrnaments.floralCorner) */}
-                              <CatalogFloralCorner
-                                position="top-left"
-                                size="lg"
-                                enabled={
-                                  simStudioOrnaments.floralCorner &&
-                                  simPreset.showFloral
-                                }
-                              />
-                              <CatalogFloralCorner
-                                position="top-right"
-                                size="lg"
-                                enabled={
-                                  simStudioOrnaments.floralCorner &&
-                                  simPreset.showFloral
-                                }
-                              />
-                              <CatalogFloralCorner
-                                position="bottom-left"
-                                size="lg"
-                                enabled={
-                                  simStudioOrnaments.floralCorner &&
-                                  simPreset.showFloral
-                                }
-                              />
-                              <CatalogFloralCorner
-                                position="bottom-right"
-                                size="lg"
-                                enabled={
-                                  simStudioOrnaments.floralCorner &&
-                                  simPreset.showFloral
-                                }
-                              />
-
-                              <div className="relative z-20 max-w-lg mx-auto space-y-5 text-[#FFFDF9]">
-                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-[#D4AF37]/55 text-[#F3D77D] text-[11px] font-extrabold uppercase tracking-[0.2em]">
-                                  <CatalogEventCrest
-                                    eventType={simPreset.eventType}
-                                    className="w-4 h-4 text-[#F3D77D]"
-                                  />
-                                  <span>{simBadge}</span>
-                                </div>
-
-                                <h4
-                                  className={`${
-                                    simPreset.eventType === 'WEDDING' ||
-                                    simPreset.eventType === 'BIRTHDAY'
-                                      ? 'font-script text-4xl sm:text-6xl'
-                                      : 'font-editorial text-3xl sm:text-5xl font-bold'
-                                  } text-[#FFFDF9] drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)] leading-tight`}
-                                >
-                                  {simPreset.titleShort}
-                                </h4>
-
-                                <p className="text-xs sm:text-sm text-[#FAF3E3]/90 font-medium tracking-wide">
-                                  {simPreset.eventDate} &bull;{' '}
-                                  {simPreset.eventVenue}
-                                </p>
-
-                                {/* Sample VIP Guest Pass Card */}
-                                <div className="mx-auto max-w-sm p-4 rounded-2xl bg-white/12 backdrop-blur-md border border-[#D4AF37]/50 text-center space-y-1.5 shadow-lg">
-                                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#E6C76B] font-bold">
-                                    {lang === 'ID'
-                                      ? 'Kepada Yth. Bapak / Ibu / Saudara/i'
-                                      : 'Dear Honored VIP Guest'}
-                                  </p>
-                                  <p className="font-editorial text-lg sm:text-xl font-bold text-white">
-                                    Bapak/Ibu Tamu Kehormatan
-                                  </p>
-                                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D4AF37]/25 border border-[#D4AF37]/60 text-[#F3D77D] font-mono text-[10px] font-extrabold">
-                                    VIP PASS &bull; INV-0001 (2 Pax) &bull;{' '}
-                                    {simPackageTier}
-                                  </span>
-                                </div>
-
-                                <div className="pt-2">
-                                  <button
-                                    type="button"
-                                    onClick={handleTriggerSimCoverOpen}
-                                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-[0_10px_30px_rgba(212,175,55,0.45)] transition-all hover:scale-105 cursor-pointer"
-                                  >
-                                    <BookOpen className="w-4 h-4 shrink-0" />
-                                    <span>
-                                      {lang === 'ID'
-                                        ? 'Buka Undangan (Efek Tirai)'
-                                        : 'Open Invitation (Curtain Lift)'}
-                                    </span>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            /* ======================================================= */
-                            /* 1:1 OPENED EDITORIAL INVITATION STAGE (simIsOpened)     */
-                            /* ======================================================= */
-                            (() => {
-                              const safeGalleryIdx =
-                                ((simGalleryIdx %
-                                  simPreset.galleryPhotos.length) +
-                                  simPreset.galleryPhotos.length) %
-                                simPreset.galleryPhotos.length;
-                              const activeGalleryPhoto =
-                                simPreset.galleryPhotos[safeGalleryIdx];
-                              const combinedWishes = [
-                                ...(simCustomWishes[simPreset.eventType] || []),
-                                ...simPreset.dummyWishes,
-                              ];
-                              const activeEnvelope =
-                                DUMMY_ENVELOPE_CHANNELS[
-                                  simEnvelopeIdx %
-                                    DUMMY_ENVELOPE_CHANNELS.length
-                                ];
-                              const isStarterSim = simPackageTier === 'STARTER';
-                              const isRoyalSim = simPackageTier === 'ROYAL VIP';
-
-                              return (
-                                <div className="max-h-[780px] overflow-y-auto bg-[#F7F1E5] p-3 sm:p-5 relative">
-                                  {/* Inner Luxury Cream Card (Matching PublicInvitationView 1:1) */}
-                                  <div className="rounded-3xl bg-[#FFFDF9]/95 border border-[#D4AF37]/40 shadow-[0_14px_44px_rgba(182,141,64,0.12)] overflow-hidden relative">
-                                    {/* 4 Animated Gold Floral Corners on Invitation Card */}
-                                    <CatalogFloralCorner
-                                      position="top-left"
-                                      size="md"
-                                      enabled={
-                                        simStudioOrnaments.floralCorner &&
-                                        simPreset.showFloral
-                                      }
-                                    />
-                                    <CatalogFloralCorner
-                                      position="top-right"
-                                      size="md"
-                                      enabled={
-                                        simStudioOrnaments.floralCorner &&
-                                        simPreset.showFloral
-                                      }
-                                    />
-                                    <CatalogFloralCorner
-                                      position="bottom-left"
-                                      size="md"
-                                      enabled={
-                                        simStudioOrnaments.floralCorner &&
-                                        simPreset.showFloral
-                                      }
-                                    />
-                                    <CatalogFloralCorner
-                                      position="bottom-right"
-                                      size="md"
-                                      enabled={
-                                        simStudioOrnaments.floralCorner &&
-                                        simPreset.showFloral
-                                      }
-                                    />
-
-                                    {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS (Zero Top Blocking Badge by Default) */}
-                                    <div className="relative">
-                                      <div
-                                        className="relative aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden"
-                                        style={{
-                                          maskImage:
-                                            'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                          WebkitMaskImage:
-                                            'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                        }}
-                                      >
-                                        <img
-                                          src={simPreset.heroImage}
-                                          alt={simPreset.titleFull}
-                                          className="w-full h-full object-cover animate-ken-burns"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#FFFDF9] via-transparent to-black/20" />
-                                      </div>
-
-                                      {/* Subtle Mode Indicator Pill at Top-Right of Hero */}
-                                      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
-                                        {!isStarterSim && (
-                                          <span className="px-2.5 py-1 rounded-full bg-stone-950/75 backdrop-blur-md border border-[#D4AF37]/50 text-[#E6C76B] text-[9px] font-extrabold">
-                                            🎬 Video Latar 25MB ({simVideoFitMode})
-                                          </span>
-                                        )}
-                                        <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/50 text-[#8B6914] text-[9px] font-extrabold">
-                                          Paket {simPackageTier}
-                                        </span>
-                                      </div>
-
-                                      {/* Editorial Title & Crest Overlapping Feathered Bottom (-mt-8 sm:-mt-12 matching PublicInvitationView) */}
-                                      <div className="relative z-10 -mt-8 sm:-mt-12 px-4 sm:px-8 text-center space-y-3">
-                                        {simStudioOrnaments.heroBadge && (
-                                          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
-                                            <CatalogEventCrest
-                                              eventType={simPreset.eventType}
-                                              className="w-3.5 h-3.5 text-[#B68D40]"
-                                            />
-                                            <span>{simBadge}</span>
-                                          </div>
-                                        )}
-
-                                        <p className="text-[10px] font-extrabold uppercase tracking-[0.28em] text-[#9A742B]">
-                                          {simPreset.eventDate} &bull;{' '}
-                                          {simPreset.eventVenue}
-                                        </p>
-
-                                        <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
-                                          {simPreset.titleFull}
-                                        </h4>
-
-                                        {/* Gold Filigree Divider */}
-                                        <div
-                                          aria-hidden="true"
-                                          className="flex items-center justify-center gap-2.5 text-[#B68D40]"
-                                        >
-                                          <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                          <CatalogEventCrest
-                                            eventType={simPreset.eventType}
-                                            className="w-5 h-5"
-                                          />
-                                          <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                        </div>
-
-                                        {/* 4-Box Countdown + Save to Calendar Pill */}
-                                        <div className="pt-1 flex flex-col items-center gap-3">
-                                          <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
-                                            {[
-                                              {
-                                                val: '14',
-                                                lbl:
-                                                  lang === 'ID'
-                                                    ? 'Hari'
-                                                    : 'Days',
-                                              },
-                                              {
-                                                val: '08',
-                                                lbl:
-                                                  lang === 'ID'
-                                                    ? 'Jam'
-                                                    : 'Hours',
-                                              },
-                                              {
-                                                val: '45',
-                                                lbl:
-                                                  lang === 'ID'
-                                                    ? 'Menit'
-                                                    : 'Mins',
-                                              },
-                                              {
-                                                val: String(
-                                                  countdownSeconds % 60
-                                                ).padStart(2, '0'),
-                                                lbl:
-                                                  lang === 'ID'
-                                                    ? 'Detik'
-                                                    : 'Secs',
-                                              },
-                                            ].map((cd) => (
-                                              <div
-                                                key={cd.lbl}
-                                                className="py-2 px-2 rounded-2xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-center"
-                                              >
-                                                <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
-                                                  {cd.val}
-                                                </span>
-                                                <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
-                                                  {cd.lbl}
-                                                </span>
-                                              </div>
-                                            ))}
-                                          </div>
-
-                                          {simStudioOrnaments.calendarBtn && (
-                                            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
-                                              <Calendar className="w-3.5 h-3.5" />
-                                              <span>
-                                                {lang === 'ID'
-                                                  ? 'Simpan ke Kalender'
-                                                  : 'Save to Calendar'}
-                                              </span>
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-9">
-                                      {/* 2. AYAT / KUTIPAN PEMBUKA (QUOTE CARD - Controlled by simSectionToggles.quote) */}
-                                      {simSectionToggles.quote && (
-                                        <div className="max-w-2xl mx-auto p-5 rounded-3xl bg-[#FAF6EE]/90 border border-[#D4AF37]/40 shadow-2xs text-center space-y-2 relative overflow-hidden">
-                                          <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
-                                            {lang === 'ID'
-                                              ? 'Kutipan & Untaian Doa Pembuka'
-                                              : 'Opening Blessing & Quote'}
-                                          </span>
-                                          <p className="font-editorial text-sm sm:text-base italic text-stone-700 leading-relaxed">
-                                            {simPreset.quote}
-                                          </p>
-                                        </div>
-                                      )}
-
-                                      {/* 3. PROFIL MEMPELAI / TOKOH UTAMA (Controlled by simSectionToggles.couple) */}
-                                      {simSectionToggles.couple && (
-                                        <div className="space-y-5">
-                                          {/* Flowing Open Editorial Section Header matching PublicInvitationView */}
-                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                              {simBadge}
-                                            </p>
-                                            <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                              {simSectionTitle}
-                                            </h5>
-                                            <div
-                                              aria-hidden="true"
-                                              className="flex items-center justify-center gap-2 pt-1"
-                                            >
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                            </div>
-                                          </div>
-
-                                          {simPreset.profileCount === 2 &&
-                                          simPreset.host2 ? (
-                                            /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
-                                            <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
-                                              <div className="md:col-span-5 p-5 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                                <CatalogFloralCorner
-                                                  position="top-left"
-                                                  size="sm"
-                                                  enabled={
-                                                    simStudioOrnaments.floralCorner &&
-                                                    simPreset.showFloral
-                                                  }
-                                                />
-                                                <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                                  <img
-                                                    src={simPreset.host1.photo}
-                                                    alt={simPreset.host1.name}
-                                                    className={`${frameClassForHost} object-cover`}
-                                                  />
-                                                </div>
-                                                <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                                  {simPreset.host1.role}
-                                                </span>
-                                                <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                                  {simPreset.host1.name}
-                                                </h6>
-                                                <p className="text-[11px] text-stone-600 leading-relaxed">
-                                                  {simPreset.host1.parents}
-                                                </p>
-                                              </div>
-
-                                              <div className="md:col-span-1 flex items-center justify-center py-1">
-                                                <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
-                                                  &amp;
-                                                </span>
-                                              </div>
-
-                                              <div className="md:col-span-5 p-5 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                                <CatalogFloralCorner
-                                                  position="top-right"
-                                                  size="sm"
-                                                  enabled={
-                                                    simStudioOrnaments.floralCorner &&
-                                                    simPreset.showFloral
-                                                  }
-                                                />
-                                                <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                                  <img
-                                                    src={simPreset.host2.photo}
-                                                    alt={simPreset.host2.name}
-                                                    className={`${frameClassForHost} object-cover`}
-                                                  />
-                                                </div>
-                                                <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                                  {simPreset.host2.role}
-                                                </span>
-                                                <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                                  {simPreset.host2.name}
-                                                </h6>
-                                                <p className="text-[11px] text-stone-600 leading-relaxed">
-                                                  {simPreset.host2.parents}
-                                                </p>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT */
-                                            <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                              <CatalogFloralCorner
-                                                position="top-left"
-                                                size="sm"
-                                                enabled={
-                                                  simStudioOrnaments.floralCorner &&
-                                                  simPreset.showFloral
-                                                }
-                                              />
-                                              <CatalogFloralCorner
-                                                position="top-right"
-                                                size="sm"
-                                                enabled={
-                                                  simStudioOrnaments.floralCorner &&
-                                                  simPreset.showFloral
-                                                }
-                                              />
-                                              <div
-                                                className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
-                                                  simPreset.frameStyle ===
-                                                  'CIRCLE'
-                                                    ? 'rounded-full'
-                                                    : simPreset.frameStyle ===
-                                                        'EDITORIAL_RECT'
-                                                      ? 'rounded-2xl'
-                                                      : 'rounded-t-[999px] rounded-b-2xl'
-                                                }`}
-                                              >
-                                                <img
-                                                  src={simPreset.host1.photo}
-                                                  alt={simPreset.host1.name}
-                                                  className={`${frameClassForHost} object-cover`}
-                                                />
-                                              </div>
-                                              <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                                {simPreset.host1.role}
-                                              </span>
-                                              <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
-                                                {simPreset.host1.name}
-                                              </h6>
-                                              {simPreset.host1.parents && (
-                                                <p className="text-xs text-stone-600 leading-relaxed">
-                                                  {simPreset.host1.parents}
-                                                </p>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {/* 4. RANGKAIAN JADWAL ACARA (Controlled by simSectionToggles.events) */}
-                                      {simSectionToggles.events && (
-                                        <div className="max-w-3xl mx-auto space-y-4">
-                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                              {lang === 'ID'
-                                                ? 'Rangkaian Jadwal & Lokasi Acara'
-                                                : 'Event Schedule & Venue'}
-                                            </p>
-                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                              {simPreset.eventTitle}
-                                            </h6>
-                                            <div
-                                              aria-hidden="true"
-                                              className="flex items-center justify-center gap-2 pt-1"
-                                            >
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                            </div>
-                                          </div>
-
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {simPreset.sessions.map((ses) => (
-                                              <div
-                                                key={ses.badge}
-                                                className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-2.5 flex flex-col justify-between"
-                                              >
-                                                <div className="space-y-1.5">
-                                                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
-                                                    {ses.badge}
-                                                  </span>
-                                                  <h6 className="font-editorial text-lg font-bold text-stone-900">
-                                                    {ses.title}
-                                                  </h6>
-                                                  <p className="text-xs font-extrabold text-[#8B6914]">
-                                                    {ses.date} &bull; {ses.time}
-                                                  </p>
-                                                  <p className="text-xs text-stone-600 flex items-start gap-1.5">
-                                                    <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
-                                                    <span>{ses.venue}</span>
-                                                  </p>
-                                                  <p className="text-[11px] text-stone-500">
-                                                    <strong>Dresscode:</strong>{' '}
-                                                    {ses.dresscode}
-                                                  </p>
-                                                </div>
-                                                <div className="pt-2 border-t border-stone-200/70 flex items-center justify-between gap-2">
-                                                  <a
-                                                    href={ses.mapsUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold transition-all"
-                                                  >
-                                                    <MapPin className="w-3 h-3" />
-                                                    <span>
-                                                      {lang === 'ID'
-                                                        ? 'Buka Google Maps'
-                                                        : 'Open Google Maps'}
-                                                    </span>
-                                                  </a>
-                                                  <span className="text-[10px] font-bold text-emerald-700">
-                                                    ✓ QR Gate Ready
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* 5. KISAH PERJALANAN & GALERI MOMEN HD (Dynamically responds to STARTER vs EXCLUSIVE/ROYAL VIP) */}
-                                      {(simSectionToggles.story ||
-                                        simSectionToggles.gallery) && (
-                                        <div className="max-w-3xl mx-auto space-y-4">
-                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                              {lang === 'ID'
-                                                ? 'Kisah Perjalanan & Galeri Momen HD'
-                                                : 'Milestone Story & HD Photo Gallery'}
-                                            </p>
-                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                              {lang === 'ID'
-                                                ? 'Momen Berharga & Galeri Interaktif'
-                                                : 'Cherished Milestones & Interactive Gallery'}
-                                            </h6>
-                                            <div
-                                              aria-hidden="true"
-                                              className="flex items-center justify-center gap-2 pt-1"
-                                            >
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                            </div>
-                                          </div>
-
-                                          {isStarterSim ? (
-                                            /* STARTER TIER LOCK NOTICE FOR STORY & 12-PHOTO HD GALLERY */
-                                            <div className="p-5 rounded-3xl bg-[#FAF3E3]/80 border border-[#D4AF37]/50 text-center space-y-2.5">
-                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900 text-[#E6C76B] text-[10px] font-extrabold">
-                                                <Lock className="w-3 h-3" />
-                                                <span>
-                                                  FITUR PAKET EXCLUSIVE &amp;
-                                                  ROYAL VIP
-                                                </span>
-                                              </span>
-                                              <p className="text-xs font-bold text-stone-800 max-w-lg mx-auto">
-                                                {lang === 'ID'
-                                                  ? 'Pada Paket STARTER (Rp 50rb), seksi Kisah Perjalanan & Galeri 12 Foto HD tidak ditampilkan. Klik tombol di bawah untuk menguji tampilan Paket EXCLUSIVE atau ROYAL VIP:'
-                                                  : 'In STARTER Plan, Milestone Story & 12-Photo HD Gallery are hidden. Click below to preview EXCLUSIVE or ROYAL VIP:'}
-                                              </p>
-                                              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    setSimPackageTier(
-                                                      'EXCLUSIVE'
-                                                    )
-                                                  }
-                                                  className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] text-xs font-extrabold"
-                                                >
-                                                  Aktifkan Simulasi EXCLUSIVE
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    setSimPackageTier(
-                                                      'ROYAL VIP'
-                                                    )
-                                                  }
-                                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-xs font-extrabold"
-                                                >
-                                                  Aktifkan Simulasi ROYAL VIP
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <>
-                                              {/* 3 Milestones Row */}
-                                              {simSectionToggles.story && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                  {simPreset.milestones.map(
-                                                    (ms) => (
-                                                      <div
-                                                        key={ms.year + ms.title}
-                                                        className="p-3.5 rounded-2xl bg-white/95 border border-[#D4AF37]/40 space-y-1 shadow-2xs"
-                                                      >
-                                                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[10px] font-extrabold">
-                                                          {ms.year}
-                                                        </span>
-                                                        <p className="text-xs font-extrabold text-stone-900">
-                                                          {ms.title}
-                                                        </p>
-                                                        <p className="text-[11px] text-stone-600 leading-relaxed">
-                                                          {ms.desc}
-                                                        </p>
-                                                      </div>
-                                                    )
-                                                  )}
-                                                </div>
-                                              )}
-
-                                              {/* Interactive Gallery Viewer with 3 Clickable Thumbnails */}
-                                              {simSectionToggles.gallery && (
-                                                <div className="p-3.5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-3">
-                                                  <div className="relative h-56 sm:h-72 rounded-2xl overflow-hidden bg-stone-900">
-                                                    <img
-                                                      src={
-                                                        activeGalleryPhoto.url
-                                                      }
-                                                      alt={
-                                                        activeGalleryPhoto.caption
-                                                      }
-                                                      className="w-full h-full object-cover transition-all duration-500"
-                                                    />
-                                                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between gap-2 text-white">
-                                                      <span className="text-xs font-bold truncate">
-                                                        {
-                                                          activeGalleryPhoto.caption
-                                                        }
-                                                      </span>
-                                                      <span className="px-2 py-0.5 rounded-md bg-[#D4AF37] text-stone-950 font-mono text-[10px] font-extrabold shrink-0">
-                                                        {safeGalleryIdx + 1} /{' '}
-                                                        {
-                                                          simPreset
-                                                            .galleryPhotos
-                                                            .length
-                                                        }
-                                                      </span>
-                                                    </div>
-                                                  </div>
-
-                                                  <div className="grid grid-cols-3 gap-2.5">
-                                                    {simPreset.galleryPhotos.map(
-                                                      (gItem, gIdx) => {
-                                                        const isCurr =
-                                                          safeGalleryIdx ===
-                                                          gIdx;
-                                                        return (
-                                                          <button
-                                                            key={gItem.url}
-                                                            type="button"
-                                                            onClick={() =>
-                                                              setSimGalleryIdx(
-                                                                gIdx
-                                                              )
-                                                            }
-                                                            className={`relative h-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                                                              isCurr
-                                                                ? 'border-[#B68D40] ring-2 ring-[#D4AF37]/40 scale-[1.01]'
-                                                                : 'border-transparent opacity-75 hover:opacity-100'
-                                                            }`}
-                                                          >
-                                                            <img
-                                                              src={gItem.url}
-                                                              alt={
-                                                                gItem.caption
-                                                              }
-                                                              className="w-full h-full object-cover"
-                                                            />
-                                                          </button>
-                                                        );
-                                                      }
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {/* 6. SIMULASI FORM RSVP & BUKU TAMU DUMMY INTERAKTIF (Controlled by rsvp / wishes) */}
-                                      {(simSectionToggles.rsvp ||
-                                        simSectionToggles.wishes) && (
-                                        <div className="max-w-3xl mx-auto space-y-4">
-                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                              {lang === 'ID'
-                                                ? 'Konfirmasi Kehadiran & Doa Restu'
-                                                : 'RSVP Attendance & Guestbook Wishes'}
-                                            </p>
-                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                              {lang === 'ID'
-                                                ? 'RSVP & Ucapan Tamu Kehormatan'
-                                                : 'VIP Guest RSVP & Wishes'}
-                                            </h6>
-                                            <div
-                                              aria-hidden="true"
-                                              className="flex items-center justify-center gap-2 pt-1"
-                                            >
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                            </div>
-                                          </div>
-
-                                          <div className="p-4 sm:p-6 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-4">
-                                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                              <div className="flex flex-wrap items-center gap-1.5">
-                                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
-                                                  ✓ INV-0001 • Terhubung Database
-                                                </span>
-                                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
-                                                  ✓ 2 Sesi Acara
-                                                </span>
-                                              </div>
-                                              <span className="text-[11px] font-extrabold text-stone-600">
-                                                {combinedWishes.length} Ucapan
-                                                Masuk
-                                              </span>
-                                            </div>
-
-                                            {/* Interactive Mini RSVP & Wish Form */}
-                                            <form
-                                              onSubmit={handleSubmitSimWish}
-                                              className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5"
-                                            >
-                                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                                                <input
-                                                  type="text"
-                                                  value={simWishName}
-                                                  onChange={(e) =>
-                                                    setSimWishName(
-                                                      e.target.value
-                                                    )
-                                                  }
-                                                  placeholder={
-                                                    lang === 'ID'
-                                                      ? 'Nama Anda (contoh: Budi & Keluarga)...'
-                                                      : 'Your Name (e.g. John & Family)...'
-                                                  }
-                                                  className="sm:col-span-5 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                                />
-                                                <select
-                                                  value={simRsvpStatus}
-                                                  onChange={(e) =>
-                                                    setSimRsvpStatus(
-                                                      e.target.value as
-                                                        | 'HADIR'
-                                                        | 'BERHALANGAN'
-                                                    )
-                                                  }
-                                                  className="sm:col-span-4 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                                >
-                                                  <option value="HADIR">
-                                                    {lang === 'ID'
-                                                      ? '✓ Hadir di Acara'
-                                                      : '✓ Attending'}
-                                                  </option>
-                                                  <option value="BERHALANGAN">
-                                                    {lang === 'ID'
-                                                      ? '🙏 Berhalangan (Doa Restu)'
-                                                      : '🙏 Warm Regards'}
-                                                  </option>
-                                                </select>
-                                                <select
-                                                  value={simRsvpPax}
-                                                  onChange={(e) =>
-                                                    setSimRsvpPax(
-                                                      Number(e.target.value)
-                                                    )
-                                                  }
-                                                  className="sm:col-span-3 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                                >
-                                                  <option value={1}>
-                                                    1 Pax
-                                                  </option>
-                                                  <option value={2}>
-                                                    2 Pax
-                                                  </option>
-                                                  <option value={3}>
-                                                    3 Pax
-                                                  </option>
-                                                  <option value={4}>
-                                                    4 Pax
-                                                  </option>
-                                                </select>
-                                              </div>
-
-                                              <div className="flex flex-col sm:flex-row gap-2">
-                                                <input
-                                                  type="text"
-                                                  value={simWishText}
-                                                  onChange={(e) =>
-                                                    setSimWishText(
-                                                      e.target.value
-                                                    )
-                                                  }
-                                                  placeholder={
-                                                    lang === 'ID'
-                                                      ? 'Tulis ucapan doa restu simulasi atau langsung klik tombol kirim...'
-                                                      : 'Write a sample wish or click send directly...'
-                                                  }
-                                                  className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                                />
-                                                <button
-                                                  type="submit"
-                                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
-                                                >
-                                                  <Send className="w-3.5 h-3.5" />
-                                                  <span>
-                                                    {lang === 'ID'
-                                                      ? 'Kirim RSVP & Ucapan'
-                                                      : 'Send RSVP & Wish'}
-                                                  </span>
-                                                </button>
-                                              </div>
-
-                                              {simWishFeedback && (
-                                                <p className="text-[11px] font-extrabold text-emerald-700">
-                                                  {simWishFeedback}
-                                                </p>
-                                              )}
-                                            </form>
-
-                                            {/* List of Guestbook Wishes */}
-                                            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                                              {combinedWishes.map((w) => (
-                                                <div
-                                                  key={w.id}
-                                                  className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 space-y-2"
-                                                >
-                                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <div>
-                                                      <p className="text-xs font-extrabold text-stone-900">
-                                                        {w.senderName}
-                                                      </p>
-                                                      <p className="text-[10px] text-stone-500">
-                                                        {w.senderTitle} &bull;{' '}
-                                                        {w.timestamp}
-                                                      </p>
-                                                    </div>
-                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
-                                                      {w.attendanceBadge}
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-xs text-stone-700 leading-relaxed">
-                                                    &ldquo;{w.message}&rdquo;
-                                                  </p>
-                                                  {w.hostReply && (
-                                                    <div className="p-2.5 rounded-xl bg-[#FAF3E3]/80 border-l-2 border-[#B68D40] text-[11px] text-stone-700">
-                                                      <span className="font-extrabold text-[#8B6914] block">
-                                                        Balasan Tuan Rumah (
-                                                        {simPreset.titleShort}):
-                                                      </span>
-                                                      <span>{w.hostReply}</span>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* 7. AMPLOP DIGITAL BER-CHIP EMV EMAS INTERAKTIF + ALAMAT KADO FISIK */}
-                                      {simSectionToggles.gift && (
-                                        <div className="max-w-3xl mx-auto space-y-4">
-                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                              {lang === 'ID'
-                                                ? 'Tanda Kasih & Amplop Digital'
-                                                : 'Digital Envelope & Gift Registry'}
-                                            </p>
-                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                              {lang === 'ID'
-                                                ? 'Amplop Digital & Pengiriman Kado'
-                                                : 'Digital Gift & Physical Delivery'}
-                                            </h6>
-                                            <div
-                                              aria-hidden="true"
-                                              className="flex items-center justify-center gap-2 pt-1"
-                                            >
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                            </div>
-                                          </div>
-
-                                          <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border-2 border-[#D4AF37]/65 shadow-md space-y-4 relative overflow-hidden">
-                                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                              <div className="flex items-center gap-2.5">
-                                                <CatalogGoldEmvChip className="w-10 h-8" />
-                                                <div>
-                                                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B] block">
-                                                    Amplop Digital Multi-Valuta
-                                                    (EMV Gold Chip)
-                                                  </span>
-                                                  <h6 className="font-editorial text-lg font-bold text-white">
-                                                    {activeEnvelope.provider}
-                                                  </h6>
-                                                </div>
-                                              </div>
-                                              <span className="px-2.5 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[10px] font-extrabold">
-                                                {activeEnvelope.badge}
-                                              </span>
-                                            </div>
-
-                                            {/* 4 Channel Selector Pills (PayPal & Crypto show ROYAL VIP badge) */}
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                              {DUMMY_ENVELOPE_CHANNELS.map(
-                                                (env, envIdx) => {
-                                                  const isAct =
-                                                    activeEnvelope.id ===
-                                                    env.id;
-                                                  const isIntlChannel =
-                                                    env.id === 'paypal' ||
-                                                    env.id === 'usdt';
-                                                  return (
-                                                    <button
-                                                      key={env.id}
-                                                      type="button"
-                                                      onClick={() => {
-                                                        if (
-                                                          isIntlChannel &&
-                                                          !isRoyalSim
-                                                        ) {
-                                                          setSimPackageTier(
-                                                            'ROYAL VIP'
-                                                          );
-                                                        }
-                                                        setSimEnvelopeIdx(
-                                                          envIdx
-                                                        );
-                                                      }}
-                                                      className={`py-2 px-2.5 rounded-xl text-[11px] font-extrabold border transition-all truncate ${
-                                                        isAct
-                                                          ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37]'
-                                                          : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
-                                                      }`}
-                                                    >
-                                                      {isIntlChannel &&
-                                                      !isRoyalSim
-                                                        ? `🔒 ${env.label} (VIP)`
-                                                        : env.label}
-                                                    </button>
-                                                  );
-                                                }
-                                              )}
-                                            </div>
-
-                                            <div className="p-3.5 rounded-2xl bg-black/40 border border-[#D4AF37]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                              <div className="min-w-0">
-                                                <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white break-all">
-                                                  {activeEnvelope.accountNumber}
-                                                </p>
-                                                <p className="text-xs text-[#E6C76B] mt-0.5">
-                                                  a.n. {simPreset.titleShort}{' '}
-                                                  (Data Simulasi Resmi)
-                                                </p>
-                                              </div>
-
-                                              <button
-                                                type="button"
-                                                onClick={() =>
-                                                  handleCopySimEnvelope(
-                                                    activeEnvelope.id,
-                                                    activeEnvelope.accountNumber
-                                                  )
-                                                }
-                                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
-                                              >
-                                                {copiedSimEnvelopeKey ===
-                                                activeEnvelope.id ? (
-                                                  <>
-                                                    <Check className="w-4 h-4 text-emerald-950" />
-                                                    <span>
-                                                      ✓ Nomor Dummy Tersalin!
-                                                    </span>
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <Copy className="w-3.5 h-3.5" />
-                                                    <span>
-                                                      Salin Rekening Dummy
-                                                    </span>
-                                                  </>
-                                                )}
-                                              </button>
-                                            </div>
-                                          </div>
-
-                                          {/* Physical Gift Delivery Address Card (Matching PublicInvitationView 1:1) */}
-                                          <div className="p-4 rounded-2xl bg-white/95 border border-[#D4AF37]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                            <div className="space-y-0.5">
-                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                                                🎁 Alamat Pengiriman Kado Fisik
-                                                &amp; Karangan Bunga
-                                              </span>
-                                              <p className="text-xs font-bold text-stone-800">
-                                                Kediaman Resmi{' '}
-                                                {simPreset.titleShort} —{' '}
-                                                {simPreset.eventVenue}
-                                              </p>
-                                            </div>
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                handleCopySimEnvelope(
-                                                  'GIFT_ADDR',
-                                                  `${simPreset.titleShort} - ${simPreset.eventVenue}`
-                                                )
-                                              }
-                                              className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[11px] font-extrabold shrink-0"
-                                            >
-                                              {copiedSimEnvelopeKey ===
-                                              'GIFT_ADDR'
-                                                ? '✓ Alamat Tersalin!'
-                                                : 'Salin Alamat Kado'}
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* 8. CLOSING SIGNATURE CARD & OFFICIAL MEPLAN CREDIT FOOTER (Matching PublicInvitationView 1:1) */}
-                                      <div className="pt-4 border-t border-[#D4AF37]/30 text-center space-y-3">
-                                        <p className="text-xs text-stone-600 max-w-lg mx-auto leading-relaxed">
-                                          {lang === 'ID'
-                                            ? 'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.'
-                                            : 'It is our greatest honor and joy to welcome your presence and warm blessings at our celebration.'}
-                                        </p>
-                                        <p className="font-script text-3xl sm:text-4xl text-[#8B6914]">
-                                          {simPreset.titleShort}
-                                        </p>
-                                        <div className="pt-2">
-                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/35 text-[10px] font-bold text-[#8B6914]">
-                                            <Sparkles className="w-3 h-3 text-[#B68D40]" />
-                                            <span>
-                                              MEPlan &bull; My Event Planner by
-                                              omeko42
-                                            </span>
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenDemoManager) {
+                              onOpenDemoManager(
+                                activeDummyMeta.id,
+                                simPackageTier
                               );
-                            })()
-                          )}
-                        </div>
+                            } else {
+                              onOpenAdminPortal();
+                            }
+                          }}
+                          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {lang === 'ID'
+                              ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
+                              : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
+                          </span>
+                        </button>
 
-                        {/* RIGHT: Fitur Desain Editorial & Simulasi Paket Summary Card (4 Cols) */}
-                        <div className="lg:col-span-4 rounded-3xl bg-white border-2 border-[#D4AF37]/45 p-5 sm:p-6 shadow-[0_14px_38px_rgba(28,25,23,0.08)] space-y-5 relative overflow-hidden">
-                          <CatalogFloralCorner
-                            position="top-right"
-                            size="sm"
-                            className="opacity-45"
-                          />
-                          <div className="space-y-1.5 relative z-10">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                              <Sparkles className="w-3 h-3 text-[#B68D40]" />
-                              <span>
-                                {lang === 'ID'
-                                  ? `Mode Aktif: Paket ${simPackageTier}`
-                                  : `Active Mode: ${simPackageTier} Plan`}
-                              </span>
-                            </span>
-                            <h4 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
-                              {lang === 'ID'
-                                ? 'Kendali Penuh 1:1 di Studio Manager'
-                                : 'Full 1:1 Control in Manager Studio'}
-                            </h4>
-                            <p className="text-xs text-stone-600 leading-relaxed">
-                              {lang === 'ID'
-                                ? 'Undangan dummy di samping terhubung langsung dengan tombol pengaturan di bawah dan di dalam tab Pengaturan Manager:'
-                                : 'The live invitation on the left is connected directly to the quick toggles below and inside the Manager Settings tab:'}
-                            </p>
-                          </div>
-
-                          {/* Live Quick Toggles right inside the 4-col companion card */}
-                          <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2 relative z-10">
-                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                              {lang === 'ID'
-                                ? 'Uji Coba Cepat Ornamen & Seksi:'
-                                : 'Quick Ornament & Section Toggles:'}
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSimStudioOrnaments((prev) => ({
-                                    ...prev,
-                                    floralCorner: !prev.floralCorner,
-                                  }))
-                                }
-                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
-                                  simStudioOrnaments.floralCorner
-                                    ? 'bg-emerald-700 text-white border-emerald-600'
-                                    : 'bg-white text-stone-600 border-stone-300'
-                                }`}
-                              >
-                                🌸 Sudut Floral:{' '}
-                                {simStudioOrnaments.floralCorner ? 'ON' : 'OFF'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSimStudioOrnaments((prev) => ({
-                                    ...prev,
-                                    heroBadge: !prev.heroBadge,
-                                  }))
-                                }
-                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
-                                  simStudioOrnaments.heroBadge
-                                    ? 'bg-emerald-700 text-white border-emerald-600'
-                                    : 'bg-white text-stone-600 border-stone-300'
-                                }`}
-                              >
-                                🏷️ Lencana Atas Foto:{' '}
-                                {simStudioOrnaments.heroBadge
-                                  ? 'ON'
-                                  : 'OFF (Bersih)'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSimSectionToggles((prev) => ({
-                                    ...prev,
-                                    quote: !prev.quote,
-                                  }))
-                                }
-                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
-                                  simSectionToggles.quote
-                                    ? 'bg-emerald-700 text-white border-emerald-600'
-                                    : 'bg-white text-stone-600 border-stone-300'
-                                }`}
-                              >
-                                📜 Seksi Kutipan:{' '}
-                                {simSectionToggles.quote ? 'ON' : 'OFF'}
-                              </button>
-                            </div>
-                          </div>
-
-                          <ul className="space-y-2 text-xs text-stone-700 relative z-10">
-                            {(lang === 'ID'
-                              ? [
-                                  'Header Sticky Identik: Monogram emas, Vinyl Player berputar, & tombol Manager.',
-                                  'Feathered Hero Banner dengan transisi alpha-mask halus tanpa tertutup lencana.',
-                                  'Bingkai Foto Kubah (Arch-Dome), Lingkaran (Circle), atau Editorial Tegak.',
-                                  'Otomatis 2 Profil (Pernikahan) atau 1 Profil Spotlight (Birthday, Wisuda, Rapat & Gala).',
-                                  'Kartu Amplop Digital EMV Emas (Bank, QRIS, PayPal & Crypto USDT) + Alamat Kado Fisik.',
-                                ]
-                              : [
-                                  'Identical Sticky Header: Gold monogram, spinning Vinyl Player & Manager button.',
-                                  'Feathered Hero Banner with clean alpha-mask and zero obstructive top badge.',
-                                  'Selectable Arch-Dome, Circle, or Editorial Rectangle portrait frames.',
-                                  'Adaptive 2-Profile (Wedding) or 1-Profile Spotlight (Birthday, Graduation, Corporate & Gala).',
-                                  'Metallic EMV Chip Digital Envelope (Bank, QRIS, PayPal & Crypto) + Physical Gift Address.',
-                                ]
-                            ).map((item) => (
-                              <li key={item} className="flex items-start gap-2">
-                                <CheckCircle2 className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                                <span className="leading-relaxed">{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-
-                          <div className="pt-3 border-t border-[#D4AF37]/30 space-y-2.5 relative z-10">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveShowcaseIdx(4);
-                                setSimStudioNavTab('konten');
-                                setShowcaseViewMode('dashboard_modules');
-                              }}
-                              className="w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
-                            >
-                              <LayoutDashboard className="w-4 h-4 shrink-0" />
-                              <span className="truncate">
-                                {lang === 'ID'
-                                  ? '🎛️ Buka Studio Pengaturan di Manager'
-                                  : '🎛️ Open Studio Settings in Manager'}
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleSelectPackageForCheckout(simPackageTier)
-                              }
-                              className="w-full py-2.5 px-4 rounded-2xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
-                            >
-                              <Wallet className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">
-                                {lang === 'ID'
-                                  ? `Pesan Paket ${simPackageTier} Sekarang`
-                                  : `Order ${simPackageTier} Plan Now`}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSelectPackageForCheckout(simPackageTier)
+                          }
+                          className="w-full py-2.5 px-4 rounded-2xl bg-[#090B14] hover:bg-indigo-950 text-[#00F0FF] border border-[#00F0FF]/40 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <Wallet className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {lang === 'ID'
+                              ? `Pesan Paket ${simPackageTier} Sekarang`
+                              : `Order ${simPackageTier} Plan Now`}
+                          </span>
+                        </button>
                       </div>
                     </div>
-                  );
-                })()
+                  </div>
+                </div>
               ) : (
                 /* ================================================================= */
                 /* TAB 2: 1:1 ADMIN DASHBOARD REPLICA + 5 INTERACTIVE MODULES        */
                 /* ================================================================= */
                 <>
+                  {/* Top Action Bar for Manager Preview: Switch Dummy Client & Open Real Themed Demo Manager */}
+                  <div className="p-3.5 sm:p-4 rounded-3xl bg-[#111528] border border-indigo-500/40 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
+                        const isSelected = activeDummyMeta.id === meta.id;
+                        return (
+                          <button
+                            key={meta.id}
+                            type="button"
+                            onClick={() => handleSelectDummyClient(meta.id)}
+                            className={`px-3.5 py-2 rounded-2xl border text-xs font-extrabold transition-all inline-flex items-center gap-1.5 whitespace-nowrap truncate ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white border-[#00F0FF] shadow-[0_0_20px_rgba(99,102,241,0.45)]'
+                                : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
+                            }`}
+                          >
+                            <span>
+                              {lang === 'ID' ? meta.labelId : meta.labelEn}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenDemoManager) {
+                          onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                        } else {
+                          onOpenAdminPortal();
+                        }
+                      }}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all shrink-0"
+                    >
+                      <LayoutDashboard className="w-4 h-4 shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? `🎨 Buka Demo Manager / Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
+                          : `🎨 Open Real Demo Manager (Theme: ${activeDummyMeta.themeLabel})`}
+                      </span>
+                    </button>
+                  </div>
+
                   {/* Featured Interactive Browser Frame Preview (1:1 AdminDashboardView Replica) */}
                   {(() => {
                     const currentShot =
@@ -7065,19 +6380,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       lang === 'ID' ? currentShot.descId : currentShot.descEn;
 
                     return (
-                      <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.10)] overflow-hidden">
+                      <div className="rounded-3xl bg-[#111528] border-2 border-indigo-500/45 shadow-[0_18px_48px_rgba(0,0,0,0.45)] overflow-hidden">
                         {/* Browser Window Top Bar */}
-                        <div className="px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                        <div className="px-3.5 sm:px-5 py-2.5 bg-[#090B14] text-white border-b border-indigo-500/35 flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
                               <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
                               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
                             </div>
-                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
+                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
                               {currentShot.badge}
                             </span>
-                            <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
+                            <span className="hidden md:inline-block font-mono text-[11px] text-indigo-300 truncate">
                               https://meplan.app/manager/{currentShot.id}
                             </span>
                             <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
@@ -7102,11 +6417,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Modul Sebelumnya'
                                   : 'Previous Module'
                               }
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
                             >
                               <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-[11px] font-mono font-bold text-[#E6C76B] px-1.5">
+                            <span className="text-[11px] font-mono font-bold text-[#00F0FF] px-1.5">
                               {activeShowcaseIdx + 1} /{' '}
                               {OFFICIAL_PRODUCT_SCREENSHOTS.length}
                             </span>
@@ -7124,7 +6439,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Modul Berikutnya'
                                   : 'Next Module'
                               }
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 transition-all"
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
                             >
                               <ChevronRight className="w-4 h-4" />
                             </button>
@@ -7136,7 +6451,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Perbesar Layar Penuh'
                                   : 'Zoom Fullscreen'
                               }
-                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
                             >
                               <Maximize2 className="w-3.5 h-3.5 shrink-0" />
                               <span className="whitespace-nowrap truncate">
@@ -7152,17 +6467,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Active Screenshot Description & Prev/Next Footer */}
-                        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="p-4 sm:p-5 bg-[#111528] border-t border-indigo-500/35 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="space-y-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                              <span className="px-2.5 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/40 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap">
                                 {currentShot.badge}
                               </span>
-                              <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
+                              <h4 className="font-sans text-base sm:text-lg font-extrabold text-white">
                                 {currentTitle}
                               </h4>
                             </div>
-                            <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
+                            <p className="text-xs text-indigo-200/80 leading-relaxed max-w-3xl">
                               {currentDesc}
                             </p>
                           </div>
@@ -7184,9 +6499,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Lihat Modul Sebelumnya'
                                   : 'View Previous Module'
                               }
-                              className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                              className="px-3 py-2 rounded-xl bg-[#090B14] hover:bg-indigo-950 border border-indigo-500/40 text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
-                              <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
+                              <ArrowLeft className="w-3.5 h-3.5 text-[#00F0FF]" />
                               <span>
                                 {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
                               </span>
@@ -7205,7 +6520,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Lihat Modul Berikutnya'
                                   : 'View Next Module'
                               }
-                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
                               <span>
                                 {lang === 'ID' ? 'Berikutnya' : 'Next'}
@@ -7230,16 +6545,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <div
                           key={shot.id}
                           onClick={() => setActiveShowcaseIdx(idx)}
-                          className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
+                          className={`group cursor-pointer rounded-2xl bg-[#111528] border overflow-hidden flex flex-col justify-between transition-all ${
                             isSelected
-                              ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
-                              : 'border-[#D4AF37]/35 hover:border-[#B68D40] shadow-2xs hover:-translate-y-0.5'
+                              ? 'border-2 border-[#00F0FF] ring-2 ring-[#6366F1]/45 shadow-md -translate-y-0.5'
+                              : 'border-indigo-500/35 hover:border-[#6366F1] shadow-2xs hover:-translate-y-0.5'
                           }`}
                         >
                           <div>
-                            <div className="relative h-24 bg-gradient-to-br from-stone-950 via-stone-900 to-[#221A14] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
+                            <div className="relative h-24 bg-gradient-to-br from-[#090B14] via-[#131836] to-[#1A1333] overflow-hidden border-b border-indigo-500/30 p-3 flex flex-col justify-between">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="px-2 py-0.5 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[9px] font-extrabold whitespace-nowrap">
                                   {lang === 'ID' ? shot.tabId : shot.tabEn}
                                 </span>
                                 <button
@@ -7255,11 +6570,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   }
                                   className="p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
                                 >
-                                  <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
+                                  <Maximize2 className="w-3 h-3 text-[#00F0FF]" />
                                 </button>
                               </div>
-                              <div className="rounded-xl bg-white/10 border border-[#D4AF37]/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-extrabold text-[#FAF3E3] truncate">
+                              <div className="rounded-xl bg-white/5 border border-indigo-500/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-extrabold text-white truncate">
                                   {shot.kpiSummary}
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[8px] font-extrabold shrink-0">
@@ -7268,19 +6583,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               </div>
                             </div>
                             <div className="p-3 space-y-1">
-                              <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
+                              <p className="text-[10px] font-extrabold text-[#00F0FF] truncate">
                                 {shot.badge}
                               </p>
-                              <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
+                              <h5 className="text-xs font-extrabold text-white line-clamp-2 leading-snug">
                                 {shotTitle}
                               </h5>
-                              <p className="text-[11px] text-stone-500 line-clamp-2 leading-relaxed">
+                              <p className="text-[11px] text-indigo-200/75 line-clamp-2 leading-relaxed">
                                 {shotDesc}
                               </p>
                             </div>
                           </div>
-                          <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/60 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
+                          <div className="px-3 py-2 bg-[#090B14] border-t border-indigo-500/25 flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold text-[#00F0FF] whitespace-nowrap truncate">
                               {isSelected
                                 ? lang === 'ID'
                                   ? '● Sedang Aktif'
@@ -7300,7 +6615,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Buka Layar Penuh'
                                   : 'Open Fullscreen'
                               }
-                              className="text-[10px] font-extrabold text-stone-800 hover:text-[#8B6914] underline whitespace-nowrap"
+                              className="text-[10px] font-extrabold text-indigo-200 hover:text-[#00F0FF] underline whitespace-nowrap"
                             >
                               {lang === 'ID' ? 'Zoom' : 'Zoom'}
                             </button>
@@ -7316,29 +6631,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* SECTION 2: 6 MODUL UNGGULAN MY EVENT PLANNER */}
             <section
               id="fitur"
-              className="py-12 sm:py-16 bg-white border-y border-[#D4AF37]/25"
+              className="py-12 sm:py-16 bg-[#111528] border-y border-indigo-500/30"
             >
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-10">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
                     {lang === 'ID'
-                      ? 'Arsitektur Cloud Enterprise'
-                      : 'Enterprise Cloud Architecture'}
+                      ? 'Arsitektur Cloud Enterprise MEPlan SaaS'
+                      : 'MEPlan SaaS Enterprise Cloud Architecture'}
                   </span>
-                  <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+                  <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
                     {lang === 'ID'
                       ? '6 Modul Terintegrasi dalam 1 Ekosistem'
                       : '6 Integrated Modules in 1 Ecosystem'}
                   </h3>
                   <div
                     aria-hidden="true"
-                    className="flex items-center justify-center gap-2.5 my-2.5 text-[#B68D40]"
+                    className="flex items-center justify-center gap-2.5 my-2.5 text-[#00F0FF]"
                   >
-                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                    <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#6366F1] to-[#00F0FF]" />
+                    <span className="w-2 h-2 rotate-45 bg-[#00F0FF]" />
+                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#6366F1] to-[#00F0FF]" />
                   </div>
-                  <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                  <p className="text-xs sm:text-sm text-indigo-200/80 mt-1">
                     {lang === 'ID' ? (
                       <>
                         Dirancang khusus agar penyelenggara acara, keluarga, dan
@@ -7374,8 +6689,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         },
                         {
                           icon: Send,
-                          title: '4. Tamu VIP & Generator WA 1-Klik',
-                          desc: 'Mendukung kode undangan unik (INV-0001), deteksi otomatis lencana Tamu VIP, dan pengiriman undangan WhatsApp personal.',
+                          title: '4. Tamu VIP & Hash Token 21-Char',
+                          desc: 'Mendukung kode hash unik 21 karakter per tamu, deteksi otomatis lencana Tamu VIP, dan pengiriman undangan WhatsApp personal.',
                         },
                         {
                           icon: ImageIcon,
@@ -7406,8 +6721,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         },
                         {
                           icon: Send,
-                          title: '4. VIP Guest CRM & 1-Click WA Blast',
-                          desc: 'Supports unique VIP invitation codes (INV-0001), automatic VIP badge detection, and personalized 1-click WhatsApp invitations.',
+                          title: '4. VIP Guest CRM & 21-Char Hash Token',
+                          desc: 'Supports unique 21-character VIP guest hash tokens, automatic VIP badge detection, and personalized 1-click WhatsApp invitations.',
                         },
                         {
                           icon: ImageIcon,
@@ -7425,15 +6740,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     return (
                       <div
                         key={feat.title}
-                        className="min-w-0 p-5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2.5"
+                        className="min-w-0 p-5 rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/50 transition-all space-y-2.5 shadow-md"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1]/25 to-[#8B5CF6]/25 border border-indigo-400/45 text-[#00F0FF] flex items-center justify-center">
                           <Icon className="w-5 h-5" />
                         </div>
-                        <h4 className="font-extrabold text-stone-900 text-sm">
+                        <h4 className="font-extrabold text-white text-sm">
                           {feat.title}
                         </h4>
-                        <p className="text-xs text-stone-600 leading-relaxed">
+                        <p className="text-xs text-indigo-200/80 leading-relaxed">
                           {feat.desc}
                         </p>
                       </div>
@@ -7449,25 +6764,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
             >
               <div className="text-center max-w-3xl mx-auto mb-10">
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
                   {lang === 'ID'
-                    ? 'Lisensi & Layanan Komersial (QRIS • Transfer Bank • Kartu Kredit • PayPal • Crypto)'
-                    : 'Commercial Plans & Licensing (Credit Card • PayPal • Crypto USDT)'}
+                    ? 'Lisensi & Layanan Komersial MEPlan SaaS (QRIS • Transfer Bank • Kartu Kredit • PayPal • Crypto)'
+                    : 'MEPlan SaaS Commercial Plans & Licensing (Credit Card • PayPal • Crypto USDT)'}
                 </span>
-                <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
+                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
                   {lang === 'ID'
                     ? 'Pilihan Paket My Event Planner'
                     : 'My Event Planner Packages'}
                 </h3>
                 <div
                   aria-hidden="true"
-                  className="flex items-center justify-center gap-2.5 my-2.5 text-[#B68D40]"
+                  className="flex items-center justify-center gap-2.5 my-2.5 text-[#00F0FF]"
                 >
-                  <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                  <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                  <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                  <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#6366F1] to-[#00F0FF]" />
+                  <span className="w-2 h-2 rotate-45 bg-[#00F0FF]" />
+                  <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#6366F1] to-[#00F0FF]" />
                 </div>
-                <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                <p className="text-xs sm:text-sm text-indigo-200/80 mt-1">
                   {lang === 'ID'
                     ? 'Klik tombol Pilih Paket di bawah untuk membuka halaman pembayaran multi-wallet & verifikasi lisensi idempoten.'
                     : 'Click Select & Checkout on any plan below to open the dedicated multi-wallet payment & idempotent activation page.'}
@@ -7484,10 +6799,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       key={pkg.tier}
                       className={`min-w-0 overflow-hidden rounded-3xl p-6 flex flex-col justify-between transition-all ${
                         isRoyal
-                          ? 'bg-gradient-to-b from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(182,141,64,0.28)] relative'
+                          ? 'bg-gradient-to-b from-[#1A1423] via-[#111528] to-[#1E1712] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(212,175,55,0.25)] relative'
                           : isExclusive
-                            ? 'bg-gradient-to-b from-[#FFFDF9] to-[#FAF3E3]/60 text-stone-800 border-2 border-[#B68D40]/70 shadow-md'
-                            : 'bg-white text-stone-800 border border-[#D4AF37]/35 shadow-xs'
+                            ? 'bg-gradient-to-b from-[#161B36] to-[#111528] text-white border-2 border-[#6366F1] shadow-[0_18px_40px_rgba(99,102,241,0.25)]'
+                            : 'bg-[#111528] text-slate-100 border border-indigo-500/35 shadow-md'
                       }`}
                     >
                       <div className="space-y-4 min-w-0">
@@ -7498,8 +6813,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               isRoyal
                                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-2xs'
                                 : isExclusive
-                                  ? 'bg-stone-900 text-[#D4AF37]'
-                                  : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
+                                  ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
+                                  : 'bg-[#090B14] text-[#00F0FF] border border-indigo-500/40'
                             }`}
                           >
                             {pkg.badge}
@@ -7508,28 +6823,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                         {/* Title & Strictly Separated Pricing Block */}
                         <div className="min-w-0">
-                          <h4
-                            className={`font-serif text-xl font-extrabold ${
-                              isRoyal ? 'text-white' : 'text-stone-900'
-                            }`}
-                          >
+                          <h4 className="font-sans text-xl font-extrabold text-white">
                             {pkg.name}
                           </h4>
 
-                          <div className="mt-3 pt-3 border-t border-[#D4AF37]/25">
+                          <div className="mt-3 pt-3 border-t border-indigo-500/25">
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <span
                                 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
                                   isRoyal
-                                    ? 'text-[#E6C76B]'
+                                    ? 'text-[#D4AF37]'
                                     : isExclusive
-                                      ? 'text-[#8B6914]'
-                                      : 'text-stone-900'
+                                      ? 'text-[#00F0FF]'
+                                      : 'text-white'
                                 }`}
                               >
                                 {pkg.priceMain}
                               </span>
-                              <span className="text-xs font-bold line-through text-stone-400">
+                              <span className="text-xs font-bold line-through text-indigo-300/50">
                                 {pkg.priceStrike}
                               </span>
                             </div>
@@ -7537,8 +6848,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <span
                                 className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-lg ${
                                   isRoyal
-                                    ? 'bg-white/10 text-[#FAF3E3] border border-[#D4AF37]/40'
-                                    : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30'
+                                    ? 'bg-[#D4AF37]/15 text-[#FAF3E3] border border-[#D4AF37]/40'
+                                    : 'bg-[#090B14] text-indigo-200 border border-indigo-500/35'
                                 }`}
                               >
                                 {pkg.priceSubBadge}
@@ -7556,15 +6867,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   isRoyal
                                     ? 'text-[#D4AF37]'
                                     : isExclusive
-                                      ? 'text-[#B68D40]'
-                                      : 'text-emerald-600'
+                                      ? 'text-[#00F0FF]'
+                                      : 'text-[#6366F1]'
                                 }`}
                               />
                               <span
                                 className={
                                   isRoyal
                                     ? 'text-[#E8DFD1] font-medium'
-                                    : 'text-stone-700'
+                                    : 'text-indigo-100/90'
                                 }
                               >
                                 {f}
@@ -7575,7 +6886,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       {/* CTA Buttons: Preview Tier in Live Tour OR Open Dedicated Checkout Page */}
-                      <div className="pt-5 mt-5 border-t border-[#D4AF37]/25 space-y-2 min-w-0">
+                      <div className="pt-5 mt-5 border-t border-indigo-500/25 space-y-2 min-w-0">
                         <button
                           type="button"
                           onClick={() => {
@@ -7593,7 +6904,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           className={`w-full max-w-full py-2.5 px-3 rounded-xl font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all border ${
                             isRoyal
                               ? 'bg-white/10 hover:bg-white/20 text-[#E6C76B] border-[#D4AF37]/45'
-                              : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                              : 'bg-[#090B14] hover:bg-indigo-950 text-[#00F0FF] border-indigo-500/45'
                           }`}
                         >
                           <Eye className="w-3.5 h-3.5 shrink-0" />
@@ -7613,8 +6924,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             isRoyal
                               ? 'bg-gradient-to-r from-[#D4AF37] via-[#E6C76B] to-[#B68D40] text-stone-950 hover:from-[#C5A059] hover:to-[#9A742B] shadow-md'
                               : isExclusive
-                                ? 'bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45'
-                                : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45'
+                                ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white shadow-md'
+                                : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
                           }`}
                         >
                           <Wallet className="w-4 h-4 shrink-0" />
@@ -7641,16 +6952,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           onClick={() => setLightboxScreenshot(null)}
         >
           <div
-            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-stone-950 border border-[#D4AF37]/50 shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-[#090B14] border border-indigo-500/50 shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-3.5 bg-stone-900 border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 sm:px-6 py-3.5 bg-[#111528] border-b border-indigo-500/35 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap">
                   {lightboxScreenshot.badge}
                 </span>
-                <h4 className="font-serif text-sm sm:text-base font-extrabold text-[#FAF3E3] truncate">
+                <h4 className="font-sans text-sm sm:text-base font-extrabold text-white truncate">
                   {lightboxScreenshot.title}
                 </h4>
                 <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold whitespace-nowrap">
@@ -7669,14 +6980,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? 'Modul Sebelumnya'
                           : 'Previous Module'
                       }
-                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
                       </span>
                     </button>
-                    <span className="text-xs font-mono font-bold text-[#E6C76B] px-1">
+                    <span className="text-xs font-mono font-bold text-[#00F0FF] px-1">
                       {activeShowcaseIdx + 1} /{' '}
                       {OFFICIAL_PRODUCT_SCREENSHOTS.length}
                     </span>
@@ -7686,7 +6997,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       title={
                         lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
                       }
-                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
                       <span className="hidden sm:inline">
                         {lang === 'ID' ? 'Berikutnya' : 'Next'}
@@ -7712,68 +7023,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* Live Vector-Sharp Interactive React Body */}
             <div className="flex-1 overflow-y-auto bg-[#FAF8F5]">
               {lightboxScreenshot.mode === 'invitation_sim' ? (
-                (() => {
-                  const activePreset =
-                    SIMULATION_EVENT_PRESETS[simEventType] ||
-                    SIMULATION_EVENT_PRESETS.WEDDING;
-                  return (
-                    <div className="p-4 sm:p-6 space-y-5">
-                      <div className="rounded-3xl overflow-hidden border border-[#D4AF37]/45 bg-stone-950 text-[#FAF3E3] relative">
-                        <div className="relative h-56 sm:h-72 overflow-hidden">
-                          <img
-                            src={activePreset.heroImage}
-                            alt={activePreset.titleShort}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/60 to-transparent" />
-                          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex flex-wrap items-end justify-between gap-3">
-                            <div>
-                              <span className="px-3 py-1 rounded-full bg-[#D4AF37]/25 border border-[#D4AF37]/60 text-[#FAF3E3] font-mono text-[10px] font-extrabold uppercase tracking-wider">
-                                {lang === 'ID'
-                                  ? activePreset.badgeId
-                                  : activePreset.badgeEn}
-                              </span>
-                              <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-white mt-2">
-                                {activePreset.titleShort}
-                              </h3>
-                              <p className="text-xs sm:text-sm text-[#E6C76B] font-semibold mt-0.5">
-                                {activePreset.eventDate} • {activePreset.eventVenue}
-                              </p>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {(
-                                Object.keys(
-                                  SIMULATION_EVENT_PRESETS
-                                ) as EventCategoryType[]
-                              ).map((evKey) => {
-                                const p = SIMULATION_EVENT_PRESETS[evKey];
-                                const isSel = simEventType === evKey;
-                                return (
-                                  <button
-                                    key={evKey}
-                                    type="button"
-                                    onClick={() => {
-                                      setSimEventType(evKey);
-                                      setSimGalleryIdx(0);
-                                    }}
-                                    className={`px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold transition-all ${
-                                      isSel
-                                        ? 'bg-[#D4AF37] text-stone-950 shadow-2xs'
-                                        : 'bg-black/60 text-[#FAF3E3] border border-white/20 hover:border-[#D4AF37]/50'
-                                    }`}
-                                  >
-                                    {lang === 'ID' ? p.tabLabelId : p.tabLabelEn}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {renderLiveDashboardModule('pengaturan')}
-                    </div>
-                  );
-                })()
+                <PublicInvitationView
+                  key={`lightbox-${activeDummyMeta.id}-${simPackageTier}`}
+                  settings={activeDummyState.settings}
+                  guests={activeDummyState.guests}
+                  wishes={effectiveDummyWishes}
+                  guestParamName={activeDummyMeta.sampleGuestName}
+                  guestParamCode={activeDummyMeta.sampleHashToken}
+                  defaultOpened={simIsOpened}
+                  isAdminLoggedIn={false}
+                  onOpenAdminPortal={() => {
+                    setLightboxScreenshot(null);
+                    if (onOpenDemoManager) {
+                      onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                    } else {
+                      onOpenAdminPortal();
+                    }
+                  }}
+                  onSubmitRsvp={handleDummyLiveRsvpSubmit}
+                />
               ) : (
                 renderLiveDashboardModule(
                   lightboxScreenshot.moduleId ||
@@ -7784,8 +7052,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
 
             {/* Modal Footer Caption */}
-            <div className="px-4 sm:px-6 py-3 bg-stone-900 border-t border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <p className="text-xs text-stone-300 leading-relaxed">
+            <div className="px-4 sm:px-6 py-3 bg-[#111528] border-t border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <p className="text-xs text-indigo-200 leading-relaxed">
                 {lightboxScreenshot.desc}
               </p>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -7798,8 +7066,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold whitespace-nowrap transition-all ${
                       activeShowcaseIdx === idx &&
                       lightboxScreenshot.mode !== 'invitation_sim'
-                        ? 'bg-[#D4AF37] text-stone-950'
-                        : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                        ? 'bg-[#6366F1] text-white'
+                        : 'bg-white/10 text-indigo-200 hover:bg-white/20'
                     }`}
                   >
                     {idx + 1}
@@ -7811,8 +7079,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       )}
 
-      {/* OFFICIAL FOOTER CREDIT & CONTACT US (With Subtle Commercial SaaS Suite Badge; Post-Payment Email Only Shown If Unlocked) */}
-      <footer className="bg-white border-t border-[#D4AF37]/35 py-6 px-4 sm:px-6 lg:px-8">
+      {/* OFFICIAL FOOTER CREDIT & CONTACT US (MEPlan SaaS Midnight Navy & Indigo Branding) */}
+      <footer className="bg-[#090B14] border-t border-indigo-500/35 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
             <div className="flex items-center justify-center shrink-0">
@@ -7823,26 +7091,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <p className="text-xs sm:text-sm font-extrabold text-stone-900">
+                <p className="text-xs sm:text-sm font-extrabold text-white">
                   MEPlan — My Event Planner by{' '}
                   <a
                     href={developerUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
+                    className="text-[#00F0FF] hover:text-indigo-300 underline decoration-[#00F0FF]/60 underline-offset-2"
                   >
                     omeko42
                   </a>{' '}
                   &copy; 2026
                 </p>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] text-[10px] font-bold">
-                  <Sparkles className="w-2.5 h-2.5" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111528] border border-indigo-500/40 text-[#00F0FF] text-[10px] font-bold">
+                  <Sparkles className="w-2.5 h-2.5 text-[#00F0FF]" />
                   <span>
-                    Commercial SaaS &amp; All-in-One Multi-Event Planner Suite
+                    Official MEPlan SaaS &amp; Multi-Event Planner Cloud Suite
                   </span>
                 </span>
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5">
+              <p className="text-[11px] text-indigo-200/75 mt-0.5">
                 {lang === 'ID'
                   ? 'Platform Multi-Event Readiness Tracker & Undangan Digital Interaktif (Wedding, Birthday, Graduation, Rapat & Gala Dinner)'
                   : 'Multi-Event Readiness Tracker & Interactive Digital Invitation Platform (Wedding, Birthday, Graduation, Corporate & Gala Dinner)'}
@@ -7851,7 +7119,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
+            <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#00F0FF]">
               {lang === 'ID' ? 'Hubungi Kami:' : 'Contact Us:'}
             </span>
             <a
@@ -7859,10 +7127,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               title={`Hubungi Kontak WA My Event Planner (${rawWa})`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-stone-900 text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111528] hover:bg-indigo-950 border border-indigo-500/45 text-white text-xs font-bold transition-all"
             >
               <svg
-                className="w-3.5 h-3.5 text-[#8B6914]"
+                className="w-3.5 h-3.5 text-[#00F0FF]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -7883,9 +7151,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? `Email Prioritas Pasca-Pembayaran (${businessEmail})`
                     : `Post-Payment Priority Email (${businessEmail})`
                 }
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45 text-xs font-bold transition-all shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111528] hover:bg-indigo-950 text-[#00F0FF] border border-[#00F0FF]/45 text-xs font-bold transition-all shadow-2xs"
               >
-                <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Mail className="w-3.5 h-3.5 text-[#00F0FF]" />
                 <span>{businessEmail}</span>
               </a>
             )}
