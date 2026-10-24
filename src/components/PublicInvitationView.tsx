@@ -41,6 +41,7 @@ import {
   RsvpStatus,
   GalleryPhotoItem,
   BackgroundSlideItem,
+  PhotoAdjustment,
   MusicTrackItem,
   InvitationInteractionType,
   EventCategoryType,
@@ -587,6 +588,165 @@ const AdaptiveVideoLayer: React.FC<AdaptiveVideoLayerProps> = ({
   );
 };
 
+interface BackgroundSlideshowLayerProps {
+  slides: BackgroundSlideItem[];
+  transitionStyle?: 'CROSSFADE' | 'ZOOM_DISSOLVE' | 'SMOOTH_SLIDE';
+  transitionDurationMs?: number;
+  slideIntervalSeconds?: number;
+  fallbackAdjust?: PhotoAdjustment;
+  altLabel?: string;
+}
+
+const BackgroundSlideshowLayer: React.FC<BackgroundSlideshowLayerProps> = ({
+  slides,
+  transitionStyle = 'CROSSFADE',
+  transitionDurationMs = 1400,
+  slideIntervalSeconds = 6,
+  fallbackAdjust,
+  altLabel = 'Background',
+}) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (slides.length <= 1 || slideIntervalSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % slides.length);
+    }, slideIntervalSeconds * 1000);
+    return () => clearInterval(timer);
+  }, [slides.length, slideIntervalSeconds]);
+
+  if (!slides || slides.length === 0) {
+    return (
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-br from-[#FAF8F5] via-[#F5E6C8]/60 to-[#E8D5B5]/50"
+      />
+    );
+  }
+
+  if (slides.length === 1) {
+    const slide = slides[0];
+    const effectiveAdj = slide.adjustment || fallbackAdjust;
+    const isContain = effectiveAdj?.fitMode === 'contain';
+    return (
+      <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+        {isContain && (
+          <img
+            src={slide.imageUrl}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-65 pointer-events-none"
+          />
+        )}
+        <img
+          src={slide.imageUrl}
+          alt={slide.title || altLabel}
+          className={`relative z-10 w-full h-full object-center transition-all ease-out ${
+            isContain ? 'object-contain' : 'object-cover animate-ken-burns'
+          }`}
+          style={{
+            ...getPhotoAdjustStyle(effectiveAdj),
+            transitionDuration: `${transitionDurationMs}ms`,
+          }}
+        />
+      </div>
+    );
+  }
+
+  const safeIndex = activeIndex % slides.length;
+
+  if (transitionStyle === 'SMOOTH_SLIDE') {
+    return (
+      <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="flex w-full h-full transition-transform will-change-transform"
+          style={{
+            transform: `translate3d(-${safeIndex * 100}%, 0, 0)`,
+            transitionDuration: `${transitionDurationMs}ms`,
+            transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+        >
+          {slides.map((slide, idx) => {
+            const isSlideActive = idx === safeIndex;
+            const effectiveAdj = slide.adjustment || fallbackAdjust;
+            const isContain = effectiveAdj?.fitMode === 'contain';
+            return (
+              <div
+                key={slide.id || `${slide.imageUrl}-${idx}`}
+                className="relative w-full h-full shrink-0 overflow-hidden"
+              >
+                {isContain && (
+                  <img
+                    src={slide.imageUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-65 pointer-events-none"
+                  />
+                )}
+                <img
+                  src={slide.imageUrl}
+                  alt={slide.title || `${altLabel} ${idx + 1}`}
+                  className={`relative z-10 w-full h-full object-center ${
+                    isContain
+                      ? 'object-contain'
+                      : `object-cover ${isSlideActive ? 'animate-ken-burns' : ''}`
+                  }`}
+                  style={getPhotoAdjustStyle(effectiveAdj)}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {slides.map((slide, idx) => {
+        const isSlideActive = idx === safeIndex;
+        const effectiveAdj = slide.adjustment || fallbackAdjust;
+        const isContain = effectiveAdj?.fitMode === 'contain';
+        return (
+          <div
+            key={slide.id || `${slide.imageUrl}-${idx}`}
+            style={{
+              transitionDuration: `${transitionDurationMs}ms`,
+              transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+            className={`absolute inset-0 w-full h-full overflow-hidden transition-all will-change-[opacity,transform,filter] ${
+              isSlideActive
+                ? 'opacity-100 scale-100 blur-0 z-10'
+                : transitionStyle === 'ZOOM_DISSOLVE'
+                ? 'opacity-0 scale-105 blur-xs z-0'
+                : 'opacity-0 scale-[1.02] z-0'
+            }`}
+          >
+            {isContain && (
+              <img
+                src={slide.imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover object-center blur-2xl scale-110 opacity-65 pointer-events-none"
+              />
+            )}
+            <img
+              src={slide.imageUrl}
+              alt={slide.title || `${altLabel} ${idx + 1}`}
+              className={`relative z-10 w-full h-full object-center ${
+                isContain
+                  ? 'object-contain'
+                  : `object-cover ${isSlideActive ? 'animate-ken-burns' : ''}`
+              }`}
+              style={getPhotoAdjustStyle(effectiveAdj)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   settings,
   guests,
@@ -748,123 +908,63 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ? Math.min(100, Math.max(0, settings.videoFocusY))
       : 28;
   const videoDesktopMode = settings.videoDesktopMode || 'HIGHLIGHT_COVER';
-  const unifiedVideoUrl = (
-    settings.coverVideoUrl ||
-    settings.heroVideoUrl ||
-    settings.pageVideoUrl ||
-    ''
-  ).trim();
 
-  const effectiveBackgroundSlides = useMemo<BackgroundSlideItem[]>(() => {
-    if (Array.isArray(settings.backgroundSlides)) {
-      return settings.backgroundSlides.filter(
+  const coverBgUrl = (settings.coverBgUrl || '').trim();
+  const heroPrewedUrl = (settings.heroPrewedUrl || '').trim();
+  const pageBgUrl = (settings.pageBgUrl || '').trim();
+
+  const coverAdj = settings.photoAdjustments?.coverBgUrl;
+  const heroAdj = settings.photoAdjustments?.heroPrewedUrl;
+  const pageBgAdj = settings.photoAdjustments?.pageBgUrl;
+
+  const rawCoverSlides = (
+    settings as WeddingSettings & { coverSlides?: BackgroundSlideItem[] }
+  ).coverSlides;
+  const rawHeroSlides = (
+    settings as WeddingSettings & { heroSlides?: BackgroundSlideItem[] }
+  ).heroSlides;
+  const rawPageSlides = (
+    settings as WeddingSettings & { pageSlides?: BackgroundSlideItem[] }
+  ).pageSlides;
+
+  const coverSlidesList = useMemo<BackgroundSlideItem[]>(() => {
+    if (Array.isArray(rawCoverSlides)) {
+      const valid = rawCoverSlides.filter(
         (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
       );
+      if (valid.length > 0) return valid;
     }
-    const fallbackEntries: {
-      field: 'coverBgUrl' | 'heroPrewedUrl' | 'pageBgUrl';
-      url?: string;
-    }[] = [
-      { field: 'coverBgUrl', url: settings.coverBgUrl },
-      { field: 'heroPrewedUrl', url: settings.heroPrewedUrl },
-      { field: 'pageBgUrl', url: settings.pageBgUrl },
-    ];
-    const seen = new Set<string>();
-    const deduplicated: BackgroundSlideItem[] = [];
-    fallbackEntries.forEach(({ field, url }, idx) => {
-      const clean = (url || '').trim();
-      if (!clean || seen.has(clean)) return;
-      seen.add(clean);
-      deduplicated.push({
-        id: `bg-fallback-${field}-${idx}`,
-        imageUrl: clean,
-        adjustment: settings.photoAdjustments?.[field],
-      });
-    });
-    return deduplicated;
-  }, [
-    settings.backgroundSlides,
-    settings.coverBgUrl,
-    settings.heroPrewedUrl,
-    settings.pageBgUrl,
-    settings.photoAdjustments,
-  ]);
+    if (coverBgUrl) {
+      return [{ id: 'cover_default', imageUrl: coverBgUrl, adjustment: coverAdj }];
+    }
+    return [];
+  }, [rawCoverSlides, coverBgUrl, coverAdj]);
 
-  const [activeBgSlideIdx, setActiveBgSlideIdx] = useState(0);
-
-  useEffect(() => {
-    if (effectiveBackgroundSlides.length <= 1) return;
-    const intervalMs = (gallerySlideSeconds > 0 ? gallerySlideSeconds : 6) * 1000;
-    const timer = setInterval(() => {
-      setActiveBgSlideIdx((prev) => (prev + 1) % effectiveBackgroundSlides.length);
-    }, intervalMs);
-    return () => clearInterval(timer);
-  }, [effectiveBackgroundSlides.length, gallerySlideSeconds]);
-
-  const renderUnifiedBackgroundLayer = (altLabel = 'Event Background') => {
-    if (unifiedVideoUrl) {
-      return (
-        <AdaptiveVideoLayer
-          videoUrl={unifiedVideoUrl}
-          posterUrl={effectiveBackgroundSlides[0]?.imageUrl || ''}
-          focusY={videoFocusY}
-          desktopMode={videoDesktopMode}
-        />
+  const heroSlidesList = useMemo<BackgroundSlideItem[]>(() => {
+    if (Array.isArray(rawHeroSlides)) {
+      const valid = rawHeroSlides.filter(
+        (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
       );
+      if (valid.length > 0) return valid;
     }
+    if (heroPrewedUrl) {
+      return [{ id: 'hero_default', imageUrl: heroPrewedUrl, adjustment: heroAdj }];
+    }
+    return [];
+  }, [rawHeroSlides, heroPrewedUrl, heroAdj]);
 
-    if (effectiveBackgroundSlides.length === 1) {
-      const slide = effectiveBackgroundSlides[0];
-      const fitMode = slide.adjustment?.fitMode;
-      return (
-        <img
-          src={slide.imageUrl}
-          alt={slide.title || altLabel}
-          className={`absolute inset-0 w-full h-full object-cover object-center transition-all ease-out ${
-            fitMode !== 'contain' ? 'animate-ken-burns' : ''
-          }`}
-          style={{
-            ...getPhotoAdjustStyle(slide.adjustment),
-            transitionDuration: `${galleryTransitionMs}ms`,
-          }}
-        />
+  const pageSlidesList = useMemo<BackgroundSlideItem[]>(() => {
+    if (Array.isArray(rawPageSlides)) {
+      const valid = rawPageSlides.filter(
+        (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
       );
+      if (valid.length > 0) return valid;
     }
-
-    if (effectiveBackgroundSlides.length > 1) {
-      const currentIdx = activeBgSlideIdx % effectiveBackgroundSlides.length;
-      return (
-        <>
-          {effectiveBackgroundSlides.map((slide, idx) => {
-            const isCurrent = idx === currentIdx;
-            return (
-              <div
-                key={slide.id || `${slide.imageUrl}-${idx}`}
-                className={`absolute inset-0 transition-all ease-in-out ${
-                  isCurrent ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 z-0'
-                }`}
-                style={{ transitionDuration: `${galleryTransitionMs}ms` }}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt={slide.title || `${altLabel} ${idx + 1}`}
-                  className="w-full h-full object-cover object-center"
-                  style={getPhotoAdjustStyle(slide.adjustment)}
-                />
-              </div>
-            );
-          })}
-        </>
-      );
+    if (pageBgUrl) {
+      return [{ id: 'page_default', imageUrl: pageBgUrl, adjustment: pageBgAdj }];
     }
-
-    return (
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-br from-[#FAF8F5] via-[#F5E6C8]/60 to-[#E8D5B5]/50"
-      />
-    );
-  };
+    return [];
+  }, [rawPageSlides, pageBgUrl, pageBgAdj]);
 
   const overlayOpacity = Math.min(96, Math.max(40, settings.bgOverlayOpacity ?? 88));
   const blurClass =
@@ -1823,7 +1923,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     return (
       <div className="min-h-[100dvh] relative flex flex-col justify-between pt-16 sm:pt-20 overflow-x-clip overflow-y-auto bg-[#FAF8F5] text-stone-800 select-none">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          {renderUnifiedBackgroundLayer('Background')}
+          {settings.coverVideoUrl?.trim() ? (
+            <AdaptiveVideoLayer
+              videoUrl={settings.coverVideoUrl}
+              posterUrl={coverSlidesList[0]?.imageUrl || coverBgUrl}
+              focusY={videoFocusY}
+              desktopMode={videoDesktopMode}
+            />
+          ) : (
+            <BackgroundSlideshowLayer
+              slides={coverSlidesList}
+              transitionStyle={galleryTransitionStyle}
+              transitionDurationMs={galleryTransitionMs}
+              slideIntervalSeconds={gallerySlideSeconds}
+              fallbackAdjust={coverAdj}
+              altLabel="Background"
+            />
+          )}
         </div>
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
@@ -1891,9 +2007,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       >
         {showPetals && <FloatingPetalsAmbient />}
 
-        {/* Unified Background Layer (1-or-Many Photo Slideshow / Video / Champagne Fallback) + Luminous Pearl Veil */}
+        {/* Cover Gate Background Layer (1-or-Many Photo Slideshow / Video / Champagne Fallback) + Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          {renderUnifiedBackgroundLayer('Cover Background')}
+          {settings.coverVideoUrl?.trim() ? (
+            <AdaptiveVideoLayer
+              videoUrl={settings.coverVideoUrl}
+              posterUrl={coverSlidesList[0]?.imageUrl || coverBgUrl}
+              focusY={videoFocusY}
+              desktopMode={videoDesktopMode}
+            />
+          ) : (
+            <BackgroundSlideshowLayer
+              slides={coverSlidesList}
+              transitionStyle={galleryTransitionStyle}
+              transitionDurationMs={galleryTransitionMs}
+              slideIntervalSeconds={gallerySlideSeconds}
+              fallbackAdjust={coverAdj}
+              altLabel="Cover Background"
+            />
+          )}
         </div>
         <div
           className={`fixed inset-0 pointer-events-none ${blurClass}`}
@@ -2103,9 +2235,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     >
       {showPetals && <FloatingPetalsAmbient />}
 
-      {/* FIXED CUSTOM WALLPAPER / UNIFIED BACKGROUND LAYER WITH ADJUSTABLE PEARL VEIL */}
+      {/* FIXED CUSTOM WALLPAPER / PAGE BACKGROUND LAYER WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        {renderUnifiedBackgroundLayer('Page Wallpaper')}
+        {settings.pageVideoUrl?.trim() ? (
+          <AdaptiveVideoLayer
+            videoUrl={settings.pageVideoUrl}
+            posterUrl={pageSlidesList[0]?.imageUrl || pageBgUrl}
+            focusY={videoFocusY}
+            desktopMode={videoDesktopMode}
+          />
+        ) : (
+          <BackgroundSlideshowLayer
+            slides={pageSlidesList}
+            transitionStyle={galleryTransitionStyle}
+            transitionDurationMs={galleryTransitionMs}
+            slideIntervalSeconds={gallerySlideSeconds}
+            fallbackAdjust={pageBgAdj}
+            altLabel="Page Wallpaper"
+          />
+        )}
         <div
           className={`absolute inset-0 z-20 ${blurClass}`}
           style={{
@@ -2357,33 +2505,57 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
             {/* Prewedding Silhouette Image / Motion Video Header with Feathered Mist Fade */}
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden bg-[#FFFDF9]">
-              <div
-                className="absolute inset-0"
-                style={{
-                  WebkitMaskImage:
-                    'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                  maskImage:
-                    'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                }}
-              >
-                {renderUnifiedBackgroundLayer('Prewedding Banner')}
-              </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/40 to-transparent pointer-events-none" />
-              {settings.showHeroBadge === true &&
-                Boolean(settings.heroBadgeText?.trim()) && (
-                  <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
-                    <EventCrestIcon
-                      eventType={eventType}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
+            {(heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim())) && (
+              <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden bg-[#FFFDF9]">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    WebkitMaskImage:
+                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                    maskImage:
+                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                  }}
+                >
+                  {settings.heroVideoUrl?.trim() ? (
+                    <AdaptiveVideoLayer
+                      videoUrl={settings.heroVideoUrl}
+                      posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
+                      focusY={videoFocusY}
+                      desktopMode={videoDesktopMode}
                     />
-                    <span>{settings.heroBadgeText?.trim()}</span>
-                  </div>
-                )}
-            </div>
+                  ) : (
+                    <BackgroundSlideshowLayer
+                      slides={heroSlidesList}
+                      transitionStyle={galleryTransitionStyle}
+                      transitionDurationMs={galleryTransitionMs}
+                      slideIntervalSeconds={gallerySlideSeconds}
+                      fallbackAdjust={heroAdj}
+                      altLabel="Prewedding Banner"
+                    />
+                  )}
+                </div>
+                <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/40 to-transparent pointer-events-none" />
+                {settings.showHeroBadge === true &&
+                  Boolean(settings.heroBadgeText?.trim()) && (
+                    <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
+                      <EventCrestIcon
+                        eventType={eventType}
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
+                      />
+                      <span>{settings.heroBadgeText?.trim()}</span>
+                    </div>
+                  )}
+              </div>
+            )}
 
             {/* Hero Content Overlapping Soft Feathered Fade */}
-            <div className="px-4 sm:px-6 pb-7 sm:pb-10 pt-2 text-center -mt-8 sm:-mt-12 relative z-20">
+            <div
+              className={`px-4 sm:px-6 pb-7 sm:pb-10 text-center relative z-20 ${
+                heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim())
+                  ? 'pt-2 -mt-8 sm:-mt-12'
+                  : 'pt-7 sm:pt-10'
+              }`}
+            >
               <div
                 aria-hidden="true"
                 className="flex items-center justify-center gap-3 mb-2"

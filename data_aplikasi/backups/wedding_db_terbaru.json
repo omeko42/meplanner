@@ -2224,11 +2224,12 @@
       ],
       "budgets": []
     },
-    "backgroundSlides": [
+    "backgroundSlides": [],
+    "coverSlides": [
       {
-        "id": "bg_slide_1",
+        "id": "cover_slide_1",
         "imageUrl": "https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/coverBgUrl_1_gCkYnnJQ1RLyLa.webp",
-        "title": "Background 1",
+        "title": "Sampul 1",
         "adjustment": {
           "x": 0,
           "y": 40,
@@ -2245,16 +2246,52 @@
           "rotation": 0,
           "aspectRatio": "3:4"
         }
-      },
+      }
+    ],
+    "heroSlides": [
       {
-        "id": "bg_slide_2",
+        "id": "hero_slide_1",
         "imageUrl": "https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/heroPrewedUrl_1_no0CPBGINMFcZm.webp",
-        "title": "Background 2"
-      },
+        "title": "Hero 1",
+        "adjustment": {
+          "x": 0,
+          "y": 30,
+          "zoom": 1,
+          "baked": true,
+          "flipX": false,
+          "cropBox": {
+            "h": 100,
+            "w": 100,
+            "x": 0,
+            "y": 0
+          },
+          "fitMode": "cover",
+          "rotation": 0,
+          "aspectRatio": "auto"
+        }
+      }
+    ],
+    "pageSlides": [
       {
-        "id": "bg_slide_3",
+        "id": "page_slide_1",
         "imageUrl": "https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/pageBgUrl_9_wIjjmzLppiJL5K.webp",
-        "title": "Background 3"
+        "title": "Latar 1",
+        "adjustment": {
+          "x": 0,
+          "y": 35,
+          "zoom": 1.2,
+          "baked": true,
+          "flipX": false,
+          "cropBox": {
+            "h": 100,
+            "w": 100,
+            "x": 0,
+            "y": 0
+          },
+          "fitMode": "cover",
+          "rotation": 0,
+          "aspectRatio": "16:9"
+        }
       }
     ]
   },

@@ -817,6 +817,12 @@ export function mergeFullDatabaseMultiDevice(
       nextSettings.brandLogoUrl = nextSettings.brandLogoUrl ?? cs.brandLogoUrl;
       nextSettings.backgroundSlides =
         nextSettings.backgroundSlides ?? cs.backgroundSlides;
+      nextSettings.coverSlides =
+        nextSettings.coverSlides ?? cs.coverSlides;
+      nextSettings.heroSlides =
+        nextSettings.heroSlides ?? cs.heroSlides;
+      nextSettings.pageSlides =
+        nextSettings.pageSlides ?? cs.pageSlides;
       nextSettings.gallerySlideDurationSeconds =
         cs.gallerySlideDurationSeconds ?? nextSettings.gallerySlideDurationSeconds;
       nextSettings.galleryTransitionDurationMs =
@@ -966,6 +972,15 @@ export function mergeFullDatabaseMultiDevice(
 
     if (nextSettings.backgroundSlides === undefined && cs.backgroundSlides) {
       nextSettings.backgroundSlides = cs.backgroundSlides;
+    }
+    if (nextSettings.coverSlides === undefined && cs.coverSlides) {
+      nextSettings.coverSlides = cs.coverSlides;
+    }
+    if (nextSettings.heroSlides === undefined && cs.heroSlides) {
+      nextSettings.heroSlides = cs.heroSlides;
+    }
+    if (nextSettings.pageSlides === undefined && cs.pageSlides) {
+      nextSettings.pageSlides = cs.pageSlides;
     }
   }
 
@@ -1223,6 +1238,7 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   const hasUnifiedBgSlides = Array.isArray(next.backgroundSlides);
   if (
     !hasUnifiedBgSlides &&
+    !Array.isArray(next.coverSlides) &&
     (!next.coverBgUrl ||
       next.coverBgUrl.includes('images.unsplash.com') ||
       (next.coverBgUrl.includes('.supabase.co/') &&
@@ -1232,6 +1248,7 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   }
   if (
     !hasUnifiedBgSlides &&
+    !Array.isArray(next.heroSlides) &&
     (!next.heroPrewedUrl ||
       next.heroPrewedUrl.includes('images.unsplash.com') ||
       (next.heroPrewedUrl.includes('.supabase.co/') &&
@@ -1241,6 +1258,7 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   }
   if (
     !hasUnifiedBgSlides &&
+    !Array.isArray(next.pageSlides) &&
     (!next.pageBgUrl ||
       next.pageBgUrl.includes('images.unsplash.com') ||
       (next.pageBgUrl.includes('.supabase.co/') &&
@@ -1248,6 +1266,60 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   ) {
     next.pageBgUrl = INITIAL_SETTINGS.pageBgUrl;
   }
+
+  const legacyOrigPhotos = (
+    next as WeddingSettings & { originalPhotoUrls?: WeddingSettings['originalPhotos'] }
+  ).originalPhotoUrls;
+
+  if (!Array.isArray(next.coverSlides)) {
+    next.coverSlides = next.coverBgUrl?.trim()
+      ? [
+          {
+            id: 'cover_slide_1',
+            imageUrl: next.coverBgUrl.trim(),
+            originalImageUrl:
+              legacyOrigPhotos?.coverBgUrl ||
+              next.originalPhotos?.coverBgUrl ||
+              next.coverBgUrl.trim(),
+            adjustment: next.photoAdjustments?.coverBgUrl,
+          },
+        ]
+      : [];
+  }
+  if (!Array.isArray(next.heroSlides)) {
+    next.heroSlides = next.heroPrewedUrl?.trim()
+      ? [
+          {
+            id: 'hero_slide_1',
+            imageUrl: next.heroPrewedUrl.trim(),
+            originalImageUrl:
+              legacyOrigPhotos?.heroPrewedUrl ||
+              next.originalPhotos?.heroPrewedUrl ||
+              next.heroPrewedUrl.trim(),
+            adjustment: next.photoAdjustments?.heroPrewedUrl,
+          },
+        ]
+      : [];
+  }
+  if (!Array.isArray(next.pageSlides)) {
+    next.pageSlides = next.pageBgUrl?.trim()
+      ? [
+          {
+            id: 'page_slide_1',
+            imageUrl: next.pageBgUrl.trim(),
+            originalImageUrl:
+              legacyOrigPhotos?.pageBgUrl ||
+              next.originalPhotos?.pageBgUrl ||
+              next.pageBgUrl.trim(),
+            adjustment: next.photoAdjustments?.pageBgUrl,
+          },
+        ]
+      : [];
+  }
+
+  next.coverBgUrl = next.coverSlides?.[0]?.imageUrl || '';
+  next.heroPrewedUrl = next.heroSlides?.[0]?.imageUrl || '';
+  next.pageBgUrl = next.pageSlides?.[0]?.imageUrl || '';
   if (!Array.isArray(next.galleryPhotos) || next.galleryPhotos.length === 0) {
     next.galleryPhotos = INITIAL_SETTINGS.galleryPhotos;
   } else {
@@ -1637,11 +1709,18 @@ export async function cleanupOrphanedStorageMedia(
       if (s.originalPhotos) {
         Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
       }
-      if (Array.isArray(s.backgroundSlides)) {
-        s.backgroundSlides.forEach((bs) => {
-          registerUrl(bs.imageUrl);
-          registerUrl(bs.originalImageUrl);
-        });
+      for (const slideList of [
+        s.backgroundSlides,
+        s.coverSlides,
+        s.heroSlides,
+        s.pageSlides,
+      ]) {
+        if (Array.isArray(slideList)) {
+          slideList.forEach((bs) => {
+            registerUrl(bs.imageUrl);
+            registerUrl(bs.originalImageUrl);
+          });
+        }
       }
       if (Array.isArray(s.galleryPhotos)) {
         s.galleryPhotos.forEach((gp) => {
@@ -1769,11 +1848,18 @@ export async function fetchSupabaseStorageCapacity(
     if (s.originalPhotos) {
       Object.values(s.originalPhotos).forEach((u) => registerUrl(u));
     }
-    if (Array.isArray(s.backgroundSlides)) {
-      s.backgroundSlides.forEach((bs) => {
-        registerUrl(bs.imageUrl);
-        registerUrl(bs.originalImageUrl);
-      });
+    for (const slideList of [
+      s.backgroundSlides,
+      s.coverSlides,
+      s.heroSlides,
+      s.pageSlides,
+    ]) {
+      if (Array.isArray(slideList)) {
+        slideList.forEach((bs) => {
+          registerUrl(bs.imageUrl);
+          registerUrl(bs.originalImageUrl);
+        });
+      }
     }
     if (Array.isArray(s.galleryPhotos)) {
       s.galleryPhotos.forEach((gp) => {
@@ -1930,9 +2016,9 @@ function normalizeCloudState(
       )
     : INITIAL_BUDGET_ITEMS;
 
-  const normalizedSettings = parsed.settings
-    ? healStalePlaceholderSettings(parsed.settings as WeddingSettings)
-    : INITIAL_SETTINGS;
+  const normalizedSettings = healStalePlaceholderSettings(
+    (parsed.settings || INITIAL_SETTINGS) as WeddingSettings
+  );
   if (
     normalizedSettings.developerCreditUrl &&
     /github\.com\/omeko11/i.test(normalizedSettings.developerCreditUrl)
@@ -2165,6 +2251,35 @@ async function prepareCloudSafeState(
     rawSettings.backgroundSlides = cleanedSlides;
   }
 
+  for (const [slideKey, prefix] of [
+    ['coverSlides', 'cover_slide'],
+    ['heroSlides', 'hero_slide'],
+    ['pageSlides', 'page_slide'],
+  ] as const) {
+    const list = rawSettings[slideKey];
+    if (Array.isArray(list)) {
+      rawSettings[slideKey] = await Promise.all(
+        list.map(async (bs, idx) => {
+          const copy: BackgroundSlideItem = { ...bs };
+          delete copy.originalImageUrl;
+          const resolvedUrl = await resolveCloudImageSlot(
+            copy.imageUrl,
+            `${prefix}_${copy.id || idx}`,
+            bannerDim,
+            qual,
+            maxChars
+          );
+          if (resolvedUrl) copy.imageUrl = resolvedUrl;
+          return copy;
+        })
+      );
+    }
+  }
+
+  rawSettings.coverBgUrl = rawSettings.coverSlides?.[0]?.imageUrl || '';
+  rawSettings.heroPrewedUrl = rawSettings.heroSlides?.[0]?.imageUrl || '';
+  rawSettings.pageBgUrl = rawSettings.pageSlides?.[0]?.imageUrl || '';
+
   if (Array.isArray(rawSettings.galleryPhotos)) {
     const cleanedGallery: GalleryPhotoItem[] = await Promise.all(
       rawSettings.galleryPhotos.map(async (gp, idx) => {
@@ -2248,6 +2363,9 @@ async function recoverStateFromSupabaseBySlices(): Promise<WeddingDatabaseSchema
       'musicPlaylist',
       'waTemplateVip',
       'waTemplateRegular',
+      'coverSlides',
+      'heroSlides',
+      'pageSlides',
     ]) {
       const row = await fetchSlice(`v:data->settings->${extraKey}`);
       if (row && row.v !== null && row.v !== undefined) {

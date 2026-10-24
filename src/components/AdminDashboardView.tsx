@@ -88,6 +88,7 @@ import {
   GalleryPhotoItem,
   WeddingScheduleEvent,
   PhotoAdjustment,
+  BackgroundSlideItem,
   MusicTrackItem,
   AuditLogEntry,
   ClientGroupItem,
@@ -97,6 +98,8 @@ import {
   CommercialPaymentTransaction,
   CommercialPaymentStatus,
 } from '@/types';
+
+type BackgroundSectionKey = 'cover' | 'hero' | 'page';
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
 import {
   formatRupiah,
@@ -842,72 +845,80 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     [settingsForm]
   );
 
-  const effectiveBackgroundSlides = useMemo<
-    Array<{
-      id: string;
-      imageUrl: string;
-      originalImageUrl?: string;
-      adjustment?: PhotoAdjustment;
-    }>
-  >(() => {
-    const rawSlides =
-      (settingsForm as any).backgroundSlides ??
-      (state.settings as any).backgroundSlides;
-    if (Array.isArray(rawSlides)) {
-      return rawSlides.filter(
-        (s: any) =>
-          s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
-      );
+  const getEffectiveSectionSlides = (
+    section: BackgroundSectionKey,
+    sourceSettings: WeddingSettings = settingsForm
+  ): BackgroundSlideItem[] => {
+    if (section === 'cover') {
+      if (
+        Array.isArray(sourceSettings.coverSlides) &&
+        sourceSettings.coverSlides.length > 0
+      ) {
+        return sourceSettings.coverSlides;
+      }
+      if (sourceSettings.coverBgUrl?.trim()) {
+        const url = sourceSettings.coverBgUrl.trim();
+        return [
+          {
+            id: 'cover_1',
+            imageUrl: url,
+            originalImageUrl:
+              sourceSettings.originalPhotos?.coverBgUrl ||
+              (sourceSettings as any).originalPhotoUrls?.coverBgUrl ||
+              url,
+            adjustment: sourceSettings.photoAdjustments?.coverBgUrl,
+          },
+        ];
+      }
+      return [];
     }
-    const legacyEntries: Array<{
-      field: 'coverBgUrl' | 'heroPrewedUrl' | 'pageBgUrl';
-      url: string;
-    }> = [
-      {
-        field: 'coverBgUrl',
-        url: (
-          settingsForm.coverBgUrl ??
-          state.settings.coverBgUrl ??
-          ''
-        ).trim(),
-      },
-      {
-        field: 'heroPrewedUrl',
-        url: (
-          settingsForm.heroPrewedUrl ??
-          state.settings.heroPrewedUrl ??
-          ''
-        ).trim(),
-      },
-      {
-        field: 'pageBgUrl',
-        url: (settingsForm.pageBgUrl ?? state.settings.pageBgUrl ?? '').trim(),
-      },
-    ];
-    const seen = new Set<string>();
-    const result: Array<{
-      id: string;
-      imageUrl: string;
-      originalImageUrl?: string;
-      adjustment?: PhotoAdjustment;
-    }> = [];
-    for (const item of legacyEntries) {
-      if (!item.url || seen.has(item.url)) continue;
-      seen.add(item.url);
-      result.push({
-        id: `bg_slide_${result.length + 1}`,
-        imageUrl: item.url,
-        originalImageUrl:
-          settingsForm.originalPhotos?.[item.field] ||
-          state.settings.originalPhotos?.[item.field] ||
-          item.url,
-        adjustment:
-          settingsForm.photoAdjustments?.[item.field] ||
-          state.settings.photoAdjustments?.[item.field],
-      });
+
+    if (section === 'hero') {
+      if (
+        Array.isArray(sourceSettings.heroSlides) &&
+        sourceSettings.heroSlides.length > 0
+      ) {
+        return sourceSettings.heroSlides;
+      }
+      if (sourceSettings.heroPrewedUrl?.trim()) {
+        const url = sourceSettings.heroPrewedUrl.trim();
+        return [
+          {
+            id: 'hero_1',
+            imageUrl: url,
+            originalImageUrl:
+              sourceSettings.originalPhotos?.heroPrewedUrl ||
+              (sourceSettings as any).originalPhotoUrls?.heroPrewedUrl ||
+              url,
+            adjustment: sourceSettings.photoAdjustments?.heroPrewedUrl,
+          },
+        ];
+      }
+      return [];
     }
-    return result;
-  }, [settingsForm, state.settings]);
+
+    if (
+      Array.isArray(sourceSettings.pageSlides) &&
+      sourceSettings.pageSlides.length > 0
+    ) {
+      return sourceSettings.pageSlides;
+    }
+    if (sourceSettings.pageBgUrl?.trim()) {
+      const url = sourceSettings.pageBgUrl.trim();
+      return [
+        {
+          id: 'page_1',
+          imageUrl: url,
+          originalImageUrl:
+            sourceSettings.originalPhotos?.pageBgUrl ||
+            (sourceSettings as any).originalPhotoUrls?.pageBgUrl ||
+            url,
+          adjustment: sourceSettings.photoAdjustments?.pageBgUrl,
+        },
+      ];
+    }
+    return [];
+  };
 
   useEffect(() => {
     weddingMusicPlayer.syncFromSettings(settingsForm);
@@ -2059,7 +2070,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           | 'pageBgUrl';
         label: string;
         shape: 'circle' | 'banner' | 'portrait';
+        sectionKey?: BackgroundSectionKey;
         slideIndex?: number;
+        aspect?: 'portrait' | 'landscape';
       }
     | {
         kind: 'gallery_item';
@@ -2219,67 +2232,77 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       : { x: 0, y: 0, w: 100, h: 100 },
   });
 
-  const syncBackgroundSlidesToLegacyFields = (
-    slides: Array<{
-      id: string;
-      imageUrl: string;
-      originalImageUrl?: string;
-      adjustment?: PhotoAdjustment;
-    }>,
-    baseSettings: WeddingSettings = { ...state.settings, ...settingsForm }
+  const syncSectionSlidesToSettings = (
+    section: BackgroundSectionKey,
+    slides: BackgroundSlideItem[],
+    base: WeddingSettings = { ...state.settings, ...settingsForm }
   ): WeddingSettings => {
-    const cleanSlides = slides.filter(
-      (s) => s && typeof s.imageUrl === 'string' && s.imageUrl.trim() !== ''
-    );
-    const s0 = cleanSlides[0];
-    const s1 = cleanSlides[1] || s0;
-    const s2 = cleanSlides[2] || s0;
+    const slidesKey =
+      section === 'cover'
+        ? 'coverSlides'
+        : section === 'hero'
+        ? 'heroSlides'
+        : 'pageSlides';
+    const legacyField =
+      section === 'cover'
+        ? 'coverBgUrl'
+        : section === 'hero'
+        ? 'heroPrewedUrl'
+        : 'pageBgUrl';
+    const s0 = slides[0];
     const nextOriginalPhotos = {
       ...(state.settings.originalPhotos || {}),
-      ...(baseSettings.originalPhotos || {}),
-      coverBgUrl: s0?.originalImageUrl || s0?.imageUrl || '',
-      heroPrewedUrl: s1?.originalImageUrl || s1?.imageUrl || '',
-      pageBgUrl: s2?.originalImageUrl || s2?.imageUrl || '',
+      ...(base.originalPhotos || {}),
+      [legacyField]: s0?.originalImageUrl || s0?.imageUrl || '',
     };
     const nextAdjustments = {
       ...(state.settings.photoAdjustments || {}),
-      ...(baseSettings.photoAdjustments || {}),
-      ...(s0?.adjustment ? { coverBgUrl: s0.adjustment } : {}),
-      ...(s1?.adjustment ? { heroPrewedUrl: s1.adjustment } : {}),
-      ...(s2?.adjustment ? { pageBgUrl: s2.adjustment } : {}),
+      ...(base.photoAdjustments || {}),
+      ...(s0?.adjustment ? { [legacyField]: s0.adjustment } : {}),
     };
+    if (!s0) {
+      delete nextAdjustments[legacyField];
+    }
     return {
-      ...baseSettings,
-      backgroundSlides: cleanSlides,
-      coverBgUrl: s0?.imageUrl || '',
-      heroPrewedUrl: s1?.imageUrl || '',
-      pageBgUrl: s2?.imageUrl || '',
+      ...base,
+      [slidesKey]: slides,
+      [legacyField]: s0?.imageUrl || '',
+      backgroundSlides: [],
       originalPhotos: nextOriginalPhotos,
       photoAdjustments: nextAdjustments,
       updatedBy: adminUser.username,
-    } as WeddingSettings;
+    };
   };
 
   const openBackgroundSlideAdjust = (
-    slide: {
-      id: string;
-      imageUrl: string;
-      originalImageUrl?: string;
-      adjustment?: PhotoAdjustment;
-    },
-    slideIndex: number
+    section: BackgroundSectionKey,
+    slide: BackgroundSlideItem,
+    idx: number
   ) => {
     const sourceUrl = slide.originalImageUrl || slide.imageUrl;
     if (!sourceUrl) {
       showToast('Upload atau masukkan foto terlebih dahulu.');
       return;
     }
+    const sectionLabel =
+      section === 'cover'
+        ? 'Sampul Depan'
+        : section === 'hero'
+        ? 'Banner Hero'
+        : 'Wallpaper Latar';
     setPhotoAdjustTarget({
       kind: 'setting',
-      field: 'coverBgUrl',
-      label: `Foto Latar #${slideIndex + 1}`,
-      shape: 'portrait',
-      slideIndex,
+      field:
+        section === 'cover'
+          ? 'coverBgUrl'
+          : section === 'hero'
+          ? 'heroPrewedUrl'
+          : 'pageBgUrl',
+      label: `${sectionLabel} • Slide #${idx + 1}`,
+      shape: section === 'hero' ? 'banner' : 'portrait',
+      sectionKey: section,
+      slideIndex: idx,
+      aspect: section === 'hero' ? 'landscape' : 'portrait',
     });
     setPhotoAdjustUrl(sourceUrl);
     setPhotoAdjustDraft(normalizeDraftAdjust(slide.adjustment));
@@ -2315,7 +2338,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       overrideAdj ||
       settingsForm.photoAdjustments?.[field] ||
       state.settings.photoAdjustments?.[field];
-    setPhotoAdjustTarget({ kind: 'setting', field, label, shape, slideIndex });
+    const sectionKey: BackgroundSectionKey | undefined =
+      field === 'coverBgUrl'
+        ? 'cover'
+        : field === 'heroPrewedUrl'
+        ? 'hero'
+        : field === 'pageBgUrl'
+        ? 'page'
+        : undefined;
+    const aspect: 'portrait' | 'landscape' | undefined =
+      field === 'heroPrewedUrl'
+        ? 'landscape'
+        : field === 'coverBgUrl' || field === 'pageBgUrl'
+        ? 'portrait'
+        : undefined;
+    setPhotoAdjustTarget({
+      kind: 'setting',
+      field,
+      label,
+      shape,
+      sectionKey,
+      slideIndex: slideIndex ?? 0,
+      aspect,
+    });
     setPhotoAdjustUrl(sourceUrl);
     setPhotoAdjustDraft(normalizeDraftAdjust(existingAdj));
     setPhotoStudioToolMode('crop');
@@ -2441,8 +2486,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           field === 'pageBgUrl';
 
         if (isBgField) {
+          const section: BackgroundSectionKey =
+            photoAdjustTarget.sectionKey ||
+            (field === 'coverBgUrl'
+              ? 'cover'
+              : field === 'heroPrewedUrl'
+              ? 'hero'
+              : 'page');
           const idx = photoAdjustTarget.slideIndex ?? 0;
-          const nextSlides = [...effectiveBackgroundSlides];
+          const nextSlides = [...getEffectiveSectionSlides(section)];
           const prevSlide = nextSlides[idx];
           if (
             prevSlide?.imageUrl &&
@@ -2450,10 +2502,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           ) {
             void deleteMediaFromSupabaseStorage(prevSlide.imageUrl);
           }
-          const updatedSlide = {
-            id: prevSlide?.id || `bg_slide_${idx + 1}`,
+          const updatedSlide: BackgroundSlideItem = {
+            id: prevSlide?.id || `${section}_${idx + 1}`,
             imageUrl: croppedDataUrl || photoAdjustUrl,
             originalImageUrl: prevSlide?.originalImageUrl || photoAdjustUrl,
+            title: prevSlide?.title,
             adjustment: savedAdj,
           };
           if (idx < nextSlides.length) {
@@ -2461,7 +2514,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           } else {
             nextSlides.push(updatedSlide);
           }
-          const nextSettings = syncBackgroundSlidesToLegacyFields(nextSlides);
+          const nextSettings = syncSectionSlidesToSettings(section, nextSlides, {
+            ...state.settings,
+            ...settingsForm,
+          });
           await commitImmediateSettings(nextSettings);
         } else {
           const prevUrl = settingsForm[field] || state.settings[field];
@@ -2876,7 +2932,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const handleUploadUnifiedBackgroundMedia = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    replaceSlideIndex?: number
+    section: BackgroundSectionKey = 'cover',
+    replaceSlideIdx?: number
   ) => {
     const files = Array.from(e.target.files || []);
     if (e.target) {
@@ -2884,9 +2941,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     if (files.length === 0) return;
 
+    const videoSlot =
+      section === 'cover'
+        ? 'coverVideoUrl'
+        : section === 'hero'
+        ? 'heroVideoUrl'
+        : 'pageVideoUrl';
+    const sectionLabel =
+      section === 'cover'
+        ? 'Sampul Depan'
+        : section === 'hero'
+        ? 'Banner Hero'
+        : 'Wallpaper Latar';
+
     const videoFile = files.find(isSupportedVideoFile);
     if (videoFile) {
-      await handleUploadThemeVideo(e, 'all_video', videoFile);
+      await handleUploadThemeVideo(e, videoSlot, videoFile);
       return;
     }
 
@@ -2901,8 +2971,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     try {
       showToast(
         photoFiles.length > 1
-          ? `Mengompresi & mengunggah ${photoFiles.length} foto latar untuk Slideshow Smooth...`
-          : 'Mengompresi & mengonversi foto latar ke .SVG HD...'
+          ? `Mengompresi & mengunggah ${photoFiles.length} foto untuk ${sectionLabel}...`
+          : `Mengompresi & mengonversi foto ${sectionLabel} ke .SVG HD...`
       );
 
       const defaultAdj: PhotoAdjustment = {
@@ -2917,18 +2987,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         baked: false,
       };
 
-      const uploadedSlides: Array<{
-        id: string;
-        imageUrl: string;
-        originalImageUrl?: string;
-        adjustment?: PhotoAdjustment;
-      }> = [];
+      const uploadedSlides: BackgroundSlideItem[] = [];
 
       for (let i = 0; i < photoFiles.length; i++) {
         const f = photoFiles[i];
         const dataUrl = await compressImageFileToDataUrl(f, 1800, 0.86);
         uploadedSlides.push({
-          id: `bg_slide_${Date.now()}_${i + 1}_${Math.random()
+          id: `${section}_slide_${Date.now()}_${i + 1}_${Math.random()
             .toString(36)
             .slice(2, 6)}`,
           imageUrl: dataUrl,
@@ -2937,40 +3002,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         });
       }
 
-      // Clear any active background video from Supabase Storage
+      // Clear any active video on this specific section from Supabase Storage
       void deleteMediaFromSupabaseStorage(
-        settingsForm.coverVideoUrl || state.settings.coverVideoUrl
-      );
-      void deleteMediaFromSupabaseStorage(
-        settingsForm.heroVideoUrl || state.settings.heroVideoUrl
-      );
-      void deleteMediaFromSupabaseStorage(
-        settingsForm.pageVideoUrl || state.settings.pageVideoUrl
+        settingsForm[videoSlot] || state.settings[videoSlot]
       );
 
-      const nextSlides = [...effectiveBackgroundSlides];
+      const nextSlides = [...getEffectiveSectionSlides(section)];
       let targetInspectorIndex = 0;
 
-      if (
-        typeof replaceSlideIndex === 'number' &&
-        nextSlides[replaceSlideIndex]
-      ) {
-        void deleteMediaFromSupabaseStorage(
-          nextSlides[replaceSlideIndex].imageUrl
-        );
-        nextSlides.splice(replaceSlideIndex, 1, ...uploadedSlides);
-        targetInspectorIndex = replaceSlideIndex;
+      if (typeof replaceSlideIdx === 'number' && nextSlides[replaceSlideIdx]) {
+        const oldSlide = nextSlides[replaceSlideIdx];
+        void deleteMediaFromSupabaseStorage(oldSlide.imageUrl);
+        if (
+          oldSlide.originalImageUrl &&
+          oldSlide.originalImageUrl !== oldSlide.imageUrl
+        ) {
+          void deleteMediaFromSupabaseStorage(oldSlide.originalImageUrl);
+        }
+        nextSlides.splice(replaceSlideIdx, 1, ...uploadedSlides);
+        targetInspectorIndex = replaceSlideIdx;
       } else {
         targetInspectorIndex = nextSlides.length;
         nextSlides.push(...uploadedSlides);
       }
 
-      const nextSettings = syncBackgroundSlidesToLegacyFields(nextSlides, {
+      const nextSettings = syncSectionSlidesToSettings(section, nextSlides, {
         ...state.settings,
         ...settingsForm,
-        coverVideoUrl: '',
-        heroVideoUrl: '',
-        pageVideoUrl: '',
+        [videoSlot]: '',
       });
       setSettingsFormInternal(nextSettings);
       await commitImmediateSettings(nextSettings);
@@ -2980,19 +3039,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'FOTO_TEMA',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Upload ${uploadedSlides.length} Foto Latar Undangan (Total: ${nextSlides.length} foto latar)`,
+        summary: `Upload ${uploadedSlides.length} Foto ke ${sectionLabel} (Total: ${nextSlides.length} foto)`,
       });
 
-      if (uploadedSlides.length === 1) {
+      if (nextSlides.length > 1) {
         showToast(
-          '✓ Foto latar berhasil ditambahkan! Silakan atur Crop & Posisi di Sidebar Kanan.'
+          `✓ Foto ditambahkan ke ${sectionLabel}! Mode Slideshow aktif (${nextSlides.length} foto).`
         );
-        openBackgroundSlideAdjust(uploadedSlides[0], targetInspectorIndex);
       } else {
         showToast(
-          `✓ ${uploadedSlides.length} Foto Latar berhasil ditambahkan! Mode Slideshow Smooth otomatis aktif (${nextSlides.length} foto).`
+          `✓ Foto ${sectionLabel} berhasil disimpan! Silakan atur Crop & Posisi di Sidebar Kanan.`
         );
       }
+      openBackgroundSlideAdjust(
+        section,
+        uploadedSlides[0],
+        targetInspectorIndex
+      );
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : 'Gagal meng-upload foto latar.'
@@ -10121,29 +10184,37 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             key={preset.label}
                             type="button"
-                            title={`Terapkan tema "${preset.label}" ke latar undangan`}
+                            title={`Terapkan tema "${preset.label}" ke Sampul Depan & Wallpaper Latar`}
                             onClick={async () => {
-                              const nextSettings =
-                                syncBackgroundSlidesToLegacyFields(
-                                  [
-                                    {
-                                      id: 'bg_preset_1',
-                                      imageUrl: preset.url,
-                                      originalImageUrl: preset.url,
-                                    },
-                                  ],
-                                  {
-                                    ...state.settings,
-                                    ...settingsForm,
-                                    coverVideoUrl: '',
-                                    heroVideoUrl: '',
-                                    pageVideoUrl: '',
-                                  }
-                                );
+                              const coverPresetSlide: BackgroundSlideItem = {
+                                id: 'cover_preset_1',
+                                imageUrl: preset.url,
+                                originalImageUrl: preset.url,
+                              };
+                              const pagePresetSlide: BackgroundSlideItem = {
+                                id: 'page_preset_1',
+                                imageUrl: preset.url,
+                                originalImageUrl: preset.url,
+                              };
+                              let nextSettings = syncSectionSlidesToSettings(
+                                'cover',
+                                [coverPresetSlide],
+                                {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  coverVideoUrl: '',
+                                  pageVideoUrl: '',
+                                }
+                              );
+                              nextSettings = syncSectionSlidesToSettings(
+                                'page',
+                                [pagePresetSlide],
+                                nextSettings
+                              );
                               setSettingsFormInternal(nextSettings);
                               await commitImmediateSettings(nextSettings);
                               showToast(
-                                `✓ Preset tema "${preset.label}" berhasil diterapkan ke latar undangan!`
+                                `✓ Preset tema "${preset.label}" berhasil diterapkan ke Sampul & Wallpaper Latar!`
                               );
                             }}
                             className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-2.5"
@@ -10166,561 +10237,602 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Single Unified Background Media & Slideshow Card */}
+                    {/* 3 Distinct Per-Section Media & Slideshow Cards */}
                     {(() => {
-                      const activeUnifiedVideoUrl = (
-                        settingsForm.coverVideoUrl ||
-                        settingsForm.heroVideoUrl ||
-                        settingsForm.pageVideoUrl ||
-                        ''
-                      ).trim();
-                      const isVideoActive = Boolean(activeUnifiedVideoUrl);
-                      const isUploadingUnifiedVideo =
-                        Boolean(uploadingVideoSlot);
+                      const renderSectionMediaCard = (
+                        section: BackgroundSectionKey,
+                        title: string,
+                        tooltip: string
+                      ) => {
+                        const slides = getEffectiveSectionSlides(section);
+                        const videoSlot =
+                          section === 'cover'
+                            ? ('coverVideoUrl' as const)
+                            : section === 'hero'
+                            ? ('heroVideoUrl' as const)
+                            : ('pageVideoUrl' as const);
+                        const fieldKey =
+                          section === 'cover'
+                            ? ('coverBgUrl' as const)
+                            : section === 'hero'
+                            ? ('heroPrewedUrl' as const)
+                            : ('pageBgUrl' as const);
+                        const stageShape =
+                          section === 'hero'
+                            ? ('banner' as const)
+                            : ('portrait' as const);
+                        const activeVideoUrl = (
+                          settingsForm[videoSlot] || ''
+                        ).trim();
+                        const isVideoActive = Boolean(activeVideoUrl);
+                        const isUploadingThisVideo =
+                          uploadingVideoSlot === videoSlot ||
+                          uploadingVideoSlot === 'all_video';
 
-                      return (
-                        <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-3.5">
-                          {/* Header Bar */}
-                          <div className="flex items-center justify-between gap-2 flex-wrap pb-2.5 border-b border-stone-100">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                              <p className="font-extrabold text-xs sm:text-sm text-stone-900">
-                                Media Latar
-                              </p>
-                              <InfoTooltip text="Upload 1 foto untuk latar statis, pilih 2+ foto sekaligus untuk Slideshow transisi smooth, atau upload 1 video MP4/WebM (maks. 25 MB)." />
-                              {isVideoActive ? (
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  Video Aktif
-                                </span>
-                              ) : effectiveBackgroundSlides.length > 1 ? (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  {effectiveBackgroundSlides.length} Foto &bull; Slideshow
-                                </span>
-                              ) : effectiveBackgroundSlides.length === 1 ? (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  1 Foto Aktif
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  Kosong
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                              <label
-                                title="Pilih 1 Video (maks. 25 MB) ATAU pilih 1 / beberapa Foto sekaligus untuk dijadikan Latar / Slideshow Smooth"
-                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all ${
-                                  isUploadingUnifiedVideo
-                                    ? 'opacity-60 pointer-events-none'
-                                    : ''
-                                }`}
-                              >
-                                <Upload className="w-3.5 h-3.5 shrink-0" />
-                                <span>
-                                  {isUploadingUnifiedVideo
-                                    ? 'Mengunggah...'
-                                    : 'Upload Media'}
-                                </span>
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                  className="hidden"
-                                  onChange={(e) =>
-                                    handleUploadUnifiedBackgroundMedia(e)
-                                  }
-                                />
-                              </label>
-
-                              {effectiveBackgroundSlides.length > 0 && (
-                                <button
-                                  type="button"
-                                  title="Hapus seluruh foto latar yang ada dari database & storage"
-                                  onClick={async () => {
-                                    for (const s of effectiveBackgroundSlides) {
-                                      void deleteMediaFromSupabaseStorage(
-                                        s.imageUrl
-                                      );
-                                      if (
-                                        s.originalImageUrl &&
-                                        s.originalImageUrl !== s.imageUrl
-                                      ) {
-                                        void deleteMediaFromSupabaseStorage(
-                                          s.originalImageUrl
-                                        );
-                                      }
-                                    }
-                                    const nextSettings =
-                                      syncBackgroundSlidesToLegacyFields([], {
-                                        ...state.settings,
-                                        ...settingsForm,
-                                      });
-                                    setSettingsFormInternal(nextSettings);
-                                    await commitImmediateSettings(nextSettings);
-                                    showToast(
-                                      '✓ Seluruh foto latar berhasil dihapus dari database.'
-                                    );
-                                  }}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 transition-all"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                  <span>Hapus Semua</span>
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Active Video Card (when a video is active) */}
-                          {isVideoActive && (
-                            <div className="p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2.5">
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
-                                    VIDEO LATAR UTAMA
+                        return (
+                          <div
+                            key={section}
+                            className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-3"
+                          >
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between gap-2 flex-wrap pb-2.5 border-b border-stone-100">
+                              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                <p className="font-extrabold text-xs sm:text-sm text-stone-900">
+                                  {title}
+                                </p>
+                                <InfoTooltip text={tooltip} />
+                                {isVideoActive ? (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                    Video Aktif
                                   </span>
-                                  <InfoTooltip text="Video ini diterapkan otomatis ke Sampul Pembuka, Banner Hero, dan Latar Undangan." />
-                                </div>
+                                ) : slides.length > 1 ? (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                    {slides.length} Foto &bull; Slideshow
+                                  </span>
+                                ) : slides.length === 1 ? (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                    1 Foto Aktif
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                    Kosong
+                                  </span>
+                                )}
+                              </div>
 
-                                <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                                {slides.length > 1 && (
                                   <button
                                     type="button"
-                                    onClick={() =>
-                                      openMediaSidebarInspector(
-                                        'coverBgUrl',
-                                        'Media Latar Undangan',
-                                        'portrait',
-                                        'video'
-                                      )
-                                    }
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
-                                    title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
-                                  >
-                                    <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                    <span>Fokus Video</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    title="Hapus video latar dari database & storage"
+                                    title="Hapus semua foto pada bagian ini"
                                     onClick={async () => {
-                                      void deleteMediaFromSupabaseStorage(
-                                        settingsForm.coverVideoUrl ||
-                                          state.settings.coverVideoUrl
-                                      );
-                                      void deleteMediaFromSupabaseStorage(
-                                        settingsForm.heroVideoUrl ||
-                                          state.settings.heroVideoUrl
-                                      );
-                                      void deleteMediaFromSupabaseStorage(
-                                        settingsForm.pageVideoUrl ||
-                                          state.settings.pageVideoUrl
-                                      );
-                                      const nextSettings: WeddingSettings = {
-                                        ...state.settings,
-                                        ...settingsForm,
-                                        coverVideoUrl: '',
-                                        heroVideoUrl: '',
-                                        pageVideoUrl: '',
-                                        updatedBy: adminUser.username,
-                                      };
+                                      for (const s of slides) {
+                                        void deleteMediaFromSupabaseStorage(
+                                          s.imageUrl
+                                        );
+                                        if (
+                                          s.originalImageUrl &&
+                                          s.originalImageUrl !== s.imageUrl
+                                        ) {
+                                          void deleteMediaFromSupabaseStorage(
+                                            s.originalImageUrl
+                                          );
+                                        }
+                                      }
+                                      const nextSettings =
+                                        syncSectionSlidesToSettings(
+                                          section,
+                                          [],
+                                          {
+                                            ...state.settings,
+                                            ...settingsForm,
+                                          }
+                                        );
                                       setSettingsFormInternal(nextSettings);
                                       await commitImmediateSettings(
                                         nextSettings
                                       );
                                       showToast(
-                                        '✓ Video latar berhasil dihapus dari database.'
+                                        `✓ Semua foto pada "${title}" berhasil direset.`
                                       );
                                     }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 transition-all"
                                   >
                                     <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                    <span>Hapus</span>
+                                    <span>Reset</span>
                                   </button>
+                                )}
+
+                                <label
+                                  title="Pilih 1/beberapa Foto untuk ditambahkan ke bagian ini (2+ foto otomatis jadi Slideshow), atau pilih 1 Video MP4"
+                                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all ${
+                                    isUploadingThisVideo
+                                      ? 'opacity-60 pointer-events-none'
+                                      : ''
+                                  }`}
+                                >
+                                  <Upload className="w-3.5 h-3.5 shrink-0" />
+                                  <span>
+                                    {isUploadingThisVideo
+                                      ? 'Mengunggah...'
+                                      : slides.length > 0
+                                      ? 'Tambah Slide / Video'
+                                      : 'Upload Media'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                    className="hidden"
+                                    onChange={(e) =>
+                                      handleUploadUnifiedBackgroundMedia(
+                                        e,
+                                        section
+                                      )
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Active Video Row */}
+                            {isVideoActive && (
+                              <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
+                                    VIDEO AKTIF
+                                  </span>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openMediaSidebarInspector(
+                                          fieldKey,
+                                          title,
+                                          stageShape,
+                                          'video'
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                      title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
+                                    >
+                                      <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                      <span>Fokus Video</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      title="Hapus video dari bagian ini"
+                                      onClick={async () => {
+                                        void deleteMediaFromSupabaseStorage(
+                                          activeVideoUrl
+                                        );
+                                        const nextSettings: WeddingSettings = {
+                                          ...state.settings,
+                                          ...settingsForm,
+                                          [videoSlot]: '',
+                                          updatedBy: adminUser.username,
+                                        };
+                                        setSettingsFormInternal(nextSettings);
+                                        await commitImmediateSettings(
+                                          nextSettings
+                                        );
+                                        showToast(
+                                          `✓ Video pada "${title}" berhasil dihapus.`
+                                        );
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Hapus</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openMediaSidebarInspector(
+                                        fieldKey,
+                                        title,
+                                        stageShape,
+                                        'video'
+                                      )
+                                    }
+                                    title="Klik untuk atur Fokus Video di Sidebar Kanan"
+                                    className="w-12 h-12 rounded-lg overflow-hidden border border-emerald-300 shrink-0 relative bg-stone-900"
+                                  >
+                                    <video
+                                      src={activeVideoUrl}
+                                      poster={slides[0]?.imageUrl || undefined}
+                                      muted
+                                      loop
+                                      autoPlay
+                                      playsInline
+                                      className="w-full h-full object-cover"
+                                      style={{
+                                        objectPosition: `50% ${
+                                          settingsForm.videoFocusY ?? 28
+                                        }%`,
+                                      }}
+                                    />
+                                    <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
+                                      MP4
+                                    </span>
+                                  </button>
+
+                                  <input
+                                    type="text"
+                                    value={activeVideoUrl}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setSettingsForm({
+                                        ...settingsForm,
+                                        [videoSlot]: val,
+                                      });
+                                    }}
+                                    placeholder="URL Video (.mp4 / .webm)..."
+                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
+                                  />
                                 </div>
                               </div>
+                            )}
 
-                              <div className="flex items-center gap-2.5">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    openMediaSidebarInspector(
-                                      'coverBgUrl',
-                                      'Media Latar Undangan',
-                                      'portrait',
-                                      'video'
-                                    )
-                                  }
-                                  title="Klik untuk atur Fokus Video di Sidebar Kanan"
-                                  className="w-14 h-14 rounded-lg overflow-hidden border border-emerald-300 shrink-0 relative bg-stone-900"
-                                >
-                                  <video
-                                    src={activeUnifiedVideoUrl}
-                                    poster={
-                                      effectiveBackgroundSlides[0]?.imageUrl ||
-                                      undefined
-                                    }
-                                    muted
-                                    loop
-                                    autoPlay
-                                    playsInline
-                                    className="w-full h-full object-cover"
-                                    style={{
-                                      objectPosition: `50% ${
-                                        settingsForm.videoFocusY ?? 28
-                                      }%`,
-                                    }}
-                                  />
-                                  <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
-                                    MP4
-                                  </span>
-                                </button>
-
-                                <input
-                                  type="text"
-                                  value={activeUnifiedVideoUrl}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setSettingsForm({
-                                      ...settingsForm,
-                                      coverVideoUrl: val,
-                                      heroVideoUrl: val,
-                                      pageVideoUrl: val,
-                                    });
-                                  }}
-                                  placeholder="URL Video Latar (.mp4 / .webm)..."
-                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
-                                />
+                            {/* Photo / Slideshow Rows */}
+                            {slides.length === 0 && !isVideoActive ? (
+                              <div className="p-3 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center">
+                                <p className="text-xs text-stone-600 font-semibold">
+                                  Belum ada media pada bagian ini. Klik{' '}
+                                  <strong>Upload Media</strong> di atas.
+                                </p>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Active Photo / Slideshow List View */}
-                          {effectiveBackgroundSlides.length === 0 &&
-                          !isVideoActive ? (
-                            <div className="p-4 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center space-y-1">
-                              <p className="text-xs text-stone-600 font-semibold">
-                                Belum ada media latar. Klik{' '}
-                                <strong>Upload Media</strong> di atas atau pilih{' '}
-                                <strong>Preset Tema</strong>.
-                              </p>
-                            </div>
-                          ) : (
-                            effectiveBackgroundSlides.length > 0 && (
-                              <div className="space-y-2.5">
+                            ) : (
+                              slides.length > 0 && (
                                 <div className="space-y-2">
-                                  {effectiveBackgroundSlides.map(
-                                    (slide, idx) => (
-                                      <div
-                                        key={slide.id || `slide_${idx}`}
-                                        className="p-2.5 sm:p-3 rounded-xl bg-[#FAF8F5]/70 border border-stone-200 flex flex-col gap-2"
-                                      >
-                                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                                          <div className="flex items-center gap-2 min-w-0">
-                                            <span className="font-bold text-xs text-stone-800">
-                                              Latar #{idx + 1}
-                                            </span>
-                                            <span
-                                              title={
-                                                idx === 0
-                                                  ? 'Digunakan sebagai latar utama Sampul Pembuka, Hero & Wallpaper Undangan'
-                                                  : `Slide #${idx + 1} pada Slideshow Latar`
-                                              }
-                                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                                idx === 0
-                                                  ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
-                                                  : 'bg-white text-stone-600 border-stone-200'
-                                              }`}
-                                            >
-                                              {idx === 0
-                                                ? 'Utama'
-                                                : `Slide #${idx + 1}`}
-                                            </span>
-                                          </div>
+                                  {slides.map((slide, idx) => (
+                                    <div
+                                      key={slide.id || `${section}_${idx}`}
+                                      className="p-2.5 rounded-xl bg-[#FAF8F5]/70 border border-stone-200 flex flex-col gap-2"
+                                    >
+                                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                            idx === 0
+                                              ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
+                                              : 'bg-white text-stone-600 border-stone-200'
+                                          }`}
+                                        >
+                                          {slides.length === 1
+                                            ? 'Foto Utama'
+                                            : `Slide #${idx + 1}`}
+                                        </span>
 
-                                          <div className="flex items-center gap-1.5 shrink-0">
-                                            <label
-                                              title="Ganti foto pada slide ini"
-                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer transition-all"
-                                            >
-                                              <Upload className="w-3.5 h-3.5 shrink-0" />
-                                              <span>Ganti</span>
-                                              <input
-                                                type="file"
-                                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                                className="hidden"
-                                                onChange={(e) =>
-                                                  handleUploadUnifiedBackgroundMedia(
-                                                    e,
-                                                    idx
-                                                  )
-                                                }
-                                              />
-                                            </label>
-
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                openBackgroundSlideAdjust(
-                                                  slide,
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <label
+                                            title="Ganti foto ini"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer transition-all"
+                                          >
+                                            <Upload className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Ganti</span>
+                                            <input
+                                              type="file"
+                                              accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                              className="hidden"
+                                              onChange={(e) =>
+                                                handleUploadUnifiedBackgroundMedia(
+                                                  e,
+                                                  section,
                                                   idx
                                                 )
                                               }
-                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
-                                              title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto latar ini"
-                                            >
-                                              <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                              <span>Crop</span>
-                                            </button>
+                                            />
+                                          </label>
 
-                                            <button
-                                              type="button"
-                                              title="Hapus foto latar ini dari database & storage"
-                                              onClick={async () => {
-                                                void deleteMediaFromSupabaseStorage(
-                                                  slide.imageUrl
-                                                );
-                                                if (
-                                                  slide.originalImageUrl &&
-                                                  slide.originalImageUrl !==
-                                                    slide.imageUrl
-                                                ) {
-                                                  void deleteMediaFromSupabaseStorage(
-                                                    slide.originalImageUrl
-                                                  );
-                                                }
-                                                const remainingSlides =
-                                                  effectiveBackgroundSlides.filter(
-                                                    (_, i) => i !== idx
-                                                  );
-                                                const nextSettings =
-                                                  syncBackgroundSlidesToLegacyFields(
-                                                    remainingSlides,
-                                                    {
-                                                      ...state.settings,
-                                                      ...settingsForm,
-                                                    }
-                                                  );
-                                                setSettingsFormInternal(
-                                                  nextSettings
-                                                );
-                                                await commitImmediateSettings(
-                                                  nextSettings
-                                                );
-                                                showToast(
-                                                  '✓ Foto latar berhasil dihapus dari database.'
-                                                );
-                                              }}
-                                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                              <span>Hapus</span>
-                                            </button>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2.5">
                                           <button
                                             type="button"
                                             onClick={() =>
                                               openBackgroundSlideAdjust(
+                                                section,
                                                 slide,
                                                 idx
                                               )
                                             }
-                                            title="Klik untuk membuka Sidebar Kanan: Crop & Posisi Foto"
-                                            className="w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                            title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto ini"
                                           >
-                                            <img
-                                              src={slide.imageUrl}
-                                              alt={`Latar #${idx + 1}`}
-                                              className="w-full h-full object-cover object-center"
-                                              style={getPhotoAdjustStyle(
-                                                slide.adjustment
-                                              )}
-                                            />
+                                            <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                            <span>Crop</span>
                                           </button>
 
-                                          <input
-                                            type="text"
-                                            value={
-                                              slide.imageUrl.startsWith(
-                                                'data:image/'
-                                              )
-                                                ? ''
-                                                : slide.imageUrl
-                                            }
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              const nextSlides =
-                                                effectiveBackgroundSlides.map(
-                                                  (s, i) =>
-                                                    i === idx
-                                                      ? {
-                                                          ...s,
-                                                          imageUrl: val,
-                                                          originalImageUrl: val,
-                                                        }
-                                                      : s
+                                          <button
+                                            type="button"
+                                            title="Hapus foto ini dari bagian ini"
+                                            onClick={async () => {
+                                              void deleteMediaFromSupabaseStorage(
+                                                slide.imageUrl
+                                              );
+                                              if (
+                                                slide.originalImageUrl &&
+                                                slide.originalImageUrl !==
+                                                  slide.imageUrl
+                                              ) {
+                                                void deleteMediaFromSupabaseStorage(
+                                                  slide.originalImageUrl
+                                                );
+                                              }
+                                              const remainingSlides =
+                                                slides.filter(
+                                                  (_, i) => i !== idx
                                                 );
                                               const nextSettings =
-                                                syncBackgroundSlidesToLegacyFields(
-                                                  nextSlides,
+                                                syncSectionSlidesToSettings(
+                                                  section,
+                                                  remainingSlides,
                                                   {
                                                     ...state.settings,
                                                     ...settingsForm,
                                                   }
                                                 );
-                                              setSettingsForm(nextSettings);
+                                              setSettingsFormInternal(
+                                                nextSettings
+                                              );
+                                              await commitImmediateSettings(
+                                                nextSettings
+                                              );
+                                              showToast(
+                                                `✓ Foto dihapus dari "${title}".`
+                                              );
                                             }}
-                                            placeholder={
-                                              slide.imageUrl.startsWith(
-                                                'data:image/'
-                                              )
-                                                ? `✓ Latar #${idx + 1} tersimpan (Klik Crop / Ganti)`
-                                                : 'Tempel URL Foto Latar atau gunakan tombol Upload...'
-                                            }
-                                            className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
-                                          />
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Hapus</span>
+                                          </button>
                                         </div>
                                       </div>
-                                    )
-                                  )}
+
+                                      <div className="flex items-center gap-2.5">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            openBackgroundSlideAdjust(
+                                              section,
+                                              slide,
+                                              idx
+                                            )
+                                          }
+                                          title="Klik untuk membuka Sidebar Kanan: Crop & Posisi Foto"
+                                          className={`${
+                                            section === 'hero'
+                                              ? 'w-16 h-11'
+                                              : 'w-11 h-14'
+                                          } rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900`}
+                                        >
+                                          <img
+                                            src={slide.imageUrl}
+                                            alt={`${title} #${idx + 1}`}
+                                            className="w-full h-full object-cover object-center"
+                                            style={getPhotoAdjustStyle(
+                                              slide.adjustment
+                                            )}
+                                          />
+                                        </button>
+
+                                        <input
+                                          type="text"
+                                          value={
+                                            slide.imageUrl.startsWith(
+                                              'data:image/'
+                                            )
+                                              ? ''
+                                              : slide.imageUrl
+                                          }
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            const nextSlides = slides.map(
+                                              (s, i) =>
+                                                i === idx
+                                                  ? {
+                                                      ...s,
+                                                      imageUrl: val,
+                                                      originalImageUrl: val,
+                                                    }
+                                                  : s
+                                            );
+                                            const nextSettings =
+                                              syncSectionSlidesToSettings(
+                                                section,
+                                                nextSlides,
+                                                {
+                                                  ...state.settings,
+                                                  ...settingsForm,
+                                                }
+                                              );
+                                            setSettingsForm(nextSettings);
+                                          }}
+                                          placeholder={
+                                            slide.imageUrl.startsWith(
+                                              'data:image/'
+                                            )
+                                              ? `✓ ${
+                                                  slides.length === 1
+                                                    ? 'Foto Utama'
+                                                    : `Slide #${idx + 1}`
+                                                } tersimpan (Klik Crop / Ganti)`
+                                              : 'Tempel URL Foto atau gunakan tombol Upload...'
+                                          }
+                                          className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        );
+                      };
+
+                      const coverCount =
+                        getEffectiveSectionSlides('cover').length;
+                      const heroCount =
+                        getEffectiveSectionSlides('hero').length;
+                      const pageCount =
+                        getEffectiveSectionSlides('page').length;
+                      const hasAnySlideshow =
+                        coverCount > 1 || heroCount > 1 || pageCount > 1;
+
+                      return (
+                        <div className="space-y-3.5">
+                          {renderSectionMediaCard(
+                            'cover',
+                            '1. Sampul Depan (Cover)',
+                            'Media latar untuk halaman Sampul Pembuka. Upload 1 foto untuk latar statis, 2+ foto untuk Slideshow Sampul, atau 1 video MP4.'
+                          )}
+                          {renderSectionMediaCard(
+                            'hero',
+                            '2. Banner Hero (Hero Section)',
+                            'Media utama pada kartu Hero di atas nama mempelai/acara. Upload 1 foto untuk banner statis, 2+ foto untuk Slideshow Hero, atau 1 video MP4.'
+                          )}
+                          {renderSectionMediaCard(
+                            'page',
+                            '3. Wallpaper Latar (Background)',
+                            'Media latar belakang halaman saat undangan dibuka. Upload 1 foto untuk latar statis, 2+ foto untuk Slideshow Latar, atau 1 video MP4.'
+                          )}
+
+                          {/* Slideshow Transition Settings Card */}
+                          {hasAnySlideshow && (
+                            <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                    Transisi Slideshow
+                                  </p>
+                                  <InfoTooltip text="Pengaturan gaya transisi, jeda slide, dan kehalusan smoothing ini berlaku untuk bagian yang memiliki 2+ foto (Slideshow)." />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                {(
+                                  [
+                                    {
+                                      key: 'CROSSFADE',
+                                      label: 'Crossfade',
+                                      title:
+                                        'Transisi memudar halus antar foto',
+                                    },
+                                    {
+                                      key: 'ZOOM_DISSOLVE',
+                                      label: 'Zoom & Blur',
+                                      title:
+                                        'Transisi sinematik dengan efek zoom lembut dan blur halus',
+                                    },
+                                    {
+                                      key: 'SMOOTH_SLIDE',
+                                      label: 'Geser Halus',
+                                      title:
+                                        'Transisi bergeser horizontal secara mulus',
+                                    },
+                                  ] as const
+                                ).map((mode) => {
+                                  const currentStyle =
+                                    settingsForm.galleryTransitionStyle ??
+                                    'CROSSFADE';
+                                  const isActive = currentStyle === mode.key;
+                                  return (
+                                    <button
+                                      key={mode.key}
+                                      type="button"
+                                      title={mode.title}
+                                      onClick={() =>
+                                        setSettingsForm({
+                                          ...settingsForm,
+                                          galleryTransitionStyle: mode.key,
+                                        })
+                                      }
+                                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
+                                        isActive
+                                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
+                                          : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
+                                      }`}
+                                    >
+                                      {mode.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
+                                  <div className="flex items-center justify-between text-[10px] font-bold">
+                                    <span className="text-stone-700">
+                                      Jeda Slide
+                                    </span>
+                                    <span className="text-[#8B6914]">
+                                      {(settingsForm.gallerySlideDurationSeconds ??
+                                        6) === 0
+                                        ? 'Manual (Mati)'
+                                        : `${settingsForm.gallerySlideDurationSeconds ?? 6} dtk`}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={2}
+                                    max={15}
+                                    step={1}
+                                    value={
+                                      settingsForm.gallerySlideDurationSeconds ||
+                                      6
+                                    }
+                                    onChange={(e) =>
+                                      setSettingsForm({
+                                        ...settingsForm,
+                                        gallerySlideDurationSeconds: Number(
+                                          e.target.value
+                                        ),
+                                      })
+                                    }
+                                    className="w-full accent-[#B68D40] h-1.5"
+                                  />
                                 </div>
 
-                                {/* Inline Slideshow Transition Controls when 2+ Background Photos */}
-                                {effectiveBackgroundSlides.length > 1 && (
-                                  <div className="p-3 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-2.5">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-1.5">
-                                        <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                          Transisi Slideshow ({effectiveBackgroundSlides.length} Foto)
-                                        </p>
-                                        <InfoTooltip text="Pilih gaya perpindahan antar foto latar, jeda waktu tampil tiap slide, dan durasi kehalusan transisi (smoothing)." />
-                                      </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
+                                  <div className="flex items-center justify-between text-[10px] font-bold">
+                                    <span className="text-stone-700">
+                                      Durasi Smoothing
+                                    </span>
+                                    <span className="text-[#8B6914]">
                                       {(
-                                        [
-                                          {
-                                            key: 'CROSSFADE',
-                                            label: 'Crossfade',
-                                            title:
-                                              'Transisi memudar halus antar foto latar',
-                                          },
-                                          {
-                                            key: 'ZOOM_DISSOLVE',
-                                            label: 'Zoom & Blur',
-                                            title:
-                                              'Transisi sinematik dengan efek zoom lembut dan blur halus',
-                                          },
-                                          {
-                                            key: 'SMOOTH_SLIDE',
-                                            label: 'Geser Halus',
-                                            title:
-                                              'Transisi bergeser horizontal secara mulus',
-                                          },
-                                        ] as const
-                                      ).map((mode) => {
-                                        const currentStyle =
-                                          settingsForm.galleryTransitionStyle ??
-                                          'CROSSFADE';
-                                        const isActive =
-                                          currentStyle === mode.key;
-                                        return (
-                                          <button
-                                            key={mode.key}
-                                            type="button"
-                                            title={mode.title}
-                                            onClick={() =>
-                                              setSettingsForm({
-                                                ...settingsForm,
-                                                galleryTransitionStyle:
-                                                  mode.key,
-                                              })
-                                            }
-                                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
-                                              isActive
-                                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
-                                                : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
-                                            }`}
-                                          >
-                                            {mode.label}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                      <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
-                                        <div className="flex items-center justify-between text-[10px] font-bold">
-                                          <span className="text-stone-700">
-                                            Jeda Slide Latar
-                                          </span>
-                                          <span className="text-[#8B6914]">
-                                            {(settingsForm.gallerySlideDurationSeconds ??
-                                              6) === 0
-                                              ? 'Manual (Mati)'
-                                              : `${settingsForm.gallerySlideDurationSeconds ?? 6} dtk`}
-                                          </span>
-                                        </div>
-                                        <input
-                                          type="range"
-                                          min={2}
-                                          max={15}
-                                          step={1}
-                                          value={
-                                            settingsForm.gallerySlideDurationSeconds ||
-                                            6
-                                          }
-                                          onChange={(e) =>
-                                            setSettingsForm({
-                                              ...settingsForm,
-                                              gallerySlideDurationSeconds:
-                                                Number(e.target.value),
-                                            })
-                                          }
-                                          className="w-full accent-[#B68D40] h-1.5"
-                                        />
-                                      </div>
-
-                                      <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
-                                        <div className="flex items-center justify-between text-[10px] font-bold">
-                                          <span className="text-stone-700">
-                                            Durasi Smoothing
-                                          </span>
-                                          <span className="text-[#8B6914]">
-                                            {(
-                                              (settingsForm.galleryTransitionDurationMs ??
-                                                1400) / 1000
-                                            ).toFixed(1)}{' '}
-                                            dtk
-                                          </span>
-                                        </div>
-                                        <input
-                                          type="range"
-                                          min={400}
-                                          max={2600}
-                                          step={100}
-                                          value={
-                                            settingsForm.galleryTransitionDurationMs ??
-                                            1400
-                                          }
-                                          onChange={(e) =>
-                                            setSettingsForm({
-                                              ...settingsForm,
-                                              galleryTransitionDurationMs:
-                                                Number(e.target.value),
-                                            })
-                                          }
-                                          className="w-full accent-[#B68D40] h-1.5"
-                                        />
-                                      </div>
-                                    </div>
+                                        (settingsForm.galleryTransitionDurationMs ??
+                                          1400) / 1000
+                                      ).toFixed(1)}{' '}
+                                      dtk
+                                    </span>
                                   </div>
-                                )}
+                                  <input
+                                    type="range"
+                                    min={400}
+                                    max={2600}
+                                    step={100}
+                                    value={
+                                      settingsForm.galleryTransitionDurationMs ??
+                                      1400
+                                    }
+                                    onChange={(e) =>
+                                      setSettingsForm({
+                                        ...settingsForm,
+                                        galleryTransitionDurationMs: Number(
+                                          e.target.value
+                                        ),
+                                      })
+                                    }
+                                    className="w-full accent-[#B68D40] h-1.5"
+                                  />
+                                </div>
                               </div>
-                            )
+                            </div>
                           )}
                         </div>
                       );
@@ -19467,12 +19579,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                           className="hidden"
                           onChange={(e) =>
-                            handleUploadUnifiedThemeMedia(
+                            handleUploadUnifiedBackgroundMedia(
                               e,
-                              photoAdjustTarget.field as
-                                | 'coverBgUrl'
-                                | 'heroPrewedUrl'
-                                | 'pageBgUrl'
+                              photoAdjustTarget.sectionKey ||
+                                (photoAdjustTarget.field === 'coverBgUrl'
+                                  ? 'cover'
+                                  : photoAdjustTarget.field === 'heroPrewedUrl'
+                                  ? 'hero'
+                                  : 'page'),
+                              photoAdjustTarget.slideIndex ?? 0
                             )
                           }
                         />

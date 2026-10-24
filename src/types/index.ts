@@ -373,6 +373,9 @@ export interface WeddingSettings {
 
   // Custom Background & Theme Settings
   backgroundSlides?: BackgroundSlideItem[]; // Unified 1-or-many background photos (auto-slideshows when >= 2)
+  coverSlides?: BackgroundSlideItem[]; // Slideshow for Sampul Depan (when > 1 photo uploaded to Cover)
+  heroSlides?: BackgroundSlideItem[];  // Slideshow for Banner Hero (when > 1 photo uploaded to Hero)
+  pageSlides?: BackgroundSlideItem[];  // Slideshow for Wallpaper Latar (when > 1 photo uploaded to Page Background)
   coverBgUrl?: string;
   heroPrewedUrl?: string;
   pageBgUrl?: string;
