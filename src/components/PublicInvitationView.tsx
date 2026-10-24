@@ -43,6 +43,7 @@ import {
   BackgroundSlideItem,
   MusicTrackItem,
   InvitationInteractionType,
+  EventCategoryType,
 } from '@/types';
 import {
   weddingMusicPlayer,
@@ -93,13 +94,17 @@ interface FloralCornerOrnamentProps {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  enabled?: boolean;
 }
 
 const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
   position,
   size = 'md',
   className = '',
+  enabled = true,
 }) => {
+  if (!enabled) return null;
+
   const posClasses =
     position === 'top-left'
       ? 'top-0 left-0'
@@ -322,6 +327,208 @@ const GoldEmvChipIcon: React.FC<{ className?: string }> = ({ className = 'w-10 h
       </linearGradient>
     </defs>
   </svg>
+);
+
+const EventCrestIcon: React.FC<{
+  eventType?: EventCategoryType;
+  className?: string;
+}> = ({ eventType = 'WEDDING', className = 'w-6 h-6' }) => {
+  switch (eventType) {
+    case 'BIRTHDAY':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          {/* Celebration Crown & Star Sparkles */}
+          <path
+            d="M4.5 20.5L6.5 9.5L11.5 14L14 7L16.5 14L21.5 9.5L23.5 20.5H4.5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <path
+            d="M5 23H23"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <circle cx="14" cy="4.2" r="1.3" fill="currentColor" />
+          <circle cx="6.2" cy="7.2" r="1.1" fill="currentColor" />
+          <circle cx="21.8" cy="7.2" r="1.1" fill="currentColor" />
+        </svg>
+      );
+    case 'GRADUATION':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          {/* Academic Mortarboard & Laurel Emblem */}
+          <path
+            d="M14 5L3 10.5L14 16L25 10.5L14 5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <path
+            d="M7.5 13V19.5C7.5 21.5 10.5 23 14 23C17.5 23 20.5 21.5 20.5 19.5V13"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M23.5 11.2V18.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <circle cx="23.5" cy="19.5" r="1.2" fill="currentColor" />
+        </svg>
+      );
+    case 'MEETING':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          {/* Executive Compass & Diamond Crest */}
+          <circle
+            cx="14"
+            cy="14"
+            r="9.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <path
+            d="M14 3.5L16.8 11.2L24.5 14L16.8 16.8L14 24.5L11.2 16.8L3.5 14L11.2 11.2L14 3.5Z"
+            stroke="currentColor"
+            strokeWidth="1.35"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <circle cx="14" cy="14" r="1.8" fill="currentColor" />
+        </svg>
+      );
+    case 'GALA_DINNER':
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          {/* Royal 8-Point Gala Star Crest */}
+          <path
+            d="M14 2.5L16.6 9.8L23.8 6.2L20.2 13.4L27.5 16L20.2 18.6L23.8 25.8L16.6 22.2L14 27.5L11.4 22.2L4.2 25.8L7.8 18.6L0.5 16L7.8 13.4L4.2 6.2L11.4 9.8L14 2.5Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+            fill="currentColor"
+            fillOpacity="0.12"
+          />
+          <circle cx="14" cy="15.5" r="3" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+      );
+    case 'WEDDING':
+    default:
+      return (
+        <svg
+          viewBox="0 0 28 28"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`shrink-0 ${className}`}
+          aria-hidden="true"
+        >
+          {/* Tiny Diamond Star Sparkle Above */}
+          <path
+            d="M14 2.8L15.1 5.6L17.9 6.7L15.1 7.8L14 10.6L12.9 7.8L10.1 6.7L12.9 5.6L14 2.8Z"
+            fill="currentColor"
+            fillOpacity="0.85"
+          />
+          {/* Interlocking Twin Wedding Rings */}
+          <circle
+            cx="10.8"
+            cy="17"
+            r="6.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="currentColor"
+            fillOpacity="0.06"
+          />
+          <circle
+            cx="17.2"
+            cy="17"
+            r="6.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="currentColor"
+            fillOpacity="0.06"
+          />
+        </svg>
+      );
+  }
+};
+
+const EditorialSectionHeader: React.FC<{
+  badge?: string;
+  title: string;
+  subtitle?: string;
+}> = ({ badge, title, subtitle }) => (
+  <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto py-2 text-center mb-7 sm:mb-10 relative">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-8 -inset-y-2 rounded-full bg-white/55 blur-2xl -z-10"
+    />
+    {badge && badge.trim() !== '' && (
+      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.28em] text-[#9A742B] mb-1.5">
+        {badge}
+      </p>
+    )}
+    <h2 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)]">
+      {title}
+    </h2>
+    {subtitle && subtitle.trim() !== '' && (
+      <p className="text-xs sm:text-sm text-stone-600 mt-1.5 max-w-xl mx-auto leading-relaxed">
+        {subtitle}
+      </p>
+    )}
+    <div
+      aria-hidden="true"
+      className="flex items-center justify-center gap-2.5 mt-3"
+    >
+      <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+      <svg
+        viewBox="0 0 24 12"
+        fill="none"
+        className="w-5 h-2.5 text-[#B68D40] shrink-0"
+      >
+        <path
+          d="M12 1L14.5 6L12 11L9.5 6L12 1Z"
+          fill="currentColor"
+          fillOpacity="0.85"
+        />
+        <circle cx="4" cy="6" r="1.4" fill="currentColor" fillOpacity="0.6" />
+        <circle cx="20" cy="6" r="1.4" fill="currentColor" fillOpacity="0.6" />
+      </svg>
+      <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+    </div>
+  </div>
 );
 
 interface AdaptiveVideoLayerProps {
@@ -670,13 +877,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const eventType = settings.eventType || 'WEDDING';
   const isWeddingEvent = eventType === 'WEDDING';
+  const showFloral = settings.showFloralOrnaments !== false;
+  const showPetals = settings.showFloatingPetals !== false;
   const hasSecondProfile =
-    isWeddingEvent ||
-    Boolean(
-      settings.brideFullName &&
-        settings.brideFullName.trim() !== '' &&
-        settings.brideFullName !== '-'
-    );
+    typeof settings.showSecondProfile === 'boolean'
+      ? settings.showSecondProfile
+      : isWeddingEvent ||
+        Boolean(
+          settings.brideFullName &&
+            settings.brideFullName.trim() !== '' &&
+            settings.brideFullName.trim() !== '-'
+        );
+
+  const initialsMonogram = hasSecondProfile
+    ? `${(settings.groomNickname || settings.groomFullName || 'A')
+        .trim()
+        .charAt(0)
+        .toUpperCase()}&${(settings.brideNickname || settings.brideFullName || 'S')
+        .trim()
+        .charAt(0)
+        .toUpperCase()}`
+    : (settings.groomNickname || settings.groomFullName || 'E')
+        .trim()
+        .slice(0, 2)
+        .toUpperCase();
 
   const eventMeta = useMemo(() => {
     switch (eventType) {
@@ -836,6 +1060,57 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const displayTitleFull = hasSecondProfile
     ? `${settings.groomFullName} & ${settings.brideFullName}`
     : settings.groomFullName;
+
+  const coverBadgeLabel = settings.coverBadgeText?.trim() || eventMeta.coverBadge;
+  const coverGreetingLabel =
+    settings.coverGreetingLabel?.trim() ||
+    (lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest');
+  const coverApology =
+    settings.coverApologyNote !== undefined
+      ? settings.coverApologyNote.trim()
+      : lang === 'ID'
+      ? '*Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar'
+      : '*We apologize if there is any misspelling of your name or title';
+  const coverButtonLabel =
+    settings.coverButtonLabel?.trim() ||
+    (lang === 'ID' ? 'Buka Undangan' : 'Open Invitation');
+  const countdownLabel =
+    settings.countdownSectionLabel?.trim() ||
+    (lang === 'ID'
+      ? isWeddingEvent
+        ? 'Menuju Hari Bahagia'
+        : 'Menuju Hari Pelaksanaan'
+      : 'Counting Down to the Event');
+  const profileTitle =
+    settings.profileSectionTitle?.trim() || eventMeta.profileSectionTitle;
+  const scheduleTitle =
+    settings.scheduleSectionTitle?.trim() || eventMeta.scheduleTitle;
+  const storyTitle = settings.storySectionTitle?.trim() || eventMeta.storyTitle;
+  const rsvpTitle = settings.rsvpSectionTitle?.trim() || eventMeta.rsvpTitle;
+  const rsvpSubtitle =
+    settings.rsvpSectionSubtitle?.trim() ||
+    (lang === 'ID'
+      ? 'Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time'
+      : 'Your attendance confirmation and wishes will be saved automatically in real-time');
+  const rsvpMessageLabel =
+    settings.rsvpMessageLabel?.trim() ||
+    (lang === 'ID'
+      ? isWeddingEvent
+        ? 'Ucapan & Doa Restu'
+        : 'Ucapan / Catatan Kehadiran'
+      : 'Wishes & Notes');
+  const wishesTitle = settings.wishesSectionTitle?.trim() || eventMeta.wishesTitle;
+  const closingBadge =
+    settings.closingBadgeText !== undefined
+      ? settings.closingBadgeText.trim()
+      : 'Thank You & Blessing';
+  const closingSignature =
+    settings.closingSignatureLabel?.trim() ||
+    (lang === 'ID'
+      ? isWeddingEvent
+        ? 'Kami yang berbahagia,'
+        : 'Hormat kami,'
+      : 'With love & gratitude,');
 
   // Lookup matched guest from DB if ?code= or ?to= matches (exact or partial)
   const matchedGuest = useMemo(() => {
@@ -1021,7 +1296,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         time: ev.timeLabel,
         venue: ev.venue,
         address: ev.address,
-        mapsUrl: ev.mapsUrl || 'https://maps.google.com',
+        mapsUrl: (ev.mapsUrl || '').trim(),
         dresscode: ev.dresscode,
         highlight:
           ev.enableCountdown &&
@@ -1579,10 +1854,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div className="relative z-10 max-w-xl mx-auto px-4 py-6 text-center my-auto w-full">
           <div className="w-full rounded-3xl bg-white/85 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-[#FAF3E3] border-2 border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B]">
-              <WeddingRingsIcon
-                className="w-9 h-9"
-                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
-              />
+              <EventCrestIcon eventType={eventType} className="w-8 h-8" />
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
               <Clock className="w-3.5 h-3.5" /> Mode Penyesuaian / Segera Hadir
@@ -1614,7 +1886,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             : 'translate-y-0 opacity-100 scale-100'
         }`}
       >
-        <FloatingPetalsAmbient />
+        {showPetals && <FloatingPetalsAmbient />}
 
         {/* Unified Background Layer (1-or-Many Photo Slideshow / Video / Champagne Fallback) + Luminous Pearl Veil */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -1632,12 +1904,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <header className="fixed top-0 inset-x-0 z-40 bg-white/75 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 px-3.5 sm:px-8 py-2.5 sm:py-3">
             <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
-              <WeddingRingsIcon
+              <EventCrestIcon
+                eventType={eventType}
                 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
-                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
               />
               <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
-                {eventMeta.coverBadge}
+                {coverBadgeLabel}
               </span>
             </div>
 
@@ -1673,25 +1945,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         {/* Center Cover Invitation Frosted Glass Card */}
         <div className="relative z-10 max-w-xl mx-auto px-3.5 sm:px-5 py-4 sm:py-6 text-center flex flex-col items-center my-auto w-full">
           <div className="w-full rounded-3xl sm:rounded-[2.25rem] bg-white/75 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-5 sm:p-10 relative overflow-hidden">
-            <FloralCornerOrnament position="top-left" />
-            <FloralCornerOrnament position="top-right" />
-            <FloralCornerOrnament position="bottom-left" />
-            <FloralCornerOrnament position="bottom-right" />
+            <FloralCornerOrnament position="top-left" enabled={showFloral} />
+            <FloralCornerOrnament position="top-right" enabled={showFloral} />
+            <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
+            <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
-            {/* Brand / Event Emblem */}
-            <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5 relative z-10">
-              <WeddingRingsIcon
-                className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]"
-                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+            {/* Event Category Crest Emblem */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5 relative z-10">
+              <EventCrestIcon
+                eventType={eventType}
+                className="w-8 h-8 sm:w-10 sm:h-10 text-[#B68D40]"
               />
             </div>
 
             <div className="mb-2">
               <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#8B6914] font-bold">
-                {eventMeta.coverBadge}
+                {coverBadgeLabel}
               </span>
             </div>
 
@@ -1700,13 +1972,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </h1>
 
             <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-4 sm:mb-6">
-              {settings.event2DateLabel} &bull; {settings.groomOrigin}
+              {settings.event2DateLabel}
+              {settings.groomOrigin && settings.groomOrigin.trim() !== '-'
+                ? ` • ${settings.groomOrigin}`
+                : ''}
             </p>
 
             {/* Personalized Guest Card (Translucent Glass) */}
             <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
-                {lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest'}
+                {coverGreetingLabel}
               </p>
 
               <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
@@ -1719,11 +1994,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               )}
 
-              <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
-                {lang === 'ID'
-                  ? '*Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar'
-                  : '*We apologize if there is any misspelling of your name or title'}
-              </p>
+              {coverApology && coverApology !== '-' && (
+                <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
+                  {coverApology}
+                </p>
+              )}
             </div>
 
             {/* Optional Superadmin VIP Code Gate Input */}
@@ -1799,7 +2074,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
             >
               <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
-              <span>{lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}</span>
+              <span>{coverButtonLabel}</span>
             </button>
           </div>
         </div>
@@ -1823,7 +2098,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ref={invitationContainerRef}
       className="min-h-screen relative bg-[#FAF8F5] text-stone-800 pt-14 sm:pt-16 pb-28 sm:pb-24 overflow-x-clip selection:bg-[#D4AF37]/25 selection:text-stone-900"
     >
-      <FloatingPetalsAmbient />
+      {showPetals && <FloatingPetalsAmbient />}
 
       {/* FIXED CUSTOM WALLPAPER / UNIFIED BACKGROUND LAYER WITH ADJUSTABLE PEARL VEIL */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -1840,11 +2115,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       <header className="fixed top-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
-              <WeddingRingsIcon
-                className="w-4 h-4 sm:w-5 sm:h-5"
-                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
-              />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="font-editorial font-bold text-xs sm:text-sm text-[#8B6914] tracking-tighter">
+                {initialsMonogram}
+              </span>
             </div>
             <div className="truncate">
               <p className="font-editorial text-xs sm:text-base font-bold text-stone-900 truncate">
@@ -2073,35 +2347,53 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* HERO PREWEDDING SILHOUETTE BANNER & LIVE COUNTDOWN */}
       <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-white/75 backdrop-blur-xl">
-            <FloralCornerOrnament position="top-left" />
-            <FloralCornerOrnament position="top-right" />
-            <FloralCornerOrnament position="bottom-left" />
-            <FloralCornerOrnament position="bottom-right" />
+          <div className="inv-reveal inv-reveal-up relative rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)] bg-[#FFFDF9]/90 backdrop-blur-xl">
+            <FloralCornerOrnament position="top-left" enabled={showFloral} />
+            <FloralCornerOrnament position="top-right" enabled={showFloral} />
+            <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
+            <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
-            {/* Prewedding Silhouette Image / Motion Video Header (16:9 matching Crop Studio) */}
-            <div className="relative w-full aspect-[16/9] max-h-[520px] overflow-hidden bg-[#FAF8F5]">
-              {renderUnifiedBackgroundLayer('Prewedding Banner')}
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-white via-stone-950/15 to-transparent pointer-events-none" />
-              <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
-                <WeddingRingsIcon
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"
-                  logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
-                />
-                <span>{eventMeta.heroBadge}</span>
+            {/* Prewedding Silhouette Image / Motion Video Header with Feathered Mist Fade */}
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden bg-[#FFFDF9]">
+              <div
+                className="absolute inset-0"
+                style={{
+                  WebkitMaskImage:
+                    'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                  maskImage:
+                    'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                }}
+              >
+                {renderUnifiedBackgroundLayer('Prewedding Banner')}
               </div>
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/40 to-transparent pointer-events-none" />
+              {settings.showHeroBadge === true &&
+                Boolean(settings.heroBadgeText?.trim()) && (
+                  <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
+                    <EventCrestIcon
+                      eventType={eventType}
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
+                    />
+                    <span>{settings.heroBadgeText?.trim()}</span>
+                  </div>
+                )}
             </div>
 
-            {/* Hero Content Overlapping Frosted Area */}
-            <div className="px-4 sm:px-6 pb-7 sm:pb-10 pt-2 text-center -mt-12 sm:-mt-14 relative z-10">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-white/95 border border-[#D4AF37]/45 flex items-center justify-center text-[#B68D40] shadow-md mb-3.5 sm:mb-4">
-                <WeddingRingsIcon
-                  className="w-8 h-8 sm:w-9 sm:h-9"
-                  logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+            {/* Hero Content Overlapping Soft Feathered Fade */}
+            <div className="px-4 sm:px-6 pb-7 sm:pb-10 pt-2 text-center -mt-8 sm:-mt-12 relative z-20">
+              <div
+                aria-hidden="true"
+                className="flex items-center justify-center gap-3 mb-2"
+              >
+                <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                <EventCrestIcon
+                  eventType={eventType}
+                  className="w-4 h-4 text-[#B68D40]"
                 />
+                <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
               </div>
 
-              <h1 className="font-editorial text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
+              <h1 className="font-editorial text-2xl sm:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-2.5 break-words">
                 {displayTitleFull}
               </h1>
 
@@ -2115,9 +2407,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
                     <Clock className="w-3.5 h-3.5" />
                     <span>
-                      {lang === 'ID'
-                        ? 'Menuju Hari Bahagia'
-                        : 'Counting Down to the Big Day'}
+                      {countdownLabel}
                       {countdownEvents.length === 1
                         ? ` • ${activeCountdownEvent.title}`
                         : ''}
@@ -2174,25 +2464,27 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
 
                   {/* Save The Date (Google Calendar) Interactive Pill Button */}
-                  <div className="pt-1 flex justify-center">
-                    <a
-                      href={googleCalendarUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={
-                        lang === 'ID'
-                          ? 'Simpan jadwal acara ini ke Google Calendar (Save The Date)'
-                          : 'Save this event to Google Calendar'
-                      }
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold whitespace-nowrap shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
-                    >
-                      <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                      <span className="whitespace-nowrap truncate">
-                        {lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}
-                      </span>
-                      <ExternalLink className="w-3 h-3 text-[#B68D40] shrink-0" />
-                    </a>
-                  </div>
+                  {settings.showSaveToCalendarButton !== false && (
+                    <div className="pt-1 flex justify-center">
+                      <a
+                        href={googleCalendarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={
+                          lang === 'ID'
+                            ? 'Simpan jadwal acara ini ke Google Calendar (Save The Date)'
+                            : 'Save this event to Google Calendar'
+                        }
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold whitespace-nowrap shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                        <span className="whitespace-nowrap truncate">
+                          {lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}
+                        </span>
+                        <ExternalLink className="w-3 h-3 text-[#B68D40] shrink-0" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2237,12 +2529,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: PROFIL MEMPELAI / HOST (1-COL SPOTLIGHT OR 2-COL SYMMETRICAL CARDS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-              {eventMeta.profileSectionTitle}
-            </h2>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
-          </div>
+          <EditorialSectionHeader
+            badge={coverBadgeLabel}
+            title={profileTitle}
+          />
 
           <div
             className={
@@ -2253,30 +2543,42 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           >
             {/* Primary Host / Groom Card */}
             <div className="inv-reveal inv-reveal-left relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-              <FloralCornerOrnament position="top-left" size="sm" />
-              <FloralCornerOrnament position="top-right" size="sm" />
+              <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
+              <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
 
               <div className="flex flex-col items-center w-full relative z-10">
-                <div className="relative mb-5 sm:mb-6 shrink-0">
-                  <FloralCornerOrnament
-                    position="bottom-left"
-                    size="sm"
-                    className="-bottom-3 -left-6 opacity-90"
-                  />
-                  <FloralCornerOrnament
-                    position="bottom-right"
-                    size="sm"
-                    className="-bottom-3 -right-6 opacity-90"
-                  />
-                  <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
-                    <img
-                      src={settings.groomPhotoUrl}
-                      alt={settings.groomFullName}
-                      className="w-full h-full object-cover object-center"
-                      style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
+                {settings.showProfilePhotos !== false && (
+                  <div className="relative mb-5 sm:mb-6 shrink-0">
+                    <FloralCornerOrnament
+                      position="bottom-left"
+                      size="sm"
+                      className="-bottom-3 -left-6 opacity-90"
+                      enabled={showFloral}
                     />
+                    <FloralCornerOrnament
+                      position="bottom-right"
+                      size="sm"
+                      className="-bottom-3 -right-6 opacity-90"
+                      enabled={showFloral}
+                    />
+                    <div
+                      className={`${
+                        settings.profileFrameStyle === 'CIRCLE'
+                          ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full'
+                          : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                          ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem]'
+                          : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl'
+                      } border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative`}
+                    >
+                      <img
+                        src={settings.groomPhotoUrl}
+                        alt={settings.groomFullName}
+                        className="w-full h-full object-cover object-center"
+                        style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
                 <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                   {settings.eventHostRoleLabel ||
                     (settings.groomRankAndTitle &&
@@ -2287,18 +2589,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                   {settings.groomFullName}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
-                  {settings.groomUnit || settings.groomOrigin}
-                </p>
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                  {settings.groomParents}
-                </p>
+                {(settings.groomUnit || settings.groomOrigin) &&
+                  (settings.groomUnit || settings.groomOrigin).trim() !== '-' && (
+                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                      {settings.groomUnit || settings.groomOrigin}
+                    </p>
+                  )}
+                {settings.groomParents &&
+                  settings.groomParents.trim() !== '' &&
+                  settings.groomParents.trim() !== '-' && (
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                      {settings.groomParents}
+                    </p>
+                  )}
               </div>
               {Boolean(
                 settings.groomUnit &&
                   settings.groomUnit.trim() !== '' &&
                   settings.groomOrigin &&
-                  settings.groomOrigin.trim() !== ''
+                  settings.groomOrigin.trim() !== '' &&
+                  settings.groomOrigin.trim() !== '-'
               ) && (
                 <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
                   <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
@@ -2329,32 +2639,44 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {/* Secondary Host / Bride Card */}
                 <div className="inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-                  <FloralCornerOrnament position="top-left" size="sm" />
-                  <FloralCornerOrnament position="top-right" size="sm" />
+                  <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
+                  <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
 
                   <div className="flex flex-col items-center w-full relative z-10">
-                    <div className="relative mb-5 sm:mb-6 shrink-0">
-                      <FloralCornerOrnament
-                        position="bottom-left"
-                        size="sm"
-                        className="-bottom-3 -left-6 opacity-90"
-                      />
-                      <FloralCornerOrnament
-                        position="bottom-right"
-                        size="sm"
-                        className="-bottom-3 -right-6 opacity-90"
-                      />
-                      <div className="w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative">
-                        <img
-                          src={settings.bridePhotoUrl}
-                          alt={settings.brideFullName}
-                          className="w-full h-full object-cover object-center"
-                          style={getPhotoAdjustStyle(
-                            settings.photoAdjustments?.bridePhotoUrl
-                          )}
+                    {settings.showProfilePhotos !== false && (
+                      <div className="relative mb-5 sm:mb-6 shrink-0">
+                        <FloralCornerOrnament
+                          position="bottom-left"
+                          size="sm"
+                          className="-bottom-3 -left-6 opacity-90"
+                          enabled={showFloral}
                         />
+                        <FloralCornerOrnament
+                          position="bottom-right"
+                          size="sm"
+                          className="-bottom-3 -right-6 opacity-90"
+                          enabled={showFloral}
+                        />
+                        <div
+                          className={`${
+                            settings.profileFrameStyle === 'CIRCLE'
+                              ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full'
+                              : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                              ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem]'
+                              : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl'
+                          } border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg overflow-hidden bg-stone-100 relative`}
+                        >
+                          <img
+                            src={settings.bridePhotoUrl}
+                            alt={settings.brideFullName}
+                            className="w-full h-full object-cover object-center"
+                            style={getPhotoAdjustStyle(
+                              settings.photoAdjustments?.bridePhotoUrl
+                            )}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
                       {settings.brideTitle &&
                       settings.brideTitle !== 'Mempelai Wanita'
@@ -2364,12 +2686,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
                       {settings.brideFullName}
                     </h3>
-                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
-                      {settings.brideOrigin}
-                    </p>
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                      {settings.brideParents}
-                    </p>
+                    {settings.brideOrigin && settings.brideOrigin.trim() !== '-' && (
+                      <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                        {settings.brideOrigin}
+                      </p>
+                    )}
+                    {settings.brideParents &&
+                      settings.brideParents.trim() !== '' &&
+                      settings.brideParents.trim() !== '-' && (
+                        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                          {settings.brideParents}
+                        </p>
+                      )}
                   </div>
                 </div>
               </>
@@ -2381,15 +2709,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
         <section id="acara" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-              {eventMeta.scheduleTitle}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 mt-1">
-              {settings.subtitle}
-            </p>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-2.5" />
-          </div>
+          <EditorialSectionHeader
+            badge={lang === 'ID' ? 'Agenda & Waktu' : 'Date & Venue'}
+            title={scheduleTitle}
+            subtitle={settings.subtitle}
+          />
 
           <div
             className={`grid grid-cols-1 gap-4 sm:gap-6 items-stretch ${
@@ -2400,79 +2724,96 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 : 'lg:grid-cols-3'
             }`}
           >
-            {visibleEvents.map((ev, idx) => (
-              <div
-                key={idx}
-                className={`inv-reveal inv-reveal-up relative h-full min-w-0 overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
-                  ev.highlight
-                    ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
-                    : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
-                }`}
-              >
-                <FloralCornerOrnament position="top-right" size="sm" />
-                <div className="flex flex-col flex-1 relative z-10">
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
-                      {ev.badge}
-                    </span>
-                    <WeddingRingsIcon
-                      className="w-5 h-5 text-[#C5A059]"
-                      logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
-                    />
-                  </div>
+            {visibleEvents.map((ev, idx) => {
+              const hasDresscode =
+                Boolean(ev.dresscode) &&
+                ev.dresscode.trim() !== '' &&
+                ev.dresscode.trim() !== '-';
+              const hasMapsUrl =
+                Boolean(ev.mapsUrl) &&
+                ev.mapsUrl.trim() !== '' &&
+                ev.mapsUrl.trim() !== '#';
 
-                  <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1">
-                    {ev.title}
-                  </h3>
-                  <p className="text-xs text-stone-500 mb-4 sm:mb-5 min-h-[2rem]">
-                    {ev.subtitle}
-                  </p>
+              return (
+                <div
+                  key={idx}
+                  className={`inv-reveal inv-reveal-up relative h-full min-w-0 overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col justify-between transition-all backdrop-blur-xl ${
+                    ev.highlight
+                      ? 'bg-gradient-to-b from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/90 border-2 border-[#D4AF37]/60 shadow-[0_20px_55px_rgba(197,160,89,0.20)]'
+                      : 'bg-white/80 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
+                  }`}
+                >
+                  <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
+                  <div className="flex flex-col flex-1 relative z-10">
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
+                        {ev.badge}
+                      </span>
+                      <EventCrestIcon
+                        eventType={eventType}
+                        className="w-5 h-5 text-[#C5A059]"
+                      />
+                    </div>
 
-                  <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-5 sm:mb-6">
-                    <div className="flex items-start gap-2.5">
-                      <Calendar className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                      <span className="font-bold text-stone-800">{ev.date}</span>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <Clock className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                      <span className="text-stone-700 font-medium">{ev.time}</span>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <MapPin className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold text-stone-800">{ev.venue}</p>
-                        <p className="text-xs text-stone-500 mt-0.5">{ev.address}</p>
+                    <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1">
+                      {ev.title}
+                    </h3>
+                    <p className="text-xs text-stone-500 mb-4 sm:mb-5 min-h-[2rem]">
+                      {ev.subtitle}
+                    </p>
+
+                    <div className="space-y-3 text-xs sm:text-sm border-t border-stone-200/70 pt-4 mb-5 sm:mb-6">
+                      <div className="flex items-start gap-2.5">
+                        <Calendar className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                        <span className="font-bold text-stone-800">{ev.date}</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Clock className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                        <span className="text-stone-700 font-medium">{ev.time}</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <MapPin className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-stone-800">{ev.venue}</p>
+                          <p className="text-xs text-stone-500 mt-0.5">{ev.address}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-3 pt-3 border-t border-stone-200/70 mt-auto">
-                  <div className="text-[11px] text-stone-500 break-words">
-                    <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
-                    {ev.dresscode}
-                  </div>
-                  <a
-                    href={ev.mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() =>
-                      emitAnalytics(
-                        'CLICK_MAPS',
-                        `Membuka lokasi Google Maps: ${ev.title} (${ev.venue})`
-                      )
-                    }
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>
-                      {lang === 'ID' ? 'Buka Google Maps' : 'Open Google Maps'}
-                    </span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {(hasDresscode || hasMapsUrl) && (
+                    <div className="space-y-3 pt-3 border-t border-stone-200/70 mt-auto relative z-10">
+                      {hasDresscode && (
+                        <div className="text-[11px] text-stone-500 break-words">
+                          <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
+                          {ev.dresscode}
+                        </div>
+                      )}
+                      {hasMapsUrl && (
+                        <a
+                          href={ev.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() =>
+                            emitAnalytics(
+                              'CLICK_MAPS',
+                              `Membuka lokasi Google Maps: ${ev.title} (${ev.venue})`
+                            )
+                          }
+                          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>
+                            {lang === 'ID' ? 'Buka Google Maps' : 'Open Google Maps'}
+                          </span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -2480,19 +2821,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {(showLoveStory || showGallery) && (
         <section id="galeri" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-              {settings.showLoveStorySection && settings.showGallerySection
-                ? `${eventMeta.storyTitle} & ${
-                    settings.gallerySectionTitle || (lang === 'ID' ? 'Galeri' : 'Gallery')
+          <EditorialSectionHeader
+            badge={lang === 'ID' ? 'Momen Berharga' : 'Precious Moments'}
+            title={
+              settings.showLoveStorySection && settings.showGallerySection
+                ? `${storyTitle} & ${
+                    settings.gallerySectionTitle?.trim() ||
+                    (lang === 'ID' ? 'Galeri' : 'Gallery')
                   }`
                 : settings.showLoveStorySection
-                ? eventMeta.storyTitle
-                : settings.gallerySectionTitle ||
-                  (lang === 'ID' ? 'Galeri Momen' : 'Photo Gallery')}
-            </h2>
-            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mt-3" />
-          </div>
+                ? storyTitle
+                : settings.gallerySectionTitle?.trim() ||
+                  (lang === 'ID' ? 'Galeri Momen' : 'Photo Gallery')
+            }
+          />
 
           {/* Love Story Timeline Cards with Connected Vertical Golden Timeline */}
           {showLoveStory &&
@@ -2520,7 +2862,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           i % 2 === 0 ? 'inv-reveal-left' : 'inv-reveal-right'
                         } relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-6 shadow-[0_14px_40px_rgba(175,145,95,0.10)] flex flex-col justify-between`}
                       >
-                        <FloralCornerOrnament position="bottom-right" size="sm" />
+                        <FloralCornerOrnament
+                          position="bottom-right"
+                          size="sm"
+                          enabled={showFloral}
+                        />
                         <div className="relative z-10">
                           <div className="flex items-center justify-between gap-2 mb-2.5">
                             <div className="inline-flex items-center gap-1.5">
@@ -2557,12 +2903,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="inv-reveal inv-reveal-up max-w-xl mx-auto mb-8 sm:mb-10 rounded-3xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-6 text-center shadow-[0_14px_40px_rgba(175,145,95,0.10)]">
                 <Heart className="w-6 h-6 text-[#C5A059] mx-auto mb-2" />
                 <p className="font-editorial font-bold text-stone-800 text-base">
-                  {lang === 'ID' ? 'Kisah Perjalanan Cinta' : 'Our Love Story'}
+                  {storyTitle}
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
                   {lang === 'ID'
-                    ? 'Belum ada momen perjalanan cinta yang ditambahkan.'
-                    : 'No love story moments have been added yet.'}
+                    ? 'Belum ada momen perjalanan yang ditambahkan.'
+                    : 'No story moments have been added yet.'}
                 </p>
               </div>
             ))}
@@ -2807,16 +3153,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
         <section id="rsvp" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div className="inv-reveal inv-reveal-up max-w-xl mx-auto text-center mb-7 sm:mb-10 rounded-3xl bg-white/88 backdrop-blur-xl border border-white/95 px-5 py-4 sm:py-5 shadow-[0_14px_40px_rgba(175,145,95,0.12)]">
-            <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-              {eventMeta.rsvpTitle}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 mt-1">
-              {lang === 'ID'
-                ? 'Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time'
-                : 'Your attendance confirmation and wishes will be saved automatically in real-time'}
-            </p>
-          </div>
+          <EditorialSectionHeader
+            badge={lang === 'ID' ? 'RSVP & Buku Tamu' : 'RSVP & Guestbook'}
+            title={rsvpTitle}
+            subtitle={rsvpSubtitle}
+          />
 
           {/* Equal 2-Column Grid with items-stretch and fixed matched desktop height */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
@@ -3079,9 +3420,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1">
-                    {lang === 'ID'
-                      ? 'Ucapan & Doa Restu untuk Kedua Mempelai'
-                      : 'Wedding Wishes & Prayers for the Couple'}
+                    {rsvpMessageLabel}
                   </label>
                   <textarea
                     rows={3}
@@ -3090,7 +3429,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     placeholder={
                       lang === 'ID'
                         ? 'Tuliskan doa restu dan harapan terbaik Anda...'
-                        : 'Write your heartfelt wishes and prayers for the couple...'
+                        : 'Write your heartfelt wishes and prayers...'
                     }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none resize-none"
                   />
@@ -3127,7 +3466,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <MessageSquareHeart className="w-5 h-5 text-[#B68D40] shrink-0" />
                   <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
-                    {eventMeta.wishesTitle} ({publicVisibleWishes.length})
+                    {wishesTitle} ({publicVisibleWishes.length})
                   </h3>
                 </div>
                 <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
@@ -3320,8 +3659,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {settings.showGiftSection !== false && (
         <section id="gift" className="relative z-10 py-8 sm:py-10 px-3 sm:px-4 max-w-5xl mx-auto">
           <div className="inv-reveal inv-reveal-up relative min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl border border-white/95 p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]">
-            <FloralCornerOrnament position="top-left" size="sm" />
-            <FloralCornerOrnament position="top-right" size="sm" />
+            <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
+            <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
 
             <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B] relative z-10">
               <Gift className="w-6 h-6" />
@@ -3625,24 +3964,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* CLOSING FOOTER CARD (HIGH-CONTRAST PEARL & CHAMPAGNE GOLD CARD) */}
       <footer className="relative z-10 pt-2 pb-10 sm:pb-12 px-3 sm:px-4 max-w-5xl mx-auto">
         <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl bg-white/92 backdrop-blur-xl border border-white/95 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
-          <FloralCornerOrnament position="top-left" />
-          <FloralCornerOrnament position="top-right" />
-          <FloralCornerOrnament position="bottom-left" />
-          <FloralCornerOrnament position="bottom-right" />
+          <FloralCornerOrnament position="top-left" enabled={showFloral} />
+          <FloralCornerOrnament position="top-right" enabled={showFloral} />
+          <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
+          <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
           {/* Subtle Top & Bottom Champagne Gold Accent Lines */}
           <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5 relative z-10" />
 
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5 relative z-10">
-            <WeddingRingsIcon
-              className="w-7 h-7"
-              logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
-            />
+            <EventCrestIcon eventType={eventType} className="w-7 h-7" />
           </div>
 
-          <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2 relative z-10">
-            Thank You &amp; Blessing
-          </span>
+          {closingBadge && closingBadge !== '-' && (
+            <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2 relative z-10">
+              {closingBadge}
+            </span>
+          )}
 
           <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-6 relative z-10">
             {settings.invitationClosingText}
@@ -3651,7 +3989,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           {/* Inner Champagne Gold Couple Signature Box */}
           <div className="max-w-md mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 py-4 sm:py-5 shadow-2xs relative z-10">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-1">
-              {lang === 'ID' ? 'Kami yang berbahagia,' : 'With love & gratitude,'}
+              {closingSignature}
             </p>
             <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-1">
               {displayTitleShort}

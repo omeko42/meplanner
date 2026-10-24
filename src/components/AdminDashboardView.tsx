@@ -6863,10 +6863,403 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                     {/* Status Summary Row */}
                     {(() => {
+                      const EVENT_CATEGORY_PRESETS = [
+                        {
+                          id: 'WEDDING' as const,
+                          label: '💍 Pernikahan',
+                          title: 'Acara Pernikahan (2 Profil: Mempelai Pria & Wanita)',
+                          defaultRole: 'Mempelai Pria',
+                          showSecondProfile: true,
+                          showFloralOrnaments: true,
+                          showFloatingPetals: true,
+                          coverBadgeText: 'Undangan Pernikahan',
+                          profileSectionTitle: 'Profil Mempelai',
+                          scheduleSectionTitle: 'Rangkaian Acara',
+                          storySectionTitle: 'Kisah Perjalanan Cinta',
+                          rsvpSectionTitle: 'Konfirmasi Kehadiran & Ucapan',
+                          wishesSectionTitle: 'Buku Tamu & Doa Restu',
+                          closingSignatureLabel: 'Kami yang berbahagia,',
+                        },
+                        {
+                          id: 'BIRTHDAY' as const,
+                          label: '🎂 Ulang Tahun',
+                          title: 'Perayaan Ulang Tahun (1 Profil Utama / Co-Host Opsional)',
+                          defaultRole: 'Yang Berulang Tahun',
+                          showSecondProfile: false,
+                          showFloralOrnaments: true,
+                          showFloatingPetals: true,
+                          coverBadgeText: 'Undangan Ulang Tahun',
+                          profileSectionTitle: 'Profil Yang Berulang Tahun',
+                          scheduleSectionTitle: 'Susunan Acara Perayaan',
+                          storySectionTitle: 'Milestone & Perjalanan Hidup',
+                          rsvpSectionTitle: 'Konfirmasi Kehadiran & Ucapan Selamat',
+                          wishesSectionTitle: 'Ucapan & Doa Ulang Tahun',
+                          closingSignatureLabel: 'Salam hangat,',
+                        },
+                        {
+                          id: 'GRADUATION' as const,
+                          label: '🎓 Wisuda',
+                          title: 'Syukuran Wisuda & Kelulusan',
+                          defaultRole: 'Wisudawan',
+                          showSecondProfile: false,
+                          showFloralOrnaments: false,
+                          showFloatingPetals: true,
+                          coverBadgeText: 'Syukuran Wisuda & Kelulusan',
+                          profileSectionTitle: 'Profil Wisudawan',
+                          scheduleSectionTitle: 'Jadwal Acara Syukuran',
+                          storySectionTitle: 'Perjalanan Akademik & Pencapaian',
+                          rsvpSectionTitle: 'Konfirmasi Kehadiran & Ucapan',
+                          wishesSectionTitle: 'Ucapan Selamat & Sukses',
+                          closingSignatureLabel: 'Hormat kami,',
+                        },
+                        {
+                          id: 'MEETING' as const,
+                          label: '🏛️ Rapat',
+                          title: 'Rapat Resmi, Seminar, atau Forum Instansi',
+                          defaultRole: 'Penyelenggara / Pimpinan',
+                          showSecondProfile: false,
+                          showFloralOrnaments: false,
+                          showFloatingPetals: false,
+                          coverBadgeText: 'Undangan Rapat & Agenda Resmi',
+                          profileSectionTitle: 'Penyelenggara & Pimpinan Acara',
+                          scheduleSectionTitle: 'Susunan Agenda & Waktu',
+                          storySectionTitle: 'Latar Belakang & Pokok Bahasan',
+                          rsvpSectionTitle: 'Registrasi Kehadiran Peserta',
+                          wishesSectionTitle: 'Catatan & Konfirmasi Peserta',
+                          closingSignatureLabel: 'Hormat kami, Panitia Penyelenggara',
+                        },
+                        {
+                          id: 'GALA_DINNER' as const,
+                          label: '🥂 Gala Dinner',
+                          title: 'Malam Apresiasi, Gathering, atau Gala Dinner Eksklusif',
+                          defaultRole: 'Host Gala Dinner',
+                          showSecondProfile: false,
+                          showFloralOrnaments: false,
+                          showFloatingPetals: true,
+                          coverBadgeText: 'Undangan Eksklusif Gala Dinner',
+                          profileSectionTitle: 'Tuan Rumah & Penyelenggara',
+                          scheduleSectionTitle: 'Rundown Malam Gala Dinner',
+                          storySectionTitle: 'Sorotan & Sejarah Acara',
+                          rsvpSectionTitle: 'Reservasi Kursi (RSVP) & Konfirmasi',
+                          wishesSectionTitle: 'Buku Tamu Kehormatan',
+                          closingSignatureLabel: 'Hormat kami,',
+                        },
+                      ];
+
+                      const isDefaultOrEmpty = (
+                        currentVal: string | undefined,
+                        key:
+                          | 'defaultRole'
+                          | 'coverBadgeText'
+                          | 'profileSectionTitle'
+                          | 'scheduleSectionTitle'
+                          | 'storySectionTitle'
+                          | 'rsvpSectionTitle'
+                          | 'wishesSectionTitle'
+                          | 'closingSignatureLabel'
+                      ) => {
+                        if (!currentVal || currentVal.trim() === '') return true;
+                        return EVENT_CATEGORY_PRESETS.some(
+                          (p) => p[key] === currentVal.trim()
+                        );
+                      };
+
+                      const applyEventCategoryPreset = (
+                        catId: 'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER',
+                        forceOverwriteLabels = false
+                      ) => {
+                        const preset =
+                          EVENT_CATEGORY_PRESETS.find((c) => c.id === catId) ||
+                          EVENT_CATEGORY_PRESETS[0];
+
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          eventType: preset.id,
+                          showSecondProfile: preset.showSecondProfile,
+                          showFloralOrnaments: preset.showFloralOrnaments,
+                          showFloatingPetals: preset.showFloatingPetals,
+                          eventHostRoleLabel:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.eventHostRoleLabel, 'defaultRole')
+                              ? preset.defaultRole
+                              : prev.eventHostRoleLabel,
+                          coverBadgeText:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.coverBadgeText, 'coverBadgeText')
+                              ? preset.coverBadgeText
+                              : prev.coverBadgeText,
+                          profileSectionTitle:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.profileSectionTitle, 'profileSectionTitle')
+                              ? preset.profileSectionTitle
+                              : prev.profileSectionTitle,
+                          scheduleSectionTitle:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.scheduleSectionTitle, 'scheduleSectionTitle')
+                              ? preset.scheduleSectionTitle
+                              : prev.scheduleSectionTitle,
+                          storySectionTitle:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.storySectionTitle, 'storySectionTitle')
+                              ? preset.storySectionTitle
+                              : prev.storySectionTitle,
+                          rsvpSectionTitle:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.rsvpSectionTitle, 'rsvpSectionTitle')
+                              ? preset.rsvpSectionTitle
+                              : prev.rsvpSectionTitle,
+                          wishesSectionTitle:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.wishesSectionTitle, 'wishesSectionTitle')
+                              ? preset.wishesSectionTitle
+                              : prev.wishesSectionTitle,
+                          closingSignatureLabel:
+                            forceOverwriteLabels ||
+                            isDefaultOrEmpty(prev.closingSignatureLabel, 'closingSignatureLabel')
+                              ? preset.closingSignatureLabel
+                              : prev.closingSignatureLabel,
+                        }));
+
+                        if (forceOverwriteLabels) {
+                          showToast(
+                            `✓ Label, tata letak profil & ornamen default kategori "${preset.label}" berhasil diterapkan!`
+                          );
+                        }
+                      };
+
+                      const renderEventCategoryAndOrnamentControls = () => (
+                        <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/45 border border-[#D4AF37]/40 space-y-3">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                              <p className="font-extrabold text-[#8B6914] uppercase text-[11px] sm:text-xs truncate">
+                                Kategori Acara — My Event Planner
+                              </p>
+                              <InfoTooltip text="Pilih jenis acara untuk menyesuaikan otomatis jumlah profil (1 tokoh / 2 mempelai), ornamen sudut, dan seluruh judul seksi undangan." />
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-full bg-white text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0">
+                                {settingsForm.eventType || 'WEDDING'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyEventCategoryPreset(
+                                    (settingsForm.eventType || 'WEDDING') as
+                                      | 'WEDDING'
+                                      | 'BIRTHDAY'
+                                      | 'GRADUATION'
+                                      | 'MEETING'
+                                      | 'GALA_DINNER',
+                                    true
+                                  )
+                                }
+                                title="Terapkan ulang seluruh label seksi, sapaan penutup, jumlah profil, dan ornamen default sesuai kategori ini"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] font-bold text-[10px] sm:text-[11px] shadow-2xs transition-all"
+                              >
+                                <span>✨ Terapkan Label Default Kategori Ini</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 5 Category Pills */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {EVENT_CATEGORY_PRESETS.map((cat) => {
+                              const activeCat =
+                                (settingsForm.eventType || 'WEDDING') === cat.id;
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  title={cat.title}
+                                  onClick={() =>
+                                    applyEventCategoryPreset(cat.id, false)
+                                  }
+                                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap truncate transition-all border ${
+                                    activeCat
+                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                      : 'bg-white hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] border-[#D4AF37]/35'
+                                  }`}
+                                >
+                                  {cat.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* 4 Visual & Ornament Toggles */}
+                          <div className="pt-2 border-t border-[#D4AF37]/25 space-y-2">
+                            <p className="text-[10px] font-bold text-stone-600 uppercase tracking-wider">
+                              Ornamen &amp; Elemen Visual Undangan (Klik untuk ON / OFF)
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {/* Toggle 1: Ornamen Bunga Sudut (Floral Frame) */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    showFloralOrnaments:
+                                      settingsForm.showFloralOrnaments === false
+                                        ? true
+                                        : false,
+                                  })
+                                }
+                                className={`px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all ${
+                                  settingsForm.showFloralOrnaments !== false
+                                    ? 'bg-white border-[#D4AF37]/60 text-stone-900 shadow-2xs'
+                                    : 'bg-stone-50 border-stone-200 text-stone-500'
+                                }`}
+                              >
+                                <span className="text-[11px] font-bold truncate">
+                                  🌸 Ornamen Bunga Sudut (Floral Frame)
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
+                                    settingsForm.showFloralOrnaments !== false
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-stone-200/70 text-stone-600 border-stone-300'
+                                  }`}
+                                >
+                                  {settingsForm.showFloralOrnaments !== false
+                                    ? 'ON'
+                                    : 'OFF'}
+                                </span>
+                              </button>
+
+                              {/* Toggle 2: Efek Kelopak / Sparkle Melayang */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    showFloatingPetals:
+                                      settingsForm.showFloatingPetals === false
+                                        ? true
+                                        : false,
+                                  })
+                                }
+                                className={`px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all ${
+                                  settingsForm.showFloatingPetals !== false
+                                    ? 'bg-white border-[#D4AF37]/60 text-stone-900 shadow-2xs'
+                                    : 'bg-stone-50 border-stone-200 text-stone-500'
+                                }`}
+                              >
+                                <span className="text-[11px] font-bold truncate">
+                                  ✨ Efek Kelopak / Sparkle Melayang
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
+                                    settingsForm.showFloatingPetals !== false
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-stone-200/70 text-stone-600 border-stone-300'
+                                  }`}
+                                >
+                                  {settingsForm.showFloatingPetals !== false
+                                    ? 'ON'
+                                    : 'OFF'}
+                                </span>
+                              </button>
+
+                              {/* Toggle 3: Tombol Simpan ke Google Calendar */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    showSaveToCalendarButton:
+                                      settingsForm.showSaveToCalendarButton ===
+                                      false
+                                        ? true
+                                        : false,
+                                  })
+                                }
+                                className={`px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all ${
+                                  settingsForm.showSaveToCalendarButton !== false
+                                    ? 'bg-white border-[#D4AF37]/60 text-stone-900 shadow-2xs'
+                                    : 'bg-stone-50 border-stone-200 text-stone-500'
+                                }`}
+                              >
+                                <span className="text-[11px] font-bold truncate">
+                                  📅 Tombol Simpan ke Google Calendar
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
+                                    settingsForm.showSaveToCalendarButton !==
+                                    false
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-stone-200/70 text-stone-600 border-stone-300'
+                                  }`}
+                                >
+                                  {settingsForm.showSaveToCalendarButton !==
+                                  false
+                                    ? 'ON'
+                                    : 'OFF'}
+                                </span>
+                              </button>
+
+                              {/* Toggle 4: Lencana Atas Foto Hero */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    showHeroBadge: !Boolean(
+                                      settingsForm.showHeroBadge
+                                    ),
+                                  })
+                                }
+                                className={`px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-all ${
+                                  Boolean(settingsForm.showHeroBadge)
+                                    ? 'bg-white border-[#D4AF37]/60 text-stone-900 shadow-2xs'
+                                    : 'bg-stone-50 border-stone-200 text-stone-500'
+                                }`}
+                              >
+                                <span className="text-[11px] font-bold truncate">
+                                  🏷️ Lencana Atas Foto Hero
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
+                                    Boolean(settingsForm.showHeroBadge)
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-stone-200/70 text-stone-600 border-stone-300'
+                                  }`}
+                                >
+                                  {Boolean(settingsForm.showHeroBadge)
+                                    ? 'ON'
+                                    : 'OFF'}
+                                </span>
+                              </button>
+                            </div>
+
+                            {/* Inline input for heroBadgeText when showHeroBadge is turned ON */}
+                            {Boolean(settingsForm.showHeroBadge) && (
+                              <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/45 space-y-1">
+                                <label className="block text-[10px] font-bold text-[#8B6914] uppercase tracking-wider">
+                                  Teks Lencana Atas Foto Hero
+                                </label>
+                                <input
+                                  type="text"
+                                  value={settingsForm.heroBadgeText || ''}
+                                  onChange={(e) =>
+                                    setSettingsForm({
+                                      ...settingsForm,
+                                      heroBadgeText: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Contoh: The Wedding Of / Perayaan Ulang Tahun / Gala Dinner..."
+                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs font-semibold text-stone-800"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+
                       const allSections = [
                         {
                           key: 'showQuoteSection' as const,
-                          title: 'Kutipan Ayat & Sambutan',
+                          title: 'Teks Pembuka, Kutipan & Penutup Undangan',
                           preview: `"${state.settings.quoteVerse}" — (${state.settings.quoteSource})`,
                           icon: BookOpen,
                           group: 'semua',
@@ -6874,13 +7267,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         {
                           key: 'showCoupleSection' as const,
                           title:
-                            state.settings.eventType &&
+                            state.settings.profileSectionTitle ||
+                            (state.settings.eventType &&
                             state.settings.eventType !== 'WEDDING'
                               ? 'Profil Mempelai / Acara (My Event Planner)'
-                              : 'Profil Mempelai / Acara',
-                          preview: state.settings.brideFullName
-                            ? `${state.settings.groomFullName} & ${state.settings.brideFullName}`
-                            : state.settings.groomFullName,
+                              : 'Profil Mempelai / Acara'),
+                          preview:
+                            state.settings.showSecondProfile === false ||
+                            !state.settings.brideFullName
+                              ? state.settings.groomFullName
+                              : `${state.settings.groomFullName} & ${state.settings.brideFullName}`,
                           icon: Users,
                           group: 'semua',
                         },
@@ -6907,7 +7303,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         },
                         {
                           key: 'showLoveStorySection' as const,
-                          title: 'Kisah Kasih',
+                          title:
+                            state.settings.storySectionTitle || 'Kisah Kasih',
                           preview: `${effectiveLoveStory.length} Momen Perjalanan Cinta`,
                           icon: Heart,
                           group: 'media',
@@ -6921,7 +7318,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         },
                         {
                           key: 'showRsvpSection' as const,
-                          title: 'Form RSVP & Buku Tamu',
+                          title:
+                            state.settings.rsvpSectionTitle ||
+                            'Form RSVP & Buku Tamu',
                           preview: `Form RSVP & ${state.wishes.length} ucapan doa`,
                           icon: MessageSquareHeart,
                           group: 'semua',
@@ -6946,6 +7345,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       return (
                         <>
+                          {/* Kategori Acara — My Event Planner + 4 Visual & Ornament Toggles */}
+                          {renderEventCategoryAndOrnamentControls()}
+
                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
                             <span className="text-xs text-stone-500">
                               Daftar seksi undangan
@@ -7046,17 +7448,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                      ========================================================= */}
                                   {isExpanded && (
                                     <div className="mt-3.5 p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3.5 text-xs">
-                                      {/* 1. EDITOR KUTIPAN AYAT SUCI & KALIMAT */}
+                                      {/* 1. EDITOR TEKS PEMBUKA, KUTIPAN & PENUTUP UNDANGAN */}
                                       {sec.key === 'showQuoteSection' && (
                                         <form
                                           onSubmit={handleSaveSettingsModal}
-                                          className="space-y-3"
+                                          className="space-y-3.5"
                                         >
                                           <div className="flex items-center gap-1">
                                             <span className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
-                                              Kutipan Ayat &amp; Sambutan
+                                              Teks Pembuka, Kutipan &amp; Penutup Undangan
                                             </span>
-                                            <InfoTooltip text="Atur sumber ayat, isi kutipan, serta kalimat pembuka dan penutup undangan." />
+                                            <InfoTooltip text="Atur sumber ayat, isi kutipan, label sampul (Cover Gate), judul tiap seksi undangan, serta kalimat pembuka dan penutup." />
                                           </div>
 
                                           {/* Quick Verse Pills */}
@@ -7142,26 +7544,238 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             </div>
                                           </div>
 
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div>
+                                            <label className="block font-bold text-stone-700 mb-1 truncate">
+                                              Kalimat Pembuka Undangan
+                                            </label>
+                                            <textarea
+                                              rows={2}
+                                              value={settingsForm.invitationOpeningText || ''}
+                                              onChange={(e) =>
+                                                setSettingsForm({
+                                                  ...settingsForm,
+                                                  invitationOpeningText: e.target.value,
+                                                })
+                                              }
+                                              className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
+                                            />
+                                          </div>
+
+                                          {/* SUB-CARD A: Sampul Pembuka (Cover Gate) */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              🚪 Sampul Pembuka (Cover Gate)
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Label Lencana Sampul
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.coverBadgeText ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      coverBadgeText: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Undangan Pernikahan / Birthday / Rapat..."
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Label Sapaan Tamu
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.coverGreetingLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      coverGreetingLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Kepada Yth."
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Teks Tombol Buka Undangan
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.coverButtonLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      coverButtonLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Buka Undangan"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                            </div>
                                             <div>
-                                              <label className="block font-bold text-stone-700 mb-1 truncate">
-                                                Kalimat Pembuka
+                                              <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                Catatan Maaf Nama/Gelar di Sampul (Kosongkan atau isi &quot;-&quot; untuk sembunyikan)
                                               </label>
-                                              <textarea
-                                                rows={2}
-                                                value={settingsForm.invitationOpeningText || ''}
+                                              <input
+                                                type="text"
+                                                value={settingsForm.coverApologyNote ?? ''}
                                                 onChange={(e) =>
                                                   setSettingsForm({
                                                     ...settingsForm,
-                                                    invitationOpeningText: e.target.value,
+                                                    coverApologyNote: e.target.value,
                                                   })
                                                 }
-                                                className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
+                                                placeholder="Mohon maaf apabila terdapat kesalahan penulisan nama/gelar (Isi '-' untuk sembunyikan)"
+                                                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
                                               />
                                             </div>
+                                          </div>
+
+                                          {/* SUB-CARD B: Hero, Countdown & Judul Seksi Undangan */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              ⏳ Hero, Countdown &amp; Judul Seksi Undangan
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Label Hitung Mundur (Countdown)
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.countdownSectionLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      countdownSectionLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Menuju Hari Bahagia"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Judul Seksi Jadwal Acara
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.scheduleSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      scheduleSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Rangkaian Acara"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Judul Seksi RSVP
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.rsvpSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      rsvpSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Konfirmasi Kehadiran & Ucapan"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Label Kolom Pesan RSVP
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.rsvpMessageLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      rsvpMessageLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Ucapan & Doa Restu"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                                                />
+                                              </div>
+                                              <div className="sm:col-span-2">
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Judul Seksi Buku Tamu
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.wishesSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      wishesSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Buku Tamu & Doa Restu"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* SUB-CARD C: Penutup Undangan (Footer) */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              🤍 Penutup Undangan (Footer)
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Lencana Atas Penutup
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.closingBadgeText ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      closingBadgeText: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Thank You & Blessing"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Salam Tanda Tangan Penutup
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.closingSignatureLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      closingSignatureLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Kami yang berbahagia, / Hormat kami,"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
+                                                />
+                                              </div>
+                                            </div>
                                             <div>
-                                              <label className="block font-bold text-stone-700 mb-1 truncate">
-                                                Kalimat Penutup
+                                              <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                Kalimat Penutup Undangan
                                               </label>
                                               <textarea
                                                 rows={2}
@@ -7242,125 +7856,181 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           onSubmit={handleSaveSettingsModal}
                                           className="space-y-3"
                                         >
-                                          {/* Kategori Acara (My Event Planner) Selector */}
-                                          <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/40 space-y-2.5">
+                                          {/* Pengaturan Judul Seksi, Jumlah Profil, Bingkai & Visibilitas Foto Profil */}
+                                          <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/40 space-y-3">
                                             <div className="flex items-center justify-between gap-2 flex-wrap">
-                                              <div className="flex items-center gap-1.5 min-w-0">
-                                                <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                                <p className="font-bold text-[#8B6914] uppercase text-[11px] truncate">
-                                                  Kategori Acara (My Event Planner)
-                                                </p>
-                                                <InfoTooltip text="Pilih jenis acara untuk menyesuaikan label profil, judul undangan, dan tata letak (mendukung 1 tokoh maupun 2 mempelai)." />
-                                              </div>
-                                              <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                                {settingsForm.eventType || 'WEDDING'}
-                                              </span>
-                                            </div>
-
-                                            <div className="flex flex-wrap gap-1.5">
-                                              {[
-                                                {
-                                                  id: 'WEDDING' as const,
-                                                  label: '💍 Wedding',
-                                                  title:
-                                                    'Acara Pernikahan (2 Profil: Mempelai Pria & Wanita)',
-                                                  defaultRole: 'Mempelai Pria',
-                                                },
-                                                {
-                                                  id: 'BIRTHDAY' as const,
-                                                  label: '🎂 Birthday',
-                                                  title:
-                                                    'Perayaan Ulang Tahun (1 Profil Utama / Co-Host Opsional)',
-                                                  defaultRole: 'Yang Berulang Tahun',
-                                                },
-                                                {
-                                                  id: 'GRADUATION' as const,
-                                                  label: '🎓 Graduation',
-                                                  title:
-                                                    'Syukuran Wisuda & Kelulusan',
-                                                  defaultRole: 'Wisudawan',
-                                                },
-                                                {
-                                                  id: 'MEETING' as const,
-                                                  label: '🏛️ Rapat / Corporate',
-                                                  title:
-                                                    'Rapat Resmi, Seminar, atau Forum Instansi',
-                                                  defaultRole:
-                                                    'Penyelenggara / Pimpinan',
-                                                },
-                                                {
-                                                  id: 'GALA_DINNER' as const,
-                                                  label: '🥂 Gala Dinner',
-                                                  title:
-                                                    'Malam Apresiasi, Gathering, atau Gala Dinner Eksklusif',
-                                                  defaultRole: 'Host Gala Dinner',
-                                                },
-                                              ].map((cat) => {
-                                                const activeCat =
-                                                  (settingsForm.eventType ||
-                                                    'WEDDING') === cat.id;
-                                                return (
-                                                  <button
-                                                    key={cat.id}
-                                                    type="button"
-                                                    title={cat.title}
-                                                    onClick={() =>
-                                                      setSettingsForm({
-                                                        ...settingsForm,
-                                                        eventType: cat.id,
-                                                        eventHostRoleLabel:
-                                                          settingsForm.eventHostRoleLabel ||
-                                                          cat.defaultRole,
-                                                      })
-                                                    }
-                                                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap truncate transition-all border ${
-                                                      activeCat
-                                                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
-                                                        : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] border-[#D4AF37]/35'
-                                                    }`}
-                                                  >
-                                                    {cat.label}
-                                                  </button>
-                                                );
-                                              })}
-                                            </div>
-
-                                            <div className="pt-1">
-                                              <label className="block text-stone-600 mb-1 truncate font-semibold text-[11px]">
-                                                Label Peran Tokoh Utama
-                                              </label>
-                                              <input
-                                                type="text"
-                                                value={
-                                                  settingsForm.eventHostRoleLabel ||
-                                                  ''
-                                                }
-                                                onChange={(e) =>
+                                              <p className="font-bold text-[#8B6914] uppercase text-[11px] truncate">
+                                                Tata Letak, Judul &amp; Bingkai Profil
+                                              </p>
+                                              <button
+                                                type="button"
+                                                onClick={() =>
                                                   setSettingsForm({
                                                     ...settingsForm,
-                                                    eventHostRoleLabel:
-                                                      e.target.value,
+                                                    showProfilePhotos:
+                                                      settingsForm.showProfilePhotos === false
+                                                        ? true
+                                                        : false,
                                                   })
                                                 }
-                                                placeholder={
-                                                  settingsForm.eventType ===
-                                                  'BIRTHDAY'
-                                                    ? 'Contoh: Yang Berulang Tahun'
-                                                    : settingsForm.eventType ===
-                                                      'GRADUATION'
-                                                    ? 'Contoh: Wisudawan'
-                                                    : settingsForm.eventType ===
-                                                      'MEETING'
-                                                    ? 'Contoh: Penyelenggara / Pimpinan'
-                                                    : settingsForm.eventType ===
-                                                      'GALA_DINNER'
-                                                    ? 'Contoh: Host Gala Dinner'
-                                                    : 'Contoh: Mempelai Pria'
-                                                }
-                                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-medium text-stone-800"
-                                              />
+                                                className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                                                  settingsForm.showProfilePhotos !== false
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                    : 'bg-stone-100 text-stone-500 border-stone-200'
+                                                }`}
+                                              >
+                                                {settingsForm.showProfilePhotos !== false
+                                                  ? '● Tampilkan Foto Profil: ON'
+                                                  : '○ Tampilkan Foto Profil: OFF'}
+                                              </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              <div>
+                                                <label className="block text-stone-700 mb-1 truncate font-bold text-[11px]">
+                                                  Judul Seksi Profil
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.profileSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      profileSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Profil Mempelai / Profil Penyelenggara"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold text-stone-800"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-stone-700 mb-1 truncate font-bold text-[11px]">
+                                                  Label Peran Tokoh Utama
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={
+                                                    settingsForm.eventHostRoleLabel ||
+                                                    ''
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      eventHostRoleLabel:
+                                                        e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder={
+                                                    settingsForm.eventType ===
+                                                    'BIRTHDAY'
+                                                      ? 'Contoh: Yang Berulang Tahun'
+                                                      : settingsForm.eventType ===
+                                                        'GRADUATION'
+                                                      ? 'Contoh: Wisudawan'
+                                                      : settingsForm.eventType ===
+                                                        'MEETING'
+                                                      ? 'Contoh: Penyelenggara / Pimpinan'
+                                                      : settingsForm.eventType ===
+                                                        'GALA_DINNER'
+                                                      ? 'Contoh: Host Gala Dinner'
+                                                      : 'Contoh: Mempelai Pria'
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-medium text-stone-800"
+                                                />
+                                              </div>
+                                            </div>
+
+                                            {/* Jumlah Profil Ditampilkan */}
+                                            <div className="space-y-1">
+                                              <label className="block text-stone-700 font-bold text-[11px]">
+                                                Jumlah Profil Ditampilkan
+                                              </label>
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      showSecondProfile: true,
+                                                    })
+                                                  }
+                                                  className={`px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
+                                                    settingsForm.showSecondProfile !== false
+                                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                                                  }`}
+                                                >
+                                                  👥 2 Profil (Pasangan / Co-Host)
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      showSecondProfile: false,
+                                                    })
+                                                  }
+                                                  className={`px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
+                                                    settingsForm.showSecondProfile === false
+                                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                                                  }`}
+                                                >
+                                                  👤 1 Profil Tunggal (Host / Tokoh Utama)
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Gaya Bingkai Foto Profil */}
+                                            <div className="space-y-1">
+                                              <label className="block text-stone-700 font-bold text-[11px]">
+                                                Gaya Bingkai Foto Profil
+                                              </label>
+                                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                {[
+                                                  {
+                                                    id: 'ARCH_DOME' as const,
+                                                    label: '🏛️ Kubah Lengkung / Arch',
+                                                  },
+                                                  {
+                                                    id: 'CIRCLE' as const,
+                                                    label: '⭕ Lingkaran Klasik',
+                                                  },
+                                                  {
+                                                    id: 'EDITORIAL_RECT' as const,
+                                                    label: '🖼️ Potret Editorial Modern',
+                                                  },
+                                                ].map((frame) => {
+                                                  const activeFrame =
+                                                    (settingsForm.profileFrameStyle ||
+                                                      'ARCH_DOME') === frame.id;
+                                                  return (
+                                                    <button
+                                                      key={frame.id}
+                                                      type="button"
+                                                      onClick={() =>
+                                                        setSettingsForm({
+                                                          ...settingsForm,
+                                                          profileFrameStyle:
+                                                            frame.id,
+                                                        })
+                                                      }
+                                                      className={`px-2.5 py-2 rounded-xl border text-[11px] font-bold truncate transition-all ${
+                                                        activeFrame
+                                                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                                          : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                                                      }`}
+                                                    >
+                                                      {frame.label}
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
                                             </div>
                                           </div>
+
+                                          {/* Kategori Acara (My Event Planner) Selector */}
+                                          {renderEventCategoryAndOrnamentControls()}
 
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Pria / Profil Utama */}
@@ -7990,6 +8660,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 6. EDITOR KISAH KASIH (LOVE STORY TIMELINE) */}
                                       {sec.key === 'showLoveStorySection' && (
                                         <div className="space-y-3">
+                                          {/* Judul Seksi Kisah / Milestone */}
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-1.5">
+                                            <label className="block font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              Judul Seksi Kisah / Milestone
+                                            </label>
+                                            <input
+                                              type="text"
+                                              value={settingsForm.storySectionTitle ?? ''}
+                                              onChange={(e) =>
+                                                setSettingsForm({
+                                                  ...settingsForm,
+                                                  storySectionTitle: e.target.value,
+                                                })
+                                              }
+                                              placeholder="Kisah Perjalanan Cinta / Milestone"
+                                              className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs font-semibold text-stone-800"
+                                            />
+                                          </div>
+
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
@@ -8965,25 +9654,86 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                       {/* 8. EDITOR FORM RSVP & BUKU TAMU */}
                                       {sec.key === 'showRsvpSection' && (
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-stone-200">
-                                          <div>
-                                            <div className="flex items-center gap-1">
-                                              <p className="font-bold text-stone-900">
-                                                Form RSVP &amp; Buku Tamu
-                                              </p>
-                                              <InfoTooltip text="Semua konfirmasi kehadiran (RSVP + Pax) dan ucapan doa dari tamu otomatis masuk ke modul Tamu." />
-                                            </div>
-                                            <p className="text-stone-500 mt-0.5">
-                                              Tercatat <strong>{state.guests.length} tamu</strong> &amp; <strong>{state.wishes.length} ucapan doa</strong>.
+                                        <div className="space-y-3">
+                                          <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
+                                            <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                              Judul &amp; Label Form RSVP &amp; Buku Tamu
                                             </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Judul Seksi RSVP
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.rsvpSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      rsvpSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Konfirmasi Kehadiran & Ucapan"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold text-xs"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Label Kolom Pesan RSVP
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.rsvpMessageLabel ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      rsvpMessageLabel: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Ucapan & Doa Restu"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
+                                                  Judul Seksi Buku Tamu
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.wishesSectionTitle ?? ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      wishesSectionTitle: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Buku Tamu & Doa Restu"
+                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold text-xs"
+                                                />
+                                              </div>
+                                            </div>
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => setActiveTab('guests')}
-                                            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shrink-0"
-                                          >
-                                            Kelola Tamu ({state.wishes.length})
-                                          </button>
+
+                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-stone-200">
+                                            <div>
+                                              <div className="flex items-center gap-1">
+                                                <p className="font-bold text-stone-900">
+                                                  Form RSVP &amp; Buku Tamu
+                                                </p>
+                                                <InfoTooltip text="Semua konfirmasi kehadiran (RSVP + Pax) dan ucapan doa dari tamu otomatis masuk ke modul Tamu." />
+                                              </div>
+                                              <p className="text-stone-500 mt-0.5">
+                                                Tercatat <strong>{state.guests.length} tamu</strong> &amp; <strong>{state.wishes.length} ucapan doa</strong>.
+                                              </p>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => setActiveTab('guests')}
+                                              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shrink-0"
+                                            >
+                                              Kelola Tamu ({state.wishes.length})
+                                            </button>
+                                          </div>
                                         </div>
                                       )}
 

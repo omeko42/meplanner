@@ -267,6 +267,32 @@ export interface WeddingSettings {
   showRsvpSection: boolean;
   showGiftSection: boolean;
 
+  // Full Invitation Element & Ornament Customization (Multi-Event Ready)
+  showFloralOrnaments?: boolean; // default true for Wedding, toggleable for corporate/minimalist events
+  showFloatingPetals?: boolean; // default true
+  showHeroBadge?: boolean; // default false (keeps hero photo clean unless enabled)
+  heroBadgeText?: string;
+  showSaveToCalendarButton?: boolean; // default true
+  showSecondProfile?: boolean; // true = 2 profiles (couple/co-hosts), false = 1 spotlight profile
+  showProfilePhotos?: boolean; // default true
+  profileFrameStyle?: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT'; // default 'ARCH_DOME'
+
+  // Customizable Section Headings & Labels
+  coverBadgeText?: string;
+  coverGreetingLabel?: string;
+  coverApologyNote?: string;
+  coverButtonLabel?: string;
+  countdownSectionLabel?: string;
+  profileSectionTitle?: string;
+  scheduleSectionTitle?: string;
+  storySectionTitle?: string;
+  rsvpSectionTitle?: string;
+  rsvpSectionSubtitle?: string;
+  rsvpMessageLabel?: string;
+  wishesSectionTitle?: string;
+  closingBadgeText?: string;
+  closingSignatureLabel?: string;
+
   // Couple Profiles
   groomFullName: string;
   groomNickname: string;
