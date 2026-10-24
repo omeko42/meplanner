@@ -36,6 +36,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import {
   ClientGroupItem,
   ClientWorkspaceData,
@@ -1732,12 +1733,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </span>
                       </button>
 
-                      <span className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold">
+                      <span
+                        title={
+                          lang === 'ID'
+                            ? 'Batas waktu kunci harga promo selama 24 jam'
+                            : '24-hour promotional price lock countdown timer'
+                        }
+                        className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold"
+                      >
                         <Clock className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                         <span className="truncate">
                           {lang === 'ID'
-                            ? `⏱️ Batas Waktu Kunci Harga: ${formatCountdown(countdownSeconds)}`
-                            : `⏱️ Price Lock Timer: ${formatCountdown(countdownSeconds)}`}
+                            ? `Kunci Harga: ${formatCountdown(countdownSeconds)}`
+                            : `Price Lock: ${formatCountdown(countdownSeconds)}`}
                         </span>
                       </span>
                     </div>
@@ -1900,6 +1908,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           type="button"
                           disabled={isConnectingWeb3}
                           onClick={() => void handleConnectAndPayWeb3()}
+                          title={
+                            lang === 'ID'
+                              ? 'Bayar otomatis 1-klik menggunakan MetaMask, TrustWallet, atau TronLink'
+                              : 'One-click payment via MetaMask, TrustWallet, or TronLink'
+                          }
                           className="w-full max-w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all text-center leading-snug"
                         >
                           <Coins className="w-4 h-4 text-[#D4AF37] shrink-0" />
@@ -1909,8 +1922,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 ? 'Menghubungkan Web3 Wallet...'
                                 : 'Connecting Web3 Wallet...'
                               : lang === 'ID'
-                                ? '🦊 One-Click Pay via Web3 Wallet (MetaMask / TrustWallet / TronLink)'
-                                : '🦊 One-Click Pay via Web3 Wallet (MetaMask / TrustWallet / TronLink)'}
+                                ? 'Bayar via Web3 Wallet'
+                                : 'Pay via Web3 Wallet'}
                           </span>
                         </button>
 
@@ -1954,13 +1967,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <button
                           type="button"
                           onClick={handleOpenPaypalSmartPopup}
+                          title={
+                            lang === 'ID'
+                              ? 'Buka jendela pembayaran resmi PayPal, Visa, atau Mastercard'
+                              : 'Open official PayPal, Visa, or Mastercard checkout popup'
+                          }
                           className="w-full max-w-full py-3.5 px-4 rounded-2xl bg-[#0070BA] hover:bg-[#005EA6] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all text-center leading-snug"
                         >
                           <CreditCard className="w-4 h-4 shrink-0" />
                           <span className="min-w-0 break-words">
                             {lang === 'ID'
-                              ? '🌐 Buka Popup Pembayaran Resmi PayPal / Visa / Mastercard'
-                              : '🌐 Open Official PayPal / Visa / Mastercard Checkout Popup'}
+                              ? 'Checkout PayPal / Kartu'
+                              : 'PayPal / Card Checkout'}
                           </span>
                           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         </button>
@@ -2064,8 +2082,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           />
                           <span className="min-w-0 break-words">
                             {lang === 'ID'
-                              ? '↻ Retry Verifikasi (Idempoten — Tidak Akan Duplikat)'
-                              : '↻ Retry Verification Safely (Idempotent — No Duplicate Order)'}
+                              ? 'Ulangi Verifikasi (Idempoten)'
+                              : 'Retry Verification (Idempotent)'}
                           </span>
                         </button>
                       </div>
@@ -2151,6 +2169,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <button
                         type="submit"
                         disabled={isSubmittingPayment}
+                        title={
+                          selectedChannel.category === 'CRYPTO'
+                            ? lang === 'ID'
+                              ? 'Verifikasi otomatis transaksi di Blockchain dan selesaikan order'
+                              : 'Auto-verify transaction on Blockchain and complete order'
+                            : selectedChannel.category === 'PAYPAL' ||
+                                selectedChannel.category === 'CREDIT_CARD'
+                              ? lang === 'ID'
+                                ? 'Verifikasi pembayaran PayPal/Kartu dan lanjutkan otomatis'
+                                : 'Verify PayPal/Card payment and continue automatically'
+                              : lang === 'ID'
+                                ? 'Verifikasi pembayaran dan aktifkan lisensi otomatis'
+                                : 'Verify payment and activate license automatically'
+                        }
                         className="w-full max-w-full py-3.5 sm:py-4 px-4 sm:px-5 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] disabled:opacity-60 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all text-center leading-snug"
                       >
                         {isSubmittingPayment ? (
@@ -2158,8 +2190,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
                             <span className="min-w-0 break-words">
                               {lang === 'ID'
-                                ? 'Memverifikasi Pembayaran & Security...'
-                                : 'Verifying Payment & Security...'}
+                                ? 'Memverifikasi Pembayaran...'
+                                : 'Verifying Payment...'}
                             </span>
                           </>
                         ) : (
@@ -2168,14 +2200,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             <span className="min-w-0 break-words">
                               {selectedChannel.category === 'CRYPTO'
                                 ? lang === 'ID'
-                                  ? '⛓️ Verifikasi Otomatis di Blockchain & Selesaikan Order →'
-                                  : '⛓️ Auto-Verify on Blockchain & Complete Order →'
+                                  ? 'Verifikasi Blockchain →'
+                                  : 'Verify on Blockchain →'
                                 : selectedChannel.category === 'PAYPAL' ||
                                     selectedChannel.category === 'CREDIT_CARD'
                                   ? lang === 'ID'
-                                    ? '✅ Verifikasi Pembayaran PayPal/Kartu & Lanjut Otomatis →'
-                                    : '✅ Verify PayPal/Card Payment & Continue Automatically →'
-                                  : '✅ Verifikasi Pembayaran & Aktifkan Lisensi Otomatis →'}
+                                    ? 'Verifikasi Pembayaran →'
+                                    : 'Verify Payment →'
+                                  : lang === 'ID'
+                                    ? 'Verifikasi & Aktifkan →'
+                                    : 'Verify & Activate →'}
                             </span>
                           </>
                         )}
@@ -2285,13 +2319,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             href={activeTransaction.blockchainExplorerUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            title={
+                              lang === 'ID'
+                                ? 'Lihat bukti transaksi on-chain di Blockchain Explorer'
+                                : 'View on-chain transaction proof on Blockchain Explorer'
+                            }
                             className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-[#D4AF37] text-[#E6C76B] text-xs font-extrabold transition-all"
                           >
                             <Coins className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">
                               {lang === 'ID'
-                                ? '⛓️ Lihat Bukti di Blockchain Explorer'
-                                : '⛓️ View Proof on Blockchain Explorer'}
+                                ? 'Bukti Blockchain'
+                                : 'Blockchain Proof'}
                             </span>
                             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           </a>
@@ -2524,11 +2563,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           : 'VIP Gala Dinners, Award Nights, Charity Galas & Exclusive Banquets',
                     },
                     {
-                      label: '🎬 Video Background 25 MB (HP ↔ PC Auto-Stretch)',
+                      label:
+                        lang === 'ID'
+                          ? '🎬 Video Latar 25 MB'
+                          : '🎬 25 MB Video Bg',
                       title:
                         lang === 'ID'
-                          ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif dari Layar HP ke Layar Lebar PC'
-                          : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive Mobile-to-PC Auto-Stretch',
+                          ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif (9:16 HP ↔ 16:9 PC)'
+                          : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive 9:16 Mobile to 16:9 PC Auto-Stretch',
                     },
                   ].map((pill) => (
                     <span
@@ -2606,17 +2648,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           : 'Quick Guest Invitation Lookup (Private Guest Gate)'}
                       </span>
                     </p>
-                    <span
-                      title={
-                        lang === 'ID'
-                          ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
-                          : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
-                      }
-                      className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
-                    >
-                      {lang === 'ID'
-                        ? '🔒 Wajib Kode INV-xxxx / Nama Terdaftar'
-                        : '🔒 Requires INV-xxxx Code / Registered Name'}
+                    <span className="inline-flex items-center gap-1.5 max-w-full">
+                      <span
+                        title={
+                          lang === 'ID'
+                            ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
+                            : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
+                        }
+                        className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
+                      >
+                        {lang === 'ID'
+                          ? 'Kode Tamu Wajib'
+                          : 'Guest Code Required'}
+                      </span>
+                      <InfoTooltip
+                        text={
+                          lang === 'ID'
+                            ? 'Undangan klien bersifat privat. Masukkan minimal 3 huruf Nama Tamu yang terdaftar atau Kode INV-xxxx untuk membuka undangan.'
+                            : 'Client invitations are private. Enter at least 3 characters of a registered guest name or INV-xxxx code to open.'
+                        }
+                      />
                     </span>
                   </div>
                   <form
@@ -2752,13 +2803,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                       Official Product Tour &bull; Copyright-Safe Preview
                     </span>
-                    <span
-                      title="Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio"
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold whitespace-nowrap truncate max-w-full"
-                    >
-                      {lang === 'ID'
-                        ? '🔒 Undangan Klien Bersifat Privat (Dilindungi Kode Tamu)'
-                        : '🔒 Client Invitations Are Private & Guest-Protected'}
+                    <span className="inline-flex items-center gap-1.5 max-w-full">
+                      <span
+                        title={
+                          lang === 'ID'
+                            ? 'Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio'
+                            : 'Active client invitations and custom music are private to protect event privacy and audio copyright'
+                        }
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold whitespace-nowrap truncate max-w-full"
+                      >
+                        {lang === 'ID'
+                          ? 'Privasi Klien Terlindungi'
+                          : 'Client Privacy Protected'}
+                      </span>
+                      <InfoTooltip
+                        text={
+                          lang === 'ID'
+                            ? 'Undangan aktif klien dan musik kustom bersifat privat untuk melindungi privasi acara & hak cipta audio.'
+                            : 'Active client invitations and custom music are private to protect event privacy and audio copyright.'
+                        }
+                      />
                     </span>
                   </div>
                   <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900">
@@ -2786,9 +2850,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   >
                     <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                     <span className="whitespace-nowrap truncate">
-                      {lang === 'ID'
-                        ? '🔍 Perbesar Layar Penuh'
-                        : '🔍 Zoom Fullscreen'}
+                      {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
                     </span>
                   </button>
 
@@ -2915,9 +2977,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         >
                           <Maximize2 className="w-3.5 h-3.5 shrink-0" />
                           <span className="whitespace-nowrap truncate">
-                            {lang === 'ID'
-                              ? '🔍 Perbesar Layar Penuh'
-                              : '🔍 Zoom Fullscreen'}
+                            {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
                           </span>
                         </button>
                       </div>

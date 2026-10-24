@@ -56,6 +56,7 @@ import {
   formatForensicUserAgent,
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 interface PublicInvitationViewProps {
   settings: WeddingSettings;
@@ -3060,8 +3061,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                   {/* Subtle Translucent Timing Pill on Hover */}
                   <div className="absolute top-3.5 sm:top-5 right-3.5 sm:right-5 z-20 pointer-events-none opacity-0 group-hover/stage:opacity-100 transition-opacity duration-500">
-                    <span className="px-2.5 py-1 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/20 text-white/90 text-[10px] font-semibold tracking-wide">
-                      ✨ {(galleryTransitionMs / 1000).toFixed(1)}s &bull;{' '}
+                    <span
+                      title={
+                        lang === 'ID'
+                          ? `Transisi halus ${(galleryTransitionMs / 1000).toFixed(1)} detik • Auto-slide ${gallerySlideSeconds > 0 ? `${gallerySlideSeconds} detik` : 'Manual'}`
+                          : `Smooth ${(galleryTransitionMs / 1000).toFixed(1)}s transition • Auto-slide ${gallerySlideSeconds > 0 ? `${gallerySlideSeconds}s` : 'Manual'}`
+                      }
+                      className="px-2.5 py-1 rounded-full bg-stone-950/45 backdrop-blur-md border border-white/20 text-white/90 text-[10px] font-semibold tracking-wide"
+                    >
+                      {(galleryTransitionMs / 1000).toFixed(1)}s &bull;{' '}
                       {gallerySlideSeconds > 0 ? `${gallerySlideSeconds}s` : 'Manual'}
                     </span>
                   </div>
@@ -3205,21 +3213,39 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         : 'Full Name / Title *'}
                     </label>
                     {effectiveMatchedGuest ? (
-                      <span
-                        title={`Data tamu terhubung otomatis dengan kode undangan ${effectiveMatchedGuest.invitationCode}`}
-                        className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap truncate shrink-0"
-                      >
-                        ✓ {effectiveMatchedGuest.invitationCode}
+                      <span className="inline-flex items-center gap-1 shrink-0">
+                        <span
+                          title={`Data tamu terhubung otomatis dengan kode undangan ${effectiveMatchedGuest.invitationCode}`}
+                          className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap truncate shrink-0"
+                        >
+                          ✓ {effectiveMatchedGuest.invitationCode}
+                        </span>
+                        <InfoTooltip
+                          text={
+                            lang === 'ID'
+                              ? `Ketik minimal 3 huruf nama Anda atau kode INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
+                              : `Type at least 3 characters of your name or INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
+                          }
+                        />
                       </span>
                     ) : (
                       guests.length > 0 && (
-                        <span
-                          title={`Ketik minimal 3 huruf nama atau kode undangan dari ${guests.length} tamu terdaftar`}
-                          className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
-                        >
-                          {lang === 'ID'
-                            ? `🔍 Cari (${guests.length} Tamu)`
-                            : `🔍 Search (${guests.length} Guests)`}
+                        <span className="inline-flex items-center gap-1 shrink-0">
+                          <span
+                            title={`Ketik minimal 3 huruf nama atau kode undangan dari ${guests.length} tamu terdaftar`}
+                            className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
+                          >
+                            {lang === 'ID'
+                              ? `${guests.length} Tamu`
+                              : `${guests.length} Guests`}
+                          </span>
+                          <InfoTooltip
+                            text={
+                              lang === 'ID'
+                                ? `Ketik minimal 3 huruf nama Anda atau kode INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
+                                : `Type at least 3 characters of your name or INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
+                            }
+                          />
                         </span>
                       )
                     )}
@@ -3394,13 +3420,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <label className="block text-xs font-bold text-stone-700 truncate">
                       {lang === 'ID' ? 'Sesi Kehadiran' : 'Event Session'}
                     </label>
-                    <span
-                      title={`Opsi kehadiran otomatis mengikuti ${visibleEvents.length} jadwal acara aktif di database`}
-                      className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
-                    >
-                      {lang === 'ID'
-                        ? `✓ ${visibleEvents.length} Sesi`
-                        : `✓ ${visibleEvents.length} Sessions`}
+                    <span className="inline-flex items-center gap-1 shrink-0">
+                      <span
+                        title={`Opsi kehadiran otomatis mengikuti ${visibleEvents.length} jadwal acara aktif di database`}
+                        className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
+                      >
+                        {lang === 'ID'
+                          ? `${visibleEvents.length} Sesi`
+                          : `${visibleEvents.length} Sessions`}
+                      </span>
+                      <InfoTooltip
+                        text={
+                          lang === 'ID'
+                            ? `Pilihan sesi kehadiran otomatis mengikuti ${visibleEvents.length} jadwal acara aktif.`
+                            : `Attendance session options automatically follow the ${visibleEvents.length} active schedule events.`
+                        }
+                      />
                     </span>
                   </div>
                   <select
@@ -3743,12 +3778,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             }`}
                           >
                             {isCrypto
-                              ? '🪙 CRYPTO / WEB3 WALLET'
+                              ? 'CRYPTO WALLET'
                               : isPaypal
-                              ? '🌐 PAYPAL INTERNATIONAL'
+                              ? 'PAYPAL'
                               : isEwallet
-                              ? '📱 E-WALLET DIGITAL'
-                              : '🏦 TRANSFER BANK'}
+                              ? 'E-WALLET'
+                              : 'TRANSFER BANK'}
                           </span>
 
                           {isCrypto && (
@@ -3894,10 +3929,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                            🎁{' '}
-                            {lang === 'ID'
-                              ? 'KIRIM KADO / BINGKISAN FISIK'
-                              : 'PHYSICAL WEDDING GIFT ADDRESS'}
+                            <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'KIRIM KADO / BINGKISAN FISIK'
+                                : 'PHYSICAL WEDDING GIFT ADDRESS'}
+                            </span>
                           </span>
                           {settings.giftRecipientName && (
                             <span className="text-xs font-bold text-stone-800">

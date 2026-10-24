@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Cormorant_Garamond, Great_Vibes } from 'next/font/google';
 import './globals.css';
+import { MobileTouchTooltipBridge } from '@/components/InfoTooltip';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -50,6 +51,7 @@ export default function RootLayout({
     <html lang="id" className={`${inter.variable} ${cormorant.variable} ${greatVibes.variable}`}>
       <body className={`${inter.className} min-h-screen antialiased bg-[#FAF8F5] text-stone-800`}>
         {children}
+        <MobileTouchTooltipBridge />
       </body>
     </html>
   );

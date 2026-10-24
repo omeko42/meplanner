@@ -61,6 +61,7 @@ import {
   ListMusic,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -159,37 +160,6 @@ export type AdminModuleTab =
   | 'guests'
   | 'settings'
   | 'superadmin';
-
-function InfoTooltip({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <span className="relative inline-flex items-center align-middle ml-1">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        title={text}
-        aria-label={text}
-        className="w-4 h-4 rounded-full bg-[#FAF3E3] hover:bg-[#EFE1C6] border border-[#D4AF37]/50 text-[#8B6914] inline-flex items-center justify-center transition-colors shrink-0"
-      >
-        <Info className="w-2.5 h-2.5" />
-      </button>
-      {open && (
-        <span
-          role="tooltip"
-          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-52 sm:w-64 p-2.5 rounded-xl bg-stone-900/95 text-[#FAF8F5] text-[11px] font-normal leading-relaxed shadow-xl border border-[#D4AF37]/40 pointer-events-none text-left"
-        >
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
 
 interface AdminDashboardViewProps {
   state: WeddingDatabaseSchema;
@@ -6559,6 +6529,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {state.wishes.length > 0 && (
                     <button
                       type="button"
+                      title="Hapus seluruh ucapan Buku Tamu secara permanen dari database"
                       onClick={() =>
                         requestConfirm({
                           title: 'Bersihkan Semua Buku Tamu?',
@@ -6578,7 +6549,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>🗑️ Bersihkan Semua Buku Tamu</span>
+                      <span>Bersihkan</span>
                     </button>
                   )}
                 </div>
@@ -7033,7 +7004,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <div className="flex items-center gap-1.5 min-w-0">
                               <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                               <p className="font-extrabold text-[#8B6914] uppercase text-[11px] sm:text-xs truncate">
-                                Kategori Acara — My Event Planner
+                                Kategori Acara &amp; Visual
                               </p>
                               <InfoTooltip text="Pilih jenis acara untuk menyesuaikan otomatis jumlah profil (1 tokoh / 2 mempelai), ornamen sudut, dan seluruh judul seksi undangan." />
                             </div>
@@ -7057,7 +7028,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 title="Terapkan ulang seluruh label seksi, sapaan penutup, jumlah profil, dan ornamen default sesuai kategori ini"
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] font-bold text-[10px] sm:text-[11px] shadow-2xs transition-all"
                               >
-                                <span>✨ Terapkan Label Default Kategori Ini</span>
+                                <RefreshCw className="w-3 h-3 shrink-0" />
+                                <span>Reset Preset</span>
                               </button>
                             </div>
                           </div>
@@ -7089,13 +7061,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                           {/* 4 Visual & Ornament Toggles */}
                           <div className="pt-2 border-t border-[#D4AF37]/25 space-y-2">
-                            <p className="text-[10px] font-bold text-stone-600 uppercase tracking-wider">
-                              Ornamen &amp; Elemen Visual Undangan (Klik untuk ON / OFF)
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-[10px] font-bold text-stone-600 uppercase tracking-wider">
+                                Elemen Visual Undangan
+                              </p>
+                              <InfoTooltip text="Klik untuk menyalakan (ON) atau mematikan (OFF) ornamen bunga, partikel melayang, tombol kalender, dan lencana foto Hero." />
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {/* Toggle 1: Ornamen Bunga Sudut (Floral Frame) */}
+                              {/* Toggle 1: Ornamen Sudut */}
                               <button
                                 type="button"
+                                title="Tampilkan ornamen bunga/filigree emas di sudut kartu undangan"
                                 onClick={() =>
                                   setSettingsForm({
                                     ...settingsForm,
@@ -7112,7 +7088,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 }`}
                               >
                                 <span className="text-[11px] font-bold truncate">
-                                  🌸 Ornamen Bunga Sudut (Floral Frame)
+                                  Ornamen Sudut
                                 </span>
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
@@ -7127,9 +7103,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </span>
                               </button>
 
-                              {/* Toggle 2: Efek Kelopak / Sparkle Melayang */}
+                              {/* Toggle 2: Partikel Melayang */}
                               <button
                                 type="button"
+                                title="Tampilkan animasi kelopak dan kilau emas melayang di layar"
                                 onClick={() =>
                                   setSettingsForm({
                                     ...settingsForm,
@@ -7146,7 +7123,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 }`}
                               >
                                 <span className="text-[11px] font-bold truncate">
-                                  ✨ Efek Kelopak / Sparkle Melayang
+                                  Partikel Melayang
                                 </span>
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
@@ -7161,9 +7138,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </span>
                               </button>
 
-                              {/* Toggle 3: Tombol Simpan ke Google Calendar */}
+                              {/* Toggle 3: Tombol Kalender */}
                               <button
                                 type="button"
+                                title="Tampilkan tombol Simpan ke Google Calendar di bawah Countdown"
                                 onClick={() =>
                                   setSettingsForm({
                                     ...settingsForm,
@@ -7181,7 +7159,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 }`}
                               >
                                 <span className="text-[11px] font-bold truncate">
-                                  📅 Tombol Simpan ke Google Calendar
+                                  Tombol Kalender
                                 </span>
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
@@ -7198,9 +7176,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </span>
                               </button>
 
-                              {/* Toggle 4: Lencana Atas Foto Hero */}
+                              {/* Toggle 4: Badge Foto Hero */}
                               <button
                                 type="button"
+                                title="Tampilkan lencana teks di bagian atas foto Hero utama"
                                 onClick={() =>
                                   setSettingsForm({
                                     ...settingsForm,
@@ -7216,7 +7195,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 }`}
                               >
                                 <span className="text-[11px] font-bold truncate">
-                                  🏷️ Lencana Atas Foto Hero
+                                  Badge Foto Hero
                                 </span>
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${
@@ -7564,7 +7543,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           {/* SUB-CARD A: Sampul Pembuka (Cover Gate) */}
                                           <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
                                             <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                              🚪 Sampul Pembuka (Cover Gate)
+                                              Sampul Pembuka (Cover Gate)
                                             </p>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                               <div>
@@ -7638,10 +7617,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             </div>
                                           </div>
 
-                                          {/* SUB-CARD B: Hero, Countdown & Judul Seksi Undangan */}
+                                          {/* SUB-CARD B: Countdown & Judul Seksi */}
                                           <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
                                             <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                              ⏳ Hero, Countdown &amp; Judul Seksi Undangan
+                                              Countdown &amp; Judul Seksi
                                             </p>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                               <div>
@@ -7678,64 +7657,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
                                                 />
                                               </div>
-                                              <div>
-                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
-                                                  Judul Seksi RSVP
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.rsvpSectionTitle ?? ''}
-                                                  onChange={(e) =>
-                                                    setSettingsForm({
-                                                      ...settingsForm,
-                                                      rsvpSectionTitle: e.target.value,
-                                                    })
-                                                  }
-                                                  placeholder="Konfirmasi Kehadiran & Ucapan"
-                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
-                                                />
-                                              </div>
-                                              <div>
-                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
-                                                  Label Kolom Pesan RSVP
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.rsvpMessageLabel ?? ''}
-                                                  onChange={(e) =>
-                                                    setSettingsForm({
-                                                      ...settingsForm,
-                                                      rsvpMessageLabel: e.target.value,
-                                                    })
-                                                  }
-                                                  placeholder="Ucapan & Doa Restu"
-                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                />
-                                              </div>
-                                              <div className="sm:col-span-2">
-                                                <label className="block font-bold text-stone-700 text-[11px] mb-0.5 truncate">
-                                                  Judul Seksi Buku Tamu
-                                                </label>
-                                                <input
-                                                  type="text"
-                                                  value={settingsForm.wishesSectionTitle ?? ''}
-                                                  onChange={(e) =>
-                                                    setSettingsForm({
-                                                      ...settingsForm,
-                                                      wishesSectionTitle: e.target.value,
-                                                    })
-                                                  }
-                                                  placeholder="Buku Tamu & Doa Restu"
-                                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
-                                                />
-                                              </div>
                                             </div>
                                           </div>
 
                                           {/* SUB-CARD C: Penutup Undangan (Footer) */}
                                           <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
                                             <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                              🤍 Penutup Undangan (Footer)
+                                              Penutup Undangan (Footer)
                                             </p>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                               <div>
@@ -7794,9 +7722,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           {/* Teks Baris Bawah Sampul & Subjudul Rangkaian Acara (settings.subtitle) */}
                                           <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-1.5">
                                             <div className="flex items-center justify-between gap-2 flex-wrap">
-                                              <label className="block font-bold text-stone-700 truncate">
-                                                Teks Baris Bawah Sampul &amp; Subjudul Rangkaian Acara
-                                              </label>
+                                              <div className="flex items-center gap-1 min-w-0">
+                                                <label className="block font-bold text-stone-700 truncate">
+                                                  Subjudul Sampul &amp; Rangkaian Acara
+                                                </label>
+                                                <InfoTooltip text="Teks ini tampil di bagian bawah halaman Sampul (Cover Gate) dan di bawah judul Rangkaian Acara." />
+                                              </div>
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -7819,7 +7750,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 title="Susun otomatis mengikuti daftar Jadwal Acara di database"
                                               >
                                                 <RefreshCw className="w-3 h-3 text-[#B68D40]" />
-                                                <span>Sinkron Otomatis dari Jadwal</span>
+                                                <span>Sinkron Jadwal</span>
                                               </button>
                                             </div>
                                             <input
@@ -7834,9 +7765,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               placeholder="Contoh: Biston: 17 Desember 2026 • Pemberkatan Nikah: 19 Desember 2026 • Resepsi: 19 Desember 2026 • Semarang"
                                               className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
                                             />
-                                            <p className="text-[10px] text-stone-500">
-                                              Teks ini tampil di bagian paling bawah halaman Sampul (Cover Gate) dan di bawah judul Rangkaian Acara Pernikahan.
-                                            </p>
                                           </div>
 
                                           <div className="flex justify-end pt-1">
@@ -7864,6 +7792,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </p>
                                               <button
                                                 type="button"
+                                                title="Tampilkan atau sembunyikan foto pada kartu profil"
                                                 onClick={() =>
                                                   setSettingsForm({
                                                     ...settingsForm,
@@ -7880,8 +7809,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 }`}
                                               >
                                                 {settingsForm.showProfilePhotos !== false
-                                                  ? '● Tampilkan Foto Profil: ON'
-                                                  : '○ Tampilkan Foto Profil: OFF'}
+                                                  ? 'Foto Profil: ON'
+                                                  : 'Foto Profil: OFF'}
                                               </button>
                                             </div>
 
@@ -7948,6 +7877,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 <button
                                                   type="button"
+                                                  title="Tampilkan 2 kartu profil berdampingan (Mempelai Pria & Wanita / Co-Host)"
                                                   onClick={() =>
                                                     setSettingsForm({
                                                       ...settingsForm,
@@ -7960,10 +7890,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
                                                   }`}
                                                 >
-                                                  👥 2 Profil (Pasangan / Co-Host)
+                                                  2 Profil (Pasangan)
                                                 </button>
                                                 <button
                                                   type="button"
+                                                  title="Tampilkan 1 kartu profil tunggal (Tokoh Utama / Host Acara)"
                                                   onClick={() =>
                                                     setSettingsForm({
                                                       ...settingsForm,
@@ -7976,7 +7907,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                       : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
                                                   }`}
                                                 >
-                                                  👤 1 Profil Tunggal (Host / Tokoh Utama)
+                                                  1 Profil (Tunggal)
                                                 </button>
                                               </div>
                                             </div>
@@ -7990,15 +7921,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 {[
                                                   {
                                                     id: 'ARCH_DOME' as const,
-                                                    label: '🏛️ Kubah Lengkung / Arch',
+                                                    label: 'Kubah (Arch)',
+                                                    title: 'Bingkai lengkung kubah atas bergaya klasik elegan',
                                                   },
                                                   {
                                                     id: 'CIRCLE' as const,
-                                                    label: '⭕ Lingkaran Klasik',
+                                                    label: 'Lingkaran',
+                                                    title: 'Bingkai foto lingkaran penuh simetris',
                                                   },
                                                   {
                                                     id: 'EDITORIAL_RECT' as const,
-                                                    label: '🖼️ Potret Editorial Modern',
+                                                    label: 'Persegi',
+                                                    title: 'Bingkai potret persegi editorial modern',
                                                   },
                                                 ].map((frame) => {
                                                   const activeFrame =
@@ -8008,6 +7942,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                     <button
                                                       key={frame.id}
                                                       type="button"
+                                                      title={frame.title}
                                                       onClick={() =>
                                                         setSettingsForm({
                                                           ...settingsForm,
@@ -8028,9 +7963,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </div>
                                             </div>
                                           </div>
-
-                                          {/* Kategori Acara (My Event Planner) Selector */}
-                                          {renderEventCategoryAndOrnamentControls()}
 
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Pria / Profil Utama */}
@@ -9011,10 +8943,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           {/* Pengaturan Kehalusan (Smoothing) & Durasi Transisi Galeri */}
                                           <div className="p-3 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-3">
                                             <div className="flex items-center justify-between gap-2">
-                                              <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                                ✨ Pengaturan Kehalusan (Smoothing) &amp; Durasi Transisi Galeri
-                                              </p>
-                                              <InfoTooltip text="Atur gaya perpindahan foto galeri di halaman undangan agar terasa mengalir halus tanpa efek patah saat kembali dari foto terakhir ke foto pertama." />
+                                              <div className="flex items-center gap-1.5">
+                                                <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                                  Transisi Galeri
+                                                </p>
+                                                <InfoTooltip text="Atur gaya transisi, jeda otomatis, dan durasi kehalusan perpindahan slide pada Galeri Foto." />
+                                              </div>
                                             </div>
 
                                             {/* 1. Gaya Transisi Smoothing */}
@@ -9027,19 +8961,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                   [
                                                     {
                                                       key: 'CROSSFADE',
-                                                      label: '✨ Crossfade Halus (Melebur)',
+                                                      label: 'Crossfade',
                                                       title:
                                                         'Transisi melebur halus antar foto tanpa patah balik saat kembali ke foto pertama',
                                                     },
                                                     {
                                                       key: 'ZOOM_DISSOLVE',
-                                                      label: '🎬 Zoom & Blur Sinematik',
+                                                      label: 'Zoom & Blur',
                                                       title:
                                                         'Efek melebur dengan perbesaran lembut dan blur sinematik',
                                                     },
                                                     {
                                                       key: 'SMOOTH_SLIDE',
-                                                      label: '↔️ Geser Horizontal Halus',
+                                                      label: 'Geser Halus',
                                                       title:
                                                         'Efek geser samping dengan kurva akselerasi halus',
                                                     },
@@ -10246,33 +10180,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-3.5">
                           {/* Header Bar */}
                           <div className="flex items-center justify-between gap-2 flex-wrap pb-2.5 border-b border-stone-100">
-                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                               <p className="font-extrabold text-xs sm:text-sm text-stone-900">
-                                Media Latar Undangan (Foto / Slideshow / Video)
+                                Media Latar
                               </p>
+                              <InfoTooltip text="Upload 1 foto untuk latar statis, pilih 2+ foto sekaligus untuk Slideshow transisi smooth, atau upload 1 video MP4/WebM (maks. 25 MB)." />
                               {isVideoActive ? (
                                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  🎬 1 Video Latar Aktif
+                                  Video Aktif
                                 </span>
                               ) : effectiveBackgroundSlides.length > 1 ? (
                                 <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  🖼️ {effectiveBackgroundSlides.length} Foto Latar (Slideshow Smooth Aktif)
+                                  {effectiveBackgroundSlides.length} Foto &bull; Slideshow
                                 </span>
                               ) : effectiveBackgroundSlides.length === 1 ? (
                                 <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  🖼️ 1 Foto Latar Aktif
+                                  1 Foto Aktif
                                 </span>
                               ) : (
                                 <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                  Belum Ada Media Latar
+                                  Kosong
                                 </span>
                               )}
                             </div>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                               <label
                                 title="Pilih 1 Video (maks. 25 MB) ATAU pilih 1 / beberapa Foto sekaligus untuk dijadikan Latar / Slideshow Smooth"
-                                className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all ${
+                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all ${
                                   isUploadingUnifiedVideo
                                     ? 'opacity-60 pointer-events-none'
                                     : ''
@@ -10281,8 +10216,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 <Upload className="w-3.5 h-3.5 shrink-0" />
                                 <span>
                                   {isUploadingUnifiedVideo
-                                    ? 'Mengunggah Video...'
-                                    : '+ Upload File (Foto / Video)'}
+                                    ? 'Mengunggah...'
+                                    : 'Upload Media'}
                                 </span>
                                 <input
                                   type="file"
@@ -10294,6 +10229,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   }
                                 />
                               </label>
+
+                              {effectiveBackgroundSlides.length > 0 && (
+                                <button
+                                  type="button"
+                                  title="Hapus seluruh foto latar yang ada dari database & storage"
+                                  onClick={async () => {
+                                    for (const s of effectiveBackgroundSlides) {
+                                      void deleteMediaFromSupabaseStorage(
+                                        s.imageUrl
+                                      );
+                                      if (
+                                        s.originalImageUrl &&
+                                        s.originalImageUrl !== s.imageUrl
+                                      ) {
+                                        void deleteMediaFromSupabaseStorage(
+                                          s.originalImageUrl
+                                        );
+                                      }
+                                    }
+                                    const nextSettings =
+                                      syncBackgroundSlidesToLegacyFields([], {
+                                        ...state.settings,
+                                        ...settingsForm,
+                                      });
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      '✓ Seluruh foto latar berhasil dihapus dari database.'
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 transition-all"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Hapus Semua</span>
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -10301,13 +10272,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           {isVideoActive && (
                             <div className="p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2.5">
                               <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                   <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
                                     VIDEO LATAR UTAMA
                                   </span>
-                                  <span className="text-[11px] font-semibold text-stone-600">
-                                    Diterapkan otomatis ke Sampul, Hero &amp; Latar Undangan
-                                  </span>
+                                  <InfoTooltip text="Video ini diterapkan otomatis ke Sampul Pembuka, Banner Hero, dan Latar Undangan." />
                                 </div>
 
                                 <div className="flex items-center gap-1.5">
@@ -10325,7 +10294,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
                                   >
                                     <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                    <span>Atur Fokus PC/HP (Sidebar)</span>
+                                    <span>Fokus Video</span>
                                   </button>
 
                                   <button
@@ -10363,7 +10332,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
                                   >
                                     <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                    <span>🗑️ Hapus Video</span>
+                                    <span>Hapus</span>
                                   </button>
                                 </div>
                               </div>
@@ -10426,68 +10395,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           {/* Active Photo / Slideshow List View */}
                           {effectiveBackgroundSlides.length === 0 &&
                           !isVideoActive ? (
-                            <div className="p-4 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center space-y-2">
+                            <div className="p-4 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center space-y-1">
                               <p className="text-xs text-stone-600 font-semibold">
-                                Belum ada foto atau video latar. Klik{' '}
-                                <strong>+ Upload File (Foto / Video)</strong> di
-                                atas atau pilih <strong>Preset Tema</strong>.
-                              </p>
-                              <p className="text-[11px] text-stone-400">
-                                💡 Upload 1 foto untuk latar statis, atau pilih
-                                beberapa foto sekaligus untuk membuat Slideshow
-                                Latar dengan transisi smooth.
+                                Belum ada media latar. Klik{' '}
+                                <strong>Upload Media</strong> di atas atau pilih{' '}
+                                <strong>Preset Tema</strong>.
                               </p>
                             </div>
                           ) : (
                             effectiveBackgroundSlides.length > 0 && (
                               <div className="space-y-2.5">
-                                <div className="flex items-center justify-between gap-2 flex-wrap bg-[#FAF8F5] px-3 py-2 rounded-lg border border-stone-200/80">
-                                  <p className="text-[11px] text-stone-600 font-medium">
-                                    💡 <strong>Tips:</strong> Upload 1 foto
-                                    untuk latar statis, atau upload 2+ foto agar
-                                    latar otomatis menjadi{' '}
-                                    <strong className="text-[#8B6914]">
-                                      Slideshow dengan transisi smooth
-                                    </strong>
-                                    .
-                                  </p>
-                                  <button
-                                    type="button"
-                                    title="Hapus seluruh foto latar yang ada dari database & storage"
-                                    onClick={async () => {
-                                      for (const s of effectiveBackgroundSlides) {
-                                        void deleteMediaFromSupabaseStorage(
-                                          s.imageUrl
-                                        );
-                                        if (
-                                          s.originalImageUrl &&
-                                          s.originalImageUrl !== s.imageUrl
-                                        ) {
-                                          void deleteMediaFromSupabaseStorage(
-                                            s.originalImageUrl
-                                          );
-                                        }
-                                      }
-                                      const nextSettings =
-                                        syncBackgroundSlidesToLegacyFields([], {
-                                          ...state.settings,
-                                          ...settingsForm,
-                                        });
-                                      setSettingsFormInternal(nextSettings);
-                                      await commitImmediateSettings(
-                                        nextSettings
-                                      );
-                                      showToast(
-                                        '✓ Seluruh foto latar berhasil dihapus dari database.'
-                                      );
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-[11px] shrink-0 transition-all"
-                                  >
-                                    <Trash2 className="w-3 h-3 shrink-0" />
-                                    <span>🗑️ Hapus Semua Foto</span>
-                                  </button>
-                                </div>
-
                                 <div className="space-y-2">
                                   {effectiveBackgroundSlides.map(
                                     (slide, idx) => (
@@ -10498,9 +10415,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         <div className="flex items-center justify-between gap-2 flex-wrap">
                                           <div className="flex items-center gap-2 min-w-0">
                                             <span className="font-bold text-xs text-stone-800">
-                                              Foto Latar #{idx + 1}
+                                              Latar #{idx + 1}
                                             </span>
                                             <span
+                                              title={
+                                                idx === 0
+                                                  ? 'Digunakan sebagai latar utama Sampul Pembuka, Hero & Wallpaper Undangan'
+                                                  : `Slide #${idx + 1} pada Slideshow Latar`
+                                              }
                                               className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                                                 idx === 0
                                                   ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
@@ -10508,7 +10430,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               }`}
                                             >
                                               {idx === 0
-                                                ? 'Utama (Sampul & Latar)'
+                                                ? 'Utama'
                                                 : `Slide #${idx + 1}`}
                                             </span>
                                           </div>
@@ -10545,7 +10467,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto latar ini"
                                             >
                                               <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                              <span>Atur &amp; Crop</span>
+                                              <span>Crop</span>
                                             </button>
 
                                             <button
@@ -10589,7 +10511,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
                                             >
                                               <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                              <span>🗑️ Hapus Foto</span>
+                                              <span>Hapus</span>
                                             </button>
                                           </div>
                                         </div>
@@ -10608,7 +10530,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           >
                                             <img
                                               src={slide.imageUrl}
-                                              alt={`Foto Latar #${idx + 1}`}
+                                              alt={`Latar #${idx + 1}`}
                                               className="w-full h-full object-cover object-center"
                                               style={getPhotoAdjustStyle(
                                                 slide.adjustment
@@ -10652,7 +10574,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               slide.imageUrl.startsWith(
                                                 'data:image/'
                                               )
-                                                ? `✓ Foto Latar #${idx + 1} tersimpan (Klik Atur & Crop / Ganti)`
+                                                ? `✓ Latar #${idx + 1} tersimpan (Klik Crop / Ganti)`
                                                 : 'Tempel URL Foto Latar atau gunakan tombol Upload...'
                                             }
                                             className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
@@ -10667,9 +10589,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 {effectiveBackgroundSlides.length > 1 && (
                                   <div className="p-3 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-2.5">
                                     <div className="flex items-center justify-between gap-2">
-                                      <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                        ✨ Pengaturan Transisi Smooth Slideshow Latar ({effectiveBackgroundSlides.length} Foto)
-                                      </p>
+                                      <div className="flex items-center gap-1.5">
+                                        <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                          Transisi Slideshow ({effectiveBackgroundSlides.length} Foto)
+                                        </p>
+                                        <InfoTooltip text="Pilih gaya perpindahan antar foto latar, jeda waktu tampil tiap slide, dan durasi kehalusan transisi (smoothing)." />
+                                      </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
@@ -10677,15 +10602,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         [
                                           {
                                             key: 'CROSSFADE',
-                                            label: '✨ Crossfade Halus',
+                                            label: 'Crossfade',
+                                            title:
+                                              'Transisi memudar halus antar foto latar',
                                           },
                                           {
                                             key: 'ZOOM_DISSOLVE',
-                                            label: '🎬 Zoom & Blur Sinematik',
+                                            label: 'Zoom & Blur',
+                                            title:
+                                              'Transisi sinematik dengan efek zoom lembut dan blur halus',
                                           },
                                           {
                                             key: 'SMOOTH_SLIDE',
-                                            label: '↔️ Geser Horizontal Halus',
+                                            label: 'Geser Halus',
+                                            title:
+                                              'Transisi bergeser horizontal secara mulus',
                                           },
                                         ] as const
                                       ).map((mode) => {
@@ -10698,6 +10629,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           <button
                                             key={mode.key}
                                             type="button"
+                                            title={mode.title}
                                             onClick={() =>
                                               setSettingsForm({
                                                 ...settingsForm,
@@ -10760,10 +10692,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               (settingsForm.galleryTransitionDurationMs ??
                                                 1400) / 1000
                                             ).toFixed(1)}{' '}
-                                            dtk (
-                                            {settingsForm.galleryTransitionDurationMs ??
-                                              1400}{' '}
-                                            ms)
+                                            dtk
                                           </span>
                                         </div>
                                         <input
@@ -11717,9 +11646,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   type="button"
                   onClick={() => setIsAddClientModalOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs transition-all"
+                  title="Tambah Grup Client Baru"
                 >
                   <Plus className="w-3.5 h-3.5 shrink-0" />
-                  <span className="hidden sm:inline">+ Grup Client Baru</span>
+                  <span className="hidden sm:inline">Klien Baru</span>
                   <span className="sm:hidden">Klien</span>
                 </button>
                 <button
@@ -11848,9 +11778,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         type="button"
                         onClick={() => setIsAddClientModalOpen(true)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                        title="Tambah Grup Client Baru"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>+ Grup Client Baru</span>
+                        <span>Klien Baru</span>
                       </button>
                     </div>
 
@@ -12427,9 +12358,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setIsChannelEditorOpen(true);
                               }}
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                              title="Tambah Wallet atau Channel Pembayaran Baru"
                             >
                               <Plus className="w-4 h-4" />
-                              <span>+ Tambah Wallet / Channel Baru</span>
+                              <span>Tambah Channel</span>
                             </button>
                           </div>
 
@@ -13308,15 +13240,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                             <button
                               type="button"
+                              title="Catat order atau pembayaran klien secara manual (Idempotent Upsert)"
                               onClick={() =>
                                 setIsManualPaymentModalOpen((prev) => !prev)
                               }
                               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-bold text-xs shrink-0"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>
-                                + Catat Order / Pembayaran Manual (Idempoten)
-                              </span>
+                              <span>Catat Order</span>
                             </button>
                           </div>
 
@@ -14382,9 +14313,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   })
                                 }
                                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 transition-all"
+                                title="Hapus seluruh ucapan Buku Tamu secara permanen dari database"
                               >
                                 <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                <span>🗑️ Bersihkan Semua ({state.wishes.length})</span>
+                                <span>Bersihkan ({state.wishes.length})</span>
                               </button>
                             )}
                           </div>
@@ -20725,7 +20657,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             },
             {
               id: 'settings' as AdminModuleTab,
-              label: 'Pengaturan',
+              label: 'Setelan',
               title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
               icon: Settings,
             },
@@ -20733,7 +20665,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               ? [
                   {
                     id: 'superadmin' as AdminModuleTab,
-                    label: 'Superadmin',
+                    label: 'Owner',
                     title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                     icon: Shield,
                   },
