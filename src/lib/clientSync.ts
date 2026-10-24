@@ -1435,6 +1435,21 @@ export function getEffectiveScheduleEvents(
   settings: WeddingSettings
 ): WeddingScheduleEvent[] {
   if (Array.isArray(settings.scheduleEvents)) {
+    if (settings.scheduleEvents.length > 0) {
+      const events = settings.scheduleEvents;
+      const hasExplicitMain = events.some((e) => e.isMainEvent === true);
+      if (hasExplicitMain) {
+        return events;
+      }
+      const regexMatchIdx = events.findIndex((e) =>
+        /pemberkatan|akad|utama/i.test(`${e.title} ${e.badge}`)
+      );
+      const mainIdx = regexMatchIdx >= 0 ? regexMatchIdx : events[1] ? 1 : 0;
+      return events.map((ev, idx) => ({
+        ...ev,
+        isMainEvent: idx === mainIdx,
+      }));
+    }
     return settings.scheduleEvents;
   }
 
@@ -1455,6 +1470,7 @@ export function getEffectiveScheduleEvents(
       dresscode: settings.event1Dresscode || 'Batik / Formal Rapi',
       enableCountdown: true,
       showOnInvitation: settings.showEvent1 !== false,
+      isMainEvent: false,
     },
     {
       id: 'ev-default-2',
@@ -1471,6 +1487,7 @@ export function getEffectiveScheduleEvents(
       dresscode: settings.event2Dresscode || 'Kebaya / Jas Formal',
       enableCountdown: true,
       showOnInvitation: settings.showEvent2 !== false,
+      isMainEvent: true,
     },
     {
       id: 'ev-default-3',
@@ -1487,6 +1504,7 @@ export function getEffectiveScheduleEvents(
       dresscode: settings.event3Dresscode || 'Formal / Batik Elegan',
       enableCountdown: false,
       showOnInvitation: settings.showEvent3 !== false,
+      isMainEvent: false,
     },
   ];
 }
@@ -1527,14 +1545,34 @@ export function syncScheduleEventsToSettings(
   settings: WeddingSettings,
   events: WeddingScheduleEvent[]
 ): WeddingSettings {
+  let normalizedEvents = events;
+  if (events.length > 0 && !events.some((e) => e.isMainEvent === true)) {
+    const regexMatchIdx = events.findIndex((e) =>
+      /pemberkatan|akad|utama/i.test(`${e.title} ${e.badge}`)
+    );
+    const mainIdx = regexMatchIdx >= 0 ? regexMatchIdx : events[1] ? 1 : 0;
+    normalizedEvents = events.map((ev, idx) => ({
+      ...ev,
+      isMainEvent: idx === mainIdx,
+    }));
+  }
+
   const next: WeddingSettings = {
     ...settings,
-    scheduleEvents: events,
+    scheduleEvents: normalizedEvents,
   };
 
-  const ev1 = events[0];
-  const ev2 = events[1];
-  const ev3 = events[2];
+  const mainEvent =
+    normalizedEvents.find((e) => e.isMainEvent) ||
+    normalizedEvents.find((e) =>
+      /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
+    ) ||
+    normalizedEvents[1] ||
+    normalizedEvents[0];
+
+  const ev1 = normalizedEvents[0];
+  const ev2 = normalizedEvents[1];
+  const ev3 = normalizedEvents[2];
 
   if (ev1) {
     next.event1Title = ev1.title;
@@ -1582,10 +1620,13 @@ export function syncScheduleEventsToSettings(
   }
 
   // Ensure weddingDatetime reflects the primary countdown event if one is enabled
-  const countdownEvents = events.filter((e) => e.enableCountdown);
+  const countdownEvents = normalizedEvents.filter((e) => e.enableCountdown);
   if (countdownEvents.length > 0) {
     const mainCountdown =
-      countdownEvents.find((e) => /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)) ||
+      countdownEvents.find((e) => e.isMainEvent) ||
+      countdownEvents.find((e) =>
+        /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
+      ) ||
       countdownEvents[countdownEvents.length - 1];
     if (mainCountdown?.datetime) {
       next.weddingDatetime = mainCountdown.datetime;
@@ -1595,9 +1636,24 @@ export function syncScheduleEventsToSettings(
     }
   }
 
+  if (mainEvent) {
+    next.weddingDatetime = mainEvent.datetime || next.weddingDatetime;
+  }
+
+  const prevHadVisible = Array.isArray(settings.scheduleEvents)
+    ? settings.scheduleEvents.some((e) => e.showOnInvitation !== false)
+    : true;
+  const nowHasVisible = normalizedEvents.some(
+    (e) => e.showOnInvitation !== false
+  );
+  next.showScheduleSection =
+    settings.showScheduleSection === false && prevHadVisible
+      ? false
+      : nowHasVisible;
+
   // Automatically sync cover & schedule summary subtitle with the current schedule events
   const computedSubtitle = buildScheduleSummarySubtitle(
-    events,
+    normalizedEvents,
     next.groomOrigin || next.brideOrigin || 'Semarang'
   );
   if (computedSubtitle) {

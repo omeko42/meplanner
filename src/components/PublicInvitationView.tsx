@@ -31,7 +31,6 @@ import {
   X,
   Sparkles,
   Shield,
-  KeyRound,
   Search,
   Globe,
 } from 'lucide-react';
@@ -498,27 +497,27 @@ const EditorialSectionHeader: React.FC<{
   title: string;
   subtitle?: string;
 }> = ({ badge, title, subtitle }) => (
-  <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto py-2 text-center mb-9 sm:mb-12 relative">
+  <div className="inv-reveal inv-reveal-up max-w-2xl mx-auto py-3 text-center mb-10 sm:mb-14 relative">
     <div
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-8 -inset-y-2 rounded-full bg-white/55 blur-2xl -z-10"
     />
     {badge && badge.trim() !== '' && (
-      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.28em] text-[#9A742B] mb-1.5">
+      <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.28em] text-[#9A742B] mb-2.5 sm:mb-3.5">
         {badge}
       </p>
     )}
-    <h2 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)]">
+    <h2 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 leading-tight drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)]">
       {title}
     </h2>
     {subtitle && subtitle.trim() !== '' && (
-      <p className="text-xs sm:text-sm text-stone-600 mt-1.5 max-w-xl mx-auto leading-relaxed">
+      <p className="text-xs sm:text-sm text-stone-600 mt-3 sm:mt-4 max-w-xl mx-auto leading-relaxed">
         {subtitle}
       </p>
     )}
     <div
       aria-hidden="true"
-      className="flex items-center justify-center gap-2.5 mt-3"
+      className="flex items-center justify-center gap-2.5 mt-4 sm:mt-5"
     >
       <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
       <svg
@@ -1296,12 +1295,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const [selectedGuestFromSearch, setSelectedGuestFromSearch] =
     useState<WeddingGuest | null>(null);
-  const [showGuestSuggestions, setShowGuestSuggestions] = useState(false);
   const [coverGuestSearch, setCoverGuestSearch] = useState('');
-  const [showCoverGuestSuggestions, setShowCoverGuestSuggestions] = useState(false);
-
-  const [vipCodeInput, setVipCodeInput] = useState('');
-  const [vipCodeError, setVipCodeError] = useState('');
   const [verifiedGuestByCode, setVerifiedGuestByCode] = useState<WeddingGuest | null>(
     null
   );
@@ -1325,10 +1319,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const effectiveMatchedGuest =
     selectedGuestFromSearch || verifiedGuestByCode || matchedGuest;
 
-  const matchedGuestHashToken = effectiveMatchedGuest
-    ? computeGuestInvitationHash(activeClientId, effectiveMatchedGuest)
-    : '';
-
   const resolvedGuestDisplayName =
     effectiveMatchedGuest?.guestName ||
     (guestParamName
@@ -1340,6 +1330,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const allScheduleEvents = useMemo(
     () => getEffectiveScheduleEvents(settings),
     [settings]
+  );
+
+  const mainScheduleEvent = useMemo(
+    () =>
+      allScheduleEvents.find((ev) => ev.isMainEvent) ||
+      allScheduleEvents.find((ev) =>
+        /pemberkatan|akad|utama|resepsi/i.test(`${ev.title} ${ev.badge}`)
+      ) ||
+      allScheduleEvents[1] ||
+      allScheduleEvents[0] ||
+      null,
+    [allScheduleEvents]
   );
 
   const countdownEvents = useMemo(
@@ -1356,9 +1358,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       if (found) return found;
     }
     return (
+      countdownEvents.find((e) => e.isMainEvent) ||
       countdownEvents.find((e) =>
         /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
-      ) || countdownEvents[0]
+      ) ||
+      countdownEvents[0]
     );
   }, [countdownEvents, selectedCountdownEventId]);
 
@@ -1403,27 +1407,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
 
-  const applyGuestToForm = (guest: WeddingGuest) => {
-    setSelectedGuestFromSearch(guest);
-    setRsvpName(guest.guestName);
-    setRsvpInstitution(guest.institution || '');
-    setRsvpPhone(guest.phone || '');
-    setRsvpPax(guest.confirmedPax || guest.pax || 2);
-    if (guest.rsvpStatus && guest.rsvpStatus !== 'Belum Konfirmasi') {
-      setRsvpStatus(guest.rsvpStatus);
-    }
-    if (guest.sessionChoice) {
-      setRsvpSession(guest.sessionChoice);
-    }
-    if (guest.wishes && !rsvpMessage) {
-      setRsvpMessage(guest.wishes);
-    }
-    setShowGuestSuggestions(false);
-    setShowCoverGuestSuggestions(false);
-    setVipCodeInput(computeGuestInvitationHash(activeClientId, guest));
-    setVipCodeError('');
-  };
-
   useEffect(() => {
     if (effectiveMatchedGuest) {
       setRsvpName(effectiveMatchedGuest.guestName);
@@ -1449,6 +1432,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }, [effectiveMatchedGuest, guestParamName]);
 
   const visibleEvents = useMemo(() => {
+    if (settings.showScheduleSection === false) return [];
     return allScheduleEvents
       .filter((ev) => ev.showOnInvitation !== false)
       .map((ev, idx) => ({
@@ -1463,10 +1447,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         mapsUrl: (ev.mapsUrl || '').trim(),
         dresscode: ev.dresscode,
         highlight:
-          ev.enableCountdown &&
-          (/pemberkatan|akad|utama/i.test(ev.title + ' ' + ev.badge) || idx === 1),
+          ev.isMainEvent !== undefined
+            ? Boolean(ev.isMainEvent)
+            : idx === 1 || /pemberkatan|akad|utama/i.test(ev.title + ' ' + ev.badge),
       }));
-  }, [allScheduleEvents]);
+  }, [allScheduleEvents, settings.showScheduleSection]);
 
   const sessionOptions = useMemo<{ value: string; label: string }[]>(() => {
     const rawOptions: { value: string; label: string }[] = [];
@@ -1534,47 +1519,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
   }, [sessionOptions, rsvpSession, effectiveMatchedGuest]);
 
-  const matchingGuestSuggestions = useMemo(() => {
-    if (guests.length === 0) return [];
-    const query = rsvpName.trim().toLowerCase();
-    if (query.length < 3) {
-      return [];
-    }
-    return guests
-      .filter(
-        (g) =>
-          g.guestName.toLowerCase().includes(query) ||
-          g.invitationCode.toLowerCase().includes(query) ||
-          computeGuestInvitationHash(activeClientId, g).toLowerCase().includes(query) ||
-          (g.institution || '').toLowerCase().includes(query)
-      )
-      .slice(0, 8);
-  }, [guests, rsvpName, activeClientId]);
-
-  const requiresVipCodeGate =
-    settings.invitationModerationMode === 'VIP_CODE_ONLY' && !effectiveMatchedGuest;
-
-  const coverMatchingGuests = useMemo(() => {
-    if (guests.length === 0) return [];
-    const rawQuery = (
-      !isOpened && requiresVipCodeGate ? vipCodeInput : coverGuestSearch
-    )
-      .trim()
-      .toLowerCase();
-    if (rawQuery.length < 3) {
-      return [];
-    }
-    return guests
-      .filter(
-        (g) =>
-          g.guestName.toLowerCase().includes(rawQuery) ||
-          g.invitationCode.toLowerCase().includes(rawQuery) ||
-          computeGuestInvitationHash(activeClientId, g).toLowerCase().includes(rawQuery) ||
-          (g.institution || '').toLowerCase().includes(rawQuery)
-      )
-      .slice(0, 8);
-  }, [guests, coverGuestSearch, vipCodeInput, requiresVipCodeGate, isOpened, activeClientId]);
-
   const emitAnalytics = (
     type: InvitationInteractionType,
     detail?: string,
@@ -1622,37 +1566,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }, []);
 
   const handleOpenInvitation = () => {
-    let resolvedGuestForOpen = effectiveMatchedGuest;
-    if (requiresVipCodeGate) {
-      const cleanInput = vipCodeInput.trim().toLowerCase();
-      if (!cleanInput) {
-        setVipCodeError(
-          'Masukkan Kode Hash Undangan (contoh: JHi4b3XgT2RQIDhZ9coLw) atau Nama Tamu terdaftar untuk membuka undangan.'
-        );
-        return;
-      }
-      const found =
-        matchGuestWithinSingleClient(vipCodeInput, activeClientId, guests) ||
-        guests.find(
-          (g) =>
-            (g.invitationCode || '').trim().toLowerCase() === cleanInput ||
-            g.guestName.trim().toLowerCase() === cleanInput ||
-            (cleanInput.length >= 3 &&
-              g.guestName.trim().toLowerCase().includes(cleanInput))
-        );
-      if (!found && guests.length > 0) {
-        setVipCodeError(
-          'Kode Undangan atau Nama Tamu tidak ditemukan dalam daftar tamu terdaftar.'
-        );
-        return;
-      }
-      if (found) {
-        resolvedGuestForOpen = found;
-        setVerifiedGuestByCode(found);
-        applyGuestToForm(found);
-      }
-      setVipCodeError('');
-    }
+    const resolvedGuestForOpen = effectiveMatchedGuest;
     emitAnalytics(
       'OPEN_COVER',
       'Klik tombol "Buka Undangan" pada sampul pembuka',
@@ -1680,10 +1594,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   };
 
   const googleCalendarUrl = useMemo(() => {
-    const evTitle = activeCountdownEvent?.title || eventMeta.coverBadge;
+    const calTarget = activeCountdownEvent || mainScheduleEvent;
+    const evTitle = calTarget?.title || eventMeta.coverBadge;
     const title = `${eventMeta.coverBadge}: ${displayTitleShort} (${evTitle})`;
     const rawIso =
-      activeCountdownEvent?.datetime ||
+      calTarget?.datetime ||
       settings.weddingDatetime ||
       '2026-12-19T09:00:00+07:00';
     const parsedStart = new Date(rawIso);
@@ -1694,18 +1609,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     const fmt = (d: Date) =>
       d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const dates = `${fmt(start)}/${fmt(end)}`;
-    const location = activeCountdownEvent
-      ? `${activeCountdownEvent.venue}, ${activeCountdownEvent.address}`
+    const location = calTarget
+      ? `${calTarget.venue}, ${calTarget.address}`
       : `${settings.event2Venue || ''}, ${settings.event2Address || ''}`;
     const details = `${eventMeta.coverBadge} ${displayTitleFull} — ${evTitle} (${
-      activeCountdownEvent?.dateLabel || settings.event2DateLabel
-    } • ${activeCountdownEvent?.timeLabel || settings.event2TimeLabel}).`;
+      calTarget?.dateLabel || settings.event2DateLabel
+    } • ${calTarget?.timeLabel || settings.event2TimeLabel}).`;
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
       title
     )}&dates=${dates}&details=${encodeURIComponent(
       details
     )}&location=${encodeURIComponent(location)}`;
-  }, [activeCountdownEvent, settings, eventMeta.coverBadge, displayTitleShort, displayTitleFull]);
+  }, [
+    activeCountdownEvent,
+    mainScheduleEvent,
+    settings,
+    eventMeta.coverBadge,
+    displayTitleShort,
+    displayTitleFull,
+  ]);
 
   useEffect(() => {
     if (!isOpened) return;
@@ -1752,7 +1674,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const handleSharePublicLink = async () => {
     const shareUrl =
-      typeof window !== 'undefined' ? window.location.href : '';
+      typeof window !== 'undefined'
+        ? effectiveMatchedGuest
+          ? `${window.location.origin}/${computeGuestInvitationHash(
+              activeClientId,
+              effectiveMatchedGuest
+            )}`
+          : window.location.href
+        : '';
     const coupleNames = `${settings.groomNickname || 'Eko'} & ${
       settings.brideNickname || 'Selo'
     }`;
@@ -1764,7 +1693,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       try {
         await navigator.share({
           title: `Undangan Pernikahan ${coupleNames}`,
-          text: `Undangan Pernikahan ${coupleNames} — ${settings.event2DateLabel}`,
+          text: `Undangan Pernikahan ${coupleNames} — ${
+            mainScheduleEvent?.dateLabel ||
+            activeCountdownEvent?.dateLabel ||
+            settings.event2DateLabel
+          }`,
           url: shareUrl,
         });
         return;
@@ -1978,7 +1911,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       (w) =>
         w.guestName.toLowerCase().includes(q) ||
         (w.institution || '').toLowerCase().includes(q) ||
-        (w.invitationCode || '').toLowerCase().includes(q) ||
         w.message.toLowerCase().includes(q)
     );
   }, [publicVisibleWishes, coverGuestSearch]);
@@ -2159,33 +2091,45 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
             {/* Event Category Crest Emblem */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5 relative z-10">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-5 sm:mb-6 relative z-10">
               <EventCrestIcon
                 eventType={eventType}
                 className="w-8 h-8 sm:w-10 sm:h-10 text-[#B68D40]"
               />
             </div>
 
-            <div className="mb-2">
+            <div className="mb-3.5 sm:mb-4">
               <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#8B6914] font-bold">
                 {coverBadgeLabel}
               </span>
             </div>
 
-            <h1 className="font-script text-4xl sm:text-6xl font-normal tracking-normal text-stone-900 leading-tight mb-2 break-words py-1">
+            <h1 className="font-script text-4xl sm:text-6xl font-normal tracking-normal text-stone-900 leading-normal mb-3 sm:mb-4 break-words py-2">
               {displayTitleShort}
             </h1>
 
-            <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-4 sm:mb-6">
-              {settings.event2DateLabel}
-              {settings.groomOrigin && settings.groomOrigin.trim() !== '-'
-                ? ` • ${settings.groomOrigin}`
+            <p className="text-xs sm:text-sm text-stone-600 font-medium tracking-wide mb-6 sm:mb-8">
+              {mainScheduleEvent?.dateLabel ||
+                activeCountdownEvent?.dateLabel ||
+                settings.event2DateLabel}
+              {(mainScheduleEvent?.venue ||
+                activeCountdownEvent?.venue ||
+                settings.event2Venue ||
+                (settings.groomOrigin && settings.groomOrigin.trim() !== '-'
+                  ? settings.groomOrigin
+                  : ''))
+                ? ` • ${
+                    mainScheduleEvent?.venue ||
+                    activeCountdownEvent?.venue ||
+                    settings.event2Venue ||
+                    settings.groomOrigin
+                  }`
                 : ''}
             </p>
 
             {/* Personalized Guest Card (Translucent Glass) */}
-            <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-4 sm:p-6 shadow-sm mb-5 sm:mb-6">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-1.5">
+            <div className="w-full rounded-2xl bg-white/85 backdrop-blur-xl border border-[#D4AF37]/35 p-5 sm:p-7 shadow-sm mb-6 sm:mb-8">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 mb-2.5 sm:mb-3">
                 {coverGreetingLabel}
               </p>
 
@@ -2193,7 +2137,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
               </h2>
 
-              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-1.5 break-words">
+              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-2.5 sm:mt-3 break-words">
                 {(() => {
                   const rawInst = (
                     effectiveMatchedGuest?.institution ||
@@ -2208,90 +2152,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 })()}
               </p>
 
-              {effectiveMatchedGuest && matchedGuestHashToken && (
-                <div className="mt-2 flex justify-center">
-                  <span
-                    title={`Kode Hash Unik: ${matchedGuestHashToken}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 font-mono text-[10px] font-bold text-[#8B6914]"
-                  >
-                    ✓ {effectiveMatchedGuest.invitationCode} •{' '}
-                    {matchedGuestHashToken.slice(0, 10)}…
-                  </span>
-                </div>
-              )}
-
               {coverApology && coverApology !== '-' && (
-                <p className="text-[10px] sm:text-[11px] text-stone-400 mt-2.5 italic">
+                <p className="text-[10px] sm:text-[11px] text-stone-400 mt-3.5 sm:mt-4 italic">
                   {coverApology}
                 </p>
               )}
             </div>
-
-            {/* Optional Superadmin VIP Code Gate Input */}
-            {requiresVipCodeGate && (
-              <div className="w-full rounded-2xl bg-[#FAF8F5]/95 border border-[#D4AF37]/50 p-3.5 sm:p-4 mb-4 text-left space-y-2 relative">
-                <label className="text-[11px] font-bold text-[#8B6914] flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-[#B68D40]" />
-                  <span>
-                    {lang === 'ID'
-                      ? 'Mode Undangan Privat VIP — Masukkan Kode / Nama Tamu:'
-                      : 'VIP Private Invitation — Enter Invitation Code / Guest Name:'}
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={vipCodeInput}
-                  onFocus={() => setShowCoverGuestSuggestions(true)}
-                  onBlur={() =>
-                    setTimeout(() => setShowCoverGuestSuggestions(false), 180)
-                  }
-                  onChange={(e) => {
-                    setVipCodeInput(e.target.value);
-                    setVipCodeError('');
-                    setShowCoverGuestSuggestions(true);
-                  }}
-                  placeholder={
-                    lang === 'ID'
-                      ? 'Contoh: JHi4b3XgT2RQIDhZ9coLw atau ketik nama Anda'
-                      : 'Example: JHi4b3XgT2RQIDhZ9coLw or type your name'
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D4AF37]/50 font-mono text-xs sm:text-sm font-bold text-stone-900 focus:outline-none focus:border-[#8B6914]"
-                />
-                {showCoverGuestSuggestions && coverMatchingGuests.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100">
-                    {coverMatchingGuests.map((guest) => (
-                      <button
-                        key={guest.id}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setVerifiedGuestByCode(guest);
-                          applyGuestToForm(guest);
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-stone-900 truncate">
-                            {guest.guestName}
-                          </p>
-                          <p className="text-[10px] text-stone-500 truncate">
-                            {guest.institution || 'di Tempat'} &bull; {guest.pax} Pax
-                          </p>
-                        </div>
-                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
-                          {guest.invitationCode}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {vipCodeError && (
-                  <p className="text-[11px] font-semibold text-rose-600">
-                    {vipCodeError}
-                  </p>
-                )}
-              </div>
-            )}
 
             {/* Open Invitation Button */}
             <button
@@ -2367,7 +2233,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {displayTitleShort}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
-                {settings.event2DateLabel}
+                {mainScheduleEvent?.dateLabel ||
+                  activeCountdownEvent?.dateLabel ||
+                  settings.event2DateLabel}
+                {mainScheduleEvent?.venue ||
+                activeCountdownEvent?.venue ||
+                settings.event2Venue
+                  ? ` • ${
+                      mainScheduleEvent?.venue ||
+                      activeCountdownEvent?.venue ||
+                      settings.event2Venue
+                    }`
+                  : ''}
               </p>
             </div>
           </div>
@@ -2904,26 +2781,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     </div>
                   </div>
                 )}
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
                   {settings.eventHostRoleLabel ||
                     (settings.groomRankAndTitle &&
                     settings.groomRankAndTitle !== 'Mempelai Pria'
                       ? settings.groomRankAndTitle
                       : eventMeta.primaryRoleBadge)}
                 </span>
-                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
+                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                   {settings.groomFullName}
                 </h3>
                 {(settings.groomUnit || settings.groomOrigin) &&
                   (settings.groomUnit || settings.groomOrigin).trim() !== '-' && (
-                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
                       {settings.groomUnit || settings.groomOrigin}
                     </p>
                   )}
                 {settings.groomParents &&
                   settings.groomParents.trim() !== '' &&
                   settings.groomParents.trim() !== '-' && (
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
                       {settings.groomParents}
                     </p>
                   )}
@@ -3002,24 +2879,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         </div>
                       </div>
                     )}
-                    <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-2.5">
+                    <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
                       {settings.brideTitle &&
                       settings.brideTitle !== 'Mempelai Wanita'
                         ? settings.brideTitle
                         : eventMeta.secondaryRoleBadge}
                     </span>
-                    <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-1 break-words">
+                    <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                       {settings.brideFullName}
                     </h3>
                     {settings.brideOrigin && settings.brideOrigin.trim() !== '-' && (
-                      <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3 min-h-[1.25rem]">
+                      <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
                         {settings.brideOrigin}
                       </p>
                     )}
                     {settings.brideParents &&
                       settings.brideParents.trim() !== '' &&
                       settings.brideParents.trim() !== '-' && (
-                        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
                           {settings.brideParents}
                         </p>
                       )}
@@ -3044,9 +2921,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             className={`grid grid-cols-1 gap-4 sm:gap-6 items-stretch ${
               visibleEvents.length === 1
                 ? 'max-w-lg mx-auto'
-                : visibleEvents.length === 2
-                ? 'md:grid-cols-2'
-                : 'lg:grid-cols-3'
+                : visibleEvents.length === 2 || visibleEvents.length === 4
+                  ? 'md:grid-cols-2 max-w-4xl mx-auto'
+                  : 'lg:grid-cols-3'
             }`}
           >
             {visibleEvents.map((ev, idx) => {
@@ -3071,12 +2948,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
                   <div className="flex flex-col flex-1 relative z-10">
                     <div className="flex items-center justify-between gap-2 mb-4">
-                      <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
-                        {ev.badge}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
+                          {ev.badge}
+                        </span>
+                        {ev.highlight && (
+                          <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-[10px] font-bold uppercase tracking-wider shadow-2xs">
+                            {lang === 'ID' ? '★ Acara Utama' : '★ Main Event'}
+                          </span>
+                        )}
+                      </div>
                       <EventCrestIcon
                         eventType={eventType}
-                        className="w-5 h-5 text-[#C5A059]"
+                        className="w-5 h-5 text-[#C5A059] shrink-0"
                       />
                     </div>
 
@@ -3536,65 +3420,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         ? 'Nama Lengkap / Gelar *'
                         : 'Full Name / Title *'}
                     </label>
-                    {effectiveMatchedGuest ? (
-                      <span className="inline-flex items-center gap-1 shrink-0">
-                        <span
-                          title={`Kode Hash Unik: ${matchedGuestHashToken}`}
-                          className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap truncate shrink-0"
-                        >
-                          ✓ {effectiveMatchedGuest.invitationCode} •{' '}
-                          {matchedGuestHashToken.slice(0, 10)}…
-                        </span>
-                        <InfoTooltip
-                          text={
-                            lang === 'ID'
-                              ? `Ketik minimal 3 huruf nama Anda atau kode Hash / INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
-                              : `Type at least 3 characters of your name or Hash / INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
-                          }
-                        />
-                      </span>
-                    ) : (
-                      guests.length > 0 && (
-                        <span className="inline-flex items-center gap-1 shrink-0">
-                          <span
-                            title={`Ketik minimal 3 huruf nama atau kode undangan dari ${guests.length} tamu terdaftar`}
-                            className="text-[10px] font-semibold text-[#9A742B] whitespace-nowrap truncate shrink-0"
-                          >
-                            {lang === 'ID'
-                              ? `${guests.length} Tamu`
-                              : `${guests.length} Guests`}
-                          </span>
-                          <InfoTooltip
-                            text={
-                              lang === 'ID'
-                                ? `Ketik minimal 3 huruf nama Anda atau kode Hash / INV-xxxx untuk mengisi otomatis data kehadiran dari ${guests.length} tamu terdaftar.`
-                                : `Type at least 3 characters of your name or Hash / INV-xxxx code to auto-fill your RSVP from ${guests.length} registered guests.`
-                            }
-                          />
-                        </span>
-                      )
-                    )}
                   </div>
                   <input
                     type="text"
                     required
                     value={rsvpName}
-                    onFocus={() => setShowGuestSuggestions(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowGuestSuggestions(false), 180)
-                    }
                     onChange={(e) => {
                       const val = e.target.value;
                       setRsvpName(val);
-                      setShowGuestSuggestions(true);
-                      const exact = matchGuestWithinSingleClient(
-                        val,
-                        activeClientId,
-                        guests
-                      );
-                      if (exact) {
-                        applyGuestToForm(exact);
-                      } else if (
+                      if (
                         selectedGuestFromSearch &&
                         val.trim().toLowerCase() !==
                           selectedGuestFromSearch.guestName.trim().toLowerCase()
@@ -3604,40 +3438,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     }}
                     placeholder={
                       lang === 'ID'
-                        ? 'Contoh: Bpk. Budi Santoso (Ketik untuk cari database tamu)'
-                        : 'Example: Mr. John Doe (Type to search guest database)'
+                        ? 'Contoh: Bpk. Budi Santoso'
+                        : 'Example: Mr. John Doe'
                     }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                   />
-
-                  {showGuestSuggestions && matchingGuestSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-2xl bg-white border border-[#D4AF37]/50 shadow-xl divide-y divide-stone-100 z-30">
-                      {matchingGuestSuggestions.map((guest) => (
-                        <button
-                          key={guest.id}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            applyGuestToForm(guest);
-                          }}
-                          className="w-full px-3.5 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-stone-900 truncate">
-                              {guest.guestName}
-                            </p>
-                            <p className="text-[10px] text-stone-500 truncate">
-                              {guest.institution || guest.guestType} &bull;{' '}
-                              {guest.confirmedPax || guest.pax || 2} Pax
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
-                            {guest.invitationCode}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -3839,27 +3644,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <input
                     type="text"
                     value={coverGuestSearch}
-                    onFocus={() => setShowCoverGuestSuggestions(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowCoverGuestSuggestions(false), 180)
-                    }
                     onChange={(e) => {
-                      const val = e.target.value;
-                      setCoverGuestSearch(val);
-                      setShowCoverGuestSuggestions(true);
-                      const exact = matchGuestWithinSingleClient(
-                        val,
-                        activeClientId,
-                        guests
-                      );
-                      if (exact) {
-                        applyGuestToForm(exact);
-                      }
+                      setCoverGuestSearch(e.target.value);
                     }}
                     placeholder={
                       lang === 'ID'
-                        ? `Cari nama tamu / kode undangan / ucapan di Buku Tamu...`
-                        : `Search guest name / invitation code / wishes in Guestbook...`
+                        ? `Cari nama tamu atau ucapan di Buku Tamu...`
+                        : `Search guest name or wishes in Guestbook...`
                     }
                     className="w-full pl-8 pr-7 py-2 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#8B6914]"
                   />
@@ -3876,37 +3667,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     </button>
                   )}
                 </div>
-
-                {showCoverGuestSuggestions &&
-                  coverGuestSearch.trim().length > 0 &&
-                  coverMatchingGuests.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 max-h-44 overflow-y-auto rounded-xl bg-white border border-[#D4AF37]/50 shadow-lg divide-y divide-stone-100 z-30">
-                      {coverMatchingGuests.map((guest) => (
-                        <button
-                          key={guest.id}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            applyGuestToForm(guest);
-                          }}
-                          className="w-full px-3 py-2 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-colors"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-stone-900 truncate">
-                              {guest.guestName}
-                            </p>
-                            <p className="text-[10px] text-stone-500 truncate">
-                              {guest.institution || guest.guestType} &bull;{' '}
-                              {guest.confirmedPax || guest.pax || 2} Pax
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 font-mono text-[10px] font-bold text-[#8B6914] shrink-0">
-                            {guest.invitationCode}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
               </div>
 
               <div className="flex-1 max-h-[380px] lg:max-h-none overflow-y-auto space-y-3 pr-1">
@@ -4320,45 +4080,45 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       )}
 
       {/* CLOSING FOOTER CARD (HIGH-CONTRAST PEARL & CHAMPAGNE GOLD CARD) */}
-      <footer className="relative z-10 pt-2 pb-10 sm:pb-12 px-3 sm:px-4 max-w-5xl mx-auto">
-        <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl bg-white/92 backdrop-blur-xl border border-white/95 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
+      <footer className="relative z-10 pt-6 sm:pt-10 pb-12 sm:pb-16 px-3 sm:px-4 max-w-5xl mx-auto">
+        <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl bg-[#FFFDF9]/96 backdrop-blur-2xl border border-white/95 p-7 sm:p-12 md:p-14 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)]">
           <FloralCornerOrnament position="top-left" enabled={showFloral} />
           <FloralCornerOrnament position="top-right" enabled={showFloral} />
           <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
           <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
           {/* Subtle Top & Bottom Champagne Gold Accent Lines */}
-          <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5 relative z-10" />
+          <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-6 sm:mb-8 relative z-10" />
 
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5 relative z-10">
-            <EventCrestIcon eventType={eventType} className="w-7 h-7" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-5 sm:mb-6 relative z-10">
+            <EventCrestIcon eventType={eventType} className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
 
           {closingBadge && closingBadge !== '-' && (
-            <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2 relative z-10">
+            <span className="text-[11px] sm:text-xs uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-4 sm:mb-5 relative z-10">
               {closingBadge}
             </span>
           )}
 
-          <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-6 relative z-10">
+          <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-8 sm:mb-10 relative z-10">
             {settings.invitationClosingText}
           </p>
 
           {/* Inner Champagne Gold Couple Signature Box */}
-          <div className="max-w-lg mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-5 sm:px-8 py-5 sm:py-7 shadow-2xs relative z-10">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-2">
+          <div className="max-w-lg mx-auto rounded-2xl bg-gradient-to-b from-[#FAF8F5] to-[#FAF3E3]/75 border border-[#D4AF37]/40 px-6 sm:px-10 py-6 sm:py-9 shadow-2xs relative z-10">
+            <p className="text-[11px] sm:text-xs uppercase tracking-[0.22em] text-[#9A742B] font-bold mb-4 sm:mb-5">
               {closingSignature}
             </p>
-            <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-1">
+            <p className="font-script text-3xl sm:text-5xl font-normal text-stone-900 py-2 leading-normal">
               {displayTitleShort}
             </p>
             {displayTitleFull !== displayTitleShort && (
               hasSecondProfile ? (
-                <div className="mt-3 pt-3 border-t border-[#D4AF37]/25 flex flex-col items-center justify-center">
+                <div className="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-[#D4AF37]/30 flex flex-col items-center justify-center gap-2 sm:gap-3">
                   <span className="font-editorial text-xs sm:text-base text-stone-800 font-bold leading-snug break-words">
                     {settings.groomFullName}
                   </span>
-                  <span className="block font-script text-2xl sm:text-3xl text-[#B68D40] my-1">
+                  <span className="block font-script text-2xl sm:text-3xl text-[#B68D40] leading-none py-0.5">
                     &amp;
                   </span>
                   <span className="font-editorial text-xs sm:text-base text-stone-800 font-bold leading-snug break-words">
@@ -4366,15 +4126,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </span>
                 </div>
               ) : (
-                <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-2">
+                <p className="font-editorial text-xs sm:text-sm text-stone-700 font-semibold mt-4 pt-4 border-t border-[#D4AF37]/25">
                   {displayTitleFull}
                 </p>
               )
             )}
           </div>
 
-          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-6 mb-2.5" />
-          <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80">
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-8 sm:mt-10 mb-3.5" />
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80 mb-2">
             All-in-One My Event Planner &amp; Digital Invitation
           </p>
 

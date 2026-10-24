@@ -13,6 +13,9 @@ import { computeGuestInvitationHash } from '@/lib/guestTokenHash';
 
 export type ShowcasePackageTier = 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
 
+export const USER_REAL_QRIS_URL =
+  'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/qrisImageUrl_7_H3fEFgYXwW2R5G.webp';
+
 export interface ShowcaseDummyClientMeta {
   id: string;
   slug: string;
@@ -140,81 +143,280 @@ export function resolveShowcaseDummyClientId(
 function buildDummyGuestsForClient(
   meta: ShowcaseDummyClientMeta
 ): WeddingGuest[] {
-  const rawList: Array<{
-    name: string;
-    inst: string;
-    type: WeddingGuest['guestType'];
-    prio: WeddingGuest['priority'];
-    pax: number;
-    rsvp: WeddingGuest['rsvpStatus'];
-    token?: string;
-  }> = [
-    {
-      name: meta.sampleGuestName,
-      inst: 'Tamu Kehormatan VVIP',
-      type: 'Pejabat/VIP',
-      prio: 'P1 - VIP',
-      pax: 2,
-      rsvp: 'Hadir',
-      token: meta.sampleHashToken,
-    },
-    {
-      name: 'Irjen Pol. (Purn.) Drs. Hendrawan Dirgantara & Ibu',
-      inst: 'Keluarga Kehormatan Jakarta',
-      type: 'Pejabat/VIP',
-      prio: 'P1 - VIP',
-      pax: 4,
-      rsvp: 'Hadir',
-    },
-    {
-      name: 'Prof. dr. Haryanto Kusuma, Sp.JP(K) & Keluarga',
-      inst: 'RSUPN Dr. Cipto Mangunkusumo',
-      type: 'Keluarga',
-      prio: 'P1 - VIP',
-      pax: 3,
-      rsvp: 'Hadir',
-    },
-    {
-      name: 'Kombes Pol. Aditya Pratama, S.I.K., M.Si.',
-      inst: 'Polda Metro Jaya',
-      type: 'Rekan Kerja/Polri',
-      prio: 'P1 - VIP',
-      pax: 2,
-      rsvp: 'Hadir',
-    },
-    {
-      name: 'dr. Nadia Maharani, Sp.A & Partner',
-      inst: 'Sahabat Alumni FK UI',
-      type: 'Teman/Sahabat',
-      prio: 'P2 - Utama',
-      pax: 2,
-      rsvp: 'Hadir',
-    },
-    {
-      name: 'Bapak Alexander Tanuwijaya & Ibu',
-      inst: 'Board of Directors Nusantara Group',
-      type: 'Pejabat/VIP',
-      prio: 'P1 - VIP',
-      pax: 2,
-      rsvp: 'Belum Konfirmasi',
-    },
-    {
-      name: 'Keluarga Besar Bapak Surya Atmaja',
-      inst: 'Kerabat Bandung',
-      type: 'Keluarga',
-      prio: 'P2 - Utama',
-      pax: 4,
-      rsvp: 'Hadir',
-    },
-    {
-      name: 'Clarissa Devina & Rekan',
-      inst: 'Divisi Korporat & Legal',
-      type: 'Teman/Sahabat',
-      prio: 'P3 - Reguler',
-      pax: 2,
-      rsvp: 'Belum Konfirmasi',
-    },
-  ];
+  const rawListByEvent: Record<
+    EventCategoryType,
+    Array<{
+      name: string;
+      inst: string;
+      type: WeddingGuest['guestType'];
+      prio: WeddingGuest['priority'];
+      pax: number;
+      rsvp: WeddingGuest['rsvpStatus'];
+      side: string;
+      token?: string;
+    }>
+  > = {
+    WEDDING: [
+      {
+        name: meta.sampleGuestName,
+        inst: 'Sahabat Kehormatan VVIP',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Mempelai Pria',
+        token: meta.sampleHashToken,
+      },
+      {
+        name: 'Irjen Pol. (Purn.) Drs. Hendrawan Dirgantara & Ibu',
+        inst: 'Keluarga Besar Mempelai Pria',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 4,
+        rsvp: 'Hadir',
+        side: 'Mempelai Pria',
+      },
+      {
+        name: 'Prof. dr. Haryanto Kusuma, Sp.JP(K) & Keluarga',
+        inst: 'Keluarga Besar Mempelai Wanita (RSCM)',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 4,
+        rsvp: 'Hadir',
+        side: 'Mempelai Wanita',
+      },
+      {
+        name: 'Kombes Pol. Aditya Pratama, S.I.K., M.Si.',
+        inst: 'Bareskrim Polri',
+        type: 'Rekan Kerja/Polri',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Mempelai Pria',
+      },
+      {
+        name: 'dr. Nadia Maharani, Sp.A & Partner',
+        inst: 'Ikatan Dokter Spesialis FK UI',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Mempelai Wanita',
+      },
+      {
+        name: 'AKBP Yudhistira Mahendra, S.I.K. & Ibu',
+        inst: 'Polda Metro Jaya',
+        type: 'Rekan Kerja/Polri',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Belum Konfirmasi',
+        side: 'Mempelai Pria',
+      },
+    ],
+    BIRTHDAY: [
+      {
+        name: meta.sampleGuestName,
+        inst: 'Keluarga Inti & Kehormatan',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 4,
+        rsvp: 'Hadir',
+        side: 'Keluarga Aurelia',
+        token: meta.sampleHashToken,
+      },
+      {
+        name: 'Michelle Valencia & Sahabat Santa Ursula',
+        inst: 'SMA Katolik Santa Ursula Jakarta',
+        type: 'Teman/Sahabat',
+        prio: 'P1 - VIP',
+        pax: 3,
+        rsvp: 'Hadir',
+        side: 'Sahabat SMA',
+      },
+      {
+        name: 'Kevin Alexander & Music Ensemble',
+        inst: 'Jakarta Youth Classical Piano Club',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Klub Piano',
+      },
+      {
+        name: 'Bapak Hendrawan Wijaya & Ibu Clarissa',
+        inst: 'Orang Tua & Tuan Rumah',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 4,
+        rsvp: 'Hadir',
+        side: 'Keluarga Aurelia',
+      },
+      {
+        name: 'Jessica Tan & Stephanie Liem',
+        inst: 'Bestie Dance & Debate Squad',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Sahabat SMA',
+      },
+      {
+        name: 'Keluarga Oom Richard Maharani',
+        inst: 'Keluarga Besar Pondok Indah',
+        type: 'Keluarga',
+        prio: 'P2 - Utama',
+        pax: 3,
+        rsvp: 'Belum Konfirmasi',
+        side: 'Keluarga Aurelia',
+      },
+    ],
+    GRADUATION: [
+      {
+        name: meta.sampleGuestName,
+        inst: 'Ketua Tim Promotor STEI ITB',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Sivitas Akademika ITB',
+        token: meta.sampleHashToken,
+      },
+      {
+        name: 'Prof. Dr. Ir. Bambang Riyanto, M.Sc.',
+        inst: 'Guru Besar & Ko-Promotor ITB',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Sivitas Akademika ITB',
+      },
+      {
+        name: 'Keluarga Besar Prof. Drs. Santoso Putra',
+        inst: 'Keluarga Wisudawan Bandung',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 4,
+        rsvp: 'Hadir',
+        side: 'Keluarga Wisudawan',
+      },
+      {
+        name: 'Dr. Eng. Raka Pradipta, S.T., M.T.',
+        inst: 'Rekan Dosen & Lab AI ITB',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Kolega Dosen',
+      },
+      {
+        name: 'Himpunan Alumni Doktor Informatika',
+        inst: 'Ikatan Alumni ITB',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 3,
+        rsvp: 'Belum Konfirmasi',
+        side: 'Kolega Dosen',
+      },
+    ],
+    MEETING: [
+      {
+        name: meta.sampleGuestName,
+        inst: 'Dewan Direksi Subsidiary',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Delegasi Direksi',
+        token: meta.sampleHashToken,
+      },
+      {
+        name: 'Bapak Dr. H. Mahendra Kusuma, M.B.A.',
+        inst: 'Komisaris Utama Nusantara Global Holding',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Dewan Komisaris',
+      },
+      {
+        name: 'Ibu Diana Kartika, S.E., M.M.',
+        inst: 'VP Corporate Strategy & Digital Transformation',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 1,
+        rsvp: 'Hadir',
+        side: 'Pimpinan Divisi',
+      },
+      {
+        name: 'Bapak Reza Pahlevi, S.T.',
+        inst: 'General Manager Regional Jawa-Bali',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Pimpinan Wilayah',
+      },
+      {
+        name: 'Delegasi Regional Sumatera & Kalimantan',
+        inst: 'Pimpinan Cabang Utama',
+        type: 'Teman/Sahabat',
+        prio: 'P2 - Utama',
+        pax: 4,
+        rsvp: 'Belum Konfirmasi',
+        side: 'Pimpinan Wilayah',
+      },
+    ],
+    GALA_DINNER: [
+      {
+        name: meta.sampleGuestName,
+        inst: 'Dewan Komisaris Utama Wijaya Kusuma Group',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'VVIP Kehormatan',
+        token: meta.sampleHashToken,
+      },
+      {
+        name: 'H.E. Ambassador Laurentius Tan & Madam',
+        inst: 'Diplomatic Corps & Strategic Partner',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'VVIP Kehormatan',
+      },
+      {
+        name: 'Bapak Alexander Tanuwijaya & Ibu',
+        inst: 'Managing Director Corporate Banking',
+        type: 'Pejabat/VIP',
+        prio: 'P1 - VIP',
+        pax: 2,
+        rsvp: 'Hadir',
+        side: 'Mitra Perbankan',
+      },
+      {
+        name: 'Ibu Cynthia Halim & Philanthropy Board',
+        inst: 'Wijaya Kusuma Charity Foundation',
+        type: 'Keluarga',
+        prio: 'P1 - VIP',
+        pax: 3,
+        rsvp: 'Hadir',
+        side: 'Tuan Rumah',
+      },
+      {
+        name: 'Bapak Victor Gunawan & Partner',
+        inst: 'Mitra Eksekutif Asia Pasifik',
+        type: 'Pejabat/VIP',
+        prio: 'P2 - Utama',
+        pax: 2,
+        rsvp: 'Belum Konfirmasi',
+        side: 'Mitra Strategis',
+      },
+    ],
+  };
+
+  const rawList = rawListByEvent[meta.eventType] || rawListByEvent.WEDDING;
 
   return rawList.map((item, idx) => {
     const id = `gst_${meta.slug}_${idx + 1}`;
@@ -232,19 +434,21 @@ function buildDummyGuestsForClient(
       invitationToken: token,
       guestName: item.name,
       guestType: item.type,
-      side: idx % 2 === 0 ? 'Mempelai Pria' : 'Mempelai Wanita',
+      side: (item.side === 'Mempelai Pria' || item.side === 'Mempelai Wanita'
+        ? item.side
+        : 'Bersama') as WeddingGuest['side'],
       institution: item.inst,
-      invitationFormat: idx < 4 ? 'Cetak Tebal' : 'Online',
+      invitationFormat: idx < 3 ? 'Cetak Tebal' : 'Online',
       priority: item.prio,
-      cardQty: idx < 4 ? 1 : 0,
+      cardQty: idx < 3 ? 1 : 0,
       pax: item.pax,
       confirmedPax: item.rsvp === 'Hadir' ? item.pax : 0,
       phone: `0812889900${idx + 10}`,
-      address: 'Jakarta Selatan',
+      address: meta.eventType === 'GRADUATION' ? 'Bandung' : 'Jakarta Selatan',
       deliveryStatus: 'Sudah Dikirim',
       rsvpStatus: item.rsvp,
       attendanceStatus: 'Belum Dicek',
-      notes: `Kode Hash Unik: ${token}`,
+      notes: `Link Personal: /${token}`,
       sessionChoice: 'Semua Sesi',
       createdAt: '2026-10-18',
       updatedAt: '2026-10-24',
@@ -253,82 +457,232 @@ function buildDummyGuestsForClient(
   });
 }
 
-function buildDummyTasksForClient(slug: string): WeddingTask[] {
-  const items: Array<{
-    cat: WeddingTask['category'];
-    phase: WeddingTask['timelinePhase'];
-    title: string;
-    owner: WeddingTask['owner'];
-    done: boolean;
-  }> = [
-    {
-      cat: 'Acara',
-      phase: 'H-6 Bulan',
-      title: 'Penetapan Tanggal Utama & Booking Grand Ballroom',
-      owner: 'Bersama',
-      done: true,
-    },
-    {
-      cat: 'Vendor & Logistik',
-      phase: 'H-6 Bulan',
-      title: 'Kontrak Vendor Dekorasi, Dokumentasi 4K & Katering VIP',
-      owner: 'WO / Panitia',
-      done: true,
-    },
-    {
-      cat: 'Kependudukan',
-      phase: 'H-3 Bulan',
-      title: 'Penyelesaian Berkas Administrasi & Perizinan Acara',
-      owner: 'Saya',
-      done: true,
-    },
-    {
-      cat: 'Acara',
-      phase: 'H-3 Bulan',
-      title: 'Sesi Pemotretan Potret Utama & Penyusunan Galeri HD',
-      owner: 'Bersama',
-      done: true,
-    },
-    {
-      cat: 'Vendor & Logistik',
-      phase: 'H-1 Bulan',
-      title: 'Finalisasi Daftar Tamu VVIP & Generate Kode Hash Undangan',
-      owner: 'Keluarga',
-      done: true,
-    },
-    {
-      cat: 'Acara',
-      phase: 'H-1 Bulan',
-      title: 'Technical Meeting Seluruh Vendor & Gladi Bersih Rundown',
-      owner: 'WO / Panitia',
-      done: true,
-    },
-    {
-      cat: 'Vendor & Logistik',
-      phase: 'H-7',
-      title: 'Distribusi Link Undangan Digital Hash Token via WhatsApp',
-      owner: 'Saya',
-      done: true,
-    },
-    {
-      cat: 'Acara',
-      phase: 'Hari-H',
-      title: 'Koordinasi Registrasi QR / Hash Gate & Penyambutan VVIP',
-      owner: 'WO / Panitia',
-      done: false,
-    },
-  ];
+function buildDummyTasksForClient(
+  meta: ShowcaseDummyClientMeta
+): WeddingTask[] {
+  const tasksByEvent: Record<
+    EventCategoryType,
+    Array<{
+      cat: WeddingTask['category'];
+      phase: WeddingTask['timelinePhase'];
+      title: string;
+      owner: WeddingTask['owner'];
+      done: boolean;
+    }>
+  > = {
+    WEDDING: [
+      {
+        cat: 'Acara',
+        phase: 'H-6 Bulan',
+        title: 'Booking Grand Ballroom Hotel Mulia Senayan & Jadwal Pemberkatan',
+        owner: 'Bersama',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-3 Bulan',
+        title: 'Kontrak Dekorasi Pelaminan Floral, Katering VIP & Dokumentasi 4K',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Kependudukan',
+        phase: 'H-3 Bulan',
+        title: 'Kelengkapan Administrasi Pernikahan & Berkas KUA / Catatan Sipil',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Fitting Busana Pengantin Adat & Gaun Resepsi Malam',
+        owner: 'Calon',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'H-7',
+        title: 'Distribusi Link Undangan Personal Hash kedua Mempelai',
+        owner: 'Keluarga',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'Hari-H',
+        title: 'Koordinasi Prosesi Kirab & Registrasi QR Tamu VVIP',
+        owner: 'WO / Panitia',
+        done: false,
+      },
+    ],
+    BIRTHDAY: [
+      {
+        cat: 'Acara',
+        phase: 'H-3 Bulan',
+        title: 'Reservasi Eksklusif The Glasshouse Ritz-Carlton Pacific Place',
+        owner: 'Keluarga',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Pemesanan Custom 5-Tier Sweet 17th Birthday Cake & Dessert Table',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Fitting Gaun Malam Blush Rose & Sesi Foto Portrait 17th Aurelia',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'H-7',
+        title: 'Persiapan List 17 Lilin Kehormatan (Candle Ceremony) & Wishes',
+        owner: 'Keluarga',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-7',
+        title: 'Kirim Link Undangan Digital ke Sahabat SMA Santa Ursula',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'Hari-H',
+        title: 'Soundcheck Live DJ Acoustic & Setup Photobooth 360',
+        owner: 'WO / Panitia',
+        done: false,
+      },
+    ],
+    GRADUATION: [
+      {
+        cat: 'Kependudukan',
+        phase: 'H-3 Bulan',
+        title: 'Yudisium Doktor Cum Laude & Pendaftaran Wisuda ITB Bandung',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Reservasi Private Dining Plataran Bandung untuk Tasyakuran Doktor',
+        owner: 'Keluarga',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-7',
+        title: 'Pengambilan Toga Doktor ITB & Cetak Hardcover Buku Disertasi',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'H-7',
+        title: 'Pengiriman Undangan Kehormatan kepada Tim Promotor & Guru Besar',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'Hari-H',
+        title: 'Prosesi Sidang Terbuka Aula Barat ITB & Dokumentasi Keluarga',
+        owner: 'WO / Panitia',
+        done: false,
+      },
+    ],
+    MEETING: [
+      {
+        cat: 'Acara',
+        phase: 'H-3 Bulan',
+        title: 'Penetapan Agenda Strategis Rakornas 2026 & Booking Raffles Ballroom',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Produksi LED Giant Screen, Sistem Voting & Materi Keynote Direksi',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-7',
+        title: 'Pengadaan Seminar Kit Eksekutif, Plakat & Akomodasi Pimpinan Wilayah',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'H-7',
+        title: 'Distribusi Akses Link Undangan Delegasi & Konfirmasi Kehadiran',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'Hari-H',
+        title: 'Registrasi Meja Delegasi, Plenary Session & Penandatanganan Pakta 2027',
+        owner: 'WO / Panitia',
+        done: false,
+      },
+    ],
+    GALA_DINNER: [
+      {
+        cat: 'Acara',
+        phase: 'H-6 Bulan',
+        title: 'Reservasi Astor Ballroom St. Regis Jakarta untuk 25th Silver Jubilee',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-3 Bulan',
+        title: 'Kurasi Menu 6-Course Royal Fine Dining bersama Executive Chef',
+        owner: 'Keluarga',
+        done: true,
+      },
+      {
+        cat: 'Vendor & Logistik',
+        phase: 'H-1 Bulan',
+        title: 'Kontrak Chamber Orchestra, Grand Lighting & Trofi Penghargaan Kristal',
+        owner: 'WO / Panitia',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'H-7',
+        title: 'Konfirmasi Seating Table VVIP Duta Besar & Mitra Perbankan',
+        owner: 'Saya',
+        done: true,
+      },
+      {
+        cat: 'Acara',
+        phase: 'Hari-H',
+        title: 'Red Carpet Welcome Cocktail, Awarding Night & Toast 25 Tahun',
+        owner: 'WO / Panitia',
+        done: false,
+      },
+    ],
+  };
+
+  const items = tasksByEvent[meta.eventType] || tasksByEvent.WEDDING;
 
   return items.map((t, i) => ({
-    id: `tsk_${slug}_${i + 1}`,
+    id: `tsk_${meta.slug}_${i + 1}`,
     category: t.cat,
     timelinePhase: t.phase,
     title: t.title,
     due: '2026-10-24',
-    priority: i < 4 ? 'Tinggi' : 'Sedang',
+    priority: i < 3 ? 'Tinggi' : 'Sedang',
     owner: t.owner,
     status: t.done ? 'SELESAI' : 'PROSES',
-    notes: 'Data simulasi workspace MEPlan',
+    notes: `Agenda persiapan ${meta.coupleLabel}`,
     done: t.done,
     doneAt: t.done ? '2026-10-20' : '',
     createdAt: '2026-10-18',
@@ -337,101 +691,492 @@ function buildDummyTasksForClient(slug: string): WeddingTask[] {
   }));
 }
 
-function buildDummyBudgetForClient(slug: string): BudgetVendorItem[] {
-  return [
-    {
-      id: `bdg_${slug}_1`,
-      category: 'Gedung & Venue',
-      itemName: 'Sewa Grand Ballroom & VIP Lounge',
-      vendorName: 'Hotel Mulia / Ritz-Carlton Venue',
-      vendorContact: '021-5747777',
-      pic: 'Koordinator WO',
-      estimatedCost: 65000000,
-      actualCost: 60000000,
-      paidAmount: 60000000,
-      paymentStatus: 'LUNAS',
-      dueDate: '2026-10-01',
-      notes: 'Lunas 100% (Hemat Rp 5 Jt)',
-      updatedAt: '2026-10-24',
-    },
-    {
-      id: `bdg_${slug}_2`,
-      category: 'Katering & Jamuan',
-      itemName: 'Fine Dining & Buffet VIP 400 Pax',
-      vendorName: 'Royal Culinary Catering',
-      vendorContact: '08119002233',
-      pic: 'Keluarga',
-      estimatedCost: 55000000,
-      actualCost: 52000000,
-      paidAmount: 40000000,
-      paymentStatus: 'DP_TERBAYAR',
-      dueDate: '2026-10-15',
-      notes: 'DP 77% Terbayar',
-      updatedAt: '2026-10-24',
-    },
-    {
-      id: `bdg_${slug}_3`,
-      category: 'Dekorasi & Lighting',
-      itemName: 'Dekorasi Floral Editorial & Ambience Lighting',
-      vendorName: 'Lumina Atelier Decor',
-      vendorContact: '081233445566',
-      pic: 'Koordinator WO',
-      estimatedCost: 25000000,
-      actualCost: 22500000,
-      paidAmount: 22500000,
-      paymentStatus: 'LUNAS',
-      dueDate: '2026-10-10',
-      notes: 'Lunas',
-      updatedAt: '2026-10-24',
-    },
-    {
-      id: `bdg_${slug}_4`,
-      category: 'Dokumentasi Foto & Video',
-      itemName: 'Tim Sinematografi 4K & Fotografi Editorial',
-      vendorName: 'Velvet Frame Pictures',
-      vendorContact: '081388776655',
-      pic: 'Host Utama',
-      estimatedCost: 15000000,
-      actualCost: 14000000,
-      paidAmount: 10000000,
-      paymentStatus: 'DP_TERBAYAR',
-      dueDate: '2026-10-18',
-      notes: 'Sisa pelunasan H-7',
-      updatedAt: '2026-10-24',
-    },
-  ];
+function buildDummyBudgetForClient(
+  meta: ShowcaseDummyClientMeta
+): BudgetVendorItem[] {
+  const budgetByEvent: Record<
+    EventCategoryType,
+    Array<{
+      category: BudgetVendorItem['category'];
+      itemName: string;
+      vendorName: string;
+      pic: string;
+      estimatedCost: number;
+      actualCost: number;
+      paidAmount: number;
+      paymentStatus: BudgetVendorItem['paymentStatus'];
+      notes: string;
+    }>
+  > = {
+    WEDDING: [
+      {
+        category: 'Gedung & Venue',
+        itemName: 'Sewa Grand Ballroom Hotel Mulia Senayan & Ruang VIP',
+        vendorName: 'Hotel Mulia Senayan Jakarta',
+        pic: 'Koordinator WO',
+        estimatedCost: 85000000,
+        actualCost: 80000000,
+        paidAmount: 80000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas 100% termasuk ruang tunggu kedua keluarga',
+      },
+      {
+        category: 'Katering & Jamuan',
+        itemName: 'Buffet Royal Wedding & Pondokan Nusantara 500 Pax',
+        vendorName: 'Mulia Culinary Banquet',
+        pic: 'Keluarga',
+        estimatedCost: 65000000,
+        actualCost: 62000000,
+        paidAmount: 45000000,
+        paymentStatus: 'DP_TERBAYAR',
+        notes: 'Food tasting selesai, pelunasan H-7',
+      },
+      {
+        category: 'Dekorasi & Lighting',
+        itemName: 'Dekorasi Pelaminan Champagne Floral & Lorong Masuk',
+        vendorName: 'Lumina Wedding Atelier',
+        pic: 'Koordinator WO',
+        estimatedCost: 35000000,
+        actualCost: 32000000,
+        paidAmount: 32000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Bunga segar full import & ambient lighting',
+      },
+      {
+        category: 'Dokumentasi Foto & Video',
+        itemName: 'Liputan Prewedding, Pemberkatan & Resepsi 4K',
+        vendorName: 'Velvet Frame Wedding Cinema',
+        pic: 'Mempelai',
+        estimatedCost: 18000000,
+        actualCost: 16500000,
+        paidAmount: 16500000,
+        paymentStatus: 'LUNAS',
+        notes: 'Termasuk Same Day Edit Video',
+      },
+    ],
+    BIRTHDAY: [
+      {
+        category: 'Gedung & Venue',
+        itemName: 'Private Glasshouse Soirée & Teen Buffet Package (150 Pax)',
+        vendorName: 'The Glasshouse Ritz-Carlton Pacific Place',
+        pic: 'Orang Tua Aurelia',
+        estimatedCost: 42000000,
+        actualCost: 40000000,
+        paidAmount: 40000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas 100% termasuk mocktail bar remaja',
+      },
+      {
+        category: 'Dekorasi & Lighting',
+        itemName: 'Blush Rose Balloon Garland, Neon Sign & 17 Candle Stage',
+        vendorName: 'Petite Fleur Party Styling',
+        pic: 'Aurelia & Mama',
+        estimatedCost: 16000000,
+        actualCost: 15000000,
+        paidAmount: 15000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Tema Blush Rose & Fairy Lights',
+      },
+      {
+        category: 'Katering & Jamuan',
+        itemName: 'Custom 5-Tier Sweet 17th Fondant Cake & Macaron Tower',
+        vendorName: 'Patisserie Valerie Jakarta',
+        pic: 'Mama Clarissa',
+        estimatedCost: 8500000,
+        actualCost: 8000000,
+        paidAmount: 8000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Desain mahkota emas & bunga gula handmade',
+      },
+      {
+        category: 'Hiburan & Musik',
+        itemName: 'MC Youth Party, Live DJ Acoustic & Photobooth 360 Spin',
+        vendorName: 'Sparkle Entertainment ID',
+        pic: 'Koordinator Party',
+        estimatedCost: 12000000,
+        actualCost: 11000000,
+        paidAmount: 8000000,
+        paymentStatus: 'DP_TERBAYAR',
+        notes: 'Sisa pelunasan saat Hari-H',
+      },
+    ],
+    GRADUATION: [
+      {
+        category: 'Katering & Jamuan',
+        itemName: 'Reservasi Private Dining Tasyakuran Doktor (80 Pax VIP)',
+        vendorName: 'Plataran Bandung Heritage Dining',
+        pic: 'Keluarga Dr. Bagaskara',
+        estimatedCost: 28000000,
+        actualCost: 26500000,
+        paidAmount: 26500000,
+        paymentStatus: 'LUNAS',
+        notes: 'Jamuan makan siang keluarga & tim promotor ITB',
+      },
+      {
+        category: 'Undangan & Souvenir',
+        itemName: 'Cetak Eksklusif Buku Disertasi Hardcover & Plakat Promotor',
+        vendorName: 'ITB Press & Artisan Plaque',
+        pic: 'Dr. Bagaskara Putra',
+        estimatedCost: 7500000,
+        actualCost: 7200000,
+        paidAmount: 7200000,
+        paymentStatus: 'LUNAS',
+        notes: '30 eksemplar buku disertasi & cendera mata',
+      },
+      {
+        category: 'Dokumentasi Foto & Video',
+        itemName: 'Fotografi Wisuda Aula Barat ITB & Potret Studio Keluarga',
+        vendorName: 'Ganesha Portrait Studio',
+        pic: 'Dr. Bagaskara Putra',
+        estimatedCost: 6500000,
+        actualCost: 6000000,
+        paidAmount: 6000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas termasuk cetak kanvas akademik',
+      },
+      {
+        category: 'Dekorasi & Lighting',
+        itemName: 'Backdrop Tasyakuran Royal Navy & Rangkaian Bunga Meja',
+        vendorName: 'Bandung Floral Design',
+        pic: 'Keluarga',
+        estimatedCost: 6000000,
+        actualCost: 5500000,
+        paidAmount: 4000000,
+        paymentStatus: 'DP_TERBAYAR',
+        notes: 'Pelunasan saat setup di Plataran Bandung',
+      },
+    ],
+    MEETING: [
+      {
+        category: 'Gedung & Venue',
+        itemName: 'Full-Day Executive Conference Package & Summit Hall (250 Delegasi)',
+        vendorName: 'Raffles Hotel Jakarta',
+        pic: 'Sekretariat Rakornas',
+        estimatedCost: 95000000,
+        actualCost: 92000000,
+        paidAmount: 92000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Termasuk 2x Coffee Break & Executive Luncheon',
+      },
+      {
+        category: 'Dekorasi & Lighting',
+        itemName: 'Produksi Stage Panggung Korporat, Giant LED P2.5 & Live Cam',
+        vendorName: 'Nusantara Visual Production',
+        pic: 'Divisi IT & Multimedia',
+        estimatedCost: 45000000,
+        actualCost: 42000000,
+        paidAmount: 42000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas — siap gladi bersih H-1',
+      },
+      {
+        category: 'Undangan & Souvenir',
+        itemName: 'Executive Seminar Kit, Leather Folder & Smart ID Card Delegasi',
+        vendorName: ' Sovereign Corporate Merch',
+        pic: 'Divisi Procurement',
+        estimatedCost: 22000000,
+        actualCost: 21000000,
+        paidAmount: 21000000,
+        paymentStatus: 'LUNAS',
+        notes: '250 paket delegasi wilayah',
+      },
+      {
+        category: 'Administrasi & Lainnya',
+        itemName: 'Protokoler VIP, Akomodasi Pimpinan Wilayah & Dokumentasi Pers',
+        vendorName: 'Komite Eksekutif Nasional',
+        pic: 'Sekretaris Korporat',
+        estimatedCost: 30000000,
+        actualCost: 28000000,
+        paidAmount: 20000000,
+        paymentStatus: 'DP_TERBAYAR',
+        notes: 'Settlement pasca penutupan Rakornas',
+      },
+    ],
+    GALA_DINNER: [
+      {
+        category: 'Gedung & Venue',
+        itemName: 'Astor Ballroom & 6-Course Royal Fine Dining (300 VVIP)',
+        vendorName: 'The St. Regis Jakarta',
+        pic: 'Komite 25th Silver Jubilee',
+        estimatedCost: 140000000,
+        actualCost: 135000000,
+        paidAmount: 135000000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas 100% termasuk Welcome Symphony Cocktail',
+      },
+      {
+        category: 'Hiburan & Musik',
+        itemName: 'Chamber Symphony Orchestra & Grand Architectural Lighting',
+        vendorName: 'Batavia Philharmonic Ensemble',
+        pic: 'Show Director',
+        estimatedCost: 48000000,
+        actualCost: 45000000,
+        paidAmount: 45000000,
+        paymentStatus: 'LUNAS',
+        notes: '24 musisi orkestra malam penghargaan',
+      },
+      {
+        category: 'Undangan & Souvenir',
+        itemName: 'Trofi Kristal 25th Anniversary & Hampers Eksklusif VVIP',
+        vendorName: 'Royal Crystal Atelier',
+        pic: 'Corporate Relations',
+        estimatedCost: 32000000,
+        actualCost: 30000000,
+        paidAmount: 25000000,
+        paymentStatus: 'DP_TERBAYAR',
+        notes: '25 plakat penghargaan mitra utama',
+      },
+      {
+        category: 'Dokumentasi Foto & Video',
+        itemName: 'Red Carpet Glambot, Multi-Cam Gala & Buku Histori 25 Tahun',
+        vendorName: 'Prestige Media House',
+        pic: 'Humas Wijaya Kusuma',
+        estimatedCost: 24000000,
+        actualCost: 22500000,
+        paidAmount: 22500000,
+        paymentStatus: 'LUNAS',
+        notes: 'Lunas',
+      },
+    ],
+  };
+
+  const list = budgetByEvent[meta.eventType] || budgetByEvent.WEDDING;
+
+  return list.map((b, idx) => ({
+    id: `bdg_${meta.slug}_${idx + 1}`,
+    category: b.category,
+    itemName: b.itemName,
+    vendorName: b.vendorName,
+    vendorContact: `021-57900${idx + 11}`,
+    pic: b.pic,
+    estimatedCost: b.estimatedCost,
+    actualCost: b.actualCost,
+    paidAmount: b.paidAmount,
+    paymentStatus: b.paymentStatus,
+    dueDate: '2026-10-15',
+    notes: b.notes,
+    updatedAt: '2026-10-24',
+  }));
 }
 
 function buildDummyWishesForClient(
-  meta: ShowcaseDummyClientMeta
+  meta: ShowcaseDummyClientMeta,
+  guests: WeddingGuest[]
 ): GuestWish[] {
+  const g1 = guests[0];
+  const g2 = guests[1] || guests[0];
+  const g3 = guests[2] || guests[0];
+
+  if (meta.eventType === 'BIRTHDAY') {
+    return [
+      {
+        id: `wsh_${meta.slug}_1`,
+        invitationCode: g1.invitationToken || meta.sampleHashToken,
+        guestName: g1.guestName,
+        institution: g1.institution,
+        relation: 'Keluarga',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 4,
+        message:
+          'Happy Sweet 17th Aurelia sayang! Semoga di usia ke-17 ini Aurelia selalu diberkati kesehatan, kebahagiaan, makin berprestasi di musik maupun sekolah, dan menjadi kebanggaan keluarga!',
+        createdAt: '2026-10-24T10:15:00.000Z',
+        isPinned: true,
+        replyFromCouple:
+          'Terima kasih banyak Keluarga Besar Wijaya atas doa dan kasih sayangnya untuk Aurelia! Sampai bertemu di malam Candle Ceremony ya!',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_2`,
+        invitationCode: g2.invitationToken || 'B7k9Lm2pQx8vWz4nRt6Yu',
+        guestName: g2.guestName,
+        institution: g2.institution,
+        relation: 'Teman/Sahabat',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 3,
+        message:
+          'Happy 17th Birthday Aurelia!! Ga sabar banget buat seru-seruan bareng di Glasshouse! Wishing you endless joy and bright future ahead bestie!',
+        createdAt: '2026-10-24T09:30:00.000Z',
+        isPinned: false,
+        replyFromCouple:
+          'Thank you besties!! See you on the dance floor!',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_3`,
+        invitationCode: g3.invitationToken || 'B7k9Lm2pQx8vWz4nRt6Yu',
+        guestName: g3.guestName,
+        institution: g3.institution,
+        relation: 'Teman/Sahabat',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Selamat ulang tahun ke-17 Aurelia! Teruslah menginspirasi lewat alunan musik pianomu. Kami pasti hadir tepat waktu!',
+        createdAt: '2026-10-24T08:45:00.000Z',
+        isPinned: false,
+        moderationStatus: 'APPROVED',
+      },
+    ];
+  }
+
+  if (meta.eventType === 'GRADUATION') {
+    return [
+      {
+        id: `wsh_${meta.slug}_1`,
+        invitationCode: g1.invitationToken || meta.sampleHashToken,
+        guestName: g1.guestName,
+        institution: g1.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Selamat dan sukses kepada Dr. Bagaskara Putra, S.T., M.Sc. atas diraihnya gelar Doktor Teknik Informatika ITB dengan predikat Cum Laude. Semoga riset dan ilmunya terus membawa kemajuan bagi Indonesia.',
+        createdAt: '2026-10-24T10:15:00.000Z',
+        isPinned: true,
+        replyFromCouple:
+          'Hatur nuhun yang sebesar-besarnya Prof. Hendra atas bimbingan, ilmu, dan keteladanan Bapak selama masa studi doktoral saya.',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_2`,
+        invitationCode: g2.invitationToken || meta.sampleHashToken,
+        guestName: g2.guestName,
+        institution: g2.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Turut bangga atas pencapaian akademik tertinggi Dr. Bagaskara. Sampai berjumpa pada Sidang Terbuka di Aula Barat ITB dan jamuan syukuran di Plataran.',
+        createdAt: '2026-10-24T09:30:00.000Z',
+        isPinned: false,
+        replyFromCouple:
+          'Terima kasih banyak Prof. Bambang atas kehormatan kehadirannya.',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_3`,
+        invitationCode: g3.invitationToken || meta.sampleHashToken,
+        guestName: g3.guestName,
+        institution: g3.institution,
+        relation: 'Keluarga',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 4,
+        message:
+          'Alhamdulillah, rasa syukur tak terhingga atas kelulusan Doktor Bagaskara. Doa keluarga besar senantiasa menyertai langkah pengabdianmu.',
+        createdAt: '2026-10-24T08:45:00.000Z',
+        isPinned: false,
+        moderationStatus: 'APPROVED',
+      },
+    ];
+  }
+
+  if (meta.eventType === 'MEETING') {
+    return [
+      {
+        id: `wsh_${meta.slug}_1`,
+        invitationCode: g1.invitationToken || meta.sampleHashToken,
+        guestName: g1.guestName,
+        institution: g1.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Delegasi Direksi PT Mitra Energi mengonfirmasi kehadiran penuh pada Plenary Session & Sidang Komisi Rakornas Nusantara Global 2026. Siap mendukung akselerasi strategis 2027.',
+        createdAt: '2026-10-24T10:15:00.000Z',
+        isPinned: true,
+        replyFromCouple:
+          'Terima kasih kepada jajaran Direksi PT Mitra Energi. Akses meja VIP telah disiapkan oleh Sekretariat Rakornas.',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_2`,
+        invitationCode: g2.invitationToken || meta.sampleHashToken,
+        guestName: g2.guestName,
+        institution: g2.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Selamat menyelenggarakan Rakornas Nusantara Global 2026. Mari jadikan forum eksekutif ini momentum penguatan tata kelola dan inovasi grup.',
+        createdAt: '2026-10-24T09:30:00.000Z',
+        isPinned: false,
+        moderationStatus: 'APPROVED',
+      },
+    ];
+  }
+
+  if (meta.eventType === 'GALA_DINNER') {
+    return [
+      {
+        id: `wsh_${meta.slug}_1`,
+        invitationCode: g1.invitationToken || meta.sampleHashToken,
+        guestName: g1.guestName,
+        institution: g1.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Selamat merayakan 25th Silver Anniversary Wijaya Kusuma Group! Dua setengah dekade perjalanan luar biasa yang penuh integritas dan kontribusi nyata bagi negeri.',
+        createdAt: '2026-10-24T10:15:00.000Z',
+        isPinned: true,
+        replyFromCouple:
+          'Suatu kehormatan besar bagi kami menyambut Bapak/Ibu Komisaris Utama pada malam Royal Gala di St. Regis Jakarta.',
+        moderationStatus: 'APPROVED',
+      },
+      {
+        id: `wsh_${meta.slug}_2`,
+        invitationCode: g2.invitationToken || meta.sampleHashToken,
+        guestName: g2.guestName,
+        institution: g2.institution,
+        relation: 'Pejabat/VIP',
+        rsvpStatus: 'Hadir',
+        sessionChoice: 'Semua Sesi',
+        pax: 2,
+        message:
+          'Warmest congratulations on the 25th Silver Jubilee of Wijaya Kusuma. We are honored to attend the Royal Gala Fine Dining & Awarding Night.',
+        createdAt: '2026-10-24T09:30:00.000Z',
+        isPinned: false,
+        moderationStatus: 'APPROVED',
+      },
+    ];
+  }
+
   return [
     {
       id: `wsh_${meta.slug}_1`,
-      invitationCode: meta.sampleHashToken,
-      guestName: meta.sampleGuestName,
-      institution: 'Tamu Kehormatan VVIP',
+      invitationCode: g1.invitationToken || meta.sampleHashToken,
+      guestName: g1.guestName,
+      institution: g1.institution,
       relation: 'Pejabat/VIP',
       rsvpStatus: 'Hadir',
       sessionChoice: 'Semua Sesi',
       pax: 2,
-      message: `Selamat & sukses untuk acara ${meta.coupleLabel}! Semoga seluruh rangkaian berjalan lancar, penuh sukacita, dan membawa keberkahan yang melimpah.`,
+      message:
+        'Selamat menempuh hidup baru AKP Rayhan & dr. Clarissa! Semoga cinta kasih senantiasa mempersatukan dan memberkati rumah tangga kalian hingga kekal abadi.',
       createdAt: '2026-10-24T10:15:00.000Z',
       isPinned: true,
-      replyFromCouple: `Terima kasih banyak ${meta.sampleGuestName} atas doa dan konfirmasi kehadirannya! Kami sangat menantikan kehadiran Anda.`,
+      replyFromCouple: `Terima kasih banyak ${g1.guestName} atas doa tulus dan konfirmasi kehadirannya! Kami sangat menantikan kehadiran Anda.`,
       moderationStatus: 'APPROVED',
     },
     {
       id: `wsh_${meta.slug}_2`,
-      invitationCode: 'INV-0002',
-      guestName: 'Irjen Pol. (Purn.) Drs. Hendrawan Dirgantara & Ibu',
-      institution: 'Keluarga Kehormatan Jakarta',
+      invitationCode: g2.invitationToken || meta.sampleHashToken,
+      guestName: g2.guestName,
+      institution: g2.institution,
       relation: 'Keluarga',
       rsvpStatus: 'Hadir',
       sessionChoice: 'Semua Sesi',
       pax: 4,
       message:
-        'Doa terbaik dari kami sekeluarga. Semoga menjadi momen bersejarah yang penuh kebahagiaan dan diberkati senantiasa.',
+        'Doa restu terbaik dari kami sekeluarga untuk ananda Rayhan & Clarissa. Semoga menjadi keluarga yang rukun, bahagia, dan penuh berkat Tuhan.',
       createdAt: '2026-10-24T09:30:00.000Z',
       isPinned: false,
       replyFromCouple:
@@ -440,15 +1185,15 @@ function buildDummyWishesForClient(
     },
     {
       id: `wsh_${meta.slug}_3`,
-      invitationCode: 'INV-0005',
-      guestName: 'dr. Nadia Maharani, Sp.A & Partner',
-      institution: 'Sahabat Alumni',
-      relation: 'Teman/Sahabat',
+      invitationCode: g3.invitationToken || meta.sampleHashToken,
+      guestName: g3.guestName,
+      institution: g3.institution,
+      relation: 'Keluarga',
       rsvpStatus: 'Hadir',
       sessionChoice: 'Semua Sesi',
-      pax: 2,
+      pax: 4,
       message:
-        'Undangan digitalnya sangat elegan dan praktis! Kami pasti hadir tepat waktu.',
+        'Selamat berbahagia Rayhan & Clarissa! Undangan digitalnya sangat anggun, kami sekeluarga siap hadir di Pemberkatan & Resepsi.',
       createdAt: '2026-10-24T08:45:00.000Z',
       isPinned: false,
       moderationStatus: 'APPROVED',
@@ -491,11 +1236,37 @@ export function getShowcaseDummyClientState(
             : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85';
 
   const imgPage1 =
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85';
+    meta.eventType === 'BIRTHDAY'
+      ? 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1600&q=85'
+      : meta.eventType === 'GRADUATION'
+        ? 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85'
+        : meta.eventType === 'MEETING'
+          ? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=85'
+          : meta.eventType === 'GALA_DINNER'
+            ? 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1600&q=85'
+            : 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85';
+
   const imgAlt2 =
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85';
+    meta.eventType === 'BIRTHDAY'
+      ? 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1400&q=85'
+      : meta.eventType === 'GRADUATION'
+        ? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1400&q=85'
+        : meta.eventType === 'MEETING'
+          ? 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=85'
+          : meta.eventType === 'GALA_DINNER'
+            ? 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85'
+            : 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85';
+
   const imgAlt3 =
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85';
+    meta.eventType === 'BIRTHDAY'
+      ? 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85'
+      : meta.eventType === 'GRADUATION'
+        ? 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85'
+        : meta.eventType === 'MEETING'
+          ? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85'
+          : meta.eventType === 'GALA_DINNER'
+            ? 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1400&q=85'
+            : 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85';
 
   const slideLimit = tier === 'STARTER' ? 1 : tier === 'EXCLUSIVE' ? 2 : 3;
 
@@ -517,48 +1288,720 @@ export function getShowcaseDummyClientState(
     { id: 'ps_3', imageUrl: imgCover1, title: 'Wallpaper Slide 3' },
   ].slice(0, slideLimit);
 
-  const allBankAccounts: NonNullable<WeddingSettings['bankAccounts']> = [
-    {
-      id: 'ba_demo_1',
-      type: 'BANK',
-      bankName: 'Bank Central Asia (BCA)',
-      accountNumber: '8720991827',
-      accountHolder: meta.coupleLabel,
-      branchOrNote: 'KCP Senayan Jakarta',
-    },
-    {
-      id: 'ba_demo_2',
-      type: 'EWALLET',
-      bankName: 'QRIS / GoPay / OVO Nasional',
-      accountNumber: '0812-8899-0010',
-      accountHolder: meta.coupleLabel,
-      branchOrNote: 'E-Wallet & QRIS Nasional',
-    },
-    {
-      id: 'ba_demo_3',
-      type: 'PAYPAL',
-      bankName: 'PayPal International (USD / EUR / SGD)',
-      accountNumber: 'https://paypal.me/meplandemo',
-      accountHolder: `${meta.coupleLabel} Official`,
-      branchOrNote: 'International Gift Transfer',
-    },
-    {
-      id: 'ba_demo_4',
-      type: 'CRYPTO',
-      bankName: 'Tether USDT (TRC20 / ERC20 / BEP20)',
-      accountNumber: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
-      accountHolder: `${meta.coupleLabel} Web3 Vault`,
-      branchOrNote: 'Jaringan TRON (TRC20)',
-      cryptoNetwork: 'TRON (TRC20)',
-    },
-  ];
+  // Real user BCA & QRIS Digital Envelope:
+  // - Wedding (2 Mempelai) -> 2 Rekening BCA
+  // - Single-Host Event (Birthday, Graduation, Meeting, Gala Dinner) -> 1 Rekening BCA
+  const bankAccountsForEvent: NonNullable<WeddingSettings['bankAccounts']> =
+    isWedding
+      ? [
+          {
+            id: 'ba_demo_wedding_1',
+            type: 'BANK',
+            bankName: 'BANK BCA',
+            accountNumber: '6790440143',
+            accountHolder: 'Eko Agung Krisdianto (Mempelai Pria)',
+            branchOrNote: 'Transfer Amplop Digital',
+          },
+          {
+            id: 'ba_demo_wedding_2',
+            type: 'BANK',
+            bankName: 'BANK BCA',
+            accountNumber: '5005205708',
+            accountHolder: 'Selo Nelci Agustina (Mempelai Wanita)',
+            branchOrNote: 'Transfer Amplop Digital',
+          },
+        ]
+      : meta.eventType === 'BIRTHDAY'
+        ? [
+            {
+              id: 'ba_demo_birthday_1',
+              type: 'BANK',
+              bankName: 'BANK BCA',
+              accountNumber: '6790440143',
+              accountHolder: 'Aurelia Valerie (a.n. Eko Agung Krisdianto)',
+              branchOrNote: 'Kado Digital Sweet 17th',
+            },
+          ]
+        : meta.eventType === 'GRADUATION'
+          ? [
+              {
+                id: 'ba_demo_graduation_1',
+                type: 'BANK',
+                bankName: 'BANK BCA',
+                accountNumber: '6790440143',
+                accountHolder:
+                  'Dr. Bagaskara Putra, M.Sc. (a.n. Eko Agung Krisdianto)',
+                branchOrNote: 'Tanda Kasih Syukuran Wisuda',
+              },
+            ]
+          : meta.eventType === 'MEETING'
+            ? [
+                {
+                  id: 'ba_demo_meeting_1',
+                  type: 'BANK',
+                  bankName: 'BANK BCA',
+                  accountNumber: '6790440143',
+                  accountHolder:
+                    'Panitia Rakornas Nusantara (a.n. Eko Agung Krisdianto)',
+                  branchOrNote: 'Kontribusi & Sponsorship Resmi',
+                },
+              ]
+            : [
+                {
+                  id: 'ba_demo_gala_1',
+                  type: 'BANK',
+                  bankName: 'BANK BCA',
+                  accountNumber: '6790440143',
+                  accountHolder:
+                    'Wijaya Kusuma Foundation (a.n. Eko Agung Krisdianto)',
+                  branchOrNote: 'Apresiasi & Charity Gala Dinner',
+                },
+              ];
 
-  const filteredBankAccounts =
-    tier === 'STARTER'
-      ? allBankAccounts.slice(0, 2)
-      : tier === 'EXCLUSIVE'
-        ? allBankAccounts.slice(0, 2)
-        : allBankAccounts;
+  const profileConfig =
+    meta.eventType === 'BIRTHDAY'
+      ? {
+          showSecondProfile: false,
+          profileSectionTitle: 'Profil Yang Berulang Tahun',
+          eventHostRoleLabel: 'The Celebrant • Sweet 17th',
+          groomFullName: 'Aurelia Valerie Maharani',
+          groomNickname: 'Aurelia',
+          groomRankAndTitle: 'Sweet 17th Birthday Celebrant',
+          groomUnit: 'SMA Katolik Santa Ursula Jakarta',
+          groomOrigin: 'Jakarta',
+          groomParents:
+            'Putri Tercinta dari Bapak Hendrawan Wijaya & Ibu Clarissa Maharani',
+          groomPhotoUrl:
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=85',
+          brideFullName: '',
+          brideNickname: '',
+          brideTitle: '',
+          brideOrigin: '',
+          brideParents: '',
+          bridePhotoUrl: '',
+          quoteVerse:
+            'Bersyukur atas setiap langkah pertumbuhan, cinta keluarga, dan persahabatan indah di usia ke-17 tahun.',
+          quoteSource: 'Sweet 17th Milestone — Aurelia Valerie',
+          invitationOpeningText:
+            'Dengan penuh sukacita, kami mengundang sahabat dan keluarga tercinta untuk merayakan malam spesial Sweet 17th Birthday Aurelia Valerie.',
+          invitationClosingText:
+            'Kehadiran dan doa terbaik dari teman-teman serta keluarga adalah kado terindah di hari ulang tahunku yang ke-17.',
+          storySectionTitle: 'Perjalanan Usia Aurelia',
+          giftSectionTitle: 'Kado Digital & QRIS',
+          giftRecipientName: 'Aurelia Valerie Maharani',
+        }
+      : meta.eventType === 'GRADUATION'
+        ? {
+            showSecondProfile: false,
+            profileSectionTitle: 'Profil Wisudawan',
+            eventHostRoleLabel: 'Wisudawan Doktor • Cum Laude',
+            groomFullName: 'Dr. Bagaskara Putra, S.T., M.Sc.',
+            groomNickname: 'Bagaskara',
+            groomRankAndTitle: 'Doktor Teknik Informatika (Predikat Cum Laude)',
+            groomUnit: 'Institut Teknologi Bandung (ITB)',
+            groomOrigin: 'Bandung',
+            groomParents:
+              'Putra dari Bapak Prof. Drs. Santoso Putra & Ibu Dra. Dewi Sartika',
+            groomPhotoUrl:
+              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=85',
+            brideFullName: '',
+            brideNickname: '',
+            brideTitle: '',
+            brideOrigin: '',
+            brideParents: '',
+            bridePhotoUrl: '',
+            quoteVerse:
+              'Ilmu pengetahuan adalah pelita pengabdian; setiap gelar adalah amanah untuk memberi manfaat yang lebih luas bagi bangsa.',
+            quoteSource: 'Syukuran Promosi Doktor ITB — 2026',
+            invitationOpeningText:
+              'Ungkapan syukur yang mendalam atas diraihnya gelar Doktor, kami mengundang Bapak/Ibu/Kolega untuk hadir pada acara Syukuran Wisuda Doktor.',
+            invitationClosingText:
+              'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Rekan Akademisi berkenan hadir memberikan doa restu.',
+            storySectionTitle: 'Jejak Langkah Akademik',
+            giftSectionTitle: 'Tanda Kasih & Apresiasi Digital',
+            giftRecipientName: 'Dr. Bagaskara Putra, S.T., M.Sc.',
+          }
+        : meta.eventType === 'MEETING'
+          ? {
+              showSecondProfile: false,
+              profileSectionTitle: 'Penyelenggara & Keynote Utama',
+              eventHostRoleLabel: 'Komite Eksekutif Nasional',
+              groomFullName: 'Komite Eksekutif Rakornas Nusantara Global',
+              groomNickname: 'Rakornas 2026',
+              groomRankAndTitle: 'Dewan Direksi & Pimpinan Wilayah Se-Indonesia',
+              groomUnit: 'Nusantara Global Holding Tbk',
+              groomOrigin: 'Jakarta',
+              groomParents: 'Sekretariat Jenderal Korporat • Jakarta Pusat',
+              groomPhotoUrl:
+                'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=85',
+              brideFullName: '',
+              brideNickname: '',
+              brideTitle: '',
+              brideOrigin: '',
+              brideParents: '',
+              bridePhotoUrl: '',
+              quoteVerse:
+                'Sinergi kepemimpinan, transformasi digital, dan tata kelola berintegritas menuju pertumbuhan berkelanjutan 2027.',
+              quoteSource: 'Piagam Rakornas Nusantara Global',
+              invitationOpeningText:
+                'Dengan hormat, kami mengundang jajaran Dewan Komisaris, Direksi, dan Pimpinan Wilayah untuk menghadiri Rapat Koordinasi Nasional Nusantara Global 2026.',
+              invitationClosingText:
+                'Partisipasi aktif dan kehadiran tepat waktu seluruh delegasi sangat menentukan keberhasilan penyusunan Rencana Strategis 2027.',
+              storySectionTitle: 'Tonggak Transformasi Korporasi',
+              giftSectionTitle: 'Kontribusi & Sponsorship Resmi',
+              giftRecipientName: 'Sekretariat Rakornas Nusantara Global',
+            }
+          : meta.eventType === 'GALA_DINNER'
+            ? {
+                showSecondProfile: false,
+                profileSectionTitle: 'Tuan Rumah Kehormatan',
+                eventHostRoleLabel: 'Executive Host • 25th Silver Jubilee',
+                groomFullName:
+                  'Bapak Ir. H. Baskoro Wijaya Kusuma & Dewan Komisaris',
+                groomNickname: 'Wijaya Kusuma Gala',
+                groomRankAndTitle: 'Founder & Chairman Wijaya Kusuma Group',
+                groomUnit: '25th Silver Anniversary Appreciation Night',
+                groomOrigin: 'Jakarta',
+                groomParents:
+                  'Menghormati Seluruh Mitra Strategis & Sahabat Kehormatan',
+                groomPhotoUrl:
+                  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=800&q=85',
+                brideFullName: '',
+                brideNickname: '',
+                brideTitle: '',
+                brideOrigin: '',
+                brideParents: '',
+                bridePhotoUrl: '',
+                quoteVerse:
+                  'Dua puluh lima tahun berkarya bersama dalam kepercayaan, dedikasi, dan persahabatan yang tak ternilai.',
+                quoteSource: '25th Silver Jubilee — Wijaya Kusuma',
+                invitationOpeningText:
+                  'Merayakan 25 tahun perjalanan penuh makna, kami mengundang Bapak/Ibu Tamu Kehormatan VVIP pada malam Royal Gala Dinner Wijaya Kusuma.',
+                invitationClosingText:
+                  'Kehadiran Bapak/Ibu merupakan kehormatan tertinggi dalam perayaan 25th Silver Anniversary ini.',
+                storySectionTitle: '25 Tahun Jejak Karya',
+                giftSectionTitle: 'Apresiasi & Charity Foundation',
+                giftRecipientName: 'Wijaya Kusuma Charity Foundation',
+              }
+            : {
+                showSecondProfile: true,
+                profileSectionTitle: 'Profil Kedua Mempelai',
+                eventHostRoleLabel: 'Mempelai Pria & Wanita',
+                groomFullName: 'AKP Rayhan Dirgantara, S.Tr.K., S.I.K.',
+                groomNickname: 'Rayhan',
+                groomRankAndTitle: 'Mempelai Pria',
+                groomUnit: 'Bareskrim Polri',
+                groomOrigin: 'Jakarta',
+                groomParents:
+                  'Putra Pertama dari Bapak Irjen Pol. (Purn.) Drs. Hendrawan Dirgantara & Ibu Hj. Ratna Kusuma',
+                groomPhotoUrl:
+                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=85',
+                brideFullName: 'dr. Clarissa Aurelia Putri, Sp.DV',
+                brideNickname: 'Clarissa',
+                brideTitle: 'Mempelai Wanita',
+                brideOrigin: 'Bandung',
+                brideParents:
+                  'Putri Kedua dari Bapak Prof. dr. Haryanto Kusuma, Sp.JP(K) & Ibu drg. Sylvia Anggraini',
+                bridePhotoUrl:
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=85',
+                quoteVerse:
+                  'Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan.',
+                quoteSource: 'Kolose 3 : 14',
+                invitationOpeningText:
+                  'Dengan memohon kasih dan berkat Tuhan Yang Maha Esa, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri pernikahan putra-putri kami.',
+                invitationClosingText:
+                  'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.',
+                storySectionTitle: 'Kisah Perjalanan Cinta',
+                giftSectionTitle: 'Amplop Digital & Tanda Kasih',
+                giftRecipientName: 'Rayhan Dirgantara & Clarissa Aurelia',
+              };
+
+  const scheduleEventsForType: NonNullable<WeddingSettings['scheduleEvents']> =
+    meta.eventType === 'BIRTHDAY'
+      ? [
+          {
+            id: `ev_${meta.slug}_1`,
+            badge: 'SESI 1 • CANDLE CEREMONY',
+            title: 'Candle Ceremony & 17 Wishes',
+            subtitle: 'Prosesi Tiup 17 Lilin Kehormatan & Doa Keluarga',
+            dateLabel: meta.dateSummary,
+            timeLabel: '18.30 - 19.30 WIB',
+            datetime: '2026-11-15T18:30:00+07:00',
+            venue: 'The Glasshouse Ritz-Carlton Pacific Place',
+            address: 'SCBD Jl. Jend. Sudirman Kav. 52-53, Jakarta Selatan',
+            mapsUrl: 'https://maps.google.com',
+            dresscode: 'Cocktail Attire — Pastel / Blush Gold / White',
+            isMainEvent: true,
+            enableCountdown: true,
+            showOnInvitation: true,
+          },
+          {
+            id: `ev_${meta.slug}_2`,
+            badge: 'SESI 2 • DINNER & PARTY',
+            title: 'Birthday Dinner & After Party DJ',
+            subtitle: 'Fine Buffet, Games & Live DJ Performance',
+            dateLabel: meta.dateSummary,
+            timeLabel: '19.30 - 22.00 WIB',
+            datetime: '2026-11-15T19:30:00+07:00',
+            venue: 'The Glasshouse Ritz-Carlton Pacific Place',
+            address: 'SCBD Jl. Jend. Sudirman Kav. 52-53, Jakarta Selatan',
+            mapsUrl: 'https://maps.google.com',
+            dresscode: 'Party Chic / Semi-Formal',
+            isMainEvent: false,
+            enableCountdown: true,
+            showOnInvitation: true,
+          },
+        ]
+      : meta.eventType === 'GRADUATION'
+        ? [
+            {
+              id: `ev_${meta.slug}_1`,
+              badge: 'SESI 1 • SIDANG WISUDA',
+              title: 'Sidang Terbuka Wisuda & Pengukuhan Doktor',
+              subtitle: 'Prosesi Akademik Resmi Senat ITB',
+              dateLabel: meta.dateSummary,
+              timeLabel: '08.00 - 11.00 WIB',
+              datetime: '2026-11-28T08:00:00+07:00',
+              venue: 'Aula Barat Institut Teknologi Bandung (ITB)',
+              address: 'Jl. Ganesha No. 10, Coblong, Kota Bandung',
+              mapsUrl: 'https://maps.google.com',
+              dresscode: 'PSL / Jas Formal / Batik Lengan Panjang',
+              isMainEvent: true,
+              enableCountdown: true,
+              showOnInvitation: true,
+            },
+            {
+              id: `ev_${meta.slug}_2`,
+              badge: 'SESI 2 • TASYAKURAN',
+              title: 'Tasyakuran Kelulusan & Jamuan Siang',
+              subtitle: 'Ramah Tamah Keluarga, Promotor & Kolega',
+              dateLabel: meta.dateSummary,
+              timeLabel: '12.30 - 15.30 WIB',
+              datetime: '2026-11-28T12:30:00+07:00',
+              venue: 'Plataran Bandung Heritage Dining',
+              address: 'Jl. Diponegoro No. 27, Citarum, Kota Bandung',
+              mapsUrl: 'https://maps.google.com',
+              dresscode: 'Smart Formal / Batik Eksekutif',
+              isMainEvent: false,
+              enableCountdown: true,
+              showOnInvitation: true,
+            },
+          ]
+        : meta.eventType === 'MEETING'
+          ? [
+              {
+                id: `ev_${meta.slug}_1`,
+                badge: 'SESI 1 • PLENARY SUMMIT',
+                title: 'Plenary Session & Keynote Speech Direktur Utama',
+                subtitle: 'Paparan Kinerja 2026 & Cetak Biru Korporasi 2027',
+                dateLabel: meta.dateSummary,
+                timeLabel: '08.30 - 12.00 WIB',
+                datetime: '2026-12-03T08:30:00+07:00',
+                venue: 'Raffles Grand Ballroom Jakarta',
+                address: 'Ciputra World 1, Jl. Prof. Dr. Satrio Kav. 3-5, Jakarta',
+                mapsUrl: 'https://maps.google.com',
+                dresscode: 'Executive Business Suit / Lounge Suit',
+                isMainEvent: true,
+                enableCountdown: true,
+                showOnInvitation: true,
+              },
+              {
+                id: `ev_${meta.slug}_2`,
+                badge: 'SESI 2 • SIDANG KOMISI',
+                title: 'Sidang Komisi Strategis & Penandatanganan Pakta',
+                subtitle: 'Konsolidasi Target Regional & Komitmen Kinerja',
+                dateLabel: meta.dateSummary,
+                timeLabel: '13.30 - 17.00 WIB',
+                datetime: '2026-12-03T13:30:00+07:00',
+                venue: 'Raffles Summit Hall Lt. 3',
+                address: 'Ciputra World 1, Jl. Prof. Dr. Satrio Kav. 3-5, Jakarta',
+                mapsUrl: 'https://maps.google.com',
+                dresscode: 'Batik Korporat Nusantara / Formal',
+                isMainEvent: false,
+                enableCountdown: true,
+                showOnInvitation: true,
+              },
+            ]
+          : meta.eventType === 'GALA_DINNER'
+            ? [
+                {
+                  id: `ev_${meta.slug}_1`,
+                  badge: 'SESI 1 • RED CARPET',
+                  title: 'Red Carpet & Welcome Symphony Cocktail',
+                  subtitle: 'Penyambutan Tamu VVIP & Pameran 25 Tahun Karya',
+                  dateLabel: meta.dateSummary,
+                  timeLabel: '18.30 - 19.30 WIB',
+                  datetime: '2026-12-11T18:30:00+07:00',
+                  venue: 'Astor Foyer — The St. Regis Jakarta',
+                  address: 'Rajawali Place, Jl. HR Rasuna Said, Kuningan, Jakarta',
+                  mapsUrl: 'https://maps.google.com',
+                  dresscode: 'Black Tie / Evening Gown / Tuxedo',
+                  isMainEvent: false,
+                  enableCountdown: true,
+                  showOnInvitation: true,
+                },
+                {
+                  id: `ev_${meta.slug}_2`,
+                  badge: 'SESI 2 • ROYAL GALA',
+                  title: 'Royal Gala Fine Dining & Awarding Night',
+                  subtitle: 'Perjamuan 6-Course, Konser Orkestra & Penganugerahan',
+                  dateLabel: meta.dateSummary,
+                  timeLabel: '19.30 - 22.30 WIB',
+                  datetime: '2026-12-11T19:30:00+07:00',
+                  venue: 'Astor Ballroom — The St. Regis Jakarta',
+                  address: 'Rajawali Place, Jl. HR Rasuna Said, Kuningan, Jakarta',
+                  mapsUrl: 'https://maps.google.com',
+                  dresscode: 'Black Tie / National High Couture',
+                  isMainEvent: true,
+                  enableCountdown: true,
+                  showOnInvitation: true,
+                },
+              ]
+            : [
+                {
+                  id: `ev_${meta.slug}_1`,
+                  badge: 'PRA-ACARA • KELUARGA',
+                  title: 'Biston & Pertemuan Keluarga Besar',
+                  subtitle: 'Silaturahmi & Doa Restu Kedua Keluarga',
+                  dateLabel: 'Jumat, 16 Oktober 2026',
+                  timeLabel: '16.00 - 19.00 WIB',
+                  datetime: '2026-10-16T16:00:00+07:00',
+                  venue: 'Kediaman Keluarga Dirgantara',
+                  address: 'Kebayoran Baru, Jakarta Selatan',
+                  mapsUrl: 'https://maps.google.com',
+                  dresscode: 'Batik Keluarga / Smart Casual',
+                  isMainEvent: false,
+                  enableCountdown: true,
+                  showOnInvitation: true,
+                },
+                {
+                  id: `ev_${meta.slug}_2`,
+                  badge: 'ACARA UTAMA • PEMBERKATAN',
+                  title: 'Pemberkatan / Akad Nikah Suci',
+                  subtitle: 'Pengucapan Janji Suci Pernikahan',
+                  dateLabel: meta.dateSummary,
+                  timeLabel: '09.00 - 11.00 WIB',
+                  datetime: '2026-10-24T09:00:00+07:00',
+                  venue: meta.venueSummary,
+                  address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
+                  mapsUrl: 'https://maps.google.com',
+                  dresscode: 'Putih / Champagne / Kebaya Formal',
+                  isMainEvent: true,
+                  enableCountdown: true,
+                  showOnInvitation: true,
+                },
+                {
+                  id: `ev_${meta.slug}_3`,
+                  badge: 'PUNCAK ACARA • RESEPSI',
+                  title: 'Resepsi Malam Kehormatan',
+                  subtitle: 'Perjamuan Malam & Ramah Tamah Tamu VVIP',
+                  dateLabel: meta.dateSummary,
+                  timeLabel: '18.30 - 21.30 WIB',
+                  datetime: '2026-10-24T18:30:00+07:00',
+                  venue: meta.venueSummary,
+                  address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
+                  mapsUrl: 'https://maps.google.com',
+                  dresscode: 'Jas Formal /PDU / Gaun Malam / Batik Eksekutif',
+                  isMainEvent: false,
+                  enableCountdown: true,
+                  showOnInvitation: true,
+                },
+              ];
+
+  const loveStoryForType: WeddingSettings['loveStory'] =
+    meta.eventType === 'BIRTHDAY'
+      ? [
+          {
+            id: 'ls_bday_1',
+            dateLabel: '15 November 2009',
+            title: 'Kelahiran Sang Buah Hati',
+            location: 'Jakarta',
+            description:
+              'Awal kebahagiaan keluarga Bapak Hendrawan & Ibu Clarissa menyambut hadirnya Aurelia Valerie di dunia.',
+          },
+          {
+            id: 'ls_bday_2',
+            dateLabel: '2022 – 2025',
+            title: 'Prestasi Musik & Persahabatan',
+            location: 'SMA Santa Ursula Jakarta',
+            description:
+              'Memenangkan kejuaraan piano klasik remaja tingkat nasional dan tumbuh bersama sahabat-sahabat terbaik.',
+          },
+          {
+            id: 'ls_bday_3',
+            dateLabel: '15 November 2026',
+            title: 'Sweet 17th Milestone',
+            location: 'The Glasshouse Ritz-Carlton',
+            description:
+              'Melangkah menuju usia dewasa muda dengan penuh rasa syukur, doa orang tua, dan cita-cita mulia.',
+          },
+        ]
+      : meta.eventType === 'GRADUATION'
+        ? [
+            {
+              id: 'ls_grad_1',
+              dateLabel: '2017',
+              title: 'Sarjana Teknik Informatika (S.T.)',
+              location: 'Bandung',
+              description:
+                'Menyelesaikan studi sarjana dengan fokus riset awal pada sistem terdistribusi dan kecerdasan buatan.',
+            },
+            {
+              id: 'ls_grad_2',
+              dateLabel: '2020',
+              title: 'Magister Sains (M.Sc.) & Publikasi Riset',
+              location: 'ITB Bandung',
+              description:
+                'Melanjutkan riset pascasarjana serta memublikasikan makalah ilmiah pada jurnal internasional bereputasi.',
+            },
+            {
+              id: 'ls_grad_3',
+              dateLabel: '28 November 2026',
+              title: 'Promosi Doktor (Dr. Cum Laude)',
+              location: 'Aula Barat ITB Bandung',
+              description:
+                'Meraih gelar akademik tertinggi Doktor dengan predikat Cum Laude berkat doa keluarga dan bimbingan tim promotor.',
+            },
+          ]
+        : meta.eventType === 'MEETING'
+          ? [
+              {
+                id: 'ls_meet_1',
+                dateLabel: 'Kuartal I — 2025',
+                title: 'Integrasi Ekosistem Digital Nasional',
+                location: 'Kantor Pusat Jakarta',
+                description:
+                  'Penyatuan infrastruktur teknologi seluruh entitas anak usaha dalam satu platform terpadu.',
+              },
+              {
+                id: 'ls_meet_2',
+                dateLabel: 'Kuartal II — 2026',
+                title: 'Ekspansi 34 Wilayah Operasional',
+                location: 'Nusantara Regional',
+                description:
+                  'Pencapaian pertumbuhan kinerja positif di seluruh wilayah operasional Indonesia.',
+              },
+              {
+                id: 'ls_meet_3',
+                dateLabel: '3 Desember 2026',
+                title: 'Rakornas & Pakta Strategis 2027',
+                location: 'Raffles Hotel Jakarta',
+                description:
+                  'Penyelarasan visi jajaran Komisaris, Direksi, dan Pimpinan Wilayah menuju lompatan kinerja 2027.',
+              },
+            ]
+          : meta.eventType === 'GALA_DINNER'
+            ? [
+                {
+                  id: 'ls_gala_1',
+                  dateLabel: 'Desember 2001',
+                  title: 'Fondasi Pertama Wijaya Kusuma',
+                  location: 'Jakarta',
+                  description:
+                    'Berdirinya Wijaya Kusuma Group dengan komitmen luhur terhadap kualitas, integritas, dan kemitraan.',
+                },
+                {
+                  id: 'ls_gala_2',
+                  dateLabel: '2015',
+                  title: 'Transformasi Global & Filantropi',
+                  location: 'Asia Pasifik',
+                  description:
+                    'Perluasan jejaring mitra internasional sekaligus pendirian Wijaya Kusuma Charity Foundation.',
+                },
+                {
+                  id: 'ls_gala_3',
+                  dateLabel: '11 Desember 2026',
+                  title: '25th Silver Jubilee Royal Gala',
+                  location: 'The St. Regis Jakarta',
+                  description:
+                    'Malam apresiasi tertinggi bagi para sahabat, mitra strategis, dan insan terbaik selama 25 tahun berkarya.',
+                },
+              ]
+            : [
+                {
+                  id: 'ls_wed_1',
+                  dateLabel: 'Mei 2022',
+                  title: 'Pertemuan Pertama',
+                  location: 'Jakarta Pusat',
+                  description:
+                    'Pertemuan tak terduga dalam penugasan bakti kesehatan bersama yang menumbuhkan kekaguman dan rasa saling menghormati.',
+                },
+                {
+                  id: 'ls_wed_2',
+                  dateLabel: 'Agustus 2025',
+                  title: 'Lamaran Resmi Kedua Keluarga',
+                  location: 'Bandung',
+                  description:
+                    'Dengan restu penuh kedua orang tua, Rayhan meminang Clarissa dalam suasana hangat dan khidmat.',
+                },
+                {
+                  id: 'ls_wed_3',
+                  dateLabel: '24 Oktober 2026',
+                  title: 'Ikatan Janji Suci Pernikahan',
+                  location: 'Hotel Mulia Senayan, Jakarta',
+                  description:
+                    'Melangkah bersama dalam ikatan pernikahan suci untuk membangun rumah tangga yang diberkati selamanya.',
+                },
+              ];
+
+  const galleryPhotosForType: WeddingSettings['galleryPhotos'] =
+    meta.eventType === 'BIRTHDAY'
+      ? [
+          {
+            id: 'gp_bday_1',
+            title: 'Sweet 17th Portrait — Aurelia',
+            caption: 'Potret anggun Aurelia Valerie menyambut usia ke-17 tahun.',
+            imageUrl: imgCover1,
+            category: 'Sweet 17th',
+          },
+          {
+            id: 'gp_bday_2',
+            title: 'Golden Candlelight Wishes',
+            caption: 'tujuh belas lilin harapan dan doa terbaik.',
+            imageUrl: imgHero1,
+            category: 'Celebration',
+          },
+          {
+            id: 'gp_bday_3',
+            title: 'Blush Rose Editorial',
+            caption: 'Pesona masa remaja yang penuh semangat dan keceriaan.',
+            imageUrl: imgAlt2,
+            category: 'Portrait',
+          },
+          {
+            id: 'gp_bday_4',
+            title: 'Sparkling Soirée Moments',
+            caption: 'Kebersamaan hangat bersama keluarga dan sahabat tercinta.',
+            imageUrl: imgAlt3,
+            category: 'Party',
+          },
+        ]
+      : meta.eventType === 'GRADUATION'
+        ? [
+            {
+              id: 'gp_grad_1',
+              title: 'Pengukuhan Doktor ITB',
+              caption: 'Momen bersejarah kelulusan Doktor dengan predikat Cum Laude.',
+              imageUrl: imgCover1,
+              category: 'Wisuda ITB',
+            },
+            {
+              id: 'gp_grad_2',
+              title: 'Aula Barat Ganesha',
+              caption: 'Dedikasi riset dan pengabdian ilmu pengetahuan.',
+              imageUrl: imgHero1,
+              category: 'Akademik',
+            },
+            {
+              id: 'gp_grad_3',
+              title: 'Dr. Bagaskara Putra, S.T., M.Sc.',
+              caption: 'Potret resmi wisudawan program Doktor Teknik Informatika.',
+              imageUrl: imgAlt2,
+              category: 'Portrait',
+            },
+            {
+              id: 'gp_grad_4',
+              title: 'Syukuran Bersama Kolega & Promotor',
+              caption: 'Ungkapan terima kasih kepada keluarga dan guru besar.',
+              imageUrl: imgAlt3,
+              category: 'Tasyakuran',
+            },
+          ]
+        : meta.eventType === 'MEETING'
+          ? [
+              {
+                id: 'gp_meet_1',
+                title: 'Plenary Hall Rakornas 2026',
+                caption: 'Forum pimpinan eksekutif Nusantara Global se-Indonesia.',
+                imageUrl: imgCover1,
+                category: 'Plenary',
+              },
+              {
+                id: 'gp_meet_2',
+                title: 'Keynote & Strategic Vision',
+                caption: 'Paparan peta jalan transformasi digital 2027.',
+                imageUrl: imgHero1,
+                category: 'Keynote',
+              },
+              {
+                id: 'gp_meet_3',
+                title: 'Executive Boardroom',
+                caption: 'Sinergi kepemimpinan lintas divisi dan regional.',
+                imageUrl: imgAlt2,
+                category: 'Leadership',
+              },
+              {
+                id: 'gp_meet_4',
+                title: 'National Summit Delegation',
+                caption: 'Komitmen bersama menuju pertumbuhan berkelanjutan.',
+                imageUrl: imgAlt3,
+                category: 'Summit',
+              },
+            ]
+          : meta.eventType === 'GALA_DINNER'
+            ? [
+                {
+                  id: 'gp_gala_1',
+                  title: '25th Silver Jubilee Ballroom',
+                  caption: 'Kemegahan malam perayaan 25 tahun Wijaya Kusuma.',
+                  imageUrl: imgCover1,
+                  category: 'Royal Gala',
+                },
+                {
+                  id: 'gp_gala_2',
+                  title: 'Symphony & Toast of Honor',
+                  caption: 'Alunan orkestra mengiringi malam apresiasi mitra VVIP.',
+                  imageUrl: imgHero1,
+                  category: 'Symphony',
+                },
+                {
+                  id: 'gp_gala_3',
+                  title: 'Fine Dining Table Setting',
+                  caption: 'Perjamuan kehormatan berstandar internasional.',
+                  imageUrl: imgAlt2,
+                  category: 'Fine Dining',
+                },
+                {
+                  id: 'gp_gala_4',
+                  title: 'Silver Anniversary Awarding',
+                  caption: 'Penghargaan tertinggi bagi insan dan mitra berdedikasi.',
+                  imageUrl: imgAlt3,
+                  category: 'Awarding',
+                },
+              ]
+            : [
+                {
+                  id: 'gp_wed_1',
+                  title: 'Eternal Promise — Rayhan & Clarissa',
+                  caption: 'Potret utama kedua mempelai dalam balutan cahaya keemasan.',
+                  imageUrl: imgCover1,
+                  category: 'Prewedding',
+                },
+                {
+                  id: 'gp_wed_2',
+                  title: 'Two Souls One Heart',
+                  caption: 'Langkah bersama menuju janji suci pernikahan.',
+                  imageUrl: imgHero1,
+                  category: 'Highlight',
+                },
+                {
+                  id: 'gp_wed_3',
+                  title: 'Grace & Devotion',
+                  caption: 'Keanggunan cinta kasih yang mempersatukan.',
+                  imageUrl: imgAlt2,
+                  category: 'Editorial',
+                },
+                {
+                  id: 'gp_wed_4',
+                  title: 'Symphony of Blessing',
+                  caption: 'Doa restu keluarga mengiringi hari bahagia.',
+                  imageUrl: imgAlt3,
+                  category: 'Exclusive',
+                },
+              ];
+
+  const primaryEvent = scheduleEventsForType[0];
+  const secondaryEvent = scheduleEventsForType[scheduleEventsForType.length - 1];
 
   const settings: WeddingSettings = {
     ...INITIAL_SETTINGS,
@@ -570,7 +2013,9 @@ export function getShowcaseDummyClientState(
     showFloralOrnaments: meta.eventType !== 'MEETING',
     showFloatingPetals: meta.eventType !== 'MEETING',
     showSaveToCalendarButton: true,
-    showSecondProfile: isWedding,
+    showSecondProfile: profileConfig.showSecondProfile,
+    profileSectionTitle: profileConfig.profileSectionTitle,
+    eventHostRoleLabel: profileConfig.eventHostRoleLabel,
     profileFrameStyle:
       meta.eventType === 'WEDDING'
         ? 'ARCH_DOME'
@@ -578,75 +2023,42 @@ export function getShowcaseDummyClientState(
           ? 'CIRCLE'
           : 'EDITORIAL_RECT',
     coverBadgeText: meta.badgeId,
-    groomFullName: isWedding
-      ? 'AKP Rayhan Dirgantara, S.Tr.K., S.I.K.'
-      : meta.coupleLabel,
-    groomNickname: isWedding ? 'Rayhan' : meta.coupleLabel.split(' ')[0],
-    groomRankAndTitle: isWedding ? 'Mempelai Pria' : meta.badgeId,
-    groomUnit: isWedding ? 'Bareskrim Polri' : meta.venueSummary,
-    groomOrigin: 'Jakarta',
-    groomParents: isWedding
-      ? 'Putra Pertama dari Bapak Irjen Pol. (Purn.) Drs. Hendrawan Dirgantara & Ibu Hj. Ratna Kusuma'
-      : 'Keluarga Besar & Penyelenggara Utama',
-    groomPhotoUrl:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=85',
-    brideFullName: isWedding ? 'dr. Clarissa Aurelia Putri, Sp.DV' : '-',
-    brideNickname: isWedding ? 'Clarissa' : '',
-    brideTitle: 'Mempelai Wanita',
-    brideOrigin: 'Bandung',
-    brideParents: isWedding
-      ? 'Putri Kedua dari Bapak Prof. dr. Haryanto Kusuma, Sp.JP(K) & Ibu drg. Sylvia Anggraini'
-      : '-',
-    bridePhotoUrl:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=85',
+    groomFullName: profileConfig.groomFullName,
+    groomNickname: profileConfig.groomNickname,
+    groomRankAndTitle: profileConfig.groomRankAndTitle,
+    groomUnit: profileConfig.groomUnit,
+    groomOrigin: profileConfig.groomOrigin,
+    groomParents: profileConfig.groomParents,
+    groomPhotoUrl: profileConfig.groomPhotoUrl,
+    brideFullName: profileConfig.brideFullName,
+    brideNickname: profileConfig.brideNickname,
+    brideTitle: profileConfig.brideTitle,
+    brideOrigin: profileConfig.brideOrigin,
+    brideParents: profileConfig.brideParents,
+    bridePhotoUrl: profileConfig.bridePhotoUrl,
+    quoteVerse: profileConfig.quoteVerse,
+    quoteSource: profileConfig.quoteSource,
+    invitationOpeningText: profileConfig.invitationOpeningText,
+    invitationClosingText: profileConfig.invitationClosingText,
+    storySectionTitle: profileConfig.storySectionTitle,
+    giftSectionTitle: profileConfig.giftSectionTitle,
     coverBgUrl: imgCover1,
     heroPrewedUrl: imgHero1,
     pageBgUrl: imgPage1,
     coverSlides: fullCoverSlides,
     heroSlides: fullHeroSlides,
     pageSlides: fullPageSlides,
-    event1Title: isWedding ? 'Akad / Pemberkatan Suci' : 'Sesi Pembuka & Sambutan',
-    event1DateLabel: meta.dateSummary,
-    event1TimeLabel: '09.00 - 11.00 WIB',
-    event1Venue: meta.venueSummary,
-    event1Address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
-    event2Title: isWedding ? 'Resepsi Malam Kehormatan' : 'Puncak Acara & Gala Jamuan',
-    event2DateLabel: meta.dateSummary,
-    event2TimeLabel: '18.30 - 21.30 WIB',
-    event2Venue: meta.venueSummary,
-    event2Address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
-    scheduleEvents: [
-      {
-        id: `ev_${meta.slug}_1`,
-        badge: 'SESI 1 • UTAMA',
-        title: isWedding ? 'Pemberkatan / Akad Nikah' : 'Registrasi VVIP & Sesi Utama',
-        subtitle: 'Prosesi Khidmat & Doa Bersama',
-        dateLabel: meta.dateSummary,
-        timeLabel: '09.00 - 11.00 WIB',
-        datetime: '2026-10-24T09:00:00+07:00',
-        venue: meta.venueSummary,
-        address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
-        mapsUrl: 'https://maps.google.com',
-        dresscode: 'Formal / Batik Eksekutif',
-        enableCountdown: true,
-        showOnInvitation: true,
-      },
-      {
-        id: `ev_${meta.slug}_2`,
-        badge: 'SESI 2 • RESEPSI / GALA',
-        title: isWedding ? 'Resepsi & Jamuan Kehormatan' : 'Malam Puncak & Ramah Tamah',
-        subtitle: 'Perjamuan Eksklusif Tamu Kehormatan',
-        dateLabel: meta.dateSummary,
-        timeLabel: '18.30 - 21.30 WIB',
-        datetime: '2026-10-24T18:30:00+07:00',
-        venue: meta.venueSummary,
-        address: 'Jl. Asia Afrika, Senayan, Jakarta Pusat',
-        mapsUrl: 'https://maps.google.com',
-        dresscode: 'Black Tie / Gaun Malam / Jas Formal',
-        enableCountdown: true,
-        showOnInvitation: true,
-      },
-    ],
+    event1Title: primaryEvent.title,
+    event1DateLabel: primaryEvent.dateLabel,
+    event1TimeLabel: primaryEvent.timeLabel,
+    event1Venue: primaryEvent.venue,
+    event1Address: primaryEvent.address,
+    event2Title: secondaryEvent.title,
+    event2DateLabel: secondaryEvent.dateLabel,
+    event2TimeLabel: secondaryEvent.timeLabel,
+    event2Venue: secondaryEvent.venue,
+    event2Address: secondaryEvent.address,
+    scheduleEvents: scheduleEventsForType,
     showLoveStorySection: tier !== 'STARTER',
     showGallerySection: tier !== 'STARTER',
     musicSourceType: 'NCS_BUILTIN',
@@ -678,75 +2090,25 @@ export function getShowcaseDummyClientState(
     ],
     musicAutoplay: tier !== 'STARTER',
     showPhysicalGiftAddress: tier !== 'STARTER',
-    bankAccounts: filteredBankAccounts,
-    giftRecipientName: meta.coupleLabel,
-    giftShippingNote: 'Kontak Penerima: 0812-8899-0010',
+    showQrisButton: true,
+    qrisImageUrl: USER_REAL_QRIS_URL,
+    bankAccounts: bankAccountsForEvent,
+    giftRecipientName: profileConfig.giftRecipientName,
+    giftShippingNote: 'Konfirmasi Pengiriman: 0851-9822-2242 (Eko Agung K)',
     giftShippingAddress:
-      'Residence One Senayan Tower A Lt. 18, Kebayoran Baru, Jakarta Selatan 12190',
-    loveStory: [
-      {
-        id: 'ls_1',
-        dateLabel: '2022',
-        title: isWedding ? 'Pertemuan Pertama' : 'Awal Perjalanan & Visi',
-        location: 'Jakarta',
-        description:
-          'Sebuah awal yang penuh makna dan menjadi fondasi kuat menuju pencapaian hari bahagia ini.',
-      },
-      {
-        id: 'ls_2',
-        dateLabel: '2024',
-        title: isWedding ? 'Komitmen Bersama' : 'Dedikasi & Pencapaian Utama',
-        location: 'Bandung',
-        description:
-          'Melalui kerja keras, doa, dan dukungan penuh keluarga besar hingga tiba di titik bersejarah.',
-      },
-      {
-        id: 'ls_3',
-        dateLabel: 'Oktober 2026',
-        title: isWedding ? 'Ikatan Janji Suci' : 'Perayaan Puncak Kehormatan',
-        location: 'Jakarta',
-        description:
-          'Merayakan momen istimewa bersama seluruh keluarga, sahabat, dan tamu kehormatan.',
-      },
-    ],
-    galleryPhotos: [
-      {
-        id: 'gp_1',
-        title: 'Editorial Portrait I',
-        caption: 'Potret utama dalam balutan cahaya keemasan.',
-        imageUrl: imgCover1,
-        category: 'Highlight',
-      },
-      {
-        id: 'gp_2',
-        title: 'Editorial Portrait II',
-        caption: 'Momen kebersamaan yang abadi.',
-        imageUrl: imgHero1,
-        category: 'Highlight',
-      },
-      {
-        id: 'gp_3',
-        title: 'Editorial Portrait III',
-        caption: 'Keanggunan dalam setiap langkah.',
-        imageUrl: imgAlt2,
-        category: 'Exclusive',
-      },
-      {
-        id: 'gp_4',
-        title: 'Editorial Portrait IV',
-        caption: 'Simfoni kebahagiaan dan doa restu.',
-        imageUrl: imgAlt3,
-        category: 'Exclusive',
-      },
-    ],
+      meta.eventType === 'GRADUATION'
+        ? 'Jl. Dago Asri I No. 18, Coblong, Kota Bandung 40135'
+        : 'Residence One Senayan Tower A Lt. 18, Kebayoran Baru, Jakarta Selatan 12190',
+    loveStory: loveStoryForType,
+    galleryPhotos: galleryPhotosForType,
     updatedAt: '2026-10-24T12:00:00.000Z',
     updatedBy: 'demo_showcase',
   };
 
   const allGuests = buildDummyGuestsForClient(meta);
-  const allTasks = buildDummyTasksForClient(meta.slug);
-  const allBudget = buildDummyBudgetForClient(meta.slug);
-  const allWishes = buildDummyWishesForClient(meta);
+  const allTasks = buildDummyTasksForClient(meta);
+  const allBudget = buildDummyBudgetForClient(meta);
+  const allWishes = buildDummyWishesForClient(meta, allGuests);
 
   return {
     settings,

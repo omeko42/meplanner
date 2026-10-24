@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sparkles,
   Shield,
@@ -34,6 +34,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   MapPin,
   Music,
   BookOpen,
@@ -616,7 +617,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-wed-1',
         senderName: 'Komjen Pol (Purn.) Drs. H. Hendra Wijaya',
-        senderTitle: 'Tamu Kehormatan VVIP • INV-0001',
+        senderTitle: 'Tamu Kehormatan VVIP',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat menempuh hidup baru untuk AKP Rayhan & dr. Clarissa. Semoga menjadi keluarga yang rukun, penuh berkat, dan selalu menjadi teladan.',
@@ -627,7 +628,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-wed-2',
         senderName: 'Prof. Dr. dr. Setyo Wibowo, Sp.PD-KGEH',
-        senderTitle: 'Kolega RSUPN Dr. Cipto Mangunkusumo • INV-0002',
+        senderTitle: 'Kolega RSUPN Dr. Cipto Mangunkusumo',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat berbahagia dr. Clarissa & AKP Rayhan! Semoga cinta kasih selalu menyertai perjalanan rumah tangga kalian.',
@@ -638,7 +639,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-wed-3',
         senderName: 'Kombes Pol Aditya Pratama, S.I.K., M.Si.',
-        senderTitle: 'Rekan Senior Batalyon Akpol • INV-0003',
+        senderTitle: 'Rekan Senior Batalyon Akpol',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Lancar jaya sampai hari H Komandan Rayhan & dr. Clarissa! Kami beserta keluarga siap hadir di Grand Ballroom Mulia.',
@@ -730,7 +731,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-bday-1',
         senderName: 'Keluarga Besar Ir. H. Darmawan',
-        senderTitle: 'Keluarga Inti VIP • INV-0001',
+        senderTitle: 'Keluarga Inti VIP',
         attendanceBadge: 'Hadir • 4 Pax',
         message:
           'Happy Sweet 17th Aurelia sayang! Semoga semakin sukses, sehat, dan selalu membanggakan Papa & Mama.',
@@ -741,7 +742,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-bday-2',
         senderName: 'Michelle & Sahabat St. Louis',
-        senderTitle: 'Best Friends Table • INV-0002',
+        senderTitle: 'Best Friends Table',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Happy 17th Birthday Aurel!! Can’t wait to celebrate tonight at The Glasshouse!',
@@ -751,7 +752,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-bday-3',
         senderName: 'drg. Karina Putri & Partner',
-        senderTitle: 'Tamu VIP • INV-0003',
+        senderTitle: 'Tamu VIP',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat ulang tahun ke-17 Aurelia. Semoga segala cita-cita muliamu tercapai.',
@@ -843,7 +844,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-grad-1',
         senderName: 'Prof. Dr. dr. Bambang Wibisono, Sp.B',
-        senderTitle: 'Dekan & Guru Besar • INV-0001',
+        senderTitle: 'Dekan & Guru Besar',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat atas pelantikan dr. Kevin Pratama dengan predikat Cum Laude. Selamat mengabdi bagi masyarakat dan kemanusiaan.',
@@ -854,7 +855,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-grad-2',
         senderName: 'dr. Raka Aditama & Rekan Sejawat',
-        senderTitle: 'Sejawat Dokter Muda • INV-0002',
+        senderTitle: 'Sejawat Dokter Muda',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat Bro dr. Kevin! Perjuangan koas terbayar lunas hari ini. Sampai jumpa di Padma Ballroom!',
@@ -864,7 +865,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-grad-3',
         senderName: 'Keluarga Besar Bapak H. Nugroho',
-        senderTitle: 'Keluarga Kehormatan • INV-0003',
+        senderTitle: 'Keluarga Kehormatan',
         attendanceBadge: 'Hadir • 3 Pax',
         message:
           'Turut bersyukur dan bangga atas kelulusan dr. Kevin. Semoga ilmunya selalu membawa keberkahan.',
@@ -956,7 +957,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-meet-1',
         senderName: 'Dr. Ir. H. Prasetyo Hadi, M.Eng.',
-        senderTitle: 'Staf Ahli Utama Kementerian • INV-0001',
+        senderTitle: 'Staf Ahli Utama Kementerian',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Konfirmasi hadir pada sesi Plenary & Penandatanganan MoU. Apresiasi tinggi atas sistem registrasi digital yang sangat rapi.',
@@ -967,7 +968,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-meet-2',
         senderName: 'Direksi PT Nusantara Cloud Mandiri',
-        senderTitle: 'Mitra Strategis Utama • INV-0002',
+        senderTitle: 'Mitra Strategis Utama',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Kami siap hadir mendukung penuh kesuksesan Rakornas Transformasi Digital 2026.',
@@ -977,7 +978,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-meet-3',
         senderName: 'Sekretariat Daerah Provinsi Jawa Timur',
-        senderTitle: 'Delegasi Provinsi • INV-0003',
+        senderTitle: 'Delegasi Provinsi',
         attendanceBadge: 'Hadir • 3 Pax',
         message:
           'Delegasi Pemprov Jatim telah tiba di Jakarta dan siap menghadiri seluruh rangkaian sidang komisi.',
@@ -1069,7 +1070,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-gala-1',
         senderName: 'Dato’ Sri Alexander Tan & Madam Evelyn',
-        senderTitle: 'VVIP Royal Table 01 • INV-0001',
+        senderTitle: 'VVIP Royal Table 01',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'An honor to attend the Royal Sapphire Annual Gala 2026. Looking forward to a magnificent evening of fellowship.',
@@ -1080,7 +1081,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-gala-2',
         senderName: 'Komisaris Utama PT Mahakarya Investama',
-        senderTitle: 'Platinum Patron • INV-0002',
+        senderTitle: 'Platinum Patron',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Selamat atas penyelenggaraan Royal Sapphire Gala 2026. Konfirmasi hadir di Meja VVIP 02.',
@@ -1091,7 +1092,7 @@ const SIMULATION_EVENT_PRESETS: Record<
       {
         id: 'w-gala-3',
         senderName: 'dr. Clarissa Aurelia & Partner',
-        senderTitle: 'Philanthropy Ambassador • INV-0003',
+        senderTitle: 'Philanthropy Ambassador',
         attendanceBadge: 'Hadir • 2 Pax',
         message:
           'Sukses untuk malam apresiasi dan lelang amal Royal Sapphire 2026!',
@@ -1227,7 +1228,7 @@ const DUMMY_DASHBOARD_VENDORS = [
 
 const DUMMY_DASHBOARD_GUESTS = [
   {
-    code: 'INV-0001',
+    code: 'JHi4b3XgT2RQIDhZ9coLw',
     name: 'Komjen Pol (Purn.) Drs. H. Hendra Wijaya beserta Keluarga',
     institution: 'Tamu Kehormatan VVIP',
     priority: 'P1 - VIP',
@@ -1237,7 +1238,7 @@ const DUMMY_DASHBOARD_GUESTS = [
     phone: '0811-8800-001',
   },
   {
-    code: 'INV-0002',
+    code: 'K9m2pL7vR4xQ8nW3yB6cH',
     name: 'Prof. Dr. dr. Clarissa Wijaya, Sp.GK. & Partner',
     institution: 'Dewan Guru Besar Kedokteran',
     priority: 'P1 - VIP',
@@ -1247,7 +1248,7 @@ const DUMMY_DASHBOARD_GUESTS = [
     phone: '0812-9900-002',
   },
   {
-    code: 'INV-0003',
+    code: 'M4n8rT1kZ5vB9qP2wX7jD',
     name: 'Kombes Pol Aditya Pratama, S.I.K., M.Si.',
     institution: 'Rekan Kehormatan & Keluarga',
     priority: 'P1 - VIP',
@@ -1257,7 +1258,7 @@ const DUMMY_DASHBOARD_GUESTS = [
     phone: '0813-7700-003',
   },
   {
-    code: 'INV-0004',
+    code: 'P7q3wY6mN9cX2bV5kL8rF',
     name: 'Jajaran Direksi PT Mahakarya Nusantara Mandiri',
     institution: 'Mitra Strategis Eksekutif',
     priority: 'P1 - VIP',
@@ -1267,7 +1268,7 @@ const DUMMY_DASHBOARD_GUESTS = [
     phone: '0815-6600-004',
   },
   {
-    code: 'INV-0005',
+    code: 'R2t6yU9pL3kM7nB4vC8xZ',
     name: 'dr. Raka Aditama, Sp.JP (K) beserta Keluarga',
     institution: 'Kolega Rumah Sakit Pusat',
     priority: 'P2 - Kolega',
@@ -1329,9 +1330,9 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
     titleId: 'CRM Tamu VIP, Kuota Pax & Blast WhatsApp 1-Klik',
     titleEn: 'VIP Guest CRM, Pax Quota & 1-Click WhatsApp Blast',
     descId:
-      'Kelola daftar tamu VIP (Cetak & Online), kode unik INV-0001..0005, kuota 410 Pax, status RSVP, serta pratinjau pesan WhatsApp personal 1-klik.',
+      'Kelola daftar tamu VIP (Cetak & Online), tautan personal tiap tamu, kuota 410 Pax, status RSVP, serta pratinjau pesan WhatsApp personal 1-klik.',
     descEn:
-      'Manage VIP guests, unique INV-0001..0005 codes, 410 Pax quota, RSVP statuses, and 1-click personalized WhatsApp messages.',
+      'Manage VIP guests, personal direct invitation links, 410 Pax quota, RSVP statuses, and 1-click personalized WhatsApp messages.',
     kpiSummary: '180 Undangan • 48 VVIP • Auto-WA Link',
     imageUrl: '/showcase/showcase-4-tamu.png',
   },
@@ -1428,6 +1429,31 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     primarySettings.defaultLanguage || 'ID'
   );
   const [copiedPaymentKey, setCopiedPaymentKey] = useState<string | null>(null);
+  const [isPlannerMenuOpen, setIsPlannerMenuOpen] = useState(false);
+  const plannerMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isPlannerMenuOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        plannerMenuRef.current &&
+        !plannerMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsPlannerMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPlannerMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPlannerMenuOpen]);
 
   // Dedicated Checkout Page View State & Automatic 3-Step Payment Wizard State
   const [isCheckoutPageOpen, setIsCheckoutPageOpen] = useState(false);
@@ -1738,7 +1764,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     DUMMY_DASHBOARD_TASKS.filter((t) => t.defaultDone).map((t) => t.id)
   );
   const [simSelectedWaGuestCode, setSimSelectedWaGuestCode] =
-    useState<string>('INV-0001');
+    useState<string>('JHi4b3XgT2RQIDhZ9coLw');
   const [copiedSimWaLinkKey, setCopiedSimWaLinkKey] = useState<string | null>(
     null
   );
@@ -1830,8 +1856,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       senderName: sender,
       senderTitle:
         lang === 'ID'
-          ? 'Simulasi Buku Tamu Live • INV-SIM'
-          : 'Live Guestbook Simulation • INV-SIM',
+          ? 'Simulasi Buku Tamu Live'
+          : 'Live Guestbook Simulation',
       attendanceBadge: badge,
       message: msg,
       timestamp: lang === 'ID' ? 'Baru saja (Live)' : 'Just now (Live)',
@@ -2036,7 +2062,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           features:
             lang === 'ID'
               ? [
-                  'Maks. 100 Tamu Undangan (Kode Unik INV-xxxx) & Link Mandiri',
+                  'Maks. 100 Tamu Undangan & Link Undangan Personal Mandiri',
                   '3 Slot Foto Latar Statis (Sampul, Hero Feathered & Wallpaper) + 1/2 Profil',
                   'Hitung Mundur, Jadwal Acara Multi-Sesi, Google Maps & Simpan Kalender',
                   'Form Konfirmasi RSVP Real-Time & Buku Tamu Doa Restu',
@@ -2044,7 +2070,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Workspace Planner Dasar: Modul Tracker, Checklist H-6 Bulan & Tabel Tamu',
                 ]
               : [
-                  'Max 100 Invited Guests (Unique INV-xxxx Code) & Dedicated Link',
+                  'Max 100 Invited Guests & Dedicated Personal Invitation Links',
                   '3 Static Media Slots (Cover, Feathered Hero & Wallpaper) + 1/2 Profiles',
                   'Live Countdown, Multi-Session Schedule, Google Maps & Save Calendar',
                   'Real-Time RSVP Form & Guestbook Wishes',
@@ -2106,7 +2132,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           features:
             lang === 'ID'
               ? [
-                  'Semua Fitur EXCLUSIVE + Unlimited Tamu & Pax Tanpa Batas + VIP Gate INV-xxxx',
+                  'Semua Fitur EXCLUSIVE + Unlimited Tamu & Pax Tanpa Batas + Link Hash Personal',
                   'Video Background Sinematik s/d 25 MB (Auto-Stretch HP 9:16 ↔ Layar PC 16:9)',
                   'Unlimited Galeri Foto HD, Bebas Upload Musik MP3 Kustom & Bilingual ID/EN',
                   'Amplop Digital Global Multi-Valuta (Bank, QRIS, PayPal & Crypto USDT TRC20/ERC20)',
@@ -2114,7 +2140,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Audit Forensik Komentar, Sinkronisasi Supabase Cloud, Google Sheets & Backup JSON',
                 ]
               : [
-                  'All EXCLUSIVE Features + Unlimited Guests & Pax + VIP Gate INV-xxxx',
+                  'All EXCLUSIVE Features + Unlimited Guests & Pax + Personal Hash Links',
                   'Up to 25 MB Cinematic Video Background (Auto-Stretch 9:16 Mobile ↔ 16:9 PC)',
                   'Unlimited HD Gallery, Custom MP3 Audio Upload & Bilingual ID/EN Switcher',
                   'Global Multi-Currency Digital Envelope (Bank, QRIS, PayPal & Crypto USDT)',
@@ -2709,7 +2735,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     const clientSlug = activePreset.titleShort
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-');
-    const waPreviewLink = `https://meplan.app/?client=${clientSlug}&code=${selectedWaGuest.code}`;
+    const waPreviewLink = `https://meplan.app/?u=${selectedWaGuest.code}`;
 
     const isStarterTier = simPackageTier === 'STARTER';
     const isRoyalTier = simPackageTier === 'ROYAL VIP';
@@ -3383,7 +3409,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="lg:col-span-7 rounded-2xl bg-white border border-[#D4AF37]/40 divide-y divide-stone-200/80 overflow-hidden">
                   {DUMMY_DASHBOARD_GUESTS.map((g) => {
                     const isSelected = selectedWaGuest.code === g.code;
-                    const guestLink = `https://meplan.app/?client=${clientSlug}&code=${g.code}`;
+                    const guestLink = `https://meplan.app/?u=${g.code}`;
                     return (
                       <div
                         key={g.code}
@@ -3397,9 +3423,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       >
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
-                              {g.code}
-                            </span>
                             <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
                               {g.priority}
                             </span>
@@ -3468,7 +3491,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         : 'Auto-Generated WhatsApp Preview'}
                     </span>
                     <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold">
-                      {selectedWaGuest.code} ({selectedWaGuest.pax} Pax)
+                      {selectedWaGuest.pax} Pax • Link Personal
                     </span>
                   </div>
 
@@ -3489,9 +3512,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <strong>{activePreset.eventVenue}</strong>.
                     </p>
                     <p className="font-mono text-[10px] text-[#E6C76B] break-all bg-white/5 p-2 rounded-lg border border-[#D4AF37]/30">
-                      🔗 Link Privat: {waPreviewLink}
-                      <br />🔑 Kode Akses VIP: {selectedWaGuest.code} (Kuota:{' '}
-                      {selectedWaGuest.pax} Pax)
+                      🔗 Link Undangan Personal: {waPreviewLink}
                     </p>
                   </div>
 
@@ -4231,7 +4252,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </a>
           </nav>
 
-          {/* Right Action Buttons — ID/EN + Demo + Planner */}
+          {/* Right Action Buttons — ID/EN + Planner Lock Popover (Login & Demo) */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Bilingual Language Switcher */}
             <button
@@ -4248,46 +4269,107 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <span>{lang}</span>
             </button>
 
-            {onOpenDemoManager && (
+            {/* Single Lock-Icon Planner Button Opening 2-Option Popover Modal Below (Login & Demo) */}
+            <div ref={plannerMenuRef} className="relative">
               <button
                 type="button"
-                onClick={() =>
-                  onOpenDemoManager(activeDummyMeta.id, simPackageTier)
-                }
+                onClick={() => setIsPlannerMenuOpen((prev) => !prev)}
+                aria-expanded={isPlannerMenuOpen}
+                aria-haspopup="menu"
                 title={
                   lang === 'ID'
-                    ? `Buka Demo Planner Interaktif (Tema: ${activeDummyMeta.themeLabel})`
-                    : `Open Interactive Demo Planner (Theme: ${activeDummyMeta.themeLabel})`
+                    ? 'Akses Portal Planner (Login Akun atau Simulasi Demo)'
+                    : 'Access Planner Portal (Account Login or Interactive Demo)'
                 }
-                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/45 text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
               >
-                <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                <span>Demo</span>
+                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F3E5AB] shrink-0" />
+                <span>Planner</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isPlannerMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
-            )}
 
-            {/* Concise Planner Portal Button */}
-            <button
-              type="button"
-              onClick={onOpenAdminPortal}
-              title={
-                isAdminLoggedIn
-                  ? lang === 'ID'
-                    ? `Buka Ruang Kerja Planner (${adminUserName || 'Admin'})`
-                    : `Open Planner Workspace (${adminUserName || 'Admin'})`
-                  : lang === 'ID'
-                    ? 'Masuk ke Portal Planner (Klien, EO/WO & Superadmin)'
-                    : 'Login to Planner Portal (Client, EO/WO & Superadmin)'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
-            >
-              {isAdminLoggedIn ? (
-                <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              ) : (
-                <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              {isPlannerMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-2.5 w-64 sm:w-72 rounded-2xl bg-[#0D1021]/98 backdrop-blur-2xl border border-indigo-500/45 shadow-[0_24px_60px_rgba(0,0,0,0.75)] p-2.5 z-50 space-y-2"
+                >
+                  <div className="px-2 py-1 flex items-center justify-between border-b border-indigo-500/20">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300/90">
+                      {lang === 'ID'
+                        ? 'Akses Portal Planner'
+                        : 'Planner Portal Access'}
+                    </span>
+                    <Lock className="w-3 h-3 text-[#F3E5AB]/80" />
+                  </div>
+
+                  {/* Popup Option Card 1 — Login Planner */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsPlannerMenuOpen(false);
+                      onOpenAdminPortal();
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/90 via-[#151934] to-purple-950/80 hover:from-indigo-900/90 hover:to-purple-900/90 border border-indigo-500/40 hover:border-[#F3E5AB]/60 flex items-center gap-3 transition-all group shadow-sm"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6366F1] via-[#8B5CF6] to-[#EC4899] flex items-center justify-center shrink-0 shadow-[0_4px_14px_rgba(99,102,241,0.4)] group-hover:scale-105 transition-transform">
+                      <Lock className="w-4 h-4 text-[#F3E5AB]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-extrabold text-white group-hover:text-[#F3E5AB] transition-colors truncate">
+                        {isAdminLoggedIn
+                          ? lang === 'ID'
+                            ? 'Buka Planner Aktif'
+                            : 'Open Active Planner'
+                          : lang === 'ID'
+                            ? 'Login Planner'
+                            : 'Planner Login'}
+                      </p>
+                      <p className="text-[10px] font-semibold text-indigo-200/80 truncate">
+                        {isAdminLoggedIn
+                          ? adminUserName || 'Workspace Aktif'
+                          : lang === 'ID'
+                            ? 'Masuk akun Klien, EO/WO & Owner'
+                            : 'Sign in for Client, EO & Owner'}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-indigo-300 group-hover:text-[#F3E5AB] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </button>
+
+                  {/* Popup Option Card 2 — Demo Planner */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsPlannerMenuOpen(false);
+                      if (onOpenDemoManager) {
+                        onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                      }
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl bg-[#111528] hover:bg-indigo-950/85 border border-[#00F0FF]/35 hover:border-[#00F0FF]/75 flex items-center gap-3 transition-all group shadow-sm"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/30 border border-[#00F0FF]/45 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <LayoutDashboard className="w-4 h-4 text-[#00F0FF]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-extrabold text-[#00F0FF] group-hover:text-white transition-colors truncate">
+                        {lang === 'ID' ? 'Demo Planner' : 'Planner Demo'}
+                      </p>
+                      <p className="text-[10px] font-semibold text-slate-300/85 truncate">
+                        {lang === 'ID'
+                          ? `Simulasi interaktif (${activeDummyMeta.labelId})`
+                          : `Interactive sandbox (${activeDummyMeta.labelEn})`}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#00F0FF]/80 group-hover:text-[#00F0FF] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </button>
+                </div>
               )}
-              <span>Planner</span>
-            </button>
+            </div>
           </div>
         </div>
       </header>
@@ -5510,146 +5592,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     );
                   })}
                 </div>
-
-                {/* Compact Multi-Client Hash Token Gate */}
-                <div className="relative max-w-2xl mx-auto pt-1 space-y-2">
-                  <form
-                    onSubmit={handleQuickLookupSubmit}
-                    className="p-2 sm:px-3 sm:py-2 rounded-2xl bg-[#111528]/95 border border-indigo-500/45 shadow-[0_12px_36px_rgba(0,0,0,0.55)] flex flex-col sm:flex-row sm:items-center gap-2 text-left"
-                  >
-                    <div className="flex items-center justify-between sm:justify-start gap-1.5 px-1 shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <Search className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
-                        <span className="text-[11px] font-extrabold text-white whitespace-nowrap">
-                          {lang === 'ID' ? 'Kode Tamu:' : 'Guest Code:'}
-                        </span>
-                        <InfoTooltip
-                          text={
-                            lang === 'ID'
-                              ? 'Masukkan Kode Hash 21 karakter (contoh: JHi4b3XgT2RQIDhZ9coLw) atau nama tamu terdaftar untuk membuka undangan.'
-                              : 'Enter your 21-char Hash Token (e.g. JHi4b3XgT2RQIDhZ9coLw) or registered guest name to open the invitation.'
-                          }
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const sample = SHOWCASE_DUMMY_CLIENT_METAS[0];
-                          setGuestCodeInput(sample.sampleHashToken);
-                          setLookupGateError(null);
-                          onSelectClientInvitation(
-                            sample.id,
-                            sample.sampleGuestName,
-                            sample.sampleHashToken
-                          );
-                        }}
-                        title="Klik untuk uji kode contoh Fiorencia (JHi4b3XgT2RQIDhZ9coLw)"
-                        className="sm:hidden px-2 py-0.5 rounded-md bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[9px] font-extrabold whitespace-nowrap"
-                      >
-                        Contoh: Fiorencia
-                      </button>
-                    </div>
-
-                    <div className="relative flex-1 min-w-0">
-                      <input
-                        type="text"
-                        value={guestCodeInput}
-                        onFocus={() => setShowLookupSuggestions(true)}
-                        onBlur={() =>
-                          window.setTimeout(
-                            () => setShowLookupSuggestions(false),
-                            200
-                          )
-                        }
-                        onChange={(e) => {
-                          setGuestCodeInput(e.target.value);
-                          setLookupGateError(null);
-                          setShowLookupSuggestions(true);
-                        }}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'Contoh: JHi4b3XgT2RQIDhZ9coLw...'
-                            : 'Example: JHi4b3XgT2RQIDhZ9coLw...'
-                        }
-                        className="w-full px-3 py-1.5 rounded-xl border border-indigo-500/40 bg-[#090B14] text-xs font-mono font-semibold text-white placeholder:text-slate-400 focus:border-[#00F0FF] focus:outline-none"
-                      />
-                      {showLookupSuggestions &&
-                        filteredLookupGuests.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-[#111528] border border-indigo-500/50 shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
-                            {filteredLookupGuests.map((item) => (
-                              <button
-                                key={`${item.clientId}-${item.hashToken}-${item.guest.id}`}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setGuestCodeInput(item.hashToken);
-                                  setLookupGateError(null);
-                                  setShowLookupSuggestions(false);
-                                  onSelectClientInvitation(
-                                    item.clientId,
-                                    item.guest.guestName,
-                                    item.hashToken
-                                  );
-                                }}
-                                className="w-full text-left px-3 py-2 hover:bg-indigo-950/80 border-b border-indigo-500/20 last:border-b-0 transition-colors flex items-center justify-between gap-2"
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-xs font-extrabold text-white truncate">
-                                    {item.guest.guestName}
-                                  </p>
-                                  <p className="text-[10px] text-indigo-300 truncate">
-                                    {item.clientLabel}
-                                  </p>
-                                </div>
-                                <span className="shrink-0 px-2 py-0.5 rounded bg-[#090B14] border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[9px] font-extrabold">
-                                  {item.hashToken.slice(0, 10)}…
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const sample = SHOWCASE_DUMMY_CLIENT_METAS[0];
-                          setGuestCodeInput(sample.sampleHashToken);
-                          setLookupGateError(null);
-                          onSelectClientInvitation(
-                            sample.id,
-                            sample.sampleGuestName,
-                            sample.sampleHashToken
-                          );
-                        }}
-                        title={`Uji kode contoh: ${SHOWCASE_DUMMY_CLIENT_METAS[0].sampleHashToken} (${SHOWCASE_DUMMY_CLIENT_METAS[0].sampleGuestName})`}
-                        className="hidden sm:inline-flex items-center gap-1 py-1.5 px-2.5 rounded-xl bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 border border-[#00F0FF]/45 text-[#00F0FF] font-mono text-[10px] font-extrabold transition-all whitespace-nowrap"
-                      >
-                        <span>Contoh</span>
-                      </button>
-
-                      <button
-                        type="submit"
-                        title={
-                          lang === 'ID'
-                            ? 'Buka Undangan Tamu'
-                            : 'Open Guest Invitation'
-                        }
-                        className="w-full sm:w-auto py-1.5 px-4 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white font-extrabold text-xs shadow-sm transition-all whitespace-nowrap"
-                      >
-                        {lang === 'ID' ? 'Buka' : 'Open'}
-                      </button>
-                    </div>
-                  </form>
-
-                  {lookupGateError && (
-                    <div className="mt-1 px-3 py-1.5 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-[11px] font-semibold flex items-center justify-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      <span>{lookupGateError}</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </section>
 
@@ -5797,12 +5739,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       className="px-2 py-0.5 rounded-md bg-[#090B14] border border-[#D4AF37]/40 text-[#D4AF37] font-bold whitespace-nowrap"
                     >
                       {activeDummyMeta.themeLabel}
-                    </span>
-                    <span
-                      title={`Kode Hash Tamu Demo (${activeDummyMeta.sampleGuestName}): ${activeDummyMeta.sampleHashToken}`}
-                      className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-[#090B14] border border-[#00F0FF]/35 text-[#00F0FF] font-mono text-[10px] font-bold"
-                    >
-                      {activeDummyMeta.sampleHashToken}
                     </span>
                   </div>
 

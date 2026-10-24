@@ -220,6 +220,7 @@ export interface WeddingScheduleEvent {
   dresscode: string;
   enableCountdown: boolean; // Switch ON/OFF for Countdown
   showOnInvitation?: boolean; // Switch ON/OFF for visibility on invitation
+  isMainEvent?: boolean; // Switch ON/OFF for Acara Utama (Primary Event)
 }
 
 export type EventCategoryType =
@@ -271,6 +272,7 @@ export interface WeddingSettings {
   // Section Visibility Toggles on Public Invitation
   showCoupleSection: boolean;
   showQuoteSection: boolean;
+  showScheduleSection?: boolean; // Unified visibility toggle for Rangkaian Jadwal Acara (default true)
   showEvent1: boolean;
   showEvent2: boolean;
   showEvent3: boolean;

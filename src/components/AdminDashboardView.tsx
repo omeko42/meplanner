@@ -38,6 +38,7 @@ import {
   KeyRound,
   UserPlus,
   ChevronRight,
+  ChevronDown,
   Lock,
   Heart,
   Image as ImageIcon,
@@ -621,8 +622,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
 
+  const getGuestPersonalUrl = (
+    guest: WeddingGuest,
+    settingsObj: WeddingSettings = state.settings
+  ): { guestHashToken: string; cleanUrl: string } => {
+    const guestHashToken = computeGuestInvitationHash(
+      settingsObj.activeClientId || 'client-utama',
+      guest
+    );
+    const baseOrigin =
+      typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://my-wedding-manager.vercel.app';
+    const cleanUrl = `${baseOrigin}/${guestHashToken}`;
+    return { guestHashToken, cleanUrl };
+  };
+
+  const getGuestPersonalWaData = (
+    guest: WeddingGuest,
+    settingsObj: WeddingSettings = state.settings
+  ) => {
+    const raw = generateWhatsAppMessage(guest, settingsObj);
+    const { guestHashToken, cleanUrl } = getGuestPersonalUrl(guest, settingsObj);
+    let messageText = raw.messageText;
+    if (raw.inviteUrl && raw.inviteUrl !== cleanUrl) {
+      messageText = messageText.split(raw.inviteUrl).join(cleanUrl);
+    }
+    messageText = messageText.replace(
+      /https?:\/\/[^\s]+\/\?(?:to|u|code)=[^\s]+/g,
+      cleanUrl
+    );
+    return {
+      ...raw,
+      guestHashToken,
+      inviteUrl: cleanUrl,
+      messageText,
+      waHref: buildWaHref(guest.phone, messageText),
+    };
+  };
+
   const openGuestWaPreview = (guest: WeddingGuest) => {
-    const gen = generateWhatsAppMessage(guest, state.settings);
+    const gen = getGuestPersonalWaData(guest, state.settings);
     setWaPreviewGuest(guest);
     setWaCustomMessage(gen.messageText);
     setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
@@ -674,7 +714,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       summary: 'Menyimpan Template Global Pengantar WhatsApp (VIP & Reguler)',
     });
     if (waPreviewGuest) {
-      const refreshed = generateWhatsAppMessage(waPreviewGuest, nextSettings);
+      const refreshed = getGuestPersonalWaData(waPreviewGuest, nextSettings);
       setWaCustomMessage(refreshed.messageText);
       setWaModalMode('preview');
     } else {
@@ -799,12 +839,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     guest?: WeddingGuest,
     detail?: string
   ) => {
+    const guestHash = guest
+      ? computeGuestInvitationHash(
+          state.settings.activeClientId || 'client-utama',
+          guest
+        )
+      : undefined;
     const nextAnalytics = appendInvitationAnalyticsEvent(
       { ...state.settings, ...settingsForm },
       {
         type,
         guestName: guest?.guestName || `Admin (${adminUser.username})`,
-        invitationCode: guest?.invitationCode,
+        invitationCode: guestHash,
         detail:
           detail ||
           (type === 'SHARE_WA'
@@ -1414,9 +1460,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     status: 'PAID_VERIFIED',
   });
 
-  // Expanded section key inside Visibilitas & Konten so user can toggle Switch + edit what is displayed right there
+  // Expanded section key inside Visibilitas & Konten so user can toggle Switch + edit what is displayed right there (default null = collapsed)
   const [expandedSectionKey, setExpandedSectionKey] = useState<string | null>(
-    'showQuoteSection'
+    null
+  );
+  // Expanded individual event inside Rangkaian Jadwal Acara inline editor
+  const [expandedScheduleEventId, setExpandedScheduleEventId] = useState<
+    string | null
+  >(null);
+  // Expanded sub-card inside Tema & Latar (default null = collapsed)
+  const [expandedBgCardKey, setExpandedBgCardKey] = useState<string | null>(
+    null
   );
 
   // Form state for adding & editing Love Story & Gallery Photo items inside the inline editor
@@ -1836,11 +1890,80 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     );
   };
 
+  // Switch khusus untuk memilih Acara Utama (menentukan tanggal utama di Sampul, Hero & Kalender)
+  const handleSetMainScheduleEvent = async (eventId: string) => {
+    const nextEvents = scheduleEvents.map((ev) => ({
+      ...ev,
+      isMainEvent: ev.id === eventId,
+      enableCountdown: ev.id === eventId ? true : ev.enableCountdown,
+    }));
+    const targetEv = nextEvents.find((ev) => ev.id === eventId);
+    const nextSettings = syncScheduleEventsToSettings(
+      {
+        ...state.settings,
+        ...settingsForm,
+        updatedBy: adminUser.username,
+      },
+      nextEvents
+    );
+    setSettingsFormInternal(nextSettings);
+    await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'JADWAL_ACARA',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Menetapkan "${targetEv?.title || 'Acara'}" sebagai Acara Utama (${targetEv?.dateLabel || ''})`,
+    });
+    showToast(
+      `★ "${targetEv?.title || 'Acara'}" dijadikan Acara Utama (${targetEv?.dateLabel || ''})!`
+    );
+  };
+
+  // Switch tampil/sembunyikan per item acara di dalam Rangkaian Jadwal Acara
+  const handleToggleSingleEventVisibility = async (
+    eventId: string,
+    title: string
+  ) => {
+    const nextEvents = scheduleEvents.map((ev) =>
+      ev.id === eventId
+        ? { ...ev, showOnInvitation: ev.showOnInvitation === false }
+        : ev
+    );
+    const toggled = nextEvents.find((ev) => ev.id === eventId);
+    const isNowShown = toggled?.showOnInvitation !== false;
+    const nextSettings = syncScheduleEventsToSettings(
+      {
+        ...state.settings,
+        ...settingsForm,
+        updatedBy: adminUser.username,
+      },
+      nextEvents
+    );
+    setSettingsFormInternal(nextSettings);
+    await commitImmediateSettings(nextSettings);
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'JADWAL_ACARA',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Visibilitas acara "${title}" diubah menjadi ${isNowShown ? 'ON' : 'OFF'}`,
+    });
+    showToast(
+      `Acara "${title}" ${
+        isNowShown
+          ? 'ditampilkan di undangan (ON)'
+          : 'disembunyikan dari undangan (OFF)'
+      }.`
+    );
+  };
+
   // Immediate 1-click switch toggle for any invitation section visibility
   const handleToggleSectionSwitch = async (
     key:
       | 'showQuoteSection'
       | 'showCoupleSection'
+      | 'showScheduleSection'
       | 'showEvent1'
       | 'showEvent2'
       | 'showEvent3'
@@ -1850,7 +1973,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       | 'showGiftSection',
     label: string
   ) => {
-    const currentVal = settingsForm[key] !== false;
+    const currentVal =
+      key === 'showScheduleSection'
+        ? settingsForm.showScheduleSection !== false &&
+          (settingsForm.showEvent1 !== false ||
+            settingsForm.showEvent2 !== false ||
+            settingsForm.showEvent3 !== false ||
+            scheduleEvents.some((ev) => ev.showOnInvitation !== false))
+        : settingsForm[key] !== false;
     const nextVal = !currentVal;
     let nextSettings: WeddingSettings = {
       ...state.settings,
@@ -1858,7 +1988,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       [key]: nextVal,
       updatedBy: adminUser.username,
     };
-    if (key === 'showEvent1' || key === 'showEvent2' || key === 'showEvent3') {
+    if (key === 'showScheduleSection') {
+      const nextEvents = scheduleEvents.map((ev) => ({
+        ...ev,
+        showOnInvitation: nextVal,
+      }));
+      nextSettings = syncScheduleEventsToSettings(
+        {
+          ...nextSettings,
+          showScheduleSection: nextVal,
+          showEvent1: nextVal,
+          showEvent2: nextVal,
+          showEvent3: nextVal,
+        },
+        nextEvents
+      );
+    } else if (
+      key === 'showEvent1' ||
+      key === 'showEvent2' ||
+      key === 'showEvent3'
+    ) {
       const eventIdx =
         key === 'showEvent1' ? 0 : key === 'showEvent2' ? 1 : 2;
       if (scheduleEvents[eventIdx]) {
@@ -1869,8 +2018,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
     }
     await commitImmediateSettings(nextSettings);
-    if (nextVal) {
-      setExpandedSectionKey(key);
+    if (!nextVal && expandedSectionKey === key) {
+      setExpandedSectionKey(null);
     }
     appendAuditLog({
       actor: adminUser.username,
@@ -6708,11 +6857,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                 <div className="divide-y divide-stone-200 px-4 sm:px-6">
                   {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
-                    const waData = generateWhatsAppMessage(guest, state.settings);
-                    const guestHashToken = computeGuestInvitationHash(
-                      state.settings.activeClientId || 'client-utama',
-                      guest
-                    );
+                    const waData = getGuestPersonalWaData(guest, state.settings);
+                    const guestHashToken = waData.guestHashToken;
                     const isLinkCopied = copiedGuestLinkId === guest.id;
                     const currentFormat = normalizeGuestFormat(guest.invitationFormat);
                     const isOnlineGuest = currentFormat === 'Online';
@@ -6734,20 +6880,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <h3 className="font-bold text-xs sm:text-base text-stone-900">
                               {guest.guestName}
                             </h3>
-                            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914]">
-                              {guest.invitationCode}
-                            </span>
                             <button
                               type="button"
                               onClick={() => {
                                 if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                                  void navigator.clipboard.writeText(guestHashToken);
+                                  void navigator.clipboard.writeText(waData.inviteUrl);
                                   showToast(
-                                    `✓ Kode Hash Undangan "${guest.guestName}" (${guestHashToken}) berhasil disalin!`
+                                    `✓ Link Undangan Personal "${guest.guestName}" (${waData.inviteUrl}) berhasil disalin!`
                                   );
                                 }
                               }}
-                              title={`Klik untuk menyalin Kode Hash Unik Multi-Client: ${guestHashToken}`}
+                              title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
                               className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer"
                             >
                               <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
@@ -6888,7 +7031,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   recordAdminAnalyticsEvent(
                                     'COPY_LINK',
                                     guest,
-                                    `Menyalin tautan undangan personal untuk ${guest.guestName} (${guest.invitationCode})`
+                                    `Menyalin tautan undangan personal untuk ${guest.guestName} (${guestHashToken})`
                                   );
                                   showToast(
                                     `Link undangan online ${guest.guestName} berhasil disalin!`
@@ -6915,7 +7058,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               recordAdminAnalyticsEvent(
                                 'SHARE_WA',
                                 guest,
-                                `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guest.invitationCode})`
+                                `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guestHashToken})`
                               )
                             }
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
@@ -6938,7 +7081,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               recordAdminAnalyticsEvent(
                                 'COPY_LINK',
                                 guest,
-                                `Menyalin link undangan untuk ${guest.guestName} (${guest.invitationCode})`
+                                `Menyalin link undangan untuk ${guest.guestName} (${guestHashToken})`
                               );
                               showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
                             }}
@@ -7311,10 +7454,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </button>
                       <button
                         type="button"
-                        title="Kelola momen Kisah Kasih dan foto Galeri Prewedding"
+                        title="Kelola momen Kisah Kasih, foto Galeri Prewedding, dan Musik Latar"
                         onClick={() => {
                           setVisibilitasSubTab('media');
-                          setExpandedSectionKey('showLoveStorySection');
+                          setExpandedSectionKey(null);
                         }}
                         className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all ${
                           visibilitasSubTab === 'media'
@@ -7323,7 +7466,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Kisah &amp; Galeri</span>
+                        <span className="truncate">Kisah, Galeri &amp; Musik</span>
                       </button>
                     </div>
 
@@ -7730,16 +7873,55 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       );
 
-                      const allSections = [
+                      const mainScheduleEvent =
+                        scheduleEvents.find((ev) => ev.isMainEvent) ||
+                        scheduleEvents.find((ev) => ev.enableCountdown) ||
+                        scheduleEvents[0];
+
+                      const schedulePreviewText =
+                        scheduleEvents.length > 0
+                          ? `${scheduleEvents.map((ev) => ev.title).join(' • ')}${
+                              mainScheduleEvent
+                                ? ` (★ Utama: ${mainScheduleEvent.title})`
+                                : ''
+                            }`
+                          : 'Belum ada rangkaian jadwal acara';
+
+                      const allSections: Array<{
+                        key:
+                          | 'kategoriVisual'
+                          | 'showQuoteSection'
+                          | 'showCoupleSection'
+                          | 'showScheduleSection'
+                          | 'showLoveStorySection'
+                          | 'showGallerySection'
+                          | 'showMusicSection'
+                          | 'showRsvpSection'
+                          | 'showGiftSection';
+                        title: string;
+                        preview: string;
+                        icon: any;
+                        group: 'semua' | 'media';
+                        hasVisibilitySwitch: boolean;
+                      }> = [
                         {
-                          key: 'showQuoteSection' as const,
+                          key: 'kategoriVisual',
+                          title: 'Kategori Acara & Elemen Visual Undangan',
+                          preview: `Kategori: ${settingsForm.eventType || 'WEDDING'} • Ornamen Sudut, Partikel, Tombol Kalender & Badge Hero`,
+                          icon: Sparkles,
+                          group: 'semua',
+                          hasVisibilitySwitch: false,
+                        },
+                        {
+                          key: 'showQuoteSection',
                           title: 'Teks Pembuka, Kutipan & Penutup Undangan',
                           preview: `"${state.settings.quoteVerse}" — (${state.settings.quoteSource})`,
                           icon: BookOpen,
                           group: 'semua',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showCoupleSection' as const,
+                          key: 'showCoupleSection',
                           title:
                             state.settings.profileSectionTitle ||
                             (state.settings.eventType &&
@@ -7753,63 +7935,92 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : `${state.settings.groomFullName} & ${state.settings.brideFullName}`,
                           icon: Users,
                           group: 'semua',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showEvent1' as const,
-                          title: `Acara 1: ${state.settings.event1Title}`,
-                          preview: `${state.settings.event1DateLabel} • ${state.settings.event1TimeLabel} • ${state.settings.event1Venue}`,
+                          key: 'showScheduleSection',
+                          title: `${
+                            state.settings.scheduleSectionTitle ||
+                            'Rangkaian Jadwal Acara'
+                          } (${scheduleEvents.length} Acara)`,
+                          preview: schedulePreviewText,
                           icon: Calendar,
                           group: 'semua',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showEvent2' as const,
-                          title: `Acara 2: ${state.settings.event2Title}`,
-                          preview: `${state.settings.event2DateLabel} • ${state.settings.event2TimeLabel} • ${state.settings.event2Venue}`,
-                          icon: Calendar,
-                          group: 'semua',
-                        },
-                        {
-                          key: 'showEvent3' as const,
-                          title: `Acara 3: ${state.settings.event3Title}`,
-                          preview: `${state.settings.event3DateLabel} • ${state.settings.event3TimeLabel} • ${state.settings.event3Venue}`,
-                          icon: Calendar,
-                          group: 'semua',
-                        },
-                        {
-                          key: 'showLoveStorySection' as const,
+                          key: 'showLoveStorySection',
                           title:
                             state.settings.storySectionTitle || 'Kisah Kasih',
                           preview: `${effectiveLoveStory.length} Momen Perjalanan Cinta`,
                           icon: Heart,
                           group: 'media',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showGallerySection' as const,
+                          key: 'showGallerySection',
                           title: 'Galeri Prewedding',
                           preview: `${effectiveGalleryPhotos.length} Foto Prewedding (Auto-Slide)`,
                           icon: ImageIcon,
                           group: 'media',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showRsvpSection' as const,
+                          key: 'showMusicSection',
+                          title: 'Musik Latar, Playlist Spotify/YouTube & Disclaimer',
+                          preview: `${effectivePlaylist.length} Lagu Aktif • ${
+                            settingsForm.musicExternalUrl
+                              ? 'Embed Spotify/YouTube Aktif'
+                              : 'Katalog NCS & Upload MP3'
+                          }`,
+                          icon: Music,
+                          group: 'media',
+                          hasVisibilitySwitch: false,
+                        },
+                        {
+                          key: 'showRsvpSection',
                           title:
                             state.settings.rsvpSectionTitle ||
                             'Form RSVP & Buku Tamu',
                           preview: `Form RSVP & ${state.wishes.length} ucapan doa`,
                           icon: MessageSquareHeart,
                           group: 'semua',
+                          hasVisibilitySwitch: true,
                         },
                         {
-                          key: 'showGiftSection' as const,
+                          key: 'showGiftSection',
                           title: 'Amplop Digital & Kado',
                           preview: `${(state.settings.bankAccounts || []).length} Rekening • Penerima: ${state.settings.giftRecipientName}`,
                           icon: Wallet,
                           group: 'semua',
+                          hasVisibilitySwitch: true,
                         },
                       ];
 
-                      const activeCount = allSections.filter(
-                        (s) => state.settings[s.key] !== false
+                      const isSectionShown = (
+                        secKey: (typeof allSections)[number]['key']
+                      ) => {
+                        if (
+                          secKey === 'kategoriVisual' ||
+                          secKey === 'showMusicSection'
+                        ) {
+                          return true;
+                        }
+                        if (secKey === 'showScheduleSection') {
+                          return (
+                            state.settings.showEvent1 !== false ||
+                            state.settings.showEvent2 !== false ||
+                            state.settings.showEvent3 !== false
+                          );
+                        }
+                        return state.settings[secKey] !== false;
+                      };
+
+                      const switchableSections = allSections.filter(
+                        (s) => s.hasVisibilitySwitch
+                      );
+                      const activeCount = switchableSections.filter((s) =>
+                        isSectionShown(s.key)
                       ).length;
 
                       const displayedSections =
@@ -7819,84 +8030,115 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       return (
                         <>
-                          {/* Kategori Acara — My Event Planner + 4 Visual & Ornament Toggles */}
-                          {renderEventCategoryAndOrnamentControls()}
-
                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
                             <span className="text-xs text-stone-500">
-                              Daftar seksi undangan
+                              Klik judul pengaturan di bawah untuk membuka / menutup editor
                             </span>
                             <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0 whitespace-nowrap">
-                              &bull; Aktif ({activeCount}/9)
+                              &bull; Seksi Tampil ({activeCount}/{switchableSections.length})
                             </span>
                           </div>
 
-                          {/* Rows List (Wira Satya 96 Row + Switch + Inline Content Editor) */}
+                          {/* Rows List (Collapsed by Default, Click Title to Expand) */}
                           <div className="divide-y divide-stone-100">
                             {displayedSections.map((sec) => {
                               const SecIcon = sec.icon;
-                              const isShown = state.settings[sec.key] !== false;
+                              const isShown = isSectionShown(sec.key);
                               const isExpanded = expandedSectionKey === sec.key;
 
                               return (
                                 <div key={sec.key} className="py-3.5 first:pt-1 last:pb-1">
                                   {/* Row Header */}
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                    <div className="flex items-start gap-3 min-w-0">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExpandedSectionKey(
+                                          isExpanded ? null : sec.key
+                                        )
+                                      }
+                                      title="Klik judul untuk membuka atau menutup pengaturan ini"
+                                      className="flex items-start gap-3 min-w-0 text-left flex-1 group cursor-pointer"
+                                    >
                                       <div
-                                        className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                                        className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                                           isShown
-                                            ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                            ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914] group-hover:bg-[#F3E5C8]'
                                             : 'bg-stone-50 border-stone-200 text-stone-400'
                                         }`}
                                       >
                                         <SecIcon className="w-4 h-4" />
                                       </div>
-                                      <div className="min-w-0">
-                                        <p className="font-bold text-xs sm:text-sm text-stone-900">
-                                          {sec.title}
-                                        </p>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <p className="font-bold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
+                                            {sec.title}
+                                          </p>
+                                          <ChevronDown
+                                            className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                              isExpanded ? 'rotate-180 text-[#8B6914]' : ''
+                                            }`}
+                                          />
+                                        </div>
                                         <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
                                           {sec.preview}
                                         </p>
                                       </div>
-                                    </div>
+                                    </button>
 
                                     {/* Right Controls: Status Badge + Switch + Edit Button */}
                                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                                      <span
-                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                          isShown
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-rose-50 text-rose-600 border-rose-200'
-                                        }`}
-                                      >
-                                        {isShown ? 'ON' : 'OFF'}
-                                      </span>
+                                      {sec.hasVisibilitySwitch && (
+                                        <>
+                                          <span
+                                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                              isShown
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                : 'bg-rose-50 text-rose-600 border-rose-200'
+                                            }`}
+                                          >
+                                            {isShown ? 'ON' : 'OFF'}
+                                          </span>
 
-                                      {/* Real Toggle Switch */}
-                                      <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={isShown}
-                                        onClick={() =>
-                                          handleToggleSectionSwitch(sec.key, sec.title)
-                                        }
-                                        title={
-                                          isShown
-                                            ? 'Klik untuk menyembunyikan dari undangan'
-                                            : 'Klik untuk menampilkan di undangan'
-                                        }
-                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                          isShown ? 'bg-emerald-600' : 'bg-stone-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                                            isShown ? 'translate-x-5' : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
+                                          {/* Real Toggle Switch */}
+                                          <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isShown}
+                                            onClick={() =>
+                                              handleToggleSectionSwitch(
+                                                sec.key as
+                                                  | 'showQuoteSection'
+                                                  | 'showCoupleSection'
+                                                  | 'showScheduleSection'
+                                                  | 'showLoveStorySection'
+                                                  | 'showGallerySection'
+                                                  | 'showRsvpSection'
+                                                  | 'showGiftSection',
+                                                sec.title
+                                              )
+                                            }
+                                            title={
+                                              isShown
+                                                ? 'Klik untuk menyembunyikan dari undangan'
+                                                : 'Klik untuk menampilkan di undangan'
+                                            }
+                                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                              isShown
+                                                ? 'bg-emerald-600'
+                                                : 'bg-stone-300'
+                                            }`}
+                                          >
+                                            <span
+                                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                                                isShown
+                                                  ? 'translate-x-5'
+                                                  : 'translate-x-0'
+                                              }`}
+                                            />
+                                          </button>
+                                        </>
+                                      )}
 
                                       {/* Expand Inline Content Editor Button */}
                                       <button
@@ -7912,7 +8154,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
                                         }`}
                                       >
-                                        {isExpanded ? 'Tutup' : 'Edit'}
+                                        {isExpanded ? 'Tutup' : 'Buka'}
                                       </button>
                                     </div>
                                   </div>
@@ -7922,6 +8164,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                      ========================================================= */}
                                   {isExpanded && (
                                     <div className="mt-3.5 p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3.5 text-xs">
+                                      {/* 0. KATEGORI ACARA & ELEMEN VISUAL UNDANGAN */}
+                                      {sec.key === 'kategoriVisual' &&
+                                        renderEventCategoryAndOrnamentControls()}
+
+                                      {/* 0B. MUSIK LATAR, PLAYLIST & DISCLAIMER */}
+                                      {sec.key === 'showMusicSection' &&
+                                        renderMusicPlaylistManager()}
                                       {/* 1. EDITOR TEKS PEMBUKA, KUTIPAN & PENUTUP UNDANGAN */}
                                       {sec.key === 'showQuoteSection' && (
                                         <form
@@ -8812,276 +9061,638 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         </form>
                                       )}
 
-                                      {/* 3, 4, 5. EDITOR ACARA 1, ACARA 2, ACARA 3 */}
-                                      {(sec.key === 'showEvent1' ||
-                                        sec.key === 'showEvent2' ||
-                                        sec.key === 'showEvent3') && (
-                                        <form
-                                          onSubmit={handleSaveSettingsModal}
-                                          className="space-y-3"
-                                        >
-                                          {(() => {
-                                            const eventIdx =
-                                              sec.key === 'showEvent1'
-                                                ? 0
-                                                : sec.key === 'showEvent2'
-                                                  ? 1
-                                                  : 2;
-                                            const prefix =
-                                              sec.key === 'showEvent1'
-                                                ? 'event1'
-                                                : sec.key === 'showEvent2'
-                                                  ? 'event2'
-                                                  : 'event3';
-                                            const titleKey = `${prefix}Title` as const;
-                                            const subKey = `${prefix}Subtitle` as const;
-                                            const dateKey = `${prefix}DateLabel` as const;
-                                            const timeKey = `${prefix}TimeLabel` as const;
-                                            const venueKey = `${prefix}Venue` as const;
-                                            const addrKey = `${prefix}Address` as const;
-                                            const dressKey = `${prefix}Dresscode` as const;
-                                            const mapsKey = `${prefix}MapsUrl` as const;
-
-                                            const updateInlineEventField = (
-                                              legacyKey:
-                                                | typeof titleKey
-                                                | typeof subKey
-                                                | typeof dateKey
-                                                | typeof timeKey
-                                                | typeof venueKey
-                                                | typeof addrKey
-                                                | typeof dressKey
-                                                | typeof mapsKey,
-                                              evField: keyof WeddingScheduleEvent,
-                                              val: string
-                                            ) => {
-                                              const nextBase: WeddingSettings = {
-                                                ...settingsForm,
-                                                [legacyKey]: val,
-                                              };
-                                              if (scheduleEvents[eventIdx]) {
-                                                const nextEvents = scheduleEvents.map(
-                                                  (ev, idx) =>
-                                                    idx === eventIdx
-                                                      ? { ...ev, [evField]: val }
-                                                      : ev
-                                                );
-                                                setSettingsForm(
-                                                  syncScheduleEventsToSettings(
-                                                    nextBase,
-                                                    nextEvents
-                                                  )
-                                                );
-                                              } else {
-                                                setSettingsForm(nextBase);
-                                              }
-                                            };
-
-                                            return (
-                                              <>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Nama Acara
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[titleKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          titleKey,
-                                                          'title',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold"
-                                                    />
-                                                  </div>
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Subjudul
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[subKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          subKey,
-                                                          'subtitle',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Hari &amp; Tanggal
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[dateKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          dateKey,
-                                                          'dateLabel',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Jam Acara
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[timeKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          timeKey,
-                                                          'timeLabel',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Nama Lokasi
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[venueKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          venueKey,
-                                                          'venue',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Alamat Lokasi
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[addrKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          addrKey,
-                                                          'address',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Dresscode
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[dressKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          dressKey,
-                                                          'dresscode',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                  <div>
-                                                    <label className="block font-bold text-stone-700 mb-0.5 truncate">
-                                                      Link Maps
-                                                    </label>
-                                                    <input
-                                                      type="text"
-                                                      value={settingsForm[mapsKey] || ''}
-                                                      onChange={(e) =>
-                                                        updateInlineEventField(
-                                                          mapsKey,
-                                                          'mapsUrl',
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white"
-                                                    />
-                                                  </div>
-                                                </div>
-
-                                                {/* Teks Baris Bawah Sampul & Subjudul Rangkaian Acara */}
-                                                <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-1">
-                                                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                                                    <label className="block font-bold text-stone-700 truncate">
-                                                      Teks Baris Bawah Sampul &amp; Subjudul Rangkaian Acara
-                                                    </label>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => {
-                                                        const autoSub =
-                                                          buildScheduleSummarySubtitle(
-                                                            scheduleEvents,
-                                                            settingsForm.groomOrigin ||
-                                                              settingsForm.brideOrigin ||
-                                                              'Semarang'
-                                                          );
-                                                        setSettingsForm({
-                                                          ...settingsForm,
-                                                          subtitle: autoSub,
-                                                        });
-                                                        showToast(
-                                                          '✓ Teks baris bawah disinkronkan otomatis dari Jadwal Acara!'
-                                                        );
-                                                      }}
-                                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px]"
-                                                    >
-                                                      <RefreshCw className="w-3 h-3 text-[#B68D40]" />
-                                                      <span>Sinkron Otomatis</span>
-                                                    </button>
-                                                  </div>
-                                                  <input
-                                                    type="text"
-                                                    value={settingsForm.subtitle || ''}
-                                                    onChange={(e) =>
-                                                      setSettingsForm({
-                                                        ...settingsForm,
-                                                        subtitle: e.target.value,
-                                                      })
-                                                    }
-                                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
-                                                  />
-                                                </div>
-                                              </>
-                                            );
-                                          })()}
-
-                                          <div className="flex justify-end">
+                                      {/* 3. EDITOR RANGKAIAN JADWAL ACARA (UNIFIED ALL DB EVENTS + SWITCH ACARA UTAMA) */}
+                                      {sec.key === 'showScheduleSection' && (
+                                        <div className="space-y-3.5">
+                                          <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-[#D4AF37]/25">
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                              <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                              <span className="font-extrabold text-[#8B6914] uppercase tracking-wider text-[11px] truncate">
+                                                Rangkaian Jadwal Acara ({scheduleEvents.length} Acara)
+                                              </span>
+                                              <InfoTooltip text="Semua jadwal acara dari database ditampilkan di sini (Biston, Pemberkatan, Resepsi, Pendadaran, dll). Aktifkan Switch 'Acara Utama' pada salah satu acara untuk menjadikannya tanggal & lokasi utama undangan. Klik judul acara untuk mengedit detailnya." />
+                                            </div>
                                             <button
-                                              type="submit"
-                                              className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
+                                              type="button"
+                                              onClick={handleOpenAddScheduleEvent}
+                                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-xs shrink-0 whitespace-nowrap"
                                             >
-                                              Simpan
+                                              <Plus className="w-3.5 h-3.5" />
+                                              <span>Tambah Acara</span>
                                             </button>
                                           </div>
-                                        </form>
+
+                                          {/* Judul Seksi & Teks Baris Bawah Sampul */}
+                                          <form
+                                            onSubmit={handleSaveSettingsModal}
+                                            className="p-3 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5"
+                                          >
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                              <div>
+                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                  Judul Seksi Rangkaian Acara
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={
+                                                    settingsForm.scheduleSectionTitle ??
+                                                    ''
+                                                  }
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      scheduleSectionTitle:
+                                                        e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Rangkaian Acara / Susunan Acara"
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold text-stone-800"
+                                                />
+                                              </div>
+                                              <div>
+                                                <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                  <label className="block font-bold text-stone-700 text-[11px] truncate">
+                                                    Teks Baris Bawah Sampul &amp; Subjudul
+                                                  </label>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      const autoSub =
+                                                        buildScheduleSummarySubtitle(
+                                                          scheduleEvents,
+                                                          settingsForm.groomOrigin ||
+                                                            settingsForm.brideOrigin ||
+                                                            'Semarang'
+                                                        );
+                                                      setSettingsForm({
+                                                        ...settingsForm,
+                                                        subtitle: autoSub,
+                                                      });
+                                                      showToast(
+                                                        '✓ Teks baris bawah disinkronkan otomatis dari Jadwal Acara!'
+                                                      );
+                                                    }}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[10px] shrink-0"
+                                                  >
+                                                    <RefreshCw className="w-2.5 h-2.5 text-[#B68D40]" />
+                                                    <span>Sinkron</span>
+                                                  </button>
+                                                </div>
+                                                <input
+                                                  type="text"
+                                                  value={settingsForm.subtitle || ''}
+                                                  onChange={(e) =>
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      subtitle: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold text-stone-800"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                              <button
+                                                type="submit"
+                                                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-2xs"
+                                              >
+                                                Simpan Judul &amp; Subjudul
+                                              </button>
+                                            </div>
+                                          </form>
+
+                                          {/* Daftar Semua Acara dari Database */}
+                                          {scheduleEvents.length === 0 ? (
+                                            <div className="p-5 rounded-xl bg-white border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
+                                              Belum ada rangkaian acara. Klik{' '}
+                                              <strong>+ Tambah Acara</strong> di atas untuk menambahkan jadwal.
+                                            </div>
+                                          ) : (
+                                            <div className="space-y-2.5">
+                                              {(() => {
+                                                const currentMainId = (
+                                                  scheduleEvents.find(
+                                                    (e) => e.isMainEvent
+                                                  ) ||
+                                                  scheduleEvents.find(
+                                                    (e) => e.enableCountdown
+                                                  ) ||
+                                                  scheduleEvents[0]
+                                                )?.id;
+
+                                                const updateSpecificScheduleEvent = (
+                                                  eventId: string,
+                                                  patch: Partial<WeddingScheduleEvent>
+                                                ) => {
+                                                  const nextEvents =
+                                                    scheduleEvents.map((item) =>
+                                                      item.id === eventId
+                                                        ? { ...item, ...patch }
+                                                        : item
+                                                    );
+                                                  setSettingsForm(
+                                                    syncScheduleEventsToSettings(
+                                                      settingsForm,
+                                                      nextEvents
+                                                    )
+                                                  );
+                                                };
+
+                                                return scheduleEvents.map(
+                                                  (ev, evIdx) => {
+                                                    const isMain =
+                                                      ev.id === currentMainId;
+                                                    const isCountdownOn = Boolean(
+                                                      ev.enableCountdown
+                                                    );
+                                                    const isVisibleOnInv =
+                                                      ev.showOnInvitation !==
+                                                      false;
+                                                    const isEvExpanded =
+                                                      expandedScheduleEventId ===
+                                                      ev.id;
+
+                                                    return (
+                                                      <div
+                                                        key={ev.id}
+                                                        className={`p-3 rounded-xl border transition-all ${
+                                                          isMain
+                                                            ? 'bg-gradient-to-r from-white via-[#FAF8F5] to-[#FAF3E3]/50 border-[#D4AF37] shadow-2xs'
+                                                            : 'bg-white border-stone-200/90'
+                                                        }`}
+                                                      >
+                                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                                                          {/* Clickable Event Header */}
+                                                          <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                              setExpandedScheduleEventId(
+                                                                isEvExpanded
+                                                                  ? null
+                                                                  : ev.id
+                                                              )
+                                                            }
+                                                            title="Klik nama acara untuk membuka atau menutup form edit acara ini"
+                                                            className="flex items-start gap-2.5 min-w-0 text-left flex-1 group cursor-pointer"
+                                                          >
+                                                            <div
+                                                              className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 mt-0.5 font-extrabold text-[11px] ${
+                                                                isMain
+                                                                  ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
+                                                                  : isVisibleOnInv
+                                                                    ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                                                    : 'bg-stone-100 border-stone-200 text-stone-400'
+                                                              }`}
+                                                            >
+                                                              {evIdx + 1}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
+                                                                  {ev.title}
+                                                                </span>
+                                                                <ChevronDown
+                                                                  className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                                                    isEvExpanded
+                                                                      ? 'rotate-180 text-[#8B6914]'
+                                                                      : ''
+                                                                  }`}
+                                                                />
+                                                                {ev.badge && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/35 font-bold">
+                                                                    {ev.badge}
+                                                                  </span>
+                                                                )}
+                                                                {isMain && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
+                                                                    ★ ACARA UTAMA
+                                                                  </span>
+                                                                )}
+                                                                {isCountdownOn && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                                                                    ⏱ Countdown
+                                                                  </span>
+                                                                )}
+                                                                {!isVisibleOnInv && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
+                                                                    Disembunyikan
+                                                                  </span>
+                                                                )}
+                                                              </div>
+                                                              <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">
+                                                                {ev.dateLabel} &bull;{' '}
+                                                                {ev.timeLabel} &bull;{' '}
+                                                                {ev.venue}
+                                                              </p>
+                                                            </div>
+                                                          </button>
+
+                                                          {/* Switches & Action Buttons */}
+                                                          <div className="flex items-center gap-2 self-end lg:self-center flex-wrap justify-end shrink-0">
+                                                            {/* Switch 1: Acara Utama */}
+                                                            <div
+                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                isMain
+                                                                  ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                                                  : 'bg-stone-50 border-stone-200'
+                                                              }`}
+                                                              title="Jadikan Acara Utama (menentukan tanggal & lokasi utama di Hero/Cover undangan)"
+                                                            >
+                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                Acara Utama
+                                                              </span>
+                                                              <button
+                                                                type="button"
+                                                                role="switch"
+                                                                aria-checked={isMain}
+                                                                onClick={() =>
+                                                                  handleSetMainScheduleEvent(
+                                                                    ev.id
+                                                                  )
+                                                                }
+                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                  isMain
+                                                                    ? 'bg-[#B68D40]'
+                                                                    : 'bg-stone-300'
+                                                                }`}
+                                                              >
+                                                                <span
+                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                    isMain
+                                                                      ? 'translate-x-4'
+                                                                      : 'translate-x-0'
+                                                                  }`}
+                                                                />
+                                                              </button>
+                                                            </div>
+
+                                                            {/* Switch 2: Countdown */}
+                                                            <div
+                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                isCountdownOn
+                                                                  ? 'bg-emerald-50/70 border-emerald-200'
+                                                                  : 'bg-stone-50 border-stone-200'
+                                                              }`}
+                                                              title="Aktifkan/matikan hitung mundur (Countdown) untuk acara ini"
+                                                            >
+                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                Countdown
+                                                              </span>
+                                                              <button
+                                                                type="button"
+                                                                role="switch"
+                                                                aria-checked={
+                                                                  isCountdownOn
+                                                                }
+                                                                onClick={() =>
+                                                                  handleToggleEventCountdownSwitch(
+                                                                    ev.id,
+                                                                    ev.title
+                                                                  )
+                                                                }
+                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                  isCountdownOn
+                                                                    ? 'bg-emerald-600'
+                                                                    : 'bg-stone-300'
+                                                                }`}
+                                                              >
+                                                                <span
+                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                    isCountdownOn
+                                                                      ? 'translate-x-4'
+                                                                      : 'translate-x-0'
+                                                                  }`}
+                                                                />
+                                                              </button>
+                                                            </div>
+
+                                                            {/* Switch 3: Tampil di Undangan */}
+                                                            <div
+                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                isVisibleOnInv
+                                                                  ? 'bg-emerald-50/70 border-emerald-200'
+                                                                  : 'bg-rose-50/70 border-rose-200'
+                                                              }`}
+                                                              title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                                            >
+                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                Tampil
+                                                              </span>
+                                                              <button
+                                                                type="button"
+                                                                role="switch"
+                                                                aria-checked={
+                                                                  isVisibleOnInv
+                                                                }
+                                                                onClick={() =>
+                                                                  handleToggleSingleEventVisibility(
+                                                                    ev.id,
+                                                                    ev.title
+                                                                  )
+                                                                }
+                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                  isVisibleOnInv
+                                                                    ? 'bg-emerald-600'
+                                                                    : 'bg-stone-300'
+                                                                }`}
+                                                              >
+                                                                <span
+                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                    isVisibleOnInv
+                                                                      ? 'translate-x-4'
+                                                                      : 'translate-x-0'
+                                                                  }`}
+                                                                />
+                                                              </button>
+                                                            </div>
+
+                                                            <button
+                                                              type="button"
+                                                              onClick={() =>
+                                                                setExpandedScheduleEventId(
+                                                                  isEvExpanded
+                                                                    ? null
+                                                                    : ev.id
+                                                                )
+                                                              }
+                                                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                                                                isEvExpanded
+                                                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                                                  : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
+                                                              }`}
+                                                            >
+                                                              {isEvExpanded
+                                                                ? 'Tutup'
+                                                                : 'Edit'}
+                                                            </button>
+
+                                                            <button
+                                                              type="button"
+                                                              onClick={() =>
+                                                                handleDeleteScheduleEvent(
+                                                                  ev.id,
+                                                                  ev.title
+                                                                )
+                                                              }
+                                                              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px]"
+                                                            >
+                                                              Hapus
+                                                            </button>
+                                                          </div>
+                                                        </div>
+
+                                                        {/* Inline Event Detail Form (Shown when clicked) */}
+                                                        {isEvExpanded && (
+                                                          <form
+                                                            onSubmit={
+                                                              handleSaveSettingsModal
+                                                            }
+                                                            className="mt-3 pt-3 border-t border-stone-200/80 space-y-2.5"
+                                                          >
+                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Nama Acara
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.title || ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        title:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] font-semibold"
+                                                                />
+                                                              </div>
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Subjudul Acara
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.subtitle ||
+                                                                    ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        subtitle:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Label Badge
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.badge || ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        badge:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  placeholder="ACARA 1 / UTAMA / SAKRAL"
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Hari &amp; Tanggal (Tampilan)
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.dateLabel ||
+                                                                    ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        dateLabel:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Jam Acara (Tampilan)
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.timeLabel ||
+                                                                    ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        timeLabel:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Nama Lokasi / Gedung
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.venue || ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        venue:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Alamat Lengkap
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.address || ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        address:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Dresscode
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.dresscode ||
+                                                                    ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        dresscode:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                              <div>
+                                                                <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
+                                                                  Link Google Maps
+                                                                </label>
+                                                                <input
+                                                                  type="text"
+                                                                  value={
+                                                                    ev.mapsUrl || ''
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    updateSpecificScheduleEvent(
+                                                                      ev.id,
+                                                                      {
+                                                                        mapsUrl:
+                                                                          e.target
+                                                                            .value,
+                                                                      }
+                                                                    )
+                                                                  }
+                                                                  className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5]"
+                                                                />
+                                                              </div>
+                                                            </div>
+
+                                                            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                                                              <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                  handleOpenEditScheduleEvent(
+                                                                    ev
+                                                                  )
+                                                                }
+                                                                className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px]"
+                                                              >
+                                                                Atur Tanggal ISO &amp; Jam Presisi
+                                                              </button>
+                                                              <button
+                                                                type="submit"
+                                                                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
+                                                              >
+                                                                Simpan Perubahan Acara
+                                                              </button>
+                                                            </div>
+                                                          </form>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  }
+                                                );
+                                              })()}
+                                            </div>
+                                          )}
+                                        </div>
                                       )}
 
                                       {/* 6. EDITOR KISAH KASIH (LOVE STORY TIMELINE) */}
@@ -10570,11 +11181,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               );
                             })}
                           </div>
-
-                          {/* Musik & Playlist Undangan (Tampil di Konten Undangan: Semua & Media) */}
-                          <div className="pt-3 border-t border-stone-200/80">
-                            {renderMusicPlaylistManager()}
-                          </div>
                         </>
                       );
                     })()}
@@ -10582,166 +11188,230 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===============================================================
-                    MENU 2: TEMA & BACKGROUND UNDANGAN
+                    MENU 2: TEMA & BACKGROUND UNDANGAN (COLLAPSED BY DEFAULT, CLICK TITLE TO EXPAND)
                    =============================================================== */}
                 {settingsMenuTab === 'background' && (
-                  <form onSubmit={handleSaveSettingsModal} className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
+                  <form onSubmit={handleSaveSettingsModal} className="space-y-3.5 text-xs sm:text-sm">
                     <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <Sparkles className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
                           Tema &amp; Latar
                         </h3>
-                        <InfoTooltip text="Pilih palet tema warna undangan & planner, preset latar default, atau upload foto/video sendiri untuk Cover, Banner Utama, dan Wallpaper Latar." />
+                        <InfoTooltip text="Klik judul masing-masing pengaturan di bawah untuk membuka atau menutup pilihan palet tema warna, preset latar, upload foto/video Cover, Banner Hero, dan Wallpaper Latar." />
                       </div>
                       <span className={`px-2.5 py-1 rounded-full border ${activeManagerTheme.badgeIdle} font-bold text-[11px] whitespace-nowrap shrink-0`}>
                         &bull; {activeManagerTheme.name} &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
                       </span>
                     </div>
 
-                    {/* 5 Invitation Theme Color Palettes (Syncs Undangan & Manager Atmosphere) */}
+                    {/* 1. Palet Tema Warna Undangan & Planner (Collapsible) */}
                     <div className={`p-3.5 sm:p-4 rounded-xl ${activeManagerTheme.pageBg} border border-stone-200/80 space-y-3 transition-colors`}>
                       <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="font-bold text-xs text-stone-800 truncate">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedBgCardKey(
+                              expandedBgCardKey === 'palette' ? null : 'palette'
+                            )
+                          }
+                          className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
+                        >
+                          <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
                             Palet Tema Warna Undangan &amp; Planner (5 Karakter)
                           </p>
-                          <InfoTooltip text="Pilih 1 dari 5 palet tema warna. Tema yang dipilih langsung menghiasi tampilan Undangan Publik sekaligus menyelaraskan atmosfer warna di ruang kerja Manager/Planner ini." />
+                          <ChevronDown
+                            className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                              expandedBgCardKey === 'palette'
+                                ? 'rotate-180 text-[#8B6914]'
+                                : ''
+                            }`}
+                          />
+                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`px-2 py-0.5 rounded-full border ${activeManagerTheme.badgeIdle} text-[10px] font-extrabold`}>
+                            Aktif: {activeManagerTheme.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedBgCardKey(
+                                expandedBgCardKey === 'palette' ? null : 'palette'
+                              )
+                            }
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                              expandedBgCardKey === 'palette'
+                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                            }`}
+                          >
+                            {expandedBgCardKey === 'palette' ? 'Tutup' : 'Buka'}
+                          </button>
                         </div>
-                        <span className={`px-2 py-0.5 rounded-full border ${activeManagerTheme.badgeIdle} text-[10px] font-extrabold`}>
-                          Aktif: {activeManagerTheme.name}
-                        </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                        {(
-                          Object.values(MANAGER_THEME_PALETTES) as Array<
-                            (typeof MANAGER_THEME_PALETTES)[ManagerThemePresetKey]
-                          >
-                        ).map((palette) => {
-                          const isSelected = activeThemePresetId === palette.id;
-                          return (
+                      {expandedBgCardKey === 'palette' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 pt-2 border-t border-stone-200/60">
+                          {(
+                            Object.values(MANAGER_THEME_PALETTES) as Array<
+                              (typeof MANAGER_THEME_PALETTES)[ManagerThemePresetKey]
+                            >
+                          ).map((palette) => {
+                            const isSelected = activeThemePresetId === palette.id;
+                            return (
+                              <button
+                                key={palette.id}
+                                type="button"
+                                onClick={async () => {
+                                  const nextSettings: WeddingSettings = {
+                                    ...state.settings,
+                                    ...settingsForm,
+                                    themePreset: palette.id as any,
+                                    updatedBy: adminUser.username,
+                                  };
+                                  setSettingsFormInternal(nextSettings);
+                                  await commitImmediateSettings(nextSettings);
+                                  showToast(
+                                    `✓ Palet Tema Undangan & Planner diubah ke "${palette.name}"!`
+                                  );
+                                }}
+                                className={`p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-2 ${
+                                  isSelected
+                                    ? `bg-white ring-2 ring-offset-1 ring-stone-800 border-stone-800 shadow-xs`
+                                    : 'bg-white/90 hover:bg-white border-stone-200/90 hover:border-stone-400'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <div className="flex items-center -space-x-1">
+                                    {palette.swatches.map((hex, i) => (
+                                      <span
+                                        key={hex + i}
+                                        className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs"
+                                        style={{ backgroundColor: hex }}
+                                      />
+                                    ))}
+                                  </div>
+                                  {isSelected && (
+                                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold border ${palette.badgeIdle}`}>
+                                      Dipakai
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-xs text-stone-900 truncate">
+                                    {palette.name}
+                                  </p>
+                                  <p className="text-[10px] text-stone-500 truncate">
+                                    {palette.subtitle}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Quick Preset Selector (Collapsible) */}
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedBgCardKey(
+                              expandedBgCardKey === 'preset' ? null : 'preset'
+                            )
+                          }
+                          className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
+                        >
+                          <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
+                            Preset Tema Latar Undangan ({BACKGROUND_PRESETS.length} Pilihan)
+                          </p>
+                          <ChevronDown
+                            className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                              expandedBgCardKey === 'preset'
+                                ? 'rotate-180 text-[#8B6914]'
+                                : ''
+                            }`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedBgCardKey(
+                              expandedBgCardKey === 'preset' ? null : 'preset'
+                            )
+                          }
+                          className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                            expandedBgCardKey === 'preset'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                              : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                          }`}
+                        >
+                          {expandedBgCardKey === 'preset' ? 'Tutup' : 'Buka'}
+                        </button>
+                      </div>
+                      {expandedBgCardKey === 'preset' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[#D4AF37]/25">
+                          {BACKGROUND_PRESETS.map((preset) => (
                             <button
-                              key={palette.id}
+                              key={preset.label}
                               type="button"
+                              title={`Terapkan tema "${preset.label}" ke Sampul Depan & Wallpaper Latar`}
                               onClick={async () => {
-                                const nextSettings: WeddingSettings = {
-                                  ...state.settings,
-                                  ...settingsForm,
-                                  themePreset: palette.id as any,
-                                  updatedBy: adminUser.username,
+                                const coverPresetSlide: BackgroundSlideItem = {
+                                  id: 'cover_preset_1',
+                                  imageUrl: preset.url,
+                                  originalImageUrl: preset.url,
                                 };
+                                const pagePresetSlide: BackgroundSlideItem = {
+                                  id: 'page_preset_1',
+                                  imageUrl: preset.url,
+                                  originalImageUrl: preset.url,
+                                };
+                                let nextSettings = syncSectionSlidesToSettings(
+                                  'cover',
+                                  [coverPresetSlide],
+                                  {
+                                    ...state.settings,
+                                    ...settingsForm,
+                                    coverVideoUrl: '',
+                                    pageVideoUrl: '',
+                                  }
+                                );
+                                nextSettings = syncSectionSlidesToSettings(
+                                  'page',
+                                  [pagePresetSlide],
+                                  nextSettings
+                                );
                                 setSettingsFormInternal(nextSettings);
                                 await commitImmediateSettings(nextSettings);
                                 showToast(
-                                  `✓ Palet Tema Undangan & Planner diubah ke "${palette.name}"!`
+                                  `✓ Preset tema "${preset.label}" berhasil diterapkan ke Sampul & Wallpaper Latar!`
                                 );
                               }}
-                              className={`p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-2 ${
-                                isSelected
-                                  ? `bg-white ring-2 ring-offset-1 ring-stone-800 border-stone-800 shadow-xs`
-                                  : 'bg-white/90 hover:bg-white border-stone-200/90 hover:border-stone-400'
-                              }`}
+                              className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-2.5"
                             >
-                              <div className="flex items-center justify-between gap-1.5">
-                                <div className="flex items-center -space-x-1">
-                                  {palette.swatches.map((hex, i) => (
-                                    <span
-                                      key={hex + i}
-                                      className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs"
-                                      style={{ backgroundColor: hex }}
-                                    />
-                                  ))}
-                                </div>
-                                {isSelected && (
-                                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold border ${palette.badgeIdle}`}>
-                                    Dipakai
-                                  </span>
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-extrabold text-xs text-stone-900 truncate">
-                                  {palette.name}
+                              <img
+                                src={preset.url}
+                                alt={preset.label}
+                                className="w-10 h-10 rounded-lg object-cover border border-[#D4AF37]/30 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-bold text-xs text-stone-900 truncate">
+                                  {preset.label}
                                 </p>
-                                <p className="text-[10px] text-stone-500 truncate">
-                                  {palette.subtitle}
+                                <p className="text-[11px] text-[#8B6914] font-semibold truncate">
+                                  Pakai Tema +
                                 </p>
                               </div>
                             </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Quick Preset Selector */}
-                    <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="font-bold text-xs text-stone-800 truncate">
-                            Preset Tema Latar Undangan
-                          </p>
-                          <InfoTooltip text="Klik salah satu preset tema di bawah untuk langsung menerapkannya ke latar undangan, atau upload foto/video sendiri pada kartu Media Latar di bawah." />
+                          ))}
                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {BACKGROUND_PRESETS.map((preset) => (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            title={`Terapkan tema "${preset.label}" ke Sampul Depan & Wallpaper Latar`}
-                            onClick={async () => {
-                              const coverPresetSlide: BackgroundSlideItem = {
-                                id: 'cover_preset_1',
-                                imageUrl: preset.url,
-                                originalImageUrl: preset.url,
-                              };
-                              const pagePresetSlide: BackgroundSlideItem = {
-                                id: 'page_preset_1',
-                                imageUrl: preset.url,
-                                originalImageUrl: preset.url,
-                              };
-                              let nextSettings = syncSectionSlidesToSettings(
-                                'cover',
-                                [coverPresetSlide],
-                                {
-                                  ...state.settings,
-                                  ...settingsForm,
-                                  coverVideoUrl: '',
-                                  pageVideoUrl: '',
-                                }
-                              );
-                              nextSettings = syncSectionSlidesToSettings(
-                                'page',
-                                [pagePresetSlide],
-                                nextSettings
-                              );
-                              setSettingsFormInternal(nextSettings);
-                              await commitImmediateSettings(nextSettings);
-                              showToast(
-                                `✓ Preset tema "${preset.label}" berhasil diterapkan ke Sampul & Wallpaper Latar!`
-                              );
-                            }}
-                            className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-2.5"
-                          >
-                            <img
-                              src={preset.url}
-                              alt={preset.label}
-                              className="w-10 h-10 rounded-lg object-cover border border-[#D4AF37]/30 shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <p className="font-bold text-xs text-stone-900 truncate">
-                                {preset.label}
-                              </p>
-                              <p className="text-[11px] text-[#8B6914] font-semibold truncate">
-                                Pakai Tema +
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                      )}
                     </div>
 
-                    {/* 3 Distinct Per-Section Media & Slideshow Cards */}
+                    {/* 3 Distinct Per-Section Media & Slideshow Cards (Collapsible) */}
                     {(() => {
                       const renderSectionMediaCard = (
                         section: BackgroundSectionKey,
@@ -10772,19 +11442,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         const isUploadingThisVideo =
                           uploadingVideoSlot === videoSlot ||
                           uploadingVideoSlot === 'all_video';
+                        const isCardExpanded = expandedBgCardKey === section;
 
                         return (
                           <div
                             key={section}
                             className="p-3.5 sm:p-4 rounded-xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-3"
                           >
-                            {/* Card Header */}
-                            <div className="flex items-center justify-between gap-2 flex-wrap pb-2.5 border-b border-stone-100">
-                              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                <p className="font-extrabold text-xs sm:text-sm text-stone-900">
+                            {/* Card Header (Click Title to Toggle Expand) */}
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedBgCardKey(
+                                    isCardExpanded ? null : section
+                                  )
+                                }
+                                title="Klik judul untuk membuka atau menutup bagian media ini"
+                                className="flex items-center gap-1.5 min-w-0 flex-wrap text-left flex-1 group cursor-pointer"
+                              >
+                                <p className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
                                   {title}
                                 </p>
-                                <InfoTooltip text={tooltip} />
+                                <ChevronDown
+                                  className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                    isCardExpanded
+                                      ? 'rotate-180 text-[#8B6914]'
+                                      : ''
+                                  }`}
+                                />
                                 {isVideoActive ? (
                                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
                                     Video Aktif
@@ -10802,7 +11488,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     Kosong
                                   </span>
                                 )}
-                              </div>
+                              </button>
 
                               <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                                 {slides.length > 1 && (
@@ -10876,304 +11562,328 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     }
                                   />
                                 </label>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedBgCardKey(
+                                      isCardExpanded ? null : section
+                                    )
+                                  }
+                                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                    isCardExpanded
+                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                      : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
+                                  }`}
+                                >
+                                  {isCardExpanded ? 'Tutup' : 'Buka'}
+                                </button>
                               </div>
                             </div>
 
-                            {/* Active Video Row */}
-                            {isVideoActive && (
-                              <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2">
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
-                                    VIDEO AKTIF
-                                  </span>
-
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openMediaSidebarInspector(
-                                          fieldKey,
-                                          title,
-                                          stageShape,
-                                          'video'
-                                        )
-                                      }
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
-                                      title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
-                                    >
-                                      <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                      <span>Fokus Video</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      title="Hapus video dari bagian ini"
-                                      onClick={async () => {
-                                        void deleteMediaFromSupabaseStorage(
-                                          activeVideoUrl
-                                        );
-                                        const nextSettings: WeddingSettings = {
-                                          ...state.settings,
-                                          ...settingsForm,
-                                          [videoSlot]: '',
-                                          updatedBy: adminUser.username,
-                                        };
-                                        setSettingsFormInternal(nextSettings);
-                                        await commitImmediateSettings(
-                                          nextSettings
-                                        );
-                                        showToast(
-                                          `✓ Video pada "${title}" berhasil dihapus.`
-                                        );
-                                      }}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                      <span>Hapus</span>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2.5">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      openMediaSidebarInspector(
-                                        fieldKey,
-                                        title,
-                                        stageShape,
-                                        'video'
-                                      )
-                                    }
-                                    title="Klik untuk atur Fokus Video di Sidebar Kanan"
-                                    className="w-12 h-12 rounded-lg overflow-hidden border border-emerald-300 shrink-0 relative bg-stone-900"
-                                  >
-                                    <video
-                                      src={activeVideoUrl}
-                                      poster={slides[0]?.imageUrl || undefined}
-                                      muted
-                                      loop
-                                      autoPlay
-                                      playsInline
-                                      className="w-full h-full object-cover"
-                                      style={{
-                                        objectPosition: `50% ${
-                                          settingsForm.videoFocusY ?? 28
-                                        }%`,
-                                      }}
-                                    />
-                                    <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
-                                      MP4
-                                    </span>
-                                  </button>
-
-                                  <input
-                                    type="text"
-                                    value={activeVideoUrl}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setSettingsForm({
-                                        ...settingsForm,
-                                        [videoSlot]: val,
-                                      });
-                                    }}
-                                    placeholder="URL Video (.mp4 / .webm)..."
-                                    className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Photo / Slideshow Rows */}
-                            {slides.length === 0 && !isVideoActive ? (
-                              <div className="p-3 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center">
-                                <p className="text-xs text-stone-600 font-semibold">
-                                  Belum ada media pada bagian ini. Klik{' '}
-                                  <strong>Upload Media</strong> di atas.
+                            {isCardExpanded && (
+                              <div className="pt-2.5 border-t border-stone-100 space-y-2.5">
+                                <p className="text-[11px] text-stone-500">
+                                  {tooltip}
                                 </p>
-                              </div>
-                            ) : (
-                              slides.length > 0 && (
-                                <div className="space-y-2">
-                                  {slides.map((slide, idx) => (
-                                    <div
-                                      key={slide.id || `${section}_${idx}`}
-                                      className="p-2.5 rounded-xl bg-[#FAF8F5]/70 border border-stone-200 flex flex-col gap-2"
-                                    >
-                                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <span
-                                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                            idx === 0
-                                              ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
-                                              : 'bg-white text-stone-600 border-stone-200'
-                                          }`}
-                                        >
-                                          {slides.length === 1
-                                            ? 'Foto Utama'
-                                            : `Slide #${idx + 1}`}
-                                        </span>
 
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                          <label
-                                            title="Ganti foto ini"
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer transition-all"
-                                          >
-                                            <Upload className="w-3.5 h-3.5 shrink-0" />
-                                            <span>Ganti</span>
-                                            <input
-                                              type="file"
-                                              accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                              className="hidden"
-                                              onChange={(e) =>
-                                                handleUploadUnifiedBackgroundMedia(
-                                                  e,
-                                                  section,
-                                                  idx
-                                                )
-                                              }
-                                            />
-                                          </label>
+                                {/* Active Video Row */}
+                                {isVideoActive && (
+                                  <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-50/40 border border-emerald-200 space-y-2">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px]">
+                                        VIDEO AKTIF
+                                      </span>
 
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              openBackgroundSlideAdjust(
-                                                section,
-                                                slide,
-                                                idx
-                                              )
-                                            }
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
-                                            title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto ini"
-                                          >
-                                            <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                                            <span>Crop</span>
-                                          </button>
-
-                                          <button
-                                            type="button"
-                                            title="Hapus foto ini dari bagian ini"
-                                            onClick={async () => {
-                                              void deleteMediaFromSupabaseStorage(
-                                                slide.imageUrl
-                                              );
-                                              if (
-                                                slide.originalImageUrl &&
-                                                slide.originalImageUrl !==
-                                                  slide.imageUrl
-                                              ) {
-                                                void deleteMediaFromSupabaseStorage(
-                                                  slide.originalImageUrl
-                                                );
-                                              }
-                                              const remainingSlides =
-                                                slides.filter(
-                                                  (_, i) => i !== idx
-                                                );
-                                              const nextSettings =
-                                                syncSectionSlidesToSettings(
-                                                  section,
-                                                  remainingSlides,
-                                                  {
-                                                    ...state.settings,
-                                                    ...settingsForm,
-                                                  }
-                                                );
-                                              setSettingsFormInternal(
-                                                nextSettings
-                                              );
-                                              await commitImmediateSettings(
-                                                nextSettings
-                                              );
-                                              showToast(
-                                                `✓ Foto dihapus dari "${title}".`
-                                              );
-                                            }}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                            <span>Hapus</span>
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2.5">
+                                      <div className="flex items-center gap-1.5">
                                         <button
                                           type="button"
                                           onClick={() =>
-                                            openBackgroundSlideAdjust(
-                                              section,
-                                              slide,
-                                              idx
+                                            openMediaSidebarInspector(
+                                              fieldKey,
+                                              title,
+                                              stageShape,
+                                              'video'
                                             )
                                           }
-                                          title="Klik untuk membuka Sidebar Kanan: Crop & Posisi Foto"
-                                          className={`${
-                                            section === 'hero'
-                                              ? 'w-16 h-11'
-                                              : 'w-11 h-14'
-                                          } rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900`}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                          title="Buka Sidebar Kanan untuk mengatur Fokus Highlight Video HP (9:16) di Layar Lebar PC (16:9)"
                                         >
-                                          <img
-                                            src={slide.imageUrl}
-                                            alt={`${title} #${idx + 1}`}
-                                            className="w-full h-full object-cover object-center"
-                                            style={getPhotoAdjustStyle(
-                                              slide.adjustment
-                                            )}
-                                          />
+                                          <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                          <span>Fokus Video</span>
                                         </button>
 
-                                        <input
-                                          type="text"
-                                          value={
-                                            slide.imageUrl.startsWith(
-                                              'data:image/'
-                                            )
-                                              ? ''
-                                              : slide.imageUrl
-                                          }
-                                          onChange={(e) => {
-                                            const val = e.target.value;
-                                            const nextSlides = slides.map(
-                                              (s, i) =>
-                                                i === idx
-                                                  ? {
-                                                      ...s,
-                                                      imageUrl: val,
-                                                      originalImageUrl: val,
-                                                    }
-                                                  : s
+                                        <button
+                                          type="button"
+                                          title="Hapus video dari bagian ini"
+                                          onClick={async () => {
+                                            void deleteMediaFromSupabaseStorage(
+                                              activeVideoUrl
                                             );
-                                            const nextSettings =
-                                              syncSectionSlidesToSettings(
-                                                section,
-                                                nextSlides,
-                                                {
-                                                  ...state.settings,
-                                                  ...settingsForm,
-                                                }
-                                              );
-                                            setSettingsForm(nextSettings);
+                                            const nextSettings: WeddingSettings = {
+                                              ...state.settings,
+                                              ...settingsForm,
+                                              [videoSlot]: '',
+                                              updatedBy: adminUser.username,
+                                            };
+                                            setSettingsFormInternal(nextSettings);
+                                            await commitImmediateSettings(
+                                              nextSettings
+                                            );
+                                            showToast(
+                                              `✓ Video pada "${title}" berhasil dihapus.`
+                                            );
                                           }}
-                                          placeholder={
-                                            slide.imageUrl.startsWith(
-                                              'data:image/'
-                                            )
-                                              ? `✓ ${
-                                                  slides.length === 1
-                                                    ? 'Foto Utama'
-                                                    : `Slide #${idx + 1}`
-                                                } tersimpan (Klik Crop / Ganti)`
-                                              : 'Tempel URL Foto atau gunakan tombol Upload...'
-                                          }
-                                          className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
-                                        />
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                          <span>Hapus</span>
+                                        </button>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-                              )
+
+                                    <div className="flex items-center gap-2.5">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          openMediaSidebarInspector(
+                                            fieldKey,
+                                            title,
+                                            stageShape,
+                                            'video'
+                                          )
+                                        }
+                                        title="Klik untuk atur Fokus Video di Sidebar Kanan"
+                                        className="w-12 h-12 rounded-lg overflow-hidden border border-emerald-300 shrink-0 relative bg-stone-900"
+                                      >
+                                        <video
+                                          src={activeVideoUrl}
+                                          poster={slides[0]?.imageUrl || undefined}
+                                          muted
+                                          loop
+                                          autoPlay
+                                          playsInline
+                                          className="w-full h-full object-cover"
+                                          style={{
+                                            objectPosition: `50% ${
+                                              settingsForm.videoFocusY ?? 28
+                                            }%`,
+                                          }}
+                                        />
+                                        <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
+                                          MP4
+                                        </span>
+                                      </button>
+
+                                      <input
+                                        type="text"
+                                        value={activeVideoUrl}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setSettingsForm({
+                                            ...settingsForm,
+                                            [videoSlot]: val,
+                                          });
+                                        }}
+                                        placeholder="URL Video (.mp4 / .webm)..."
+                                        className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Photo / Slideshow Rows */}
+                                {slides.length === 0 && !isVideoActive ? (
+                                  <div className="p-3 rounded-xl bg-[#FAF8F5] border border-dashed border-stone-300 text-center">
+                                    <p className="text-xs text-stone-600 font-semibold">
+                                      Belum ada media pada bagian ini. Klik{' '}
+                                      <strong>Upload Media</strong> di atas.
+                                    </p>
+                                  </div>
+                                ) : (
+                                  slides.length > 0 && (
+                                    <div className="space-y-2">
+                                      {slides.map((slide, idx) => (
+                                        <div
+                                          key={slide.id || `${section}_${idx}`}
+                                          className="p-2.5 rounded-xl bg-[#FAF8F5]/70 border border-stone-200 flex flex-col gap-2"
+                                        >
+                                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                                            <span
+                                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                                idx === 0
+                                                  ? 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/50'
+                                                  : 'bg-white text-stone-600 border-stone-200'
+                                              }`}
+                                            >
+                                              {slides.length === 1
+                                                ? 'Foto Utama'
+                                                : `Slide #${idx + 1}`}
+                                            </span>
+
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                              <label
+                                                title="Ganti foto ini"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer transition-all"
+                                              >
+                                                <Upload className="w-3.5 h-3.5 shrink-0" />
+                                                <span>Ganti</span>
+                                                <input
+                                                  type="file"
+                                                  accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                                  className="hidden"
+                                                  onChange={(e) =>
+                                                    handleUploadUnifiedBackgroundMedia(
+                                                      e,
+                                                      section,
+                                                      idx
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  openBackgroundSlideAdjust(
+                                                    section,
+                                                    slide,
+                                                    idx
+                                                  )
+                                                }
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs transition-all"
+                                                title="Buka Sidebar Kanan untuk Crop, Zoom & Posisi foto ini"
+                                              >
+                                                <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                                <span>Crop</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                title="Hapus foto ini dari bagian ini"
+                                                onClick={async () => {
+                                                  void deleteMediaFromSupabaseStorage(
+                                                    slide.imageUrl
+                                                  );
+                                                  if (
+                                                    slide.originalImageUrl &&
+                                                    slide.originalImageUrl !==
+                                                      slide.imageUrl
+                                                  ) {
+                                                    void deleteMediaFromSupabaseStorage(
+                                                      slide.originalImageUrl
+                                                    );
+                                                  }
+                                                  const remainingSlides =
+                                                    slides.filter(
+                                                      (_, i) => i !== idx
+                                                    );
+                                                  const nextSettings =
+                                                    syncSectionSlidesToSettings(
+                                                      section,
+                                                      remainingSlides,
+                                                      {
+                                                        ...state.settings,
+                                                        ...settingsForm,
+                                                      }
+                                                    );
+                                                  setSettingsFormInternal(
+                                                    nextSettings
+                                                  );
+                                                  await commitImmediateSettings(
+                                                    nextSettings
+                                                  );
+                                                  showToast(
+                                                    `✓ Foto dihapus dari "${title}".`
+                                                  );
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs transition-all"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                                <span>Hapus</span>
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2.5">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                openBackgroundSlideAdjust(
+                                                  section,
+                                                  slide,
+                                                  idx
+                                                )
+                                              }
+                                              title="Klik untuk membuka Sidebar Kanan: Crop & Posisi Foto"
+                                              className={`${
+                                                section === 'hero'
+                                                  ? 'w-16 h-11'
+                                                  : 'w-11 h-14'
+                                              } rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900`}
+                                            >
+                                              <img
+                                                src={slide.imageUrl}
+                                                alt={`${title} #${idx + 1}`}
+                                                className="w-full h-full object-cover object-center"
+                                                style={getPhotoAdjustStyle(
+                                                  slide.adjustment
+                                                )}
+                                              />
+                                            </button>
+
+                                            <input
+                                              type="text"
+                                              value={
+                                                slide.imageUrl.startsWith(
+                                                  'data:image/'
+                                                )
+                                                  ? ''
+                                                  : slide.imageUrl
+                                              }
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const nextSlides = slides.map(
+                                                  (s, i) =>
+                                                    i === idx
+                                                      ? {
+                                                          ...s,
+                                                          imageUrl: val,
+                                                          originalImageUrl: val,
+                                                        }
+                                                      : s
+                                                );
+                                                const nextSettings =
+                                                  syncSectionSlidesToSettings(
+                                                    section,
+                                                    nextSlides,
+                                                    {
+                                                      ...state.settings,
+                                                      ...settingsForm,
+                                                    }
+                                                  );
+                                                setSettingsForm(nextSettings);
+                                              }}
+                                              placeholder={
+                                                slide.imageUrl.startsWith(
+                                                  'data:image/'
+                                                )
+                                                  ? `✓ ${
+                                                      slides.length === 1
+                                                        ? 'Foto Utama'
+                                                        : `Slide #${idx + 1}`
+                                                    } tersimpan (Klik Crop / Ganti)`
+                                                  : 'Tempel URL Foto atau gunakan tombol Upload...'
+                                              }
+                                              className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )
+                                )}
+                              </div>
                             )}
                           </div>
                         );
@@ -11206,192 +11916,244 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             'Media latar belakang halaman saat undangan dibuka. Upload 1 foto untuk latar statis, 2+ foto untuk Slideshow Latar, atau 1 video MP4.'
                           )}
 
-                          {/* Slideshow Transition Settings Card */}
-                          {hasAnySlideshow && (
-                            <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-2.5">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
-                                    Transisi Slideshow
-                                  </p>
-                                  <InfoTooltip text="Pengaturan gaya transisi, jeda slide, dan kehalusan smoothing ini berlaku untuk bagian yang memiliki 2+ foto (Slideshow)." />
-                                </div>
-                              </div>
+                          {/* 4. Efek Transparansi Veil, Blur Latar & Transisi Slideshow (Collapsible) */}
+                          <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-3">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedBgCardKey(
+                                    expandedBgCardKey === 'effects'
+                                      ? null
+                                      : 'effects'
+                                  )
+                                }
+                                className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
+                              >
+                                <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
+                                  Efek Transparansi Veil, Blur Latar &amp; Transisi Slideshow
+                                </p>
+                                <ChevronDown
+                                  className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                    expandedBgCardKey === 'effects'
+                                      ? 'rotate-180 text-[#8B6914]'
+                                      : ''
+                                  }`}
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedBgCardKey(
+                                    expandedBgCardKey === 'effects'
+                                      ? null
+                                      : 'effects'
+                                  )
+                                }
+                                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                                  expandedBgCardKey === 'effects'
+                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                    : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                                }`}
+                              >
+                                {expandedBgCardKey === 'effects'
+                                  ? 'Tutup'
+                                  : 'Buka'}
+                              </button>
+                            </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                                {(
-                                  [
-                                    {
-                                      key: 'CROSSFADE',
-                                      label: 'Crossfade',
-                                      title:
-                                        'Transisi memudar halus antar foto',
-                                    },
-                                    {
-                                      key: 'ZOOM_DISSOLVE',
-                                      label: 'Zoom & Blur',
-                                      title:
-                                        'Transisi sinematik dengan efek zoom lembut dan blur halus',
-                                    },
-                                    {
-                                      key: 'SMOOTH_SLIDE',
-                                      label: 'Geser Halus',
-                                      title:
-                                        'Transisi bergeser horizontal secara mulus',
-                                    },
-                                  ] as const
-                                ).map((mode) => {
-                                  const currentStyle =
-                                    settingsForm.galleryTransitionStyle ??
-                                    'CROSSFADE';
-                                  const isActive = currentStyle === mode.key;
-                                  return (
-                                    <button
-                                      key={mode.key}
-                                      type="button"
-                                      title={mode.title}
-                                      onClick={() =>
+                            {expandedBgCardKey === 'effects' && (
+                              <div className="pt-2.5 border-t border-[#D4AF37]/25 space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <label className="font-bold text-stone-800 text-xs">
+                                        Transparansi Veil
+                                      </label>
+                                      <span className="font-mono font-bold text-[#8B6914] text-xs">
+                                        {settingsForm.bgOverlayOpacity ?? 88}%
+                                      </span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min={45}
+                                      max={95}
+                                      value={settingsForm.bgOverlayOpacity ?? 88}
+                                      onChange={(e) =>
                                         setSettingsForm({
                                           ...settingsForm,
-                                          galleryTransitionStyle: mode.key,
+                                          bgOverlayOpacity: Number(
+                                            e.target.value
+                                          ),
                                         })
                                       }
-                                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
-                                        isActive
-                                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
-                                          : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
-                                      }`}
+                                      className="w-full accent-[#B68D40]"
+                                    />
+                                  </div>
+
+                                  <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30">
+                                    <label className="block font-bold text-stone-800 text-xs mb-1">
+                                      Efek Blur Latar
+                                    </label>
+                                    <select
+                                      value={
+                                        settingsForm.bgBlurIntensity || 'sm'
+                                      }
+                                      onChange={(e) =>
+                                        setSettingsForm({
+                                          ...settingsForm,
+                                          bgBlurIntensity:
+                                            e.target
+                                              .value as WeddingSettings['bgBlurIntensity'],
+                                        })
+                                      }
+                                      className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-[#FAF8F5] text-xs"
                                     >
-                                      {mode.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
-                                  <div className="flex items-center justify-between text-[10px] font-bold">
-                                    <span className="text-stone-700">
-                                      Jeda Slide
-                                    </span>
-                                    <span className="text-[#8B6914]">
-                                      {(settingsForm.gallerySlideDurationSeconds ??
-                                        6) === 0
-                                        ? 'Manual (Mati)'
-                                        : `${settingsForm.gallerySlideDurationSeconds ?? 6} dtk`}
-                                    </span>
+                                      <option value="none">Tanpa Blur</option>
+                                      <option value="sm">
+                                        Blur Halus (Default)
+                                      </option>
+                                      <option value="md">Blur Sedang</option>
+                                      <option value="lg">Blur Kuat</option>
+                                    </select>
                                   </div>
-                                  <input
-                                    type="range"
-                                    min={2}
-                                    max={15}
-                                    step={1}
-                                    value={
-                                      settingsForm.gallerySlideDurationSeconds ||
-                                      6
-                                    }
-                                    onChange={(e) =>
-                                      setSettingsForm({
-                                        ...settingsForm,
-                                        gallerySlideDurationSeconds: Number(
-                                          e.target.value
-                                        ),
-                                      })
-                                    }
-                                    className="w-full accent-[#B68D40] h-1.5"
-                                  />
                                 </div>
 
-                                <div className="p-2 rounded-lg bg-white/90 border border-stone-200/80 space-y-1">
-                                  <div className="flex items-center justify-between text-[10px] font-bold">
-                                    <span className="text-stone-700">
-                                      Durasi Smoothing
-                                    </span>
-                                    <span className="text-[#8B6914]">
+                                {hasAnySlideshow && (
+                                  <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/30 space-y-2.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
+                                        Transisi Slideshow
+                                      </p>
+                                      <InfoTooltip text="Pengaturan gaya transisi, jeda slide, dan kehalusan smoothing ini berlaku untuk bagian yang memiliki 2+ foto (Slideshow)." />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                                       {(
-                                        (settingsForm.galleryTransitionDurationMs ??
-                                          1400) / 1000
-                                      ).toFixed(1)}{' '}
-                                      dtk
-                                    </span>
+                                        [
+                                          {
+                                            key: 'CROSSFADE',
+                                            label: 'Crossfade',
+                                            title:
+                                              'Transisi memudar halus antar foto',
+                                          },
+                                          {
+                                            key: 'ZOOM_DISSOLVE',
+                                            label: 'Zoom & Blur',
+                                            title:
+                                              'Transisi sinematik dengan efek zoom lembut dan blur halus',
+                                          },
+                                          {
+                                            key: 'SMOOTH_SLIDE',
+                                            label: 'Geser Halus',
+                                            title:
+                                              'Transisi bergeser horizontal secara mulus',
+                                          },
+                                        ] as const
+                                      ).map((mode) => {
+                                        const currentStyle =
+                                          settingsForm.galleryTransitionStyle ??
+                                          'CROSSFADE';
+                                        const isActive =
+                                          currentStyle === mode.key;
+                                        return (
+                                          <button
+                                            key={mode.key}
+                                            type="button"
+                                            title={mode.title}
+                                            onClick={() =>
+                                              setSettingsForm({
+                                                ...settingsForm,
+                                                galleryTransitionStyle:
+                                                  mode.key,
+                                              })
+                                            }
+                                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold truncate transition-all border ${
+                                              isActive
+                                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#9A742B] shadow-2xs'
+                                                : 'bg-[#FAF8F5] text-stone-700 border-stone-200 hover:border-[#D4AF37]'
+                                            }`}
+                                          >
+                                            {mode.label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <div className="p-2 rounded-lg bg-[#FAF8F5] border border-stone-200/80 space-y-1">
+                                        <div className="flex items-center justify-between text-[10px] font-bold">
+                                          <span className="text-stone-700">
+                                            Jeda Slide
+                                          </span>
+                                          <span className="text-[#8B6914]">
+                                            {(settingsForm.gallerySlideDurationSeconds ??
+                                              6) === 0
+                                              ? 'Manual (Mati)'
+                                              : `${settingsForm.gallerySlideDurationSeconds ?? 6} dtk`}
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="range"
+                                          min={2}
+                                          max={15}
+                                          step={1}
+                                          value={
+                                            settingsForm.gallerySlideDurationSeconds ||
+                                            6
+                                          }
+                                          onChange={(e) =>
+                                            setSettingsForm({
+                                              ...settingsForm,
+                                              gallerySlideDurationSeconds:
+                                                Number(e.target.value),
+                                            })
+                                          }
+                                          className="w-full accent-[#B68D40] h-1.5"
+                                        />
+                                      </div>
+
+                                      <div className="p-2 rounded-lg bg-[#FAF8F5] border border-stone-200/80 space-y-1">
+                                        <div className="flex items-center justify-between text-[10px] font-bold">
+                                          <span className="text-stone-700">
+                                            Durasi Smoothing
+                                          </span>
+                                          <span className="text-[#8B6914]">
+                                            {(
+                                              (settingsForm.galleryTransitionDurationMs ??
+                                                1400) / 1000
+                                            ).toFixed(1)}{' '}
+                                            dtk
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="range"
+                                          min={400}
+                                          max={2600}
+                                          step={100}
+                                          value={
+                                            settingsForm.galleryTransitionDurationMs ??
+                                            1400
+                                          }
+                                          onChange={(e) =>
+                                            setSettingsForm({
+                                              ...settingsForm,
+                                              galleryTransitionDurationMs:
+                                                Number(e.target.value),
+                                            })
+                                          }
+                                          className="w-full accent-[#B68D40] h-1.5"
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <input
-                                    type="range"
-                                    min={400}
-                                    max={2600}
-                                    step={100}
-                                    value={
-                                      settingsForm.galleryTransitionDurationMs ??
-                                      1400
-                                    }
-                                    onChange={(e) =>
-                                      setSettingsForm({
-                                        ...settingsForm,
-                                        galleryTransitionDurationMs: Number(
-                                          e.target.value
-                                        ),
-                                      })
-                                    }
-                                    className="w-full accent-[#B68D40] h-1.5"
-                                  />
-                                </div>
+                                )}
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       );
                     })()}
-
-                    {/* Opacity & Blur */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="font-bold text-stone-800 text-xs">
-                            Transparansi Veil
-                          </label>
-                          <span className="font-mono font-bold text-[#8B6914] text-xs">
-                            {settingsForm.bgOverlayOpacity ?? 88}%
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min={45}
-                          max={95}
-                          value={settingsForm.bgOverlayOpacity ?? 88}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              bgOverlayOpacity: Number(e.target.value),
-                            })
-                          }
-                          className="w-full accent-[#B68D40]"
-                        />
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30">
-                        <label className="block font-bold text-stone-800 text-xs mb-1">
-                          Efek Blur Latar
-                        </label>
-                        <select
-                          value={settingsForm.bgBlurIntensity || 'sm'}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              bgBlurIntensity: e.target.value as WeddingSettings['bgBlurIntensity'],
-                            })
-                          }
-                          className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
-                        >
-                          <option value="none">Tanpa Blur</option>
-                          <option value="sm">Blur Halus (Default)</option>
-                          <option value="md">Blur Sedang</option>
-                          <option value="lg">Blur Kuat</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Musik & Playlist Undangan */}
-                    {renderMusicPlaylistManager()}
 
                     <div className="flex justify-end pt-2 border-t border-stone-100">
                       <button
@@ -11405,7 +12167,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===============================================================
-                    MENU 3: JADWAL ACARA & WAKTU COUNTDOWN (BEHAVIOR SEPERTI TAMBAH PANITIA + SWITCH COUNTDOWN ON/OFF)
+                    MENU 3: JADWAL ACARA & WAKTU COUNTDOWN (DENGAN SWITCH ACARA UTAMA & SEMUA ACARA DB)
                    =============================================================== */}
                 {settingsMenuTab === 'jadwal' && (
                   <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
@@ -11413,9 +12175,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2 min-w-0">
                         <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Jadwal &amp; Countdown
+                          Jadwal &amp; Countdown ({scheduleEvents.length} Acara)
                         </h3>
-                        <InfoTooltip text="Tambah, edit, atau hapus rangkaian acara. Nyalakan switch Countdown pada acara yang ingin dihitung mundur." />
+                        <InfoTooltip text="Semua jadwal acara dari database ditampilkan di sini. Aktifkan switch 'Acara Utama' pada acara yang ingin dijadikan jadwal & lokasi utama undangan, dan nyalakan switch 'Countdown' pada acara yang ingin dihitung mundur." />
                       </div>
                       <button
                         type="button"
@@ -11494,95 +12256,202 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     ) : (
                       <div className="divide-y divide-stone-100">
-                        {scheduleEvents.map((ev) => {
-                          const isCountdownOn = Boolean(ev.enableCountdown);
-                          return (
-                            <div
-                              key={ev.id}
-                              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
-                            >
-                              <div className="flex items-start gap-3 min-w-0">
-                                <div
-                                  className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                                    isCountdownOn
-                                      ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
-                                      : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
-                                  }`}
-                                >
-                                  {isCountdownOn ? (
-                                    <Clock className="w-4 h-4" />
-                                  ) : (
-                                    <Calendar className="w-4 h-4" />
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-bold text-stone-900">{ev.title}</p>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
-                                      {ev.badge}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-stone-500 mt-0.5">
-                                    {ev.dateLabel} &bull; {ev.timeLabel} &bull; {ev.venue}
-                                  </p>
-                                </div>
-                              </div>
+                        {(() => {
+                          const currentMainId = (
+                            scheduleEvents.find((e) => e.isMainEvent) ||
+                            scheduleEvents.find((e) => e.enableCountdown) ||
+                            scheduleEvents[0]
+                          )?.id;
 
-                              <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full justify-end">
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                    isCountdownOn
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                      : 'bg-stone-100 text-stone-500 border-stone-200'
-                                  }`}
-                                >
-                                  {isCountdownOn ? 'ON' : 'OFF'}
-                                </span>
+                          return scheduleEvents.map((ev) => {
+                            const isMain = ev.id === currentMainId;
+                            const isCountdownOn = Boolean(ev.enableCountdown);
+                            const isVisibleOnInv =
+                              ev.showOnInvitation !== false;
 
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={isCountdownOn}
-                                  onClick={() =>
-                                    handleToggleEventCountdownSwitch(ev.id, ev.title)
-                                  }
-                                  title={
-                                    isCountdownOn
-                                      ? 'Klik untuk mematikan Countdown acara ini'
-                                      : 'Klik untuk mengaktifkan Countdown acara ini'
-                                  }
-                                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                    isCountdownOn ? 'bg-[#B68D40]' : 'bg-stone-300'
-                                  }`}
-                                >
-                                  <span
-                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                                      isCountdownOn ? 'translate-x-5' : 'translate-x-0'
-                                    }`}
-                                  />
-                                </button>
-
+                            return (
+                              <div
+                                key={ev.id}
+                                className="py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0 overflow-hidden"
+                              >
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditScheduleEvent(ev)}
-                                  className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                  title="Klik nama acara untuk mengedit jadwal acara ini"
+                                  className="flex items-start gap-3 min-w-0 text-left flex-1 group cursor-pointer"
                                 >
-                                  Edit
+                                  <div
+                                    className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                                      isMain
+                                        ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
+                                        : isCountdownOn
+                                          ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                          : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
+                                    }`}
+                                  >
+                                    {isCountdownOn ? (
+                                      <Clock className="w-4 h-4" />
+                                    ) : (
+                                      <Calendar className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-bold text-stone-900 group-hover:text-[#8B6914] transition-colors">
+                                        {ev.title}
+                                      </p>
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
+                                        {ev.badge}
+                                      </span>
+                                      {isMain && (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
+                                          ★ ACARA UTAMA
+                                        </span>
+                                      )}
+                                      {!isVisibleOnInv && (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
+                                          Disembunyikan
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-stone-500 mt-0.5">
+                                      {ev.dateLabel} &bull; {ev.timeLabel} &bull; {ev.venue}
+                                    </p>
+                                  </div>
                                 </button>
 
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeleteScheduleEvent(ev.id, ev.title)
-                                  }
-                                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
-                                >
-                                  Hapus
-                                </button>
+                                <div className="flex items-center gap-2 self-end lg:self-center flex-wrap max-w-full justify-end">
+                                  {/* Switch 1: Acara Utama */}
+                                  <div
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                      isMain
+                                        ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                        : 'bg-stone-50 border-stone-200'
+                                    }`}
+                                    title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
+                                  >
+                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                      Acara Utama
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={isMain}
+                                      onClick={() =>
+                                        handleSetMainScheduleEvent(ev.id)
+                                      }
+                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                        isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
+                                      }`}
+                                    >
+                                      <span
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                          isMain
+                                            ? 'translate-x-4'
+                                            : 'translate-x-0'
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+
+                                  {/* Switch 2: Countdown */}
+                                  <div
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                      isCountdownOn
+                                        ? 'bg-emerald-50/70 border-emerald-200'
+                                        : 'bg-stone-50 border-stone-200'
+                                    }`}
+                                    title="Aktifkan/matikan Countdown untuk acara ini"
+                                  >
+                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                      Countdown
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={isCountdownOn}
+                                      onClick={() =>
+                                        handleToggleEventCountdownSwitch(
+                                          ev.id,
+                                          ev.title
+                                        )
+                                      }
+                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                        isCountdownOn
+                                          ? 'bg-emerald-600'
+                                          : 'bg-stone-300'
+                                      }`}
+                                    >
+                                      <span
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                          isCountdownOn
+                                            ? 'translate-x-4'
+                                            : 'translate-x-0'
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+
+                                  {/* Switch 3: Tampil */}
+                                  <div
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                      isVisibleOnInv
+                                        ? 'bg-emerald-50/70 border-emerald-200'
+                                        : 'bg-rose-50/70 border-rose-200'
+                                    }`}
+                                    title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                  >
+                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                      Tampil
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={isVisibleOnInv}
+                                      onClick={() =>
+                                        handleToggleSingleEventVisibility(
+                                          ev.id,
+                                          ev.title
+                                        )
+                                      }
+                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                        isVisibleOnInv
+                                          ? 'bg-emerald-600'
+                                          : 'bg-stone-300'
+                                      }`}
+                                    >
+                                      <span
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                          isVisibleOnInv
+                                            ? 'translate-x-4'
+                                            : 'translate-x-0'
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditScheduleEvent(ev)}
+                                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeleteScheduleEvent(ev.id, ev.title)
+                                    }
+                                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>
@@ -15178,11 +16047,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                         <div>
                                           <span className="text-[#D4AF37] font-bold">
-                                            Kode Undangan &amp; Instansi:
+                                            Instansi / Kategori Tamu:
                                           </span>{' '}
                                           <span className="font-mono">
-                                            {actorCode || '—'}
-                                            {actorGroup ? ` (${actorGroup})` : ''}
+                                            {actorGroup || '—'}
                                           </span>
                                         </div>
 
@@ -15691,11 +16559,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         <span className="font-bold text-stone-900 truncate">
                                           {ev.guestName || 'Tamu Undangan'}
                                         </span>
-                                        {ev.invitationCode && (
-                                          <span className="font-mono text-[10px] text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded">
-                                            {ev.invitationCode}
-                                          </span>
-                                        )}
                                       </div>
                                       {ev.detail && (
                                         <p className="text-[11px] text-stone-600 line-clamp-1">
@@ -17533,7 +18396,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           {(() => {
             const targetGuest = waPreviewGuest || state.guests[0];
             const generated = targetGuest
-              ? generateWhatsAppMessage(targetGuest, state.settings)
+              ? getGuestPersonalWaData(targetGuest, state.settings)
               : null;
             const effectiveMessage =
               waCustomMessage || generated?.messageText || '';

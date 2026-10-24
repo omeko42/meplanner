@@ -8,7 +8,7 @@ import React, {
   useRef,
   Suspense,
 } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 import { AdminDashboardView } from '@/components/AdminDashboardView';
 import { AdminLoginModal } from '@/components/AdminLoginModal';
@@ -300,10 +300,20 @@ function projectStateForClient(
 
 function WeddingAppContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname() || '/';
+  const pathHashSegment = useMemo(() => {
+    const seg = pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || '';
+    if (!seg || seg === 'api' || seg === '_next' || seg.includes('.')) return '';
+    return decodeURIComponent(seg);
+  }, [pathname]);
   const urlClientParam = searchParams.get('client') || '';
   const urlGuestTo = searchParams.get('to') || '';
   const urlGuestCode =
-    searchParams.get('code') || searchParams.get('token') || '';
+    pathHashSegment ||
+    searchParams.get('u') ||
+    searchParams.get('code') ||
+    searchParams.get('token') ||
+    '';
   const urlMode = searchParams.get('mode') || '';
 
   const [state, setState] = useState<WeddingDatabaseSchema>(() =>
@@ -393,6 +403,15 @@ function WeddingAppContent() {
   const [publicSelectedClientId, setPublicSelectedClientId] = useState<
     string | null
   >(() => {
+    if (urlGuestCode) {
+      const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
+        urlGuestCode,
+        allWorkspacesForHashLookup
+      );
+      if (resolvedHash) {
+        return resolvedHash.clientId;
+      }
+    }
     if (urlClientParam || urlGuestTo || urlGuestCode) {
       return urlClientParam
         ? resolveClientIdFromParam(urlClientParam, [])
@@ -404,10 +423,24 @@ function WeddingAppContent() {
   const [manualGuestLookup, setManualGuestLookup] = useState<{
     to?: string;
     code?: string;
-  }>({});
+  }>(() => {
+    if (urlGuestCode) {
+      const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
+        urlGuestCode,
+        allWorkspacesForHashLookup
+      );
+      if (resolvedHash) {
+        return {
+          to: resolvedHash.guest.guestName,
+          code: resolvedHash.hashToken,
+        };
+      }
+    }
+    return {};
+  });
 
   useEffect(() => {
-    if (urlGuestCode && !urlClientParam) {
+    if (urlGuestCode) {
       const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
         urlGuestCode,
         allWorkspacesForHashLookup
@@ -847,6 +880,12 @@ function WeddingAppContent() {
   const handleSwitchToPublicPreview = (guest?: WeddingGuest) => {
     if (guest) {
       setPreviewOverrideGuest(guest);
+      if (typeof window !== 'undefined') {
+        const hashToken =
+          guest.invitationToken ||
+          computeGuestInvitationHash(activeWorkspaceClientId, guest);
+        window.history.pushState({}, '', `/${encodeURIComponent(hashToken)}`);
+      }
     }
     setDemoManagerClientId(null);
     setPublicSelectedClientId(activeWorkspaceClientId);
@@ -876,20 +915,23 @@ function WeddingAppContent() {
     setPublicSelectedClientId(clientId);
     changeViewMode('PUBLIC');
     if (typeof window !== 'undefined') {
-      const dummyMeta = SHOWCASE_DUMMY_CLIENT_METAS.find(
-        (m) => m.id === clientId || m.slug === clientId
-      );
-      const grp = clientGroups.find((g) => g.id === clientId);
-      const slug = dummyMeta
-        ? dummyMeta.slug
-        : clientId === 'client-utama'
-          ? 'agung_selo'
-          : (grp?.clientCode || clientId.replace(/^client-/i, '')).toLowerCase();
-      const params = new URLSearchParams();
-      params.set('client', slug);
-      if (guestTo) params.set('to', guestTo);
-      if (guestCode) params.set('code', guestCode);
-      window.history.pushState({}, '', `/?${params.toString()}`);
+      if (guestCode) {
+        window.history.pushState({}, '', `/${encodeURIComponent(guestCode)}`);
+      } else {
+        const dummyMeta = SHOWCASE_DUMMY_CLIENT_METAS.find(
+          (m) => m.id === clientId || m.slug === clientId
+        );
+        const grp = clientGroups.find((g) => g.id === clientId);
+        const slug = dummyMeta
+          ? dummyMeta.slug
+          : clientId === 'client-utama'
+            ? 'agung_selo'
+            : (grp?.clientCode || clientId.replace(/^client-/i, '')).toLowerCase();
+        const params = new URLSearchParams();
+        params.set('client', slug);
+        if (guestTo) params.set('to', guestTo);
+        window.history.pushState({}, '', `/?${params.toString()}`);
+      }
     }
   };
 
@@ -1872,6 +1914,7 @@ function WeddingAppContent() {
   const effectiveGuestName =
     previewOverrideGuest?.guestName || manualGuestLookup.to || urlGuestTo;
   const effectiveGuestCode =
+    previewOverrideGuest?.invitationToken ||
     previewOverrideGuest?.invitationCode ||
     manualGuestLookup.code ||
     urlGuestCode;
@@ -1998,6 +2041,16 @@ function WeddingAppContent() {
             onSwitchToPublicPreview={(guest) => {
               if (guest) {
                 setPreviewOverrideGuest(guest);
+                if (typeof window !== 'undefined' && demoManagerClientId) {
+                  const hashToken =
+                    guest.invitationToken ||
+                    computeGuestInvitationHash(demoManagerClientId, guest);
+                  window.history.pushState(
+                    {},
+                    '',
+                    `/${encodeURIComponent(hashToken)}`
+                  );
+                }
               }
               setDemoManagerClientId(null);
               setPublicSelectedClientId(demoManagerClientId);
