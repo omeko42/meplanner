@@ -410,6 +410,37 @@ interface SimulationHostItem {
   photo: string;
 }
 
+interface SimulationScheduleSession {
+  badge: string;
+  title: string;
+  date: string;
+  time: string;
+  venue: string;
+  dresscode: string;
+  mapsUrl: string;
+}
+
+interface SimulationMilestoneItem {
+  year: string;
+  title: string;
+  desc: string;
+}
+
+interface SimulationGalleryPhoto {
+  url: string;
+  caption: string;
+}
+
+interface SimulationGuestWish {
+  id: string;
+  senderName: string;
+  senderTitle: string;
+  attendanceBadge: string;
+  message: string;
+  timestamp: string;
+  hostReply?: string;
+}
+
 interface SimulationEventPreset {
   eventType: EventCategoryType;
   tabLabelId: string;
@@ -432,7 +463,50 @@ interface SimulationEventPreset {
   eventDate: string;
   eventVenue: string;
   musicTrackLabel: string;
+  sessions: [SimulationScheduleSession, SimulationScheduleSession];
+  milestones: [
+    SimulationMilestoneItem,
+    SimulationMilestoneItem,
+    SimulationMilestoneItem,
+  ];
+  galleryPhotos: [
+    SimulationGalleryPhoto,
+    SimulationGalleryPhoto,
+    SimulationGalleryPhoto,
+  ];
+  dummyWishes: SimulationGuestWish[];
 }
+
+const DUMMY_ENVELOPE_CHANNELS = [
+  {
+    id: 'bca',
+    label: 'Bank BCA',
+    provider: 'Bank Central Asia (BCA Prioritas)',
+    accountNumber: '8820 4591 2026',
+    badge: 'Transfer Bank Instan',
+  },
+  {
+    id: 'qris',
+    label: 'QRIS Nasional',
+    provider: 'QRIS Merchant Resmi • NMID ID2026008820',
+    accountNumber: 'NMID-ID2026-8820-MEP',
+    badge: 'Bebas Biaya Admin',
+  },
+  {
+    id: 'usdt',
+    label: 'Crypto USDT TRC20',
+    provider: 'Tether USD (TRON Network TRC20)',
+    accountNumber: 'TX9k8mQ2vR7pL4nW6yB3cH1jF5dG8sK2mP',
+    badge: 'Web3 On-Chain',
+  },
+  {
+    id: 'paypal',
+    label: 'PayPal Global',
+    provider: 'PayPal International Express',
+    accountNumber: 'paypal.me/meplan-vip-2026',
+    badge: 'USD / Multi-Currency',
+  },
+] as const;
 
 const SIMULATION_EVENT_PRESETS: Record<
   EventCategoryType,
@@ -453,7 +527,7 @@ const SIMULATION_EVENT_PRESETS: Record<
     quote:
       '"Dan di atas semuanya itu: kenakanlah kasih, sebagai pengikat yang mempersatukan dan menyempurnakan." — Kolose 3 : 14',
     heroImage:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
     profileCount: 2,
     frameStyle: 'ARCH_DOME',
     showFloral: true,
@@ -462,19 +536,103 @@ const SIMULATION_EVENT_PRESETS: Record<
       role: 'Mempelai Pria',
       parents: 'Putra dari Bapak Ir. H. Baskoro & Ibu Hj. Ratna Sari',
       photo:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1400&q=85',
     },
     host2: {
       name: 'dr. Clarissa Aurelia, Sp.DV',
       role: 'Mempelai Wanita',
       parents: 'Putri dari Bapak Prof. Dr. Hendra Wijaya & Ibu Dra. Sylvia',
       photo:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1400&q=85',
     },
     eventTitle: 'Pemberkatan & Grand Resepsi',
     eventDate: 'Sabtu, 24 Oktober 2026 • 18.30 WIB',
     eventVenue: 'Grand Ballroom Hotel Mulia Senayan, Jakarta',
     musicTrackLabel: 'Romantic Strings Serenade (Royalty-Free Preview)',
+    sessions: [
+      {
+        badge: 'SESI 1 • AKAD / PEMBERKATAN',
+        title: 'Upacara Pemberkatan Nikah Kudus',
+        date: 'Sabtu, 24 Oktober 2026',
+        time: '09.00 – 11.00 WIB',
+        venue: 'Sanctuary Chapel & Heritage Hall, Jakarta Pusat',
+        dresscode: 'Formal Putih Gading & Champagne Gold',
+        mapsUrl: 'https://maps.google.com/?q=Hotel+Mulia+Senayan+Jakarta',
+      },
+      {
+        badge: 'SESI 2 • GRAND RESEPSI VIP',
+        title: 'Pedang Pora & Grand Ballroom Reception',
+        date: 'Sabtu, 24 Oktober 2026',
+        time: '18.30 – 21.30 WIB',
+        venue: 'Grand Ballroom Hotel Mulia Senayan, Jakarta',
+        dresscode: 'PDU / Black Tie / Kebaya & Batik Tulis Eksklusif',
+        mapsUrl: 'https://maps.google.com/?q=Hotel+Mulia+Senayan+Jakarta',
+      },
+    ],
+    milestones: [
+      {
+        year: '2022',
+        title: 'Pertemuan Pertama',
+        desc: 'Berawal dari penugasan kolaborasi bakti kesehatan dan kemanusiaan di Jakarta.',
+      },
+      {
+        year: '2025',
+        title: 'Pertunangan & Lamaran Resmi',
+        desc: 'Pengikatan janji suci di hadapan kedua keluarga besar dengan restu penuh.',
+      },
+      {
+        year: '2026',
+        title: 'Ikatan Suci Pernikahan',
+        desc: 'Melangkah bersama memulai bahtera rumah tangga pada 24 Oktober 2026.',
+      },
+    ],
+    galleryPhotos: [
+      {
+        url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+        caption: 'The Royal Ballroom Editorial Portrait — Rayhan & Clarissa',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Golden Hour Vows &Sacred Rings Ceremony',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Classic Heritage Garden Prewedding Suite',
+      },
+    ],
+    dummyWishes: [
+      {
+        id: 'w-wed-1',
+        senderName: 'Komjen Pol (Purn.) Drs. H. Hendra Wijaya',
+        senderTitle: 'Tamu Kehormatan VVIP • INV-0001',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat menempuh hidup baru untuk AKP Rayhan & dr. Clarissa. Semoga menjadi keluarga yang rukun, penuh berkat, dan selalu menjadi teladan.',
+        timestamp: 'Baru saja',
+        hostReply:
+          'Terima kasih banyak Bapak Jenderal beserta Ibu atas doa restu dan kehadirannya.',
+      },
+      {
+        id: 'w-wed-2',
+        senderName: 'Prof. Dr. dr. Setyo Wibowo, Sp.PD-KGEH',
+        senderTitle: 'Kolega RSUPN Dr. Cipto Mangunkusumo • INV-0002',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat berbahagia dr. Clarissa & AKP Rayhan! Semoga cinta kasih selalu menyertai perjalanan rumah tangga kalian.',
+        timestamp: '14 menit lalu',
+        hostReply:
+          'Terima kasih banyak Prof. Setyo atas doa terbaiknya untuk kami berdua.',
+      },
+      {
+        id: 'w-wed-3',
+        senderName: 'Kombes Pol Aditya Pratama, S.I.K., M.Si.',
+        senderTitle: 'Rekan Senior Batalyon Akpol • INV-0003',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Lancar jaya sampai hari H Komandan Rayhan & dr. Clarissa! Kami beserta keluarga siap hadir di Grand Ballroom Mulia.',
+        timestamp: '38 menit lalu',
+      },
+    ],
   },
   BIRTHDAY: {
     eventType: 'BIRTHDAY',
@@ -490,7 +648,7 @@ const SIMULATION_EVENT_PRESETS: Record<
     quote:
       '"Mensyukuri setiap langkah perjalanan usia baru bersama keluarga dan sahabat tercinta."',
     heroImage:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
     profileCount: 1,
     frameStyle: 'CIRCLE',
     showFloral: true,
@@ -499,12 +657,95 @@ const SIMULATION_EVENT_PRESETS: Record<
       role: 'The Celebrant • Sweet 17th',
       parents: 'Putri Tercinta dari Bapak Pratama & Ibu Indah',
       photo:
-        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1400&q=85',
     },
     eventTitle: 'Birthday Dinner & Candle Ceremony',
     eventDate: 'Minggu, 15 November 2026 • 19.00 WIB',
     eventVenue: 'The Glasshouse Rooftop Lounge, Surabaya',
     musicTrackLabel: 'Champagne Waltz & Acoustic Piano',
+    sessions: [
+      {
+        badge: 'SESI 1 • WELCOME MOCKTAIL & PHOTO',
+        title: 'Red Carpet Arrival & Sunset Rooftop Session',
+        date: 'Minggu, 15 November 2026',
+        time: '17.30 – 18.45 WIB',
+        venue: 'Sky Foyer The Glasshouse, Surabaya',
+        dresscode: 'Champagne Gold & Pastel Glam Attire',
+        mapsUrl: 'https://maps.google.com/?q=Surabaya+Rooftop+Lounge',
+      },
+      {
+        badge: 'SESI 2 • 17 CANDLES & GALA DINNER',
+        title: 'Sweet 17th Candle Ceremony & Fine Dining',
+        date: 'Minggu, 15 November 2026',
+        time: '19.00 – 22.00 WIB',
+        venue: 'The Glasshouse Rooftop Lounge, Surabaya',
+        dresscode: 'Evening Gown & Smart Tailored Suit',
+        mapsUrl: 'https://maps.google.com/?q=Surabaya+Rooftop+Lounge',
+      },
+    ],
+    milestones: [
+      {
+        year: '2009',
+        title: 'Kelahiran Penuh Sukacita',
+        desc: 'Kelahiran Aurelia yang membawa kebahagiaan di tengah keluarga besar.',
+      },
+      {
+        year: '2023',
+        title: 'Penghargaan Musik & Akademik',
+        desc: 'Meraih juara pertama resital piano klasik dan delegasi olimpiade sains.',
+      },
+      {
+        year: '2026',
+        title: 'Sweet Seventeen Soirée',
+        desc: 'Merayakan usia ke-17 dengan penuh syukur bersama keluarga dan sahabat.',
+      },
+    ],
+    galleryPhotos: [
+      {
+        url: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Sweet 17th Editorial Spotlight — Aurelia Putri',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Golden Confetti & 17 Candles Wish Ceremony',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
+        caption: 'The Glasshouse Rooftop Soirée Ambience',
+      },
+    ],
+    dummyWishes: [
+      {
+        id: 'w-bday-1',
+        senderName: 'Keluarga Besar Ir. H. Darmawan',
+        senderTitle: 'Keluarga Inti VIP • INV-0001',
+        attendanceBadge: 'Hadir • 4 Pax',
+        message:
+          'Happy Sweet 17th Aurelia sayang! Semoga semakin sukses, sehat, dan selalu membanggakan Papa & Mama.',
+        timestamp: '5 menit lalu',
+        hostReply:
+          'Terima kasih banyak Om & Tante atas doa dan kehadirannya!',
+      },
+      {
+        id: 'w-bday-2',
+        senderName: 'Michelle & Sahabat St. Louis',
+        senderTitle: 'Best Friends Table • INV-0002',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Happy 17th Birthday Aurel!! Can’t wait to celebrate tonight at The Glasshouse!',
+        timestamp: '19 menit lalu',
+        hostReply: 'Thank you bestie! See you at the rooftop lounge!',
+      },
+      {
+        id: 'w-bday-3',
+        senderName: 'drg. Karina Putri & Partner',
+        senderTitle: 'Tamu VIP • INV-0003',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat ulang tahun ke-17 Aurelia. Semoga segala cita-cita muliamu tercapai.',
+        timestamp: '42 menit lalu',
+      },
+    ],
   },
   GRADUATION: {
     eventType: 'GRADUATION',
@@ -520,7 +761,7 @@ const SIMULATION_EVENT_PRESETS: Record<
     quote:
       '"Sebuah awal pengabdian baru dari perjalanan panjang menuntut ilmu."',
     heroImage:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
     profileCount: 1,
     frameStyle: 'ARCH_DOME',
     showFloral: false,
@@ -529,12 +770,95 @@ const SIMULATION_EVENT_PRESETS: Record<
       role: 'Wisudawan • Cum Laude',
       parents: 'Putra dari Bapak Drs. Santoso & Ibu Dewi',
       photo:
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1400&q=85',
     },
     eventTitle: 'Tasyakuran Kelulusan & Ramah Tamah',
     eventDate: 'Sabtu, 28 November 2026 • 12.00 WIB',
     eventVenue: 'Padma Hotel Grand Ballroom, Semarang',
     musicTrackLabel: 'Grand Academic Orchestra Suite',
+    sessions: [
+      {
+        badge: 'SESI 1 • PROSESI SUMPAH DOKTER',
+        title: 'Sidang Terbuka Senat & Pelantikan Dokter',
+        date: 'Sabtu, 28 November 2026',
+        time: '08.00 – 11.00 WIB',
+        venue: 'Auditorium Utama Fakultas Kedokteran, Semarang',
+        dresscode: 'Toga Akademik / Pakaian Sipil Lengkap (PSL)',
+        mapsUrl: 'https://maps.google.com/?q=Padma+Hotel+Semarang',
+      },
+      {
+        badge: 'SESI 2 • TASYAKURAN & JAMUAN VIP',
+        title: 'Syukuran Kelulusan & Ramah Tamah Keluarga',
+        date: 'Sabtu, 28 November 2026',
+        time: '12.00 – 15.00 WIB',
+        venue: 'Padma Hotel Grand Ballroom, Semarang',
+        dresscode: 'Batik Tulis Lengan Panjang / Smart Formal',
+        mapsUrl: 'https://maps.google.com/?q=Padma+Hotel+Semarang',
+      },
+    ],
+    milestones: [
+      {
+        year: '2020',
+        title: 'Awal Studi Kedokteran',
+        desc: 'Memulai pendidikan sarjana kedokteran dengan komitmen akademik penuh.',
+      },
+      {
+        year: '2024',
+        title: 'Kepaniteraan Klinik (Koas)',
+        desc: 'Menyelesaikan rotasi klinik di rumah sakit pendidikan utama.',
+      },
+      {
+        year: '2026',
+        title: 'Sumpah Dokter • Cum Laude',
+        desc: 'Resmi dilantik sebagai dokter dengan predikat kehormatan Cum Laude.',
+      },
+    ],
+    galleryPhotos: [
+      {
+        url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Grand Convocation & Medical Oath Ceremony',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Cum Laude Academic Portrait — dr. Kevin Pratama',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Family Tribute & Colleagues Celebration',
+      },
+    ],
+    dummyWishes: [
+      {
+        id: 'w-grad-1',
+        senderName: 'Prof. Dr. dr. Bambang Wibisono, Sp.B',
+        senderTitle: 'Dekan & Guru Besar • INV-0001',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat atas pelantikan dr. Kevin Pratama dengan predikat Cum Laude. Selamat mengabdi bagi masyarakat dan kemanusiaan.',
+        timestamp: '8 menit lalu',
+        hostReply:
+          'Terima kasih sebesar-besarnya Prof. Bambang atas bimbingan selama masa studi.',
+      },
+      {
+        id: 'w-grad-2',
+        senderName: 'dr. Raka Aditama & Rekan Sejawat',
+        senderTitle: 'Sejawat Dokter Muda • INV-0002',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat Bro dr. Kevin! Perjuangan koas terbayar lunas hari ini. Sampai jumpa di Padma Ballroom!',
+        timestamp: '22 menit lalu',
+        hostReply: 'Siap dr. Raka! Terima kasih perjuangan barengnya!',
+      },
+      {
+        id: 'w-grad-3',
+        senderName: 'Keluarga Besar Bapak H. Nugroho',
+        senderTitle: 'Keluarga Kehormatan • INV-0003',
+        attendanceBadge: 'Hadir • 3 Pax',
+        message:
+          'Turut bersyukur dan bangga atas kelulusan dr. Kevin. Semoga ilmunya selalu membawa keberkahan.',
+        timestamp: '45 menit lalu',
+      },
+    ],
   },
   MEETING: {
     eventType: 'MEETING',
@@ -550,7 +874,7 @@ const SIMULATION_EVENT_PRESETS: Record<
     quote:
       '"Sinergi kepemimpinan dan akselerasi transformasi menuju tata kelola berstandar global."',
     heroImage:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
     profileCount: 1,
     frameStyle: 'EDITORIAL_RECT',
     showFloral: false,
@@ -559,12 +883,95 @@ const SIMULATION_EVENT_PRESETS: Record<
       role: 'Penyelenggara Utama',
       parents: 'Dewan Transformasi Digital & Mitra Strategis Nasional',
       photo:
-        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1400&q=85',
     },
     eventTitle: 'Plenary Session & Executive Forum',
     eventDate: 'Kamis, 10 Desember 2026 • 08.30 WIB',
     eventVenue: 'Jakarta International Convention Center (JICC)',
     musicTrackLabel: 'Ambient Executive Lounge Instrumental',
+    sessions: [
+      {
+        badge: 'SESI 1 • REGISTRASI VVIP & PLENARY',
+        title: 'Registrasi Delegasi & Keynote Opening Ceremony',
+        date: 'Kamis, 10 Desember 2026',
+        time: '08.30 – 12.00 WIB',
+        venue: 'Assembly Hall JICC Senayan, Jakarta',
+        dresscode: 'Pakaian Sipil Lengkap (PSL) / Jas Formal Gelap',
+        mapsUrl: 'https://maps.google.com/?q=JICC+Senayan+Jakarta',
+      },
+      {
+        badge: 'SESI 2 • SIDANG KOMISI & MOU SIGNING',
+        title: 'Executive Forum & Penandatanganan Pakta Integritas',
+        date: 'Kamis, 10 Desember 2026',
+        time: '13.30 – 17.00 WIB',
+        venue: 'Summit Room JICC Senayan, Jakarta',
+        dresscode: 'Executive Business Attire / Batik Resmi Lengan Panjang',
+        mapsUrl: 'https://maps.google.com/?q=JICC+Senayan+Jakarta',
+      },
+    ],
+    milestones: [
+      {
+        year: 'Q1 2026',
+        title: 'Perumusan Cetak Biru Nasional',
+        desc: 'Penyusunan arsitektur tata kelola digital terpadu lintas instansi.',
+      },
+      {
+        year: 'Q3 2026',
+        title: 'Integrasi & Audit Keamanan Cloud',
+        desc: 'Standardisasi enkripsi data dan kesiapan infrastruktur di 38 provinsi.',
+      },
+      {
+        year: 'Q4 2026',
+        title: 'Rakornas & Peluncuran Ekosistem',
+        desc: 'Konsolidasi pimpinan nasional pada 10 Desember 2026 di JICC Senayan.',
+      },
+    ],
+    galleryPhotos: [
+      {
+        url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Main Plenary Hall & Keynote Stage — JICC Senayan',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Executive Delegation & Strategic Panel Session',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
+        caption: 'National Digital Transformation MoU Signing',
+      },
+    ],
+    dummyWishes: [
+      {
+        id: 'w-meet-1',
+        senderName: 'Dr. Ir. H. Prasetyo Hadi, M.Eng.',
+        senderTitle: 'Staf Ahli Utama Kementerian • INV-0001',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Konfirmasi hadir pada sesi Plenary & Penandatanganan MoU. Apresiasi tinggi atas sistem registrasi digital yang sangat rapi.',
+        timestamp: '10 menit lalu',
+        hostReply:
+          'Terima kasih Bapak Dr. Prasetyo. Kursi VVIP Baris A-01 telah disiapkan oleh tim protokol.',
+      },
+      {
+        id: 'w-meet-2',
+        senderName: 'Direksi PT Nusantara Cloud Mandiri',
+        senderTitle: 'Mitra Strategis Utama • INV-0002',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Kami siap hadir mendukung penuh kesuksesan Rakornas Transformasi Digital 2026.',
+        timestamp: '28 menit lalu',
+        hostReply: 'Terima kasih kepada jajaran Direksi atas dukungannya.',
+      },
+      {
+        id: 'w-meet-3',
+        senderName: 'Sekretariat Daerah Provinsi Jawa Timur',
+        senderTitle: 'Delegasi Provinsi • INV-0003',
+        attendanceBadge: 'Hadir • 3 Pax',
+        message:
+          'Delegasi Pemprov Jatim telah tiba di Jakarta dan siap menghadiri seluruh rangkaian sidang komisi.',
+        timestamp: '1 jam lalu',
+      },
+    ],
   },
   GALA_DINNER: {
     eventType: 'GALA_DINNER',
@@ -580,7 +987,7 @@ const SIMULATION_EVENT_PRESETS: Record<
     quote:
       '"Malam apresiasi tertinggi bagi para mitra strategis dan tamu kehormatan."',
     heroImage:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     profileCount: 1,
     frameStyle: 'EDITORIAL_RECT',
     showFloral: false,
@@ -589,12 +996,96 @@ const SIMULATION_EVENT_PRESETS: Record<
       role: 'Tuan Rumah Kehormatan',
       parents: 'Royal Sapphire Enterprise & Executive Philanthropy Council',
       photo:
-        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=1400&q=85',
     },
     eventTitle: 'Red Carpet, Fine Dining & Awarding Night',
     eventDate: 'Jumat, 18 Desember 2026 • 19.00 WIB',
     eventVenue: 'The Ritz-Carlton Pacific Place Ballroom, Jakarta',
     musicTrackLabel: 'Luxury Jazz & Velvet Evening Quartet',
+    sessions: [
+      {
+        badge: 'SESI 1 • RED CARPET & CHAMPAGNE LOUNGE',
+        title: 'VVIP Arrival, Red Carpet & Symphony Aperitif',
+        date: 'Jumat, 18 Desember 2026',
+        time: '18.00 – 19.00 WIB',
+        venue: 'Grand Foyer The Ritz-Carlton Pacific Place, Jakarta',
+        dresscode: 'Black Tie / Luxury Evening Gown',
+        mapsUrl: 'https://maps.google.com/?q=Ritz+Carlton+Pacific+Place+Jakarta',
+      },
+      {
+        badge: 'SESI 2 • 5-COURSE ROYAL GALA & AWARDING',
+        title: 'Fine Dining, Charity Auction & Appreciation Night',
+        date: 'Jumat, 18 Desember 2026',
+        time: '19.00 – 22.30 WIB',
+        venue: 'The Ritz-Carlton Grand Ballroom, Jakarta',
+        dresscode: 'Black Tie & Royal Sapphire Accent',
+        mapsUrl: 'https://maps.google.com/?q=Ritz+Carlton+Pacific+Place+Jakarta',
+      },
+    ],
+    milestones: [
+      {
+        year: '2016',
+        title: 'Inisiasi Royal Sapphire Council',
+        desc: 'Berdirinya forum kemitraan strategis dan filantropi korporasi.',
+      },
+      {
+        year: '2021',
+        title: 'Satu Dekade Kolaborasi Regional',
+        desc: 'Memperluas jejaring investasi berkelanjutan di Asia Tenggara.',
+      },
+      {
+        year: '2026',
+        title: 'Annual Appreciation Gala 2026',
+        desc: 'Malam penganugerahan tertinggi bagi 180 pemimpin & mitra kehormatan.',
+      },
+    ],
+    galleryPhotos: [
+      {
+        url: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+        caption: 'The Ritz-Carlton Candlelight Grand Ballroom',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
+        caption: 'Symphony Orchestra & Royal Sapphire Awarding Stage',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
+        caption: '5-Course Executive Michelin Curated Dining',
+      },
+    ],
+    dummyWishes: [
+      {
+        id: 'w-gala-1',
+        senderName: 'Dato’ Sri Alexander Tan & Madam Evelyn',
+        senderTitle: 'VVIP Royal Table 01 • INV-0001',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'An honor to attend the Royal Sapphire Annual Gala 2026. Looking forward to a magnificent evening of fellowship.',
+        timestamp: '6 menit lalu',
+        hostReply:
+          'We are deeply honored by your presence, Dato’ Sri & Madam Evelyn.',
+      },
+      {
+        id: 'w-gala-2',
+        senderName: 'Komisaris Utama PT Mahakarya Investama',
+        senderTitle: 'Platinum Patron • INV-0002',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Selamat atas penyelenggaraan Royal Sapphire Gala 2026. Konfirmasi hadir di Meja VVIP 02.',
+        timestamp: '19 menit lalu',
+        hostReply:
+          'Terima kasih Bapak Komisaris Utama. Tim concierge kami siap menyambut.',
+      },
+      {
+        id: 'w-gala-3',
+        senderName: 'dr. Clarissa Aurelia & Partner',
+        senderTitle: 'Philanthropy Ambassador • INV-0003',
+        attendanceBadge: 'Hadir • 2 Pax',
+        message:
+          'Sukses untuk malam apresiasi dan lelang amal Royal Sapphire 2026!',
+        timestamp: '42 menit lalu',
+      },
+    ],
   },
 };
 
@@ -606,18 +1097,188 @@ const SIMULATION_EVENT_KEYS: EventCategoryType[] = [
   'GALA_DINNER',
 ];
 
+const DUMMY_DASHBOARD_TASKS = [
+  {
+    id: 'tsk-1',
+    phase: 'H-6 Bulan',
+    titleId: 'Penetapan Tanggal Utama & Kontrak Grand Ballroom Venue',
+    titleEn: 'Lock Primary Event Date & Grand Ballroom Venue Contract',
+    category: 'Venue & Catering',
+    pic: 'Host Utama',
+    priority: 'Utama',
+    defaultDone: true,
+  },
+  {
+    id: 'tsk-2',
+    phase: 'H-3 Bulan',
+    titleId: 'Finalisasi Berkas Administrasi, Perizinan & Katering VIP 400 Pax',
+    titleEn: 'Finalize Permits, Administration & 400 Pax VIP Catering',
+    category: 'Administrasi & VIP',
+    pic: 'EO / Panitia',
+    priority: 'Prioritas Tinggi',
+    defaultDone: true,
+  },
+  {
+    id: 'tsk-3',
+    phase: 'H-3 Bulan',
+    titleId: 'Kurasi Tema Dekorasi Floral, Lighting & Sesi Foto/Video HD',
+    titleEn: 'Curate Floral Decor, Architectural Lighting & HD Photo/Video',
+    category: 'Dekorasi & Dokumentasi',
+    pic: 'EO / Panitia',
+    priority: 'Prioritas Tinggi',
+    defaultDone: true,
+  },
+  {
+    id: 'tsk-4',
+    phase: 'H-1 Bulan',
+    titleId: 'Validasi Kuota 180 Undangan VIP (410 Pax) & Distribusi Blast WA',
+    titleEn: 'Validate 180 VIP Invitations (410 Pax) & 1-Click WA Blast',
+    category: 'CRM Tamu & WA',
+    pic: 'Keluarga',
+    priority: 'Utama',
+    defaultDone: true,
+  },
+  {
+    id: 'tsk-5',
+    phase: 'H-1 Bulan',
+    titleId: 'Gladi Kotor, Pelunasan Vendor Dekorasi & Konfirmasi Kursi VVIP',
+    titleEn: 'Technical Rehearsal, Decor Balance Settlement & VVIP Seating',
+    category: 'Operasional',
+    pic: 'EO / Panitia',
+    priority: 'Prioritas Tinggi',
+    defaultDone: false,
+  },
+  {
+    id: 'tsk-6',
+    phase: 'Hari-H',
+    titleId: 'Briefing Protokol Sambutan VVIP, QR Gate Check-In & Dokumentasi Live',
+    titleEn: 'VVIP Protocol Briefing, QR Gate Check-In & Live Documentation',
+    category: 'Eksekusi Hari-H',
+    pic: 'EO / Panitia',
+    priority: 'Utama',
+    defaultDone: false,
+  },
+] as const;
+
+const DUMMY_DASHBOARD_VENDORS = [
+  {
+    id: 'vnd-1',
+    name: 'Grand Ballroom & Executive Venue',
+    category: 'Venue Utama',
+    pagu: 'Rp 65.000.000',
+    realisasi: 'Rp 60.000.000',
+    terbayar: 'Rp 60.000.000',
+    sisa: 'Rp 0',
+    status: 'LUNAS' as const,
+  },
+  {
+    id: 'vnd-2',
+    name: 'Katering Eksklusif 400 Pax & VIP Stall',
+    category: 'F&B Banquet',
+    pagu: 'Rp 45.000.000',
+    realisasi: 'Rp 42.500.000',
+    terbayar: 'Rp 30.000.000',
+    sisa: 'Rp 12.500.000',
+    status: 'DP TERBAYAR' as const,
+  },
+  {
+    id: 'vnd-3',
+    name: 'Dekorasi Floral & Architectural Lighting',
+    category: 'Dekorasi & Stage',
+    pagu: 'Rp 25.000.000',
+    realisasi: 'Rp 22.000.000',
+    terbayar: 'Rp 12.000.000',
+    sisa: 'Rp 10.000.000',
+    status: 'DP TERBAYAR' as const,
+  },
+  {
+    id: 'vnd-4',
+    name: 'Dokumentasi Cinema 4K & Editorial Photo',
+    category: 'Foto & Video',
+    pagu: 'Rp 15.000.000',
+    realisasi: 'Rp 14.500.000',
+    terbayar: 'Rp 14.500.000',
+    sisa: 'Rp 0',
+    status: 'LUNAS' as const,
+  },
+  {
+    id: 'vnd-5',
+    name: 'Orchestra Entertainment & Sound System',
+    category: 'Musik & Audio',
+    pagu: 'Rp 10.000.000',
+    realisasi: 'Rp 9.500.000',
+    terbayar: 'Rp 2.000.000',
+    sisa: 'Rp 7.500.000',
+    status: 'DP TERBAYAR' as const,
+  },
+] as const;
+
+const DUMMY_DASHBOARD_GUESTS = [
+  {
+    code: 'INV-0001',
+    name: 'Komjen Pol (Purn.) Drs. H. Hendra Wijaya beserta Keluarga',
+    institution: 'Tamu Kehormatan VVIP',
+    priority: 'P1 - VIP',
+    format: 'Cetak + Online',
+    pax: 4,
+    rsvp: 'Hadir (4 Pax)',
+    phone: '0811-8800-001',
+  },
+  {
+    code: 'INV-0002',
+    name: 'Prof. Dr. dr. Clarissa Wijaya, Sp.GK. & Partner',
+    institution: 'Dewan Guru Besar Kedokteran',
+    priority: 'P1 - VIP',
+    format: 'Online Link',
+    pax: 2,
+    rsvp: 'Hadir (2 Pax)',
+    phone: '0812-9900-002',
+  },
+  {
+    code: 'INV-0003',
+    name: 'Kombes Pol Aditya Pratama, S.I.K., M.Si.',
+    institution: 'Rekan Kehormatan & Keluarga',
+    priority: 'P1 - VIP',
+    format: 'Online Link',
+    pax: 2,
+    rsvp: 'Hadir (2 Pax)',
+    phone: '0813-7700-003',
+  },
+  {
+    code: 'INV-0004',
+    name: 'Jajaran Direksi PT Mahakarya Nusantara Mandiri',
+    institution: 'Mitra Strategis Eksekutif',
+    priority: 'P1 - VIP',
+    format: 'Cetak Tebal',
+    pax: 4,
+    rsvp: 'Menunggu Konfirmasi',
+    phone: '0815-6600-004',
+  },
+  {
+    code: 'INV-0005',
+    name: 'dr. Raka Aditama, Sp.JP (K) beserta Keluarga',
+    institution: 'Kolega Rumah Sakit Pusat',
+    priority: 'P2 - Kolega',
+    format: 'Online Link',
+    pax: 3,
+    rsvp: 'Hadir (3 Pax)',
+    phone: '0816-5500-005',
+  },
+] as const;
+
 const OFFICIAL_PRODUCT_SCREENSHOTS = [
   {
     id: 'tracker',
     tabId: '1. Tracker',
     tabEn: '1. Tracker',
     badge: 'MODUL 1 • EXECUTIVE TRACKER',
-    titleId: 'Dashboard Readiness Tracker & Countdown Multi-Acara',
+    titleId: 'Executive Readiness Tracker & Countdown Multi-Acara',
     titleEn: 'Executive Readiness Tracker & Multi-Event Countdown',
     descId:
-      'Pantau hitung mundur hari/jam/menit/detik tiap sesi acara, persentase kesiapan, ringkasan moneter, dan statistik kehadiran tamu secara real-time.',
+      'Pantau hitung mundur hari/jam/menit/detik tiap sesi acara, persentase kesiapan 92%, ringkasan moneter, dan statistik kehadiran tamu secara real-time.',
     descEn:
-      'Monitor live countdowns across event sessions, readiness percentage, budget overview, and guest attendance in real time.',
+      'Monitor live countdowns across event sessions, 92% readiness score, budget overview, and guest attendance in real time.',
+    kpiSummary: '92% Siap • 23/25 Tugas • 410 Pax',
     imageUrl: '/showcase/showcase-1-tracker.png',
   },
   {
@@ -628,9 +1289,10 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
     titleId: 'Checklist Persiapan Bertahap (H-6 Bulan s/d Hari-H)',
     titleEn: 'Phased Preparation Checklist (6 Months Prior to Event Day)',
     descId:
-      'Kelola daftar tugas dan dokumen penting berdasarkan fase waktu, kategori, status penyelesaian, serta pembagian PIC tim/keluarga.',
+      'Kelola daftar tugas dan dokumen penting berdasarkan fase waktu (H-6 Bulan s/d Hari-H), status interaktif, serta pembagian PIC tim/keluarga.',
     descEn:
-      'Organize critical tasks and documents by timeline phase, category, status, and PIC assignment.',
+      'Organize critical tasks and documents by timeline phase, interactive status checkboxes, and PIC assignment.',
+    kpiSummary: '4 Fase • Filter PIC • Toggle Status Live',
     imageUrl: '/showcase/showcase-2-checklist.png',
   },
   {
@@ -641,9 +1303,10 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
     titleId: 'Kalkulator Pagu Moneter, Realisasi & Pelunasan Vendor',
     titleEn: 'Budget Cap Calculator, Vendor Contracts & Payment Tracking',
     descId:
-      'Kontrol target pagu anggaran, realisasi kontrak vendor, nominal DP yang sudah dibayar, hingga sisa pelunasan secara transparan.',
+      'Kontrol target pagu Rp 160 Jt, realisasi kontrak Rp 148,5 Jt, DP terbayar Rp 118,5 Jt, hingga sisa pelunasan Rp 30 Jt secara transparan.',
     descEn:
       'Control target budget caps, actual vendor contracts, paid deposits, and remaining balances transparently.',
+    kpiSummary: 'Pagu Rp 160 Jt • Hemat Rp 11,5 Jt • 5 Vendor',
     imageUrl: '/showcase/showcase-3-moneter.png',
   },
   {
@@ -651,12 +1314,13 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
     tabId: '4. Tamu & WA',
     tabEn: '4. Guests & WA',
     badge: 'MODUL 4 • CRM TAMU & BLAST WA',
-    titleId: 'Manajemen Tamu VIP, Kuota Pax & Blast WhatsApp 1-Klik',
+    titleId: 'CRM Tamu VIP, Kuota Pax & Blast WhatsApp 1-Klik',
     titleEn: 'VIP Guest CRM, Pax Quota & 1-Click WhatsApp Blast',
     descId:
-      'Kelola ribuan daftar tamu (Cetak & Online), kode unik INV-xxxx, kuota Pax fleksibel, status RSVP, serta kirim pesan WhatsApp personal 1-klik.',
+      'Kelola daftar tamu VIP (Cetak & Online), kode unik INV-0001..0005, kuota 410 Pax, status RSVP, serta pratinjau pesan WhatsApp personal 1-klik.',
     descEn:
-      'Manage thousands of guests, unique INV-xxxx codes, flexible Pax quotas, RSVP statuses, and 1-click personalized WhatsApp links.',
+      'Manage VIP guests, unique INV-0001..0005 codes, 410 Pax quota, RSVP statuses, and 1-click personalized WhatsApp messages.',
+    kpiSummary: '180 Undangan • 48 VVIP • Auto-WA Link',
     imageUrl: '/showcase/showcase-4-tamu.png',
   },
   {
@@ -664,12 +1328,13 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
     tabId: '5. Studio Undangan',
     tabEn: '5. Invitation Studio',
     badge: 'MODUL 5 • STUDIO UNDANGAN & VIDEO',
-    titleId: 'Studio Kustomisasi Konten, Tema, Musik & Video Background',
-    titleEn: 'Custom Invitation Studio, Themes, Music & Video Background',
+    titleId: 'Studio Kustomisasi Konten, 3 Bagian Media & Transisi Slideshow',
+    titleEn: 'Custom Invitation Studio, 3 Media Slots & Slideshow Transitions',
     descId:
-      'Atur seksi undangan, kutipan, galeri foto HD, jadwal acara, amplop digital (Bank/QRIS/PayPal/Crypto), hingga background video adaptif HP ke PC.',
+      'Atur 3 slot media terpisah (Sampul, Hero, Wallpaper Video MP4), toggle ornamen floral/partikel, dan efek transisi slideshow secara instan.',
     descEn:
-      'Customize invitation sections, quotes, HD photo gallery, schedules, digital envelopes, and adaptive mobile-to-PC video backgrounds.',
+      'Configure 3 separate media slots (Cover, Hero, MP4 Video Wallpaper), ornament toggles, and slideshow transitions.',
+    kpiSummary: '3 Slot Media • Ornamen ON • Slideshow HD',
     imageUrl: '/showcase/showcase-5-pengaturan.png',
   },
 ] as const;
@@ -929,11 +1594,54 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   >('WEDDING');
   const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
   const [simIsOpeningAnim, setSimIsOpeningAnim] = useState<boolean>(false);
+  const [simGalleryIdx, setSimGalleryIdx] = useState<number>(0);
+  const [simRsvpStatus, setSimRsvpStatus] = useState<'HADIR' | 'BERHALANGAN'>(
+    'HADIR'
+  );
+  const [simRsvpPax, setSimRsvpPax] = useState<number>(2);
+  const [simWishName, setSimWishName] = useState<string>('');
+  const [simWishText, setSimWishText] = useState<string>('');
+  const [simCustomWishes, setSimCustomWishes] = useState<
+    Partial<Record<EventCategoryType, SimulationGuestWish[]>>
+  >({});
+  const [simWishFeedback, setSimWishFeedback] = useState<string | null>(null);
+  const [simEnvelopeIdx, setSimEnvelopeIdx] = useState<number>(0);
+  const [copiedSimEnvelopeKey, setCopiedSimEnvelopeKey] = useState<
+    string | null
+  >(null);
+
+  // Interactive Dummy Dashboard Module States
+  const [simChecklistPhase, setSimChecklistPhase] =
+    useState<string>('ALL');
+  const [simDoneTaskIds, setSimDoneTaskIds] = useState<string[]>(() =>
+    DUMMY_DASHBOARD_TASKS.filter((t) => t.defaultDone).map((t) => t.id)
+  );
+  const [simSelectedWaGuestCode, setSimSelectedWaGuestCode] =
+    useState<string>('INV-0001');
+  const [copiedSimWaLinkKey, setCopiedSimWaLinkKey] = useState<string | null>(
+    null
+  );
+  const [simStudioNavTab, setSimStudioNavTab] = useState<string>('konten');
+  const [simStudioOrnaments, setSimStudioOrnaments] = useState<{
+    floralCorner: boolean;
+    floatingParticles: boolean;
+    calendarBtn: boolean;
+  }>({
+    floralCorner: true,
+    floatingParticles: true,
+    calendarBtn: true,
+  });
+  const [simStudioTransition, setSimStudioTransition] = useState<
+    'CROSSFADE' | 'ZOOM_BLUR' | 'SLIDE'
+  >('CROSSFADE');
+
   const [lightboxScreenshot, setLightboxScreenshot] = useState<{
     title: string;
     badge: string;
     desc: string;
     imageUrl: string;
+    mode?: 'dashboard_module' | 'invitation_sim';
+    moduleId?: string;
   } | null>(null);
 
   const handleTriggerSimCoverOpen = () => {
@@ -943,6 +1651,82 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       setSimIsOpened(true);
       setSimIsOpeningAnim(false);
     }, 520);
+  };
+
+  const handleCopySimEnvelope = (key: string, accountValue: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(accountValue);
+    }
+    setCopiedSimEnvelopeKey(key);
+    window.setTimeout(() => setCopiedSimEnvelopeKey(null), 2200);
+  };
+
+  const handleCopySimWaLink = (key: string, urlValue: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(urlValue);
+    }
+    setCopiedSimWaLinkKey(key);
+    window.setTimeout(() => setCopiedSimWaLinkKey(null), 2200);
+  };
+
+  const handleToggleSimTaskDone = (taskId: string) => {
+    setSimDoneTaskIds((prev) =>
+      prev.includes(taskId)
+        ? prev.filter((id) => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  const handleSubmitSimWish = (e: React.FormEvent) => {
+    e.preventDefault();
+    const activePreset =
+      SIMULATION_EVENT_PRESETS[simEventType] ||
+      SIMULATION_EVENT_PRESETS.WEDDING;
+    const sender =
+      simWishName.trim() ||
+      (lang === 'ID'
+        ? 'Bapak/Ibu Tamu Simulasi VIP'
+        : 'Honored VIP Simulation Guest');
+    const msg =
+      simWishText.trim() ||
+      (lang === 'ID'
+        ? `Selamat & sukses untuk acara ${activePreset.titleShort}! Semoga seluruh rangkaian berjalan lancar dan penuh berkah.`
+        : `Congratulations & best wishes for ${activePreset.titleShort}! Wishing a wonderful and blessed celebration.`);
+    const badge =
+      simRsvpStatus === 'HADIR'
+        ? `${lang === 'ID' ? 'Hadir' : 'Attending'} • ${simRsvpPax} Pax`
+        : lang === 'ID'
+          ? 'Berhalangan • Doa Restu'
+          : 'Warmest Regards';
+
+    const newWish: SimulationGuestWish = {
+      id: `sim-wish-${Date.now()}`,
+      senderName: sender,
+      senderTitle:
+        lang === 'ID'
+          ? 'Simulasi Buku Tamu Live • INV-SIM'
+          : 'Live Guestbook Simulation • INV-SIM',
+      attendanceBadge: badge,
+      message: msg,
+      timestamp: lang === 'ID' ? 'Baru saja (Live)' : 'Just now (Live)',
+      hostReply:
+        lang === 'ID'
+          ? `Terima kasih banyak ${sender} atas konfirmasi RSVP dan doa restunya!`
+          : `Thank you so much ${sender} for your RSVP and kind wishes!`,
+    };
+
+    setSimCustomWishes((prev) => ({
+      ...prev,
+      [simEventType]: [newWish, ...(prev[simEventType] || [])],
+    }));
+    setSimWishName('');
+    setSimWishText('');
+    setSimWishFeedback(
+      lang === 'ID'
+        ? '✓ RSVP & Ucapan Simulasi berhasil ditambahkan ke Buku Tamu!'
+        : '✓ Simulated RSVP & Wish added to the live Guestbook!'
+    );
+    window.setTimeout(() => setSimWishFeedback(null), 3200);
   };
 
   const activeLookupClientGuests = useMemo<WeddingGuest[]>(() => {
@@ -1641,7 +2425,1000 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       badge: shot.badge,
       desc: lang === 'ID' ? shot.descId : shot.descEn,
       imageUrl: shot.imageUrl,
+      mode: 'dashboard_module',
+      moduleId: shot.id,
     });
+  };
+
+  const openSimInvitationLightbox = () => {
+    const activePreset =
+      SIMULATION_EVENT_PRESETS[simEventType] ||
+      SIMULATION_EVENT_PRESETS.WEDDING;
+    setLightboxScreenshot({
+      title: `${activePreset.titleShort} — ${
+        lang === 'ID' ? activePreset.badgeId : activePreset.badgeEn
+      }`,
+      badge:
+        lang === 'ID'
+          ? 'SIMULASI UNDANGAN INTERAKTIF • 100% VECTOR-SHARP'
+          : 'INTERACTIVE INVITATION SIMULATOR • 100% VECTOR-SHARP',
+      desc:
+        lang === 'ID'
+          ? 'Pratinjau layar penuh undangan digital editorial lengkap dengan jadwal 2 sesi, galeri interaktif, buku tamu live, dan amplop digital EMV.'
+          : 'Fullscreen live editorial digital invitation with 2-session schedule, interactive gallery, live guestbook, and EMV digital envelope.',
+      imageUrl: activePreset.heroImage,
+      mode: 'invitation_sim',
+    });
+  };
+
+  const renderLiveDashboardModule = (moduleId: string) => {
+    const activePreset =
+      SIMULATION_EVENT_PRESETS[simEventType] ||
+      SIMULATION_EVENT_PRESETS.WEDDING;
+    const doneTasksCount = simDoneTaskIds.length;
+    const totalTasksCount = DUMMY_DASHBOARD_TASKS.length;
+    const dynamicChecklistPct = Math.round(
+      (doneTasksCount / totalTasksCount) * 100
+    );
+    const filteredTasks =
+      simChecklistPhase === 'ALL'
+        ? DUMMY_DASHBOARD_TASKS
+        : DUMMY_DASHBOARD_TASKS.filter((t) => t.phase === simChecklistPhase);
+    const selectedWaGuest =
+      DUMMY_DASHBOARD_GUESTS.find((g) => g.code === simSelectedWaGuestCode) ||
+      DUMMY_DASHBOARD_GUESTS[0];
+    const clientSlug = activePreset.titleShort
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
+    const waPreviewLink = `https://meplan.app/?client=${clientSlug}&code=${selectedWaGuest.code}`;
+
+    return (
+      <div className="bg-[#FAF8F5] text-stone-800 p-4 sm:p-6 space-y-5 select-none">
+        {/* Top Workspace Header + Interactive 5-Event Category Switcher */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-[#1C1613] via-[#241C16] to-[#2C221B] text-[#FAF3E3] border border-[#D4AF37]/50 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#E6C76B] flex items-center justify-center shrink-0">
+              <CatalogEventCrest
+                eventType={activePreset.eventType}
+                className="w-5 h-5"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold uppercase">
+                  LIVE WORKSPACE DUMMY • 100% TAJAM
+                </span>
+                <span className="text-[10px] font-mono text-[#E6C76B]">
+                  ID: {clientSlug}
+                </span>
+              </div>
+              <p className="font-serif text-sm sm:text-base font-extrabold text-white truncate mt-0.5">
+                {activePreset.titleFull}
+              </p>
+            </div>
+          </div>
+
+          {/* Event Preset Pills inside Dashboard Mockup */}
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+            {SIMULATION_EVENT_KEYS.map((evKey) => {
+              const p = SIMULATION_EVENT_PRESETS[evKey];
+              const isSelected = simEventType === evKey;
+              return (
+                <button
+                  key={evKey}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSimEventType(evKey);
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold transition-all border ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37] shadow-2xs'
+                      : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
+                  }`}
+                >
+                  {lang === 'ID' ? p.tabLabelId : p.tabLabelEn}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* =============================================================== */}
+        {/* MODUL 1: EXECUTIVE READINESS TRACKER & MULTI-SESSION COUNTDOWN  */}
+        {/* =============================================================== */}
+        {moduleId === 'tracker' && (
+          <div className="space-y-4">
+            {/* 4 Crisp KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID' ? 'Kesiapan Acara' : 'Event Readiness'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                    ON TRACK
+                  </span>
+                </div>
+                <p className="text-2xl font-extrabold text-stone-900">92%</p>
+                <p className="text-[11px] font-bold text-[#8B6914]">
+                  {lang === 'ID'
+                    ? '23 / 25 Tugas Selesai'
+                    : '23 / 25 Tasks Completed'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID' ? 'Pagu Moneter' : 'Budget Cap'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[9px] font-extrabold">
+                    HEMAT 9,3%
+                  </span>
+                </div>
+                <p className="text-lg sm:text-xl font-extrabold text-stone-900 truncate">
+                  Rp 145.000.000
+                </p>
+                <p className="text-[11px] font-semibold text-stone-500">
+                  {lang === 'ID'
+                    ? 'dari Pagu Rp 160.000.000'
+                    : 'of Rp 160,000,000 Cap'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID' ? 'Tamu VIP & Reguler' : 'VIP & Guests'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                    48 VVIP
+                  </span>
+                </div>
+                <p className="text-xl font-extrabold text-stone-900">
+                  180 {lang === 'ID' ? 'Undangan' : 'Invites'}
+                </p>
+                <p className="text-[11px] font-bold text-[#8B6914]">
+                  {lang === 'ID'
+                    ? 'Total Kuota: 410 Pax'
+                    : 'Total Quota: 410 Pax'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID' ? 'Konfirmasi RSVP' : 'RSVP Confirmed'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                    LIVE SYNC
+                  </span>
+                </div>
+                <p className="text-xl font-extrabold text-emerald-700">
+                  154 {lang === 'ID' ? 'Hadir' : 'Attending'}
+                </p>
+                <p className="text-[11px] font-semibold text-stone-600">
+                  38 {lang === 'ID' ? 'Ucapan Doa Restu' : 'Guestbook Wishes'}
+                </p>
+              </div>
+            </div>
+
+            {/* Multi-Session Live Countdown + Domain Progress & Audit Log */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Left 7 cols: Multi-Session Countdown + Progress Bars */}
+              <div className="lg:col-span-7 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#B68D40]" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Hitung Mundur Multi-Sesi & Progress Kategori'
+                        : 'Multi-Session Countdown & Category Progress'}
+                    </span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/35">
+                    {activePreset.eventDate}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {activePreset.sessions.map((ses, sIdx) => (
+                    <div
+                      key={ses.badge}
+                      className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-1.5"
+                    >
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8B6914] block">
+                        {ses.badge}
+                      </span>
+                      <p className="text-xs font-extrabold text-stone-900 truncate">
+                        {ses.title}
+                      </p>
+                      <p className="text-[10px] text-stone-600 truncate">
+                        {ses.time} • {ses.venue}
+                      </p>
+                      <div className="grid grid-cols-4 gap-1.5 pt-1">
+                        {[
+                          { v: sIdx === 0 ? '14' : '14', l: 'H' },
+                          { v: sIdx === 0 ? '08' : '17', l: 'J' },
+                          { v: '45', l: 'M' },
+                          {
+                            v: String(countdownSeconds % 60).padStart(2, '0'),
+                            l: 'D',
+                          },
+                        ].map((b) => (
+                          <div
+                            key={b.l}
+                            className="py-1 rounded-lg bg-stone-900 text-[#E6C76B] text-center font-mono text-[10px] font-extrabold"
+                          >
+                            {b.v}
+                            {b.l}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Category Progress Bars */}
+                <div className="space-y-2.5 pt-1">
+                  {[
+                    {
+                      label:
+                        lang === 'ID'
+                          ? 'Venue Utama & Katering VIP (400 Pax)'
+                          : 'Main Venue & VIP Catering (400 Pax)',
+                      pct: 100,
+                      color: 'bg-emerald-600',
+                    },
+                    {
+                      label:
+                        lang === 'ID'
+                          ? 'Dekorasi Floral, Lighting & Dokumentasi 4K'
+                          : 'Floral Decor, Lighting & 4K Documentation',
+                      pct: 90,
+                      color: 'bg-[#C5A059]',
+                    },
+                    {
+                      label:
+                        lang === 'ID'
+                          ? 'Administrasi, Perizinan & Distribusi VIP'
+                          : 'Permits, Administration & VIP Distribution',
+                      pct: 85,
+                      color: 'bg-amber-600',
+                    },
+                  ].map((bar) => (
+                    <div key={bar.label} className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-stone-700">{bar.label}</span>
+                        <span className="text-[#8B6914] font-extrabold">
+                          {bar.pct}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${bar.color}`}
+                          style={{ width: `${bar.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right 5 cols: Live Audit & Activity Feed */}
+              <div className="lg:col-span-5 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-3 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-stone-900">
+                      {lang === 'ID'
+                        ? 'Log Aktivitas & Audit Kesiapan Live'
+                        : 'Live Readiness & Activity Audit Log'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                      REAL-TIME
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      {
+                        badge: 'MONETER',
+                        text:
+                          lang === 'ID'
+                            ? '✓ Kontrak Vendor Grand Ballroom & Katering VIP Lunas/DP Terverifikasi'
+                            : '✓ Grand Ballroom & VIP Catering Vendor Contracts Verified',
+                        time: '5m lalu',
+                      },
+                      {
+                        badge: 'CRM WA',
+                        text:
+                          lang === 'ID'
+                            ? '✓ 45 Undangan WhatsApp VVIP (INV-0001 s/d INV-0045) Terkirim'
+                            : '✓ 45 VVIP WhatsApp Invitations (INV-0001..0045) Delivered',
+                        time: '18m lalu',
+                      },
+                      {
+                        badge: 'RSVP LIVE',
+                        text:
+                          lang === 'ID'
+                            ? `✓ RSVP Hadir: ${activePreset.dummyWishes[0]?.senderName || 'Tamu VVIP'} (2 Pax)`
+                            : `✓ RSVP Attending: ${activePreset.dummyWishes[0]?.senderName || 'VVIP Guest'} (2 Pax)`,
+                        time: '32m lalu',
+                      },
+                    ].map((log) => (
+                      <div
+                        key={log.text}
+                        className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 text-[11px] space-y-0.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[9px] font-extrabold text-[#8B6914]">
+                            [{log.badge}]
+                          </span>
+                          <span className="text-[10px] text-stone-400">
+                            {log.time}
+                          </span>
+                        </div>
+                        <p className="font-semibold text-stone-800 leading-snug">
+                          {log.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-bold flex items-center justify-between">
+                  <span>
+                    {lang === 'ID'
+                      ? '✓ Sinkronisasi Cloud & Google Sheets Aktif'
+                      : '✓ Cloud & Google Sheets Sync Active'}
+                  </span>
+                  <span className="font-mono text-[10px]">100% OK</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* MODUL 2: INTERACTIVE PHASED CHECKLIST (H-6 BULAN S/D HARI-H)    */}
+        {/* =============================================================== */}
+        {moduleId === 'checklist' && (
+          <div className="space-y-4">
+            {/* Phase Filter Bar + Dynamic Progress Pill */}
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  {
+                    id: 'ALL',
+                    label:
+                      lang === 'ID'
+                        ? `Semua Fase (${DUMMY_DASHBOARD_TASKS.length})`
+                        : `All Phases (${DUMMY_DASHBOARD_TASKS.length})`,
+                  },
+                  { id: 'H-6 Bulan', label: 'H-6 Bulan' },
+                  { id: 'H-3 Bulan', label: 'H-3 Bulan' },
+                  { id: 'H-1 Bulan', label: 'H-1 Bulan' },
+                  { id: 'Hari-H', label: 'Hari-H' },
+                ].map((ph) => (
+                  <button
+                    key={ph.id}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSimChecklistPhase(ph.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                      simChecklistPhase === ph.id
+                        ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
+                        : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border border-stone-200'
+                    }`}
+                  >
+                    {ph.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-[#8B6914] bg-[#FAF3E3] px-3 py-1 rounded-xl border border-[#D4AF37]/40">
+                  {lang === 'ID'
+                    ? `Selesai: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Klik tugas untuk uji coba!`
+                    : `Done: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Click any task to toggle!`}
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Checklist Rows */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredTasks.map((task) => {
+                const isDone = simDoneTaskIds.includes(task.id);
+                return (
+                  <div
+                    key={task.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleSimTaskDone(task.id);
+                    }}
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                      isDone
+                        ? 'bg-emerald-50/60 border-emerald-300/90 shadow-2xs'
+                        : 'bg-white hover:bg-[#FAF3E3]/40 border-[#D4AF37]/40 shadow-2xs'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleSimTaskDone(task.id);
+                        }}
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 font-extrabold transition-all ${
+                          isDone
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-white border-2 border-[#B68D40] text-transparent'
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                            {task.phase}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[9px] font-extrabold">
+                            PIC: {task.pic}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                            {task.priority}
+                          </span>
+                        </div>
+                        <p
+                          className={`text-xs font-extrabold leading-snug ${
+                            isDone
+                              ? 'line-through text-stone-500'
+                              : 'text-stone-900'
+                          }`}
+                        >
+                          {lang === 'ID' ? task.titleId : task.titleEn}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                        isDone
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}
+                    >
+                      {isDone
+                        ? lang === 'ID'
+                          ? '✓ Selesai'
+                          : '✓ Done'
+                        : lang === 'ID'
+                          ? '⏳ Proses'
+                          : '⏳ In Progress'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* MODUL 3: MONETER, PAGU ANGGARAN & KONTRAK PELUNASAN VENDOR      */}
+        {/* =============================================================== */}
+        {moduleId === 'moneter' && (
+          <div className="space-y-4">
+            {/* 4 Financial Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                  {lang === 'ID' ? 'Target Pagu Anggaran' : 'Target Budget Cap'}
+                </p>
+                <p className="text-lg font-extrabold text-stone-900 mt-1">
+                  Rp 160.000.000
+                </p>
+                <span className="inline-block mt-1 text-[10px] font-bold text-stone-500">
+                  100% Plafon Maksimal
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                  {lang === 'ID'
+                    ? 'Total Kontrak Realisasi'
+                    : 'Actual Contracts'}
+                </p>
+                <p className="text-lg font-extrabold text-[#8B6914] mt-1">
+                  Rp 148.500.000
+                </p>
+                <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                  ✓ HEMAT Rp 11,5 Jt di Bawah Pagu
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                  {lang === 'ID'
+                    ? 'Sudah Dibayar (DP / Lunas)'
+                    : 'Paid (Deposit / Full)'}
+                </p>
+                <p className="text-lg font-extrabold text-emerald-700 mt-1">
+                  Rp 118.500.000
+                </p>
+                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700">
+                  79,8% Terbayar Resmi
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                  {lang === 'ID'
+                    ? 'Sisa Pelunasan Vendor'
+                    : 'Remaining Balance'}
+                </p>
+                <p className="text-lg font-extrabold text-amber-800 mt-1">
+                  Rp 30.000.000
+                </p>
+                <span className="inline-block mt-1 text-[10px] font-bold text-amber-800">
+                  Jatuh Tempo H-14 Acara
+                </span>
+              </div>
+            </div>
+
+            {/* 5 Dummy Vendor Contracts Table */}
+            <div className="rounded-2xl bg-white border border-[#D4AF37]/40 overflow-hidden">
+              <div className="px-4 py-3 bg-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-extrabold text-stone-900">
+                  {lang === 'ID'
+                    ? 'Rincian Kontrak Vendor & Status Pelunasan (5 Vendor Utama)'
+                    : 'Vendor Contracts & Payment Settlement Breakdown (5 Core Vendors)'}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
+                  AUDIT MONETER TRANSPARAN
+                </span>
+              </div>
+
+              <div className="divide-y divide-stone-200/80">
+                {DUMMY_DASHBOARD_VENDORS.map((v) => (
+                  <div
+                    key={v.id}
+                    className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#FAF8F5] transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] text-[9px] font-extrabold">
+                          {v.category}
+                        </span>
+                        <p className="text-xs font-extrabold text-stone-900 truncate">
+                          {v.name}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        Pagu: <strong>{v.pagu}</strong> &bull; Kontrak
+                        Realisasi:{' '}
+                        <strong className="text-stone-800">
+                          {v.realisasi}
+                        </strong>
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+                      <div className="text-left sm:text-right text-[11px]">
+                        <p className="text-emerald-700 font-extrabold">
+                          Dibayar: {v.terbayar}
+                        </p>
+                        <p className="text-stone-500 font-semibold">
+                          Sisa: {v.sisa}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                          v.status === 'LUNAS'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-100 text-amber-900 border border-amber-300'
+                        }`}
+                      >
+                        {v.status === 'LUNAS' ? '✓ LUNAS' : '⏳ DP TERBAYAR'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* MODUL 4: CRM TAMU VIP, KUOTA PAX & BLAST WHATSAPP 1-KLIK        */}
+        {/* =============================================================== */}
+        {moduleId === 'tamu' && (
+          <div className="space-y-4">
+            {/* Summary Pills */}
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-xl bg-stone-900 text-[#E6C76B] text-xs font-extrabold">
+                  ★ P1 - VIP: 48 Tamu
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
+                  ✉️ Cetak Tebal: 60
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
+                  🌐 Online Link: 120
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold">
+                  👥 Total Kuota: 410 Pax
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-stone-500">
+                {lang === 'ID'
+                  ? 'Klik "Kirim WA" untuk melihat pratinjau pesan otomatis:'
+                  : 'Click "Send WA" to preview auto-generated message:'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+              {/* Left 7 Cols: 5 Dummy VIP Guests */}
+              <div className="lg:col-span-7 rounded-2xl bg-white border border-[#D4AF37]/40 divide-y divide-stone-200/80 overflow-hidden">
+                {DUMMY_DASHBOARD_GUESTS.map((g) => {
+                  const isSelected = selectedWaGuest.code === g.code;
+                  const guestLink = `https://meplan.app/?client=${clientSlug}&code=${g.code}`;
+                  return (
+                    <div
+                      key={g.code}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSimSelectedWaGuestCode(g.code);
+                      }}
+                      className={`p-3.5 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                        isSelected ? 'bg-[#FAF3E3]/70' : 'hover:bg-[#FAF8F5]'
+                      }`}
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
+                            {g.code}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                            {g.priority}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 text-stone-700 text-[9px] font-bold">
+                            {g.pax} Pax • {g.format}
+                          </span>
+                        </div>
+                        <p className="text-xs font-extrabold text-stone-900 truncate">
+                          {g.name}
+                        </p>
+                        <p className="text-[10px] text-stone-500 truncate">
+                          {g.institution} • RSVP:{' '}
+                          <strong className="text-emerald-700">{g.rsvp}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSimSelectedWaGuestCode(g.code);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold inline-flex items-center gap-1 shadow-2xs"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>Kirim WA</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopySimWaLink(g.code, guestLink);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold inline-flex items-center gap-1"
+                        >
+                          {copiedSimWaLinkKey === g.code ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>Tersalin!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Salin Link</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right 5 Cols: Live Auto-Generated WhatsApp Message Preview */}
+              <div className="lg:col-span-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 text-emerald-50 border border-[#D4AF37]/50 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E6C76B]">
+                    {lang === 'ID'
+                      ? 'Pratinjau Pesan WhatsApp Otomatis'
+                      : 'Auto-Generated WhatsApp Preview'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold">
+                    {selectedWaGuest.code} ({selectedWaGuest.pax} Pax)
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 text-[11px] leading-relaxed space-y-2 font-sans text-stone-200">
+                  <p>
+                    Kepada Yth.{' '}
+                    <strong className="text-[#E6C76B]">
+                      {selectedWaGuest.name}
+                    </strong>
+                  </p>
+                  <p>
+                    Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu
+                    untuk menghadiri acara{' '}
+                    <strong className="text-white">
+                      {activePreset.titleFull}
+                    </strong>{' '}
+                    pada <strong>{activePreset.eventDate}</strong> di{' '}
+                    <strong>{activePreset.eventVenue}</strong>.
+                  </p>
+                  <p className="font-mono text-[10px] text-[#E6C76B] break-all bg-white/5 p-2 rounded-lg border border-[#D4AF37]/30">
+                    🔗 Link Privat: {waPreviewLink}
+                    <br />🔑 Kode Akses VIP: {selectedWaGuest.code} (Kuota:{' '}
+                    {selectedWaGuest.pax} Pax)
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopySimWaLink('preview-wa', waPreviewLink);
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5"
+                >
+                  {copiedSimWaLinkKey === 'preview-wa' ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>✓ Link Undangan Dummy Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Salin Link & Pesan WhatsApp Dummy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* MODUL 5: STUDIO PENGATURAN UNDANGAN, 3 SLOT MEDIA & SLIDESHOW   */}
+        {/* =============================================================== */}
+        {moduleId === 'pengaturan' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            {/* Left Mini-Sidebar (5 Studio Sections) */}
+            <div className="lg:col-span-3 p-3 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-1.5">
+              <p className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                {lang === 'ID'
+                  ? 'Menu Studio Kustomisasi'
+                  : 'Customization Studio Menu'}
+              </p>
+              {[
+                {
+                  id: 'konten',
+                  label:
+                    lang === 'ID' ? '1. Konten Undangan' : '1. Invitation Content',
+                },
+                {
+                  id: 'tema',
+                  label:
+                    lang === 'ID'
+                      ? '2. Tema & 3 Slot Media'
+                      : '2. Theme & 3 Media Slots',
+                },
+                {
+                  id: 'jadwal',
+                  label:
+                    lang === 'ID'
+                      ? '3. Jadwal & Lokasi Maps'
+                      : '3. Schedule & Maps',
+                },
+                {
+                  id: 'akun',
+                  label:
+                    lang === 'ID' ? '4. Akun & Akses WO' : '4. Accounts & Access',
+                },
+                {
+                  id: 'database',
+                  label:
+                    lang === 'ID'
+                      ? '5. Cloud & Backup JSON'
+                      : '5. Cloud & JSON Backup',
+                },
+              ].map((nav) => (
+                <button
+                  key={nav.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSimStudioNavTab(nav.id);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-between ${
+                    simStudioNavTab === nav.id
+                      ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
+                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700'
+                  }`}
+                >
+                  <span>{nav.label}</span>
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+                </button>
+              ))}
+            </div>
+
+            {/* Right Panel: 3 Separate Media Sections + Ornament Toggles + Slideshow Transitions */}
+            <div className="lg:col-span-9 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                    {lang === 'ID'
+                      ? 'Arsitektur 3 Slot Media Terpisah & Transisi Sinematik'
+                      : '3 Separate Media Slots & Cinematic Transitions'}
+                  </span>
+                  <h5 className="text-sm font-extrabold text-stone-900">
+                    {activePreset.titleShort} — Studio Visual & Ornamen
+                  </h5>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                  ✓ Auto-Save Cloud Aktif
+                </span>
+              </div>
+
+              {/* 3 Separate Media Slots */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                    SLOT 1 • SAMPUL DEPAN (COVER)
+                  </span>
+                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300">
+                    <img
+                      src={activePreset.galleryPhotos[0].url}
+                      alt="Cover Slot"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                      2 Foto HD • Slideshow
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-bold text-stone-600">
+                    Mendukung s/d 3 Foto (Maks 10 MB/foto) + Studio Crop
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                    SLOT 2 • BANNER HERO EDITORIAL
+                  </span>
+                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300">
+                    <img
+                      src={activePreset.galleryPhotos[1].url}
+                      alt="Hero Slot"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                      1 Foto Aktif • Feathered
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-bold text-stone-600">
+                    Alpha-Mask Feathering Halus + Animasi Ken Burns
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                    SLOT 3 • WALLPAPER LATAR (VIDEO)
+                  </span>
+                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300 bg-stone-900 flex items-center justify-center">
+                    <img
+                      src={activePreset.galleryPhotos[2].url}
+                      alt="Wallpaper Slot"
+                      className="w-full h-full object-cover opacity-70"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold">
+                      🎬 1 Video MP4 Aktif (18.4 MB)
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-bold text-stone-600">
+                    Video MP4/WebM s/d 25 MB (Auto-Stretch HP ke PC)
+                  </p>
+                </div>
+              </div>
+
+              {/* Interactive Ornament Toggles & Slideshow Transition Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200 space-y-2">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+                    {lang === 'ID'
+                      ? 'Toggle Ornamen & Fitur Interaktif (Klik untuk Uji):'
+                      : 'Interactive Ornament Toggles (Click to Test):'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      {
+                        key: 'floralCorner' as const,
+                        label: `🌸 Ornamen Sudut: ${simStudioOrnaments.floralCorner ? 'ON' : 'OFF'}`,
+                      },
+                      {
+                        key: 'floatingParticles' as const,
+                        label: `✨ Partikel Melayang: ${simStudioOrnaments.floatingParticles ? 'ON' : 'OFF'}`,
+                      },
+                      {
+                        key: 'calendarBtn' as const,
+                        label: `📅 Tombol Kalender: ${simStudioOrnaments.calendarBtn ? 'ON' : 'OFF'}`,
+                      },
+                    ].map((tog) => (
+                      <button
+                        key={tog.key}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSimStudioOrnaments((prev) => ({
+                            ...prev,
+                            [tog.key]: !prev[tog.key],
+                          }));
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
+                          simStudioOrnaments[tog.key]
+                            ? 'bg-emerald-700 text-white border-emerald-600'
+                            : 'bg-white text-stone-500 border-stone-300'
+                        }`}
+                      >
+                        {tog.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200 space-y-2">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+                    {lang === 'ID'
+                      ? 'Gaya Transisi Slideshow Latar:'
+                      : 'Background Slideshow Transition Style:'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: 'CROSSFADE' as const, label: 'Crossfade Halus' },
+                      { id: 'ZOOM_BLUR' as const, label: 'Zoom & Blur' },
+                      { id: 'SLIDE' as const, label: 'Geser Halus' },
+                    ].map((tr) => (
+                      <button
+                        key={tr.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSimStudioTransition(tr.id);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
+                          simStudioTransition === tr.id
+                            ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                            : 'bg-white text-stone-700 border-stone-300'
+                        }`}
+                      >
+                        {tr.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const scrollToShowcase = () => {
@@ -3651,6 +5428,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                               <button
                                 type="button"
+                                onClick={openSimInvitationLightbox}
+                                title={
+                                  lang === 'ID'
+                                    ? 'Buka Simulasi Undangan di Layar Penuh'
+                                    : 'Open Invitation Simulator in Fullscreen'
+                                }
+                                className="px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 text-[11px] font-extrabold inline-flex items-center gap-1 transition-all whitespace-nowrap"
+                              >
+                                <Maximize2 className="w-3 h-3 shrink-0" />
+                                <span className="hidden sm:inline">
+                                  {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
                                 onClick={() => {
                                   if (simIsOpened) {
                                     setSimIsOpeningAnim(false);
@@ -3773,301 +5566,657 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             /* ======================================================= */
                             /* OPENED EDITORIAL INVITATION STAGE (simIsOpened === true)*/
                             /* ======================================================= */
-                            <div className="max-h-[680px] overflow-y-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE2] relative">
-                              {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS */}
-                              <div className="relative">
-                                <CatalogFloralCorner
-                                  position="top-left"
-                                  size="md"
-                                  enabled={simPreset.showFloral}
-                                />
-                                <CatalogFloralCorner
-                                  position="top-right"
-                                  size="md"
-                                  enabled={simPreset.showFloral}
-                                />
+                            (() => {
+                              const safeGalleryIdx =
+                                ((simGalleryIdx %
+                                  simPreset.galleryPhotos.length) +
+                                  simPreset.galleryPhotos.length) %
+                                simPreset.galleryPhotos.length;
+                              const activeGalleryPhoto =
+                                simPreset.galleryPhotos[safeGalleryIdx];
+                              const combinedWishes = [
+                                ...(simCustomWishes[simPreset.eventType] || []),
+                                ...simPreset.dummyWishes,
+                              ];
+                              const activeEnvelope =
+                                DUMMY_ENVELOPE_CHANNELS[
+                                  simEnvelopeIdx %
+                                    DUMMY_ENVELOPE_CHANNELS.length
+                                ];
 
-                                <div
-                                  className="relative h-64 sm:h-80 w-full overflow-hidden"
-                                  style={{
-                                    maskImage:
-                                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                    WebkitMaskImage:
-                                      'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                  }}
-                                >
-                                  <img
-                                    src={simPreset.heroImage}
-                                    alt={simPreset.titleFull}
-                                    className="w-full h-full object-cover animate-ken-burns"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-[#FAF6EE] via-transparent to-black/25" />
-                                </div>
-
-                                {/* Editorial Title & Crest Overlapping Feathered Bottom */}
-                                <div className="relative z-10 -mt-12 sm:-mt-16 px-4 sm:px-8 text-center space-y-3">
-                                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
-                                    <CatalogEventCrest
-                                      eventType={simPreset.eventType}
-                                      className="w-3.5 h-3.5 text-[#B68D40]"
-                                    />
-                                    <span>{simBadge}</span>
-                                  </div>
-
-                                  <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
-                                    {simPreset.titleFull}
-                                  </h4>
-
-                                  {/* Gold Filigree Divider */}
-                                  <div
-                                    aria-hidden="true"
-                                    className="flex items-center justify-center gap-2.5 text-[#B68D40]"
-                                  >
-                                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                    <CatalogEventCrest
-                                      eventType={simPreset.eventType}
-                                      className="w-5 h-5"
-                                    />
-                                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                  </div>
-
-                                  <p className="text-xs sm:text-sm italic text-stone-600 max-w-xl mx-auto leading-relaxed">
-                                    {simPreset.quote}
-                                  </p>
-
-                                  {/* 4-Box Countdown + Save to Calendar Pill */}
-                                  <div className="pt-2 flex flex-col items-center gap-3">
-                                    <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
-                                      {[
-                                        {
-                                          val: '14',
-                                          lbl: lang === 'ID' ? 'Hari' : 'Days',
-                                        },
-                                        {
-                                          val: '08',
-                                          lbl: lang === 'ID' ? 'Jam' : 'Hours',
-                                        },
-                                        {
-                                          val: '45',
-                                          lbl: lang === 'ID' ? 'Menit' : 'Mins',
-                                        },
-                                        {
-                                          val: '22',
-                                          lbl: lang === 'ID' ? 'Detik' : 'Secs',
-                                        },
-                                      ].map((cd) => (
-                                        <div
-                                          key={cd.lbl}
-                                          className="py-2 px-2 rounded-2xl bg-white/90 border border-[#D4AF37]/45 shadow-2xs text-center"
-                                        >
-                                          <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
-                                            {cd.val}
-                                          </span>
-                                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
-                                            {cd.lbl}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
-                                      <Calendar className="w-3.5 h-3.5" />
-                                      <span>
-                                        {lang === 'ID'
-                                          ? 'Simpan ke Google Calendar'
-                                          : 'Save to Google Calendar'}
-                                      </span>
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* 2. OPEN EDITORIAL SECTION HEADER + ADAPTIVE PROFILE SECTION */}
-                              <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-6">
-                                {/* Open Editorial Header (No Rigid Box!) */}
-                                <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                  <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                    {simBadge}
-                                  </p>
-                                  <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                    {simSectionTitle}
-                                  </h5>
-                                  <div
-                                    aria-hidden="true"
-                                    className="flex items-center justify-center gap-2 pt-1"
-                                  >
-                                    <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                    <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                    <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                  </div>
-                                </div>
-
-                                {simPreset.profileCount === 2 &&
-                                simPreset.host2 ? (
-                                  /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
-                                  <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
-                                    {/* Host 1 */}
-                                    <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                      <CatalogFloralCorner
-                                        position="top-left"
-                                        size="sm"
-                                        enabled={simPreset.showFloral}
-                                      />
-                                      <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                        <img
-                                          src={simPreset.host1.photo}
-                                          alt={simPreset.host1.name}
-                                          className={`${frameClassForHost} object-cover`}
-                                        />
-                                      </div>
-                                      <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                        {simPreset.host1.role}
-                                      </span>
-                                      <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                        {simPreset.host1.name}
-                                      </h6>
-                                      <p className="text-[11px] text-stone-600 leading-relaxed">
-                                        {simPreset.host1.parents}
-                                      </p>
-                                    </div>
-
-                                    {/* Center Script Ampersand */}
-                                    <div className="md:col-span-1 flex items-center justify-center py-1">
-                                      <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
-                                        &amp;
-                                      </span>
-                                    </div>
-
-                                    {/* Host 2 */}
-                                    <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                      <CatalogFloralCorner
-                                        position="top-right"
-                                        size="sm"
-                                        enabled={simPreset.showFloral}
-                                      />
-                                      <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                        <img
-                                          src={simPreset.host2.photo}
-                                          alt={simPreset.host2.name}
-                                          className={`${frameClassForHost} object-cover`}
-                                        />
-                                      </div>
-                                      <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                        {simPreset.host2.role}
-                                      </span>
-                                      <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                        {simPreset.host2.name}
-                                      </h6>
-                                      <p className="text-[11px] text-stone-600 leading-relaxed">
-                                        {simPreset.host2.parents}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT (BIRTHDAY / GRADUATION / MEETING / GALA) */
-                                  <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                              return (
+                                <div className="max-h-[760px] overflow-y-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE2] relative">
+                                  {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS */}
+                                  <div className="relative">
                                     <CatalogFloralCorner
                                       position="top-left"
-                                      size="sm"
+                                      size="md"
                                       enabled={simPreset.showFloral}
                                     />
                                     <CatalogFloralCorner
                                       position="top-right"
-                                      size="sm"
+                                      size="md"
                                       enabled={simPreset.showFloral}
                                     />
+
                                     <div
-                                      className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
-                                        simPreset.frameStyle === 'CIRCLE'
-                                          ? 'rounded-full'
-                                          : simPreset.frameStyle ===
-                                              'EDITORIAL_RECT'
-                                            ? 'rounded-2xl'
-                                            : 'rounded-t-[999px] rounded-b-2xl'
-                                      }`}
+                                      className="relative h-64 sm:h-80 w-full overflow-hidden"
+                                      style={{
+                                        maskImage:
+                                          'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                        WebkitMaskImage:
+                                          'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                      }}
                                     >
                                       <img
-                                        src={simPreset.host1.photo}
-                                        alt={simPreset.host1.name}
-                                        className={`${frameClassForHost} object-cover`}
+                                        src={simPreset.heroImage}
+                                        alt={simPreset.titleFull}
+                                        className="w-full h-full object-cover animate-ken-burns"
                                       />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-[#FAF6EE] via-transparent to-black/25" />
                                     </div>
-                                    <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                      {simPreset.host1.role}
-                                    </span>
-                                    <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
-                                      {simPreset.host1.name}
-                                    </h6>
-                                    {simPreset.host1.parents && (
-                                      <p className="text-xs text-stone-600 leading-relaxed">
-                                        {simPreset.host1.parents}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
 
-                                {/* 3. SCHEDULE & LUXURY METALLIC EMV CHIP DIGITAL ENVELOPE PREVIEW */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 max-w-3xl mx-auto">
-                                  {/* Schedule Card */}
-                                  <div className="p-4 sm:p-5 rounded-3xl bg-white/90 border border-[#D4AF37]/40 shadow-2xs space-y-2.5 flex flex-col justify-between">
-                                    <div className="space-y-1.5">
-                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                                        <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
-                                        <span>
-                                          {lang === 'ID'
-                                            ? 'Rangkaian Acara Utama'
-                                            : 'Primary Event Schedule'}
+                                    {/* Editorial Title & Crest Overlapping Feathered Bottom */}
+                                    <div className="relative z-10 -mt-12 sm:-mt-16 px-4 sm:px-8 text-center space-y-3">
+                                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
+                                        <CatalogEventCrest
+                                          eventType={simPreset.eventType}
+                                          className="w-3.5 h-3.5 text-[#B68D40]"
+                                        />
+                                        <span>{simBadge}</span>
+                                      </div>
+
+                                      <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
+                                        {simPreset.titleFull}
+                                      </h4>
+
+                                      {/* Gold Filigree Divider */}
+                                      <div
+                                        aria-hidden="true"
+                                        className="flex items-center justify-center gap-2.5 text-[#B68D40]"
+                                      >
+                                        <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                        <CatalogEventCrest
+                                          eventType={simPreset.eventType}
+                                          className="w-5 h-5"
+                                        />
+                                        <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                      </div>
+
+                                      {/* 4-Box Countdown + Save to Calendar Pill */}
+                                      <div className="pt-2 flex flex-col items-center gap-3">
+                                        <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
+                                          {[
+                                            {
+                                              val: '14',
+                                              lbl:
+                                                lang === 'ID' ? 'Hari' : 'Days',
+                                            },
+                                            {
+                                              val: '08',
+                                              lbl:
+                                                lang === 'ID' ? 'Jam' : 'Hours',
+                                            },
+                                            {
+                                              val: '45',
+                                              lbl:
+                                                lang === 'ID'
+                                                  ? 'Menit'
+                                                  : 'Mins',
+                                            },
+                                            {
+                                              val: String(
+                                                countdownSeconds % 60
+                                              ).padStart(2, '0'),
+                                              lbl:
+                                                lang === 'ID'
+                                                  ? 'Detik'
+                                                  : 'Secs',
+                                            },
+                                          ].map((cd) => (
+                                            <div
+                                              key={cd.lbl}
+                                              className="py-2 px-2 rounded-2xl bg-white/90 border border-[#D4AF37]/45 shadow-2xs text-center"
+                                            >
+                                              <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
+                                                {cd.val}
+                                              </span>
+                                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
+                                                {cd.lbl}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+
+                                        <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
+                                          <Calendar className="w-3.5 h-3.5" />
+                                          <span>
+                                            {lang === 'ID'
+                                              ? 'Simpan ke Google Calendar'
+                                              : 'Save to Google Calendar'}
+                                          </span>
                                         </span>
-                                      </span>
-                                      <h6 className="font-editorial text-lg font-bold text-stone-900">
-                                        {simPreset.eventTitle}
-                                      </h6>
-                                      <p className="text-xs font-bold text-[#8B6914]">
-                                        {simPreset.eventDate}
-                                      </p>
-                                      <p className="text-xs text-stone-600 flex items-start gap-1.5">
-                                        <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
-                                        <span>{simPreset.eventVenue}</span>
-                                      </p>
-                                    </div>
-                                    <div className="pt-2 flex items-center justify-between gap-2 border-t border-stone-200/70">
-                                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                                        ✓ Google Maps &amp; RSVP Live
-                                      </span>
-                                      <span className="text-[10px] font-extrabold text-[#8B6914]">
-                                        INV-0001
-                                      </span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Luxury Metallic EMV Chip Digital Envelope Card */}
-                                  <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border border-[#D4AF37]/65 shadow-md space-y-3 flex flex-col justify-between relative overflow-hidden">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <CatalogGoldEmvChip className="w-9 h-7" />
-                                      <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[9px] font-extrabold uppercase tracking-widest">
-                                        Digital Envelope &bull; Multi-Currency
+                                  <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-8">
+                                    {/* 2. AYAT / KUTIPAN PEMBUKA (QUOTE CARD) */}
+                                    <div className="max-w-2xl mx-auto p-5 rounded-3xl bg-white/90 border border-[#D4AF37]/40 shadow-2xs text-center space-y-2 relative overflow-hidden">
+                                      <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
+                                        {lang === 'ID'
+                                          ? 'Kutipan & Untaian Doa Pembuka'
+                                          : 'Opening Blessing & Quote'}
                                       </span>
-                                    </div>
-                                    <div className="space-y-0.5">
-                                      <p className="text-[10px] uppercase tracking-widest text-[#E6C76B]/80 font-bold">
-                                        Bank / QRIS / PayPal / USDT
-                                      </p>
-                                      <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white">
-                                        8820 &bull;&bull;&bull;&bull;
-                                        &bull;&bull;&bull;&bull; 2026
-                                      </p>
-                                      <p className="text-[11px] text-[#FAF3E3]/80 truncate">
-                                        a.n. {simPreset.titleShort}
+                                      <p className="font-editorial text-sm sm:text-base italic text-stone-700 leading-relaxed">
+                                        {simPreset.quote}
                                       </p>
                                     </div>
-                                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 text-[10px] text-[#E6C76B] font-bold">
-                                      <span>1-Click Copy Rekening</span>
-                                      <span>QRIS &amp; Crypto Ready</span>
+
+                                    {/* 3. PROFIL MEMPELAI / TOKOH UTAMA */}
+                                    <div className="space-y-5">
+                                      <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                        <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                          {simBadge}
+                                        </p>
+                                        <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                          {simSectionTitle}
+                                        </h5>
+                                        <div
+                                          aria-hidden="true"
+                                          className="flex items-center justify-center gap-2 pt-1"
+                                        >
+                                          <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                          <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                          <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                        </div>
+                                      </div>
+
+                                      {simPreset.profileCount === 2 &&
+                                      simPreset.host2 ? (
+                                        /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
+                                        <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
+                                          <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                            <CatalogFloralCorner
+                                              position="top-left"
+                                              size="sm"
+                                              enabled={simPreset.showFloral}
+                                            />
+                                            <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                              <img
+                                                src={simPreset.host1.photo}
+                                                alt={simPreset.host1.name}
+                                                className={`${frameClassForHost} object-cover`}
+                                              />
+                                            </div>
+                                            <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                              {simPreset.host1.role}
+                                            </span>
+                                            <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                              {simPreset.host1.name}
+                                            </h6>
+                                            <p className="text-[11px] text-stone-600 leading-relaxed">
+                                              {simPreset.host1.parents}
+                                            </p>
+                                          </div>
+
+                                          <div className="md:col-span-1 flex items-center justify-center py-1">
+                                            <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
+                                              &amp;
+                                            </span>
+                                          </div>
+
+                                          <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                            <CatalogFloralCorner
+                                              position="top-right"
+                                              size="sm"
+                                              enabled={simPreset.showFloral}
+                                            />
+                                            <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                              <img
+                                                src={simPreset.host2.photo}
+                                                alt={simPreset.host2.name}
+                                                className={`${frameClassForHost} object-cover`}
+                                              />
+                                            </div>
+                                            <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                              {simPreset.host2.role}
+                                            </span>
+                                            <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                              {simPreset.host2.name}
+                                            </h6>
+                                            <p className="text-[11px] text-stone-600 leading-relaxed">
+                                              {simPreset.host2.parents}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT */
+                                        <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                          <CatalogFloralCorner
+                                            position="top-left"
+                                            size="sm"
+                                            enabled={simPreset.showFloral}
+                                          />
+                                          <CatalogFloralCorner
+                                            position="top-right"
+                                            size="sm"
+                                            enabled={simPreset.showFloral}
+                                          />
+                                          <div
+                                            className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
+                                              simPreset.frameStyle === 'CIRCLE'
+                                                ? 'rounded-full'
+                                                : simPreset.frameStyle ===
+                                                    'EDITORIAL_RECT'
+                                                  ? 'rounded-2xl'
+                                                  : 'rounded-t-[999px] rounded-b-2xl'
+                                            }`}
+                                          >
+                                            <img
+                                              src={simPreset.host1.photo}
+                                              alt={simPreset.host1.name}
+                                              className={`${frameClassForHost} object-cover`}
+                                            />
+                                          </div>
+                                          <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                            {simPreset.host1.role}
+                                          </span>
+                                          <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
+                                            {simPreset.host1.name}
+                                          </h6>
+                                          {simPreset.host1.parents && (
+                                            <p className="text-xs text-stone-600 leading-relaxed">
+                                              {simPreset.host1.parents}
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* 4. RANGKAIAN JADWAL ACARA (2 SESI DUMMY + DRESSCODE + GOOGLE MAPS) */}
+                                    <div className="max-w-3xl mx-auto space-y-3">
+                                      <div className="text-center space-y-1">
+                                        <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
+                                          {lang === 'ID'
+                                            ? 'Rangkaian Jadwal & Lokasi Acara'
+                                            : 'Event Schedule & Venue'}
+                                        </span>
+                                        <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
+                                          {simPreset.eventTitle}
+                                        </h6>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {simPreset.sessions.map((ses) => (
+                                          <div
+                                            key={ses.badge}
+                                            className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-2.5 flex flex-col justify-between"
+                                          >
+                                            <div className="space-y-1.5">
+                                              <span className="inline-block px-2.5 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                                                {ses.badge}
+                                              </span>
+                                              <h6 className="font-editorial text-lg font-bold text-stone-900">
+                                                {ses.title}
+                                              </h6>
+                                              <p className="text-xs font-extrabold text-[#8B6914]">
+                                                {ses.date} &bull; {ses.time}
+                                              </p>
+                                              <p className="text-xs text-stone-600 flex items-start gap-1.5">
+                                                <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
+                                                <span>{ses.venue}</span>
+                                              </p>
+                                              <p className="text-[11px] text-stone-500">
+                                                <strong>Dresscode:</strong>{' '}
+                                                {ses.dresscode}
+                                              </p>
+                                            </div>
+                                            <div className="pt-2 border-t border-stone-200/70 flex items-center justify-between gap-2">
+                                              <a
+                                                href={ses.mapsUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold transition-all"
+                                              >
+                                                <MapPin className="w-3 h-3" />
+                                                <span>
+                                                  {lang === 'ID'
+                                                    ? 'Buka Google Maps'
+                                                    : 'Open Google Maps'}
+                                                </span>
+                                              </a>
+                                              <span className="text-[10px] font-bold text-emerald-700">
+                                                ✓ QR Gate Ready
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* 5. KISAH PERJALANAN / MILESTONE & GALERI INTERAKTIF (3 FOTO DUMMY) */}
+                                    <div className="max-w-3xl mx-auto space-y-4">
+                                      <div className="text-center space-y-1">
+                                        <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
+                                          {lang === 'ID'
+                                            ? 'Kisah Perjalanan & Galeri Resolusi Tinggi'
+                                            : 'Milestone Story & High-Resolution Gallery'}
+                                        </span>
+                                        <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
+                                          {lang === 'ID'
+                                            ? 'Momen Berharga & Galeri Interaktif'
+                                            : 'Cherished Milestones & Interactive Gallery'}
+                                        </h6>
+                                      </div>
+
+                                      {/* 3 Milestones Row */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        {simPreset.milestones.map((ms) => (
+                                          <div
+                                            key={ms.year + ms.title}
+                                            className="p-3.5 rounded-2xl bg-white/90 border border-[#D4AF37]/40 space-y-1"
+                                          >
+                                            <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[10px] font-extrabold">
+                                              {ms.year}
+                                            </span>
+                                            <p className="text-xs font-extrabold text-stone-900">
+                                              {ms.title}
+                                            </p>
+                                            <p className="text-[11px] text-stone-600 leading-relaxed">
+                                              {ms.desc}
+                                            </p>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {/* Interactive Gallery Viewer with 3 Clickable Thumbnails */}
+                                      <div className="p-3.5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-3">
+                                        <div className="relative h-56 sm:h-72 rounded-2xl overflow-hidden bg-stone-900">
+                                          <img
+                                            src={activeGalleryPhoto.url}
+                                            alt={activeGalleryPhoto.caption}
+                                            className="w-full h-full object-cover transition-all duration-500"
+                                          />
+                                          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between gap-2 text-white">
+                                            <span className="text-xs font-bold truncate">
+                                              {activeGalleryPhoto.caption}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded-md bg-[#D4AF37] text-stone-950 font-mono text-[10px] font-extrabold shrink-0">
+                                              {safeGalleryIdx + 1} /{' '}
+                                              {simPreset.galleryPhotos.length}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2.5">
+                                          {simPreset.galleryPhotos.map(
+                                            (gItem, gIdx) => {
+                                              const isCurr =
+                                                safeGalleryIdx === gIdx;
+                                              return (
+                                                <button
+                                                  key={gItem.url}
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSimGalleryIdx(gIdx)
+                                                  }
+                                                  className={`relative h-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                                                    isCurr
+                                                      ? 'border-[#B68D40] ring-2 ring-[#D4AF37]/40 scale-[1.01]'
+                                                      : 'border-transparent opacity-75 hover:opacity-100'
+                                                  }`}
+                                                >
+                                                  <img
+                                                    src={gItem.url}
+                                                    alt={gItem.caption}
+                                                    className="w-full h-full object-cover"
+                                                  />
+                                                </button>
+                                              );
+                                            }
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* 6. SIMULASI FORM RSVP & BUKU TAMU DUMMY INTERAKTIF */}
+                                    <div className="max-w-3xl mx-auto p-4 sm:p-6 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-4">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div>
+                                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                                            {lang === 'ID'
+                                              ? 'Simulasi RSVP & Buku Tamu Doa Restu'
+                                              : 'Interactive RSVP & Guestbook Simulation'}
+                                          </span>
+                                          <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
+                                            {lang === 'ID'
+                                              ? `${combinedWishes.length} Ucapan Tamu VIP & Balasan Tuan Rumah`
+                                              : `${combinedWishes.length} VIP Guest Wishes & Host Replies`}
+                                          </h6>
+                                        </div>
+                                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                                          ✓ Uji Kirim Ucapan Live
+                                        </span>
+                                      </div>
+
+                                      {/* Interactive Mini RSVP & Wish Form */}
+                                      <form
+                                        onSubmit={handleSubmitSimWish}
+                                        className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5"
+                                      >
+                                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                          <input
+                                            type="text"
+                                            value={simWishName}
+                                            onChange={(e) =>
+                                              setSimWishName(e.target.value)
+                                            }
+                                            placeholder={
+                                              lang === 'ID'
+                                                ? 'Nama Anda (contoh: Budi & Keluarga)...'
+                                                : 'Your Name (e.g. John & Family)...'
+                                            }
+                                            className="sm:col-span-5 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                          />
+                                          <select
+                                            value={simRsvpStatus}
+                                            onChange={(e) =>
+                                              setSimRsvpStatus(
+                                                e.target.value as
+                                                  | 'HADIR'
+                                                  | 'BERHALANGAN'
+                                              )
+                                            }
+                                            className="sm:col-span-4 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                          >
+                                            <option value="HADIR">
+                                              {lang === 'ID'
+                                                ? '✓ Hadir di Acara'
+                                                : '✓ Attending'}
+                                            </option>
+                                            <option value="BERHALANGAN">
+                                              {lang === 'ID'
+                                                ? '🙏 Berhalangan (Doa Restu)'
+                                                : '🙏 Warm Regards'}
+                                            </option>
+                                          </select>
+                                          <select
+                                            value={simRsvpPax}
+                                            onChange={(e) =>
+                                              setSimRsvpPax(
+                                                Number(e.target.value)
+                                              )
+                                            }
+                                            className="sm:col-span-3 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                          >
+                                            <option value={1}>1 Pax</option>
+                                            <option value={2}>2 Pax</option>
+                                            <option value={3}>3 Pax</option>
+                                            <option value={4}>4 Pax</option>
+                                          </select>
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                          <input
+                                            type="text"
+                                            value={simWishText}
+                                            onChange={(e) =>
+                                              setSimWishText(e.target.value)
+                                            }
+                                            placeholder={
+                                              lang === 'ID'
+                                                ? 'Tulis ucapan doa restu simulasi atau langsung klik tombol kirim...'
+                                                : 'Write a sample wish or click send directly...'
+                                            }
+                                            className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                          />
+                                          <button
+                                            type="submit"
+                                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
+                                          >
+                                            <Send className="w-3.5 h-3.5" />
+                                            <span>
+                                              {lang === 'ID'
+                                                ? 'Kirim Ucapan Dummy'
+                                                : 'Send Dummy Wish'}
+                                            </span>
+                                          </button>
+                                        </div>
+
+                                        {simWishFeedback && (
+                                          <p className="text-[11px] font-extrabold text-emerald-700">
+                                            {simWishFeedback}
+                                          </p>
+                                        )}
+                                      </form>
+
+                                      {/* List of Guestbook Wishes */}
+                                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                                        {combinedWishes.map((w) => (
+                                          <div
+                                            key={w.id}
+                                            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 space-y-2"
+                                          >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                              <div>
+                                                <p className="text-xs font-extrabold text-stone-900">
+                                                  {w.senderName}
+                                                </p>
+                                                <p className="text-[10px] text-stone-500">
+                                                  {w.senderTitle} &bull;{' '}
+                                                  {w.timestamp}
+                                                </p>
+                                              </div>
+                                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
+                                                {w.attendanceBadge}
+                                              </span>
+                                            </div>
+                                            <p className="text-xs text-stone-700 leading-relaxed">
+                                              &ldquo;{w.message}&rdquo;
+                                            </p>
+                                            {w.hostReply && (
+                                              <div className="p-2.5 rounded-xl bg-[#FAF3E3]/80 border-l-2 border-[#B68D40] text-[11px] text-stone-700">
+                                                <span className="font-extrabold text-[#8B6914] block">
+                                                  Balasan Tuan Rumah (
+                                                  {simPreset.titleShort}):
+                                                </span>
+                                                <span>{w.hostReply}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* 7. AMPLOP DIGITAL BER-CHIP EMV EMAS INTERAKTIF (4 KANAL DUMMY) */}
+                                    <div className="max-w-3xl mx-auto p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border-2 border-[#D4AF37]/65 shadow-md space-y-4 relative overflow-hidden">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2.5">
+                                          <CatalogGoldEmvChip className="w-10 h-8" />
+                                          <div>
+                                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B] block">
+                                              Amplop Digital Multi-Valuta (EMV
+                                              Gold Chip)
+                                            </span>
+                                            <h6 className="font-editorial text-lg font-bold text-white">
+                                              {activeEnvelope.provider}
+                                            </h6>
+                                          </div>
+                                        </div>
+                                        <span className="px-2.5 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[10px] font-extrabold">
+                                          {activeEnvelope.badge}
+                                        </span>
+                                      </div>
+
+                                      {/* 4 Channel Selector Pills */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {DUMMY_ENVELOPE_CHANNELS.map(
+                                          (env, envIdx) => {
+                                            const isAct =
+                                              activeEnvelope.id === env.id;
+                                            return (
+                                              <button
+                                                key={env.id}
+                                                type="button"
+                                                onClick={() =>
+                                                  setSimEnvelopeIdx(envIdx)
+                                                }
+                                                className={`py-2 px-2.5 rounded-xl text-[11px] font-extrabold border transition-all truncate ${
+                                                  isAct
+                                                    ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37]'
+                                                    : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
+                                                }`}
+                                              >
+                                                {env.label}
+                                              </button>
+                                            );
+                                          }
+                                        )}
+                                      </div>
+
+                                      <div className="p-3.5 rounded-2xl bg-black/40 border border-[#D4AF37]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white break-all">
+                                            {activeEnvelope.accountNumber}
+                                          </p>
+                                          <p className="text-xs text-[#E6C76B] mt-0.5">
+                                            a.n. {simPreset.titleShort} (Data
+                                            Simulasi Resmi)
+                                          </p>
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleCopySimEnvelope(
+                                              activeEnvelope.id,
+                                              activeEnvelope.accountNumber
+                                            )
+                                          }
+                                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
+                                        >
+                                          {copiedSimEnvelopeKey ===
+                                          activeEnvelope.id ? (
+                                            <>
+                                              <Check className="w-4 h-4 text-emerald-950" />
+                                              <span>
+                                                ✓ Nomor Dummy Tersalin!
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Copy className="w-3.5 h-3.5" />
+                                              <span>Salin Rekening Dummy</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
+                              );
+                            })()
                           )}
                         </div>
 
@@ -4261,8 +6410,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {currentShot.badge}
                             </span>
                             <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
-                              https://my-event-planner.app/workspace/
-                              {currentShot.id}
+                              https://meplan.app/workspace/{currentShot.id}
+                            </span>
+                            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
+                              ● LIVE UI • 100% VECTOR-SHARP
                             </span>
                           </div>
 
@@ -4327,29 +6478,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Screenshot Image Viewport */}
-                        <div
-                          onClick={() => openLightboxAt(activeShowcaseIdx)}
-                          title={
-                            lang === 'ID'
-                              ? 'Klik gambar untuk memperbesar ke layar penuh'
-                              : 'Click image to zoom fullscreen'
-                          }
-                          className="relative bg-stone-950/95 cursor-zoom-in group overflow-hidden max-h-[540px] flex items-center justify-center"
-                        >
-                          <img
-                            src={currentShot.imageUrl}
-                            alt={currentTitle}
-                            className="w-full h-auto max-h-[540px] object-contain object-top transition-transform duration-300 group-hover:scale-[1.01]"
-                          />
-                          <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs border border-[#D4AF37]/50 text-[#FAF3E3] text-[11px] font-bold inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
-                            <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                            <span>
-                              {lang === 'ID'
-                                ? 'Klik untuk Layar Penuh'
-                                : 'Click for Fullscreen'}
-                            </span>
-                          </div>
+                        {/* Live Vector-Sharp Interactive React UI Viewport (Zero Raster Blur) */}
+                        <div className="relative bg-[#FAF8F5] overflow-hidden">
+                          {renderLiveDashboardModule(currentShot.id)}
                         </div>
 
                         {/* Active Screenshot Description & Prev/Next Footer */}
@@ -4438,30 +6569,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }`}
                         >
                           <div>
-                            <div className="relative h-28 bg-stone-900 overflow-hidden border-b border-stone-200/80">
-                              <img
-                                src={shot.imageUrl}
-                                alt={shotTitle}
-                                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                              />
-                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-stone-900/90 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
-                                {lang === 'ID' ? shot.tabId : shot.tabEn}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openLightboxAt(idx);
-                                }}
-                                title={
-                                  lang === 'ID'
-                                    ? `Perbesar ${shotTitle}`
-                                    : `Zoom ${shotTitle}`
-                                }
-                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
-                              >
-                                <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
-                              </button>
+                            <div className="relative h-28 bg-gradient-to-br from-stone-950 via-stone-900 to-[#221A14] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="px-2 py-0.5 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
+                                  {lang === 'ID' ? shot.tabId : shot.tabEn}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openLightboxAt(idx);
+                                  }}
+                                  title={
+                                    lang === 'ID'
+                                      ? `Perbesar ${shotTitle}`
+                                      : `Zoom ${shotTitle}`
+                                  }
+                                  className="p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
+                                >
+                                  <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
+                                </button>
+                              </div>
+                              <div className="rounded-xl bg-white/10 border border-[#D4AF37]/30 px-2.5 py-2 flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-extrabold text-[#FAF3E3] truncate">
+                                  {shot.kpiSummary}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[8px] font-extrabold shrink-0">
+                                  LIVE UI
+                                </span>
+                              </div>
                             </div>
                             <div className="p-3 space-y-1">
                               <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
@@ -4802,7 +6938,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         )}
       </main>
 
-      {/* FULLSCREEN SCREENSHOT LIGHTBOX MODAL */}
+      {/* FULLSCREEN LIVE VECTOR-SHARP UI LIGHTBOX MODAL */}
       {lightboxScreenshot && (
         <div
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
@@ -4821,40 +6957,48 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <h4 className="font-serif text-sm sm:text-base font-extrabold text-[#FAF3E3] truncate">
                   {lightboxScreenshot.title}
                 </h4>
+                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold whitespace-nowrap">
+                  ● 100% VECTOR-SHARP LIVE UI
+                </span>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => openLightboxAt(activeShowcaseIdx - 1)}
-                  title={
-                    lang === 'ID'
-                      ? 'Screenshot Sebelumnya'
-                      : 'Previous Screenshot'
-                  }
-                  className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
-                  </span>
-                </button>
-                <span className="text-xs font-mono font-bold text-[#E6C76B] px-1">
-                  {activeShowcaseIdx + 1} / {OFFICIAL_PRODUCT_SCREENSHOTS.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => openLightboxAt(activeShowcaseIdx + 1)}
-                  title={
-                    lang === 'ID' ? 'Screenshot Berikutnya' : 'Next Screenshot'
-                  }
-                  className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
-                >
-                  <span className="hidden sm:inline">
-                    {lang === 'ID' ? 'Berikutnya' : 'Next'}
-                  </span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                {lightboxScreenshot.mode !== 'invitation_sim' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => openLightboxAt(activeShowcaseIdx - 1)}
+                      title={
+                        lang === 'ID'
+                          ? 'Modul Sebelumnya'
+                          : 'Previous Module'
+                      }
+                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
+                      </span>
+                    </button>
+                    <span className="text-xs font-mono font-bold text-[#E6C76B] px-1">
+                      {activeShowcaseIdx + 1} /{' '}
+                      {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openLightboxAt(activeShowcaseIdx + 1)}
+                      title={
+                        lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
+                      }
+                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#FAF3E3] border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                    >
+                      <span className="hidden sm:inline">
+                        {lang === 'ID' ? 'Berikutnya' : 'Next'}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={() => setLightboxScreenshot(null)}
@@ -4869,13 +7013,82 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
             </div>
 
-            {/* High-Res Image Body */}
-            <div className="flex-1 overflow-auto bg-black flex items-center justify-center p-2 sm:p-4">
-              <img
-                src={lightboxScreenshot.imageUrl}
-                alt={lightboxScreenshot.title}
-                className="max-w-full max-h-[74vh] w-auto h-auto object-contain rounded-xl border border-stone-800 shadow-lg"
-              />
+            {/* Live Vector-Sharp Interactive React Body */}
+            <div className="flex-1 overflow-y-auto bg-[#FAF8F5]">
+              {lightboxScreenshot.mode === 'invitation_sim' ? (
+                (() => {
+                  const activePreset =
+                    SIMULATION_EVENT_PRESETS[simEventType] ||
+                    SIMULATION_EVENT_PRESETS.WEDDING;
+                  return (
+                    <div className="p-4 sm:p-6 space-y-5">
+                      <div className="rounded-3xl overflow-hidden border border-[#D4AF37]/45 bg-stone-950 text-[#FAF3E3] relative">
+                        <div className="relative h-56 sm:h-72 overflow-hidden">
+                          <img
+                            src={activePreset.heroImage}
+                            alt={activePreset.titleShort}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/60 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                              <span className="px-3 py-1 rounded-full bg-[#D4AF37]/25 border border-[#D4AF37]/60 text-[#FAF3E3] font-mono text-[10px] font-extrabold uppercase tracking-wider">
+                                {lang === 'ID'
+                                  ? activePreset.badgeId
+                                  : activePreset.badgeEn}
+                              </span>
+                              <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-white mt-2">
+                                {activePreset.titleShort}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-[#E6C76B] font-semibold mt-0.5">
+                                {lang === 'ID'
+                                  ? activePreset.eventDateId
+                                  : activePreset.eventDateEn}{' '}
+                                • {activePreset.venueName}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(
+                                Object.keys(
+                                  SIMULATION_EVENT_PRESETS
+                                ) as EventCategoryType[]
+                              ).map((evKey) => {
+                                const p = SIMULATION_EVENT_PRESETS[evKey];
+                                const isSel = simEventType === evKey;
+                                return (
+                                  <button
+                                    key={evKey}
+                                    type="button"
+                                    onClick={() => {
+                                      setSimEventType(evKey);
+                                      setSimGalleryIdx(0);
+                                    }}
+                                    className={`px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold transition-all ${
+                                      isSel
+                                        ? 'bg-[#D4AF37] text-stone-950 shadow-2xs'
+                                        : 'bg-black/60 text-[#FAF3E3] border border-white/20 hover:border-[#D4AF37]/50'
+                                    }`}
+                                  >
+                                    {p.emoji}{' '}
+                                    {lang === 'ID' ? p.labelId : p.labelEn}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {renderLiveDashboardModule('pengaturan')}
+                    </div>
+                  );
+                })()
+              ) : (
+                renderLiveDashboardModule(
+                  lightboxScreenshot.moduleId ||
+                    OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx]?.id ||
+                    'tracker'
+                )
+              )}
             </div>
 
             {/* Modal Footer Caption */}
@@ -4891,7 +7104,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     onClick={() => openLightboxAt(idx)}
                     title={lang === 'ID' ? s.titleId : s.titleEn}
                     className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold whitespace-nowrap transition-all ${
-                      activeShowcaseIdx === idx
+                      activeShowcaseIdx === idx &&
+                      lightboxScreenshot.mode !== 'invitation_sim'
                         ? 'bg-[#D4AF37] text-stone-950'
                         : 'bg-white/10 text-stone-300 hover:bg-white/20'
                     }`}
