@@ -445,7 +445,9 @@ export function buildGuestInvitationUrl(
 ): string {
   const base =
     originUrl ||
-    (typeof window !== 'undefined' ? window.location.origin : 'https://my-wedding-manager.vercel.app');
+    (typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || 'https://my-event-planner.vercel.app');
   const params = new URLSearchParams();
   if (
     clientSlug &&

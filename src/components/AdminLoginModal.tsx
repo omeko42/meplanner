@@ -83,8 +83,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </button>
 
           <div className="flex items-center gap-3.5 pr-8">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-sm shrink-0">
-              <WeddingRingsIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+            <div className="flex items-center justify-center shrink-0">
+              <WeddingRingsIcon className="w-10 h-10 sm:w-11 sm:h-11" />
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7B38] flex items-center gap-1">

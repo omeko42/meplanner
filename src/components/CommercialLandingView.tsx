@@ -1140,11 +1140,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-sm shrink-0 hover:scale-105 transition-transform"
+              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
               title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
             >
               <WeddingRingsIcon
-                className="w-6 h-6 sm:w-7 sm:h-7"
+                className="w-8 h-8 sm:w-10 sm:h-10"
                 logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </button>
@@ -3480,9 +3480,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       <footer className="bg-white border-t border-[#D4AF37]/35 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shrink-0 shadow-xs">
+            <div className="flex items-center justify-center shrink-0">
               <WeddingRingsIcon
-                className="w-5 h-5"
+                className="w-8 h-8"
                 logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </div>

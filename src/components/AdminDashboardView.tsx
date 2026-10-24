@@ -4526,11 +4526,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
-            {/* Brand Title with Neutral Event Crest / Custom Brand Logo */}
+            {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/45 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+              <div className="flex items-center justify-center shrink-0">
                 <WeddingRingsIcon
-                  className="w-6 h-6 sm:w-6.5 sm:h-6.5"
+                  className="w-8 h-8 sm:w-9 sm:h-9"
                   logoUrl={
                     (settingsForm as any).brandLogoUrl ||
                     (state.settings as any).brandLogoUrl
@@ -14691,9 +14691,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#131629] to-[#090A14] border border-[#8B5CF6]/50 flex items-center justify-center shrink-0 shadow-sm overflow-hidden p-2">
+                          <div className="w-14 h-14 rounded-2xl bg-[#FAF8F5] border border-stone-200 flex items-center justify-center shrink-0 overflow-hidden p-1.5">
                             <WeddingRingsIcon
-                              className="w-9 h-9"
+                              className="w-10 h-10"
                               logoUrl={
                                 (settingsForm as any).brandLogoUrl ||
                                 (state.settings as any).brandLogoUrl
@@ -15266,9 +15266,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <footer className="mt-8 pt-4 pb-2">
           <div className="rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FAF3E3]/80 to-[#FFFDF9] border border-[#D4AF37]/35 px-4 py-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-center sm:text-left">
-              <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-center shrink-0">
                 <WeddingRingsIcon
-                  className="w-4 h-4"
+                  className="w-7 h-7"
                   logoUrl={
                     (settingsForm as any).brandLogoUrl ||
                     (state.settings as any).brandLogoUrl
