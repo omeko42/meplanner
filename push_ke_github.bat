@@ -1,7 +1,7 @@
 @echo off
-title Push My Wedding Manager ke GitHub
+title Push MEPlan (My Event Planner) ke GitHub
 echo =======================================================
-echo [WEDDING MANAGER] MENGUNGGAH KODE KE GITHUB (omeko11/my_wedding_manager)...
+echo [MEPLAN] MENGUNGGAH KODE KE GITHUB (omeko11/meplan)...
 echo =======================================================
 echo.
 cd /d "%~dp0"
