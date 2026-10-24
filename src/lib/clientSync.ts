@@ -447,7 +447,7 @@ export function buildGuestInvitationUrl(
     originUrl ||
     (typeof window !== 'undefined'
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || 'https://my-event-planner.vercel.app');
+      : process.env.NEXT_PUBLIC_SITE_URL || 'https://meplan.vercel.app');
   const params = new URLSearchParams();
   if (
     clientSlug &&
