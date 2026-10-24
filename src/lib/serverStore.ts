@@ -93,9 +93,10 @@ function readDbFromDisk(): WeddingDatabaseSchema {
 
         if (
           !candidate.settings.siteTitle ||
+          candidate.settings.siteTitle === 'My Wedding Manager' ||
           /wedding\s*readiness\s*tracker/i.test(candidate.settings.siteTitle)
         ) {
-          candidate.settings.siteTitle = 'My Wedding Manager';
+          candidate.settings.siteTitle = 'My Event Planner';
         }
 
         if (!bestCandidate || candidateTime > bestTime) {

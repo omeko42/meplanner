@@ -15,8 +15,8 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     category: 'QRIS',
     marketScope: 'ID',
     providerName: 'QRIS Nasional (All Bank & E-Wallet Indonesia)',
-    accountOrWalletAddress: 'NMID: My Wedding Manager Indonesia',
-    accountHolder: 'My Wedding Manager (Eko Agung K.)',
+    accountOrWalletAddress: 'NMID: My Event Planner Indonesia',
+    accountHolder: 'My Event Planner (Eko Agung K.)',
     networkOrBranch: 'M-Banking, GoPay, OVO, DANA, ShopeePay, LinkAja',
     qrCodeImageUrl: '',
     minAmountNote: 'Mulai Rp 50.000',
@@ -45,7 +45,7 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     marketScope: 'BOTH',
     providerName: 'Visa / Mastercard / JCB / Apple Pay',
     accountOrWalletAddress: 'Official Card Checkout Gateway (PayPal NCP)',
-    accountHolder: 'My Wedding Manager (@omeko11)',
+    accountHolder: 'My Event Planner (@omeko11)',
     networkOrBranch: 'Visa, Mastercard, Amex, JCB & Debit Online',
     checkoutUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
     qrCodeImageUrl: '/paypal-qr-mwm.png',
@@ -61,7 +61,7 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     marketScope: 'BOTH',
     providerName: 'PayPal International (Official Merchant)',
     accountOrWalletAddress: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
-    accountHolder: 'My Wedding Manager (Eko Agung Krisdianto)',
+    accountHolder: 'My Event Planner (Eko Agung Krisdianto)',
     networkOrBranch: 'PayPal Balance / International Cards (USD)',
     checkoutUrl: 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
     qrCodeImageUrl: '/paypal-qr-mwm.png',
@@ -77,7 +77,7 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     marketScope: 'BOTH',
     providerName: 'USDT (Tether) — Jaringan TRC20 (Tron)',
     accountOrWalletAddress: 'Atur Alamat Wallet USDT TRC20 di Menu Superadmin',
-    accountHolder: 'MWM Crypto Treasury (TRC20)',
+    accountHolder: 'MEP Crypto Treasury (TRC20)',
     networkOrBranch: 'TRC20 (Tron Network)',
     minAmountNote: 'Min. Transfer 10 USDT',
     instructions:
@@ -91,7 +91,7 @@ export const DEFAULT_COMMERCIAL_PAYMENT_CHANNELS: CommercialPaymentChannel[] = [
     marketScope: 'BOTH',
     providerName: 'USDT (Tether) — Jaringan BEP20 (BNB Smart Chain)',
     accountOrWalletAddress: 'Atur Alamat Wallet USDT BEP20 di Menu Superadmin',
-    accountHolder: 'MWM Crypto Treasury (BEP20)',
+    accountHolder: 'MEP Crypto Treasury (BEP20)',
     networkOrBranch: 'BEP20 (BNB Smart Chain / BSC)',
     minAmountNote: 'Min. Transfer 10 USDT',
     instructions:
@@ -121,7 +121,7 @@ export function inferTimelinePhase(due: string, category: string): TimelinePhase
 }
 
 export const INITIAL_SETTINGS: WeddingSettings = {
-  siteTitle: 'My Wedding Manager',
+  siteTitle: 'My Event Planner',
   subtitle:
     'Biston: 17 Desember 2026 • Pemberkatan Nikah: 19 Desember 2026 • Resepsi: 19 Desember 2026 • Semarang',
   weddingDatetime: '2026-12-19T09:30:00+07:00',

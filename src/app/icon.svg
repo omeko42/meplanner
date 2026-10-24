@@ -1,27 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <defs>
-    <linearGradient id="bgPearl" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFDF9" />
-      <stop offset="100%" stop-color="#F5EFE6" />
+    <linearGradient id="bgObsidian" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1813" />
+      <stop offset="55%" stop-color="#14100C" />
+      <stop offset="100%" stop-color="#2A2016" />
     </linearGradient>
-    <linearGradient id="goldRing1" x1="20" y1="35" x2="80" y2="95" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#E5C158" />
-      <stop offset="50%" stop-color="#C5A059" />
-      <stop offset="100%" stop-color="#9A7B38" />
-    </linearGradient>
-    <linearGradient id="goldRing2" x1="45" y1="30" x2="105" y2="90" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#F3D77D" />
+    <linearGradient id="goldCrest" x1="20" y1="15" x2="100" y2="105" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F7E39C" />
       <stop offset="50%" stop-color="#D4AF37" />
-      <stop offset="100%" stop-color="#A68236" />
+      <stop offset="100%" stop-color="#9A742B" />
+    </linearGradient>
+    <linearGradient id="goldStar" x1="40" y1="45" x2="80" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF5CC" />
+      <stop offset="55%" stop-color="#E5C158" />
+      <stop offset="100%" stop-color="#B88E35" />
     </linearGradient>
   </defs>
-  <rect width="120" height="120" rx="28" fill="url(#bgPearl)" stroke="#D4AF37" stroke-width="3" stroke-opacity="0.45" />
-  <!-- Left Wedding Ring -->
-  <circle cx="48" cy="66" r="22" stroke="url(#goldRing1)" stroke-width="7" fill="none" />
-  <!-- Right Interlocking Wedding Ring -->
-  <circle cx="72" cy="60" r="22" stroke="url(#goldRing2)" stroke-width="7" fill="none" />
-  <!-- Diamond Crown on Right Ring -->
-  <polygon points="72,22 79,30 72,36 65,30" fill="#D4AF37" />
-  <!-- Subtle Sparkle Rays -->
-  <path d="M72 13V18M60 20L63 23M84 20L81 23" stroke="#C5A059" stroke-width="2.5" stroke-linecap="round" />
+  <!-- Luxury Obsidian & Champagne Gold Rounded Square -->
+  <rect width="120" height="120" rx="28" fill="url(#bgObsidian)" stroke="url(#goldCrest)" stroke-width="4" />
+  <rect x="8" y="8" width="104" height="104" rx="22" stroke="#D4AF37" stroke-width="1.2" stroke-opacity="0.35" />
+  <!-- Royal Crown Crest Header -->
+  <path d="M38 26L49 36L60 21L71 36L82 26L78 40H42L38 26Z" fill="url(#goldCrest)" />
+  <!-- Executive Event Calendar & Stage Frame -->
+  <rect x="24" y="40" width="72" height="56" rx="14" stroke="url(#goldCrest)" stroke-width="5.5" fill="#1A140F" fill-opacity="0.7" />
+  <path d="M24 54H96" stroke="url(#goldCrest)" stroke-width="4" stroke-linecap="round" />
+  <circle cx="37" cy="47" r="2.6" fill="#F7E39C" />
+  <circle cx="83" cy="47" r="2.6" fill="#F7E39C" />
+  <!-- 4-Point Royal Star Sparkle Centerpiece -->
+  <path d="M60 58L64.6 70.4L77 75L64.6 79.6L60 92L55.4 79.6L43 75L55.4 70.4L60 58Z" fill="url(#goldStar)" />
 </svg>

@@ -1177,7 +1177,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     marketScope: 'BOTH',
     providerName: '',
     accountOrWalletAddress: '',
-    accountHolder: 'My Wedding Manager (Eko Agung K.)',
+    accountHolder: 'My Event Planner (Eko Agung K.)',
     networkOrBranch: '',
     qrCodeImageUrl: '',
     checkoutUrl: '',
@@ -2826,10 +2826,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         module: 'SUPERADMIN_BRANDING',
         action: 'EDIT',
         status: 'SUCCESS',
-        summary: `Meng-upload & konversi QRIS Komersial MWM ke .SVG (${origSizeLabel} → ${finalKb} KB)`,
+        summary: `Meng-upload & konversi QRIS Komersial MEP ke .SVG (${origSizeLabel} → ${finalKb} KB)`,
       });
       showToast(
-        `✓ QRIS Komersial MWM berhasil dikompres & dikonversi ke .SVG (${origSizeLabel} → ${finalKb} KB)!`
+        `✓ QRIS Komersial MEP berhasil dikompres & dikonversi ke .SVG (${origSizeLabel} → ${finalKb} KB)!`
       );
     } catch (err) {
       showToast(
@@ -3283,7 +3283,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           clientId,
           settings: {
             ...state.settings,
-            siteTitle: 'My Wedding Manager',
+            siteTitle: 'My Event Planner',
             activeClientId: clientId,
             groomFullName: groomNamePart,
             groomNickname: groomNamePart.split(' ')[0] || groomNamePart,
@@ -4233,21 +4233,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl text-stone-900 border-b border-[#D4AF37]/30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
-            {/* Brand Title with Neutral Wedding Rings Icon */}
+            {/* Brand Title with Neutral Event Crest / Custom Brand Logo */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0">
-                <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                <WeddingRingsIcon
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  logoUrl={
+                    (settingsForm as any).brandLogoUrl ||
+                    (state.settings as any).brandLogoUrl
+                  }
+                />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate leading-tight">
-                    <span className="sm:hidden tracking-wider">MWM</span>
+                    <span className="sm:hidden tracking-wider">MEP</span>
                     <span className="hidden sm:inline">
                       {!state.settings.siteTitle ||
-                      /wedding\s*readiness\s*tracker/i.test(
+                      /wedding\s*readiness\s*tracker|my\s*wedding\s*manager/i.test(
                         state.settings.siteTitle
                       )
-                        ? 'My Wedding Manager'
+                        ? 'My Event Planner'
                         : state.settings.siteTitle}
                     </span>
                   </h1>
@@ -4413,10 +4419,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   type="button"
                   onClick={onOpenLandingPage}
                   className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-all"
-                  title="Buka Halaman Depan Komersial My Wedding Manager (MWM)"
+                  title="Buka Halaman Depan Komersial My Event Planner (MEP)"
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span className="hidden lg:inline">Katalog MWM</span>
+                  <span className="hidden lg:inline">Katalog MEP</span>
                 </button>
               )}
 
@@ -6402,8 +6408,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
             <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs">
-                  <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs overflow-hidden">
+                  <WeddingRingsIcon
+                    className="w-5 h-5 sm:w-6 sm:h-6"
+                    logoUrl={
+                      (settingsForm as any).brandLogoUrl ||
+                      (state.settings as any).brandLogoUrl
+                    }
+                  />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
@@ -10468,7 +10480,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     </span>
                                   </div>
                                   <p className="text-[11px] text-stone-500 mt-0.5">
-                                    {cg.notes || 'Paket Komersial My Wedding Manager'} &bull;{' '}
+                                    {cg.notes || 'Paket Komersial My Event Planner'} &bull;{' '}
                                     {cg.eventDate || '2026-12-19'}
                                   </p>
                                 </div>
@@ -11001,7 +11013,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   providerName: '',
                                   accountOrWalletAddress: '',
                                   accountHolder:
-                                    'My Wedding Manager (Eko Agung K.)',
+                                    'My Event Planner (Eko Agung K.)',
                                   networkOrBranch: 'TRC20 (Tron)',
                                   qrCodeImageUrl: '',
                                   checkoutUrl: '',
@@ -11033,7 +11045,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   providerName:
                                     'USDT (Tether) — Jaringan TRC20 (Tron)',
                                   accountOrWalletAddress: '',
-                                  accountHolder: 'MWM Crypto Treasury (TRC20)',
+                                  accountHolder: 'MEP Crypto Treasury (TRC20)',
                                   networkOrBranch: 'TRC20 (Tron)',
                                   minAmountNote: 'Min. 10 USDT',
                                   instructions:
@@ -11046,7 +11058,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   providerName:
                                     'USDT (Tether) — Jaringan BEP20 (BNB Smart Chain)',
                                   accountOrWalletAddress: '',
-                                  accountHolder: 'MWM Crypto Treasury (BEP20)',
+                                  accountHolder: 'MEP Crypto Treasury (BEP20)',
                                   networkOrBranch: 'BEP20 (BNB Smart Chain)',
                                   minAmountNote: 'Min. 10 USDT',
                                   instructions:
@@ -11059,7 +11071,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   providerName:
                                     'USDT (Tether) — Jaringan ERC20 (Ethereum)',
                                   accountOrWalletAddress: '',
-                                  accountHolder: 'MWM Crypto Treasury (ERC20)',
+                                  accountHolder: 'MEP Crypto Treasury (ERC20)',
                                   networkOrBranch: 'ERC20 (Ethereum)',
                                   minAmountNote: 'Min. 10 USDT',
                                   instructions:
@@ -11071,7 +11083,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   marketScope: 'BOTH' as const,
                                   providerName: 'Bitcoin (BTC) / Solana (SOL)',
                                   accountOrWalletAddress: '',
-                                  accountHolder: 'MWM Crypto Treasury',
+                                  accountHolder: 'MEP Crypto Treasury',
                                   networkOrBranch: 'SOL (Solana)',
                                   minAmountNote: 'Setara Min. $10 USD',
                                   instructions:
@@ -11086,7 +11098,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   accountOrWalletAddress:
                                     'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY',
                                   accountHolder:
-                                    'My Wedding Manager (Eko Agung Krisdianto)',
+                                    'My Event Planner (Eko Agung Krisdianto)',
                                   networkOrBranch:
                                     'PayPal Balance / International Cards (USD)',
                                   checkoutUrl:
@@ -11105,7 +11117,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     'Visa / Mastercard / JCB / Apple Pay',
                                   accountOrWalletAddress:
                                     'Official Card Checkout Gateway',
-                                  accountHolder: 'My Wedding Manager (@omeko11)',
+                                  accountHolder: 'My Event Planner (@omeko11)',
                                   networkOrBranch:
                                     'Visa, Mastercard, Amex, JCB & Debit Online',
                                   checkoutUrl:
@@ -11136,9 +11148,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   providerName:
                                     'QRIS Nasional (All Bank & E-Wallet Indonesia)',
                                   accountOrWalletAddress:
-                                    'NMID: My Wedding Manager Indonesia',
+                                    'NMID: My Event Planner Indonesia',
                                   accountHolder:
-                                    'My Wedding Manager (Eko Agung K.)',
+                                    'My Event Planner (Eko Agung K.)',
                                   networkOrBranch:
                                     'M-Banking, GoPay, OVO, DANA, ShopeePay, LinkAja',
                                   minAmountNote: 'Mulai Rp 50.000',
@@ -11319,7 +11331,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         accountHolder: e.target.value,
                                       }))
                                     }
-                                    placeholder="Contoh: Eko Agung Krisdianto / MWM Crypto Treasury"
+                                    placeholder="Contoh: Eko Agung Krisdianto / MEP Crypto Treasury"
                                     className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
                                   />
                                 </div>
@@ -11610,7 +11622,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           channelForm.accountOrWalletAddress.trim(),
                                         accountHolder:
                                           channelForm.accountHolder.trim() ||
-                                          'My Wedding Manager',
+                                          'My Event Planner',
                                         networkOrBranch:
                                           channelForm.networkOrBranch?.trim() ||
                                           '',
@@ -12204,7 +12216,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     const newTx: CommercialPaymentTransaction =
                                       {
                                         id: `pay_${Date.now().toString(36)}`,
-                                        orderId: `MWM-${Date.now()
+                                        orderId: `MEP-${Date.now()
                                           .toString()
                                           .slice(-6)}`,
                                         idempotencyKey: idempKey,
@@ -14002,6 +14014,146 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         1. Identitas Developer, Kontak Resmi &amp; Bahasa Default
                       </p>
 
+                      {/* Logo Merk Aplikasi (My Event Planner) */}
+                      <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <label className="block text-[11px] font-extrabold text-stone-800">
+                              Logo Merk Aplikasi (My Event Planner)
+                            </label>
+                            <p className="text-[10px] text-stone-500">
+                              Logo ini tampil di pojok kiri atas Katalog Komersial, Halaman Login Admin, Header Dasbor, dan Footer.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-stone-900 border border-[#D4AF37]/60 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-1.5">
+                            <WeddingRingsIcon
+                              className="w-6 h-6 text-[#D4AF37]"
+                              logoUrl={
+                                (settingsForm as any).brandLogoUrl ||
+                                (state.settings as any).brandLogoUrl
+                              }
+                            />
+                          </div>
+
+                          <div className="flex-1 w-full space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs transition-all">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Upload Logo Merk</span>
+                                <input
+                                  type="file"
+                                  accept="image/*,.svg,.png,.webp,.jpg,.jpeg"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    e.target.value = '';
+                                    if (!file) return;
+                                    try {
+                                      showToast(
+                                        'Mengompresi & menyimpan Logo Merk Aplikasi (My Event Planner)...'
+                                      );
+                                      const dataUrl =
+                                        await compressImageFileToDataUrl(
+                                          file,
+                                          512,
+                                          0.92
+                                        );
+                                      const nextSettings: WeddingSettings = {
+                                        ...state.settings,
+                                        ...settingsForm,
+                                        brandLogoUrl: dataUrl,
+                                        updatedBy: adminUser.username,
+                                      } as WeddingSettings;
+                                      setSettingsFormInternal(nextSettings);
+                                      await commitImmediateSettings(
+                                        nextSettings
+                                      );
+                                      appendAuditLog({
+                                        actor: adminUser.username,
+                                        module: 'SUPERADMIN_BRANDING',
+                                        action: 'EDIT',
+                                        status: 'SUCCESS',
+                                        summary:
+                                          'Meng-upload Logo Merk Aplikasi (My Event Planner)',
+                                      });
+                                      showToast(
+                                        '✓ Logo Merk Aplikasi (My Event Planner) berhasil diperbarui!'
+                                      );
+                                    } catch (err) {
+                                      showToast(
+                                        err instanceof Error
+                                          ? err.message
+                                          : 'Gagal meng-upload logo merk aplikasi.'
+                                      );
+                                    }
+                                  }}
+                                />
+                              </label>
+
+                              {((settingsForm as any).brandLogoUrl ||
+                                (state.settings as any).brandLogoUrl) && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      brandLogoUrl: '',
+                                      updatedBy: adminUser.username,
+                                    } as WeddingSettings;
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      '✓ Logo aplikasi dikembalikan ke Logo Default MEP.'
+                                    );
+                                  }}
+                                  className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs transition-all"
+                                >
+                                  Reset ke Logo Default MEP
+                                </button>
+                              )}
+                            </div>
+
+                            <input
+                              type="text"
+                              value={
+                                (
+                                  (settingsForm as any).brandLogoUrl ??
+                                  (state.settings as any).brandLogoUrl ??
+                                  ''
+                                ).startsWith('data:')
+                                  ? ''
+                                  : (settingsForm as any).brandLogoUrl ??
+                                    (state.settings as any).brandLogoUrl ??
+                                    ''
+                              }
+                              onChange={(e) =>
+                                setSettingsForm(
+                                  (prev) =>
+                                    ({
+                                      ...prev,
+                                      brandLogoUrl: e.target.value,
+                                    } as WeddingSettings)
+                                )
+                              }
+                              placeholder={
+                                (
+                                  (settingsForm as any).brandLogoUrl ??
+                                  (state.settings as any).brandLogoUrl ??
+                                  ''
+                                ).startsWith('data:')
+                                  ? '✓ File logo kustom aktif (atau tempel URL logo merk aplikasi di sini)'
+                                  : 'Upload file logo PNG/SVG/WebP atau tempel URL logo merk aplikasi...'
+                              }
+                              className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
@@ -14148,6 +14300,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           const nextSettings: WeddingSettings = {
                             ...state.settings,
                             ...settingsForm,
+                            brandLogoUrl: (
+                              (settingsForm as any).brandLogoUrl ??
+                              (state.settings as any).brandLogoUrl ??
+                              ''
+                            ).trim(),
                             developerCreditUrl:
                               (
                                 settingsForm.developerCreditUrl ??
@@ -14179,7 +14336,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               )?.trim() ||
                               'USDT (TRC20 / BEP20 / ERC20 • Min. 10 USDT)',
                             updatedBy: adminUser.username,
-                          };
+                          } as WeddingSettings;
                           setSettingsFormInternal(nextSettings);
                           await commitImmediateSettings(nextSettings);
                           appendAuditLog({
@@ -14384,12 +14541,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <footer className="mt-8 pt-4 pb-2">
           <div className="rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FAF3E3]/80 to-[#FFFDF9] border border-[#D4AF37]/35 px-4 py-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-center sm:text-left">
-              <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-2xs">
-                <WeddingRingsIcon className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+                <WeddingRingsIcon
+                  className="w-4 h-4"
+                  logoUrl={
+                    (settingsForm as any).brandLogoUrl ||
+                    (state.settings as any).brandLogoUrl
+                  }
+                />
               </div>
               <div>
                 <p className="text-xs font-extrabold text-stone-900 tracking-wide">
-                  My Wedding Manager by{' '}
+                  My Event Planner by{' '}
                   <a
                     href={
                       (
@@ -14407,7 +14570,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   &copy; 2026
                 </p>
                 <p className="text-[10px] text-stone-500">
-                  Enterprise Multi-Client Wedding Planner &amp; Digital Invitation Suite
+                  Enterprise Multi-Client Event &amp; Wedding Planner Suite
                 </p>
               </div>
             </div>
@@ -14429,7 +14592,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 })()}
                 target="_blank"
                 rel="noopener noreferrer"
-                title={`Hubungi Kontak WA My Wedding Manager (${
+                title={`Hubungi Kontak WA My Event Planner (${
                   (
                     settingsForm.contactWhatsappNumber ??
                     state.settings.contactWhatsappNumber

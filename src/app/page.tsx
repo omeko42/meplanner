@@ -237,7 +237,7 @@ function getOrCreateWorkspaceForClient(
 
   const baseSettings: WeddingSettings = {
     ...INITIAL_SETTINGS,
-    siteTitle: 'My Wedding Manager',
+    siteTitle: 'My Event Planner',
     activeClientId: clientId,
     groomFullName: groomPart,
     groomNickname: groomPart.split(' ')[0] || groomPart,
@@ -1707,16 +1707,16 @@ function WeddingAppContent() {
         />
       ) : (
         <div className="relative">
-          {/* Floating Button to return to MWM Commercial Catalog when viewing without personal guest params */}
+          {/* Floating Button to return to MEP Commercial Catalog when viewing without personal guest params */}
           {!urlGuestTo && !urlGuestCode && (
             <button
               type="button"
               onClick={handleOpenLandingPage}
               className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-full bg-stone-900/90 hover:bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-extrabold shadow-lg backdrop-blur-md transition-all"
-              title="Kembali ke Halaman Depan My Wedding Manager (MWM)"
+              title="Kembali ke Halaman Depan My Event Planner (MEP)"
             >
-              <span className="sm:hidden">&larr; MWM</span>
-              <span className="hidden sm:inline">&larr; Katalog MWM</span>
+              <span className="sm:hidden">&larr; MEP</span>
+              <span className="hidden sm:inline">&larr; Katalog MEP</span>
             </button>
           )}
           <PublicInvitationView
@@ -1747,7 +1747,7 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex flex-col items-center justify-center gap-1 text-sm font-bold">
-          <span>Memuat My Wedding Manager...</span>
+          <span>Memuat My Event Planner...</span>
           <span className="text-[11px] font-medium text-[#9A742B]">by omeko11</span>
         </div>
       }

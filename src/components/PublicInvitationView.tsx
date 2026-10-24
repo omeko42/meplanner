@@ -1232,6 +1232,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     const whatsappUrl = /^https?:\/\//i.test(rawWa)
       ? rawWa
       : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
+    const brandLogoUrl = (settings as WeddingSettings & { brandLogoUrl?: string })
+      .brandLogoUrl;
 
     return (
       <div
@@ -1239,17 +1241,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           compact ? 'mt-3 pt-3' : 'mt-5 pt-4 border-t border-[#D4AF37]/25'
         } flex flex-col items-center justify-center gap-2 text-center`}
       >
-        <p className="text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
-          My Wedding Manager by{' '}
-          <a
-            href={developerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold"
-          >
-            omeko11
-          </a>{' '}
-          &copy; 2026
+        <p className="inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
+          <WeddingRingsIcon
+            className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
+            logoUrl={brandLogoUrl}
+          />
+          <span>
+            My Event Planner by{' '}
+            <a
+              href={developerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold"
+            >
+              omeko11
+            </a>{' '}
+            &copy; 2026
+          </span>
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -1283,7 +1291,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            title={`Hubungi Kontak WA My Wedding Manager (${rawWa})`}
+            title={`Hubungi Kontak WA My Event Planner (${rawWa})`}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
             <svg
@@ -1463,7 +1471,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div className="relative z-10 max-w-xl mx-auto px-4 py-6 text-center my-auto w-full">
           <div className="w-full rounded-3xl bg-white/85 backdrop-blur-2xl border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)] p-6 sm:p-10 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-[#FAF3E3] border-2 border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B]">
-              <WeddingRingsIcon className="w-9 h-9" />
+              <WeddingRingsIcon
+                className="w-9 h-9"
+                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+              />
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
               <Clock className="w-3.5 h-3.5" /> Mode Penyesuaian / Segera Hadir
@@ -1527,7 +1538,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <header className="fixed top-0 inset-x-0 z-40 bg-white/75 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-2xs">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 px-3.5 sm:px-8 py-2.5 sm:py-3">
             <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xs min-w-0">
-              <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
+              <WeddingRingsIcon
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
+                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+              />
               <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider sm:tracking-[0.2em] uppercase text-[#8B6914] truncate">
                 {eventMeta.coverBadge}
               </span>
@@ -1551,7 +1565,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   onOpenAdminPortal();
                 }}
                 className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
-                title="Login Portal Manajemen Pernikahan"
+                title="Login Portal Manajemen My Event Planner"
               >
                 <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
                 <span className="hidden sm:inline">
@@ -1573,9 +1587,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
 
-            {/* Pure Neutral Interlocking Wedding Rings Emblem */}
+            {/* Brand / Event Emblem */}
             <div className="w-16 h-16 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-3.5 sm:mb-5 relative z-10">
-              <WeddingRingsIcon className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]" />
+              <WeddingRingsIcon
+                className="w-9 h-9 sm:w-12 sm:h-12 text-[#B68D40]"
+                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+              />
             </div>
 
             <div className="mb-2">
@@ -1742,7 +1759,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0 shadow-2xs">
-              <WeddingRingsIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <WeddingRingsIcon
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+              />
             </div>
             <div className="truncate">
               <p className="font-editorial text-xs sm:text-base font-bold text-stone-900 truncate">
@@ -1995,7 +2015,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               />
               <div className="absolute inset-0 z-20 bg-gradient-to-t from-white via-stone-950/20 to-transparent pointer-events-none" />
               <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
-                <WeddingRingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <WeddingRingsIcon
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"
+                  logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+                />
                 <span>{eventMeta.heroBadge}</span>
               </div>
             </div>
@@ -2003,7 +2026,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             {/* Hero Content Overlapping Frosted Area */}
             <div className="px-4 sm:px-6 pb-7 sm:pb-10 pt-2 text-center -mt-12 sm:-mt-14 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-white/95 border border-[#D4AF37]/45 flex items-center justify-center text-[#B68D40] shadow-md mb-3.5 sm:mb-4">
-                <WeddingRingsIcon className="w-8 h-8 sm:w-9 sm:h-9" />
+                <WeddingRingsIcon
+                  className="w-8 h-8 sm:w-9 sm:h-9"
+                  logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+                />
               </div>
 
               <h1 className="font-editorial text-2xl sm:text-5xl md:text-6xl font-bold text-stone-900 tracking-tight leading-snug mb-3 break-words">
@@ -2320,7 +2346,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
                       {ev.badge}
                     </span>
-                    <WeddingRingsIcon className="w-5 h-5 text-[#C5A059]" />
+                    <WeddingRingsIcon
+                      className="w-5 h-5 text-[#C5A059]"
+                      logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+                    />
                   </div>
 
                   <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1">
@@ -3536,7 +3565,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <div className="w-28 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-5 relative z-10" />
 
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shadow-sm mb-3.5 relative z-10">
-            <WeddingRingsIcon className="w-7 h-7" />
+            <WeddingRingsIcon
+              className="w-7 h-7"
+              logoUrl={(settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl}
+            />
           </div>
 
           <span className="text-[11px] uppercase tracking-[0.28em] text-[#9A742B] font-bold block mb-2 relative z-10">
@@ -3564,7 +3596,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
           <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-6 mb-2.5" />
           <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80">
-            All-in-One Wedding Planner &amp; Digital Invitation
+            All-in-One My Event Planner &amp; Digital Invitation
           </p>
 
           {renderDeveloperCreditBar(false)}

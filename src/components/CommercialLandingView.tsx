@@ -288,8 +288,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       `${buyerEmail.trim().toLowerCase() || 'guest'}|${tierCode}|${lang}`
     );
     return {
-      currentIdempotencyKey: `IDEMP-MWM-${lang}-${tierCode}-${cleanEmail}-${hashSuffix}`,
-      currentOrderId: `ORD-MWM-${tierCode.slice(0, 3)}-${hashSuffix}`,
+      currentIdempotencyKey: `IDEMP-MEP-${lang}-${tierCode}-${cleanEmail}-${hashSuffix}`,
+      currentOrderId: `ORD-MEP-${tierCode.slice(0, 3)}-${hashSuffix}`,
     };
   }, [buyerEmail, selectedCheckoutTier, lang]);
 
@@ -419,8 +419,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       : `[Payment Receipt Confirmation ${activeTransaction?.orderId || currentOrderId}] ${selectedCheckoutTier} Plan - ${buyerCoupleName || buyerEmail}`
   )}&body=${encodeURIComponent(
     lang === 'ID'
-      ? `Halo Tim My Wedding Manager,\n\nSaya telah melakukan pembayaran paket komersial dengan rincian berikut:\n- Order ID: ${activeTransaction?.orderId || currentOrderId}\n- Idempotency Key: ${activeTransaction?.idempotencyKey || currentIdempotencyKey}\n- Paket: ${selectedCheckoutTier}\n- Metode / Wallet: ${selectedChannel?.providerName || '-'}\n- Email Tujuan Pengiriman Akses (Maks. H+3): ${buyerEmail}\n- Nama Pasangan / Klien: ${buyerCoupleName || '-'}\n- No. Referensi / TXID: ${paymentReference || '-'}\n\nTerlampir bukti pembayaran kami. Terima kasih.`
-      : `Hello My Wedding Manager Team,\n\nI have completed the payment for our commercial wedding suite:\n- Order ID: ${activeTransaction?.orderId || currentOrderId}\n- Idempotency Key: ${activeTransaction?.idempotencyKey || currentIdempotencyKey}\n- Plan: ${selectedCheckoutTier}\n- Payment Wallet: ${selectedChannel?.providerName || '-'}\n- Client Email for Credentials Delivery (Max D+3): ${buyerEmail}\n- Couple / Client Name: ${buyerCoupleName || '-'}\n- Reference / TXID: ${paymentReference || '-'}\n\nPlease find our payment receipt attached. Thank you.`
+      ? `Halo Tim My Event Planner,\n\nSaya telah melakukan pembayaran paket komersial dengan rincian berikut:\n- Order ID: ${activeTransaction?.orderId || currentOrderId}\n- Idempotency Key: ${activeTransaction?.idempotencyKey || currentIdempotencyKey}\n- Paket: ${selectedCheckoutTier}\n- Metode / Wallet: ${selectedChannel?.providerName || '-'}\n- Email Tujuan Pengiriman Akses (Maks. H+3): ${buyerEmail}\n- Nama Pasangan / Klien: ${buyerCoupleName || '-'}\n- No. Referensi / TXID: ${paymentReference || '-'}\n\nTerlampir bukti pembayaran kami. Terima kasih.`
+      : `Hello My Event Planner Team,\n\nI have completed the payment for our commercial event planner suite:\n- Order ID: ${activeTransaction?.orderId || currentOrderId}\n- Idempotency Key: ${activeTransaction?.idempotencyKey || currentIdempotencyKey}\n- Plan: ${selectedCheckoutTier}\n- Payment Wallet: ${selectedChannel?.providerName || '-'}\n- Client Email for Credentials Delivery (Max D+3): ${buyerEmail}\n- Couple / Client Name: ${buyerCoupleName || '-'}\n- Reference / TXID: ${paymentReference || '-'}\n\nPlease find our payment receipt attached. Thank you.`
   )}`;
 
   const commercialPackages = useMemo(
@@ -765,7 +765,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       const top = Math.max(0, Math.round((window.screen.height - height) / 2));
       window.open(
         url,
-        'MWMPayPalCheckout',
+        'MEPPayPalCheckout',
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
     }
@@ -1143,7 +1143,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#EAD3A8] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center shadow-2xs shrink-0 hover:scale-105 transition-transform"
               title="My Event Planner — Wedding, Birthday, Graduation, Rapat & Gala Dinner"
             >
-              <WeddingRingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <WeddingRingsIcon
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                logoUrl={(primarySettings as any).brandLogoUrl}
+              />
             </button>
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -1956,8 +1959,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <div className="p-3.5 rounded-2xl bg-white border border-sky-200/80 flex flex-col items-center text-center space-y-2">
                           <p className="text-xs font-extrabold text-stone-900">
                             {lang === 'ID'
-                              ? 'Atau Scan QR Code PayPal Resmi My Wedding Manager:'
-                              : 'Or Scan Official My Wedding Manager PayPal QR Code:'}
+                              ? 'Atau Scan QR Code PayPal Resmi My Event Planner:'
+                              : 'Or Scan Official My Event Planner PayPal QR Code:'}
                           </p>
                           <img
                             src={
@@ -3083,7 +3086,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
             </section>
 
-            {/* SECTION 2: 6 MODUL UNGGULAN MY WEDDING MANAGER */}
+            {/* SECTION 2: 6 MODUL UNGGULAN MY EVENT PLANNER */}
             <section
               id="fitur"
               className="py-12 sm:py-16 bg-white border-y border-[#D4AF37]/25"
@@ -3219,8 +3222,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
                   {lang === 'ID'
-                    ? 'Pilihan Paket My Wedding Manager'
-                    : 'Choose Your Wedding Suite Plan'}
+                    ? 'Pilihan Paket My Event Planner'
+                    : 'My Event Planner Packages'}
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-500 mt-1">
                   {lang === 'ID'
@@ -3469,7 +3472,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
             <div className="w-9 h-9 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0">
-              <WeddingRingsIcon className="w-5 h-5" />
+              <WeddingRingsIcon
+                className="w-5 h-5"
+                logoUrl={(primarySettings as any).brandLogoUrl}
+              />
             </div>
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">

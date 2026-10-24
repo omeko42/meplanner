@@ -32,9 +32,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title:
-    'My Wedding Manager — All-in-One Wedding Planner & Digital Invitation',
+    'My Event Planner — All-in-One Event Planner & Digital Invitation Suite',
   description:
-    'Aplikasi Manajemen Kesiapan Pernikahan Terpadu (Readiness Tracker, Checklist Bertahap, Budget & Vendor, Generator Undangan WA) & Undangan Digital Online.',
+    'Platform Manajemen Acara & Undangan Digital Terpadu (Wedding, Birthday, Graduation, Meeting, Gala Dinner — Readiness Tracker, Checklist, Budget, CRM Tamu WA & Studio Undangan).',
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],

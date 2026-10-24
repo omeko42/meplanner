@@ -232,6 +232,7 @@ export interface WeddingSettings {
   // Core Settings
   siteTitle: string;
   subtitle: string;
+  brandLogoUrl?: string; // Custom brand logo URL (PNG/WebP/SVG in Supabase Storage)
   eventType?: EventCategoryType; // default 'WEDDING'
   eventHostRoleLabel?: string; // custom label for host/celebrant in non-wedding events
   weddingDatetime: string;

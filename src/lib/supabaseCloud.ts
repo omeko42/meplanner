@@ -700,6 +700,7 @@ export function mergeFullDatabaseMultiDevice(
       nextSettings.heroVideoUrl = cs.heroVideoUrl || nextSettings.heroVideoUrl;
       nextSettings.pageVideoUrl = cs.pageVideoUrl || nextSettings.pageVideoUrl;
       nextSettings.eventType = nextSettings.eventType || cs.eventType || 'WEDDING';
+      nextSettings.brandLogoUrl = nextSettings.brandLogoUrl ?? cs.brandLogoUrl;
       nextSettings.gallerySlideDurationSeconds =
         cs.gallerySlideDurationSeconds ?? nextSettings.gallerySlideDurationSeconds;
       nextSettings.galleryTransitionDurationMs =
@@ -1226,9 +1227,10 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   }
   if (
     !next.siteTitle ||
+    next.siteTitle === 'My Wedding Manager' ||
     /wedding\s*readiness\s*tracker/i.test(next.siteTitle)
   ) {
-    next.siteTitle = 'My Wedding Manager';
+    next.siteTitle = 'My Event Planner';
   }
   return next;
 }
@@ -1483,6 +1485,7 @@ export async function cleanupOrphanedStorageMedia(
 
     const registerSettingsMedia = (s?: Partial<WeddingSettings>) => {
       if (!s) return;
+      registerUrl(s.brandLogoUrl);
       registerUrl(s.groomPhotoUrl);
       registerUrl(s.bridePhotoUrl);
       registerUrl(s.coverBgUrl);
@@ -1608,6 +1611,7 @@ export async function fetchSupabaseStorageCapacity(
 
   const registerSettingsMedia = (s?: Partial<WeddingSettings>) => {
     if (!s) return;
+    registerUrl(s.brandLogoUrl);
     registerUrl(s.groomPhotoUrl);
     registerUrl(s.bridePhotoUrl);
     registerUrl(s.coverBgUrl);

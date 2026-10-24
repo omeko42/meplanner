@@ -91,8 +91,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 <ShieldCheck className="w-3.5 h-3.5" /> Portal Login Resmi
               </span>
               <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                <span className="sm:hidden">MWM — My Wedding Manager</span>
-                <span className="hidden sm:inline">My Wedding Manager</span>
+                <span className="sm:hidden">MEP — My Event Planner</span>
+                <span className="hidden sm:inline">My Event Planner</span>
               </h3>
               <p className="text-[10px] font-semibold text-[#8B6914]">
                 by omeko11
