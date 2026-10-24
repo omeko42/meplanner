@@ -7041,10 +7041,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 {activePreset.titleShort}
                               </h3>
                               <p className="text-xs sm:text-sm text-[#E6C76B] font-semibold mt-0.5">
-                                {lang === 'ID'
-                                  ? activePreset.eventDateId
-                                  : activePreset.eventDateEn}{' '}
-                                • {activePreset.venueName}
+                                {activePreset.eventDate} • {activePreset.eventVenue}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
@@ -7069,8 +7066,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                         : 'bg-black/60 text-[#FAF3E3] border border-white/20 hover:border-[#D4AF37]/50'
                                     }`}
                                   >
-                                    {p.emoji}{' '}
-                                    {lang === 'ID' ? p.labelId : p.labelEn}
+                                    {lang === 'ID' ? p.tabLabelId : p.tabLabelEn}
                                   </button>
                                 );
                               })}
