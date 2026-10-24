@@ -33,6 +33,7 @@ import {
   Shield,
   KeyRound,
   Search,
+  Globe,
 } from 'lucide-react';
 import {
   WeddingSettings,
@@ -2055,7 +2056,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/85 hover:bg-[#FAF3E3] backdrop-blur-md border border-[#D4AF37]/45 text-[10px] sm:text-[11px] font-bold text-[#8B6914] transition-all shadow-2xs"
                 title="Switch Language (Bahasa Indonesia / English)"
               >
-                <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+                <Globe className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                <span>{lang}</span>
               </button>
 
               <button
@@ -2066,12 +2068,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   onOpenAdminPortal();
                 }}
                 className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white/95 backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
-                title="Login Portal Manajemen My Event Planner"
+                title={
+                  isAdminLoggedIn
+                    ? 'Buka Workspace Manager My Event Planner'
+                    : 'Masuk ke Portal Manager My Event Planner'
+                }
               >
                 <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-                <span className="hidden sm:inline">
-                  {isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}
-                </span>
+                <span className="hidden sm:inline">Manager</span>
               </button>
             </div>
           </div>
@@ -2473,7 +2477,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[11px] sm:text-xs font-bold text-[#8B6914] transition-all shadow-2xs"
               title="Switch Language (Bahasa Indonesia / English)"
             >
-              <span>{lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+              <Globe className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+              <span>{lang}</span>
             </button>
 
             <button
@@ -2484,12 +2489,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 onOpenAdminPortal();
               }}
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
-              title={isAdminLoggedIn ? 'Dashboard Admin' : 'Portal Admin'}
+              title={
+                isAdminLoggedIn
+                  ? 'Buka Workspace Manager My Event Planner'
+                  : 'Masuk ke Portal Manager My Event Planner'
+              }
             >
               <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
-              <span className="hidden sm:inline">
-                {isAdminLoggedIn ? 'Dashboard' : 'Admin'}
-              </span>
+              <span className="hidden sm:inline">Manager</span>
             </button>
           </div>
         </div>

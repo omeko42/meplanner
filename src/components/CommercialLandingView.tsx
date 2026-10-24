@@ -1581,14 +1581,37 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   ]);
 
   const [guestCodeInput, setGuestCodeInput] = useState('');
-  const [selectedLookupClientId, setSelectedLookupClientId] =
-    useState<string>('client-utama');
+  const [selectedLookupClientId] = useState<string>('client-utama');
   const [showLookupSuggestions, setShowLookupSuggestions] = useState(false);
   const [lookupGateError, setLookupGateError] = useState<string | null>(null);
   const [activeShowcaseIdx, setActiveShowcaseIdx] = useState<number>(0);
   const [showcaseViewMode, setShowcaseViewMode] = useState<
     'invitation_sim' | 'dashboard_modules'
   >('invitation_sim');
+  const [simPackageTier, setSimPackageTier] = useState<
+    'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
+  >('ROYAL VIP');
+  const [simSectionToggles, setSimSectionToggles] = useState<{
+    cover: boolean;
+    quote: boolean;
+    couple: boolean;
+    events: boolean;
+    story: boolean;
+    gallery: boolean;
+    rsvp: boolean;
+    gift: boolean;
+    wishes: boolean;
+  }>({
+    cover: true,
+    quote: true,
+    couple: true,
+    events: true,
+    story: true,
+    gallery: true,
+    rsvp: true,
+    gift: true,
+    wishes: true,
+  });
   const [simEventType, setSimEventType] = useState<
     'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
   >('WEDDING');
@@ -1626,14 +1649,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     floralCorner: boolean;
     floatingParticles: boolean;
     calendarBtn: boolean;
+    heroBadge: boolean;
   }>({
     floralCorner: true,
     floatingParticles: true,
     calendarBtn: true,
+    heroBadge: false,
   });
   const [simStudioTransition, setSimStudioTransition] = useState<
     'CROSSFADE' | 'ZOOM_BLUR' | 'SLIDE'
   >('CROSSFADE');
+  const [simVideoFitMode, setSimVideoFitMode] = useState<
+    'AUTO_STRETCH' | 'COVER_CENTER' | 'CONTAIN_FULL'
+  >('AUTO_STRETCH');
 
   const [lightboxScreenshot, setLightboxScreenshot] = useState<{
     title: string;
@@ -1729,27 +1757,49 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     window.setTimeout(() => setSimWishFeedback(null), 3200);
   };
 
-  const activeLookupClientGuests = useMemo<WeddingGuest[]>(() => {
-    if (selectedLookupClientId === 'client-utama') {
-      return primaryGuests || [];
+  // Discreet Private Guest Lookup across ALL client workspaces (never exposes client names publicly)
+  const allSearchableClientGuests = useMemo<
+    Array<{ clientId: string; guest: WeddingGuest }>
+  >(() => {
+    const list: Array<{ clientId: string; guest: WeddingGuest }> = [];
+    const seenKeys = new Set<string>();
+    for (const g of primaryGuests || []) {
+      const k = `client-utama:${g.id || g.invitationCode}`;
+      if (!seenKeys.has(k)) {
+        seenKeys.add(k);
+        list.push({ clientId: 'client-utama', guest: g });
+      }
     }
-    return clientWorkspaces?.[selectedLookupClientId]?.guests || [];
-  }, [selectedLookupClientId, primaryGuests, clientWorkspaces]);
+    if (clientWorkspaces) {
+      for (const [cid, ws] of Object.entries(clientWorkspaces)) {
+        for (const g of ws?.guests || []) {
+          const k = `${cid}:${g.id || g.invitationCode}`;
+          if (!seenKeys.has(k)) {
+            seenKeys.add(k);
+            list.push({ clientId: cid, guest: g });
+          }
+        }
+      }
+    }
+    return list;
+  }, [primaryGuests, clientWorkspaces]);
 
-  const filteredLookupGuests = useMemo<WeddingGuest[]>(() => {
+  const filteredLookupGuests = useMemo<
+    Array<{ clientId: string; guest: WeddingGuest }>
+  >(() => {
     const q = guestCodeInput.trim().toLowerCase();
     if (q.length < 3) {
       return [];
     }
-    return activeLookupClientGuests
+    return allSearchableClientGuests
       .filter(
-        (g) =>
+        ({ guest: g }) =>
           g.guestName.toLowerCase().includes(q) ||
           g.invitationCode.toLowerCase().includes(q) ||
           (g.institution || '').toLowerCase().includes(q)
       )
       .slice(0, 6);
-  }, [activeLookupClientGuests, guestCodeInput]);
+  }, [allSearchableClientGuests, guestCodeInput]);
 
   const rawDeveloperUrl = primarySettings.developerCreditUrl?.trim() || '';
   const developerUrl =
@@ -1788,7 +1838,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         {
           tier: 'STARTER' as const,
           badge: lang === 'ID' ? 'STARTER • HEMAT' : 'STARTER • ENTRY',
-          name: 'Starter Digital Invitation',
+          name: 'Starter Digital Invitation & Basic Tracker',
           priceMain: lang === 'ID' ? 'Rp 50.000' : '$10 USD',
           priceCryptoDisplay: '10 USDT',
           amountNumeric: lang === 'ID' ? 50000 : 10,
@@ -1801,20 +1851,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           features:
             lang === 'ID'
               ? [
-                  'Maksimal 100 Pax Tamu Undangan',
-                  'Foto Default Sesuai Tema + 2 Foto Pasangan',
-                  'Tautan Undangan Mandiri (/?client=nama_pasangan)',
-                  'Jadwal Acara, Hitung Mundur & Navigasi Google Maps',
-                  'Form RSVP Real-Time & Buku Tamu Doa Restu',
-                  'Amplop Digital Bank, E-Wallet, PayPal & Crypto USDT',
+                  'Maks. 100 Tamu Undangan (Kode Unik INV-xxxx) & Link Mandiri',
+                  '3 Slot Foto Latar Statis (Sampul, Hero Feathered & Wallpaper) + 1/2 Profil',
+                  'Hitung Mundur, Jadwal Acara Multi-Sesi, Google Maps & Simpan Kalender',
+                  'Form Konfirmasi RSVP Real-Time & Buku Tamu Doa Restu',
+                  'Amplop Digital Domestik (Transfer Bank Nasional & QRIS)',
+                  'Workspace Manager Dasar: Modul Tracker, Checklist H-6 Bulan & Tabel Tamu',
                 ]
               : [
-                  'Max 100 Guest Pax Quota',
-                  'Theme Default Background + 2 Couple Photos',
-                  'Dedicated Couple Invitation Link (/?client=couple_name)',
-                  'Schedule, Countdown & Google Maps',
-                  'Real-Time RSVP & Guestbook Wishes',
-                  'Digital Envelope: Bank, E-Wallet, PayPal & Crypto',
+                  'Max 100 Invited Guests (Unique INV-xxxx Code) & Dedicated Link',
+                  '3 Static Media Slots (Cover, Feathered Hero & Wallpaper) + 1/2 Profiles',
+                  'Live Countdown, Multi-Session Schedule, Google Maps & Save Calendar',
+                  'Real-Time RSVP Form & Guestbook Wishes',
+                  'Domestic Digital Envelope (Bank Transfer & QRIS)',
+                  'Basic Workspace Manager: Tracker, 6-Month Checklist & Guest Table',
                 ],
         },
         {
@@ -1823,7 +1873,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? '★ PALING POPULER • EXCLUSIVE'
               : '★ MOST POPULAR • EXCLUSIVE',
-          name: 'Exclusive Planner & Gallery',
+          name: 'Exclusive Planner, Slideshow & Vendor Suite',
           priceMain: lang === 'ID' ? 'Rp 299.000' : '$25 USD',
           priceCryptoDisplay: '25 USDT',
           amountNumeric: lang === 'ID' ? 299000 : 25,
@@ -1836,18 +1886,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           features:
             lang === 'ID'
               ? [
-                  'Maksimal 500 Pax Tamu Undangan + Blast WhatsApp Otomatis',
-                  'Bebas Kustom Background + Galeri Prewedding (s/d 10 Foto) & Kisah Cinta',
-                  'Musik Latar Romantis & Kustomisasi Tema Warna',
-                  'Dashboard Readiness Tracker, Checklist H-6 Bulan & Kalkulator Vendor',
-                  'Moderasi Komentar & Statistik Insight Dasar',
+                  'Semua Fitur STARTER + Kuota s/d 500 Tamu VIP & Generator Blast WA 1-Klik',
+                  'Multi-Foto Smooth Slideshow (Crossfade, Zoom & Blur, Geser Halus) + Studio Crop',
+                  'Seksi Kisah Perjalanan / Milestone & Galeri Foto HD (s/d 10 Foto) + Musik Latar',
+                  'Amplop Digital Lengkap Domestik (Bank, E-Wallet, QRIS & Alamat Kado Fisik)',
+                  'Workspace Manager Lengkap: Buka Modul Moneter, Pagu Anggaran & Kontrak Vendor',
+                  'Multi-Akses 2 Akun Pengelola Inti & Sinkronisasi Cloud Otomatis',
                 ]
               : [
-                  'Up to 500 Guest Pax + Auto WhatsApp Blast',
-                  'Custom Backgrounds + 10 Gallery Photos & Love Story',
-                  'Romantic Background Music & Theme Presets',
-                  '8-Domain Readiness Tracker, Timeline & Budget Suite',
-                  'Comment Moderation & Basic Traffic Insights',
+                  'All STARTER Features + Up to 500 VIP Guests & 1-Click WA Blast Generator',
+                  'Multi-Photo Smooth Slideshow (Crossfade, Zoom & Blur, Slide) + Studio Crop',
+                  'Milestone Love Story & HD Photo Gallery (up to 10 Photos) + Background Music',
+                  'Full Domestic Digital Envelope (Bank, E-Wallet, QRIS & Physical Gift Address)',
+                  'Full Workspace Manager: Unlocks Budget Cap & Vendor Settlement Module',
+                  '2 Core Family Manager Accounts & Automatic Cloud Sync',
                 ],
         },
         {
@@ -1856,7 +1908,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? '👑 PAKET TERLENGKAP • ROYAL VIP'
               : '👑 ALL-INCLUSIVE FLAGSHIP • ROYAL VIP',
-          name: 'Royal VIP Flagship Suite',
+          name: 'Royal VIP Flagship All-Inclusive Suite',
           priceMain: lang === 'ID' ? 'Rp 599.000' : '$49 USD',
           priceCryptoDisplay: '49 USDT',
           amountNumeric: lang === 'ID' ? 599000 : 49,
@@ -1869,18 +1921,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           features:
             lang === 'ID'
               ? [
-                  'Unlimited Tamu Undangan (Tanpa Batas Pax) + Kode VIP Gate INV-xxxx',
-                  'Unlimited Galeri Foto HD, Studio Crop Non-Destruktif & Upload Musik MP3',
-                  'Multi-Akses 4 Akun Inti + Akun Panitia/WO',
-                  'Full Insight Trafik & Audit Forensik Pelaku Komentar Negatif',
-                  'Sinkronisasi Cloud Supabase + Google Sheets + Backup/Restore JSON',
+                  'Semua Fitur EXCLUSIVE + Unlimited Tamu & Pax Tanpa Batas + VIP Gate INV-xxxx',
+                  'Video Background Sinematik s/d 25 MB (Auto-Stretch HP 9:16 ↔ Layar PC 16:9)',
+                  'Unlimited Galeri Foto HD, Bebas Upload Musik MP3 Kustom & Bilingual ID/EN',
+                  'Amplop Digital Global Multi-Valuta (Bank, QRIS, PayPal & Crypto USDT TRC20/ERC20)',
+                  'Multi-Akses 4 Akun Inti Keluarga + Unlimited Akun Panitia / EO / WO',
+                  'Audit Forensik Komentar, Sinkronisasi Supabase Cloud, Google Sheets & Backup JSON',
                 ]
               : [
-                  'Unlimited Guest Pax + VIP Invitation Code Gate',
-                  'Unlimited HD Gallery, Studio Crop & Custom MP3 Upload',
-                  '4 Core Family Accounts + Unlimited WO/Committee Logins',
-                  'Full Traffic Funnel Analytics & Negative Comment Forensic Audit',
-                  'Full Supabase Cloud Sync, Google Sheets & JSON Backup',
+                  'All EXCLUSIVE Features + Unlimited Guests & Pax + VIP Gate INV-xxxx',
+                  'Up to 25 MB Cinematic Video Background (Auto-Stretch 9:16 Mobile ↔ 16:9 PC)',
+                  'Unlimited HD Gallery, Custom MP3 Audio Upload & Bilingual ID/EN Switcher',
+                  'Global Multi-Currency Digital Envelope (Bank, QRIS, PayPal & Crypto USDT)',
+                  '4 Core Family Accounts + Unlimited Event Organizer / Committee Logins',
+                  'Forensic Comment Audit, Supabase Cloud Sync, Google Sheets & JSON Backup',
                 ],
         },
       ] as const,
@@ -2472,951 +2526,1337 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       .replace(/[^a-z0-9]+/g, '-');
     const waPreviewLink = `https://meplan.app/?client=${clientSlug}&code=${selectedWaGuest.code}`;
 
+    const isStarterTier = simPackageTier === 'STARTER';
+    const isRoyalTier = simPackageTier === 'ROYAL VIP';
+    const tierQuotaLabel = isStarterTier
+      ? 'Maks 50 Tamu'
+      : isRoyalTier
+        ? 'Unlimited Tamu VIP'
+        : 'Maks 350 Tamu';
+    const tierLoginLabel = isStarterTier
+      ? '2 Akun Inti'
+      : isRoyalTier
+        ? '4 Akun Inti + Unlimited Panitia EO/WO'
+        : '4 Akun Inti + 3 Panitia EO/WO';
+
     return (
-      <div className="bg-[#FAF8F5] text-stone-800 p-4 sm:p-6 space-y-5 select-none">
-        {/* Top Workspace Header + Interactive 5-Event Category Switcher */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-[#1C1613] via-[#241C16] to-[#2C221B] text-[#FAF3E3] border border-[#D4AF37]/50 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#E6C76B] flex items-center justify-center shrink-0">
-              <CatalogEventCrest
-                eventType={activePreset.eventType}
-                className="w-5 h-5"
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold uppercase">
-                  LIVE WORKSPACE DUMMY • 100% TAJAM
-                </span>
-                <span className="text-[10px] font-mono text-[#E6C76B]">
-                  ID: {clientSlug}
-                </span>
-              </div>
-              <p className="font-serif text-sm sm:text-base font-extrabold text-white truncate mt-0.5">
-                {activePreset.titleFull}
-              </p>
-            </div>
-          </div>
-
-          {/* Event Preset Pills inside Dashboard Mockup */}
-          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-            {SIMULATION_EVENT_KEYS.map((evKey) => {
-              const p = SIMULATION_EVENT_PRESETS[evKey];
-              const isSelected = simEventType === evKey;
-              return (
-                <button
-                  key={evKey}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSimEventType(evKey);
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold transition-all border ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37] shadow-2xs'
-                      : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
-                  }`}
-                >
-                  {lang === 'ID' ? p.tabLabelId : p.tabLabelEn}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* =============================================================== */}
-        {/* MODUL 1: EXECUTIVE READINESS TRACKER & MULTI-SESSION COUNTDOWN  */}
-        {/* =============================================================== */}
-        {moduleId === 'tracker' && (
-          <div className="space-y-4">
-            {/* 4 Crisp KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                    {lang === 'ID' ? 'Kesiapan Acara' : 'Event Readiness'}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
-                    ON TRACK
-                  </span>
+      <div className="bg-[#FAF8F5] text-stone-800 select-none">
+        {/* ================================================================= */}
+        {/* 1:1 REPLICA OF AdminDashboardView.tsx 2-ROW TOP STICKY HEADER      */}
+        {/* ================================================================= */}
+        <div className="bg-white/95 backdrop-blur-md border-b border-[#D4AF37]/30 shadow-[0_4px_20px_rgba(182,141,64,0.08)]">
+          <div className="px-4 sm:px-6">
+            {/* ROW 1: Brand Title + Event Switcher + Quick Navigation Buttons */}
+            <div className="flex items-center justify-between min-h-14 py-2 gap-2 border-b border-[#D4AF37]/20 flex-wrap">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FBF6EA] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center shadow-2xs shrink-0">
+                  <WeddingRingsIcon className="w-5 h-5" />
                 </div>
-                <p className="text-2xl font-extrabold text-stone-900">92%</p>
-                <p className="text-[11px] font-bold text-[#8B6914]">
-                  {lang === 'ID'
-                    ? '23 / 25 Tugas Selesai'
-                    : '23 / 25 Tasks Completed'}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                    {lang === 'ID' ? 'Pagu Moneter' : 'Budget Cap'}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[9px] font-extrabold">
-                    HEMAT 9,3%
-                  </span>
-                </div>
-                <p className="text-lg sm:text-xl font-extrabold text-stone-900 truncate">
-                  Rp 145.000.000
-                </p>
-                <p className="text-[11px] font-semibold text-stone-500">
-                  {lang === 'ID'
-                    ? 'dari Pagu Rp 160.000.000'
-                    : 'of Rp 160,000,000 Cap'}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                    {lang === 'ID' ? 'Tamu VIP & Reguler' : 'VIP & Guests'}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">
-                    48 VVIP
-                  </span>
-                </div>
-                <p className="text-xl font-extrabold text-stone-900">
-                  180 {lang === 'ID' ? 'Undangan' : 'Invites'}
-                </p>
-                <p className="text-[11px] font-bold text-[#8B6914]">
-                  {lang === 'ID'
-                    ? 'Total Kuota: 410 Pax'
-                    : 'Total Quota: 410 Pax'}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                    {lang === 'ID' ? 'Konfirmasi RSVP' : 'RSVP Confirmed'}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
-                    LIVE SYNC
-                  </span>
-                </div>
-                <p className="text-xl font-extrabold text-emerald-700">
-                  154 {lang === 'ID' ? 'Hadir' : 'Attending'}
-                </p>
-                <p className="text-[11px] font-semibold text-stone-600">
-                  38 {lang === 'ID' ? 'Ucapan Doa Restu' : 'Guestbook Wishes'}
-                </p>
-              </div>
-            </div>
-
-            {/* Multi-Session Live Countdown + Domain Progress & Audit Log */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left 7 cols: Multi-Session Countdown + Progress Bars */}
-              <div className="lg:col-span-7 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-[#B68D40]" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Hitung Mundur Multi-Sesi & Progress Kategori'
-                        : 'Multi-Session Countdown & Category Progress'}
-                    </span>
-                  </span>
-                  <span className="text-[10px] font-mono font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/35">
-                    {activePreset.eventDate}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {activePreset.sessions.map((ses, sIdx) => (
-                    <div
-                      key={ses.badge}
-                      className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-1.5"
-                    >
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8B6914] block">
-                        {ses.badge}
-                      </span>
-                      <p className="text-xs font-extrabold text-stone-900 truncate">
-                        {ses.title}
-                      </p>
-                      <p className="text-[10px] text-stone-600 truncate">
-                        {ses.time} • {ses.venue}
-                      </p>
-                      <div className="grid grid-cols-4 gap-1.5 pt-1">
-                        {[
-                          { v: sIdx === 0 ? '14' : '14', l: 'H' },
-                          { v: sIdx === 0 ? '08' : '17', l: 'J' },
-                          { v: '45', l: 'M' },
-                          {
-                            v: String(countdownSeconds % 60).padStart(2, '0'),
-                            l: 'D',
-                          },
-                        ].map((b) => (
-                          <div
-                            key={b.l}
-                            className="py-1 rounded-lg bg-stone-900 text-[#E6C76B] text-center font-mono text-[10px] font-extrabold"
-                          >
-                            {b.v}
-                            {b.l}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Category Progress Bars */}
-                <div className="space-y-2.5 pt-1">
-                  {[
-                    {
-                      label:
-                        lang === 'ID'
-                          ? 'Venue Utama & Katering VIP (400 Pax)'
-                          : 'Main Venue & VIP Catering (400 Pax)',
-                      pct: 100,
-                      color: 'bg-emerald-600',
-                    },
-                    {
-                      label:
-                        lang === 'ID'
-                          ? 'Dekorasi Floral, Lighting & Dokumentasi 4K'
-                          : 'Floral Decor, Lighting & 4K Documentation',
-                      pct: 90,
-                      color: 'bg-[#C5A059]',
-                    },
-                    {
-                      label:
-                        lang === 'ID'
-                          ? 'Administrasi, Perizinan & Distribusi VIP'
-                          : 'Permits, Administration & VIP Distribution',
-                      pct: 85,
-                      color: 'bg-amber-600',
-                    },
-                  ].map((bar) => (
-                    <div key={bar.label} className="space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-stone-700">{bar.label}</span>
-                        <span className="text-[#8B6914] font-extrabold">
-                          {bar.pct}%
-                        </span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${bar.color}`}
-                          style={{ width: `${bar.pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right 5 cols: Live Audit & Activity Feed */}
-              <div className="lg:col-span-5 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Log Aktivitas & Audit Kesiapan Live'
-                        : 'Live Readiness & Activity Audit Log'}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
-                      REAL-TIME
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h4 className="font-serif text-xs sm:text-sm font-bold text-stone-800 tracking-wide truncate">
+                      MEPlan
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold uppercase tracking-wider">
+                      {simPackageTier}
                     </span>
                   </div>
-
-                  <div className="space-y-2">
-                    {[
-                      {
-                        badge: 'MONETER',
-                        text:
-                          lang === 'ID'
-                            ? '✓ Kontrak Vendor Grand Ballroom & Katering VIP Lunas/DP Terverifikasi'
-                            : '✓ Grand Ballroom & VIP Catering Vendor Contracts Verified',
-                        time: '5m lalu',
-                      },
-                      {
-                        badge: 'CRM WA',
-                        text:
-                          lang === 'ID'
-                            ? '✓ 45 Undangan WhatsApp VVIP (INV-0001 s/d INV-0045) Terkirim'
-                            : '✓ 45 VVIP WhatsApp Invitations (INV-0001..0045) Delivered',
-                        time: '18m lalu',
-                      },
-                      {
-                        badge: 'RSVP LIVE',
-                        text:
-                          lang === 'ID'
-                            ? `✓ RSVP Hadir: ${activePreset.dummyWishes[0]?.senderName || 'Tamu VVIP'} (2 Pax)`
-                            : `✓ RSVP Attending: ${activePreset.dummyWishes[0]?.senderName || 'VVIP Guest'} (2 Pax)`,
-                        time: '32m lalu',
-                      },
-                    ].map((log) => (
-                      <div
-                        key={log.text}
-                        className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 text-[11px] space-y-0.5"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-[9px] font-extrabold text-[#8B6914]">
-                            [{log.badge}]
-                          </span>
-                          <span className="text-[10px] text-stone-400">
-                            {log.time}
-                          </span>
-                        </div>
-                        <p className="font-semibold text-stone-800 leading-snug">
-                          {log.text}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-bold flex items-center justify-between">
-                  <span>
-                    {lang === 'ID'
-                      ? '✓ Sinkronisasi Cloud & Google Sheets Aktif'
-                      : '✓ Cloud & Google Sheets Sync Active'}
-                  </span>
-                  <span className="font-mono text-[10px]">100% OK</span>
+                  <p className="text-[10px] text-[#9A742B] font-semibold tracking-wider uppercase truncate">
+                    {activePreset.titleShort} &bull; {activePreset.eventDate}
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* =============================================================== */}
-        {/* MODUL 2: INTERACTIVE PHASED CHECKLIST (H-6 BULAN S/D HARI-H)    */}
-        {/* =============================================================== */}
-        {moduleId === 'checklist' && (
-          <div className="space-y-4">
-            {/* Phase Filter Bar + Dynamic Progress Pill */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  {
-                    id: 'ALL',
-                    label:
-                      lang === 'ID'
-                        ? `Semua Fase (${DUMMY_DASHBOARD_TASKS.length})`
-                        : `All Phases (${DUMMY_DASHBOARD_TASKS.length})`,
-                  },
-                  { id: 'H-6 Bulan', label: 'H-6 Bulan' },
-                  { id: 'H-3 Bulan', label: 'H-3 Bulan' },
-                  { id: 'H-1 Bulan', label: 'H-1 Bulan' },
-                  { id: 'Hari-H', label: 'Hari-H' },
-                ].map((ph) => (
-                  <button
-                    key={ph.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSimChecklistPhase(ph.id);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                      simChecklistPhase === ph.id
-                        ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
-                        : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border border-stone-200'
-                    }`}
-                  >
-                    {ph.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-extrabold text-[#8B6914] bg-[#FAF3E3] px-3 py-1 rounded-xl border border-[#D4AF37]/40">
-                  {lang === 'ID'
-                    ? `Selesai: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Klik tugas untuk uji coba!`
-                    : `Done: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Click any task to toggle!`}
-                </span>
-              </div>
-            </div>
-
-            {/* Interactive Checklist Rows */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filteredTasks.map((task) => {
-                const isDone = simDoneTaskIds.includes(task.id);
-                return (
-                  <div
-                    key={task.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleSimTaskDone(task.id);
-                    }}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                      isDone
-                        ? 'bg-emerald-50/60 border-emerald-300/90 shadow-2xs'
-                        : 'bg-white hover:bg-[#FAF3E3]/40 border-[#D4AF37]/40 shadow-2xs'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleSimTaskDone(task.id);
-                        }}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 font-extrabold transition-all ${
-                          isDone
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-white border-2 border-[#B68D40] text-transparent'
-                        }`}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
-                            {task.phase}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[9px] font-extrabold">
-                            PIC: {task.pic}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
-                            {task.priority}
-                          </span>
-                        </div>
-                        <p
-                          className={`text-xs font-extrabold leading-snug ${
-                            isDone
-                              ? 'line-through text-stone-500'
-                              : 'text-stone-900'
-                          }`}
-                        >
-                          {lang === 'ID' ? task.titleId : task.titleEn}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
-                        isDone
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-amber-100 text-amber-900 border border-amber-300'
-                      }`}
-                    >
-                      {isDone
-                        ? lang === 'ID'
-                          ? '✓ Selesai'
-                          : '✓ Done'
-                        : lang === 'ID'
-                          ? '⏳ Proses'
-                          : '⏳ In Progress'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* =============================================================== */}
-        {/* MODUL 3: MONETER, PAGU ANGGARAN & KONTRAK PELUNASAN VENDOR      */}
-        {/* =============================================================== */}
-        {moduleId === 'moneter' && (
-          <div className="space-y-4">
-            {/* 4 Financial Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                  {lang === 'ID' ? 'Target Pagu Anggaran' : 'Target Budget Cap'}
-                </p>
-                <p className="text-lg font-extrabold text-stone-900 mt-1">
-                  Rp 160.000.000
-                </p>
-                <span className="inline-block mt-1 text-[10px] font-bold text-stone-500">
-                  100% Plafon Maksimal
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                  {lang === 'ID'
-                    ? 'Total Kontrak Realisasi'
-                    : 'Actual Contracts'}
-                </p>
-                <p className="text-lg font-extrabold text-[#8B6914] mt-1">
-                  Rp 148.500.000
-                </p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
-                  ✓ HEMAT Rp 11,5 Jt di Bawah Pagu
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                  {lang === 'ID'
-                    ? 'Sudah Dibayar (DP / Lunas)'
-                    : 'Paid (Deposit / Full)'}
-                </p>
-                <p className="text-lg font-extrabold text-emerald-700 mt-1">
-                  Rp 118.500.000
-                </p>
-                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700">
-                  79,8% Terbayar Resmi
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                  {lang === 'ID'
-                    ? 'Sisa Pelunasan Vendor'
-                    : 'Remaining Balance'}
-                </p>
-                <p className="text-lg font-extrabold text-amber-800 mt-1">
-                  Rp 30.000.000
-                </p>
-                <span className="inline-block mt-1 text-[10px] font-bold text-amber-800">
-                  Jatuh Tempo H-14 Acara
-                </span>
-              </div>
-            </div>
-
-            {/* 5 Dummy Vendor Contracts Table */}
-            <div className="rounded-2xl bg-white border border-[#D4AF37]/40 overflow-hidden">
-              <div className="px-4 py-3 bg-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-extrabold text-stone-900">
-                  {lang === 'ID'
-                    ? 'Rincian Kontrak Vendor & Status Pelunasan (5 Vendor Utama)'
-                    : 'Vendor Contracts & Payment Settlement Breakdown (5 Core Vendors)'}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
-                  AUDIT MONETER TRANSPARAN
-                </span>
-              </div>
-
-              <div className="divide-y divide-stone-200/80">
-                {DUMMY_DASHBOARD_VENDORS.map((v) => (
-                  <div
-                    key={v.id}
-                    className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#FAF8F5] transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] text-[9px] font-extrabold">
-                          {v.category}
-                        </span>
-                        <p className="text-xs font-extrabold text-stone-900 truncate">
-                          {v.name}
-                        </p>
-                      </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5">
-                        Pagu: <strong>{v.pagu}</strong> &bull; Kontrak
-                        Realisasi:{' '}
-                        <strong className="text-stone-800">
-                          {v.realisasi}
-                        </strong>
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
-                      <div className="text-left sm:text-right text-[11px]">
-                        <p className="text-emerald-700 font-extrabold">
-                          Dibayar: {v.terbayar}
-                        </p>
-                        <p className="text-stone-500 font-semibold">
-                          Sisa: {v.sisa}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
-                          v.status === 'LUNAS'
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-amber-100 text-amber-900 border border-amber-300'
-                        }`}
-                      >
-                        {v.status === 'LUNAS' ? '✓ LUNAS' : '⏳ DP TERBAYAR'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =============================================================== */}
-        {/* MODUL 4: CRM TAMU VIP, KUOTA PAX & BLAST WHATSAPP 1-KLIK        */}
-        {/* =============================================================== */}
-        {moduleId === 'tamu' && (
-          <div className="space-y-4">
-            {/* Summary Pills */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 rounded-xl bg-stone-900 text-[#E6C76B] text-xs font-extrabold">
-                  ★ P1 - VIP: 48 Tamu
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
-                  ✉️ Cetak Tebal: 60
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
-                  🌐 Online Link: 120
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold">
-                  👥 Total Kuota: 410 Pax
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-stone-500">
-                {lang === 'ID'
-                  ? 'Klik "Kirim WA" untuk melihat pratinjau pesan otomatis:'
-                  : 'Click "Send WA" to preview auto-generated message:'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-              {/* Left 7 Cols: 5 Dummy VIP Guests */}
-              <div className="lg:col-span-7 rounded-2xl bg-white border border-[#D4AF37]/40 divide-y divide-stone-200/80 overflow-hidden">
-                {DUMMY_DASHBOARD_GUESTS.map((g) => {
-                  const isSelected = selectedWaGuest.code === g.code;
-                  const guestLink = `https://meplan.app/?client=${clientSlug}&code=${g.code}`;
+              {/* Center: 5 Event Category Switcher Pills */}
+              <div className="flex flex-wrap items-center gap-1">
+                {SIMULATION_EVENT_KEYS.map((evKey) => {
+                  const p = SIMULATION_EVENT_PRESETS[evKey];
+                  const isSelected = simEventType === evKey;
                   return (
-                    <div
-                      key={g.code}
+                    <button
+                      key={evKey}
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSimSelectedWaGuestCode(g.code);
+                        setSimEventType(evKey);
                       }}
-                      className={`p-3.5 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                        isSelected ? 'bg-[#FAF3E3]/70' : 'hover:bg-[#FAF8F5]'
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all border ${
+                        isSelected
+                          ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] shadow-2xs'
+                          : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-[#D4AF37]/30'
                       }`}
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
-                            {g.code}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
-                            {g.priority}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 text-stone-700 text-[9px] font-bold">
-                            {g.pax} Pax • {g.format}
-                          </span>
-                        </div>
-                        <p className="text-xs font-extrabold text-stone-900 truncate">
-                          {g.name}
-                        </p>
-                        <p className="text-[10px] text-stone-500 truncate">
-                          {g.institution} • RSVP:{' '}
-                          <strong className="text-emerald-700">{g.rsvp}</strong>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSimSelectedWaGuestCode(g.code);
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold inline-flex items-center gap-1 shadow-2xs"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>Kirim WA</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopySimWaLink(g.code, guestLink);
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold inline-flex items-center gap-1"
-                        >
-                          {copiedSimWaLinkKey === g.code ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              <span>Tersalin!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>Salin Link</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
+                      {lang === 'ID' ? p.tabLabelId : p.tabLabelEn}
+                    </button>
                   );
                 })}
               </div>
 
-              {/* Right 5 Cols: Live Auto-Generated WhatsApp Message Preview */}
-              <div className="lg:col-span-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 text-emerald-50 border border-[#D4AF37]/50 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E6C76B]">
-                    {lang === 'ID'
-                      ? 'Pratinjau Pesan WhatsApp Otomatis'
-                      : 'Auto-Generated WhatsApp Preview'}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold">
-                    {selectedWaGuest.code} ({selectedWaGuest.pax} Pax)
+              {/* Right: Quick View Switcher matching AdminDashboardView */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="hidden xl:inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                  ● Tuan Rumah (Simulasi)
+                </span>
+                <div className="inline-flex items-center p-0.5 rounded-full bg-[#FAF3E3]/90 border border-[#D4AF37]/40">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowcaseViewMode('invitation_sim');
+                    }}
+                    title="Buka Simulasi Undangan Tamu 1:1"
+                    className="px-2.5 py-1 rounded-full text-[10px] font-bold text-[#8B6914] hover:bg-white/70 transition-all"
+                  >
+                    Undangan
+                  </button>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs">
+                    Manager
                   </span>
                 </div>
+              </div>
+            </div>
 
-                <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 text-[11px] leading-relaxed space-y-2 font-sans text-stone-200">
-                  <p>
-                    Kepada Yth.{' '}
-                    <strong className="text-[#E6C76B]">
-                      {selectedWaGuest.name}
-                    </strong>
-                  </p>
-                  <p>
-                    Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu
-                    untuk menghadiri acara{' '}
-                    <strong className="text-white">
-                      {activePreset.titleFull}
-                    </strong>{' '}
-                    pada <strong>{activePreset.eventDate}</strong> di{' '}
-                    <strong>{activePreset.eventVenue}</strong>.
-                  </p>
-                  <p className="font-mono text-[10px] text-[#E6C76B] break-all bg-white/5 p-2 rounded-lg border border-[#D4AF37]/30">
-                    🔗 Link Privat: {waPreviewLink}
-                    <br />🔑 Kode Akses VIP: {selectedWaGuest.code} (Kuota:{' '}
-                    {selectedWaGuest.pax} Pax)
-                  </p>
-                </div>
+            {/* ROW 2: Horizontal Scrollable Module Navigation Bar (Matching AdminDashboardView 1:1) */}
+            <div className="flex items-center justify-between gap-2 py-2 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 shrink-0">
+                {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
+                  const isActive = moduleId === shot.id;
+                  const shortLabels: Record<string, string> = {
+                    tracker: `Tracker (92%)`,
+                    checklist: `Checklist (${doneTasksCount}/${totalTasksCount})`,
+                    moneter: lang === 'ID' ? 'Moneter' : 'Budget',
+                    tamu: lang === 'ID' ? 'Tamu' : 'Guests',
+                    pengaturan:
+                      lang === 'ID' ? 'Pengaturan (Studio)' : 'Settings (Studio)',
+                  };
+                  return (
+                    <button
+                      key={shot.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveShowcaseIdx(idx);
+                      }}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all inline-flex items-center gap-1.5 whitespace-nowrap ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white shadow-xs'
+                          : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-600 border border-[#D4AF37]/25'
+                      }`}
+                    >
+                      <span>{shortLabels[shot.id] || shot.tabId}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
+              <div className="hidden md:flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCopySimWaLink('preview-wa', waPreviewLink);
+                    setActiveShowcaseIdx(4);
+                    setSimStudioNavTab('database');
                   }}
-                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5"
+                  className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold inline-flex items-center gap-1 transition-all"
                 >
-                  {copiedSimWaLinkKey === 'preview-wa' ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>✓ Link Undangan Dummy Tersalin!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Salin Link & Pesan WhatsApp Dummy</span>
-                    </>
-                  )}
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Data &amp; Cloud</span>
                 </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* =============================================================== */}
-        {/* MODUL 5: STUDIO PENGATURAN UNDANGAN, 3 SLOT MEDIA & SLIDESHOW   */}
-        {/* =============================================================== */}
-        {moduleId === 'pengaturan' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* Left Mini-Sidebar (5 Studio Sections) */}
-            <div className="lg:col-span-3 p-3 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-1.5">
-              <p className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                {lang === 'ID'
-                  ? 'Menu Studio Kustomisasi'
-                  : 'Customization Studio Menu'}
-              </p>
-              {[
-                {
-                  id: 'konten',
-                  label:
-                    lang === 'ID' ? '1. Konten Undangan' : '1. Invitation Content',
-                },
-                {
-                  id: 'tema',
-                  label:
-                    lang === 'ID'
-                      ? '2. Tema & 3 Slot Media'
-                      : '2. Theme & 3 Media Slots',
-                },
-                {
-                  id: 'jadwal',
-                  label:
-                    lang === 'ID'
-                      ? '3. Jadwal & Lokasi Maps'
-                      : '3. Schedule & Maps',
-                },
-                {
-                  id: 'akun',
-                  label:
-                    lang === 'ID' ? '4. Akun & Akses WO' : '4. Accounts & Access',
-                },
-                {
-                  id: 'database',
-                  label:
-                    lang === 'ID'
-                      ? '5. Cloud & Backup JSON'
-                      : '5. Cloud & JSON Backup',
-                },
-              ].map((nav) => (
-                <button
-                  key={nav.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSimStudioNavTab(nav.id);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-between ${
-                    simStudioNavTab === nav.id
-                      ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
-                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700'
-                  }`}
-                >
-                  <span>{nav.label}</span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                </button>
-              ))}
-            </div>
-
-            {/* Right Panel: 3 Separate Media Sections + Ornament Toggles + Slideshow Transitions */}
-            <div className="lg:col-span-9 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+        {/* Main Workspace Body */}
+        <div className="p-4 sm:p-6 space-y-5">
+          {/* =============================================================== */}
+          {/* MODUL 1: EXECUTIVE READINESS TRACKER & MULTI-SESSION COUNTDOWN  */}
+          {/* =============================================================== */}
+          {moduleId === 'tracker' && (
+            <div className="space-y-4">
+              {/* 4 Crisp KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                      {lang === 'ID' ? 'Kesiapan Acara' : 'Event Readiness'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                      ON TRACK
+                    </span>
+                  </div>
+                  <p className="text-2xl font-extrabold text-stone-900">92%</p>
+                  <p className="text-[11px] font-bold text-[#8B6914]">
                     {lang === 'ID'
-                      ? 'Arsitektur 3 Slot Media Terpisah & Transisi Sinematik'
-                      : '3 Separate Media Slots & Cinematic Transitions'}
-                  </span>
-                  <h5 className="text-sm font-extrabold text-stone-900">
-                    {activePreset.titleShort} — Studio Visual & Ornamen
-                  </h5>
+                      ? '23 / 25 Tugas Selesai'
+                      : '23 / 25 Tasks Completed'}
+                  </p>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
-                  ✓ Auto-Save Cloud Aktif
+
+                <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                      {lang === 'ID' ? 'Pagu Moneter' : 'Budget Cap'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[9px] font-extrabold">
+                      HEMAT 9,3%
+                    </span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-extrabold text-stone-900 truncate">
+                    Rp 145.000.000
+                  </p>
+                  <p className="text-[11px] font-semibold text-stone-500">
+                    {lang === 'ID'
+                      ? 'dari Pagu Rp 160.000.000'
+                      : 'of Rp 160,000,000 Cap'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                      {lang === 'ID' ? 'Kuota Paket Aktif' : 'Active Tier Quota'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                      {simPackageTier}
+                    </span>
+                  </div>
+                  <p className="text-xl font-extrabold text-stone-900">
+                    {isStarterTier ? '50 Tamu' : '180 Undangan'}
+                  </p>
+                  <p className="text-[11px] font-bold text-[#8B6914]">
+                    {tierQuotaLabel}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                      {lang === 'ID' ? 'Konfirmasi RSVP' : 'RSVP Confirmed'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                      LIVE SYNC
+                    </span>
+                  </div>
+                  <p className="text-xl font-extrabold text-emerald-700">
+                    {isStarterTier ? '42' : '154'}{' '}
+                    {lang === 'ID' ? 'Hadir' : 'Attending'}
+                  </p>
+                  <p className="text-[11px] font-semibold text-stone-600">
+                    38 {lang === 'ID' ? 'Ucapan Doa Restu' : 'Guestbook Wishes'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Multi-Session Live Countdown + Domain Progress & Audit Log */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-7 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-[#B68D40]" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Hitung Mundur Multi-Sesi & Progress Kategori'
+                          : 'Multi-Session Countdown & Category Progress'}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/35">
+                      {activePreset.eventDate}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {activePreset.sessions.map((ses, sIdx) => (
+                      <div
+                        key={ses.badge}
+                        className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-1.5"
+                      >
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8B6914] block">
+                          {ses.badge}
+                        </span>
+                        <p className="text-xs font-extrabold text-stone-900 truncate">
+                          {ses.title}
+                        </p>
+                        <p className="text-[10px] text-stone-600 truncate">
+                          {ses.time} • {ses.venue}
+                        </p>
+                        <div className="grid grid-cols-4 gap-1.5 pt-1">
+                          {[
+                            { v: sIdx === 0 ? '14' : '14', l: 'H' },
+                            { v: sIdx === 0 ? '08' : '17', l: 'J' },
+                            { v: '45', l: 'M' },
+                            {
+                              v: String(countdownSeconds % 60).padStart(2, '0'),
+                              l: 'D',
+                            },
+                          ].map((b) => (
+                            <div
+                              key={b.l}
+                              className="py-1 rounded-lg bg-stone-900 text-[#E6C76B] text-center font-mono text-[10px] font-extrabold"
+                            >
+                              {b.v}
+                              {b.l}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Category Progress Bars */}
+                  <div className="space-y-2.5 pt-1">
+                    {[
+                      {
+                        label:
+                          lang === 'ID'
+                            ? 'Venue Utama & Katering VIP (400 Pax)'
+                            : 'Main Venue & VIP Catering (400 Pax)',
+                        pct: 100,
+                        color: 'bg-emerald-600',
+                      },
+                      {
+                        label:
+                          lang === 'ID'
+                            ? 'Dekorasi Floral, Lighting & Dokumentasi 4K'
+                            : 'Floral Decor, Lighting & 4K Documentation',
+                        pct: 90,
+                        color: 'bg-[#C5A059]',
+                      },
+                      {
+                        label:
+                          lang === 'ID'
+                            ? 'Administrasi, Perizinan & Distribusi VIP'
+                            : 'Permits, Administration & VIP Distribution',
+                        pct: 85,
+                        color: 'bg-amber-600',
+                      },
+                    ].map((bar) => (
+                      <div key={bar.label} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-stone-700">{bar.label}</span>
+                          <span className="text-[#8B6914] font-extrabold">
+                            {bar.pct}%
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${bar.color}`}
+                            style={{ width: `${bar.pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right 5 cols: Live Audit & Activity Feed */}
+                <div className="lg:col-span-5 p-4 rounded-2xl bg-white border border-[#D4AF37]/40 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Log Aktivitas & Audit Kesiapan Live'
+                          : 'Live Readiness & Activity Audit Log'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                        REAL-TIME
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {[
+                        {
+                          badge: 'MONETER',
+                          text:
+                            lang === 'ID'
+                              ? '✓ Kontrak Vendor Grand Ballroom & Katering VIP Lunas/DP Terverifikasi'
+                              : '✓ Grand Ballroom & VIP Catering Vendor Contracts Verified',
+                          time: '5m lalu',
+                        },
+                        {
+                          badge: 'CRM WA',
+                          text:
+                            lang === 'ID'
+                              ? '✓ 45 Undangan WhatsApp VVIP (INV-0001 s/d INV-0045) Terkirim'
+                              : '✓ 45 VVIP WhatsApp Invitations (INV-0001..0045) Delivered',
+                          time: '18m lalu',
+                        },
+                        {
+                          badge: 'RSVP LIVE',
+                          text:
+                            lang === 'ID'
+                              ? `✓ RSVP Hadir: ${activePreset.dummyWishes[0]?.senderName || 'Tamu VVIP'} (2 Pax)`
+                              : `✓ RSVP Attending: ${activePreset.dummyWishes[0]?.senderName || 'VVIP Guest'} (2 Pax)`,
+                          time: '32m lalu',
+                        },
+                      ].map((log) => (
+                        <div
+                          key={log.text}
+                          className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 text-[11px] space-y-0.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-[9px] font-extrabold text-[#8B6914]">
+                              [{log.badge}]
+                            </span>
+                            <span className="text-[10px] text-stone-400">
+                              {log.time}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-stone-800 leading-snug">
+                            {log.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-bold flex items-center justify-between">
+                    <span>
+                      {lang === 'ID'
+                        ? '✓ Sinkronisasi Cloud & Google Sheets Aktif'
+                        : '✓ Cloud & Google Sheets Sync Active'}
+                    </span>
+                    <span className="font-mono text-[10px]">100% OK</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =============================================================== */}
+          {/* MODUL 2: INTERACTIVE PHASED CHECKLIST (H-6 BULAN S/D HARI-H)    */}
+          {/* =============================================================== */}
+          {moduleId === 'checklist' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    {
+                      id: 'ALL',
+                      label:
+                        lang === 'ID'
+                          ? `Semua Fase (${DUMMY_DASHBOARD_TASKS.length})`
+                          : `All Phases (${DUMMY_DASHBOARD_TASKS.length})`,
+                    },
+                    { id: 'H-6 Bulan', label: 'H-6 Bulan' },
+                    { id: 'H-3 Bulan', label: 'H-3 Bulan' },
+                    { id: 'H-1 Bulan', label: 'H-1 Bulan' },
+                    { id: 'Hari-H', label: 'Hari-H' },
+                  ].map((ph) => (
+                    <button
+                      key={ph.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSimChecklistPhase(ph.id);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                        simChecklistPhase === ph.id
+                          ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
+                          : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border border-stone-200'
+                      }`}
+                    >
+                      {ph.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold text-[#8B6914] bg-[#FAF3E3] px-3 py-1 rounded-xl border border-[#D4AF37]/40">
+                    {lang === 'ID'
+                      ? `Selesai: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Klik tugas untuk uji coba!`
+                      : `Done: ${doneTasksCount}/${totalTasksCount} (${dynamicChecklistPct}%) — Click any task to toggle!`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {filteredTasks.map((task) => {
+                  const isDone = simDoneTaskIds.includes(task.id);
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSimTaskDone(task.id);
+                      }}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                        isDone
+                          ? 'bg-emerald-50/60 border-emerald-300/90 shadow-2xs'
+                          : 'bg-white hover:bg-[#FAF3E3]/40 border-[#D4AF37]/40 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleSimTaskDone(task.id);
+                          }}
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 font-extrabold transition-all ${
+                            isDone
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white border-2 border-[#B68D40] text-transparent'
+                          }`}
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                              {task.phase}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[9px] font-extrabold">
+                              PIC: {task.pic}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                              {task.priority}
+                            </span>
+                          </div>
+                          <p
+                            className={`text-xs font-extrabold leading-snug ${
+                              isDone
+                                ? 'line-through text-stone-500'
+                                : 'text-stone-900'
+                            }`}
+                          >
+                            {lang === 'ID' ? task.titleId : task.titleEn}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                          isDone
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-100 text-amber-900 border border-amber-300'
+                        }`}
+                      >
+                        {isDone
+                          ? lang === 'ID'
+                            ? '✓ Selesai'
+                            : '✓ Done'
+                          : lang === 'ID'
+                            ? '⏳ Proses'
+                            : '⏳ In Progress'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* =============================================================== */}
+          {/* MODUL 3: MONETER, PAGU ANGGARAN & KONTRAK PELUNASAN VENDOR      */}
+          {/* =============================================================== */}
+          {moduleId === 'moneter' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID' ? 'Target Pagu Anggaran' : 'Target Budget Cap'}
+                  </p>
+                  <p className="text-lg font-extrabold text-stone-900 mt-1">
+                    Rp 160.000.000
+                  </p>
+                  <span className="inline-block mt-1 text-[10px] font-bold text-stone-500">
+                    100% Plafon Maksimal
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID'
+                      ? 'Total Kontrak Realisasi'
+                      : 'Actual Contracts'}
+                  </p>
+                  <p className="text-lg font-extrabold text-[#8B6914] mt-1">
+                    Rp 148.500.000
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                    ✓ HEMAT Rp 11,5 Jt di Bawah Pagu
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID'
+                      ? 'Sudah Dibayar (DP / Lunas)'
+                      : 'Paid (Deposit / Full)'}
+                  </p>
+                  <p className="text-lg font-extrabold text-emerald-700 mt-1">
+                    Rp 118.500.000
+                  </p>
+                  <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700">
+                    79,8% Terbayar Resmi
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/40">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                    {lang === 'ID'
+                      ? 'Sisa Pelunasan Vendor'
+                      : 'Remaining Balance'}
+                  </p>
+                  <p className="text-lg font-extrabold text-amber-800 mt-1">
+                    Rp 30.000.000
+                  </p>
+                  <span className="inline-block mt-1 text-[10px] font-bold text-amber-800">
+                    Jatuh Tempo H-14 Acara
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-[#D4AF37]/40 overflow-hidden">
+                <div className="px-4 py-3 bg-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Rincian Kontrak Vendor & Status Pelunasan (5 Vendor Utama)'
+                      : 'Vendor Contracts & Payment Settlement Breakdown (5 Core Vendors)'}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
+                    AUDIT MONETER TRANSPARAN
+                  </span>
+                </div>
+
+                <div className="divide-y divide-stone-200/80">
+                  {DUMMY_DASHBOARD_VENDORS.map((v) => (
+                    <div
+                      key={v.id}
+                      className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#FAF8F5] transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] text-[9px] font-extrabold">
+                            {v.category}
+                          </span>
+                          <p className="text-xs font-extrabold text-stone-900 truncate">
+                            {v.name}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                          Pagu: <strong>{v.pagu}</strong> &bull; Kontrak
+                          Realisasi:{' '}
+                          <strong className="text-stone-800">
+                            {v.realisasi}
+                          </strong>
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+                        <div className="text-left sm:text-right text-[11px]">
+                          <p className="text-emerald-700 font-extrabold">
+                            Dibayar: {v.terbayar}
+                          </p>
+                          <p className="text-stone-500 font-semibold">
+                            Sisa: {v.sisa}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                            v.status === 'LUNAS'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}
+                        >
+                          {v.status === 'LUNAS' ? '✓ LUNAS' : '⏳ DP TERBAYAR'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =============================================================== */}
+          {/* MODUL 4: CRM TAMU VIP, KUOTA PAX & BLAST WHATSAPP 1-KLIK        */}
+          {/* =============================================================== */}
+          {moduleId === 'tamu' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-xl bg-stone-900 text-[#E6C76B] text-xs font-extrabold">
+                    Paket {simPackageTier}: {tierQuotaLabel}
+                  </span>
+                  <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
+                    ★ P1 - VIP: {isStarterTier ? '15' : '48'} Tamu
+                  </span>
+                  <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold">
+                    👥 Total Kuota: {isStarterTier ? '100' : '410'} Pax
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-stone-500">
+                  {lang === 'ID'
+                    ? 'Klik "Kirim WA" untuk melihat pratinjau pesan otomatis:'
+                    : 'Click "Send WA" to preview auto-generated message:'}
                 </span>
               </div>
 
-              {/* 3 Separate Media Slots */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
-                    SLOT 1 • SAMPUL DEPAN (COVER)
-                  </span>
-                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300">
-                    <img
-                      src={activePreset.galleryPhotos[0].url}
-                      alt="Cover Slot"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
-                      2 Foto HD • Slideshow
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-bold text-stone-600">
-                    Mendukung s/d 3 Foto (Maks 10 MB/foto) + Studio Crop
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
-                    SLOT 2 • BANNER HERO EDITORIAL
-                  </span>
-                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300">
-                    <img
-                      src={activePreset.galleryPhotos[1].url}
-                      alt="Hero Slot"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
-                      1 Foto Aktif • Feathered
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-bold text-stone-600">
-                    Alpha-Mask Feathering Halus + Animasi Ken Burns
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                  <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
-                    SLOT 3 • WALLPAPER LATAR (VIDEO)
-                  </span>
-                  <div className="h-20 rounded-lg overflow-hidden relative border border-stone-300 bg-stone-900 flex items-center justify-center">
-                    <img
-                      src={activePreset.galleryPhotos[2].url}
-                      alt="Wallpaper Slot"
-                      className="w-full h-full object-cover opacity-70"
-                    />
-                    <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold">
-                      🎬 1 Video MP4 Aktif (18.4 MB)
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-bold text-stone-600">
-                    Video MP4/WebM s/d 25 MB (Auto-Stretch HP ke PC)
-                  </p>
-                </div>
-              </div>
-
-              {/* Interactive Ornament Toggles & Slideshow Transition Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200 space-y-2">
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
-                    {lang === 'ID'
-                      ? 'Toggle Ornamen & Fitur Interaktif (Klik untuk Uji):'
-                      : 'Interactive Ornament Toggles (Click to Test):'}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      {
-                        key: 'floralCorner' as const,
-                        label: `🌸 Ornamen Sudut: ${simStudioOrnaments.floralCorner ? 'ON' : 'OFF'}`,
-                      },
-                      {
-                        key: 'floatingParticles' as const,
-                        label: `✨ Partikel Melayang: ${simStudioOrnaments.floatingParticles ? 'ON' : 'OFF'}`,
-                      },
-                      {
-                        key: 'calendarBtn' as const,
-                        label: `📅 Tombol Kalender: ${simStudioOrnaments.calendarBtn ? 'ON' : 'OFF'}`,
-                      },
-                    ].map((tog) => (
-                      <button
-                        key={tog.key}
-                        type="button"
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div className="lg:col-span-7 rounded-2xl bg-white border border-[#D4AF37]/40 divide-y divide-stone-200/80 overflow-hidden">
+                  {DUMMY_DASHBOARD_GUESTS.map((g) => {
+                    const isSelected = selectedWaGuest.code === g.code;
+                    const guestLink = `https://meplan.app/?client=${clientSlug}&code=${g.code}`;
+                    return (
+                      <div
+                        key={g.code}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSimStudioOrnaments((prev) => ({
-                            ...prev,
-                            [tog.key]: !prev[tog.key],
-                          }));
+                          setSimSelectedWaGuestCode(g.code);
                         }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
-                          simStudioOrnaments[tog.key]
-                            ? 'bg-emerald-700 text-white border-emerald-600'
-                            : 'bg-white text-stone-500 border-stone-300'
+                        className={`p-3.5 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                          isSelected ? 'bg-[#FAF3E3]/70' : 'hover:bg-[#FAF8F5]'
                         }`}
                       >
-                        {tog.label}
-                      </button>
-                    ))}
-                  </div>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
+                              {g.code}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-extrabold">
+                              {g.priority}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 text-stone-700 text-[9px] font-bold">
+                              {g.pax} Pax • {g.format}
+                            </span>
+                          </div>
+                          <p className="text-xs font-extrabold text-stone-900 truncate">
+                            {g.name}
+                          </p>
+                          <p className="text-[10px] text-stone-500 truncate">
+                            {g.institution} • RSVP:{' '}
+                            <strong className="text-emerald-700">{g.rsvp}</strong>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSimSelectedWaGuestCode(g.code);
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold inline-flex items-center gap-1 shadow-2xs"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Kirim WA</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopySimWaLink(g.code, guestLink);
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold inline-flex items-center gap-1"
+                          >
+                            {copiedSimWaLinkKey === g.code ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span>Tersalin!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Salin Link</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200 space-y-2">
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
-                    {lang === 'ID'
-                      ? 'Gaya Transisi Slideshow Latar:'
-                      : 'Background Slideshow Transition Style:'}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { id: 'CROSSFADE' as const, label: 'Crossfade Halus' },
-                      { id: 'ZOOM_BLUR' as const, label: 'Zoom & Blur' },
-                      { id: 'SLIDE' as const, label: 'Geser Halus' },
-                    ].map((tr) => (
-                      <button
-                        key={tr.id}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSimStudioTransition(tr.id);
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
-                          simStudioTransition === tr.id
-                            ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
-                            : 'bg-white text-stone-700 border-stone-300'
-                        }`}
-                      >
-                        {tr.label}
-                      </button>
-                    ))}
+                {/* Right 5 Cols: Live Auto-Generated WhatsApp Message Preview */}
+                <div className="lg:col-span-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 text-emerald-50 border border-[#D4AF37]/50 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E6C76B]">
+                      {lang === 'ID'
+                        ? 'Pratinjau Pesan WhatsApp Otomatis'
+                        : 'Auto-Generated WhatsApp Preview'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold">
+                      {selectedWaGuest.code} ({selectedWaGuest.pax} Pax)
+                    </span>
                   </div>
+
+                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 text-[11px] leading-relaxed space-y-2 font-sans text-stone-200">
+                    <p>
+                      Kepada Yth.{' '}
+                      <strong className="text-[#E6C76B]">
+                        {selectedWaGuest.name}
+                      </strong>
+                    </p>
+                    <p>
+                      Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu
+                      untuk menghadiri acara{' '}
+                      <strong className="text-white">
+                        {activePreset.titleFull}
+                      </strong>{' '}
+                      pada <strong>{activePreset.eventDate}</strong> di{' '}
+                      <strong>{activePreset.eventVenue}</strong>.
+                    </p>
+                    <p className="font-mono text-[10px] text-[#E6C76B] break-all bg-white/5 p-2 rounded-lg border border-[#D4AF37]/30">
+                      🔗 Link Privat: {waPreviewLink}
+                      <br />🔑 Kode Akses VIP: {selectedWaGuest.code} (Kuota:{' '}
+                      {selectedWaGuest.pax} Pax)
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopySimWaLink('preview-wa', waPreviewLink);
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5"
+                  >
+                    {copiedSimWaLinkKey === 'preview-wa' ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>✓ Link Undangan Dummy Tersalin!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>Salin Link &amp; Pesan WhatsApp Dummy</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* =============================================================== */}
+          {/* MODUL 5: STUDIO PENGATURAN UNDANGAN (1:1 REPLICA WIRA SATYA 96) */}
+          {/* =============================================================== */}
+          {moduleId === 'pengaturan' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left Sidebar (Matching AdminDashboardView Settings Left Column 1:1) */}
+              <div className="lg:col-span-3 rounded-3xl bg-white border border-[#D4AF37]/40 p-3.5 shadow-2xs space-y-1.5">
+                <div className="px-2.5 py-1.5 border-b border-stone-100 mb-1">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                    {lang === 'ID'
+                      ? 'Studio Pengaturan'
+                      : 'Customization Studio'}
+                  </p>
+                  <p className="text-[11px] font-bold text-stone-500 truncate">
+                    {activePreset.titleShort}
+                  </p>
+                </div>
+                {[
+                  {
+                    id: 'konten',
+                    label:
+                      lang === 'ID' ? 'Konten Undangan' : 'Invitation Content',
+                    sub: '9 Seksi & Ornamen',
+                  },
+                  {
+                    id: 'tema',
+                    label: lang === 'ID' ? 'Tema & Latar' : 'Theme & Media',
+                    sub: '3 Slot Media & Video 25MB',
+                  },
+                  {
+                    id: 'jadwal',
+                    label: lang === 'ID' ? 'Jadwal Acara' : 'Event Schedule',
+                    sub: '2 Sesi & Google Maps',
+                  },
+                  {
+                    id: 'akun',
+                    label: lang === 'ID' ? 'Akun & Akses' : 'Accounts & Roles',
+                    sub: tierLoginLabel,
+                  },
+                  {
+                    id: 'database',
+                    label: lang === 'ID' ? 'Database' : 'Cloud & Backup',
+                    sub: 'Supabase & JSON',
+                  },
+                ].map((nav) => {
+                  const isAct = simStudioNavTab === nav.id;
+                  return (
+                    <button
+                      key={nav.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSimStudioNavTab(nav.id);
+                      }}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-2xl transition-all flex items-center justify-between gap-2 ${
+                        isAct
+                          ? 'bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white shadow-xs'
+                          : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border border-transparent hover:border-[#D4AF37]/30'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold truncate">
+                          {nav.label}
+                        </p>
+                        <p
+                          className={`text-[10px] truncate ${
+                            isAct ? 'text-white/90' : 'text-stone-500'
+                          }`}
+                        >
+                          {nav.sub}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Right Content Panel (Switches dynamically between konten, tema, jadwal, akun, database) */}
+              <div className="lg:col-span-9 rounded-3xl bg-white border border-[#D4AF37]/40 p-4 sm:p-6 shadow-2xs space-y-5">
+                {simStudioNavTab === 'konten' && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200/80">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                          {lang === 'ID'
+                            ? 'Manajemen Konten & 9 Seksi Undangan Publik'
+                            : 'Public Invitation 9-Section Visibility & Ornaments'}
+                        </span>
+                        <h5 className="font-serif text-base font-extrabold text-stone-900">
+                          {lang === 'ID'
+                            ? 'Atur Visibilitas Seksi (ON/OFF Terhubung ke Undangan Dummy)'
+                            : 'Toggle Section Visibility (Connected Live to Dummy Invitation)'}
+                        </h5>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowcaseViewMode('invitation_sim');
+                          setSimIsOpened(true);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 text-[11px] font-extrabold inline-flex items-center gap-1.5"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Lihat Hasil di Undangan</span>
+                      </button>
+                    </div>
+
+                    {/* Visual Ornaments Quick Toggles */}
+                    <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                        {lang === 'ID'
+                          ? 'Ornamen Editorial & Lencana Atas Foto (Klik untuk Uji Coba):'
+                          : 'Editorial Ornaments & Top Photo Badge (Click to Toggle):'}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          {
+                            key: 'floralCorner' as const,
+                            label: `🌸 Ornamen Sudut Floral: ${simStudioOrnaments.floralCorner ? 'ON' : 'OFF'}`,
+                          },
+                          {
+                            key: 'heroBadge' as const,
+                            label: `🏷️ Lencana Atas Foto Hero: ${simStudioOrnaments.heroBadge ? 'ON' : 'OFF (Default Bersih)'}`,
+                          },
+                          {
+                            key: 'floatingParticles' as const,
+                            label: `✨ Partikel Emas: ${simStudioOrnaments.floatingParticles ? 'ON' : 'OFF'}`,
+                          },
+                          {
+                            key: 'calendarBtn' as const,
+                            label: `📅 Tombol Google Calendar: ${simStudioOrnaments.calendarBtn ? 'ON' : 'OFF'}`,
+                          },
+                        ].map((tog) => (
+                          <button
+                            key={tog.key}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSimStudioOrnaments((prev) => ({
+                                ...prev,
+                                [tog.key]: !prev[tog.key],
+                              }));
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold border transition-all ${
+                              simStudioOrnaments[tog.key]
+                                ? 'bg-emerald-700 text-white border-emerald-600 shadow-2xs'
+                                : 'bg-white text-stone-600 border-stone-300'
+                            }`}
+                          >
+                            {tog.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 9 Invitation Section Cards matching AdminDashboardView */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {[
+                        {
+                          key: 'cover' as const,
+                          num: '01',
+                          title: 'Sampul & Judul Hero',
+                          desc: 'Layar pembuka tirai & judul utama',
+                        },
+                        {
+                          key: 'quote' as const,
+                          num: '02',
+                          title: 'Ayat / Kutipan Doa',
+                          desc: 'Untaian doa & kutipan pembuka',
+                        },
+                        {
+                          key: 'couple' as const,
+                          num: '03',
+                          title: 'Profil Tuan Rumah',
+                          desc: `${activePreset.profileCount} Profil (${activePreset.frameStyle})`,
+                        },
+                        {
+                          key: 'events' as const,
+                          num: '04',
+                          title: 'Rangkaian Acara',
+                          desc: '2 Sesi Jadwal, Dresscode & Maps',
+                        },
+                        {
+                          key: 'story' as const,
+                          num: '05',
+                          title: 'Kisah & Milestone',
+                          desc: isStarterTier
+                            ? '🔒 Eksklusif Paket EXCLUSIVE+'
+                            : '3 Babak Perjalanan Hidup',
+                        },
+                        {
+                          key: 'gallery' as const,
+                          num: '06',
+                          title: 'Galeri Momen HD',
+                          desc: isStarterTier
+                            ? '🔒 Eksklusif Paket EXCLUSIVE+'
+                            : '12 Foto Pre-Event Ultra-HD',
+                        },
+                        {
+                          key: 'rsvp' as const,
+                          num: '07',
+                          title: 'Konfirmasi RSVP',
+                          desc: 'Form Kehadiran & Kuota Pax',
+                        },
+                        {
+                          key: 'gift' as const,
+                          num: '08',
+                          title: 'Amplop Digital EMV',
+                          desc: isRoyalTier
+                            ? 'Bank, QRIS, PayPal & Crypto USDT'
+                            : 'Transfer Bank & QRIS (Domestik)',
+                        },
+                        {
+                          key: 'wishes' as const,
+                          num: '09',
+                          title: 'Ucapan & Penutup',
+                          desc: 'Buku Tamu Live & Balasan Host',
+                        },
+                      ].map((sec) => {
+                        const isOn = simSectionToggles[sec.key];
+                        return (
+                          <div
+                            key={sec.key}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSimSectionToggles((prev) => ({
+                                ...prev,
+                                [sec.key]: !prev[sec.key],
+                              }));
+                            }}
+                            className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                              isOn
+                                ? 'bg-[#FAF3E3]/55 border-[#D4AF37]/60 shadow-2xs'
+                                : 'bg-stone-50 border-stone-200 opacity-75'
+                            }`}
+                          >
+                            <div className="min-w-0 space-y-0.5">
+                              <span className="text-[9px] font-mono font-extrabold text-[#8B6914]">
+                                SEKSI {sec.num}
+                              </span>
+                              <p className="text-xs font-extrabold text-stone-900 truncate">
+                                {sec.title}
+                              </p>
+                              <p className="text-[10px] text-stone-500 truncate">
+                                {sec.desc}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                isOn
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-stone-300 text-stone-700'
+                              }`}
+                            >
+                              {isOn ? 'ON' : 'OFF'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {simStudioNavTab === 'tema' && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200/80">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                          {lang === 'ID'
+                            ? 'Arsitektur 3 Slot Media Terpisah & Video Latar 25 MB'
+                            : '3 Separate Media Slots & 25 MB Video Background'}
+                        </span>
+                        <h5 className="font-serif text-base font-extrabold text-stone-900">
+                          {activePreset.titleShort} — Tema, Foto &amp; Video
+                          Sinematik
+                        </h5>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                        ✓ Supabase CDN Aktif
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                          1. SAMPUL DEPAN (COVER)
+                        </span>
+                        <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300">
+                          <img
+                            src={activePreset.galleryPhotos[0].url}
+                            alt="Cover Slot"
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                            {isStarterTier
+                              ? '1 Foto HD'
+                              : '3 Foto HD • Slideshow'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-stone-600">
+                          Maks 10 MB/foto + Interactive Studio Cropper
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                          2. BANNER HERO ATAS
+                        </span>
+                        <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300">
+                          <img
+                            src={activePreset.galleryPhotos[1].url}
+                            alt="Hero Slot"
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                            Feathered Alpha-Mask
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-stone-600">
+                          Transisi gradasi menyatu mulus dengan kertas krem
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
+                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                          3. WALLPAPER &amp; VIDEO 25 MB
+                        </span>
+                        <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300 bg-stone-900">
+                          <img
+                            src={activePreset.galleryPhotos[2].url}
+                            alt="Wallpaper Slot"
+                            className="w-full h-full object-cover opacity-70"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold bg-black/30">
+                            {isStarterTier
+                              ? '🔒 Video 25MB (EXCLUSIVE+)'
+                              : '🎬 MP4 18.4 MB Aktif'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-stone-600">
+                          Mode Video: Auto-Stretch Responsif (9:16 HP ↔ 16:9 PC)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 space-y-2">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+                          Gaya Transisi Slideshow Latar:
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { id: 'CROSSFADE' as const, label: 'Crossfade Halus' },
+                            { id: 'ZOOM_BLUR' as const, label: 'Zoom & Blur' },
+                            { id: 'SLIDE' as const, label: 'Geser Sinematik' },
+                          ].map((tr) => (
+                            <button
+                              key={tr.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSimStudioTransition(tr.id);
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
+                                simStudioTransition === tr.id
+                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                                  : 'bg-white text-stone-700 border-stone-300'
+                              }`}
+                            >
+                              {tr.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 space-y-2">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+                          Mode Fit Video Latar (MP4/WebM s/d 25 MB):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            {
+                              id: 'AUTO_STRETCH' as const,
+                              label: 'Auto-Stretch (HP & PC)',
+                            },
+                            {
+                              id: 'COVER_CENTER' as const,
+                              label: 'Cover Center Proporsional',
+                            },
+                            { id: 'CONTAIN_FULL' as const, label: 'Contain Utuh' },
+                          ].map((vf) => (
+                            <button
+                              key={vf.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSimVideoFitMode(vf.id);
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
+                                simVideoFitMode === vf.id
+                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                                  : 'bg-white text-stone-700 border-stone-300'
+                              }`}
+                            >
+                              {vf.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {simStudioNavTab === 'jadwal' && (
+                  <div className="space-y-3">
+                    <h5 className="font-serif text-base font-extrabold text-stone-900">
+                      {lang === 'ID'
+                        ? 'Pengaturan 2 Sesi Acara & Titik Koordinat Google Maps'
+                        : '2 Event Sessions & Google Maps Pin Configuration'}
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {activePreset.sessions.map((ses) => (
+                        <div
+                          key={ses.badge}
+                          className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-1.5"
+                        >
+                          <span className="px-2 py-0.5 rounded bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                            {ses.badge}
+                          </span>
+                          <p className="text-sm font-extrabold text-stone-900">
+                            {ses.title}
+                          </p>
+                          <p className="text-xs font-bold text-[#8B6914]">
+                            {ses.date} • {ses.time}
+                          </p>
+                          <p className="text-xs text-stone-600">{ses.venue}</p>
+                          <p className="text-[11px] text-stone-500">
+                            Dresscode: <strong>{ses.dresscode}</strong>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {simStudioNavTab === 'akun' && (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h5 className="font-serif text-base font-extrabold text-stone-900">
+                        Manajemen Akun Login Keluarga &amp; Tim Panitia EO/WO
+                      </h5>
+                      <span className="px-2.5 py-1 rounded-full bg-stone-900 text-[#E6C76B] text-[10px] font-extrabold">
+                        Paket {simPackageTier}: {tierLoginLabel}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {[
+                        {
+                          role: 'Akun Utama 1 (Host / Mempelai Pria)',
+                          user: `${clientSlug}_host1`,
+                          status: 'AKTIF',
+                        },
+                        {
+                          role: 'Akun Utama 2 (Co-Host / Mempelai Wanita)',
+                          user: `${clientSlug}_host2`,
+                          status: 'AKTIF',
+                        },
+                        {
+                          role: 'Akun Keluarga Pria (Orang Tua)',
+                          user: `${clientSlug}_kel1`,
+                          status: isStarterTier ? '🔒 EXCLUSIVE+' : 'AKTIF',
+                        },
+                        {
+                          role: 'Akun Koordinator Panitia EO / WO',
+                          user: `${clientSlug}_wo1`,
+                          status: isStarterTier
+                            ? '🔒 EXCLUSIVE+'
+                            : isRoyalTier
+                              ? 'UNLIMITED WO'
+                              : '3 AKUN WO',
+                        },
+                      ].map((acc) => (
+                        <div
+                          key={acc.user}
+                          className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200 flex items-center justify-between gap-2"
+                        >
+                          <div>
+                            <p className="text-xs font-extrabold text-stone-900">
+                              {acc.role}
+                            </p>
+                            <p className="font-mono text-[10px] text-stone-500">
+                              ID: {acc.user}
+                            </p>
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
+                            {acc.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {simStudioNavTab === 'database' && (
+                  <div className="space-y-3">
+                    <h5 className="font-serif text-base font-extrabold text-stone-900">
+                      Sinkronisasi Cloud Supabase, Google Sheets &amp; Backup JSON
+                    </h5>
+                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2 text-xs text-emerald-950">
+                      <p className="font-extrabold">
+                        ✓ Workspace Terhubung ke Cloud Database &amp; CDN Storage
+                      </p>
+                      <p className="text-[11px] leading-relaxed">
+                        Seluruh perubahan checklist, kontrak vendor, daftar tamu
+                        VIP, dan foto/video undangan otomatis tersimpan secara
+                        real-time serta dapat diekspor ke file Backup JSON kapan
+                        saja.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -3450,23 +3890,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       return;
     }
     const lower = trimmed.toLowerCase();
-    const matched =
-      activeLookupClientGuests.find(
-        (g) =>
+    const matchedItem =
+      allSearchableClientGuests.find(
+        ({ guest: g }) =>
           g.invitationCode.toLowerCase() === lower ||
           g.guestName.toLowerCase() === lower
       ) ||
-      activeLookupClientGuests.find(
-        (g) =>
+      allSearchableClientGuests.find(
+        ({ guest: g }) =>
           g.guestName.toLowerCase().includes(lower) ||
           g.invitationCode.toLowerCase().includes(lower)
       );
-    if (matched) {
+    if (matchedItem) {
       setLookupGateError(null);
       onSelectClientInvitation(
-        selectedLookupClientId,
-        matched.guestName,
-        matched.invitationCode
+        matchedItem.clientId,
+        matchedItem.guest.guestName,
+        matchedItem.guest.invitationCode
       );
       return;
     }
@@ -3484,7 +3924,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   return (
     <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#FAF8F5] text-stone-800 flex flex-col justify-between selection:bg-[#D4AF37]/30">
-      {/* TOP FIXED NAVBAR (Locked at Top + Separate Individual Cards + Automatic Icon-Only on HP) */}
+      {/* TOP FIXED NAVBAR (Clean Brand Subtitle, Concise Links, Clean Language Pill & Manager Button) */}
       <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#D4AF37]/30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
@@ -3531,28 +3971,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   title="GitHub Profile @omeko42"
                 >
                   omeko42
-                </a>{' '}
-                <span className="font-normal text-stone-500 hidden xl:inline">
-                  &bull;{' '}
-                  {lang === 'ID'
-                    ? 'Wedding, Birthday, Graduation, Rapat & Gala Dinner'
-                    : 'Wedding, Birthday, Graduation, Corporate & Gala Dinner'}
-                </span>
+                </a>
               </p>
             </div>
           </div>
 
-          {/* Center Navigation Links — Separate Individual Cards (Masing-Masing) + Automatic Icon-Only on HP */}
+          {/* Center Navigation Links — Katalog | Fitur | Paket */}
           <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
             <a
               href="#showcase"
               onClick={() => setIsCheckoutPageOpen(false)}
-              title="Lihat Katalog Screenshot 5 Modul My Event Planner"
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              title={
+                lang === 'ID'
+                  ? 'Lihat Katalog Interaktif Undangan & 5 Modul Manager'
+                  : 'Explore Interactive Invitation & 5 Manager Modules Showcase'
+              }
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Eye className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Katalog Fitur' : 'Showcase'}
+                {lang === 'ID' ? 'Katalog' : 'Showcase'}
               </span>
             </a>
 
@@ -3564,7 +4002,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Fitur & 6 Modul Manajemen Persiapan Multi-Acara'
                   : 'Features & 6 Multi-Event Readiness Modules'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <LayoutDashboard className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
@@ -3577,10 +4015,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Paket Langganan Komersial (QRIS, Transfer Bank, Kartu Kredit, PayPal & Crypto)'
-                  : 'Commercial Pricing Plans (Credit Card, PayPal & Crypto USDT)'
+                  ? 'Paket Lisensi Komersial (STARTER, EXCLUSIVE & ROYAL VIP)'
+                  : 'Commercial License Packages (STARTER, EXCLUSIVE & ROYAL VIP)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
@@ -3589,77 +4027,44 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </a>
           </nav>
 
-          {/* Right Action Buttons — Separate Individual Cards + Compact Icon-Only on HP */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Bilingual Language & Market Switcher */}
+          {/* Right Action Buttons — Language Switcher + Concise Manager Button */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Bilingual Language Switcher (No broken Windows flag emoji) */}
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
               title={
                 lang === 'ID'
-                  ? 'Ganti Bahasa (ID / EN)'
-                  : 'Switch Language (EN / ID)'
+                  ? 'Ganti Bahasa ke Bahasa Inggris (EN)'
+                  : 'Switch Language to Indonesian (ID)'
               }
-              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 hover:text-[#8B6914] text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Globe className="w-4 h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden sm:inline">
-                {lang === 'ID' ? '🇮🇩 ID' : '🇬🇧 EN'}
-              </span>
-              <span className="sm:hidden text-[10px]">{lang}</span>
+              <span>{lang}</span>
             </button>
 
-            {/* Live Demo Individual Button -> Scrolls to #showcase & Opens Official Product Tour */}
-            <button
-              type="button"
-              onClick={() => {
-                scrollToShowcase();
-                openLightboxAt(activeShowcaseIdx);
-              }}
-              title={
-                lang === 'ID'
-                  ? 'Lihat Tur Screenshot 5 Modul My Event Planner (Layar Penuh)'
-                  : 'Open 5-Module Product Screenshot Tour (Fullscreen)'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs lg:text-sm font-bold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Tur Produk' : 'Product Tour'}
-              </span>
-            </button>
-
-            {/* Login Klien / Dashboard Individual Button */}
+            {/* Concise Manager Portal Button */}
             <button
               type="button"
               onClick={onOpenAdminPortal}
               title={
                 isAdminLoggedIn
                   ? lang === 'ID'
-                    ? `Buka Workspace Dashboard (${adminUserName || 'Admin'})`
-                    : `Open Workspace Dashboard (${adminUserName || 'Admin'})`
+                    ? `Buka Workspace Manager (${adminUserName || 'Admin'})`
+                    : `Open Workspace Manager (${adminUserName || 'Admin'})`
                   : lang === 'ID'
-                    ? 'Masuk ke Portal Klien, Panitia EO/WO, atau Superadmin'
-                    : 'Login to Client, Event Organizer, or Superadmin Portal'
+                    ? 'Masuk ke Portal Manager (Klien, EO/WO & Superadmin)'
+                    : 'Login to Manager Portal (Client, EO/WO & Superadmin)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs lg:text-sm font-extrabold whitespace-nowrap shadow-sm transition-all"
             >
               {isAdminLoggedIn ? (
-                <>
-                  <LayoutDashboard className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                  {adminUserName && (
-                    <span className="hidden xl:inline">({adminUserName})</span>
-                  )}
-                </>
+                <LayoutDashboard className="w-4 h-4 shrink-0" />
               ) : (
-                <>
-                  <KeyRound className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">
-                    {lang === 'ID' ? 'Login Klien' : 'Client Login'}
-                  </span>
-                </>
+                <KeyRound className="w-4 h-4 shrink-0" />
               )}
+              <span>Manager</span>
             </button>
           </div>
         </div>
@@ -4804,25 +5209,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </section>
         ) : (
-          /* MAIN LANDING PAGE VIEW (HERO + SHOWCASE + FITUR + 3 PRICING CARDS) */
+          /* MAIN LANDING PAGE VIEW (COMPACT HERO + 1:1 SHOWCASE + FITUR + 3 PRICING CARDS) */
           <>
-            {/* HERO SECTION */}
-            <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/55 to-[#FAF8F5]">
+            {/* STREAMLINED HERO SECTION + SLEEK 1-LINE PRIVATE GUEST GATE BAR */}
+            <section className="relative overflow-hidden py-6 sm:py-8 border-b border-[#D4AF37]/25 bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3]/55 to-[#FAF8F5]">
               {/* Luxury Editorial Corner Ornaments on Hero */}
               <CatalogFloralCorner
                 position="top-left"
-                size="lg"
-                className="opacity-80"
+                size="md"
+                className="opacity-75"
               />
               <CatalogFloralCorner
                 position="top-right"
-                size="lg"
-                className="opacity-80"
+                size="md"
+                className="opacity-75"
               />
 
-              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+              <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
                 <div
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
                   title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko42"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
@@ -4839,7 +5244,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </span>
                 </div>
 
-                <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[54px] font-bold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.12]">
+                <h2 className="font-editorial text-2xl sm:text-4xl lg:text-[44px] font-bold text-stone-900 tracking-tight max-w-4xl mx-auto leading-[1.14]">
                   {lang === 'ID' ? (
                     <>
                       Platform Manajemen Persiapan Acara &amp;{' '}
@@ -4857,52 +5262,36 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   )}
                 </h2>
 
-                {/* Gold Filigree Crest Divider under Hero Heading */}
-                <div
-                  aria-hidden="true"
-                  className="flex items-center justify-center gap-3 text-[#B68D40]"
-                >
-                  <span className="w-14 sm:w-24 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                  <CatalogEventCrest
-                    eventType={simEventType}
-                    className="w-6 h-6 text-[#B68D40]"
-                  />
-                  <span className="w-14 sm:w-24 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                </div>
-
-                <p className="text-xs sm:text-base text-stone-600 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xs sm:text-sm text-stone-600 max-w-3xl mx-auto leading-relaxed">
                   {lang === 'ID' ? (
                     <>
-                      Satu sistem terpadu untuk mengelola{' '}
-                      <strong>Executive Readiness Tracker</strong>,{' '}
-                      <strong>Checklist Timeline H-6 Bulan s/d Hari-H</strong>,{' '}
-                      <strong>Pagu Anggaran &amp; Kontrak Vendor</strong>,{' '}
-                      <strong>CRM Tamu VIP &amp; Blast WhatsApp 1-Klik</strong>,
-                      serta{' '}
+                      Satu sistem terpadu untuk{' '}
+                      <strong>Readiness Tracker</strong>,{' '}
+                      <strong>Checklist Timeline</strong>,{' '}
+                      <strong>Pagu Moneter &amp; Kontrak Vendor</strong>,{' '}
+                      <strong>CRM Tamu VIP &amp; Blast WhatsApp</strong>, serta{' '}
                       <strong>
-                        Studio Undangan Digital Editorial Interaktif (5 Jenis
-                        Event)
+                        Studio Undangan Digital Editorial (5 Jenis Event)
                       </strong>{' '}
                       dengan privasi penuh.
                     </>
                   ) : (
                     <>
-                      One unified platform to manage your{' '}
-                      <strong>Executive Readiness Tracker</strong>,{' '}
-                      <strong>6-Month Countdown Checklist</strong>,{' '}
-                      <strong>Vendor Budget &amp; Contracts</strong>,{' '}
+                      One unified suite for{' '}
+                      <strong>Readiness Tracking</strong>,{' '}
+                      <strong>Phased Checklists</strong>,{' '}
+                      <strong>Vendor Contracts</strong>,{' '}
                       <strong>1-Click VIP WhatsApp Invitations</strong>, and{' '}
                       <strong>
-                        Interactive Luxury Editorial Digital Invitations (5
-                        Event Types)
+                        Luxury Editorial Digital Invitations (5 Event Types)
                       </strong>{' '}
-                      with full client privacy.
+                      with 100% client privacy.
                     </>
                   )}
                 </p>
 
-                {/* Supported Multi-Event Category Pills (Click to preview live simulation in #showcase) */}
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 max-w-4xl mx-auto">
+                {/* Supported Multi-Event Category Pills + Quick CTAs */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5 max-w-4xl mx-auto">
                   {(
                     [
                       {
@@ -4960,7 +5349,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           scrollToShowcase();
                         }}
                         title={pill.title}
-                        className={`inline-flex items-center px-3.5 py-1.5 rounded-full border text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full transition-all ${
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full border text-[11px] font-extrabold shadow-2xs whitespace-nowrap transition-all ${
                           isCurrentSim
                             ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/30'
                             : 'bg-white/95 hover:bg-[#FAF3E3] border-[#D4AF37]/45 text-stone-800 hover:text-[#8B6914]'
@@ -4970,254 +5359,161 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </button>
                     );
                   })}
-                  <span
-                    title={
-                      lang === 'ID'
-                        ? 'Mendukung Upload Video Background Sinematik s/d 25 MB dengan Auto-Stretch Responsif (9:16 HP ↔ 16:9 PC)'
-                        : 'Supports up to 25 MB Cinematic Video Backgrounds with Adaptive 9:16 Mobile to 16:9 PC Auto-Stretch'
-                    }
-                    className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] sm:text-xs font-extrabold shadow-2xs whitespace-nowrap truncate max-w-full"
-                  >
-                    {lang === 'ID'
-                      ? '🎬 Video Latar 25 MB'
-                      : '🎬 25 MB Video Bg'}
-                  </span>
-                </div>
-
-                {/* Primary Hero CTAs */}
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
-                      setShowcaseViewMode('invitation_sim');
+                      setShowcaseViewMode('dashboard_modules');
                       scrollToShowcase();
                     }}
                     title={
                       lang === 'ID'
-                        ? 'Coba Simulasi Undangan Digital Editorial Interaktif (5 Jenis Event) & Lihat 5 Modul Dashboard'
-                        : 'Try the Interactive Luxury Invitation Simulator (5 Event Types) & Inspect 5 Dashboard Modules'
+                        ? 'Buka Simulasi 5 Modul Manager Dashboard (Tracker, Checklist, Moneter, Tamu, Studio)'
+                        : 'Open 5 Manager Dashboard Modules Simulation'
                     }
-                    className="w-full sm:w-auto max-w-full justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all whitespace-nowrap truncate"
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-extrabold shadow-2xs whitespace-nowrap transition-all ${
+                      showcaseViewMode === 'dashboard_modules'
+                        ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                        : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] border-[#D4AF37]/50 text-[#8B6914]'
+                    }`}
                   >
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span className="whitespace-nowrap truncate">
+                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                    <span>
                       {lang === 'ID'
-                        ? 'Coba Simulasi Undangan & 5 Modul'
-                        : 'Try Live Invitation Sim & 5 Modules'}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={onOpenAdminPortal}
-                    title={
-                      isAdminLoggedIn
-                        ? lang === 'ID'
-                          ? 'Masuk ke Workspace Dashboard'
-                          : 'Enter Workspace Dashboard'
-                        : lang === 'ID'
-                          ? 'Masuk ke Portal Login Klien, Panitia EO/WO, atau Superadmin'
-                          : 'Login to Client, Event Organizer, or Superadmin Portal'
-                    }
-                    className="w-full sm:w-auto max-w-full justify-center inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 font-extrabold text-xs sm:text-sm shadow-sm transition-all whitespace-nowrap truncate"
-                  >
-                    <KeyRound className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                    <span className="whitespace-nowrap truncate">
-                      {isAdminLoggedIn
-                        ? lang === 'ID'
-                          ? 'Masuk ke Workspace Dashboard'
-                          : 'Enter Workspace Dashboard'
-                        : lang === 'ID'
-                          ? 'Portal Login Klien / EO / WO'
-                          : 'Client / EO / WO Login Portal'}
+                        ? 'Simulasi Manager'
+                        : 'Manager Sim'}
                     </span>
                   </button>
                 </div>
 
-                {/* Quick Guest Invitation Lookup Card (Private Guest Gate with Floral Corners) */}
-                <div className="relative overflow-hidden max-w-2xl mx-auto mt-8 p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-[0_12px_36px_rgba(182,141,64,0.14)] text-left">
-                  <CatalogFloralCorner
-                    position="top-left"
-                    size="sm"
-                    className="opacity-45"
-                  />
-                  <CatalogFloralCorner
-                    position="bottom-right"
-                    size="sm"
-                    className="opacity-45"
-                  />
-                  <div className="relative z-20">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                      <p
-                        className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5 whitespace-nowrap truncate"
-                        title={
-                          lang === 'ID'
-                            ? 'Gerbang Privat Tamu Undangan — Masukkan Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar'
-                            : 'Private Guest Invitation Gate — Enter Registered Invitation Code (INV-xxxx) or Guest Name'
-                        }
-                      >
-                        <Search className="w-4 h-4 text-[#B68D40] shrink-0" />
-                        <span className="whitespace-nowrap truncate">
-                          {lang === 'ID'
-                            ? 'Akses Cepat Tamu Undangan (Private Guest Gate)'
-                            : 'Quick Guest Invitation Lookup (Private Guest Gate)'}
-                        </span>
-                      </p>
-                      <span className="inline-flex items-center gap-1.5 max-w-full">
-                        <span
-                          title={
-                            lang === 'ID'
-                              ? 'Undangan klien bersifat privat dan hanya dapat dibuka dengan Kode Undangan (INV-xxxx) atau Nama Tamu yang terdaftar di database acara'
-                              : 'Client invitations are private and require a registered Invitation Code (INV-xxxx) or Guest Name'
-                          }
-                          className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 whitespace-nowrap truncate max-w-full"
-                        >
-                          {lang === 'ID'
-                            ? 'Kode Tamu Wajib'
-                            : 'Guest Code Required'}
-                        </span>
-                        <InfoTooltip
-                          text={
-                            lang === 'ID'
-                              ? 'Undangan klien bersifat privat. Masukkan minimal 3 huruf Nama Tamu yang terdaftar atau Kode INV-xxxx untuk membuka undangan.'
-                              : 'Client invitations are private. Enter at least 3 characters of a registered guest name or INV-xxxx code to open.'
-                          }
-                        />
+                {/* SLEEK 1-LINE PRIVATE GUEST GATE BAR (100% Discreet — Zero Public Client Dropdown) */}
+                <div className="relative max-w-3xl mx-auto pt-1">
+                  <form
+                    onSubmit={handleQuickLookupSubmit}
+                    className="p-2 sm:px-3.5 sm:py-2 rounded-2xl bg-white/95 border border-[#D4AF37]/50 shadow-[0_8px_28px_rgba(182,141,64,0.12)] flex flex-col sm:flex-row sm:items-center gap-2 text-left"
+                  >
+                    <div
+                      className="flex items-center gap-1.5 px-1.5 shrink-0"
+                      title={
+                        lang === 'ID'
+                          ? 'Undangan klien bersifat 100% privat dan tidak dipajang di publik. Ketik Kode Undangan (INV-xxxx) atau Nama Tamu Terdaftar untuk membuka undangan.'
+                          : 'Client invitations are 100% private. Enter your Invitation Code (INV-xxxx) or Registered Guest Name to open.'
+                      }
+                    >
+                      <Lock className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                      <span className="text-[11px] font-extrabold text-stone-800 whitespace-nowrap">
+                        {lang === 'ID'
+                          ? 'Punya Kode Undangan Tamu VIP?'
+                          : 'Have a VIP Guest Code?'}
                       </span>
                     </div>
-                    <form
-                      onSubmit={handleQuickLookupSubmit}
-                      className="grid grid-cols-1 sm:grid-cols-12 gap-2"
-                    >
-                      <div className="sm:col-span-5">
-                        <select
-                          value={selectedLookupClientId}
-                          onChange={(e) => {
-                            setSelectedLookupClientId(e.target.value);
-                            setGuestCodeInput('');
-                            setLookupGateError(null);
-                          }}
-                          title={
-                            lang === 'ID'
-                              ? 'Pilih Acara / Klien Tujuan'
-                              : 'Select Target Event / Client'
-                          }
-                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none truncate"
-                        >
-                          {clientGroups.map((cg) => (
-                            <option key={cg.id} value={cg.id}>
-                              💍 {cg.coupleLabel || cg.clientName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-4 relative">
-                        <input
-                          type="text"
-                          value={guestCodeInput}
-                          onFocus={() => setShowLookupSuggestions(true)}
-                          onBlur={() =>
-                            window.setTimeout(
-                              () => setShowLookupSuggestions(false),
-                              180
-                            )
-                          }
-                          onChange={(e) => {
-                            setGuestCodeInput(e.target.value);
-                            setLookupGateError(null);
-                            setShowLookupSuggestions(true);
-                          }}
-                          placeholder={
-                            lang === 'ID'
-                              ? 'Ketik min. 3 huruf / INV-0001...'
-                              : 'Type min. 3 chars / INV-0001...'
-                          }
-                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                        />
-                        {showLookupSuggestions &&
-                          filteredLookupGuests.length > 0 && (
-                            <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-white border border-[#D4AF37]/45 shadow-xl overflow-hidden max-h-60 overflow-y-auto">
-                              <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Tamu Terdaftar Cocok'
-                                    : 'Matching Registered Guests'}
-                                </span>
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Klik untuk Buka'
-                                    : 'Click to Open'}
-                                </span>
-                              </div>
-                              {filteredLookupGuests.map((guest) => (
-                                <button
-                                  key={guest.id}
-                                  type="button"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    setGuestCodeInput(guest.guestName);
-                                    setLookupGateError(null);
-                                    setShowLookupSuggestions(false);
-                                    onSelectClientInvitation(
-                                      selectedLookupClientId,
-                                      guest.guestName,
-                                      guest.invitationCode
-                                    );
-                                  }}
-                                  className="w-full text-left px-3 py-2 hover:bg-[#FAF3E3]/60 border-b border-stone-100 last:border-b-0 transition-colors flex items-center justify-between gap-2"
-                                >
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-bold text-stone-900 truncate">
-                                      {guest.guestName}
-                                    </p>
-                                    <p className="text-[10px] text-stone-500 truncate">
-                                      {guest.institution || guest.guestType}
-                                    </p>
-                                  </div>
-                                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] font-mono text-[10px] font-bold">
-                                    {guest.invitationCode}
-                                  </span>
-                                </button>
-                              ))}
+
+                    <div className="relative flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={guestCodeInput}
+                        onFocus={() => setShowLookupSuggestions(true)}
+                        onBlur={() =>
+                          window.setTimeout(
+                            () => setShowLookupSuggestions(false),
+                            180
+                          )
+                        }
+                        onChange={(e) => {
+                          setGuestCodeInput(e.target.value);
+                          setLookupGateError(null);
+                          setShowLookupSuggestions(true);
+                        }}
+                        placeholder={
+                          lang === 'ID'
+                            ? 'Ketik Kode INV-xxxx / Nama Terdaftar (min. 3 huruf)...'
+                            : 'Type INV-xxxx Code / Registered Name (min. 3 chars)...'
+                        }
+                        className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-medium text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                      />
+                      {showLookupSuggestions &&
+                        filteredLookupGuests.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl bg-white border border-[#D4AF37]/45 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                            <div className="px-3 py-1.5 bg-[#FAF3E3]/70 border-b border-[#D4AF37]/25 text-[10px] font-extrabold text-[#8B6914] flex items-center justify-between">
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Tamu Terdaftar Cocok'
+                                  : 'Matching Registered Guest'}
+                              </span>
+                              <span>
+                                {lang === 'ID'
+                                  ? 'Klik untuk Buka'
+                                  : 'Click to Open'}
+                              </span>
                             </div>
-                          )}
-                      </div>
-                      <div className="sm:col-span-3">
-                        <button
-                          type="submit"
-                          title={
-                            lang === 'ID'
-                              ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
-                              : 'Verify Guest Code & Open Private Invitation'
-                          }
-                          className="w-full h-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap truncate"
-                        >
-                          {lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}
-                        </button>
-                      </div>
-                    </form>
-                    {lookupGateError && (
-                      <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center gap-2">
-                        <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                        <span>{lookupGateError}</span>
-                      </div>
-                    )}
-                  </div>
+                            {filteredLookupGuests.map((item) => (
+                              <button
+                                key={`${item.clientId}-${item.guest.id}`}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setGuestCodeInput(item.guest.guestName);
+                                  setLookupGateError(null);
+                                  setShowLookupSuggestions(false);
+                                  onSelectClientInvitation(
+                                    item.clientId,
+                                    item.guest.guestName,
+                                    item.guest.invitationCode
+                                  );
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-[#FAF3E3]/60 border-b border-stone-100 last:border-b-0 transition-colors flex items-center justify-between gap-2"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-stone-900 truncate">
+                                    {item.guest.guestName}
+                                  </p>
+                                  <p className="text-[10px] text-stone-500 truncate">
+                                    {item.guest.institution ||
+                                      item.guest.guestType}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 text-[#8B6914] font-mono text-[10px] font-bold">
+                                  {item.guest.invitationCode}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      title={
+                        lang === 'ID'
+                          ? 'Verifikasi Kode Tamu & Buka Undangan Privat'
+                          : 'Verify Guest Code & Open Private Invitation'
+                      }
+                      className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-2xs transition-all whitespace-nowrap shrink-0"
+                    >
+                      {lang === 'ID' ? 'Buka Undangan' : 'Open Invite'}
+                    </button>
+                  </form>
+
+                  {lookupGateError && (
+                    <div className="mt-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-[11px] font-semibold flex items-center justify-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>{lookupGateError}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
 
-            {/* SECTION 1: DUAL-EXPERIENCE INTERACTIVE SHOWCASE (LIVE INVITATION SIMULATOR + 5 DASHBOARD MODULES) */}
+            {/* SECTION 1: DUAL-EXPERIENCE INTERACTIVE SHOWCASE (1:1 INVITATION SIMULATOR + 1:1 MANAGER WORKSPACE) */}
             <section
               id="showcase"
-              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6"
+              className="py-10 sm:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5"
             >
               {/* Section Header + Privacy Note Pill + 2-Tab Mode Switcher */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                      Official Interactive Showcase &bull; 100% Privacy-Safe
+                      Official 1:1 Interactive Tour &bull; 100% Privacy-Safe
                     </span>
                     <span className="inline-flex items-center gap-1.5 max-w-full">
                       <span
@@ -5235,21 +5531,21 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <InfoTooltip
                         text={
                           lang === 'ID'
-                            ? 'Simulasi di bawah menggunakan data sampel fiktif resmi. Undangan asli klien (seperti Agung & Selo) beserta musik kustom tetap 100% privat di balik Guest Code Gate.'
-                            : 'The simulation below uses official fictional sample data. Real client invitations and custom audio remain 100% private behind the Guest Code Gate.'
+                            ? 'Simulasi di bawah menggunakan antarmuka asli 1:1 aplikasi (Undangan Publik & Manager Dashboard) dengan data sampel fiktif resmi.'
+                            : 'The simulation below uses the exact 1:1 application interface (Public Invitation & Manager Dashboard) with official fictional sample data.'
                         }
                       />
                     </span>
                   </div>
                   <h3 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Simulasi Undangan Editorial Mewah & 5 Modul Dashboard'
-                      : 'Luxury Editorial Invitation Simulator & 5 Dashboard Modules'}
+                      ? 'Katalog Interaktif 1:1 — Undangan Editorial & Manager'
+                      : '1:1 Interactive Showcase — Editorial Invitation & Manager'}
                   </h3>
                   <p className="text-xs sm:text-sm text-stone-600 max-w-3xl leading-relaxed">
                     {lang === 'ID'
-                      ? 'Rasakan langsung keindahan sampul pembuka, kurva leher kubah (Arch-Dome), tata letak adaptif 1 atau 2 profil, hingga kartu amplop ber-chip emas—atau jelajahi 5 modul dashboard pengelola acara.'
-                      : 'Experience the interactive cover curtain-lift, Arch-Dome portraits, adaptive 1 or 2 host layouts, and metallic EMV digital envelope—or inspect the 5 admin dashboard modules.'}
+                      ? 'Uji coba langsung tampilan Undangan Tamu dan ruang kerja Manager persis sampai ke akar-akarnya, lengkap dengan simulasi perbedaan paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
+                      : 'Test the exact 1:1 Guest Invitation and Manager Workspace down to every detail, complete with live STARTER, EXCLUSIVE, and ROYAL VIP plan simulation.'}
                   </p>
                 </div>
 
@@ -5260,8 +5556,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     onClick={() => setShowcaseViewMode('invitation_sim')}
                     title={
                       lang === 'ID'
-                        ? 'Coba Simulasi Undangan Digital Interaktif untuk 5 Jenis Event'
-                        : 'Try Interactive Digital Invitation Simulator across 5 Event Types'
+                        ? 'Coba Simulasi Undangan Digital Interaktif 1:1 untuk 5 Jenis Event'
+                        : 'Try 1:1 Interactive Digital Invitation Simulator across 5 Event Types'
                     }
                     className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
                       showcaseViewMode === 'invitation_sim'
@@ -5271,8 +5567,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   >
                     <span>
                       {lang === 'ID'
-                        ? '✨ Simulasi Undangan Interaktif (5 Jenis Event)'
-                        : '✨ Interactive Invitation Simulator (5 Events)'}
+                        ? '✨ Simulasi Undangan 1:1 (5 Event)'
+                        : '✨ 1:1 Invitation Sim (5 Events)'}
                     </span>
                   </button>
                   <button
@@ -5280,8 +5576,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     onClick={() => setShowcaseViewMode('dashboard_modules')}
                     title={
                       lang === 'ID'
-                        ? 'Lihat 5 Screenshot Resolusi Tinggi Modul Dashboard Pengelola'
-                        : 'Inspect 5 High-Resolution Admin Dashboard Module Screenshots'
+                        ? 'Coba Simulasi 5 Modul Manager Dashboard 1:1 (Tracker, Checklist, Moneter, Tamu, Studio)'
+                        : 'Try 1:1 5 Manager Dashboard Modules Simulation'
                     }
                     className={`px-3.5 py-2 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all ${
                       showcaseViewMode === 'dashboard_modules'
@@ -5291,16 +5587,98 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   >
                     <span>
                       {lang === 'ID'
-                        ? '📊 5 Modul Dashboard Pengelola'
-                        : '📊 5 Admin Dashboard Modules'}
+                        ? '📊 5 Modul Manager 1:1'
+                        : '📊 1:1 5 Manager Modules'}
                     </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ================================================================= */}
+              {/* INTERACTIVE PACKAGE TIER SIMULATOR BAR (STARTER • EXCLUSIVE • VIP) */}
+              {/* ================================================================= */}
+              <div className="p-3 sm:p-4 rounded-3xl bg-gradient-to-r from-[#1C1613] via-[#241B15] to-[#1C1613] text-[#FAF3E3] border border-[#D4AF37]/55 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#E6C76B] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Simulasi Paket Lisensi:'
+                        : 'Simulate License Tier:'}
+                    </span>
+                  </span>
+                  <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/15">
+                    {(
+                      [
+                        {
+                          tier: 'STARTER' as const,
+                          label: 'STARTER • Rp 50rb',
+                          badge: '50 Tamu',
+                        },
+                        {
+                          tier: 'EXCLUSIVE' as const,
+                          label: 'EXCLUSIVE • Rp 299rb',
+                          badge: '350 Tamu + Video 25MB',
+                        },
+                        {
+                          tier: 'ROYAL VIP' as const,
+                          label: 'ROYAL VIP • Rp 599rb',
+                          badge: 'Unlimited + PayPal/Crypto',
+                        },
+                      ] as const
+                    ).map((tItem) => {
+                      const isTierActive = simPackageTier === tItem.tier;
+                      return (
+                        <button
+                          key={tItem.tier}
+                          type="button"
+                          onClick={() => setSimPackageTier(tItem.tier)}
+                          title={`${tItem.label} (${tItem.badge})`}
+                          className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all flex items-center gap-1.5 ${
+                            isTierActive
+                              ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-2xs'
+                              : 'text-[#FAF3E3]/85 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <span>{tItem.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Live Active Tier Capabilities Summary Strip */}
+                <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 text-[11px]">
+                  <span className="px-2.5 py-1 rounded-xl bg-white/10 border border-[#D4AF37]/35 text-[#E6C76B] font-bold">
+                    {simPackageTier === 'STARTER'
+                      ? lang === 'ID'
+                        ? 'Mode STARTER: Maks 50 Tamu • 2 Login Inti • Galeri HD & Video 25MB Terkunci'
+                        : 'STARTER Mode: Max 50 Guests • 2 Logins • HD Gallery & 25MB Video Locked'
+                      : simPackageTier === 'EXCLUSIVE'
+                        ? lang === 'ID'
+                          ? 'Mode EXCLUSIVE: 350 Tamu • 4 Login + 3 WO • Galeri 12 Foto & Video 25MB Aktif'
+                          : 'EXCLUSIVE Mode: 350 Guests • 4 Logins + 3 WO • 12-Photo Gallery & 25MB Video Active'
+                        : lang === 'ID'
+                          ? 'Mode ROYAL VIP: Unlimited Tamu & WO • Video 25MB • Amplop PayPal & Crypto Aktif'
+                          : 'ROYAL VIP Mode: Unlimited Guests & WO • 25MB Video • PayPal & Crypto Active'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSelectPackageForCheckout(simPackageTier)
+                    }
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] whitespace-nowrap shadow-2xs transition-all"
+                  >
+                    {lang === 'ID'
+                      ? `Pesan Paket ${simPackageTier}`
+                      : `Order ${simPackageTier}`}
                   </button>
                 </div>
               </div>
 
               {showcaseViewMode === 'invitation_sim' ? (
                 /* ================================================================= */
-                /* TAB 1: LIVE INTERACTIVE EDITORIAL INVITATION SIMULATOR (5 EVENTS) */
+                /* TAB 1: 1:1 REPLICA OF PublicInvitationView.tsx (5 EVENT PRESETS)  */
                 /* ================================================================= */
                 (() => {
                   const simPreset =
@@ -5386,45 +5764,53 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }`}
                             >
                               {lang === 'ID'
-                                ? '📖 Isi Undangan Editorial'
-                                : '📖 Editorial Inside'}
+                                ? '📖 Isi Undangan 1:1'
+                                : '📖 1:1 Inside View'}
                             </button>
                           </div>
                         </div>
                       </div>
 
-                      {/* Main Grid: Live Interactive Invitation Stage (8 Cols) + Editorial Highlights Card (4 Cols) */}
+                      {/* Main Grid: Live 1:1 PublicInvitationView Stage (8 Cols) + Editorial & Tier Highlights Card (4 Cols) */}
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* LEFT / MAIN: Interactive Editorial Invitation Stage */}
-                        <div className="lg:col-span-8 rounded-3xl bg-[#FAF6EE] border-2 border-[#D4AF37]/55 shadow-[0_22px_56px_rgba(28,25,23,0.14)] overflow-hidden relative">
-                          {/* Top Floating Luxury Bar inside Simulator */}
-                          <div className="px-4 py-3 bg-white/90 backdrop-blur-md border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2 z-30 relative">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-7 h-7 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0">
-                                <CatalogEventCrest
-                                  eventType={simPreset.eventType}
-                                  className="w-4 h-4"
-                                />
-                              </span>
-                              <span className="font-editorial text-sm sm:text-base font-bold text-stone-900 tracking-wide truncate">
-                                {simPreset.monogram} &mdash;{' '}
-                                {simPreset.titleShort}
-                              </span>
+                        {/* LEFT / MAIN: 1:1 PublicInvitationView Stage */}
+                        <div className="lg:col-span-8 rounded-3xl bg-[#F7F1E5] border-2 border-[#D4AF37]/55 shadow-[0_22px_56px_rgba(28,25,23,0.14)] overflow-hidden relative">
+                          {/* 1:1 REPLICA OF PublicInvitationView.tsx TOP STICKY HEADER */}
+                          <div className="px-3.5 sm:px-5 py-2.5 bg-white/95 backdrop-blur-md border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2 z-30 relative shadow-2xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FBF6EA] to-[#EFE1C6] border border-[#D4AF37]/55 text-[#8B6914] flex items-center justify-center font-serif text-xs font-extrabold shrink-0 shadow-2xs">
+                                {simPreset.monogram}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-serif text-xs sm:text-sm font-bold text-stone-800 tracking-wide truncate">
+                                  {simPreset.titleShort}
+                                </p>
+                                <p className="text-[10px] text-[#9A742B] font-semibold truncate">
+                                  {simPreset.eventDate}
+                                </p>
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                              {/* Spinning Vinyl Audio Indicator */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {/* Spinning Vinyl Audio Pill + Equalizer Bars (Matching PublicInvitationView 1:1) */}
                               <div
                                 title={simPreset.musicTrackLabel}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white text-[10px] font-extrabold shadow-2xs"
                               >
-                                <span className="w-4 h-4 rounded-full bg-stone-900 text-[#D4AF37] flex items-center justify-center animate-spin-slow">
+                                <span className="w-4 h-4 rounded-full bg-stone-950 text-[#E6C76B] flex items-center justify-center animate-spin-slow shrink-0">
                                   <Music className="w-2.5 h-2.5" />
                                 </span>
-                                <span className="hidden sm:inline truncate max-w-[140px]">
+                                <span className="hidden sm:inline truncate max-w-[115px]">
                                   {simPreset.musicTrackLabel}
                                 </span>
                               </div>
+
+                              <span
+                                title="3 Lagu Latar Tersedia di Playlist"
+                                className="hidden md:inline-flex items-center px-2 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold"
+                              >
+                                🎵 3
+                              </span>
 
                               <button
                                 type="button"
@@ -5434,33 +5820,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     ? 'Buka Simulasi Undangan di Layar Penuh'
                                     : 'Open Invitation Simulator in Fullscreen'
                                 }
-                                className="px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 text-[11px] font-extrabold inline-flex items-center gap-1 transition-all whitespace-nowrap"
+                                className="p-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 transition-all"
                               >
-                                <Maximize2 className="w-3 h-3 shrink-0" />
-                                <span className="hidden sm:inline">
-                                  {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
-                                </span>
+                                <Maximize2 className="w-3.5 h-3.5" />
                               </button>
 
+                              {/* Manager Switch Pill (Matching PublicInvitationView's Manager Button) */}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (simIsOpened) {
-                                    setSimIsOpeningAnim(false);
-                                    setSimIsOpened(false);
-                                  } else {
-                                    handleTriggerSimCoverOpen();
-                                  }
-                                }}
-                                className="px-3 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 text-[11px] font-extrabold transition-all whitespace-nowrap"
+                                onClick={() =>
+                                  setShowcaseViewMode('dashboard_modules')
+                                }
+                                title="Buka Simulasi Manager Dashboard (Pengaturan Studio, Tamu, Moneter, Checklist)"
+                                className="px-2.5 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/40 text-[10px] font-extrabold inline-flex items-center gap-1 transition-all whitespace-nowrap"
                               >
-                                {simIsOpened
-                                  ? lang === 'ID'
-                                    ? 'Lihat Sampul'
-                                    : 'View Cover'
-                                  : lang === 'ID'
-                                    ? 'Buka Undangan'
-                                    : 'Open Invitation'}
+                                <Lock className="w-3 h-3 text-[#D4AF37]" />
+                                <span>Manager</span>
                               </button>
                             </div>
                           </div>
@@ -5484,26 +5859,38 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               />
                               <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-900/55 to-stone-950/80 backdrop-blur-[1.5px]" />
 
-                              {/* Optional Floral Corners on Cover Gate */}
+                              {/* Optional Floral Corners on Cover Gate (Controlled by simStudioOrnaments.floralCorner) */}
                               <CatalogFloralCorner
                                 position="top-left"
                                 size="lg"
-                                enabled={simPreset.showFloral}
+                                enabled={
+                                  simStudioOrnaments.floralCorner &&
+                                  simPreset.showFloral
+                                }
                               />
                               <CatalogFloralCorner
                                 position="top-right"
                                 size="lg"
-                                enabled={simPreset.showFloral}
+                                enabled={
+                                  simStudioOrnaments.floralCorner &&
+                                  simPreset.showFloral
+                                }
                               />
                               <CatalogFloralCorner
                                 position="bottom-left"
                                 size="lg"
-                                enabled={simPreset.showFloral}
+                                enabled={
+                                  simStudioOrnaments.floralCorner &&
+                                  simPreset.showFloral
+                                }
                               />
                               <CatalogFloralCorner
                                 position="bottom-right"
                                 size="lg"
-                                enabled={simPreset.showFloral}
+                                enabled={
+                                  simStudioOrnaments.floralCorner &&
+                                  simPreset.showFloral
+                                }
                               />
 
                               <div className="relative z-20 max-w-lg mx-auto space-y-5 text-[#FFFDF9]">
@@ -5542,7 +5929,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     Bapak/Ibu Tamu Kehormatan
                                   </p>
                                   <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#D4AF37]/25 border border-[#D4AF37]/60 text-[#F3D77D] font-mono text-[10px] font-extrabold">
-                                    VIP PASS &bull; INV-0001 (2 Pax)
+                                    VIP PASS &bull; INV-0001 (2 Pax) &bull;{' '}
+                                    {simPackageTier}
                                   </span>
                                 </div>
 
@@ -5564,7 +5952,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </div>
                           ) : (
                             /* ======================================================= */
-                            /* OPENED EDITORIAL INVITATION STAGE (simIsOpened === true)*/
+                            /* 1:1 OPENED EDITORIAL INVITATION STAGE (simIsOpened)     */
                             /* ======================================================= */
                             (() => {
                               const safeGalleryIdx =
@@ -5583,634 +5971,921 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   simEnvelopeIdx %
                                     DUMMY_ENVELOPE_CHANNELS.length
                                 ];
+                              const isStarterSim = simPackageTier === 'STARTER';
+                              const isRoyalSim = simPackageTier === 'ROYAL VIP';
 
                               return (
-                                <div className="max-h-[760px] overflow-y-auto bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE2] relative">
-                                  {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS */}
-                                  <div className="relative">
+                                <div className="max-h-[780px] overflow-y-auto bg-[#F7F1E5] p-3 sm:p-5 relative">
+                                  {/* Inner Luxury Cream Card (Matching PublicInvitationView 1:1) */}
+                                  <div className="rounded-3xl bg-[#FFFDF9]/95 border border-[#D4AF37]/40 shadow-[0_14px_44px_rgba(182,141,64,0.12)] overflow-hidden relative">
+                                    {/* 4 Animated Gold Floral Corners on Invitation Card */}
                                     <CatalogFloralCorner
                                       position="top-left"
                                       size="md"
-                                      enabled={simPreset.showFloral}
+                                      enabled={
+                                        simStudioOrnaments.floralCorner &&
+                                        simPreset.showFloral
+                                      }
                                     />
                                     <CatalogFloralCorner
                                       position="top-right"
                                       size="md"
-                                      enabled={simPreset.showFloral}
+                                      enabled={
+                                        simStudioOrnaments.floralCorner &&
+                                        simPreset.showFloral
+                                      }
+                                    />
+                                    <CatalogFloralCorner
+                                      position="bottom-left"
+                                      size="md"
+                                      enabled={
+                                        simStudioOrnaments.floralCorner &&
+                                        simPreset.showFloral
+                                      }
+                                    />
+                                    <CatalogFloralCorner
+                                      position="bottom-right"
+                                      size="md"
+                                      enabled={
+                                        simStudioOrnaments.floralCorner &&
+                                        simPreset.showFloral
+                                      }
                                     />
 
-                                    <div
-                                      className="relative h-64 sm:h-80 w-full overflow-hidden"
-                                      style={{
-                                        maskImage:
-                                          'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                        WebkitMaskImage:
-                                          'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
-                                      }}
-                                    >
-                                      <img
-                                        src={simPreset.heroImage}
-                                        alt={simPreset.titleFull}
-                                        className="w-full h-full object-cover animate-ken-burns"
-                                      />
-                                      <div className="absolute inset-0 bg-gradient-to-t from-[#FAF6EE] via-transparent to-black/25" />
-                                    </div>
-
-                                    {/* Editorial Title & Crest Overlapping Feathered Bottom */}
-                                    <div className="relative z-10 -mt-12 sm:-mt-16 px-4 sm:px-8 text-center space-y-3">
-                                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
-                                        <CatalogEventCrest
-                                          eventType={simPreset.eventType}
-                                          className="w-3.5 h-3.5 text-[#B68D40]"
-                                        />
-                                        <span>{simBadge}</span>
-                                      </div>
-
-                                      <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
-                                        {simPreset.titleFull}
-                                      </h4>
-
-                                      {/* Gold Filigree Divider */}
+                                    {/* 1. FEATHERED HERO BANNER WITH ALPHA MASK & KEN BURNS (Zero Top Blocking Badge by Default) */}
+                                    <div className="relative">
                                       <div
-                                        aria-hidden="true"
-                                        className="flex items-center justify-center gap-2.5 text-[#B68D40]"
+                                        className="relative aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden"
+                                        style={{
+                                          maskImage:
+                                            'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                          WebkitMaskImage:
+                                            'linear-gradient(to bottom, black 0%, black 66%, rgba(0,0,0,0.45) 84%, transparent 100%)',
+                                        }}
                                       >
-                                        <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                        <CatalogEventCrest
-                                          eventType={simPreset.eventType}
-                                          className="w-5 h-5"
+                                        <img
+                                          src={simPreset.heroImage}
+                                          alt={simPreset.titleFull}
+                                          className="w-full h-full object-cover animate-ken-burns"
                                         />
-                                        <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#FFFDF9] via-transparent to-black/20" />
                                       </div>
 
-                                      {/* 4-Box Countdown + Save to Calendar Pill */}
-                                      <div className="pt-2 flex flex-col items-center gap-3">
-                                        <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
-                                          {[
-                                            {
-                                              val: '14',
-                                              lbl:
-                                                lang === 'ID' ? 'Hari' : 'Days',
-                                            },
-                                            {
-                                              val: '08',
-                                              lbl:
-                                                lang === 'ID' ? 'Jam' : 'Hours',
-                                            },
-                                            {
-                                              val: '45',
-                                              lbl:
-                                                lang === 'ID'
-                                                  ? 'Menit'
-                                                  : 'Mins',
-                                            },
-                                            {
-                                              val: String(
-                                                countdownSeconds % 60
-                                              ).padStart(2, '0'),
-                                              lbl:
-                                                lang === 'ID'
-                                                  ? 'Detik'
-                                                  : 'Secs',
-                                            },
-                                          ].map((cd) => (
-                                            <div
-                                              key={cd.lbl}
-                                              className="py-2 px-2 rounded-2xl bg-white/90 border border-[#D4AF37]/45 shadow-2xs text-center"
-                                            >
-                                              <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
-                                                {cd.val}
-                                              </span>
-                                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
-                                                {cd.lbl}
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                        <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
-                                          <Calendar className="w-3.5 h-3.5" />
-                                          <span>
-                                            {lang === 'ID'
-                                              ? 'Simpan ke Google Calendar'
-                                              : 'Save to Google Calendar'}
+                                      {/* Subtle Mode Indicator Pill at Top-Right of Hero */}
+                                      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+                                        {!isStarterSim && (
+                                          <span className="px-2.5 py-1 rounded-full bg-stone-950/75 backdrop-blur-md border border-[#D4AF37]/50 text-[#E6C76B] text-[9px] font-extrabold">
+                                            🎬 Video Latar 25MB ({simVideoFitMode})
                                           </span>
+                                        )}
+                                        <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/50 text-[#8B6914] text-[9px] font-extrabold">
+                                          Paket {simPackageTier}
                                         </span>
                                       </div>
-                                    </div>
-                                  </div>
 
-                                  <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-8">
-                                    {/* 2. AYAT / KUTIPAN PEMBUKA (QUOTE CARD) */}
-                                    <div className="max-w-2xl mx-auto p-5 rounded-3xl bg-white/90 border border-[#D4AF37]/40 shadow-2xs text-center space-y-2 relative overflow-hidden">
-                                      <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
-                                        {lang === 'ID'
-                                          ? 'Kutipan & Untaian Doa Pembuka'
-                                          : 'Opening Blessing & Quote'}
-                                      </span>
-                                      <p className="font-editorial text-sm sm:text-base italic text-stone-700 leading-relaxed">
-                                        {simPreset.quote}
-                                      </p>
-                                    </div>
+                                      {/* Editorial Title & Crest Overlapping Feathered Bottom (-mt-8 sm:-mt-12 matching PublicInvitationView) */}
+                                      <div className="relative z-10 -mt-8 sm:-mt-12 px-4 sm:px-8 text-center space-y-3">
+                                        {simStudioOrnaments.heroBadge && (
+                                          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-[0.22em] shadow-2xs">
+                                            <CatalogEventCrest
+                                              eventType={simPreset.eventType}
+                                              className="w-3.5 h-3.5 text-[#B68D40]"
+                                            />
+                                            <span>{simBadge}</span>
+                                          </div>
+                                        )}
 
-                                    {/* 3. PROFIL MEMPELAI / TOKOH UTAMA */}
-                                    <div className="space-y-5">
-                                      <div className="text-center max-w-xl mx-auto space-y-1.5">
-                                        <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
-                                          {simBadge}
+                                        <p className="text-[10px] font-extrabold uppercase tracking-[0.28em] text-[#9A742B]">
+                                          {simPreset.eventDate} &bull;{' '}
+                                          {simPreset.eventVenue}
                                         </p>
-                                        <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
-                                          {simSectionTitle}
-                                        </h5>
+
+                                        <h4 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 leading-tight max-w-2xl mx-auto">
+                                          {simPreset.titleFull}
+                                        </h4>
+
+                                        {/* Gold Filigree Divider */}
                                         <div
                                           aria-hidden="true"
-                                          className="flex items-center justify-center gap-2 pt-1"
+                                          className="flex items-center justify-center gap-2.5 text-[#B68D40]"
                                         >
-                                          <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                                          <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
-                                          <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                          <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                          <CatalogEventCrest
+                                            eventType={simPreset.eventType}
+                                            className="w-5 h-5"
+                                          />
+                                          <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                        </div>
+
+                                        {/* 4-Box Countdown + Save to Calendar Pill */}
+                                        <div className="pt-1 flex flex-col items-center gap-3">
+                                          <div className="grid grid-cols-4 gap-2 max-w-xs w-full mx-auto">
+                                            {[
+                                              {
+                                                val: '14',
+                                                lbl:
+                                                  lang === 'ID'
+                                                    ? 'Hari'
+                                                    : 'Days',
+                                              },
+                                              {
+                                                val: '08',
+                                                lbl:
+                                                  lang === 'ID'
+                                                    ? 'Jam'
+                                                    : 'Hours',
+                                              },
+                                              {
+                                                val: '45',
+                                                lbl:
+                                                  lang === 'ID'
+                                                    ? 'Menit'
+                                                    : 'Mins',
+                                              },
+                                              {
+                                                val: String(
+                                                  countdownSeconds % 60
+                                                ).padStart(2, '0'),
+                                                lbl:
+                                                  lang === 'ID'
+                                                    ? 'Detik'
+                                                    : 'Secs',
+                                              },
+                                            ].map((cd) => (
+                                              <div
+                                                key={cd.lbl}
+                                                className="py-2 px-2 rounded-2xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs text-center"
+                                              >
+                                                <span className="font-editorial text-lg sm:text-xl font-bold text-[#8B6914] block leading-none">
+                                                  {cd.val}
+                                                </span>
+                                                <span className="text-[9px] font-extrabold uppercase tracking-wider text-stone-500">
+                                                  {cd.lbl}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+
+                                          {simStudioOrnaments.calendarBtn && (
+                                            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold">
+                                              <Calendar className="w-3.5 h-3.5" />
+                                              <span>
+                                                {lang === 'ID'
+                                                  ? 'Simpan ke Kalender'
+                                                  : 'Save to Calendar'}
+                                              </span>
+                                            </span>
+                                          )}
                                         </div>
                                       </div>
+                                    </div>
 
-                                      {simPreset.profileCount === 2 &&
-                                      simPreset.host2 ? (
-                                        /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
-                                        <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
-                                          <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                            <CatalogFloralCorner
-                                              position="top-left"
-                                              size="sm"
-                                              enabled={simPreset.showFloral}
-                                            />
-                                            <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                              <img
-                                                src={simPreset.host1.photo}
-                                                alt={simPreset.host1.name}
-                                                className={`${frameClassForHost} object-cover`}
-                                              />
-                                            </div>
-                                            <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                              {simPreset.host1.role}
-                                            </span>
-                                            <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                              {simPreset.host1.name}
-                                            </h6>
-                                            <p className="text-[11px] text-stone-600 leading-relaxed">
-                                              {simPreset.host1.parents}
-                                            </p>
-                                          </div>
-
-                                          <div className="md:col-span-1 flex items-center justify-center py-1">
-                                            <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
-                                              &amp;
-                                            </span>
-                                          </div>
-
-                                          <div className="md:col-span-5 p-5 rounded-3xl bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                            <CatalogFloralCorner
-                                              position="top-right"
-                                              size="sm"
-                                              enabled={simPreset.showFloral}
-                                            />
-                                            <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
-                                              <img
-                                                src={simPreset.host2.photo}
-                                                alt={simPreset.host2.name}
-                                                className={`${frameClassForHost} object-cover`}
-                                              />
-                                            </div>
-                                            <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                              {simPreset.host2.role}
-                                            </span>
-                                            <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                                              {simPreset.host2.name}
-                                            </h6>
-                                            <p className="text-[11px] text-stone-600 leading-relaxed">
-                                              {simPreset.host2.parents}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT */
-                                        <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                                          <CatalogFloralCorner
-                                            position="top-left"
-                                            size="sm"
-                                            enabled={simPreset.showFloral}
-                                          />
-                                          <CatalogFloralCorner
-                                            position="top-right"
-                                            size="sm"
-                                            enabled={simPreset.showFloral}
-                                          />
-                                          <div
-                                            className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
-                                              simPreset.frameStyle === 'CIRCLE'
-                                                ? 'rounded-full'
-                                                : simPreset.frameStyle ===
-                                                    'EDITORIAL_RECT'
-                                                  ? 'rounded-2xl'
-                                                  : 'rounded-t-[999px] rounded-b-2xl'
-                                            }`}
-                                          >
-                                            <img
-                                              src={simPreset.host1.photo}
-                                              alt={simPreset.host1.name}
-                                              className={`${frameClassForHost} object-cover`}
-                                            />
-                                          </div>
-                                          <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                                            {simPreset.host1.role}
+                                    <div className="px-4 sm:px-8 py-8 sm:py-10 space-y-9">
+                                      {/* 2. AYAT / KUTIPAN PEMBUKA (QUOTE CARD - Controlled by simSectionToggles.quote) */}
+                                      {simSectionToggles.quote && (
+                                        <div className="max-w-2xl mx-auto p-5 rounded-3xl bg-[#FAF6EE]/90 border border-[#D4AF37]/40 shadow-2xs text-center space-y-2 relative overflow-hidden">
+                                          <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
+                                            {lang === 'ID'
+                                              ? 'Kutipan & Untaian Doa Pembuka'
+                                              : 'Opening Blessing & Quote'}
                                           </span>
-                                          <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
-                                            {simPreset.host1.name}
-                                          </h6>
-                                          {simPreset.host1.parents && (
-                                            <p className="text-xs text-stone-600 leading-relaxed">
-                                              {simPreset.host1.parents}
+                                          <p className="font-editorial text-sm sm:text-base italic text-stone-700 leading-relaxed">
+                                            {simPreset.quote}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* 3. PROFIL MEMPELAI / TOKOH UTAMA (Controlled by simSectionToggles.couple) */}
+                                      {simSectionToggles.couple && (
+                                        <div className="space-y-5">
+                                          {/* Flowing Open Editorial Section Header matching PublicInvitationView */}
+                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                              {simBadge}
                                             </p>
+                                            <h5 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                              {simSectionTitle}
+                                            </h5>
+                                            <div
+                                              aria-hidden="true"
+                                              className="flex items-center justify-center gap-2 pt-1"
+                                            >
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                            </div>
+                                          </div>
+
+                                          {simPreset.profileCount === 2 &&
+                                          simPreset.host2 ? (
+                                            /* 2-PROFILE ARCH-DOME LAYOUT (WEDDING) */
+                                            <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center max-w-3xl mx-auto">
+                                              <div className="md:col-span-5 p-5 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                                <CatalogFloralCorner
+                                                  position="top-left"
+                                                  size="sm"
+                                                  enabled={
+                                                    simStudioOrnaments.floralCorner &&
+                                                    simPreset.showFloral
+                                                  }
+                                                />
+                                                <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                                  <img
+                                                    src={simPreset.host1.photo}
+                                                    alt={simPreset.host1.name}
+                                                    className={`${frameClassForHost} object-cover`}
+                                                  />
+                                                </div>
+                                                <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                                  {simPreset.host1.role}
+                                                </span>
+                                                <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                                  {simPreset.host1.name}
+                                                </h6>
+                                                <p className="text-[11px] text-stone-600 leading-relaxed">
+                                                  {simPreset.host1.parents}
+                                                </p>
+                                              </div>
+
+                                              <div className="md:col-span-1 flex items-center justify-center py-1">
+                                                <span className="font-script text-4xl sm:text-5xl text-[#B68D40]">
+                                                  &amp;
+                                                </span>
+                                              </div>
+
+                                              <div className="md:col-span-5 p-5 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/40 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                                <CatalogFloralCorner
+                                                  position="top-right"
+                                                  size="sm"
+                                                  enabled={
+                                                    simStudioOrnaments.floralCorner &&
+                                                    simPreset.showFloral
+                                                  }
+                                                />
+                                                <div className="p-1.5 rounded-t-[999px] rounded-b-2xl border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md">
+                                                  <img
+                                                    src={simPreset.host2.photo}
+                                                    alt={simPreset.host2.name}
+                                                    className={`${frameClassForHost} object-cover`}
+                                                  />
+                                                </div>
+                                                <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                                  {simPreset.host2.role}
+                                                </span>
+                                                <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900 leading-snug">
+                                                  {simPreset.host2.name}
+                                                </h6>
+                                                <p className="text-[11px] text-stone-600 leading-relaxed">
+                                                  {simPreset.host2.parents}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            /* 1-PROFILE CENTERED SPOTLIGHT LAYOUT */
+                                            <div className="max-w-md mx-auto p-6 rounded-3xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 shadow-sm text-center flex flex-col items-center space-y-3 relative overflow-hidden">
+                                              <CatalogFloralCorner
+                                                position="top-left"
+                                                size="sm"
+                                                enabled={
+                                                  simStudioOrnaments.floralCorner &&
+                                                  simPreset.showFloral
+                                                }
+                                              />
+                                              <CatalogFloralCorner
+                                                position="top-right"
+                                                size="sm"
+                                                enabled={
+                                                  simStudioOrnaments.floralCorner &&
+                                                  simPreset.showFloral
+                                                }
+                                              />
+                                              <div
+                                                className={`p-1.5 border-2 border-[#D4AF37]/65 bg-gradient-to-b from-[#FAF3E3] to-white shadow-md ${
+                                                  simPreset.frameStyle ===
+                                                  'CIRCLE'
+                                                    ? 'rounded-full'
+                                                    : simPreset.frameStyle ===
+                                                        'EDITORIAL_RECT'
+                                                      ? 'rounded-2xl'
+                                                      : 'rounded-t-[999px] rounded-b-2xl'
+                                                }`}
+                                              >
+                                                <img
+                                                  src={simPreset.host1.photo}
+                                                  alt={simPreset.host1.name}
+                                                  className={`${frameClassForHost} object-cover`}
+                                                />
+                                              </div>
+                                              <span className="px-3 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                                                {simPreset.host1.role}
+                                              </span>
+                                              <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 leading-snug">
+                                                {simPreset.host1.name}
+                                              </h6>
+                                              {simPreset.host1.parents && (
+                                                <p className="text-xs text-stone-600 leading-relaxed">
+                                                  {simPreset.host1.parents}
+                                                </p>
+                                              )}
+                                            </div>
                                           )}
                                         </div>
                                       )}
-                                    </div>
 
-                                    {/* 4. RANGKAIAN JADWAL ACARA (2 SESI DUMMY + DRESSCODE + GOOGLE MAPS) */}
-                                    <div className="max-w-3xl mx-auto space-y-3">
-                                      <div className="text-center space-y-1">
-                                        <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
-                                          {lang === 'ID'
-                                            ? 'Rangkaian Jadwal & Lokasi Acara'
-                                            : 'Event Schedule & Venue'}
-                                        </span>
-                                        <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
-                                          {simPreset.eventTitle}
-                                        </h6>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {simPreset.sessions.map((ses) => (
-                                          <div
-                                            key={ses.badge}
-                                            className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-2.5 flex flex-col justify-between"
-                                          >
-                                            <div className="space-y-1.5">
-                                              <span className="inline-block px-2.5 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
-                                                {ses.badge}
-                                              </span>
-                                              <h6 className="font-editorial text-lg font-bold text-stone-900">
-                                                {ses.title}
-                                              </h6>
-                                              <p className="text-xs font-extrabold text-[#8B6914]">
-                                                {ses.date} &bull; {ses.time}
-                                              </p>
-                                              <p className="text-xs text-stone-600 flex items-start gap-1.5">
-                                                <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
-                                                <span>{ses.venue}</span>
-                                              </p>
-                                              <p className="text-[11px] text-stone-500">
-                                                <strong>Dresscode:</strong>{' '}
-                                                {ses.dresscode}
-                                              </p>
+                                      {/* 4. RANGKAIAN JADWAL ACARA (Controlled by simSectionToggles.events) */}
+                                      {simSectionToggles.events && (
+                                        <div className="max-w-3xl mx-auto space-y-4">
+                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                              {lang === 'ID'
+                                                ? 'Rangkaian Jadwal & Lokasi Acara'
+                                                : 'Event Schedule & Venue'}
+                                            </p>
+                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                              {simPreset.eventTitle}
+                                            </h6>
+                                            <div
+                                              aria-hidden="true"
+                                              className="flex items-center justify-center gap-2 pt-1"
+                                            >
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
                                             </div>
-                                            <div className="pt-2 border-t border-stone-200/70 flex items-center justify-between gap-2">
-                                              <a
-                                                href={ses.mapsUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold transition-all"
+                                          </div>
+
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {simPreset.sessions.map((ses) => (
+                                              <div
+                                                key={ses.badge}
+                                                className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-2.5 flex flex-col justify-between"
                                               >
-                                                <MapPin className="w-3 h-3" />
-                                                <span>
-                                                  {lang === 'ID'
-                                                    ? 'Buka Google Maps'
-                                                    : 'Open Google Maps'}
-                                                </span>
-                                              </a>
-                                              <span className="text-[10px] font-bold text-emerald-700">
-                                                ✓ QR Gate Ready
-                                              </span>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {/* 5. KISAH PERJALANAN / MILESTONE & GALERI INTERAKTIF (3 FOTO DUMMY) */}
-                                    <div className="max-w-3xl mx-auto space-y-4">
-                                      <div className="text-center space-y-1">
-                                        <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#8B6914]">
-                                          {lang === 'ID'
-                                            ? 'Kisah Perjalanan & Galeri Resolusi Tinggi'
-                                            : 'Milestone Story & High-Resolution Gallery'}
-                                        </span>
-                                        <h6 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
-                                          {lang === 'ID'
-                                            ? 'Momen Berharga & Galeri Interaktif'
-                                            : 'Cherished Milestones & Interactive Gallery'}
-                                        </h6>
-                                      </div>
-
-                                      {/* 3 Milestones Row */}
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        {simPreset.milestones.map((ms) => (
-                                          <div
-                                            key={ms.year + ms.title}
-                                            className="p-3.5 rounded-2xl bg-white/90 border border-[#D4AF37]/40 space-y-1"
-                                          >
-                                            <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[10px] font-extrabold">
-                                              {ms.year}
-                                            </span>
-                                            <p className="text-xs font-extrabold text-stone-900">
-                                              {ms.title}
-                                            </p>
-                                            <p className="text-[11px] text-stone-600 leading-relaxed">
-                                              {ms.desc}
-                                            </p>
-                                          </div>
-                                        ))}
-                                      </div>
-
-                                      {/* Interactive Gallery Viewer with 3 Clickable Thumbnails */}
-                                      <div className="p-3.5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-3">
-                                        <div className="relative h-56 sm:h-72 rounded-2xl overflow-hidden bg-stone-900">
-                                          <img
-                                            src={activeGalleryPhoto.url}
-                                            alt={activeGalleryPhoto.caption}
-                                            className="w-full h-full object-cover transition-all duration-500"
-                                          />
-                                          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between gap-2 text-white">
-                                            <span className="text-xs font-bold truncate">
-                                              {activeGalleryPhoto.caption}
-                                            </span>
-                                            <span className="px-2 py-0.5 rounded-md bg-[#D4AF37] text-stone-950 font-mono text-[10px] font-extrabold shrink-0">
-                                              {safeGalleryIdx + 1} /{' '}
-                                              {simPreset.galleryPhotos.length}
-                                            </span>
+                                                <div className="space-y-1.5">
+                                                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                                                    {ses.badge}
+                                                  </span>
+                                                  <h6 className="font-editorial text-lg font-bold text-stone-900">
+                                                    {ses.title}
+                                                  </h6>
+                                                  <p className="text-xs font-extrabold text-[#8B6914]">
+                                                    {ses.date} &bull; {ses.time}
+                                                  </p>
+                                                  <p className="text-xs text-stone-600 flex items-start gap-1.5">
+                                                    <MapPin className="w-3.5 h-3.5 text-[#B68D40] shrink-0 mt-0.5" />
+                                                    <span>{ses.venue}</span>
+                                                  </p>
+                                                  <p className="text-[11px] text-stone-500">
+                                                    <strong>Dresscode:</strong>{' '}
+                                                    {ses.dresscode}
+                                                  </p>
+                                                </div>
+                                                <div className="pt-2 border-t border-stone-200/70 flex items-center justify-between gap-2">
+                                                  <a
+                                                    href={ses.mapsUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold transition-all"
+                                                  >
+                                                    <MapPin className="w-3 h-3" />
+                                                    <span>
+                                                      {lang === 'ID'
+                                                        ? 'Buka Google Maps'
+                                                        : 'Open Google Maps'}
+                                                    </span>
+                                                  </a>
+                                                  <span className="text-[10px] font-bold text-emerald-700">
+                                                    ✓ QR Gate Ready
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
                                         </div>
+                                      )}
 
-                                        <div className="grid grid-cols-3 gap-2.5">
-                                          {simPreset.galleryPhotos.map(
-                                            (gItem, gIdx) => {
-                                              const isCurr =
-                                                safeGalleryIdx === gIdx;
-                                              return (
+                                      {/* 5. KISAH PERJALANAN & GALERI MOMEN HD (Dynamically responds to STARTER vs EXCLUSIVE/ROYAL VIP) */}
+                                      {(simSectionToggles.story ||
+                                        simSectionToggles.gallery) && (
+                                        <div className="max-w-3xl mx-auto space-y-4">
+                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                              {lang === 'ID'
+                                                ? 'Kisah Perjalanan & Galeri Momen HD'
+                                                : 'Milestone Story & HD Photo Gallery'}
+                                            </p>
+                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                              {lang === 'ID'
+                                                ? 'Momen Berharga & Galeri Interaktif'
+                                                : 'Cherished Milestones & Interactive Gallery'}
+                                            </h6>
+                                            <div
+                                              aria-hidden="true"
+                                              className="flex items-center justify-center gap-2 pt-1"
+                                            >
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                            </div>
+                                          </div>
+
+                                          {isStarterSim ? (
+                                            /* STARTER TIER LOCK NOTICE FOR STORY & 12-PHOTO HD GALLERY */
+                                            <div className="p-5 rounded-3xl bg-[#FAF3E3]/80 border border-[#D4AF37]/50 text-center space-y-2.5">
+                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900 text-[#E6C76B] text-[10px] font-extrabold">
+                                                <Lock className="w-3 h-3" />
+                                                <span>
+                                                  FITUR PAKET EXCLUSIVE &amp;
+                                                  ROYAL VIP
+                                                </span>
+                                              </span>
+                                              <p className="text-xs font-bold text-stone-800 max-w-lg mx-auto">
+                                                {lang === 'ID'
+                                                  ? 'Pada Paket STARTER (Rp 50rb), seksi Kisah Perjalanan & Galeri 12 Foto HD tidak ditampilkan. Klik tombol di bawah untuk menguji tampilan Paket EXCLUSIVE atau ROYAL VIP:'
+                                                  : 'In STARTER Plan, Milestone Story & 12-Photo HD Gallery are hidden. Click below to preview EXCLUSIVE or ROYAL VIP:'}
+                                              </p>
+                                              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                                                 <button
-                                                  key={gItem.url}
                                                   type="button"
                                                   onClick={() =>
-                                                    setSimGalleryIdx(gIdx)
+                                                    setSimPackageTier(
+                                                      'EXCLUSIVE'
+                                                    )
                                                   }
-                                                  className={`relative h-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                                                    isCurr
-                                                      ? 'border-[#B68D40] ring-2 ring-[#D4AF37]/40 scale-[1.01]'
-                                                      : 'border-transparent opacity-75 hover:opacity-100'
-                                                  }`}
+                                                  className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] text-xs font-extrabold"
                                                 >
-                                                  <img
-                                                    src={gItem.url}
-                                                    alt={gItem.caption}
-                                                    className="w-full h-full object-cover"
-                                                  />
+                                                  Aktifkan Simulasi EXCLUSIVE
                                                 </button>
-                                              );
-                                            }
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* 6. SIMULASI FORM RSVP & BUKU TAMU DUMMY INTERAKTIF */}
-                                    <div className="max-w-3xl mx-auto p-4 sm:p-6 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-4">
-                                      <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <div>
-                                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                                            {lang === 'ID'
-                                              ? 'Simulasi RSVP & Buku Tamu Doa Restu'
-                                              : 'Interactive RSVP & Guestbook Simulation'}
-                                          </span>
-                                          <h6 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
-                                            {lang === 'ID'
-                                              ? `${combinedWishes.length} Ucapan Tamu VIP & Balasan Tuan Rumah`
-                                              : `${combinedWishes.length} VIP Guest Wishes & Host Replies`}
-                                          </h6>
-                                        </div>
-                                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
-                                          ✓ Uji Kirim Ucapan Live
-                                        </span>
-                                      </div>
-
-                                      {/* Interactive Mini RSVP & Wish Form */}
-                                      <form
-                                        onSubmit={handleSubmitSimWish}
-                                        className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5"
-                                      >
-                                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                                          <input
-                                            type="text"
-                                            value={simWishName}
-                                            onChange={(e) =>
-                                              setSimWishName(e.target.value)
-                                            }
-                                            placeholder={
-                                              lang === 'ID'
-                                                ? 'Nama Anda (contoh: Budi & Keluarga)...'
-                                                : 'Your Name (e.g. John & Family)...'
-                                            }
-                                            className="sm:col-span-5 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                          />
-                                          <select
-                                            value={simRsvpStatus}
-                                            onChange={(e) =>
-                                              setSimRsvpStatus(
-                                                e.target.value as
-                                                  | 'HADIR'
-                                                  | 'BERHALANGAN'
-                                              )
-                                            }
-                                            className="sm:col-span-4 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                          >
-                                            <option value="HADIR">
-                                              {lang === 'ID'
-                                                ? '✓ Hadir di Acara'
-                                                : '✓ Attending'}
-                                            </option>
-                                            <option value="BERHALANGAN">
-                                              {lang === 'ID'
-                                                ? '🙏 Berhalangan (Doa Restu)'
-                                                : '🙏 Warm Regards'}
-                                            </option>
-                                          </select>
-                                          <select
-                                            value={simRsvpPax}
-                                            onChange={(e) =>
-                                              setSimRsvpPax(
-                                                Number(e.target.value)
-                                              )
-                                            }
-                                            className="sm:col-span-3 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                          >
-                                            <option value={1}>1 Pax</option>
-                                            <option value={2}>2 Pax</option>
-                                            <option value={3}>3 Pax</option>
-                                            <option value={4}>4 Pax</option>
-                                          </select>
-                                        </div>
-
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                          <input
-                                            type="text"
-                                            value={simWishText}
-                                            onChange={(e) =>
-                                              setSimWishText(e.target.value)
-                                            }
-                                            placeholder={
-                                              lang === 'ID'
-                                                ? 'Tulis ucapan doa restu simulasi atau langsung klik tombol kirim...'
-                                                : 'Write a sample wish or click send directly...'
-                                            }
-                                            className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 focus:border-[#B68D40] focus:outline-none"
-                                          />
-                                          <button
-                                            type="submit"
-                                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
-                                          >
-                                            <Send className="w-3.5 h-3.5" />
-                                            <span>
-                                              {lang === 'ID'
-                                                ? 'Kirim Ucapan Dummy'
-                                                : 'Send Dummy Wish'}
-                                            </span>
-                                          </button>
-                                        </div>
-
-                                        {simWishFeedback && (
-                                          <p className="text-[11px] font-extrabold text-emerald-700">
-                                            {simWishFeedback}
-                                          </p>
-                                        )}
-                                      </form>
-
-                                      {/* List of Guestbook Wishes */}
-                                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                                        {combinedWishes.map((w) => (
-                                          <div
-                                            key={w.id}
-                                            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 space-y-2"
-                                          >
-                                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                              <div>
-                                                <p className="text-xs font-extrabold text-stone-900">
-                                                  {w.senderName}
-                                                </p>
-                                                <p className="text-[10px] text-stone-500">
-                                                  {w.senderTitle} &bull;{' '}
-                                                  {w.timestamp}
-                                                </p>
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setSimPackageTier(
+                                                      'ROYAL VIP'
+                                                    )
+                                                  }
+                                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-xs font-extrabold"
+                                                >
+                                                  Aktifkan Simulasi ROYAL VIP
+                                                </button>
                                               </div>
-                                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
-                                                {w.attendanceBadge}
-                                              </span>
                                             </div>
-                                            <p className="text-xs text-stone-700 leading-relaxed">
-                                              &ldquo;{w.message}&rdquo;
-                                            </p>
-                                            {w.hostReply && (
-                                              <div className="p-2.5 rounded-xl bg-[#FAF3E3]/80 border-l-2 border-[#B68D40] text-[11px] text-stone-700">
-                                                <span className="font-extrabold text-[#8B6914] block">
-                                                  Balasan Tuan Rumah (
-                                                  {simPreset.titleShort}):
-                                                </span>
-                                                <span>{w.hostReply}</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {/* 7. AMPLOP DIGITAL BER-CHIP EMV EMAS INTERAKTIF (4 KANAL DUMMY) */}
-                                    <div className="max-w-3xl mx-auto p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border-2 border-[#D4AF37]/65 shadow-md space-y-4 relative overflow-hidden">
-                                      <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2.5">
-                                          <CatalogGoldEmvChip className="w-10 h-8" />
-                                          <div>
-                                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B] block">
-                                              Amplop Digital Multi-Valuta (EMV
-                                              Gold Chip)
-                                            </span>
-                                            <h6 className="font-editorial text-lg font-bold text-white">
-                                              {activeEnvelope.provider}
-                                            </h6>
-                                          </div>
-                                        </div>
-                                        <span className="px-2.5 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[10px] font-extrabold">
-                                          {activeEnvelope.badge}
-                                        </span>
-                                      </div>
-
-                                      {/* 4 Channel Selector Pills */}
-                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                        {DUMMY_ENVELOPE_CHANNELS.map(
-                                          (env, envIdx) => {
-                                            const isAct =
-                                              activeEnvelope.id === env.id;
-                                            return (
-                                              <button
-                                                key={env.id}
-                                                type="button"
-                                                onClick={() =>
-                                                  setSimEnvelopeIdx(envIdx)
-                                                }
-                                                className={`py-2 px-2.5 rounded-xl text-[11px] font-extrabold border transition-all truncate ${
-                                                  isAct
-                                                    ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37]'
-                                                    : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
-                                                }`}
-                                              >
-                                                {env.label}
-                                              </button>
-                                            );
-                                          }
-                                        )}
-                                      </div>
-
-                                      <div className="p-3.5 rounded-2xl bg-black/40 border border-[#D4AF37]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                        <div className="min-w-0">
-                                          <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white break-all">
-                                            {activeEnvelope.accountNumber}
-                                          </p>
-                                          <p className="text-xs text-[#E6C76B] mt-0.5">
-                                            a.n. {simPreset.titleShort} (Data
-                                            Simulasi Resmi)
-                                          </p>
-                                        </div>
-
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleCopySimEnvelope(
-                                              activeEnvelope.id,
-                                              activeEnvelope.accountNumber
-                                            )
-                                          }
-                                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
-                                        >
-                                          {copiedSimEnvelopeKey ===
-                                          activeEnvelope.id ? (
-                                            <>
-                                              <Check className="w-4 h-4 text-emerald-950" />
-                                              <span>
-                                                ✓ Nomor Dummy Tersalin!
-                                              </span>
-                                            </>
                                           ) : (
                                             <>
-                                              <Copy className="w-3.5 h-3.5" />
-                                              <span>Salin Rekening Dummy</span>
+                                              {/* 3 Milestones Row */}
+                                              {simSectionToggles.story && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                  {simPreset.milestones.map(
+                                                    (ms) => (
+                                                      <div
+                                                        key={ms.year + ms.title}
+                                                        className="p-3.5 rounded-2xl bg-white/95 border border-[#D4AF37]/40 space-y-1 shadow-2xs"
+                                                      >
+                                                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[10px] font-extrabold">
+                                                          {ms.year}
+                                                        </span>
+                                                        <p className="text-xs font-extrabold text-stone-900">
+                                                          {ms.title}
+                                                        </p>
+                                                        <p className="text-[11px] text-stone-600 leading-relaxed">
+                                                          {ms.desc}
+                                                        </p>
+                                                      </div>
+                                                    )
+                                                  )}
+                                                </div>
+                                              )}
+
+                                              {/* Interactive Gallery Viewer with 3 Clickable Thumbnails */}
+                                              {simSectionToggles.gallery && (
+                                                <div className="p-3.5 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-3">
+                                                  <div className="relative h-56 sm:h-72 rounded-2xl overflow-hidden bg-stone-900">
+                                                    <img
+                                                      src={
+                                                        activeGalleryPhoto.url
+                                                      }
+                                                      alt={
+                                                        activeGalleryPhoto.caption
+                                                      }
+                                                      className="w-full h-full object-cover transition-all duration-500"
+                                                    />
+                                                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between gap-2 text-white">
+                                                      <span className="text-xs font-bold truncate">
+                                                        {
+                                                          activeGalleryPhoto.caption
+                                                        }
+                                                      </span>
+                                                      <span className="px-2 py-0.5 rounded-md bg-[#D4AF37] text-stone-950 font-mono text-[10px] font-extrabold shrink-0">
+                                                        {safeGalleryIdx + 1} /{' '}
+                                                        {
+                                                          simPreset
+                                                            .galleryPhotos
+                                                            .length
+                                                        }
+                                                      </span>
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="grid grid-cols-3 gap-2.5">
+                                                    {simPreset.galleryPhotos.map(
+                                                      (gItem, gIdx) => {
+                                                        const isCurr =
+                                                          safeGalleryIdx ===
+                                                          gIdx;
+                                                        return (
+                                                          <button
+                                                            key={gItem.url}
+                                                            type="button"
+                                                            onClick={() =>
+                                                              setSimGalleryIdx(
+                                                                gIdx
+                                                              )
+                                                            }
+                                                            className={`relative h-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                                                              isCurr
+                                                                ? 'border-[#B68D40] ring-2 ring-[#D4AF37]/40 scale-[1.01]'
+                                                                : 'border-transparent opacity-75 hover:opacity-100'
+                                                            }`}
+                                                          >
+                                                            <img
+                                                              src={gItem.url}
+                                                              alt={
+                                                                gItem.caption
+                                                              }
+                                                              className="w-full h-full object-cover"
+                                                            />
+                                                          </button>
+                                                        );
+                                                      }
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )}
                                             </>
                                           )}
-                                        </button>
+                                        </div>
+                                      )}
+
+                                      {/* 6. SIMULASI FORM RSVP & BUKU TAMU DUMMY INTERAKTIF (Controlled by rsvp / wishes) */}
+                                      {(simSectionToggles.rsvp ||
+                                        simSectionToggles.wishes) && (
+                                        <div className="max-w-3xl mx-auto space-y-4">
+                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                              {lang === 'ID'
+                                                ? 'Konfirmasi Kehadiran & Doa Restu'
+                                                : 'RSVP Attendance & Guestbook Wishes'}
+                                            </p>
+                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                              {lang === 'ID'
+                                                ? 'RSVP & Ucapan Tamu Kehormatan'
+                                                : 'VIP Guest RSVP & Wishes'}
+                                            </h6>
+                                            <div
+                                              aria-hidden="true"
+                                              className="flex items-center justify-center gap-2 pt-1"
+                                            >
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                            </div>
+                                          </div>
+
+                                          <div className="p-4 sm:p-6 rounded-3xl bg-white/95 border border-[#D4AF37]/45 shadow-2xs space-y-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                              <div className="flex flex-wrap items-center gap-1.5">
+                                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                                                  ✓ INV-0001 • Terhubung Database
+                                                </span>
+                                                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
+                                                  ✓ 2 Sesi Acara
+                                                </span>
+                                              </div>
+                                              <span className="text-[11px] font-extrabold text-stone-600">
+                                                {combinedWishes.length} Ucapan
+                                                Masuk
+                                              </span>
+                                            </div>
+
+                                            {/* Interactive Mini RSVP & Wish Form */}
+                                            <form
+                                              onSubmit={handleSubmitSimWish}
+                                              className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5"
+                                            >
+                                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                                <input
+                                                  type="text"
+                                                  value={simWishName}
+                                                  onChange={(e) =>
+                                                    setSimWishName(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  placeholder={
+                                                    lang === 'ID'
+                                                      ? 'Nama Anda (contoh: Budi & Keluarga)...'
+                                                      : 'Your Name (e.g. John & Family)...'
+                                                  }
+                                                  className="sm:col-span-5 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                                />
+                                                <select
+                                                  value={simRsvpStatus}
+                                                  onChange={(e) =>
+                                                    setSimRsvpStatus(
+                                                      e.target.value as
+                                                        | 'HADIR'
+                                                        | 'BERHALANGAN'
+                                                    )
+                                                  }
+                                                  className="sm:col-span-4 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                                >
+                                                  <option value="HADIR">
+                                                    {lang === 'ID'
+                                                      ? '✓ Hadir di Acara'
+                                                      : '✓ Attending'}
+                                                  </option>
+                                                  <option value="BERHALANGAN">
+                                                    {lang === 'ID'
+                                                      ? '🙏 Berhalangan (Doa Restu)'
+                                                      : '🙏 Warm Regards'}
+                                                  </option>
+                                                </select>
+                                                <select
+                                                  value={simRsvpPax}
+                                                  onChange={(e) =>
+                                                    setSimRsvpPax(
+                                                      Number(e.target.value)
+                                                    )
+                                                  }
+                                                  className="sm:col-span-3 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                                >
+                                                  <option value={1}>
+                                                    1 Pax
+                                                  </option>
+                                                  <option value={2}>
+                                                    2 Pax
+                                                  </option>
+                                                  <option value={3}>
+                                                    3 Pax
+                                                  </option>
+                                                  <option value={4}>
+                                                    4 Pax
+                                                  </option>
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col sm:flex-row gap-2">
+                                                <input
+                                                  type="text"
+                                                  value={simWishText}
+                                                  onChange={(e) =>
+                                                    setSimWishText(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  placeholder={
+                                                    lang === 'ID'
+                                                      ? 'Tulis ucapan doa restu simulasi atau langsung klik tombol kirim...'
+                                                      : 'Write a sample wish or click send directly...'
+                                                  }
+                                                  className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 focus:border-[#B68D40] focus:outline-none"
+                                                />
+                                                <button
+                                                  type="submit"
+                                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
+                                                >
+                                                  <Send className="w-3.5 h-3.5" />
+                                                  <span>
+                                                    {lang === 'ID'
+                                                      ? 'Kirim RSVP & Ucapan'
+                                                      : 'Send RSVP & Wish'}
+                                                  </span>
+                                                </button>
+                                              </div>
+
+                                              {simWishFeedback && (
+                                                <p className="text-[11px] font-extrabold text-emerald-700">
+                                                  {simWishFeedback}
+                                                </p>
+                                              )}
+                                            </form>
+
+                                            {/* List of Guestbook Wishes */}
+                                            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                                              {combinedWishes.map((w) => (
+                                                <div
+                                                  key={w.id}
+                                                  className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 space-y-2"
+                                                >
+                                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div>
+                                                      <p className="text-xs font-extrabold text-stone-900">
+                                                        {w.senderName}
+                                                      </p>
+                                                      <p className="text-[10px] text-stone-500">
+                                                        {w.senderTitle} &bull;{' '}
+                                                        {w.timestamp}
+                                                      </p>
+                                                    </div>
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
+                                                      {w.attendanceBadge}
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-xs text-stone-700 leading-relaxed">
+                                                    &ldquo;{w.message}&rdquo;
+                                                  </p>
+                                                  {w.hostReply && (
+                                                    <div className="p-2.5 rounded-xl bg-[#FAF3E3]/80 border-l-2 border-[#B68D40] text-[11px] text-stone-700">
+                                                      <span className="font-extrabold text-[#8B6914] block">
+                                                        Balasan Tuan Rumah (
+                                                        {simPreset.titleShort}):
+                                                      </span>
+                                                      <span>{w.hostReply}</span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 7. AMPLOP DIGITAL BER-CHIP EMV EMAS INTERAKTIF + ALAMAT KADO FISIK */}
+                                      {simSectionToggles.gift && (
+                                        <div className="max-w-3xl mx-auto space-y-4">
+                                          <div className="text-center max-w-xl mx-auto space-y-1.5">
+                                            <p className="text-[10px] font-extrabold uppercase tracking-[0.26em] text-[#9A742B]">
+                                              {lang === 'ID'
+                                                ? 'Tanda Kasih & Amplop Digital'
+                                                : 'Digital Envelope & Gift Registry'}
+                                            </p>
+                                            <h6 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+                                              {lang === 'ID'
+                                                ? 'Amplop Digital & Pengiriman Kado'
+                                                : 'Digital Gift & Physical Delivery'}
+                                            </h6>
+                                            <div
+                                              aria-hidden="true"
+                                              className="flex items-center justify-center gap-2 pt-1"
+                                            >
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                              <span className="w-2 h-2 rotate-45 bg-[#C5A059]" />
+                                              <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                                            </div>
+                                          </div>
+
+                                          <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#251C16] to-[#33261D] text-[#FAF3E3] border-2 border-[#D4AF37]/65 shadow-md space-y-4 relative overflow-hidden">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                              <div className="flex items-center gap-2.5">
+                                                <CatalogGoldEmvChip className="w-10 h-8" />
+                                                <div>
+                                                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B] block">
+                                                    Amplop Digital Multi-Valuta
+                                                    (EMV Gold Chip)
+                                                  </span>
+                                                  <h6 className="font-editorial text-lg font-bold text-white">
+                                                    {activeEnvelope.provider}
+                                                  </h6>
+                                                </div>
+                                              </div>
+                                              <span className="px-2.5 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] text-[10px] font-extrabold">
+                                                {activeEnvelope.badge}
+                                              </span>
+                                            </div>
+
+                                            {/* 4 Channel Selector Pills (PayPal & Crypto show ROYAL VIP badge) */}
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                              {DUMMY_ENVELOPE_CHANNELS.map(
+                                                (env, envIdx) => {
+                                                  const isAct =
+                                                    activeEnvelope.id ===
+                                                    env.id;
+                                                  const isIntlChannel =
+                                                    env.id === 'paypal' ||
+                                                    env.id === 'usdt';
+                                                  return (
+                                                    <button
+                                                      key={env.id}
+                                                      type="button"
+                                                      onClick={() => {
+                                                        if (
+                                                          isIntlChannel &&
+                                                          !isRoyalSim
+                                                        ) {
+                                                          setSimPackageTier(
+                                                            'ROYAL VIP'
+                                                          );
+                                                        }
+                                                        setSimEnvelopeIdx(
+                                                          envIdx
+                                                        );
+                                                      }}
+                                                      className={`py-2 px-2.5 rounded-xl text-[11px] font-extrabold border transition-all truncate ${
+                                                        isAct
+                                                          ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 border-[#D4AF37]'
+                                                          : 'bg-white/10 hover:bg-white/20 text-[#FAF3E3] border-white/15'
+                                                      }`}
+                                                    >
+                                                      {isIntlChannel &&
+                                                      !isRoyalSim
+                                                        ? `🔒 ${env.label} (VIP)`
+                                                        : env.label}
+                                                    </button>
+                                                  );
+                                                }
+                                              )}
+                                            </div>
+
+                                            <div className="p-3.5 rounded-2xl bg-black/40 border border-[#D4AF37]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                              <div className="min-w-0">
+                                                <p className="font-mono text-sm sm:text-base font-extrabold tracking-wider text-white break-all">
+                                                  {activeEnvelope.accountNumber}
+                                                </p>
+                                                <p className="text-xs text-[#E6C76B] mt-0.5">
+                                                  a.n. {simPreset.titleShort}{' '}
+                                                  (Data Simulasi Resmi)
+                                                </p>
+                                              </div>
+
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  handleCopySimEnvelope(
+                                                    activeEnvelope.id,
+                                                    activeEnvelope.accountNumber
+                                                  )
+                                                }
+                                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] hover:from-[#C5A059] hover:to-[#D4AF37] text-stone-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
+                                              >
+                                                {copiedSimEnvelopeKey ===
+                                                activeEnvelope.id ? (
+                                                  <>
+                                                    <Check className="w-4 h-4 text-emerald-950" />
+                                                    <span>
+                                                      ✓ Nomor Dummy Tersalin!
+                                                    </span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Copy className="w-3.5 h-3.5" />
+                                                    <span>
+                                                      Salin Rekening Dummy
+                                                    </span>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Physical Gift Delivery Address Card (Matching PublicInvitationView 1:1) */}
+                                          <div className="p-4 rounded-2xl bg-white/95 border border-[#D4AF37]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div className="space-y-0.5">
+                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                                                🎁 Alamat Pengiriman Kado Fisik
+                                                &amp; Karangan Bunga
+                                              </span>
+                                              <p className="text-xs font-bold text-stone-800">
+                                                Kediaman Resmi{' '}
+                                                {simPreset.titleShort} —{' '}
+                                                {simPreset.eventVenue}
+                                              </p>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleCopySimEnvelope(
+                                                  'GIFT_ADDR',
+                                                  `${simPreset.titleShort} - ${simPreset.eventVenue}`
+                                                )
+                                              }
+                                              className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[11px] font-extrabold shrink-0"
+                                            >
+                                              {copiedSimEnvelopeKey ===
+                                              'GIFT_ADDR'
+                                                ? '✓ Alamat Tersalin!'
+                                                : 'Salin Alamat Kado'}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 8. CLOSING SIGNATURE CARD & OFFICIAL MEPLAN CREDIT FOOTER (Matching PublicInvitationView 1:1) */}
+                                      <div className="pt-4 border-t border-[#D4AF37]/30 text-center space-y-3">
+                                        <p className="text-xs text-stone-600 max-w-lg mx-auto leading-relaxed">
+                                          {lang === 'ID'
+                                            ? 'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.'
+                                            : 'It is our greatest honor and joy to welcome your presence and warm blessings at our celebration.'}
+                                        </p>
+                                        <p className="font-script text-3xl sm:text-4xl text-[#8B6914]">
+                                          {simPreset.titleShort}
+                                        </p>
+                                        <div className="pt-2">
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/35 text-[10px] font-bold text-[#8B6914]">
+                                            <Sparkles className="w-3 h-3 text-[#B68D40]" />
+                                            <span>
+                                              MEPlan &bull; My Event Planner by
+                                              omeko42
+                                            </span>
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -6220,7 +6895,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           )}
                         </div>
 
-                        {/* RIGHT: Fitur Desain Editorial & Multi-Event Summary Card (4 Cols) */}
+                        {/* RIGHT: Fitur Desain Editorial & Simulasi Paket Summary Card (4 Cols) */}
                         <div className="lg:col-span-4 rounded-3xl bg-white border-2 border-[#D4AF37]/45 p-5 sm:p-6 shadow-[0_14px_38px_rgba(28,25,23,0.08)] space-y-5 relative overflow-hidden">
                           <CatalogFloralCorner
                             position="top-right"
@@ -6232,39 +6907,101 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <Sparkles className="w-3 h-3 text-[#B68D40]" />
                               <span>
                                 {lang === 'ID'
-                                  ? 'Standar Desain Editorial 2026'
-                                  : '2026 Luxury Editorial Standard'}
+                                  ? `Mode Aktif: Paket ${simPackageTier}`
+                                  : `Active Mode: ${simPackageTier} Plan`}
                               </span>
                             </span>
                             <h4 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
                               {lang === 'ID'
-                                ? 'Fitur Desain Editorial & Multi-Event'
-                                : 'Editorial & Multi-Event Design Features'}
+                                ? 'Kendali Penuh 1:1 di Studio Manager'
+                                : 'Full 1:1 Control in Manager Studio'}
                             </h4>
                             <p className="text-xs text-stone-600 leading-relaxed">
                               {lang === 'ID'
-                                ? 'Setiap klien mendapatkan Studio Kustomisasi penuh untuk mengatur tampilan undangan sesuai jenis acara:'
-                                : 'Every client gets a full Customization Studio to tailor their invitation for any event category:'}
+                                ? 'Undangan dummy di samping terhubung langsung dengan tombol pengaturan di bawah dan di dalam tab Pengaturan Manager:'
+                                : 'The live invitation on the left is connected directly to the quick toggles below and inside the Manager Settings tab:'}
                             </p>
                           </div>
 
-                          <ul className="space-y-2.5 text-xs text-stone-700 relative z-10">
+                          {/* Live Quick Toggles right inside the 4-col companion card */}
+                          <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2 relative z-10">
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                              {lang === 'ID'
+                                ? 'Uji Coba Cepat Ornamen & Seksi:'
+                                : 'Quick Ornament & Section Toggles:'}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSimStudioOrnaments((prev) => ({
+                                    ...prev,
+                                    floralCorner: !prev.floralCorner,
+                                  }))
+                                }
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
+                                  simStudioOrnaments.floralCorner
+                                    ? 'bg-emerald-700 text-white border-emerald-600'
+                                    : 'bg-white text-stone-600 border-stone-300'
+                                }`}
+                              >
+                                🌸 Sudut Floral:{' '}
+                                {simStudioOrnaments.floralCorner ? 'ON' : 'OFF'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSimStudioOrnaments((prev) => ({
+                                    ...prev,
+                                    heroBadge: !prev.heroBadge,
+                                  }))
+                                }
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
+                                  simStudioOrnaments.heroBadge
+                                    ? 'bg-emerald-700 text-white border-emerald-600'
+                                    : 'bg-white text-stone-600 border-stone-300'
+                                }`}
+                              >
+                                🏷️ Lencana Atas Foto:{' '}
+                                {simStudioOrnaments.heroBadge
+                                  ? 'ON'
+                                  : 'OFF (Bersih)'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSimSectionToggles((prev) => ({
+                                    ...prev,
+                                    quote: !prev.quote,
+                                  }))
+                                }
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
+                                  simSectionToggles.quote
+                                    ? 'bg-emerald-700 text-white border-emerald-600'
+                                    : 'bg-white text-stone-600 border-stone-300'
+                                }`}
+                              >
+                                📜 Seksi Kutipan:{' '}
+                                {simSectionToggles.quote ? 'ON' : 'OFF'}
+                              </button>
+                            </div>
+                          </div>
+
+                          <ul className="space-y-2 text-xs text-stone-700 relative z-10">
                             {(lang === 'ID'
                               ? [
-                                  'Feathered Hero Banner dengan transisi alpha-mask halus & animasi Ken Burns.',
+                                  'Header Sticky Identik: Monogram emas, Vinyl Player berputar, & tombol Manager.',
+                                  'Feathered Hero Banner dengan transisi alpha-mask halus tanpa tertutup lencana.',
                                   'Bingkai Foto Kubah (Arch-Dome), Lingkaran (Circle), atau Editorial Tegak.',
                                   'Otomatis 2 Profil (Pernikahan) atau 1 Profil Spotlight (Birthday, Wisuda, Rapat & Gala).',
-                                  'Ornamen Sudut Bunga Emas (Floral Corner) yang dapat dinyalakan/dimatikan.',
-                                  'Kartu Amplop Digital Metalik ber-Chip Emas (Bank, QRIS, PayPal & Crypto USDT).',
-                                  'Mendukung Background Video Sinematik s/d 25 MB (Auto-Stretch HP ke PC).',
+                                  'Kartu Amplop Digital EMV Emas (Bank, QRIS, PayPal & Crypto USDT) + Alamat Kado Fisik.',
                                 ]
                               : [
-                                  'Feathered Hero Banner with seamless alpha-mask & slow Ken Burns motion.',
+                                  'Identical Sticky Header: Gold monogram, spinning Vinyl Player & Manager button.',
+                                  'Feathered Hero Banner with clean alpha-mask and zero obstructive top badge.',
                                   'Selectable Arch-Dome, Circle, or Editorial Rectangle portrait frames.',
                                   'Adaptive 2-Profile (Wedding) or 1-Profile Spotlight (Birthday, Graduation, Corporate & Gala).',
-                                  'Toggleable animated gold-leaf Floral Corner Ornaments.',
-                                  'Luxury Metallic EMV Chip Digital Envelope (Bank, QRIS, PayPal & Crypto USDT).',
-                                  'Supports up to 25 MB Cinematic Video Backgrounds (9:16 Mobile to 16:9 PC).',
+                                  'Metallic EMV Chip Digital Envelope (Bank, QRIS, PayPal & Crypto) + Physical Gift Address.',
                                 ]
                             ).map((item) => (
                               <li key={item} className="flex items-start gap-2">
@@ -6277,31 +7014,33 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           <div className="pt-3 border-t border-[#D4AF37]/30 space-y-2.5 relative z-10">
                             <button
                               type="button"
-                              onClick={() =>
-                                setShowcaseViewMode('dashboard_modules')
-                              }
+                              onClick={() => {
+                                setActiveShowcaseIdx(4);
+                                setSimStudioNavTab('konten');
+                                setShowcaseViewMode('dashboard_modules');
+                              }}
                               className="w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
                             >
                               <LayoutDashboard className="w-4 h-4 shrink-0" />
                               <span className="truncate">
                                 {lang === 'ID'
-                                  ? '📊 Lihat 5 Modul Dashboard Pengelola'
-                                  : '📊 View 5 Admin Dashboard Modules'}
+                                  ? '🎛️ Buka Studio Pengaturan di Manager'
+                                  : '🎛️ Open Studio Settings in Manager'}
                               </span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() =>
-                                handleSelectPackageForCheckout('EXCLUSIVE')
+                                handleSelectPackageForCheckout(simPackageTier)
                               }
                               className="w-full py-2.5 px-4 rounded-2xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
                             >
                               <Wallet className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">
                                 {lang === 'ID'
-                                  ? 'Pesan Undangan & Workspace Sekarang'
-                                  : 'Order Invitation & Workspace Now'}
+                                  ? `Pesan Paket ${simPackageTier} Sekarang`
+                                  : `Order ${simPackageTier} Plan Now`}
                               </span>
                             </button>
                           </div>
@@ -6312,81 +7051,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 })()
               ) : (
                 /* ================================================================= */
-                /* TAB 2: 5 ADMIN DASHBOARD MODULE SCREENSHOTS + FULLSCREEN LIGHTBOX */
+                /* TAB 2: 1:1 ADMIN DASHBOARD REPLICA + 5 INTERACTIVE MODULES        */
                 /* ================================================================= */
                 <>
-                  {/* Quick Action Row for Screenshots */}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-stone-600">
-                      {lang === 'ID'
-                        ? 'Klik tab modul di bawah atau klik gambar untuk memperbesar ke Layar Penuh:'
-                        : 'Click any module tab below or click the screenshot to zoom Fullscreen:'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => openLightboxAt(activeShowcaseIdx)}
-                        title={
-                          lang === 'ID'
-                            ? 'Perbesar Screenshot Modul Aktif ke Layar Penuh'
-                            : 'Zoom Active Module Screenshot to Fullscreen'
-                        }
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/45 text-xs font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                        <span className="whitespace-nowrap truncate">
-                          {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={onOpenAdminPortal}
-                        title={
-                          lang === 'ID'
-                            ? 'Masuk ke Portal Klien / EO / WO / Superadmin'
-                            : 'Login to Client / EO / WO / Superadmin Portal'
-                        }
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#D4AF37]/45 text-[#8B6914] hover:bg-[#FAF3E3] text-xs font-bold whitespace-nowrap truncate shadow-2xs transition-all"
-                      >
-                        <Shield className="w-3.5 h-3.5 shrink-0" />
-                        <span className="whitespace-nowrap truncate">
-                          {lang === 'ID'
-                            ? 'Buka Portal Login'
-                            : 'Open Login Portal'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Row of 5 Interactive Module Tabs */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
-                      const isActive = activeShowcaseIdx === idx;
-                      const tabLabel = lang === 'ID' ? shot.tabId : shot.tabEn;
-                      const fullTitle =
-                        lang === 'ID' ? shot.titleId : shot.titleEn;
-                      return (
-                        <button
-                          key={shot.id}
-                          type="button"
-                          onClick={() => setActiveShowcaseIdx(idx)}
-                          title={`${shot.badge} — ${fullTitle}`}
-                          className={`px-3 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap truncate shadow-2xs ${
-                            isActive
-                              ? 'bg-gradient-to-r from-[#1C1613] to-[#2A2019] text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]/35'
-                              : 'bg-white hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] border-[#D4AF37]/35'
-                          }`}
-                        >
-                          <span className="whitespace-nowrap truncate">
-                            {tabLabel}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Featured Interactive Browser Frame Preview */}
+                  {/* Featured Interactive Browser Frame Preview (1:1 AdminDashboardView Replica) */}
                   {(() => {
                     const currentShot =
                       OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx] ||
@@ -6399,7 +7067,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     return (
                       <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.10)] overflow-hidden">
                         {/* Browser Window Top Bar */}
-                        <div className="px-3.5 sm:px-5 py-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
+                        <div className="px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#FAF3E3] border-b border-[#D4AF37]/35 flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
@@ -6410,10 +7078,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {currentShot.badge}
                             </span>
                             <span className="hidden md:inline-block font-mono text-[11px] text-stone-300 truncate">
-                              https://meplan.app/workspace/{currentShot.id}
+                              https://meplan.app/manager/{currentShot.id}
                             </span>
                             <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
-                              ● LIVE UI • 100% VECTOR-SHARP
+                              ● 1:1 MANAGER WORKSPACE ({simPackageTier})
                             </span>
                           </div>
 
@@ -6478,7 +7146,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Live Vector-Sharp Interactive React UI Viewport (Zero Raster Blur) */}
+                        {/* Live Vector-Sharp Interactive React UI Viewport (1:1 AdminDashboardView) */}
                         <div className="relative bg-[#FAF8F5] overflow-hidden">
                           {renderLiveDashboardModule(currentShot.id)}
                         </div>
@@ -6513,8 +7181,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }
                               title={
                                 lang === 'ID'
-                                  ? 'Lihat Screenshot Modul Sebelumnya'
-                                  : 'View Previous Module Screenshot'
+                                  ? 'Lihat Modul Sebelumnya'
+                                  : 'View Previous Module'
                               }
                               className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-800 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
@@ -6534,8 +7202,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }
                               title={
                                 lang === 'ID'
-                                  ? 'Lihat Screenshot Modul Berikutnya'
-                                  : 'View Next Module Screenshot'
+                                  ? 'Lihat Modul Berikutnya'
+                                  : 'View Next Module'
                               }
                               className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
@@ -6569,7 +7237,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }`}
                         >
                           <div>
-                            <div className="relative h-28 bg-gradient-to-br from-stone-950 via-stone-900 to-[#221A14] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
+                            <div className="relative h-24 bg-gradient-to-br from-stone-950 via-stone-900 to-[#221A14] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="px-2 py-0.5 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/45 text-[#E6C76B] font-mono text-[9px] font-extrabold whitespace-nowrap">
                                   {lang === 'ID' ? shot.tabId : shot.tabEn}
@@ -6590,12 +7258,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   <Maximize2 className="w-3 h-3 text-[#E6C76B]" />
                                 </button>
                               </div>
-                              <div className="rounded-xl bg-white/10 border border-[#D4AF37]/30 px-2.5 py-2 flex items-center justify-between gap-2">
+                              <div className="rounded-xl bg-white/10 border border-[#D4AF37]/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
                                 <span className="text-[10px] font-extrabold text-[#FAF3E3] truncate">
                                   {shot.kpiSummary}
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[8px] font-extrabold shrink-0">
-                                  LIVE UI
+                                  1:1 UI
                                 </span>
                               </div>
                             </div>
@@ -6615,11 +7283,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
                               {isSelected
                                 ? lang === 'ID'
-                                  ? '● Sedang Ditampilkan'
-                                  : '● Currently Viewing'
+                                  ? '● Sedang Aktif'
+                                  : '● Active'
                                 : lang === 'ID'
-                                  ? 'Klik untuk Pratinjau'
-                                  : 'Click to Preview'}
+                                  ? 'Klik untuk Buka'
+                                  : 'Click to Open'}
                             </span>
                             <button
                               type="button"
@@ -6906,8 +7574,36 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </ul>
                       </div>
 
-                      {/* CTA Button: Opens Dedicated Separate Checkout Page */}
-                      <div className="pt-6 mt-6 border-t border-[#D4AF37]/25 min-w-0">
+                      {/* CTA Buttons: Preview Tier in Live Tour OR Open Dedicated Checkout Page */}
+                      <div className="pt-5 mt-5 border-t border-[#D4AF37]/25 space-y-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSimPackageTier(
+                              pkg.tier as 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
+                            );
+                            setShowcaseViewMode('invitation_sim');
+                            scrollToShowcase();
+                          }}
+                          title={
+                            lang === 'ID'
+                              ? `Uji Coba Simulasi Fitur Paket ${pkg.tier} di Katalog Interaktif`
+                              : `Test ${pkg.tier} Plan Features in the Interactive Showcase`
+                          }
+                          className={`w-full max-w-full py-2.5 px-3 rounded-xl font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all border ${
+                            isRoyal
+                              ? 'bg-white/10 hover:bg-white/20 text-[#E6C76B] border-[#D4AF37]/45'
+                              : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                          }`}
+                        >
+                          <Eye className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {lang === 'ID'
+                              ? `Lihat Simulasi Paket ${pkg.tier} di Katalog`
+                              : `Preview ${pkg.tier} Plan in Showcase`}
+                          </span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() =>
