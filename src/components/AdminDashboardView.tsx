@@ -1836,6 +1836,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     );
   };
 
+  const isSupportedVideoFile = (file: File): boolean => {
+    if (file.type && file.type.startsWith('video/')) return true;
+    return /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+  };
+
   // Auto-compress & convert uploaded image of ANY size (28 MB, 50 MB, 100 MB+ / Camera RAW) into lightweight Ultra-HD .SVG DataURL
   const compressImageFileToDataUrl = async (
     file: File,
@@ -2052,6 +2057,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     caption: '',
   });
   const [photoStudioToolMode, setPhotoStudioToolMode] = useState<'pan' | 'crop'>('crop');
+  const [inspectorMediaTab, setInspectorMediaTab] = useState<'photo' | 'video'>('photo');
   const [isSavingPhotoCrop, setIsSavingPhotoCrop] = useState(false);
   const [loadedPreviewImg, setLoadedPreviewImg] = useState<HTMLImageElement | null>(null);
   const cropStageRef = useRef<HTMLDivElement | null>(null);
@@ -2155,7 +2161,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         );
       }
     }
-  }, [photoAdjustTarget, loadedPreviewImg, photoAdjustDraft]);
+  }, [photoAdjustTarget, loadedPreviewImg, photoAdjustDraft, inspectorMediaTab]);
 
   const normalizeDraftAdjust = (adj?: PhotoAdjustment): PhotoAdjustment => ({
     zoom: Number.isFinite(adj?.zoom) ? Number(adj!.zoom) : 1,
@@ -2206,6 +2212,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setPhotoAdjustUrl(sourceUrl);
     setPhotoAdjustDraft(normalizeDraftAdjust(existingAdj));
     setPhotoStudioToolMode('crop');
+    setInspectorMediaTab('photo');
+  };
+
+  const openMediaSidebarInspector = (
+    field:
+      | 'groomPhotoUrl'
+      | 'bridePhotoUrl'
+      | 'coverBgUrl'
+      | 'heroPrewedUrl'
+      | 'pageBgUrl',
+    label: string,
+    shape: 'circle' | 'banner' | 'portrait',
+    preferredTab?: 'photo' | 'video'
+  ) => {
+    openSettingPhotoAdjust(field, label, shape);
+    setInspectorMediaTab(preferredTab || 'photo');
   };
 
   const openGalleryPhotoAdjust = (photo: GalleryPhotoItem) => {
@@ -2224,6 +2246,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       caption: photo.caption ?? '',
     });
     setPhotoStudioToolMode('crop');
+    setInspectorMediaTab('photo');
   };
 
   const openNewGalleryPhotoAdjust = (overrideUrl?: string) => {
@@ -2243,6 +2266,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       caption: newPhotoForm.caption ?? '',
     });
     setPhotoStudioToolMode('crop');
+    setInspectorMediaTab('photo');
   };
 
   const applyCropAspectPreset = (
@@ -2448,8 +2472,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         void deleteMediaFromSupabaseStorage(settingsForm.coverBgUrl || state.settings.coverBgUrl);
         void deleteMediaFromSupabaseStorage(settingsForm.heroPrewedUrl || state.settings.heroPrewedUrl);
         void deleteMediaFromSupabaseStorage(settingsForm.pageBgUrl || state.settings.pageBgUrl);
+        void deleteMediaFromSupabaseStorage(settingsForm.coverVideoUrl || state.settings.coverVideoUrl);
+        void deleteMediaFromSupabaseStorage(settingsForm.heroVideoUrl || state.settings.heroVideoUrl);
+        void deleteMediaFromSupabaseStorage(settingsForm.pageVideoUrl || state.settings.pageVideoUrl);
       } else {
         void deleteMediaFromSupabaseStorage(settingsForm[target] || state.settings[target]);
+        if (target === 'coverBgUrl') {
+          void deleteMediaFromSupabaseStorage(settingsForm.coverVideoUrl || state.settings.coverVideoUrl);
+        } else if (target === 'heroPrewedUrl') {
+          void deleteMediaFromSupabaseStorage(settingsForm.heroVideoUrl || state.settings.heroVideoUrl);
+        } else if (target === 'pageBgUrl') {
+          void deleteMediaFromSupabaseStorage(settingsForm.pageVideoUrl || state.settings.pageVideoUrl);
+        }
       }
 
       const defaultAdj: PhotoAdjustment = {
@@ -2486,17 +2520,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           : { [target]: dataUrl }),
       };
 
+      const clearVideoPatch: Partial<WeddingSettings> =
+        target === 'all_bg'
+          ? {
+              coverVideoUrl: '',
+              heroVideoUrl: '',
+              pageVideoUrl: '',
+            }
+          : target === 'coverBgUrl'
+          ? { coverVideoUrl: '' }
+          : target === 'heroPrewedUrl'
+          ? { heroVideoUrl: '' }
+          : target === 'pageBgUrl'
+          ? { pageVideoUrl: '' }
+          : {};
+
       const patch: Partial<WeddingSettings> =
         target === 'all_bg'
           ? {
               coverBgUrl: dataUrl,
               heroPrewedUrl: dataUrl,
               pageBgUrl: dataUrl,
+              ...clearVideoPatch,
               originalPhotos: nextOriginalPhotos,
               photoAdjustments: nextAdjustments,
             }
           : {
               [target]: dataUrl,
+              ...clearVideoPatch,
               originalPhotos: nextOriginalPhotos,
               photoAdjustments: nextAdjustments,
             };
@@ -2516,10 +2567,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         summary: `Upload & konversi foto ke .SVG HD (${target}: ${origSizeLabel} -> ${finalKb}KB .svg)`,
       });
       showToast(
-        `✓ Foto berhasil dikompres & dikonversi ke .SVG HD (${origSizeLabel} → ${finalKb} KB)! Silakan atur Crop & Posisi.`
+        `✓ Foto berhasil dikompres & dikonversi ke .SVG HD (${origSizeLabel} → ${finalKb} KB)! Silakan atur Crop & Posisi di Sidebar Kanan.`
       );
 
-      // Automatically open the Crop, Zoom & Pan Studio so user can adjust framing right away
+      // Automatically open the Right Sidebar Inspector so user can adjust framing right away
       if (target === 'groomPhotoUrl') {
         openSettingPhotoAdjust('groomPhotoUrl', 'Foto Mempelai Pria', 'circle', dataUrl, defaultAdj);
       } else if (target === 'bridePhotoUrl') {
@@ -2552,10 +2603,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const handleUploadThemeVideo = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    slot: 'coverVideoUrl' | 'heroVideoUrl' | 'pageVideoUrl' | 'all_video'
+    slot: 'coverVideoUrl' | 'heroVideoUrl' | 'pageVideoUrl' | 'all_video',
+    explicitFile?: File
   ) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+    const file = explicitFile || e.target.files?.[0];
+    if (e.target) {
+      e.target.value = '';
+    }
     if (!file) return;
     if (file.size > 25 * 1024 * 1024) {
       showToast(
@@ -2615,8 +2669,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           ).toFixed(1)} MB)`,
         });
         showToast(
-          '✓ Video Background berhasil diunggah ke Supabase Storage & diterapkan!'
+          '✓ Video Background berhasil diunggah! Silakan atur Fokus Highlight di Sidebar Kanan.'
         );
+
+        // Automatically open the Right Sidebar Inspector in 'video' mode
+        if (slot === 'coverVideoUrl' || slot === 'all_video') {
+          openMediaSidebarInspector(
+            'coverBgUrl',
+            'Sampul Pembuka (Cover)',
+            'portrait',
+            'video'
+          );
+        } else if (slot === 'heroVideoUrl') {
+          openMediaSidebarInspector(
+            'heroPrewedUrl',
+            'Banner Utama (Hero)',
+            'banner',
+            'video'
+          );
+        } else if (slot === 'pageVideoUrl') {
+          openMediaSidebarInspector(
+            'pageBgUrl',
+            'Wallpaper Latar',
+            'portrait',
+            'video'
+          );
+        }
       } else if (res.error) {
         showToast(res.error);
       }
@@ -2629,6 +2707,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     } finally {
       setUploadingVideoSlot(null);
     }
+  };
+
+  const handleUploadUnifiedThemeMedia = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: 'all_bg' | 'coverBgUrl' | 'heroPrewedUrl' | 'pageBgUrl'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (isSupportedVideoFile(file)) {
+      const videoSlot =
+        slot === 'all_bg'
+          ? 'all_video'
+          : slot === 'coverBgUrl'
+          ? 'coverVideoUrl'
+          : slot === 'heroPrewedUrl'
+          ? 'heroVideoUrl'
+          : 'pageVideoUrl';
+      await handleUploadThemeVideo(e, videoSlot, file);
+      return;
+    }
+    if (isSupportedPhotoFile(file)) {
+      await handleUploadThemeImage(e, slot);
+      return;
+    }
+    e.target.value = '';
+    showToast(
+      'Format file tidak didukung. Pilih file Foto (JPG/PNG/WEBP/HEIC/RAW) atau Video (MP4/WebM/MOV maks. 25 MB).'
+    );
   };
 
   const handleUploadQrisFile = async (
@@ -8789,23 +8895,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Quick Preset Selector + Upload Gambar Sendiri untuk Semua Background */}
+                    {/* Quick Preset Selector + Unified Auto-Detect Upload untuk Semua Latar */}
                     <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-3">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <p className="font-bold text-xs text-stone-800 truncate">
-                            Preset Tema
+                            Preset Tema &amp; Upload Semua Latar
                           </p>
-                          <InfoTooltip text="Klik salah satu preset di bawah, atau klik Upload Semua untuk mengganti 3 background sekaligus dengan foto Anda." />
+                          <InfoTooltip text="Pilih preset tema di bawah, atau klik Upload Semua Latar (Foto / Video) — sistem otomatis mengenali format file dan membuka Sidebar Kanan untuk pengaturan spesifik." />
                         </div>
-                        <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Semua</span>
+                        <label
+                          title="Upload 1 file Foto atau Video (otomatis terdeteksi) untuk diterapkan ke Sampul, Banner Hero, dan Wallpaper sekaligus"
+                          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
+                            uploadingVideoSlot === 'all_video' ? 'opacity-60 pointer-events-none' : ''
+                          }`}
+                        >
+                          <Upload className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {uploadingVideoSlot === 'all_video'
+                              ? 'Mengunggah...'
+                              : 'Upload Semua Latar (Foto / Video)'}
+                          </span>
                           <input
                             type="file"
-                            accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                            accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
                             className="hidden"
-                            onChange={(e) => handleUploadThemeImage(e, 'all_bg')}
+                            onChange={(e) => handleUploadUnifiedThemeMedia(e, 'all_bg')}
                           />
                         </label>
                       </div>
@@ -8814,12 +8929,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <button
                             key={preset.label}
                             type="button"
+                            title={`Terapkan tema "${preset.label}" ke seluruh latar undangan`}
                             onClick={() =>
                               setSettingsForm({
                                 ...settingsForm,
                                 coverBgUrl: preset.url,
                                 heroPrewedUrl: preset.url,
                                 pageBgUrl: preset.url,
+                                coverVideoUrl: '',
+                                heroVideoUrl: '',
+                                pageVideoUrl: '',
                               })
                             }
                             className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/60 border border-[#D4AF37]/30 hover:border-[#B68D40] text-left transition-all flex items-center gap-2.5"
@@ -8833,7 +8952,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <p className="font-bold text-xs text-stone-900 truncate">
                                 {preset.label}
                               </p>
-                              <p className="text-[11px] text-[#8B6914] font-semibold">
+                              <p className="text-[11px] text-[#8B6914] font-semibold truncate">
                                 Pakai Tema +
                               </p>
                             </div>
@@ -8842,512 +8961,243 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* 3 Individual Background Upload / URL Inputs */}
+                    {/* Unified 3 Background Slots (Auto-Detects Photo or Video + Opens Right Sidebar Inspector) */}
                     <div className="space-y-3">
-                      <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <label className="block font-bold text-xs text-stone-800 truncate">
-                            1. Sampul Pembuka (Cover)
-                          </label>
-                          <div className="flex items-center gap-1.5">
-                            {settingsForm.coverBgUrl && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openSettingPhotoAdjust(
-                                    'coverBgUrl',
-                                    'Sampul Pembuka (Cover)',
-                                    'portrait'
-                                  )
-                                }
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Crop, Zoom In/Out & Geser Posisi Cover"
-                              >
-                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Crop &amp; Posisi</span>
-                              </button>
-                            )}
-                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                              <Upload className="w-3.5 h-3.5" />
-                              <span>Upload</span>
-                              <input
-                                type="file"
-                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                className="hidden"
-                                onChange={(e) => handleUploadThemeImage(e, 'coverBgUrl')}
-                              />
-                            </label>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          {settingsForm.coverBgUrl && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openSettingPhotoAdjust(
-                                  'coverBgUrl',
-                                  'Sampul Pembuka (Cover)',
-                                  'portrait'
-                                )
-                              }
-                              title="Klik untuk Crop, Zoom & Geser posisi"
-                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
-                            >
-                              <img
-                                src={settingsForm.coverBgUrl}
-                                alt="Cover Preview"
-                                className="w-full h-full object-cover object-center"
-                                style={getPhotoAdjustStyle(
-                                  settingsForm.photoAdjustments?.coverBgUrl ||
-                                    state.settings.photoAdjustments?.coverBgUrl
-                                )}
-                              />
-                            </button>
-                          )}
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.coverBgUrl?.startsWith('data:image/')
-                                ? ''
-                                : settingsForm.coverBgUrl || ''
-                            }
-                            onChange={(e) =>
-                              setSettingsForm({ ...settingsForm, coverBgUrl: e.target.value })
-                            }
-                            placeholder={
-                              settingsForm.coverBgUrl?.startsWith('data:image/')
-                                ? '✓ Gambar Cover tersimpan (Klik Crop & Posisi / Upload baru)'
-                                : 'URL gambar atau klik Upload...'
-                            }
-                            className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
-                          />
-                        </div>
-                      </div>
+                      {(
+                        [
+                          {
+                            photoField: 'coverBgUrl' as const,
+                            videoField: 'coverVideoUrl' as const,
+                            label: '1. Sampul Pembuka (Cover)',
+                            cleanLabel: 'Sampul Pembuka (Cover)',
+                            shape: 'portrait' as const,
+                          },
+                          {
+                            photoField: 'heroPrewedUrl' as const,
+                            videoField: 'heroVideoUrl' as const,
+                            label: '2. Banner Utama (Hero)',
+                            cleanLabel: 'Banner Utama (Hero)',
+                            shape: 'banner' as const,
+                          },
+                          {
+                            photoField: 'pageBgUrl' as const,
+                            videoField: 'pageVideoUrl' as const,
+                            label: '3. Wallpaper Latar',
+                            cleanLabel: 'Wallpaper Latar',
+                            shape: 'portrait' as const,
+                          },
+                        ] as const
+                      ).map((item) => {
+                        const activeVideoUrl = (
+                          settingsForm[item.videoField] || ''
+                        ).trim();
+                        const activePhotoUrl = (
+                          settingsForm[item.photoField] || ''
+                        ).trim();
+                        const isVideoActive = Boolean(activeVideoUrl);
+                        const isUploadingThisVideo =
+                          uploadingVideoSlot === item.videoField;
 
-                      <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <label className="block font-bold text-xs text-stone-800 truncate">
-                            2. Banner Utama (Hero)
-                          </label>
-                          <div className="flex items-center gap-1.5">
-                            {settingsForm.heroPrewedUrl && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openSettingPhotoAdjust(
-                                    'heroPrewedUrl',
-                                    'Banner Utama (Hero)',
-                                    'banner'
-                                  )
-                                }
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Crop, Zoom In/Out & Geser Posisi Banner"
-                              >
-                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Crop &amp; Posisi</span>
-                              </button>
-                            )}
-                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                              <Upload className="w-3.5 h-3.5" />
-                              <span>Upload</span>
-                              <input
-                                type="file"
-                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                className="hidden"
-                                onChange={(e) => handleUploadThemeImage(e, 'heroPrewedUrl')}
-                              />
-                            </label>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          {settingsForm.heroPrewedUrl && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openSettingPhotoAdjust(
-                                  'heroPrewedUrl',
-                                  'Banner Utama (Hero)',
-                                  'banner'
-                                )
-                              }
-                              title="Klik untuk Crop, Zoom & Geser posisi"
-                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
-                            >
-                              <img
-                                src={settingsForm.heroPrewedUrl}
-                                alt="Hero Preview"
-                                className="w-full h-full object-cover object-center"
-                                style={getPhotoAdjustStyle(
-                                  settingsForm.photoAdjustments?.heroPrewedUrl ||
-                                    state.settings.photoAdjustments?.heroPrewedUrl
-                                )}
-                              />
-                            </button>
-                          )}
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.heroPrewedUrl?.startsWith('data:image/')
-                                ? ''
-                                : settingsForm.heroPrewedUrl || ''
-                            }
-                            onChange={(e) =>
-                              setSettingsForm({ ...settingsForm, heroPrewedUrl: e.target.value })
-                            }
-                            placeholder={
-                              settingsForm.heroPrewedUrl?.startsWith('data:image/')
-                                ? '✓ Foto Banner tersimpan (Klik Crop & Posisi / Upload baru)'
-                                : 'URL gambar atau klik Upload...'
-                            }
-                            className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <label className="block font-bold text-xs text-stone-800 truncate">
-                            3. Wallpaper Latar
-                          </label>
-                          <div className="flex items-center gap-1.5">
-                            {settingsForm.pageBgUrl && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openSettingPhotoAdjust(
-                                    'pageBgUrl',
-                                    'Wallpaper Latar',
-                                    'portrait'
-                                  )
-                                }
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap transition-all"
-                                title="Crop, Zoom In/Out & Geser Posisi Wallpaper"
-                              >
-                                <Crop className="w-3.5 h-3.5 text-[#B68D40]" />
-                                <span>Crop &amp; Posisi</span>
-                              </button>
-                            )}
-                            <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap transition-all">
-                              <Upload className="w-3.5 h-3.5" />
-                              <span>Upload</span>
-                              <input
-                                type="file"
-                                accept="image/*,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
-                                className="hidden"
-                                onChange={(e) => handleUploadThemeImage(e, 'pageBgUrl')}
-                              />
-                            </label>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          {settingsForm.pageBgUrl && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openSettingPhotoAdjust(
-                                  'pageBgUrl',
-                                  'Wallpaper Latar',
-                                  'portrait'
-                                )
-                              }
-                              title="Klik untuk atur Zoom & Geser posisi"
-                              className="w-11 h-11 rounded-lg overflow-hidden border border-[#D4AF37]/40 shrink-0 relative"
-                            >
-                              <img
-                                src={settingsForm.pageBgUrl}
-                                alt="Wallpaper Preview"
-                                className="w-full h-full object-cover object-center"
-                                style={getPhotoAdjustStyle(
-                                  settingsForm.photoAdjustments?.pageBgUrl ||
-                                    state.settings.photoAdjustments?.pageBgUrl
-                                )}
-                              />
-                            </button>
-                          )}
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.pageBgUrl?.startsWith('data:image/')
-                                ? ''
-                                : settingsForm.pageBgUrl || ''
-                            }
-                            onChange={(e) =>
-                              setSettingsForm({ ...settingsForm, pageBgUrl: e.target.value })
-                            }
-                            placeholder={
-                              settingsForm.pageBgUrl?.startsWith('data:image/')
-                                ? '✓ Wallpaper tersimpan (Klik Atur Posisi / Upload baru)'
-                                : 'URL gambar atau klik Upload...'
-                            }
-                            className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* =============================================================
-                        MOTION VIDEO BACKGROUND STUDIO (UP TO 25 MB) + MOBILE-TO-PC HIGHLIGHT STRETCH CONTROLS
-                       ============================================================= */}
-                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FAF8F5] to-[#FAF3E3]/50 border border-[#D4AF37]/45 space-y-3.5">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
-                            🎬 Video Background Interaktif (Maks. 25 MB &bull; Adaptif HP 9:16 ke Layar PC 16:9)
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full bg-white text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0">
-                            MP4 / WebM / MOV &le; 25 MB
-                          </span>
-                        </div>
-
-                        <label
-                          title="Upload 1 file video (maksimal 25 MB) untuk diterapkan sekaligus ke Sampul, Banner Hero, dan Wallpaper Latar"
-                          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
-                            uploadingVideoSlot === 'all_video' ? 'opacity-60 pointer-events-none' : ''
-                          }`}
-                        >
-                          <Upload className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">
-                            {uploadingVideoSlot === 'all_video'
-                              ? 'Mengunggah Video...'
-                              : 'Upload Video ke Semua Latar'}
-                          </span>
-                          <input
-                            type="file"
-                            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
-                            className="hidden"
-                            onChange={(e) => handleUploadThemeVideo(e, 'all_video')}
-                          />
-                        </label>
-                      </div>
-
-                      {/* 3 Video Background Slots */}
-                      <div className="space-y-2.5">
-                        {(
-                          [
-                            {
-                              slot: 'coverVideoUrl' as const,
-                              label: '1. Video Sampul (Cover)',
-                              uploadTitle:
-                                'Upload video maksimal 25 MB untuk latar Sampul Pembuka',
-                            },
-                            {
-                              slot: 'heroVideoUrl' as const,
-                              label: '2. Video Banner Hero',
-                              uploadTitle:
-                                'Upload video maksimal 25 MB untuk latar Banner Utama (Hero)',
-                            },
-                            {
-                              slot: 'pageVideoUrl' as const,
-                              label: '3. Video Wallpaper Latar',
-                              uploadTitle:
-                                'Upload video maksimal 25 MB untuk latar Wallpaper halaman undangan',
-                            },
-                          ] as const
-                        ).map((vItem) => {
-                          const currentVideoUrl = settingsForm[vItem.slot] || '';
-                          const isUploadingThis = uploadingVideoSlot === vItem.slot;
-                          return (
-                            <div
-                              key={vItem.slot}
-                              className="p-3 rounded-xl bg-white border border-stone-200 space-y-2"
-                            >
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <label className="block font-bold text-xs text-stone-800 truncate">
-                                    {vItem.label}
-                                  </label>
-                                  {currentVideoUrl && (
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0">
-                                      ✓ Video Aktif
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  {currentVideoUrl && (
-                                    <button
-                                      type="button"
-                                      title={`Hapus ${vItem.label} dari undangan dan Supabase Storage`}
-                                      onClick={async () => {
-                                        void deleteMediaFromSupabaseStorage(currentVideoUrl);
-                                        const nextSettings: WeddingSettings = {
-                                          ...state.settings,
-                                          ...settingsForm,
-                                          [vItem.slot]: '',
-                                          updatedBy: adminUser.username,
-                                        };
-                                        await commitImmediateSettings(nextSettings);
-                                        showToast(`${vItem.label} berhasil dihapus.`);
-                                      }}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
-                                    >
-                                      <Trash2 className="w-3 h-3 shrink-0" />
-                                      <span>Hapus Video</span>
-                                    </button>
-                                  )}
-                                  <label
-                                    title={vItem.uploadTitle}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
-                                      isUploadingThis ? 'opacity-60 pointer-events-none' : ''
-                                    }`}
+                        return (
+                          <div
+                            key={item.photoField}
+                            className="p-3 sm:p-3.5 rounded-xl bg-white border border-stone-200 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <label className="block font-bold text-xs text-stone-800 truncate">
+                                  {item.label}
+                                </label>
+                                {isVideoActive ? (
+                                  <span
+                                    title="Slot ini sedang menggunakan Video Background. Klik Atur & Crop untuk mengatur fokus layar PC/HP di Sidebar Kanan"
+                                    className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] whitespace-nowrap shrink-0"
                                   >
-                                    <Upload className="w-3.5 h-3.5 shrink-0" />
-                                    <span>
-                                      {isUploadingThis ? 'Mengunggah...' : 'Upload Video'}
-                                    </span>
-                                    <input
-                                      type="file"
-                                      accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
-                                      className="hidden"
-                                      onChange={(e) =>
-                                        handleUploadThemeVideo(e, vItem.slot)
-                                      }
-                                    />
-                                  </label>
-                                </div>
+                                    🎬 Video Aktif
+                                  </span>
+                                ) : activePhotoUrl ? (
+                                  <span
+                                    title="Slot ini sedang menggunakan Foto Latar. Klik Atur & Crop untuk mengatur posisi & potongan di Sidebar Kanan"
+                                    className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[10px] whitespace-nowrap shrink-0"
+                                  >
+                                    🖼️ Foto Aktif
+                                  </span>
+                                ) : null}
                               </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {isVideoActive && (
+                                  <button
+                                    type="button"
+                                    title="Hapus video dari slot ini dan kembali ke Foto Latar"
+                                    onClick={async () => {
+                                      void deleteMediaFromSupabaseStorage(
+                                        activeVideoUrl
+                                      );
+                                      const nextSettings: WeddingSettings = {
+                                        ...state.settings,
+                                        ...settingsForm,
+                                        [item.videoField]: '',
+                                        updatedBy: adminUser.username,
+                                      };
+                                      await commitImmediateSettings(
+                                        nextSettings
+                                      );
+                                      showToast(
+                                        `Video pada ${item.cleanLabel} dihapus — kembali menggunakan Foto Latar.`
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Hapus Video</span>
+                                  </button>
+                                )}
+
+                                {(activePhotoUrl || isVideoActive) && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openMediaSidebarInspector(
+                                        item.photoField,
+                                        item.cleanLabel,
+                                        item.shape,
+                                        isVideoActive ? 'video' : 'photo'
+                                      )
+                                    }
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs shrink-0 whitespace-nowrap truncate transition-all"
+                                    title="Buka Sidebar Pengaturan Spesifik (Crop Foto / Fokus Highlight Video HP ke PC)"
+                                  >
+                                    <Crop className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                    <span>Atur &amp; Crop</span>
+                                  </button>
+                                )}
+
+                                <label
+                                  title="Pilih file Foto atau Video (maks. 25 MB) — format otomatis dikenali sistem"
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs cursor-pointer shrink-0 whitespace-nowrap truncate transition-all ${
+                                    isUploadingThisVideo
+                                      ? 'opacity-60 pointer-events-none'
+                                      : ''
+                                  }`}
+                                >
+                                  <Upload className="w-3.5 h-3.5 shrink-0" />
+                                  <span>
+                                    {isUploadingThisVideo
+                                      ? 'Mengunggah...'
+                                      : 'Upload File'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                                    className="hidden"
+                                    onChange={(e) =>
+                                      handleUploadUnifiedThemeMedia(
+                                        e,
+                                        item.photoField
+                                      )
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5">
+                              {(activePhotoUrl || isVideoActive) && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openMediaSidebarInspector(
+                                      item.photoField,
+                                      item.cleanLabel,
+                                      item.shape,
+                                      isVideoActive ? 'video' : 'photo'
+                                    )
+                                  }
+                                  title="Klik untuk membuka Sidebar Kanan: Crop Foto atau Fokus Video"
+                                  className="w-12 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/45 shrink-0 relative bg-stone-900 group"
+                                >
+                                  {isVideoActive ? (
+                                    <>
+                                      <video
+                                        src={activeVideoUrl}
+                                        poster={activePhotoUrl || undefined}
+                                        muted
+                                        loop
+                                        autoPlay
+                                        playsInline
+                                        className="w-full h-full object-cover"
+                                        style={{
+                                          objectPosition: `50% ${
+                                            settingsForm.videoFocusY ?? 28
+                                          }%`,
+                                        }}
+                                      />
+                                      <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-stone-950/80 text-[#D4AF37] text-[8px] font-extrabold">
+                                        MP4
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <img
+                                      src={activePhotoUrl}
+                                      alt={item.cleanLabel}
+                                      className="w-full h-full object-cover object-center"
+                                      style={getPhotoAdjustStyle(
+                                        settingsForm.photoAdjustments?.[
+                                          item.photoField
+                                        ] ||
+                                          state.settings.photoAdjustments?.[
+                                            item.photoField
+                                          ]
+                                      )}
+                                    />
+                                  )}
+                                </button>
+                              )}
+
                               <input
                                 type="text"
-                                value={currentVideoUrl}
-                                onChange={(e) =>
-                                  setSettingsForm({
-                                    ...settingsForm,
-                                    [vItem.slot]: e.target.value,
-                                  })
+                                value={
+                                  isVideoActive
+                                    ? activeVideoUrl
+                                    : activePhotoUrl?.startsWith('data:image/')
+                                    ? ''
+                                    : activePhotoUrl
                                 }
-                                placeholder="Tempel URL video (.mp4 / .webm) atau klik Upload Video (maks. 25 MB)..."
-                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs bg-[#FAF8F5]"
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const isVideoLink =
+                                    /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(
+                                      val.trim()
+                                    ) || val.includes('/wedding-media/videos/');
+                                  if (isVideoLink) {
+                                    setSettingsForm({
+                                      ...settingsForm,
+                                      [item.videoField]: val,
+                                    });
+                                  } else {
+                                    setSettingsForm({
+                                      ...settingsForm,
+                                      [item.photoField]: val,
+                                      ...(isVideoActive
+                                        ? { [item.videoField]: '' }
+                                        : {}),
+                                    });
+                                  }
+                                }}
+                                placeholder={
+                                  isVideoActive
+                                    ? '✓ Video aktif (Klik Atur & Crop untuk atur fokus di Sidebar)'
+                                    : activePhotoUrl?.startsWith('data:image/')
+                                    ? `✓ Foto ${item.cleanLabel} tersimpan (Klik Atur & Crop / Upload File)`
+                                    : 'Tempel URL Foto / Video (.mp4) atau klik Upload File (otomatis dikenali)...'
+                                }
+                                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs"
                               />
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Pengaturan Stretch & Highlight Otomatis (Format HP 9:16 ➔ Layar PC 16:9) */}
-                      <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-3">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="font-bold text-xs text-stone-800 truncate">
-                            Pengaturan Stretch &amp; Highlight Otomatis (Format HP 9:16 &#10132; Layar PC 16:9)
-                          </span>
-                          <span className="text-[10px] font-bold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-full border border-[#D4AF37]/40 whitespace-nowrap">
-                            Fokus Y: {settingsForm.videoFocusY ?? 28}%
-                          </span>
-                        </div>
-
-                        {/* Mode Tampilan di PC */}
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-semibold text-stone-600 truncate">
-                            Mode Tampilan di PC (Widescreen 16:9)
-                          </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {(
-                              [
-                                {
-                                  mode: 'HIGHLIGHT_COVER' as const,
-                                  label:
-                                    'Stretch Penuh Fokus Highlight (Otomatis Penuhi Layar PC)',
-                                  title:
-                                    'Video vertikal HP otomatis di-stretch memenuhi layar lebar PC dengan menjaga titik fokus highlight tetap di tengah',
-                                },
-                                {
-                                  mode: 'CINEMA_BLUR' as const,
-                                  label:
-                                    'Cinema Spotlight (Tengah Utuh + Blur Artistik Kiri-Kanan)',
-                                  title:
-                                    'Menampilkan rasio asli video di tengah dengan latar blur sinematik di sisi kiri dan kanan layar PC',
-                                },
-                              ] as const
-                            ).map((m) => {
-                              const isSelectedMode =
-                                (settingsForm.videoDesktopMode ||
-                                  'HIGHLIGHT_COVER') === m.mode;
-                              return (
-                                <button
-                                  key={m.mode}
-                                  type="button"
-                                  title={m.title}
-                                  onClick={() =>
-                                    setSettingsForm({
-                                      ...settingsForm,
-                                      videoDesktopMode: m.mode,
-                                    })
-                                  }
-                                  className={`px-3 py-2 rounded-xl border text-[11px] font-bold text-left whitespace-nowrap truncate transition-all ${
-                                    isSelectedMode
-                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
-                                      : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-[#D4AF37]/35'
-                                  }`}
-                                >
-                                  {m.label}
-                                </button>
-                              );
-                            })}
                           </div>
-                        </div>
-
-                        {/* Slider Titik Fokus Vertikal Highlight di PC */}
-                        <div className="space-y-1.5 pt-1">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <label className="font-semibold text-[11px] text-stone-700 truncate">
-                              Titik Fokus Vertikal Highlight di PC (0% Atas &ndash; 100% Bawah)
-                            </label>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {[
-                                {
-                                  label: 'Wajah/Atas (25%)',
-                                  val: 25,
-                                  title:
-                                    'Fokuskan area wajah/kepala subjek di bagian atas video (25%) saat di-stretch di layar PC',
-                                },
-                                {
-                                  label: 'Tengah (50%)',
-                                  val: 50,
-                                  title:
-                                    'Fokuskan bagian tengah video (50%) saat ditampilkan di layar PC',
-                                },
-                                {
-                                  label: 'Bawah (75%)',
-                                  val: 75,
-                                  title:
-                                    'Fokuskan bagian bawah video (75%) saat ditampilkan di layar PC',
-                                },
-                              ].map((preset) => (
-                                <button
-                                  key={preset.val}
-                                  type="button"
-                                  title={preset.title}
-                                  onClick={() =>
-                                    setSettingsForm({
-                                      ...settingsForm,
-                                      videoFocusY: preset.val,
-                                    })
-                                  }
-                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap truncate border transition-all ${
-                                    (settingsForm.videoFocusY ?? 28) ===
-                                    preset.val
-                                      ? 'bg-[#8B6914] text-white border-[#8B6914]'
-                                      : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
-                                  }`}
-                                >
-                                  {preset.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={settingsForm.videoFocusY ?? 28}
-                            onChange={(e) =>
-                              setSettingsForm({
-                                ...settingsForm,
-                                videoFocusY: Number(e.target.value),
-                              })
-                            }
-                            className="w-full accent-[#B68D40]"
-                          />
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
 
                     {/* Opacity & Blur */}
@@ -17661,11 +17511,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* =======================================================================
-          MODAL: STUDIO CROP, ZOOM, ROTATE & POSISI FOTO (100% WYSIWYG)
+          RIGHT SIDEBAR INSPECTOR: STUDIO MEDIA, CROP & PENGATURAN SPESIFIK (FOTO & VIDEO)
          ======================================================================= */}
       {photoAdjustTarget && (
         <div
-          className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-50 bg-stone-950/55 backdrop-blur-xs flex justify-end"
           onPointerMove={(e) => {
             if (!photoDragStart) return;
             const dxPx = e.clientX - photoDragStart.clientX;
@@ -17749,32 +17599,412 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           onPointerUp={() => setPhotoDragStart(null)}
           onPointerCancel={() => setPhotoDragStart(null)}
         >
-          <div className="bg-white rounded-2xl border border-[#D4AF37]/45 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
-            {/* Modal Header */}
-            <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-[#FAF3E3] to-[#F3E6C8] border-b border-[#D4AF37]/30 flex items-center justify-between shrink-0">
-              <div className="min-w-0">
-                <h4 className="font-serif text-sm sm:text-base font-bold text-[#1C1917] flex items-center gap-2">
-                  <Crop className="w-4 h-4 text-[#B68D40] shrink-0" />
-                  <span>Studio Crop, Zoom &amp; Posisi Foto</span>
-                </h4>
-                <p className="text-[11px] text-stone-600 font-semibold truncate">
-                  {photoAdjustTarget.label} &bull; Hasil simpan 100% sesuai pratinjau
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setPhotoDragStart(null);
-                  setPhotoAdjustTarget(null);
-                }}
-                className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-white/60"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+          {(() => {
+            const isBgMediaSlot =
+              photoAdjustTarget.kind === 'setting' &&
+              (photoAdjustTarget.field === 'coverBgUrl' ||
+                photoAdjustTarget.field === 'heroPrewedUrl' ||
+                photoAdjustTarget.field === 'pageBgUrl');
+            const mappedVideoSlot:
+              | 'coverVideoUrl'
+              | 'heroVideoUrl'
+              | 'pageVideoUrl'
+              | null =
+              photoAdjustTarget.kind === 'setting'
+                ? photoAdjustTarget.field === 'coverBgUrl'
+                  ? 'coverVideoUrl'
+                  : photoAdjustTarget.field === 'heroPrewedUrl'
+                  ? 'heroVideoUrl'
+                  : photoAdjustTarget.field === 'pageBgUrl'
+                  ? 'pageVideoUrl'
+                  : null
+                : null;
+            const currentSlotVideoUrl = mappedVideoSlot
+              ? (settingsForm[mappedVideoSlot] || '').trim()
+              : '';
+            const showVideoInspector =
+              isBgMediaSlot && inspectorMediaTab === 'video';
 
-            {/* Modal Body */}
-            <div className="p-3.5 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+            return (
+              <div className="bg-white border-l border-[#D4AF37]/45 shadow-2xl w-full max-w-xl lg:max-w-2xl h-full overflow-hidden animate-in slide-in-from-right duration-200 flex flex-col">
+                {/* Sidebar Header */}
+                <div className="px-4 sm:px-5 py-3.5 bg-gradient-to-r from-[#FAF3E3] to-[#F3E6C8] border-b border-[#D4AF37]/35 flex items-center justify-between gap-2 shrink-0">
+                  <div className="min-w-0">
+                    <h4 className="font-serif text-sm sm:text-base font-bold text-[#1C1917] flex items-center gap-2 truncate">
+                      <Crop className="w-4 h-4 text-[#B68D40] shrink-0" />
+                      <span className="truncate">
+                        Studio Media, Crop &amp; Pengaturan Spesifik
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-stone-600 font-semibold truncate">
+                      {photoAdjustTarget.label} &bull; Deteksi Otomatis Foto &amp; Video
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isBgMediaSlot && photoAdjustTarget.kind === 'setting' && (
+                      <label
+                        title="Upload atau ganti file Foto maupun Video langsung dari Sidebar ini"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF8F5] border border-[#D4AF37]/55 text-[#8B6914] font-bold text-[11px] cursor-pointer whitespace-nowrap truncate shadow-2xs transition-all"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                        <span>Ganti File</span>
+                        <input
+                          type="file"
+                          accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.svg,.webp,.png,.jpg,.jpeg,.avif,.bmp,.tif,.tiff,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.rw2,.orf,.raf"
+                          className="hidden"
+                          onChange={(e) =>
+                            handleUploadUnifiedThemeMedia(
+                              e,
+                              photoAdjustTarget.field as
+                                | 'coverBgUrl'
+                                | 'heroPrewedUrl'
+                                | 'pageBgUrl'
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                    <button
+                      type="button"
+                      title="Tutup Sidebar Pengaturan Media"
+                      onClick={() => {
+                        setPhotoDragStart(null);
+                        setPhotoAdjustTarget(null);
+                      }}
+                      className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-white/60"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2-Tab Mode Switcher Bar (For Background Slots that Support Both Photo & Video) */}
+                {isBgMediaSlot && (
+                  <div className="px-4 sm:px-5 pt-3 pb-2 bg-[#FAF8F5] border-b border-stone-200/80 shrink-0">
+                    <div className="p-1 rounded-xl bg-white border border-[#D4AF37]/35 grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        title="Atur Crop, Zoom, Putar & Posisi untuk Foto Latar"
+                        onClick={() => setInspectorMediaTab('photo')}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                          inspectorMediaTab === 'photo'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
+                        }`}
+                      >
+                        <span>🖼️ Pengaturan &amp; Crop Foto</span>
+                      </button>
+                      <button
+                        type="button"
+                        title="Atur Fokus Highlight Vertikal & Mode Stretch Layar PC untuk Video Background"
+                        onClick={() => setInspectorMediaTab('video')}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap truncate transition-all ${
+                          inspectorMediaTab === 'video'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                            : 'text-stone-600 hover:text-[#8B6914]'
+                        }`}
+                      >
+                        <span>🎬 Pengaturan Video &amp; Fokus PC/HP</span>
+                        {currentSlotVideoUrl && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sidebar Body */}
+                <div className="p-3.5 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+                  {showVideoInspector && mappedVideoSlot ? (
+                    <>
+                      {/* Live Video Dual Frame Preview (HP 9:16 vs PC 16:9) */}
+                      <div className="bg-stone-900 rounded-2xl p-3.5 sm:p-4 border border-stone-800 space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-[#FAF3E3] flex items-center gap-1.5 truncate">
+                            <span>🎬 Pratinjau Langsung Adaptasi HP (9:16) &#10132; PC (16:9)</span>
+                          </span>
+                          {currentSlotVideoUrl ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-[10px] whitespace-nowrap">
+                              ✓ Video Aktif di Slot Ini
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-stone-800 text-stone-400 font-bold text-[10px] whitespace-nowrap">
+                              Belum Ada Video
+                            </span>
+                          )}
+                        </div>
+
+                        {currentSlotVideoUrl ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-center bg-stone-950/90 rounded-xl p-3 border border-stone-800">
+                            {/* Left: Mobile 9:16 Preview */}
+                            <div className="sm:col-span-5 flex flex-col items-center space-y-1.5">
+                              <span className="text-[10px] font-bold text-stone-300 uppercase tracking-wider">
+                                📱 Tampilan HP (9:16)
+                              </span>
+                              <div className="aspect-[9/16] w-32 sm:w-36 rounded-xl overflow-hidden border-2 border-[#D4AF37]/80 relative bg-stone-900 shadow-lg">
+                                <video
+                                  src={currentSlotVideoUrl}
+                                  poster={photoAdjustUrl || undefined}
+                                  muted
+                                  loop
+                                  autoPlay
+                                  playsInline
+                                  className="w-full h-full object-cover"
+                                  style={{
+                                    objectPosition: `50% ${
+                                      settingsForm.videoFocusY ?? 28
+                                    }%`,
+                                  }}
+                                />
+                                {/* Focus Y Marker on Mobile Frame */}
+                                <div
+                                  style={{
+                                    top: `${settingsForm.videoFocusY ?? 28}%`,
+                                  }}
+                                  className="absolute inset-x-0 border-t-2 border-dashed border-[#D4AF37] pointer-events-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Right: Widescreen PC 16:9 Preview */}
+                            <div className="sm:col-span-7 flex flex-col items-center space-y-1.5">
+                              <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider text-center">
+                                💻 Tampilan Layar Lebar PC (16:9)
+                              </span>
+                              <div className="aspect-video w-full rounded-xl overflow-hidden border-2 border-[#D4AF37] relative bg-stone-900 shadow-lg">
+                                {(settingsForm.videoDesktopMode ||
+                                  'HIGHLIGHT_COVER') === 'CINEMA_BLUR' ? (
+                                  <>
+                                    <video
+                                      src={currentSlotVideoUrl}
+                                      muted
+                                      loop
+                                      autoPlay
+                                      playsInline
+                                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-md opacity-55"
+                                    />
+                                    <video
+                                      src={currentSlotVideoUrl}
+                                      muted
+                                      loop
+                                      autoPlay
+                                      playsInline
+                                      className="relative z-10 w-full h-full object-contain"
+                                    />
+                                  </>
+                                ) : (
+                                  <video
+                                    src={currentSlotVideoUrl}
+                                    poster={photoAdjustUrl || undefined}
+                                    muted
+                                    loop
+                                    autoPlay
+                                    playsInline
+                                    className="w-full h-full object-cover transition-all"
+                                    style={{
+                                      objectPosition: `50% ${
+                                        settingsForm.videoFocusY ?? 28
+                                      }%`,
+                                    }}
+                                  />
+                                )}
+                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-[#D4AF37]/80 pointer-events-none z-20" />
+                              </div>
+                              <p className="text-[10px] text-stone-400 text-center leading-tight">
+                                Garis emas menunjukkan area fokus vertikal ({settingsForm.videoFocusY ?? 28}%) yang dijaga tetap di tengah layar PC.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-5 rounded-xl bg-stone-950/90 border border-dashed border-[#D4AF37]/50 text-center space-y-2.5">
+                            <p className="text-xs font-bold text-[#FAF3E3]">
+                              Belum ada video pada slot {photoAdjustTarget.label}
+                            </p>
+                            <p className="text-[11px] text-stone-400">
+                              Upload file video (.MP4 / .WebM / .MOV maks. 25 MB) untuk mengaktifkan latar video interaktif.
+                            </p>
+                            <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs whitespace-nowrap">
+                              <Upload className="w-3.5 h-3.5 shrink-0" />
+                              <span>
+                                {uploadingVideoSlot === mappedVideoSlot
+                                  ? 'Mengunggah Video...'
+                                  : 'Upload Video Sekarang (Maks. 25 MB)'}
+                              </span>
+                              <input
+                                type="file"
+                                accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleUploadThemeVideo(e, mappedVideoSlot)
+                                }
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mode Tampilan Video di PC (16:9) */}
+                      <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-[#D4AF37]/40 space-y-2.5">
+                        <label className="block text-xs font-bold text-stone-800 truncate">
+                          1. Mode Adaptasi Video HP (9:16) di Layar PC (16:9)
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {(
+                            [
+                              {
+                                mode: 'HIGHLIGHT_COVER' as const,
+                                label:
+                                  'Stretch Fokus Highlight (Penuhi Layar PC)',
+                                desc: 'Otomatis memenuhi layar lebar PC dengan fokus pada titik subjek',
+                              },
+                              {
+                                mode: 'CINEMA_BLUR' as const,
+                                label:
+                                  'Cinema Spotlight (Tengah Utuh + Blur Kiri-Kanan)',
+                                desc: 'Video vertikal utuh di tengah dengan sayap blur artistik',
+                              },
+                            ] as const
+                          ).map((m) => {
+                            const activeMode =
+                              (settingsForm.videoDesktopMode ||
+                                'HIGHLIGHT_COVER') === m.mode;
+                            return (
+                              <button
+                                key={m.mode}
+                                type="button"
+                                title={m.desc}
+                                onClick={() =>
+                                  setSettingsForm({
+                                    ...settingsForm,
+                                    videoDesktopMode: m.mode,
+                                  })
+                                }
+                                className={`p-2.5 rounded-xl border text-left transition-all ${
+                                  activeMode
+                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                                    : 'bg-white hover:bg-[#FAF3E3] text-stone-800 border-stone-200'
+                                }`}
+                              >
+                                <p className="text-[11px] font-bold truncate">
+                                  {m.label}
+                                </p>
+                                <p
+                                  className={`text-[10px] mt-0.5 line-clamp-1 ${
+                                    activeMode
+                                      ? 'text-amber-100'
+                                      : 'text-stone-500'
+                                  }`}
+                                >
+                                  {m.desc}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Slider Titik Fokus Highlight Vertikal (videoFocusY) */}
+                      <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-[#D4AF37]/40 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <label className="text-xs font-bold text-stone-800 truncate">
+                            2. Titik Fokus Vertikal Highlight di PC (0% Atas &ndash; 100% Bawah)
+                          </label>
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-[#8B6914] font-extrabold text-xs whitespace-nowrap">
+                            {settingsForm.videoFocusY ?? 28}%
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { label: 'Wajah Atas (20%)', val: 20 },
+                            { label: 'Ideal Subjek (28%)', val: 28 },
+                            { label: 'Tengah (50%)', val: 50 },
+                            { label: 'Bawah (75%)', val: 75 },
+                          ].map((preset) => (
+                            <button
+                              key={preset.val}
+                              type="button"
+                              onClick={() =>
+                                setSettingsForm({
+                                  ...settingsForm,
+                                  videoFocusY: preset.val,
+                                })
+                              }
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap truncate border transition-all ${
+                                (settingsForm.videoFocusY ?? 28) === preset.val
+                                  ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                                  : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={settingsForm.videoFocusY ?? 28}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              videoFocusY: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-[#B68D40] cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Transparansi Veil & Blur Latar */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="font-bold text-stone-800 text-[11px]">
+                              Transparansi Veil Latar
+                            </label>
+                            <span className="font-mono font-bold text-[#8B6914] text-[11px]">
+                              {settingsForm.bgOverlayOpacity ?? 88}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={45}
+                            max={95}
+                            value={settingsForm.bgOverlayOpacity ?? 88}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                bgOverlayOpacity: Number(e.target.value),
+                              })
+                            }
+                            className="w-full accent-[#B68D40]"
+                          />
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80">
+                          <label className="block font-bold text-stone-800 text-[11px] mb-1">
+                            Efek Blur Latar
+                          </label>
+                          <select
+                            value={settingsForm.bgBlurIntensity || 'sm'}
+                            onChange={(e) =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                bgBlurIntensity:
+                                  e.target.value as WeddingSettings['bgBlurIntensity'],
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                          >
+                            <option value="none">Tanpa Blur</option>
+                            <option value="sm">Blur Halus (Default)</option>
+                            <option value="md">Blur Sedang</option>
+                            <option value="lg">Blur Kuat</option>
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
               {/* Top Interactive Stage + Live Cropped Output Preview */}
               {(() => {
                 const cb = photoAdjustDraft.cropBox || {
@@ -18452,56 +18682,132 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+                    </>
+                  )}
+                </div>
 
-            {/* Modal Footer */}
-            <div className="px-4 sm:px-5 py-3 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex flex-wrap items-center justify-between gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() =>
-                  setPhotoAdjustDraft({
-                    zoom: 1,
-                    x: 0,
-                    y: 0,
-                    rotation: 0,
-                    flipX: false,
-                    fitMode: 'cover',
-                    aspectRatio: 'auto',
-                    cropBox: { x: 0, y: 0, w: 100, h: 100 },
-                  })
-                }
-                className="px-3.5 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Awal</span>
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhotoDragStart(null);
-                    setPhotoAdjustTarget(null);
-                  }}
-                  className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-bold"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingPhotoCrop}
-                  onClick={handleSavePhotoAdjust}
-                  className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 transition-all disabled:opacity-50"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>
-                    {isSavingPhotoCrop
-                      ? 'Menyimpan Crop...'
-                      : 'Simpan Hasil Crop'}
-                  </span>
-                </button>
+                {/* Sidebar Footer */}
+                <div className="px-4 sm:px-5 py-3 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                  {showVideoInspector && mappedVideoSlot ? (
+                    <>
+                      {currentSlotVideoUrl ? (
+                        <button
+                          type="button"
+                          title="Hapus video dari slot ini dan kembali ke Foto Latar"
+                          onClick={async () => {
+                            void deleteMediaFromSupabaseStorage(
+                              currentSlotVideoUrl
+                            );
+                            const nextSettings: WeddingSettings = {
+                              ...state.settings,
+                              ...settingsForm,
+                              [mappedVideoSlot]: '',
+                              updatedBy: adminUser.username,
+                            };
+                            await commitImmediateSettings(nextSettings);
+                            setInspectorMediaTab('photo');
+                            showToast(
+                              `Video dihapus dari ${photoAdjustTarget.label} — beralih ke Foto Latar.`
+                            );
+                          }}
+                          className="px-3.5 py-2 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>Hapus Video &amp; Pakai Foto</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setInspectorMediaTab('photo')}
+                          className="px-3.5 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all"
+                        >
+                          <span>← Kembali ke Crop Foto</span>
+                        </button>
+                      )}
+                      <div className="flex items-center gap-2 ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhotoDragStart(null);
+                            setPhotoAdjustTarget(null);
+                          }}
+                          className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-bold whitespace-nowrap"
+                        >
+                          Tutup
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const nextSettings: WeddingSettings = {
+                              ...state.settings,
+                              ...settingsForm,
+                              updatedBy: adminUser.username,
+                            };
+                            await commitImmediateSettings(nextSettings);
+                            setPhotoAdjustTarget(null);
+                            showToast(
+                              `✓ Pengaturan Video & Fokus "${photoAdjustTarget.label}" berhasil disimpan!`
+                            );
+                          }}
+                          className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>Simpan Pengaturan Video</span>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPhotoAdjustDraft({
+                            zoom: 1,
+                            x: 0,
+                            y: 0,
+                            rotation: 0,
+                            flipX: false,
+                            fitMode: 'cover',
+                            aspectRatio: 'auto',
+                            cropBox: { x: 0, y: 0, w: 100, h: 100 },
+                          })
+                        }
+                        className="px-3.5 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap transition-all"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                        <span>Reset Awal</span>
+                      </button>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhotoDragStart(null);
+                            setPhotoAdjustTarget(null);
+                          }}
+                          className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-bold whitespace-nowrap"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSavingPhotoCrop}
+                          onClick={handleSavePhotoAdjust}
+                          className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap truncate transition-all disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {isSavingPhotoCrop
+                              ? 'Menyimpan Crop...'
+                              : 'Simpan Hasil Crop'}
+                          </span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
 
