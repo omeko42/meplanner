@@ -5,7 +5,7 @@
 # ✨ MEPlan — My Event Planner (All-in-One Event Readiness & Digital Invitation Suite)
 
 > **Official Commercial Product Showcase & Release Documentation**  
-> Created & Maintained by **Eko Agung Krisdianto ([@omeko11](https://github.com/omeko11)) © 2026**  
+> Created & Maintained by **Eko Agung Krisdianto ([@omeko42](https://github.com/omeko42)) © 2026**  
 > 🌐 **Bilingual Ready:** Bahasa Indonesia (ID) & English (EN) | 💎 **Multi-Event SaaS Platform (Wedding • Birthday • Graduation • Meeting • Gala Dinner)**
 
 ---
@@ -51,8 +51,8 @@
 
 ## 👨‍💻 Developer & Official Profile
 
-- 👨‍💻 **GitHub Profile**: [**@omeko11**](https://github.com/omeko11)
+- 👨‍💻 **GitHub Profile**: [**@omeko42**](https://github.com/omeko42)
 - 🔗 **LinkedIn**: [**Eko Agung Krisdianto**](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
 
 ---
-*© 2026 MEPlan — My Event Planner by [@omeko11](https://github.com/omeko11). All Rights Reserved.*
+*© 2026 MEPlan — My Event Planner by [@omeko42](https://github.com/omeko42). All Rights Reserved.*

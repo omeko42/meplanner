@@ -395,9 +395,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       .slice(0, 6);
   }, [activeLookupClientGuests, guestCodeInput]);
 
+  const rawDeveloperUrl = primarySettings.developerCreditUrl?.trim() || '';
   const developerUrl =
-    primarySettings.developerCreditUrl?.trim() ||
-    'https://github.com/omeko11';
+    !rawDeveloperUrl || /github\.com\/omeko11/i.test(rawDeveloperUrl)
+      ? 'https://github.com/omeko42'
+      : rawDeveloperUrl;
   const rawWa =
     primarySettings.contactWhatsappNumber?.trim() || '089638616516';
   const whatsappUrl = /^https?:\/\//i.test(rawWa)
@@ -407,7 +409,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const rawPaypalConfig = primarySettings.commercialPaypalUrl?.trim() || '';
   const paypalHref =
     /^https?:\/\//i.test(rawPaypalConfig) &&
-    rawPaypalConfig !== 'https://paypal.me/omeko11'
+    rawPaypalConfig !== 'https://paypal.me/omeko42'
       ? rawPaypalConfig
       : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
 
@@ -1177,9 +1179,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"
-                  title="GitHub Profile @omeko11"
+                  title="GitHub Profile @omeko42"
                 >
-                  omeko11
+                  omeko42
                 </a>{' '}
                 <span className="font-normal text-stone-500 hidden xl:inline">
                   &bull;{' '}
@@ -2460,7 +2462,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
                 <div
                   className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest max-w-full"
-                  title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko11"
+                  title="My Event Planner — Platform Multi-Event & Undangan Digital Eksklusif by omeko42"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                   <span className="whitespace-nowrap truncate">
@@ -2471,7 +2473,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       rel="noopener noreferrer"
                       className="underline decoration-[#D4AF37]/60 underline-offset-2 hover:text-[#B68D40]"
                     >
-                      omeko11
+                      omeko42
                     </a>
                   </span>
                 </div>
@@ -3556,7 +3558,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     rel="noopener noreferrer"
                     className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
                   >
-                    omeko11
+                    omeko42
                   </a>{' '}
                   &copy; 2026
                 </p>

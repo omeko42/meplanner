@@ -1363,6 +1363,12 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   ) {
     next.siteTitle = 'My Event Planner';
   }
+  if (
+    next.developerCreditUrl &&
+    /github\.com\/omeko11/i.test(next.developerCreditUrl)
+  ) {
+    next.developerCreditUrl = 'https://github.com/omeko42';
+  }
   return next;
 }
 
@@ -1924,10 +1930,18 @@ function normalizeCloudState(
       )
     : INITIAL_BUDGET_ITEMS;
 
+  const normalizedSettings = parsed.settings
+    ? healStalePlaceholderSettings(parsed.settings as WeddingSettings)
+    : INITIAL_SETTINGS;
+  if (
+    normalizedSettings.developerCreditUrl &&
+    /github\.com\/omeko11/i.test(normalizedSettings.developerCreditUrl)
+  ) {
+    normalizedSettings.developerCreditUrl = 'https://github.com/omeko42';
+  }
+
   return {
-    settings: parsed.settings
-      ? healStalePlaceholderSettings(parsed.settings as WeddingSettings)
-      : INITIAL_SETTINGS,
+    settings: normalizedSettings,
     tasks: cleanTasks,
     guests: cleanGuests,
     wishes: cleanWishes,

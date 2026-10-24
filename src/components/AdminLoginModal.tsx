@@ -94,7 +94,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 MEPlan — My Event Planner
               </h3>
               <p className="text-[10px] font-semibold text-[#8B6914]">
-                by omeko11
+                by omeko42
               </p>
             </div>
           </div>

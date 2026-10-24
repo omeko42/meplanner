@@ -4525,18 +4525,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="font-bold text-[#8B6914]">
                     by{' '}
                     <a
-                      href={
-                        (
+                      href={(() => {
+                        const raw = (
                           settingsForm.developerCreditUrl ??
                           state.settings.developerCreditUrl
-                        )?.trim() ||
-                        'https://github.com/omeko11'
-                      }
+                        )?.trim();
+                        return !raw || /github\.com\/omeko11/i.test(raw)
+                          ? 'https://github.com/omeko42'
+                          : raw;
+                      })()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"
                     >
-                      omeko11
+                      omeko42
                     </a>
                   </span>
                   <span className="hidden md:inline">
@@ -12451,7 +12453,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     'Visa / Mastercard / JCB / Apple Pay',
                                   accountOrWalletAddress:
                                     'Official Card Checkout Gateway',
-                                  accountHolder: 'My Event Planner (@omeko11)',
+                                  accountHolder: 'My Event Planner (@omeko42)',
                                   networkOrBranch:
                                     'Visa, Mastercard, Amex, JCB & Debit Online',
                                   checkoutUrl:
@@ -15347,7 +15349,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===========================================================
-                    5. BRANDING OMEKO11, KONTAK WA/EMAIL, BAHASA & PEMBAYARAN KOMERSIAL
+                    5. BRANDING OMEKO42, KONTAK WA/EMAIL, BAHASA & PEMBAYARAN KOMERSIAL
                    =========================================================== */}
                 {superadminMenuTab === 'branding' && (
                   <div className="space-y-4">
@@ -15358,10 +15360,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                         <div>
                           <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Pengaturan Branding <span className="text-[#8B6914]">omeko11</span>, Kontak Global &amp; Pembayaran Komersial
+                            Pengaturan Branding <span className="text-[#8B6914]">omeko42</span>, Kontak Global &amp; Pembayaran Komersial
                           </h3>
                           <p className="text-[11px] text-stone-500">
-                            Kelola link GitHub omeko11, Kontak WA, Email Bisnis (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
+                            Kelola link GitHub omeko42, Kontak WA, Email Bisnis (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
                           </p>
                         </div>
                       </div>
@@ -15578,22 +15580,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Link Credit &ldquo;omeko11&rdquo; (GitHub / Website):
+                            Link Credit &ldquo;omeko42&rdquo; (GitHub / Website):
                           </label>
                           <input
                             type="url"
-                            value={
-                              settingsForm.developerCreditUrl ??
-                              state.settings.developerCreditUrl ??
-                              'https://github.com/omeko11'
-                            }
+                            value={(() => {
+                              const raw =
+                                settingsForm.developerCreditUrl ??
+                                state.settings.developerCreditUrl;
+                              return !raw || /github\.com\/omeko11/i.test(raw)
+                                ? 'https://github.com/omeko42'
+                                : raw;
+                            })()}
                             onChange={(e) =>
                               setSettingsForm((prev) => ({
                                 ...prev,
                                 developerCreditUrl: e.target.value,
                               }))
                             }
-                            placeholder="https://github.com/omeko11"
+                            placeholder="https://github.com/omeko42"
                             className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                           />
                         </div>
@@ -15695,7 +15700,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           Tampilkan Credit &amp; Kontak WA di Footer
                         </p>
                         <p className="text-[11px] text-stone-500">
-                          Menampilkan tautan credit by omeko11, Kontak WA, dan Email Bisnis pada bagian bawah halaman.
+                          Menampilkan tautan credit by omeko42, Kontak WA, dan Email Bisnis pada bagian bawah halaman.
                         </p>
                       </div>
                       <input
@@ -15726,11 +15731,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               (state.settings as any).brandLogoUrl ??
                               ''
                             ).trim(),
-                            developerCreditUrl:
-                              (
+                            developerCreditUrl: (() => {
+                              const raw = (
                                 settingsForm.developerCreditUrl ??
                                 state.settings.developerCreditUrl
-                              )?.trim() || 'https://github.com/omeko11',
+                              )?.trim();
+                              return !raw || /github\.com\/omeko11/i.test(raw)
+                                ? 'https://github.com/omeko42'
+                                : raw;
+                            })(),
                             contactWhatsappNumber:
                               (
                                 settingsForm.contactWhatsappNumber ??
@@ -15766,7 +15775,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             action: 'SIMPAN',
                             status: 'SUCCESS',
                             summary:
-                              'Menyimpan Pengaturan Branding omeko11, Kontak Global & Pembayaran Komersial',
+                              'Menyimpan Pengaturan Branding omeko42, Kontak Global & Pembayaran Komersial',
                           });
                           showToast(
                             '✓ Pengaturan Branding, Kontak Global & Pembayaran Komersial berhasil disimpan!'
@@ -15975,18 +15984,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <p className="text-xs font-extrabold text-stone-900 tracking-wide">
                   My Event Planner by{' '}
                   <a
-                    href={
-                      (
+                    href={(() => {
+                      const raw = (
                         settingsForm.developerCreditUrl ??
                         state.settings.developerCreditUrl
-                      )?.trim() ||
-                      'https://github.com/omeko11'
-                    }
+                      )?.trim();
+                      return !raw || /github\.com\/omeko11/i.test(raw)
+                        ? 'https://github.com/omeko42'
+                        : raw;
+                    })()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
                   >
-                    omeko11
+                    omeko42
                   </a>{' '}
                   &copy; 2026
                 </p>

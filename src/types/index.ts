@@ -420,7 +420,7 @@ export interface WeddingSettings {
   disableRsvpSubmission?: boolean;
   storageQuotaLimitMb?: number; // default 500 MB
   showFooterCredit?: boolean; // default true
-  developerCreditUrl?: string; // default https://github.com/omeko11
+  developerCreditUrl?: string; // default https://github.com/omeko42
   contactWhatsappNumber?: string; // default 089638616516
   contactBusinessEmail?: string; // default e98.bisnis@gmail.com
   defaultLanguage?: 'ID' | 'EN';

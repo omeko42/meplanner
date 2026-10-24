@@ -1614,9 +1614,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const renderDeveloperCreditBar = (compact = false) => {
     if (settings.showFooterCredit === false) return null;
+    const rawDevUrl = settings.developerCreditUrl?.trim() || '';
     const developerUrl =
-      settings.developerCreditUrl?.trim() ||
-      'https://github.com/omeko11';
+      !rawDevUrl || /github\.com\/omeko11/i.test(rawDevUrl)
+        ? 'https://github.com/omeko42'
+        : rawDevUrl;
     const rawWa = settings.contactWhatsappNumber?.trim() || '089638616516';
     const whatsappUrl = /^https?:\/\//i.test(rawWa)
       ? rawWa
@@ -1643,7 +1645,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               rel="noopener noreferrer"
               className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold"
             >
-              omeko11
+              omeko42
             </a>{' '}
             &copy; 2026
           </span>
@@ -1702,7 +1704,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
             target="_blank"
             rel="noopener noreferrer"
-            title="Profil LinkedIn Resmi Eko Agung Krisdianto (omeko11)"
+            title="Profil LinkedIn Resmi Eko Agung Krisdianto (omeko42)"
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
             {/* LinkedIn Official SVG Icon */}
