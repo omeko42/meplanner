@@ -492,6 +492,23 @@ export function saveStoredAdminUser(user: AdminUser | null): void {
   try {
     if (user) {
       localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(user));
+      const cleanEmail = (user.email || '').trim().toLowerCase();
+      if (cleanEmail && cleanEmail.includes('@') && !cleanEmail.endsWith('.local')) {
+        const cleanDisplayName = (user.nama || cleanEmail)
+          .replace(/\s*\(Superadmin.*?\)/gi, '')
+          .replace(/\s*\(GRATIS\)/gi, '')
+          .trim();
+        const rawList = localStorage.getItem('meplanner_browser_google_accounts_v1');
+        const list: Array<{ email: string; name: string }> = rawList
+          ? JSON.parse(rawList)
+          : [];
+        const filtered = list.filter((item) => item.email !== cleanEmail);
+        filtered.unshift({ email: cleanEmail, name: cleanDisplayName });
+        localStorage.setItem(
+          'meplanner_browser_google_accounts_v1',
+          JSON.stringify(filtered.slice(0, 5))
+        );
+      }
     } else {
       localStorage.removeItem(ADMIN_AUTH_KEY);
     }

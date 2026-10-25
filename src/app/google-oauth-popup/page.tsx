@@ -3,6 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import type { GoogleLoginResponse } from '@/components/ReactGoogleLoginButton';
 
+const BROWSER_GOOGLE_ACCOUNTS_KEY = 'meplanner_browser_google_accounts_v1';
+const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
+
+interface SavedBrowserGoogleAccount {
+  email: string;
+  name: string;
+}
+
 function formatDisplayNameFromEmail(email: string): {
   fullName: string;
   givenName: string;
@@ -25,9 +33,81 @@ function formatDisplayNameFromEmail(email: string): {
   return { fullName, givenName, familyName };
 }
 
+function loadBrowserSavedAccounts(): SavedBrowserGoogleAccount[] {
+  if (typeof window === 'undefined') return [];
+  const map = new Map<string, SavedBrowserGoogleAccount>();
+  try {
+    const rawList = localStorage.getItem(BROWSER_GOOGLE_ACCOUNTS_KEY);
+    if (rawList) {
+      const parsed = JSON.parse(rawList) as SavedBrowserGoogleAccount[];
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const email = (item?.email || '').trim().toLowerCase();
+          if (email && email.includes('@') && !email.endsWith('.local')) {
+            const cleanName = (
+              item.name || formatDisplayNameFromEmail(email).fullName
+            )
+              .replace(/\s*\(Superadmin.*?\)/gi, '')
+              .replace(/\s*\(GRATIS\)/gi, '')
+              .trim();
+            map.set(email, { email, name: cleanName });
+          }
+        }
+      }
+    }
+
+    const rawActive = localStorage.getItem(ADMIN_AUTH_KEY);
+    if (rawActive) {
+      const activeUser = JSON.parse(rawActive) as {
+        email?: string;
+        nama?: string;
+      };
+      const email = (activeUser?.email || '').trim().toLowerCase();
+      if (email && email.includes('@') && !email.endsWith('.local')) {
+        const cleanName = (
+          activeUser.nama || formatDisplayNameFromEmail(email).fullName
+        )
+          .replace(/\s*\(Superadmin.*?\)/gi, '')
+          .replace(/\s*\(GRATIS\)/gi, '')
+          .trim();
+        if (!map.has(email)) {
+          map.set(email, { email, name: cleanName });
+        }
+      }
+    }
+  } catch {
+    // Ignore storage read errors
+  }
+  return Array.from(map.values());
+}
+
+function saveBrowserGoogleAccount(email: string, name: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name
+      .replace(/\s*\(Superadmin.*?\)/gi, '')
+      .replace(/\s*\(GRATIS\)/gi, '')
+      .trim();
+    const current = loadBrowserSavedAccounts().filter(
+      (a) => a.email !== cleanEmail
+    );
+    current.unshift({ email: cleanEmail, name: cleanName });
+    localStorage.setItem(
+      BROWSER_GOOGLE_ACCOUNTS_KEY,
+      JSON.stringify(current.slice(0, 5))
+    );
+  } catch {
+    // Ignore storage write errors
+  }
+}
+
 export default function GoogleOAuthPopupPage() {
   const [lang, setLang] = useState<'ID' | 'EN'>('ID');
-  const [step, setStep] = useState<'EMAIL' | 'PASSWORD'>('EMAIL');
+  const [savedAccounts, setSavedAccounts] = useState<
+    SavedBrowserGoogleAccount[]
+  >([]);
+  const [step, setStep] = useState<'CHOOSER' | 'EMAIL' | 'PASSWORD'>('EMAIL');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +119,12 @@ export default function GoogleOAuthPopupPage() {
     const params = new URLSearchParams(window.location.search);
     const qLang = params.get('lang');
     if (qLang === 'EN') setLang('EN');
+
+    const browserAccounts = loadBrowserSavedAccounts();
+    setSavedAccounts(browserAccounts);
+    if (browserAccounts.length > 0) {
+      setStep('CHOOSER');
+    }
   }, []);
 
   const normalizedEmail = (() => {
@@ -65,9 +151,7 @@ export default function GoogleOAuthPopupPage() {
     e.preventDefault();
     setErrorMsg('');
     if (!passwordInput) {
-      setErrorMsg(
-        lang === 'ID' ? 'Masukkan sandi.' : 'Enter a password.'
-      );
+      setErrorMsg(lang === 'ID' ? 'Masukkan sandi.' : 'Enter a password.');
       return;
     }
 
@@ -116,13 +200,20 @@ export default function GoogleOAuthPopupPage() {
         res.ok && json.success && json.user ? json.user : undefined;
       const { fullName, givenName, familyName } =
         formatDisplayNameFromEmail(normalizedEmail);
+      const displayName = (verifiedUser?.nama || fullName)
+        .replace(/\s*\(Superadmin.*?\)/gi, '')
+        .trim();
+
+      // Remember this account in THIS browser's localStorage for future 1-click detection
+      saveBrowserGoogleAccount(normalizedEmail, displayName);
+
       const now = Date.now();
       const googleId = `google_${normalizedEmail.replace(/[^a-z0-9]/g, '')}`;
       const fakeJwt = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(
         JSON.stringify({
           sub: googleId,
           email: normalizedEmail,
-          name: verifiedUser?.nama || fullName,
+          name: displayName,
           iat: Math.floor(now / 1000),
         })
       )}.sig`;
@@ -135,7 +226,7 @@ export default function GoogleOAuthPopupPage() {
           googleId,
           imageUrl: '',
           email: normalizedEmail,
-          name: verifiedUser?.nama || fullName,
+          name: displayName,
           givenName,
           familyName,
         },
@@ -201,12 +292,7 @@ export default function GoogleOAuthPopupPage() {
       <div className="flex-1 flex flex-col justify-center px-8 sm:px-10 py-6 max-w-[440px] w-full mx-auto">
         {/* Google Wordmark */}
         <div className="flex justify-center mb-4">
-          <svg
-            viewBox="0 0 75 24"
-            width="75"
-            height="24"
-            aria-hidden="true"
-          >
+          <svg viewBox="0 0 75 24" width="75" height="24" aria-hidden="true">
             <path
               fill="#4285F4"
               d="M9.24 8.19v2.46h5.88c-.18 1.38-.64 2.39-1.34 3.1-.86.86-2.2 1.8-4.54 1.8-3.62 0-6.45-2.92-6.45-6.54s2.83-6.54 6.45-6.54c1.95 0 3.38.77 4.43 1.76L15.4 2.5C13.94 1.08 11.98 0 9.24 0 4.28 0 .11 4.04.11 9s4.17 9 9.13 9c2.68 0 4.7-.88 6.28-2.52 1.62-1.62 2.13-3.91 2.13-5.75 0-.57-.04-1.1-.13-1.54H9.24z"
@@ -231,16 +317,80 @@ export default function GoogleOAuthPopupPage() {
           </svg>
         </div>
 
-        {step === 'EMAIL' ? (
-          <form onSubmit={handleEmailStepSubmit} className="space-y-6">
+        {step === 'CHOOSER' && savedAccounts.length > 0 ? (
+          <div className="space-y-5">
+            <div className="text-center space-y-1">
+              <h1 className="text-2xl font-normal text-[#202124]">
+                {lang === 'ID' ? 'Pilih akun' : 'Choose an account'}
+              </h1>
+              <p className="text-sm text-[#5f6368]">
+                {lang === 'ID' ? 'untuk melanjutkan ke ' : 'to continue to '}
+                <span className="font-semibold text-[#1a73e8]">MEPlanner</span>
+              </p>
+            </div>
+
+            <div className="divide-y divide-[#dadce0] border-y border-[#dadce0]">
+              {savedAccounts.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => {
+                    setEmailInput(acc.email);
+                    setErrorMsg('');
+                    setStep('PASSWORD');
+                  }}
+                  className="w-full py-3 px-2 hover:bg-[#f8f9fa] flex items-center gap-3 text-left transition-colors cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#1a73e8] text-white text-sm font-medium flex items-center justify-center shrink-0">
+                    {acc.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#202124] truncate">
+                      {acc.name}
+                    </p>
+                    <p className="text-xs text-[#5f6368] truncate">
+                      {acc.email}
+                    </p>
+                  </div>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailInput('');
+                  setErrorMsg('');
+                  setStep('EMAIL');
+                }}
+                className="w-full py-3 px-2 hover:bg-[#f8f9fa] flex items-center gap-3 text-left transition-colors cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#f1f3f4] text-[#5f6368] flex items-center justify-center shrink-0">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 fill-current"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-[#202124]">
+                  {lang === 'ID' ? 'Gunakan akun lain' : 'Use another account'}
+                </span>
+              </button>
+            </div>
+          </div>
+        ) : step === 'EMAIL' ? (
+          <form
+            onSubmit={handleEmailStepSubmit}
+            autoComplete="on"
+            className="space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <h1 className="text-2xl font-normal text-[#202124]">
                 {lang === 'ID' ? 'Login' : 'Sign in'}
               </h1>
               <p className="text-sm text-[#202124]">
-                {lang === 'ID'
-                  ? 'Lanjutkan ke '
-                  : 'Continue to '}
+                {lang === 'ID' ? 'Lanjutkan ke ' : 'Continue to '}
                 <span className="font-semibold text-[#1a73e8]">MEPlanner</span>
               </p>
             </div>
@@ -248,7 +398,10 @@ export default function GoogleOAuthPopupPage() {
             <div className="space-y-2 pt-2">
               <div className="relative">
                 <input
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="username email"
                   autoFocus
                   value={emailInput}
                   onChange={(e) => {
@@ -286,15 +439,28 @@ export default function GoogleOAuthPopupPage() {
             </div>
 
             <div className="flex items-center justify-between pt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== 'undefined') window.close();
-                }}
-                className="text-sm font-medium text-[#1a73e8] hover:bg-[#f6fafe] px-3 py-2 rounded-md transition-colors cursor-pointer"
-              >
-                {lang === 'ID' ? 'Batal' : 'Cancel'}
-              </button>
+              {savedAccounts.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMsg('');
+                    setStep('CHOOSER');
+                  }}
+                  className="text-sm font-medium text-[#1a73e8] hover:bg-[#f6fafe] px-3 py-2 rounded-md transition-colors cursor-pointer"
+                >
+                  {lang === 'ID' ? 'Pilih akun tersimpan' : 'Saved accounts'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') window.close();
+                  }}
+                  className="text-sm font-medium text-[#1a73e8] hover:bg-[#f6fafe] px-3 py-2 rounded-md transition-colors cursor-pointer"
+                >
+                  {lang === 'ID' ? 'Batal' : 'Cancel'}
+                </button>
+              )}
 
               <button
                 type="submit"
@@ -305,7 +471,11 @@ export default function GoogleOAuthPopupPage() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handlePasswordStepSubmit} className="space-y-6">
+          <form
+            onSubmit={handlePasswordStepSubmit}
+            autoComplete="on"
+            className="space-y-6"
+          >
             <div className="text-center space-y-2.5">
               <h1 className="text-2xl font-normal text-[#202124]">
                 {lang === 'ID' ? 'Selamat datang' : 'Welcome'}
@@ -316,7 +486,7 @@ export default function GoogleOAuthPopupPage() {
                   onClick={() => {
                     setErrorMsg('');
                     setPasswordInput('');
-                    setStep('EMAIL');
+                    setStep(savedAccounts.length > 0 ? 'CHOOSER' : 'EMAIL');
                   }}
                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#dadce0] hover:bg-[#f8f9fa] text-xs font-medium text-[#3c4043] transition-colors cursor-pointer"
                 >
@@ -338,9 +508,21 @@ export default function GoogleOAuthPopupPage() {
             </div>
 
             <div className="space-y-3 pt-2">
+              <input
+                type="email"
+                name="username"
+                autoComplete="username"
+                value={normalizedEmail}
+                readOnly
+                className="sr-only"
+                tabIndex={-1}
+              />
               <div className="relative">
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   autoFocus
                   value={passwordInput}
                   onChange={(e) => {
@@ -391,7 +573,7 @@ export default function GoogleOAuthPopupPage() {
                 onClick={() => {
                   setErrorMsg('');
                   setPasswordInput('');
-                  setStep('EMAIL');
+                  setStep(savedAccounts.length > 0 ? 'CHOOSER' : 'EMAIL');
                 }}
                 className="text-sm font-medium text-[#1a73e8] hover:bg-[#f6fafe] px-3 py-2 rounded-md transition-colors cursor-pointer"
               >

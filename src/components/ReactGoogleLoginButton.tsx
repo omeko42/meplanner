@@ -73,6 +73,18 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !clientId) return;
+    const existingScript = document.getElementById('google-gsi-client-script');
+    if (existingScript) return;
+    const script = document.createElement('script');
+    script.id = 'google-gsi-client-script';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }, [clientId]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleMessage = (event: MessageEvent) => {
