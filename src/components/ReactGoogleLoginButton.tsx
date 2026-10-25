@@ -50,8 +50,12 @@ export interface ReactGoogleLoginProps {
   }) => React.ReactElement;
 }
 
+export const DEFAULT_GOOGLE_OAUTH_CLIENT_ID =
+  '512370466811-6f1tt3lepri4q9hi4254a7i6cg52mjt6.apps.googleusercontent.com';
+
 export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
-  clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+  clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+    DEFAULT_GOOGLE_OAUTH_CLIENT_ID,
   buttonText = 'Sign in with Google',
   onSuccess,
   onFailure,

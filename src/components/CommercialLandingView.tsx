@@ -2386,6 +2386,7 @@ interface CommercialLandingViewProps {
     themeLayoutArchetype?: ThemeLayoutArchetype;
     coverImageUrl?: string;
     heroImageUrl?: string;
+    isOAuthVerified?: boolean;
   }) => void;
   onSelectClientInvitation: (
     clientId: string,
@@ -8357,6 +8358,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     if (onQuickCreateWithGoogle) {
                       onQuickCreateWithGoogle({
                         email: response.profileObj.email,
+                        displayName: response.profileObj.name,
                         eventTitle:
                           googleOnboardingEventTitle.trim() ||
                           response.profileObj.name,
@@ -8369,6 +8371,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           selectedThemeObj.layoutArchetype,
                         coverImageUrl: selectedThemeObj.coverBgUrl,
                         heroImageUrl: selectedThemeObj.heroPrewedUrl,
+                        isOAuthVerified: response.isOAuthVerified,
                       });
                     } else {
                       onOpenAdminPortal();
