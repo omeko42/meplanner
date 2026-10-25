@@ -1470,6 +1470,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   >(null);
   // Expanded individual guest row inside Daftar Tamu (default null = collapsed 1-row)
   const [expandedGuestId, setExpandedGuestId] = useState<string | null>(null);
+  const [guestListViewMode, setGuestListViewMode] = useState<'list' | 'grid'>('list');
+  const [scheduleListViewMode, setScheduleListViewMode] = useState<'list' | 'grid'>('list');
   // Expanded sub-card inside Tema & Latar (default null = collapsed)
   const [expandedBgCardKey, setExpandedBgCardKey] = useState<string | null>(
     null
@@ -6814,16 +6816,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {guestSubTab === 'list' ? (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-                {/* LinkedIn-Style Header with + and Edit icons */}
-                <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2">
+                {/* LinkedIn-Style Header with View Switcher, Format WA, + and Edit icons */}
+                <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                     <span>
                       Daftar Tamu ({filteredGuests.length} &bull;{' '}
                       {filteredGuests.reduce((s, g) => s + (Number(g.pax) || 0), 0)} Pax)
                     </span>
-                    <InfoTooltip text="Pilih penanda undangan (Cetak Tebal, Cetak Biasa, Online), status RSVP, dan jumlah Pax langsung pada baris tamu." />
+                    <InfoTooltip text="Pilih penanda undangan (Cetak Tebal, Cetak Biasa, Online), status RSVP, dan jumlah Pax langsung pada baris atau kartu tamu." />
                   </h2>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <div className="inline-flex items-center p-0.5 rounded-full bg-stone-100 border border-stone-200/90 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setGuestListViewMode('list')}
+                        className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                          guestListViewMode === 'list'
+                            ? 'bg-stone-900 text-[#E6C76B] shadow-2xs'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                        title="Tampilan Baris Ringkas (Klik nama untuk detail)"
+                      >
+                        ☰ Baris
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGuestListViewMode('grid')}
+                        className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                          guestListViewMode === 'grid'
+                            ? 'bg-stone-900 text-[#E6C76B] shadow-2xs'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                        title="Tampilan Kartu Grid (Semua detail langsung terlihat rapi)"
+                      >
+                        ⊞ Grid
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={openGlobalWaTemplateEditor}
@@ -6871,72 +6899,544 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                <div className="divide-y divide-stone-200 px-4 sm:px-6">
-                  {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
-                    const waData = getGuestPersonalWaData(guest, state.settings);
-                    const guestHashToken = waData.guestHashToken;
-                    const isLinkCopied = copiedGuestLinkId === guest.id;
-                    const currentFormat = normalizeGuestFormat(guest.invitationFormat);
-                    const isOnlineGuest = currentFormat === 'Online';
-                    const currentGuestPax = Math.max(1, Number(guest.pax) || 1);
-                    const paxOptions = Array.from(
-                      new Set([
-                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20,
-                        25, 30, 40, 50, 100, currentGuestPax,
-                      ])
-                    ).sort((a, b) => a - b);
+                {guestListViewMode === 'list' ? (
+                  <div className="divide-y divide-stone-200 px-4 sm:px-6">
+                    {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
+                      const waData = getGuestPersonalWaData(guest, state.settings);
+                      const guestHashToken = waData.guestHashToken;
+                      const isLinkCopied = copiedGuestLinkId === guest.id;
+                      const currentFormat = normalizeGuestFormat(guest.invitationFormat);
+                      const isOnlineGuest = currentFormat === 'Online';
+                      const currentGuestPax = Math.max(1, Number(guest.pax) || 1);
+                      const paxOptions = Array.from(
+                        new Set([
+                          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20,
+                          25, 30, 40, 50, 100, currentGuestPax,
+                        ])
+                      ).sort((a, b) => a - b);
 
-                    const isGuestExpanded = expandedGuestId === guest.id;
+                      const isGuestExpanded = expandedGuestId === guest.id;
 
-                    return (
-                      <div
-                        key={guest.id}
-                        className="py-3 transition-colors"
-                      >
-                        {/* BARIS UTAMA 1 BARIS: Nama + Key Hash di Kiri, Kirim WA + Aksi di Kanan */}
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-                          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedGuestId(
-                                  isGuestExpanded ? null : guest.id
-                                )
-                              }
-                              title="Klik nama tamu untuk membuka atau menutup detail Prioritas, Format Undangan, RSVP, Kuota Pax & Instansi"
-                              className="inline-flex items-center gap-1.5 text-left min-w-0 group cursor-pointer"
-                            >
-                              <h3 className="font-bold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] truncate transition-colors">
-                                {guest.guestName}
-                              </h3>
-                              <ChevronDown
-                                className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
-                                  isGuestExpanded
-                                    ? 'rotate-180 text-[#8B6914]'
-                                    : ''
-                                }`}
-                              />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                                  void navigator.clipboard.writeText(waData.inviteUrl);
-                                  showToast(
-                                    `✓ Link Undangan Personal "${guest.guestName}" (${waData.inviteUrl}) berhasil disalin!`
-                                  );
+                      return (
+                        <div
+                          key={guest.id}
+                          className="py-3 transition-colors"
+                        >
+                          {/* BARIS UTAMA 1 BARIS: Nama + Key Hash di Kiri, Kirim WA + Aksi di Kanan */}
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                            <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedGuestId(
+                                    isGuestExpanded ? null : guest.id
+                                  )
                                 }
-                              }}
-                              title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
-                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
-                            >
-                              <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
-                              <span>{guestHashToken}</span>
-                            </button>
+                                title="Klik nama tamu untuk membuka atau menutup detail Prioritas, Format Undangan, RSVP, Kuota Pax & Instansi"
+                                className="inline-flex items-center gap-1.5 text-left min-w-0 group cursor-pointer"
+                              >
+                                <h3 className="font-bold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] truncate transition-colors">
+                                  {guest.guestName}
+                                </h3>
+                                <ChevronDown
+                                  className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                    isGuestExpanded
+                                      ? 'rotate-180 text-[#8B6914]'
+                                      : ''
+                                  }`}
+                                />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                    void navigator.clipboard.writeText(waData.inviteUrl);
+                                    showToast(
+                                      `✓ Link Undangan Personal "${guest.guestName}" (${waData.inviteUrl}) berhasil disalin!`
+                                    );
+                                  }
+                                }}
+                                title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
+                              >
+                                <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
+                                <span>{guestHashToken}</span>
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap max-w-full shrink-0">
+                              <a
+                                href={waData.waHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() =>
+                                  recordAdminAnalyticsEvent(
+                                    'SHARE_WA',
+                                    guest,
+                                    `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guestHashToken})`
+                                  )
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs whitespace-nowrap"
+                              >
+                                <Send className="w-3 h-3 shrink-0" /> Kirim WA
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => openGuestWaPreview(guest)}
+                                className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 whitespace-nowrap"
+                              >
+                                Teks WA
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(waData.inviteUrl);
+                                  setCopiedGuestLinkId(guest.id);
+                                  setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                                  recordAdminAnalyticsEvent(
+                                    'COPY_LINK',
+                                    guest,
+                                    `Menyalin link undangan untuk ${guest.guestName} (${guestHashToken})`
+                                  );
+                                  showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
+                                }}
+                                className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1 whitespace-nowrap"
+                              >
+                                {isLinkCopied ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-600 shrink-0" /> Disalin
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 shrink-0" /> Link
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onSwitchToPublicPreview(guest)}
+                                className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                                title="Preview Undangan"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingGuest(guest)}
+                                className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                                title="Edit Tamu"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestConfirm({
+                                    title: 'Hapus Tamu Undangan?',
+                                    message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
+                                    confirmLabel: 'Ya, Hapus Tamu',
+                                    variant: 'danger',
+                                    onConfirm: async () => {
+                                      await onDeleteGuest(guest.id);
+                                      showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
+                                    },
+                                  })
+                                }
+                                className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
+                                title="Hapus Tamu"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 flex-wrap max-w-full shrink-0">
+                          {/* PANEL DETAIL SAAT NAMA TAMU DIKLIK (2 KOLOM SEIMBANG KIRI & KANAN) */}
+                          {isGuestExpanded && (
+                            <div className="mt-2.5 p-3 rounded-xl bg-[#FAF8F5] border border-[#E5D5B5]/80 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+                              {/* Kolom Kiri: Badges, Selectors & Metadata Instansi */}
+                              <div className="lg:col-span-7 flex flex-col justify-between gap-2">
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] sm:text-[11px] font-bold">
+                                    {guest.priority}
+                                  </span>
+
+                                  {/* Penanda Cetak Undangan: Cetak Tebal | Cetak Biasa | Online */}
+                                  <select
+                                    aria-label={`Penanda undangan ${guest.guestName}`}
+                                    value={currentFormat}
+                                    onChange={async (e) => {
+                                      const nextFormat = e.target.value as InvitationFormat;
+                                      await onUpsertGuest({
+                                        ...guest,
+                                        invitationFormat: nextFormat,
+                                        updatedBy: adminUser.username,
+                                      });
+                                      showToast(
+                                        `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
+                                      );
+                                    }}
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer transition-colors ${
+                                      currentFormat === 'Cetak Tebal'
+                                        ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
+                                        : currentFormat === 'Cetak Biasa'
+                                        ? 'bg-white text-stone-800 border-stone-300'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    }`}
+                                  >
+                                    <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
+                                    <option value="Cetak Biasa">✉️ Cetak Biasa</option>
+                                    <option value="Online">🌐 Online (Link)</option>
+                                  </select>
+
+                                  {/* Status RSVP */}
+                                  <select
+                                    aria-label={`Status RSVP ${guest.guestName}`}
+                                    value={guest.rsvpStatus}
+                                    onChange={async (e) => {
+                                      const nextRsvp = e.target.value as RsvpStatus;
+                                      await onUpsertGuest({
+                                        ...guest,
+                                        rsvpStatus: nextRsvp,
+                                        confirmedPax:
+                                          nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
+                                        updatedBy: adminUser.username,
+                                      });
+                                      showToast(
+                                        `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
+                                      );
+                                    }}
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border cursor-pointer ${
+                                      guest.rsvpStatus === 'Hadir'
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                        : guest.rsvpStatus === 'Tidak Hadir'
+                                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                        : 'bg-white text-stone-700 border-stone-300'
+                                    }`}
+                                  >
+                                    <option value="Belum Konfirmasi">Belum Konfirmasi</option>
+                                    <option value="Hadir">✓ Hadir</option>
+                                    <option value="Masih Ragu">Masih Ragu</option>
+                                    <option value="Tidak Hadir">✕ Tidak Hadir</option>
+                                  </select>
+
+                                  {/* Jumlah Pax */}
+                                  <select
+                                    aria-label={`Jumlah Pax ${guest.guestName}`}
+                                    value={String(currentGuestPax)}
+                                    onChange={async (e) => {
+                                      if (e.target.value === 'CUSTOM') {
+                                        setEditingGuest(guest);
+                                        return;
+                                      }
+                                      const nextPax = Math.max(
+                                        1,
+                                        Number(e.target.value) || 1
+                                      );
+                                      await onUpsertGuest({
+                                        ...guest,
+                                        pax: nextPax,
+                                        confirmedPax:
+                                          guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
+                                        updatedBy: adminUser.username,
+                                      });
+                                      showToast(
+                                        `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
+                                      );
+                                    }}
+                                    className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-white text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
+                                  >
+                                    {paxOptions.map((num) => (
+                                      <option key={num} value={String(num)}>
+                                        {num} Pax
+                                      </option>
+                                    ))}
+                                    <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
+                                  </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                                    <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                                    <span>
+                                      🏢{' '}
+                                      {!guest.institution ||
+                                      guest.institution.trim() === '' ||
+                                      guest.institution.trim() === '-'
+                                        ? 'di Tempat'
+                                        : guest.institution}{' '}
+                                      &bull; {guest.guestType} &bull; {guest.side} &bull; Kode:{' '}
+                                      {guest.invitationCode || '-'}
+                                      {guest.phone ? ` • 📱 ${guest.phone}` : ''}
+                                    </span>
+                                    {!isOnlineGuest && guest.address && (
+                                      <span>&bull; {guest.address}</span>
+                                    )}
+                                    {!isOnlineGuest && guest.deliveryStatus && (
+                                      <span className="text-[#8B6914] font-semibold">
+                                        &bull; {guest.deliveryStatus}
+                                      </span>
+                                    )}
+                                  </p>
+                                  {guest.notes && (
+                                    <p className="text-[11px] text-stone-500 italic">
+                                      Catatan: {guest.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Kolom Kanan: Box Tautan Undangan Personal */}
+                              <div className="lg:col-span-5 flex flex-col justify-between p-2.5 rounded-lg bg-white border border-stone-200/90 shadow-2xs gap-1.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                                    🔗 Tautan Undangan Personal
+                                  </span>
+                                  {isOnlineGuest ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                      Link Aktif
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                      {currentFormat}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="truncate font-mono text-[11px] text-emerald-800 bg-emerald-50/60 border border-emerald-200/80 px-2.5 py-1 rounded-md flex items-center justify-between gap-2">
+                                  <span className="truncate">{waData.inviteUrl}</span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(waData.inviteUrl);
+                                        setCopiedGuestLinkId(guest.id);
+                                        setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                                        recordAdminAnalyticsEvent(
+                                          'COPY_LINK',
+                                          guest,
+                                          `Menyalin tautan undangan personal untuk ${guest.guestName} (${guestHashToken})`
+                                        );
+                                        showToast(
+                                          `Link undangan online ${guest.guestName} berhasil disalin!`
+                                        );
+                                      }}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded font-sans text-[10px] font-bold cursor-pointer"
+                                    >
+                                      {isLinkCopied ? 'Tersalin!' : 'Salin'}
+                                    </button>
+                                    <a
+                                      href={waData.inviteUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="bg-white hover:bg-stone-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-sans text-[10px] font-bold"
+                                    >
+                                      Buka ↗
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* TAMPILAN KARTU GRID (EXECUTIVE CRM GUEST CARDS) */
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 p-4 sm:p-6">
+                    {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
+                      const waData = getGuestPersonalWaData(guest, state.settings);
+                      const guestHashToken = waData.guestHashToken;
+                      const isLinkCopied = copiedGuestLinkId === guest.id;
+                      const currentFormat = normalizeGuestFormat(guest.invitationFormat);
+                      const currentGuestPax = Math.max(1, Number(guest.pax) || 1);
+                      const paxOptions = Array.from(
+                        new Set([
+                          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20,
+                          25, 30, 40, 50, 100, currentGuestPax,
+                        ])
+                      ).sort((a, b) => a - b);
+
+                      return (
+                        <div
+                          key={guest.id}
+                          className="rounded-2xl border border-stone-200/90 bg-gradient-to-b from-white to-[#FAF8F5]/90 p-3.5 shadow-2xs hover:shadow-md hover:border-[#D4AF37]/60 transition-all flex flex-col justify-between gap-3"
+                        >
+                          {/* Card Top Row: Priority + Key Hash on Left, Quick Icons on Right */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold shrink-0">
+                                {guest.priority}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                    void navigator.clipboard.writeText(waData.inviteUrl);
+                                    showToast(
+                                      `✓ Link Undangan Personal "${guest.guestName}" (${waData.inviteUrl}) berhasil disalin!`
+                                    );
+                                  }
+                                }}
+                                title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
+                              >
+                                <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
+                                <span>{guestHashToken}</span>
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => onSwitchToPublicPreview(guest)}
+                                className="w-7 h-7 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                                title="Preview Undangan"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingGuest(guest)}
+                                className="w-7 h-7 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                                title="Edit Tamu"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestConfirm({
+                                    title: 'Hapus Tamu Undangan?',
+                                    message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
+                                    confirmLabel: 'Ya, Hapus Tamu',
+                                    variant: 'danger',
+                                    onConfirm: async () => {
+                                      await onDeleteGuest(guest.id);
+                                      showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
+                                    },
+                                  })
+                                }
+                                className="w-7 h-7 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
+                                title="Hapus Tamu"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Card Identity Block */}
+                          <div>
+                            <h3
+                              className="font-extrabold text-sm text-stone-900 leading-snug line-clamp-1"
+                              title={guest.guestName}
+                            >
+                              {guest.guestName}
+                            </h3>
+                            <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">
+                              {guest.institution && guest.institution.trim() !== '-'
+                                ? guest.institution
+                                : 'di Tempat'}{' '}
+                              &bull; {guest.guestType} &bull; {guest.side}
+                            </p>
+                          </div>
+
+                          {/* Card 3-Column Inline Controls */}
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <select
+                              aria-label={`Penanda undangan ${guest.guestName}`}
+                              value={currentFormat}
+                              onChange={async (e) => {
+                                const nextFormat = e.target.value as InvitationFormat;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  invitationFormat: nextFormat,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
+                                );
+                              }}
+                              className={`w-full px-2 py-1 rounded-lg text-[10px] font-extrabold border cursor-pointer truncate ${
+                                currentFormat === 'Cetak Tebal'
+                                  ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
+                                  : currentFormat === 'Cetak Biasa'
+                                  ? 'bg-white text-stone-800 border-stone-300'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              }`}
+                            >
+                              <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
+                              <option value="Cetak Biasa">✉️ Cetak Biasa</option>
+                              <option value="Online">🌐 Online</option>
+                            </select>
+
+                            <select
+                              aria-label={`Status RSVP ${guest.guestName}`}
+                              value={guest.rsvpStatus}
+                              onChange={async (e) => {
+                                const nextRsvp = e.target.value as RsvpStatus;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  rsvpStatus: nextRsvp,
+                                  confirmedPax:
+                                    nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
+                                );
+                              }}
+                              className={`w-full px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer truncate ${
+                                guest.rsvpStatus === 'Hadir'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : guest.rsvpStatus === 'Tidak Hadir'
+                                  ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                  : 'bg-white text-stone-700 border-stone-300'
+                              }`}
+                            >
+                              <option value="Belum Konfirmasi">Belum Konfirmasi</option>
+                              <option value="Hadir">✓ Hadir</option>
+                              <option value="Masih Ragu">Masih Ragu</option>
+                              <option value="Tidak Hadir">✕ Tidak Hadir</option>
+                            </select>
+
+                            <select
+                              aria-label={`Jumlah Pax ${guest.guestName}`}
+                              value={String(currentGuestPax)}
+                              onChange={async (e) => {
+                                if (e.target.value === 'CUSTOM') {
+                                  setEditingGuest(guest);
+                                  return;
+                                }
+                                const nextPax = Math.max(
+                                  1,
+                                  Number(e.target.value) || 1
+                                );
+                                await onUpsertGuest({
+                                  ...guest,
+                                  pax: nextPax,
+                                  confirmedPax:
+                                    guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
+                                );
+                              }}
+                              className="w-full px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer truncate"
+                            >
+                              {paxOptions.map((num) => (
+                                <option key={num} value={String(num)}>
+                                  {num} Pax
+                                </option>
+                              ))}
+                              <option value="CUSTOM">✏️ Bebas...</option>
+                            </select>
+                          </div>
+
+                          {/* Card Bottom Action Bar */}
+                          <div className="pt-2.5 border-t border-stone-200/80 flex items-center justify-between gap-1.5">
                             <a
                               href={waData.waHref}
                               target="_blank"
@@ -6948,14 +7448,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guestHashToken})`
                                 )
                               }
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs whitespace-nowrap"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs whitespace-nowrap"
                             >
                               <Send className="w-3 h-3 shrink-0" /> Kirim WA
                             </a>
                             <button
                               type="button"
                               onClick={() => openGuestWaPreview(guest)}
-                              className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 whitespace-nowrap"
+                              className="px-2.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 whitespace-nowrap"
                             >
                               Teks WA
                             </button>
@@ -6972,7 +7472,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 );
                                 showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
                               }}
-                              className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1 whitespace-nowrap"
+                              className="px-2.5 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1 whitespace-nowrap"
                             >
                               {isLinkCopied ? (
                                 <>
@@ -6980,207 +7480,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </>
                               ) : (
                                 <>
-                                  <Copy className="w-3 h-3 shrink-0" /> Link
+                                  <Copy className="w-3 h-3 shrink-0" /> Salin Link
                                 </>
                               )}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => onSwitchToPublicPreview(guest)}
-                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
-                              title="Preview Undangan"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingGuest(guest)}
-                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
-                              title="Edit Tamu"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                requestConfirm({
-                                  title: 'Hapus Tamu Undangan?',
-                                  message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
-                                  confirmLabel: 'Ya, Hapus Tamu',
-                                  variant: 'danger',
-                                  onConfirm: async () => {
-                                    await onDeleteGuest(guest.id);
-                                    showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
-                                  },
-                                })
-                              }
-                              className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
-                              title="Hapus Tamu"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         </div>
-
-                        {/* PANEL DETAIL SAAT NAMA TAMU DIKLIK */}
-                        {isGuestExpanded && (
-                          <div className="mt-2.5 pt-2.5 border-t border-stone-200/80 bg-[#FAF8F5]/80 rounded-xl p-3 space-y-2.5">
-                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] sm:text-[11px] font-bold">
-                                {guest.priority}
-                              </span>
-
-                              {/* Penanda Cetak Undangan: Cetak Tebal | Cetak Biasa | Online */}
-                              <select
-                                aria-label={`Penanda undangan ${guest.guestName}`}
-                                value={currentFormat}
-                                onChange={async (e) => {
-                                  const nextFormat = e.target.value as InvitationFormat;
-                                  await onUpsertGuest({
-                                    ...guest,
-                                    invitationFormat: nextFormat,
-                                    updatedBy: adminUser.username,
-                                  });
-                                  showToast(
-                                    `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
-                                  );
-                                }}
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer transition-colors ${
-                                  currentFormat === 'Cetak Tebal'
-                                    ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
-                                    : currentFormat === 'Cetak Biasa'
-                                    ? 'bg-white text-stone-800 border-stone-300'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                }`}
-                              >
-                                <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
-                                <option value="Cetak Biasa">✉️ Cetak Biasa</option>
-                                <option value="Online">🌐 Online (Link)</option>
-                              </select>
-
-                              {/* Status RSVP */}
-                              <select
-                                aria-label={`Status RSVP ${guest.guestName}`}
-                                value={guest.rsvpStatus}
-                                onChange={async (e) => {
-                                  const nextRsvp = e.target.value as RsvpStatus;
-                                  await onUpsertGuest({
-                                    ...guest,
-                                    rsvpStatus: nextRsvp,
-                                    confirmedPax:
-                                      nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
-                                    updatedBy: adminUser.username,
-                                  });
-                                  showToast(
-                                    `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
-                                  );
-                                }}
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border cursor-pointer ${
-                                  guest.rsvpStatus === 'Hadir'
-                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                    : guest.rsvpStatus === 'Tidak Hadir'
-                                    ? 'bg-rose-100 text-rose-800 border-rose-300'
-                                    : 'bg-white text-stone-700 border-stone-300'
-                                }`}
-                              >
-                                <option value="Belum Konfirmasi">Belum Konfirmasi</option>
-                                <option value="Hadir">✓ Hadir</option>
-                                <option value="Masih Ragu">Masih Ragu</option>
-                                <option value="Tidak Hadir">✕ Tidak Hadir</option>
-                              </select>
-
-                              {/* Jumlah Pax */}
-                              <select
-                                aria-label={`Jumlah Pax ${guest.guestName}`}
-                                value={String(currentGuestPax)}
-                                onChange={async (e) => {
-                                  if (e.target.value === 'CUSTOM') {
-                                    setEditingGuest(guest);
-                                    return;
-                                  }
-                                  const nextPax = Math.max(
-                                    1,
-                                    Number(e.target.value) || 1
-                                  );
-                                  await onUpsertGuest({
-                                    ...guest,
-                                    pax: nextPax,
-                                    confirmedPax:
-                                      guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
-                                    updatedBy: adminUser.username,
-                                  });
-                                  showToast(
-                                    `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
-                                  );
-                                }}
-                                className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-white text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
-                              >
-                                {paxOptions.map((num) => (
-                                  <option key={num} value={String(num)}>
-                                    {num} Pax
-                                  </option>
-                                ))}
-                                <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
-                              </select>
-                            </div>
-
-                            <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
-                              <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                              <span>
-                                {!guest.institution ||
-                                guest.institution.trim() === '' ||
-                                guest.institution.trim() === '-'
-                                  ? 'di Tempat'
-                                  : guest.institution}{' '}
-                                &bull; {guest.guestType} &bull; {guest.side}
-                              </span>
-                              {!isOnlineGuest && guest.address && (
-                                <span>&bull; {guest.address}</span>
-                              )}
-                              {!isOnlineGuest && guest.deliveryStatus && (
-                                <span className="text-[#8B6914] font-semibold">
-                                  &bull; {guest.deliveryStatus}
-                                </span>
-                              )}
-                            </p>
-
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 border border-emerald-200 max-w-full">
-                              <span className="text-[10px] font-bold text-emerald-800 shrink-0">
-                                Link:
-                              </span>
-                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[200px] sm:max-w-[420px]">
-                                {waData.inviteUrl}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(waData.inviteUrl);
-                                  setCopiedGuestLinkId(guest.id);
-                                  setTimeout(() => setCopiedGuestLinkId(null), 2000);
-                                  recordAdminAnalyticsEvent(
-                                    'COPY_LINK',
-                                    guest,
-                                    `Menyalin tautan undangan personal untuk ${guest.guestName} (${guestHashToken})`
-                                  );
-                                  showToast(
-                                    `Link undangan online ${guest.guestName} berhasil disalin!`
-                                  );
-                                }}
-                                className="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shrink-0"
-                              >
-                                {isLinkCopied ? 'Tersalin!' : 'Salin'}
-                              </button>
-                            </div>
-
-                            {guest.notes && (
-                              <p className="text-xs text-stone-500">{guest.notes}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {filteredGuests.length > 6 && (
                   <button
@@ -9265,8 +9574,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             : 'bg-white border-stone-200/90'
                                                         }`}
                                                       >
-                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                          {/* Clickable 1-Row Event Header */}
+                                                        {/* ROW 1: Full Event Title + Status Badges on Left, Compact Gear/Edit/Delete Buttons on Right */}
+                                                        <div className="flex items-center justify-between gap-2">
                                                           <button
                                                             type="button"
                                                             onClick={() =>
@@ -9276,8 +9585,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                   : ev.id
                                                               )
                                                             }
-                                                            title="Klik nama acara untuk membuka atau menutup detail & form edit acara ini"
-                                                            className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer"
+                                                            title="Klik nama acara untuk membuka pengaturan switch (Acara Utama, Countdown, Tampil) & form edit acara"
+                                                            className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer flex-wrap"
                                                           >
                                                             <div
                                                               className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
@@ -9290,7 +9599,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             >
                                                               {evIdx + 1}
                                                             </div>
-                                                            <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
+                                                            <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
                                                               {ev.title}
                                                             </span>
                                                             <ChevronDown
@@ -9305,126 +9614,41 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                 ★ Utama
                                                               </span>
                                                             )}
+                                                            {isCountdownOn && (
+                                                              <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0 whitespace-nowrap">
+                                                                ⏱ Countdown
+                                                              </span>
+                                                            )}
+                                                            {!isVisibleOnInv && (
+                                                              <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold shrink-0 whitespace-nowrap">
+                                                                Disembunyikan
+                                                              </span>
+                                                            )}
                                                           </button>
 
-                                                          {/* Switches & Action Buttons */}
-                                                          <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap justify-end shrink-0">
-                                                            {/* Switch 1: Acara Utama */}
-                                                            <div
-                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                                                isMain
-                                                                  ? 'bg-[#FAF3E3] border-[#D4AF37]'
-                                                                  : 'bg-stone-50 border-stone-200'
+                                                          {/* Compact Action Buttons on Right */}
+                                                          <div className="flex items-center gap-1.5 shrink-0">
+                                                            <button
+                                                              type="button"
+                                                              onClick={() =>
+                                                                setExpandedScheduleEventId(
+                                                                  isEvExpanded
+                                                                    ? null
+                                                                    : ev.id
+                                                                )
+                                                              }
+                                                              title="Buka/tutup pengaturan Switch (Acara Utama, Countdown, Tampil) & form edit"
+                                                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
+                                                                isEvExpanded
+                                                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                                                                  : 'bg-stone-100 hover:bg-stone-200/80 text-stone-700 border-stone-200'
                                                               }`}
-                                                              title="Jadikan Acara Utama (menentukan tanggal & lokasi utama di Hero/Cover undangan)"
                                                             >
-                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                                                Acara Utama
+                                                              <Settings className="w-3.5 h-3.5 shrink-0" />
+                                                              <span className="hidden sm:inline">
+                                                                Switch
                                                               </span>
-                                                              <button
-                                                                type="button"
-                                                                role="switch"
-                                                                aria-checked={isMain}
-                                                                onClick={() =>
-                                                                  handleSetMainScheduleEvent(
-                                                                    ev.id
-                                                                  )
-                                                                }
-                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                                                  isMain
-                                                                    ? 'bg-[#B68D40]'
-                                                                    : 'bg-stone-300'
-                                                                }`}
-                                                              >
-                                                                <span
-                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                                                    isMain
-                                                                      ? 'translate-x-4'
-                                                                      : 'translate-x-0'
-                                                                  }`}
-                                                                />
-                                                              </button>
-                                                            </div>
-
-                                                            {/* Switch 2: Countdown */}
-                                                            <div
-                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                                                isCountdownOn
-                                                                  ? 'bg-emerald-50/70 border-emerald-200'
-                                                                  : 'bg-stone-50 border-stone-200'
-                                                              }`}
-                                                              title="Aktifkan/matikan hitung mundur (Countdown) untuk acara ini"
-                                                            >
-                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                                                Countdown
-                                                              </span>
-                                                              <button
-                                                                type="button"
-                                                                role="switch"
-                                                                aria-checked={
-                                                                  isCountdownOn
-                                                                }
-                                                                onClick={() =>
-                                                                  handleToggleEventCountdownSwitch(
-                                                                    ev.id,
-                                                                    ev.title
-                                                                  )
-                                                                }
-                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                                                  isCountdownOn
-                                                                    ? 'bg-emerald-600'
-                                                                    : 'bg-stone-300'
-                                                                }`}
-                                                              >
-                                                                <span
-                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                                                    isCountdownOn
-                                                                      ? 'translate-x-4'
-                                                                      : 'translate-x-0'
-                                                                  }`}
-                                                                />
-                                                              </button>
-                                                            </div>
-
-                                                            {/* Switch 3: Tampil di Undangan */}
-                                                            <div
-                                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                                                isVisibleOnInv
-                                                                  ? 'bg-emerald-50/70 border-emerald-200'
-                                                                  : 'bg-rose-50/70 border-rose-200'
-                                                              }`}
-                                                              title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
-                                                            >
-                                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                                                Tampil
-                                                              </span>
-                                                              <button
-                                                                type="button"
-                                                                role="switch"
-                                                                aria-checked={
-                                                                  isVisibleOnInv
-                                                                }
-                                                                onClick={() =>
-                                                                  handleToggleSingleEventVisibility(
-                                                                    ev.id,
-                                                                    ev.title
-                                                                  )
-                                                                }
-                                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                                                  isVisibleOnInv
-                                                                    ? 'bg-emerald-600'
-                                                                    : 'bg-stone-300'
-                                                                }`}
-                                                              >
-                                                                <span
-                                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                                                    isVisibleOnInv
-                                                                      ? 'translate-x-4'
-                                                                      : 'translate-x-0'
-                                                                  }`}
-                                                                />
-                                                              </button>
-                                                            </div>
+                                                            </button>
 
                                                             <button
                                                               type="button"
@@ -9435,7 +9659,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                     : ev.id
                                                                 )
                                                               }
-                                                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                                                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
                                                                 isEvExpanded
                                                                   ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
                                                                   : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border-[#D4AF37]/45'
@@ -9454,14 +9678,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                   ev.title
                                                                 )
                                                               }
-                                                              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px]"
+                                                              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] cursor-pointer"
                                                             >
                                                               Hapus
                                                             </button>
                                                           </div>
                                                         </div>
 
-                                                        {/* Inline Event Detail Form (Shown when clicked) */}
+                                                        {/* ROW 2 / EXPANDED DRAWER (Switches + Summary + Inline Edit Form) */}
                                                         {isEvExpanded && (
                                                           <form
                                                             onSubmit={
@@ -9469,6 +9693,131 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             }
                                                             className="mt-3 pt-3 border-t border-stone-200/80 space-y-2.5"
                                                           >
+                                                            {/* 3 Switches Bar Inside Row 2 */}
+                                                            <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/90 flex flex-wrap items-center justify-between gap-2">
+                                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                                                                <Settings className="w-3.5 h-3.5 text-[#8B6914]" />
+                                                                <span>Pengaturan Switch Acara:</span>
+                                                              </span>
+                                                              <div className="flex items-center gap-2 flex-wrap">
+                                                                {/* Switch 1: Acara Utama */}
+                                                                <div
+                                                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                    isMain
+                                                                      ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                                                      : 'bg-white border-stone-200'
+                                                                  }`}
+                                                                  title="Jadikan Acara Utama (menentukan tanggal & lokasi utama di Hero/Cover undangan)"
+                                                                >
+                                                                  <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                    Acara Utama
+                                                                  </span>
+                                                                  <button
+                                                                    type="button"
+                                                                    role="switch"
+                                                                    aria-checked={isMain}
+                                                                    onClick={() =>
+                                                                      handleSetMainScheduleEvent(
+                                                                        ev.id
+                                                                      )
+                                                                    }
+                                                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                      isMain
+                                                                        ? 'bg-[#B68D40]'
+                                                                        : 'bg-stone-300'
+                                                                    }`}
+                                                                  >
+                                                                    <span
+                                                                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                        isMain
+                                                                          ? 'translate-x-4'
+                                                                          : 'translate-x-0'
+                                                                      }`}
+                                                                    />
+                                                                  </button>
+                                                                </div>
+
+                                                                {/* Switch 2: Countdown */}
+                                                                <div
+                                                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                    isCountdownOn
+                                                                      ? 'bg-emerald-50/70 border-emerald-200'
+                                                                      : 'bg-white border-stone-200'
+                                                                  }`}
+                                                                  title="Aktifkan/matikan hitung mundur (Countdown) untuk acara ini"
+                                                                >
+                                                                  <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                    Countdown
+                                                                  </span>
+                                                                  <button
+                                                                    type="button"
+                                                                    role="switch"
+                                                                    aria-checked={
+                                                                      isCountdownOn
+                                                                    }
+                                                                    onClick={() =>
+                                                                      handleToggleEventCountdownSwitch(
+                                                                        ev.id,
+                                                                        ev.title
+                                                                      )
+                                                                    }
+                                                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                      isCountdownOn
+                                                                        ? 'bg-emerald-600'
+                                                                        : 'bg-stone-300'
+                                                                    }`}
+                                                                  >
+                                                                    <span
+                                                                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                        isCountdownOn
+                                                                          ? 'translate-x-4'
+                                                                          : 'translate-x-0'
+                                                                      }`}
+                                                                    />
+                                                                  </button>
+                                                                </div>
+
+                                                                {/* Switch 3: Tampil di Undangan */}
+                                                                <div
+                                                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                                    isVisibleOnInv
+                                                                      ? 'bg-emerald-50/70 border-emerald-200'
+                                                                      : 'bg-rose-50/70 border-rose-200'
+                                                                  }`}
+                                                                  title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                                                >
+                                                                  <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                                    Tampil
+                                                                  </span>
+                                                                  <button
+                                                                    type="button"
+                                                                    role="switch"
+                                                                    aria-checked={
+                                                                      isVisibleOnInv
+                                                                    }
+                                                                    onClick={() =>
+                                                                      handleToggleSingleEventVisibility(
+                                                                        ev.id,
+                                                                        ev.title
+                                                                      )
+                                                                    }
+                                                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                                      isVisibleOnInv
+                                                                        ? 'bg-emerald-600'
+                                                                        : 'bg-stone-300'
+                                                                    }`}
+                                                                  >
+                                                                    <span
+                                                                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                                        isVisibleOnInv
+                                                                          ? 'translate-x-4'
+                                                                          : 'translate-x-0'
+                                                                      }`}
+                                                                    />
+                                                                  </button>
+                                                                </div>
+                                                              </div>
+                                                            </div>
                                                             {/* Full-Width Event Summary Badges & Info Strip */}
                                                             <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E5D5B5]/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600">
                                                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -12303,7 +12652,41 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         Belum ada rangkaian acara. Klik <strong>+ Tambah Acara</strong> untuk menambahkan jadwal.
                       </div>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div className="space-y-3">
+                        {/* View Switcher Bar (Baris vs Grid) */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30">
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-stone-600">
+                            <Settings className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                            <span>
+                              Klik nama acara atau ikon <strong>⚙️ Switch</strong> untuk mengatur <strong>Acara Utama</strong>, <strong>Countdown</strong> &amp; <strong>Visibilitas</strong>
+                            </span>
+                          </div>
+                          <div className="inline-flex items-center p-0.5 rounded-lg bg-stone-200/80 border border-stone-300/70 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setScheduleListViewMode('list')}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold transition-all cursor-pointer ${
+                                scheduleListViewMode === 'list'
+                                  ? 'bg-white text-[#8B6914] shadow-2xs border border-[#D4AF37]/40'
+                                  : 'text-stone-600 hover:text-stone-900'
+                              }`}
+                            >
+                              ☰ Baris
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setScheduleListViewMode('grid')}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold transition-all cursor-pointer ${
+                                scheduleListViewMode === 'grid'
+                                  ? 'bg-white text-[#8B6914] shadow-2xs border border-[#D4AF37]/40'
+                                  : 'text-stone-600 hover:text-stone-900'
+                              }`}
+                            >
+                              ⊞ Grid
+                            </button>
+                          </div>
+                        </div>
+
                         {(() => {
                           const currentMainId = (
                             scheduleEvents.find((e) => e.isMainEvent) ||
@@ -12311,256 +12694,470 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             scheduleEvents[0]
                           )?.id;
 
-                          return scheduleEvents.map((ev, evIdx) => {
-                            const isMain = ev.id === currentMainId;
-                            const isCountdownOn = Boolean(ev.enableCountdown);
-                            const isVisibleOnInv =
-                              ev.showOnInvitation !== false;
-                            const isEvExpanded =
-                              expandedScheduleEventId === ev.id;
-
+                          if (scheduleListViewMode === 'grid') {
                             return (
-                              <div
-                                key={ev.id}
-                                className={`p-3 rounded-xl border transition-all ${
-                                  isMain
-                                    ? 'bg-gradient-to-r from-white via-[#FAF8F5] to-[#FAF3E3]/50 border-[#D4AF37] shadow-2xs'
-                                    : 'bg-white border-stone-200/90 hover:border-[#D4AF37]/50'
-                                }`}
-                              >
-                                {/* ROW 1 (1 Clean Line: Nama Acara + ChevronDown on Left, Switches & Actions on Right) */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setExpandedScheduleEventId(
-                                        isEvExpanded ? null : ev.id
-                                      )
-                                    }
-                                    title="Klik nama acara untuk membuka atau menutup detail jadwal acara ini"
-                                    className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer"
-                                  >
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {scheduleEvents.map((ev, evIdx) => {
+                                  const isMain = ev.id === currentMainId;
+                                  const isCountdownOn = Boolean(ev.enableCountdown);
+                                  const isVisibleOnInv = ev.showOnInvitation !== false;
+
+                                  return (
                                     <div
-                                      className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
+                                      key={ev.id}
+                                      className={`p-3.5 rounded-2xl border flex flex-col justify-between gap-2.5 transition-all ${
                                         isMain
-                                          ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
-                                          : isCountdownOn
-                                            ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
-                                            : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
+                                          ? 'bg-gradient-to-br from-white via-[#FAF8F5] to-[#FAF3E3]/60 border-[#D4AF37] shadow-2xs'
+                                          : 'bg-white border-stone-200/90 hover:border-[#D4AF37]/50'
                                       }`}
                                     >
-                                      {evIdx + 1}
-                                    </div>
-                                    <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
-                                      {ev.title}
-                                    </span>
-                                    <ChevronDown
-                                      className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
-                                        isEvExpanded
-                                          ? 'rotate-180 text-[#8B6914]'
-                                          : ''
-                                      }`}
-                                    />
-                                    {isMain && (
-                                      <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
-                                        ★ Utama
-                                      </span>
-                                    )}
-                                  </button>
+                                      {/* Card Header */}
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                          <div
+                                            className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] mt-0.5 ${
+                                              isMain
+                                                ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
+                                                : isCountdownOn
+                                                  ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                                  : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
+                                            }`}
+                                          >
+                                            {evIdx + 1}
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <span className="font-extrabold text-xs sm:text-sm text-stone-900 leading-snug">
+                                                {ev.title}
+                                              </span>
+                                              {isMain && (
+                                                <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
+                                                  ★ Utama
+                                                </span>
+                                              )}
+                                            </div>
+                                            {ev.badge && (
+                                              <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold">
+                                                {ev.badge}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
 
-                                  <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap max-w-full justify-end shrink-0">
-                                    {/* Switch 1: Acara Utama */}
-                                    <div
-                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                        isMain
-                                          ? 'bg-[#FAF3E3] border-[#D4AF37]'
-                                          : 'bg-stone-50 border-stone-200'
-                                      }`}
-                                      title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
-                                    >
-                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                        Acara Utama
-                                      </span>
-                                      <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={isMain}
-                                        onClick={() =>
-                                          handleSetMainScheduleEvent(ev.id)
-                                        }
-                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                          isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                            isMain
-                                              ? 'translate-x-4'
-                                              : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
-                                    </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpenEditScheduleEvent(ev)}
+                                            className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px] cursor-pointer"
+                                          >
+                                            Edit
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleDeleteScheduleEvent(ev.id, ev.title)
+                                            }
+                                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] cursor-pointer"
+                                          >
+                                            Hapus
+                                          </button>
+                                        </div>
+                                      </div>
 
-                                    {/* Switch 2: Countdown */}
-                                    <div
-                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                        isCountdownOn
-                                          ? 'bg-emerald-50/70 border-emerald-200'
-                                          : 'bg-stone-50 border-stone-200'
-                                      }`}
-                                      title="Aktifkan/matikan Countdown untuk acara ini"
-                                    >
-                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                        Countdown
-                                      </span>
-                                      <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={isCountdownOn}
-                                        onClick={() =>
-                                          handleToggleEventCountdownSwitch(
-                                            ev.id,
-                                            ev.title
-                                          )
-                                        }
-                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                          isCountdownOn
-                                            ? 'bg-emerald-600'
-                                            : 'bg-stone-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                            isCountdownOn
-                                              ? 'translate-x-4'
-                                              : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
-                                    </div>
-
-                                    {/* Switch 3: Tampil */}
-                                    <div
-                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                        isVisibleOnInv
-                                          ? 'bg-emerald-50/70 border-emerald-200'
-                                          : 'bg-rose-50/70 border-rose-200'
-                                      }`}
-                                      title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
-                                    >
-                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                        Tampil
-                                      </span>
-                                      <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={isVisibleOnInv}
-                                        onClick={() =>
-                                          handleToggleSingleEventVisibility(
-                                            ev.id,
-                                            ev.title
-                                          )
-                                        }
-                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                          isVisibleOnInv
-                                            ? 'bg-emerald-600'
-                                            : 'bg-stone-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                            isVisibleOnInv
-                                              ? 'translate-x-4'
-                                              : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenEditScheduleEvent(ev)}
-                                      className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
-                                    >
-                                      Edit
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleDeleteScheduleEvent(ev.id, ev.title)
-                                      }
-                                      className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer"
-                                    >
-                                      Hapus
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* EXPANDED DETAIL DRAWER (Shown when Event Name is clicked) */}
-                                {isEvExpanded && (
-                                  <div className="mt-2.5 pt-2.5 border-t border-stone-200/80 space-y-2 text-xs">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        {ev.badge && (
-                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold">
-                                            {ev.badge}
+                                      {/* Card Body */}
+                                      <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 space-y-1.5 text-[11px] text-stone-700">
+                                        <div className="flex items-start gap-1.5">
+                                          <span className="shrink-0">📅</span>
+                                          <span className="font-semibold text-stone-800">
+                                            {ev.dateLabel || '-'} &bull; ⏰ {ev.timeLabel || '-'}
                                           </span>
-                                        )}
+                                        </div>
+                                        <div className="flex items-start gap-1.5">
+                                          <span className="shrink-0">📍</span>
+                                          <span className="text-stone-700">
+                                            <strong className="text-stone-900">{ev.venue || '-'}</strong>
+                                            {ev.address ? ` — ${ev.address}` : ''}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Card Footer: 3 Compact Switches */}
+                                      <div className="pt-2 border-t border-stone-200/80 flex items-center justify-between gap-1.5 flex-wrap">
+                                        {/* Switch 1: Acara Utama */}
+                                        <div
+                                          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+                                            isMain
+                                              ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                              : 'bg-stone-50 border-stone-200'
+                                          }`}
+                                          title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
+                                        >
+                                          <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                            Acara Utama
+                                          </span>
+                                          <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isMain}
+                                            onClick={() => handleSetMainScheduleEvent(ev.id)}
+                                            className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                              isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
+                                            }`}
+                                          >
+                                            <span
+                                              className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                isMain ? 'translate-x-4' : 'translate-x-0'
+                                              }`}
+                                            />
+                                          </button>
+                                        </div>
+
+                                        {/* Switch 2: Countdown */}
+                                        <div
+                                          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+                                            isCountdownOn
+                                              ? 'bg-emerald-50/70 border-emerald-200'
+                                              : 'bg-stone-50 border-stone-200'
+                                          }`}
+                                          title="Aktifkan/matikan Countdown untuk acara ini"
+                                        >
+                                          <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                            Countdown
+                                          </span>
+                                          <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isCountdownOn}
+                                            onClick={() =>
+                                              handleToggleEventCountdownSwitch(ev.id, ev.title)
+                                            }
+                                            className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                              isCountdownOn ? 'bg-emerald-600' : 'bg-stone-300'
+                                            }`}
+                                          >
+                                            <span
+                                              className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                isCountdownOn ? 'translate-x-4' : 'translate-x-0'
+                                              }`}
+                                            />
+                                          </button>
+                                        </div>
+
+                                        {/* Switch 3: Tampil */}
+                                        <div
+                                          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+                                            isVisibleOnInv
+                                              ? 'bg-emerald-50/70 border-emerald-200'
+                                              : 'bg-rose-50/70 border-rose-200'
+                                          }`}
+                                          title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                        >
+                                          <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                            Tampil
+                                          </span>
+                                          <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isVisibleOnInv}
+                                            onClick={() =>
+                                              handleToggleSingleEventVisibility(ev.id, ev.title)
+                                            }
+                                            className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                              isVisibleOnInv ? 'bg-emerald-600' : 'bg-stone-300'
+                                            }`}
+                                          >
+                                            <span
+                                              className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                isVisibleOnInv ? 'translate-x-4' : 'translate-x-0'
+                                              }`}
+                                            />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="space-y-2.5">
+                              {scheduleEvents.map((ev, evIdx) => {
+                                const isMain = ev.id === currentMainId;
+                                const isCountdownOn = Boolean(ev.enableCountdown);
+                                const isVisibleOnInv =
+                                  ev.showOnInvitation !== false;
+                                const isEvExpanded =
+                                  expandedScheduleEventId === ev.id;
+
+                                return (
+                                  <div
+                                    key={ev.id}
+                                    className={`p-3 rounded-xl border transition-all ${
+                                      isMain
+                                        ? 'bg-gradient-to-r from-white via-[#FAF8F5] to-[#FAF3E3]/50 border-[#D4AF37] shadow-2xs'
+                                        : 'bg-white border-stone-200/90 hover:border-[#D4AF37]/50'
+                                    }`}
+                                  >
+                                    {/* ROW 1 (Always Visible — Event Title 100% Clear & Never Truncated!) */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setExpandedScheduleEventId(
+                                            isEvExpanded ? null : ev.id
+                                          )
+                                        }
+                                        title="Klik nama acara untuk membuka atau menutup pengaturan Switch & detail acara ini"
+                                        className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer flex-wrap"
+                                      >
+                                        <div
+                                          className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
+                                            isMain
+                                              ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
+                                              : isCountdownOn
+                                                ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                                : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
+                                          }`}
+                                        >
+                                          {evIdx + 1}
+                                        </div>
+                                        <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
+                                          {ev.title}
+                                        </span>
+                                        <ChevronDown
+                                          className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                            isEvExpanded
+                                              ? 'rotate-180 text-[#8B6914]'
+                                              : ''
+                                          }`}
+                                        />
                                         {isMain && (
-                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
-                                            ★ Acara Utama
+                                          <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
+                                            ★ Utama
                                           </span>
                                         )}
                                         {isCountdownOn && (
-                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                                            ⏱ Countdown Aktif
+                                          <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0 whitespace-nowrap">
+                                            ⏱ Countdown
                                           </span>
                                         )}
                                         {!isVisibleOnInv && (
-                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
-                                            Disembunyikan dari Undangan
+                                          <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold shrink-0 whitespace-nowrap">
+                                            Disembunyikan
                                           </span>
                                         )}
-                                      </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleOpenEditScheduleEvent(ev)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/40 text-[10px] font-bold cursor-pointer"
-                                      >
-                                        <span>✏️ Edit Detail Acara</span>
                                       </button>
+
+                                      <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setExpandedScheduleEventId(
+                                              isEvExpanded ? null : ev.id
+                                            )
+                                          }
+                                          title="Buka pengaturan Switch (Acara Utama, Countdown & Tampil)"
+                                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-xs cursor-pointer transition-colors ${
+                                            isEvExpanded
+                                              ? 'bg-[#B68D40] text-white border-[#9A742B]'
+                                              : 'bg-stone-100 hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] border-stone-200/90'
+                                          }`}
+                                        >
+                                          <Settings className="w-3.5 h-3.5" />
+                                          <span>Switch</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditScheduleEvent(ev)}
+                                          className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
+                                        >
+                                          Edit
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleDeleteScheduleEvent(ev.id, ev.title)
+                                          }
+                                          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer"
+                                        >
+                                          Hapus
+                                        </button>
+                                      </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#FAF8F5] border border-stone-200/80 text-[11px] text-stone-700">
-                                      <div>
-                                        <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                                          Hari, Tanggal &amp; Jam
-                                        </span>
-                                        <span className="font-semibold text-stone-800">
-                                          {ev.dateLabel || '-'} &bull; {ev.timeLabel || '-'}
-                                        </span>
+                                    {/* ROW 2 / POP-UP SWITCH & DETAIL DRAWER (Shown when Event Name or ⚙️ Switch is clicked) */}
+                                    {isEvExpanded && (
+                                      <div className="mt-2.5 pt-2.5 border-t border-stone-200/80 space-y-2.5 text-xs">
+                                        {/* Top Bar Inside Drawer: Pengaturan Switch Acara (3 Switches with Plenty of Space!) */}
+                                        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF3E3]/55 border border-[#D4AF37]/35">
+                                          <div className="flex items-center gap-1.5 font-extrabold text-[11px] text-[#8B6914]">
+                                            <Settings className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
+                                            <span>Pengaturan Switch Acara:</span>
+                                          </div>
+
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            {/* Switch 1: Acara Utama */}
+                                            <div
+                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                isMain
+                                                  ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                                  : 'bg-white border-stone-200'
+                                              }`}
+                                              title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
+                                            >
+                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                Acara Utama
+                                              </span>
+                                              <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={isMain}
+                                                onClick={() =>
+                                                  handleSetMainScheduleEvent(ev.id)
+                                                }
+                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                  isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
+                                                }`}
+                                              >
+                                                <span
+                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                    isMain
+                                                      ? 'translate-x-4'
+                                                      : 'translate-x-0'
+                                                  }`}
+                                                />
+                                              </button>
+                                            </div>
+
+                                            {/* Switch 2: Countdown */}
+                                            <div
+                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                isCountdownOn
+                                                  ? 'bg-emerald-50/80 border-emerald-200'
+                                                  : 'bg-white border-stone-200'
+                                              }`}
+                                              title="Aktifkan/matikan Countdown untuk acara ini"
+                                            >
+                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                Countdown
+                                              </span>
+                                              <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={isCountdownOn}
+                                                onClick={() =>
+                                                  handleToggleEventCountdownSwitch(
+                                                    ev.id,
+                                                    ev.title
+                                                  )
+                                                }
+                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                  isCountdownOn
+                                                    ? 'bg-emerald-600'
+                                                    : 'bg-stone-300'
+                                                }`}
+                                              >
+                                                <span
+                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                    isCountdownOn
+                                                      ? 'translate-x-4'
+                                                      : 'translate-x-0'
+                                                  }`}
+                                                />
+                                              </button>
+                                            </div>
+
+                                            {/* Switch 3: Tampil */}
+                                            <div
+                                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                                isVisibleOnInv
+                                                  ? 'bg-emerald-50/80 border-emerald-200'
+                                                  : 'bg-rose-50/80 border-rose-200'
+                                              }`}
+                                              title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                            >
+                                              <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                                Tampil
+                                              </span>
+                                              <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={isVisibleOnInv}
+                                                onClick={() =>
+                                                  handleToggleSingleEventVisibility(
+                                                    ev.id,
+                                                    ev.title
+                                                  )
+                                                }
+                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                                  isVisibleOnInv
+                                                    ? 'bg-emerald-600'
+                                                    : 'bg-stone-300'
+                                                }`}
+                                              >
+                                                <span
+                                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                                    isVisibleOnInv
+                                                      ? 'translate-x-4'
+                                                      : 'translate-x-0'
+                                                  }`}
+                                                />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Bottom Grid Inside Drawer: Detail Hari/Tanggal/Jam, Badge Peserta & Lokasi Gedung */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-2.5 rounded-lg bg-[#FAF8F5] border border-stone-200/80 text-[11px] text-stone-700">
+                                          <div className="sm:col-span-5">
+                                            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                              Hari, Tanggal &amp; Jam
+                                            </span>
+                                            <span className="font-semibold text-stone-800">
+                                              {ev.dateLabel || '-'} &bull; {ev.timeLabel || '-'}
+                                            </span>
+                                            {ev.badge && (
+                                              <div className="mt-1">
+                                                <span className="inline-block text-[10px] px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold">
+                                                  {ev.badge}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="sm:col-span-5">
+                                            <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                              Lokasi / Gedung
+                                            </span>
+                                            <span className="font-semibold text-stone-800">
+                                              {ev.venue || '-'}
+                                            </span>
+                                            {ev.address && (
+                                              <span className="block text-[10px] text-stone-500 mt-0.5">
+                                                {ev.address}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="sm:col-span-2 flex items-center justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenEditScheduleEvent(ev)}
+                                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/40 text-[10px] font-bold cursor-pointer whitespace-nowrap"
+                                            >
+                                              <span>✏️ Edit Detail</span>
+                                            </button>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                                          Lokasi / Gedung
-                                        </span>
-                                        <span className="font-semibold text-stone-800">
-                                          {ev.venue || '-'}
-                                        </span>
-                                        {ev.address && (
-                                          <span className="block text-[10px] text-stone-500 mt-0.5">
-                                            {ev.address}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            );
-                          });
+                                );
+                              })}
+                            </div>
+                          );
                         })()}
                       </div>
                     )}
