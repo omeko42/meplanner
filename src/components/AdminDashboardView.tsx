@@ -1378,6 +1378,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [showAllTasks, setShowAllTasks] = useState(false);
   const [showAllBudget, setShowAllBudget] = useState(false);
   const [showAllGuests, setShowAllGuests] = useState(false);
+  const [guestCurrentPage, setGuestCurrentPage] = useState<number>(1);
+  const [guestPageSize, setGuestPageSize] = useState<number>(10);
   const [showAllBanks, setShowAllBanks] = useState(false);
   const [showAllPanitia, setShowAllPanitia] = useState(false);
   const [showAllSectionsToggle, setShowAllSectionsToggle] = useState(false);
@@ -6899,9 +6901,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
 
-                {guestListViewMode === 'list' ? (
+                {(() => {
+                  const effectiveGuestPageSize =
+                    guestPageSize <= 0
+                      ? Math.max(1, filteredGuests.length)
+                      : guestPageSize;
+                  const totalGuestPages = Math.max(
+                    1,
+                    Math.ceil(filteredGuests.length / effectiveGuestPageSize)
+                  );
+                  const safeGuestPage = Math.max(
+                    1,
+                    Math.min(guestCurrentPage, totalGuestPages)
+                  );
+                  const guestStartIdx =
+                    (safeGuestPage - 1) * effectiveGuestPageSize;
+                  const paginatedGuests = filteredGuests.slice(
+                    guestStartIdx,
+                    guestStartIdx + effectiveGuestPageSize
+                  );
+
+                  return guestListViewMode === 'list' ? (
                   <div className="divide-y divide-stone-200 px-4 sm:px-6">
-                    {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
+                    {paginatedGuests.map((guest) => {
                       const waData = getGuestPersonalWaData(guest, state.settings);
                       const guestHashToken = waData.guestHashToken;
                       const isLinkCopied = copiedGuestLinkId === guest.id;
@@ -7245,7 +7267,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 ) : (
                   /* TAMPILAN KARTU GRID (EXECUTIVE CRM GUEST CARDS) */
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 p-4 sm:p-6">
-                    {(showAllGuests ? filteredGuests : filteredGuests.slice(0, 6)).map((guest) => {
+                    {paginatedGuests.map((guest) => {
                       const waData = getGuestPersonalWaData(guest, state.settings);
                       const guestHashToken = waData.guestHashToken;
                       const isLinkCopied = copiedGuestLinkId === guest.id;
@@ -7489,21 +7511,136 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       );
                     })}
                   </div>
-                )}
+                );
+                })()}
 
-                {filteredGuests.length > 6 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllGuests(!showAllGuests)}
-                    className="w-full py-3.5 border-t border-stone-200 hover:bg-[#FAF8F5] text-sm font-bold text-[#8B6914] flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <span>
-                      {showAllGuests
-                        ? 'Ringkas daftar'
-                        : `Tampilkan semua (${filteredGuests.length}) \u2192`}
-                    </span>
-                  </button>
-                )}
+                {/* PAGINATION BAR DAFTAR TAMU */}
+                {filteredGuests.length > 0 && (() => {
+                  const effectiveGuestPageSize =
+                    guestPageSize <= 0
+                      ? Math.max(1, filteredGuests.length)
+                      : guestPageSize;
+                  const totalGuestPages = Math.max(
+                    1,
+                    Math.ceil(filteredGuests.length / effectiveGuestPageSize)
+                  );
+                  const safeGuestPage = Math.max(
+                    1,
+                    Math.min(guestCurrentPage, totalGuestPages)
+                  );
+                  const guestStartIdx =
+                    (safeGuestPage - 1) * effectiveGuestPageSize;
+                  const guestEndIdx = Math.min(
+                    guestStartIdx + effectiveGuestPageSize,
+                    filteredGuests.length
+                  );
+
+                  const getPageNumbers = () => {
+                    const pages: (number | '...')[] = [];
+                    if (totalGuestPages <= 7) {
+                      for (let i = 1; i <= totalGuestPages; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+                      if (safeGuestPage > 3) pages.push('...');
+                      const start = Math.max(2, safeGuestPage - 1);
+                      const end = Math.min(totalGuestPages - 1, safeGuestPage + 1);
+                      for (let i = start; i <= end; i++) pages.push(i);
+                      if (safeGuestPage < totalGuestPages - 2) pages.push('...');
+                      pages.push(totalGuestPages);
+                    }
+                    return pages;
+                  };
+
+                  return (
+                    <div className="px-4 sm:px-6 py-3 border-t border-stone-200 bg-[#FAF8F5]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-3 flex-wrap text-xs text-stone-600">
+                        <span>
+                          Menampilkan{' '}
+                          <strong className="text-stone-900">
+                            {guestStartIdx + 1}–{guestEndIdx}
+                          </strong>{' '}
+                          dari{' '}
+                          <strong className="text-stone-900">
+                            {filteredGuests.length}
+                          </strong>{' '}
+                          Tamu
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-stone-500">
+                            Baris/Halaman:
+                          </span>
+                          <select
+                            aria-label="Jumlah tamu per halaman"
+                            value={guestPageSize}
+                            onChange={(e) => {
+                              setGuestPageSize(Number(e.target.value));
+                              setGuestCurrentPage(1);
+                            }}
+                            className="px-2 py-1 rounded-lg border border-stone-200 bg-white text-stone-800 text-[11px] font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
+                          >
+                            <option value={6}>6</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                            <option value={0}>Semua ({filteredGuests.length})</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {totalGuestPages > 1 && (
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          <button
+                            type="button"
+                            disabled={safeGuestPage <= 1}
+                            onClick={() =>
+                              setGuestCurrentPage(Math.max(1, safeGuestPage - 1))
+                            }
+                            className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40 disabled:pointer-events-none text-stone-700 font-bold text-xs cursor-pointer transition-colors"
+                          >
+                            &lsaquo; Prev
+                          </button>
+
+                          {getPageNumbers().map((p, idx) =>
+                            p === '...' ? (
+                              <span
+                                key={`ellipsis-${idx}`}
+                                className="px-1.5 text-xs text-stone-400 font-bold"
+                              >
+                                &hellip;
+                              </span>
+                            ) : (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => setGuestCurrentPage(p)}
+                                className={`min-w-[30px] h-7 px-2 rounded-lg border text-xs font-extrabold transition-all cursor-pointer ${
+                                  safeGuestPage === p
+                                    ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] shadow-2xs'
+                                    : 'bg-white hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                                }`}
+                              >
+                                {p}
+                              </button>
+                            )
+                          )}
+
+                          <button
+                            type="button"
+                            disabled={safeGuestPage >= totalGuestPages}
+                            onClick={() =>
+                              setGuestCurrentPage(
+                                Math.min(totalGuestPages, safeGuestPage + 1)
+                              )
+                            }
+                            className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-40 disabled:pointer-events-none text-stone-700 font-bold text-xs cursor-pointer transition-colors"
+                          >
+                            Next &rsaquo;
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               /* SUB-TAB BUKU TAMU, KONFIRMASI RSVP & BALASAN UCAPAN DOA */
