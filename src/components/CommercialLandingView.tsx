@@ -5558,17 +5558,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-18 overflow-x-clip bg-white text-stone-900 flex flex-col justify-between selection:bg-[#9E1B46]/15">
-      {/* CLEAN TOP NAVBAR — WEVITATION-INSPIRED AIRY EDITORIAL HEADER REBRANDED AS MEPLANNER */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-100">
+    <div className="min-h-screen pt-16 sm:pt-18 overflow-x-clip bg-white text-stone-900 flex flex-col justify-between selection:bg-[#D4AF37]/25">
+      {/* CLEAN TOP NAVBAR — MEPLANNER ORIGINAL WARM EDITORIAL HEADER */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
-          {/* Left: Logo + MEPlanner (online event & wedding invitation) */}
+          {/* Left: Logo + MEPlanner (My Event Planner) */}
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
               className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
-              title="MEPlanner — online event & wedding invitation"
+              title="MEPlanner — My Event Planner"
             >
               <WeddingRingsIcon
                 className="w-8 h-8 sm:w-9 sm:h-9"
@@ -5581,56 +5581,58 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 onClick={() => setIsCheckoutPageOpen(false)}
                 className="font-sans font-extrabold text-base sm:text-xl text-stone-900 tracking-tight leading-none text-left block cursor-pointer"
               >
-                ME<span className="text-[#9E1B46]">Planner</span>
+                ME<span className="text-[#8B6914]">Planner</span>
               </button>
               <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 leading-tight truncate mt-0.5">
-                online event &amp; wedding invitation
+                {lang === 'ID'
+                  ? 'My Event Planner • Undangan & Manajemen Acara'
+                  : 'My Event Planner • Event & Invitation Platform'}
               </p>
             </div>
           </div>
 
-          {/* Right: Clean Borderless Text Links + Cek Undangan + ID/EN + Solid Burgundy Login Button */}
+          {/* Right: Clean Text Links + Cek Undangan + ID/EN + Solid Charcoal Login Button */}
           <div className="flex items-center gap-3 sm:gap-6 shrink-0">
             <nav className="hidden md:flex items-center gap-5 lg:gap-6">
               <a
                 href="#"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
                 {lang === 'ID' ? 'Beranda' : 'Home'}
               </a>
               <a
                 href="#tema"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
-                {lang === 'ID' ? 'Tema' : 'Themes'}
+                {lang === 'ID' ? 'Katalog Tema' : 'Themes'}
               </a>
               <a
                 href="#fitur"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
-                {lang === 'ID' ? 'Fitur' : 'Features'}
+                {lang === 'ID' ? 'Ekosistem' : 'Features'}
               </a>
               <a
                 href="#paket"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
-                {lang === 'ID' ? 'Harga' : 'Pricing'}
+                {lang === 'ID' ? 'Paket Lisensi' : 'Pricing'}
               </a>
               <a
                 href="#blog"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
-                Blog
+                {lang === 'ID' ? 'Panduan' : 'Guides'}
               </a>
               <a
                 href="#faq"
                 onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
               >
                 FAQ
               </a>
@@ -5643,21 +5645,21 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 setGuestCodeInput('');
                 setIsGuestLookupModalOpen(true);
               }}
-              className="text-xs sm:text-sm font-semibold text-stone-700 hover:text-[#9E1B46] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-stone-700 hover:text-[#8B6914] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
               title={
                 lang === 'ID'
                   ? 'Cek Undangan dengan Key Unik'
                   : 'Check Invitation by Unique Key'
               }
             >
-              <KeyRound className="w-3.5 h-3.5 text-[#9E1B46] shrink-0" />
+              <KeyRound className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
               <span>{lang === 'ID' ? 'Cek Undangan' : 'Check Invitation'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
-              className="text-xs sm:text-sm font-semibold text-stone-600 hover:text-[#9E1B46] transition-colors cursor-pointer"
+              className="text-xs sm:text-sm font-semibold text-stone-600 hover:text-[#8B6914] transition-colors cursor-pointer"
               title={
                 lang === 'ID'
                   ? 'Switch Language to English (EN)'
@@ -5670,12 +5672,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <button
               type="button"
               onClick={() => onOpenAdminPortal()}
-              className="px-5 py-2 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
             >
               {isAdminLoggedIn
                 ? lang === 'ID'
-                  ? 'Dashboard'
-                  : 'Dashboard'
+                  ? 'Planner'
+                  : 'Planner'
                 : 'Login'}
             </button>
           </div>
@@ -6886,25 +6888,87 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </section>
         ) : (
-          /* MAIN LANDING PAGE VIEW — CLEAN AIRY WEVITATION-INSPIRED LAYOUT REBRANDED AS MEPLANNER */
+          /* MAIN LANDING PAGE VIEW — 100% ORIGINAL CLEAN LUXURY MEPLANNER */
           <>
             {/* ================================================================= */}
-            {/* SECTION 1: CLEAN SPLIT HERO WITH REALISTIC IPHONE 15 PRO MOCKUP   */}
+            {/* SECTION 1: ORIGINAL MULTI-EVENT SPLIT HERO WITH IPHONE 15 PRO     */}
             {/* ================================================================= */}
-            <section className="bg-[#FCF5F6] py-14 sm:py-20 border-b border-rose-100/70">
+            <section className="bg-[#FAF8F5] py-14 sm:py-20 border-b border-stone-200/80">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left 7 Cols */}
                 <div className="lg:col-span-7 text-left">
-                  <h1 className="font-editorial text-3xl sm:text-5xl lg:text-[52px] font-bold text-stone-900 leading-[1.15] tracking-tight">
+                  {/* Interactive 5-Category Switcher Pills at Top of Hero */}
+                  <div className="flex flex-wrap items-center gap-2 mb-6">
+                    {(
+                      [
+                        {
+                          id: 'WEDDING' as const,
+                          label:
+                            lang === 'ID' ? '💍 Pernikahan' : '💍 Wedding',
+                        },
+                        {
+                          id: 'BIRTHDAY' as const,
+                          label:
+                            lang === 'ID' ? '🎂 Ulang Tahun' : '🎂 Birthday',
+                        },
+                        {
+                          id: 'GRADUATION' as const,
+                          label:
+                            lang === 'ID' ? '🎓 Wisuda' : '🎓 Graduation',
+                        },
+                        {
+                          id: 'MEETING' as const,
+                          label:
+                            lang === 'ID' ? '🏛️ Rapat Resmi' : '🏛️ Summit',
+                        },
+                        {
+                          id: 'GALA_DINNER' as const,
+                          label:
+                            lang === 'ID' ? '🥂 Gala Dinner' : '🥂 Gala Dinner',
+                        },
+                      ] as const
+                    ).map((cat) => {
+                      const isCatActive = simEventType === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setCatalogEventFilter(cat.id);
+                            setSimEventType(cat.id);
+                            const firstTheme = MULTI_EVENT_THEME_CATALOG.find(
+                              (t) => t.eventType === cat.id
+                            );
+                            if (firstTheme) {
+                              setSelectedCatalogThemeId(firstTheme.id);
+                              setSelectedDemoClientId(
+                                firstTheme.dummyClientId
+                              );
+                              setSimThemeOverride(firstTheme.themePreset);
+                            }
+                          }}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            isCatActive
+                              ? 'bg-stone-900 text-white shadow-xs'
+                              : 'bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <h1 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-bold text-stone-900 leading-[1.15] tracking-tight">
                     {lang === 'ID'
-                      ? 'Undangan Digital Modern & Elegan, Siap Dibagikan Dalam Hitungan Menit'
-                      : 'Modern & Elegant Digital Invitations, Ready to Share in Minutes'}
+                      ? 'Rancang Undangan Eksklusif & Kelola Seluruh Acara dalam Satu Ruang Kerja'
+                      : 'Design Exclusive Digital Invitations & Manage Your Entire Event in One Workspace'}
                   </h1>
 
                   <p className="text-stone-600 text-sm sm:text-base leading-relaxed mt-5 max-w-xl">
                     {lang === 'ID'
-                      ? 'Buat undangan digital yang cantik, cepat dan mudah diedit – lengkap dengan RSVP Online, Galeri, Musik, Kado, Event Planner dan fitur AI yang membantu persiapan hari bahagiamu.'
-                      : 'Create beautiful, fast, and easy-to-edit digital invitations – complete with Online RSVP, Gallery, Music, Gift Registry, Event Planner, and AI features for your special day.'}
+                      ? 'Dirancang khusus untuk Pernikahan, Ulang Tahun, Wisuda, Rapat Resmi hingga Gala Dinner. Pilih tema dari katalog, sesuaikan langsung di ruang kerja Planner, dan bagikan undangan berproteksi Key unik kepada setiap tamu kehormatan.'
+                      : 'Purpose-built for Weddings, Birthdays, Graduations, Official Summits, and Gala Dinners. Pick a catalog theme, customize live in your Planner workspace, and share Key-protected invitations with every honored guest.'}
                   </p>
 
                   {/* 2 Clean CTA Buttons */}
@@ -6912,11 +6976,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenAdminPortal()}
-                      className="px-6 py-3.5 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
+                      className="px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
                     >
                       {lang === 'ID'
-                        ? 'Buat Undangan Gratis'
-                        : 'Create Free Invitation'}
+                        ? 'Mulai Buat Acara (Gratis)'
+                        : 'Start Creating (Free)'}
                     </button>
 
                     <button
@@ -6926,33 +6990,49 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           .getElementById('tema')
                           ?.scrollIntoView({ behavior: 'smooth' })
                       }
-                      className="px-6 py-3.5 rounded-xl bg-white hover:bg-rose-50 text-[#9E1B46] border border-[#E6A8B8] font-bold text-sm transition-all cursor-pointer"
+                      className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/60 font-bold text-sm transition-all cursor-pointer"
                     >
-                      {lang === 'ID' ? 'Lihat Demo' : 'View Demo'}
+                      {lang === 'ID'
+                        ? 'Jelajahi Katalog Tema'
+                        : 'Explore Theme Catalog'}
                     </button>
                   </div>
 
-                  {/* Single-Line Social Proof Stats */}
-                  <div className="mt-8 flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-600">
-                    <div>
-                      <strong className="font-bold text-stone-900">
-                        203.4K+
-                      </strong>{' '}
-                      {lang === 'ID' ? 'Pasangan & Acara' : 'Couples & Events'}
+                  {/* 3 Authentic MEPlanner Highlights */}
+                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl">
+                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
+                        {lang === 'ID' ? '5 Kategori Acara' : '5 Event Types'}
+                      </p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        {lang === 'ID'
+                          ? 'Nikah • Ultah • Wisuda • Rapat • Gala'
+                          : 'Wedding • Birthday • Grad • Summit • Gala'}
+                      </p>
                     </div>
-                    <span className="text-stone-300">|</span>
-                    <div>
-                      <strong className="font-bold text-stone-900">
-                        3.1M+
-                      </strong>{' '}
-                      {lang === 'ID' ? 'Tamu Undangan' : 'Invited Guests'}
+                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
+                        {lang === 'ID'
+                          ? '31 Tema Interaktif'
+                          : '31 Interactive Themes'}
+                      </p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        {lang === 'ID'
+                          ? 'Sinkron Langsung ke Planner'
+                          : 'Synced Live to Planner'}
+                      </p>
                     </div>
-                    <span className="text-stone-300">|</span>
-                    <div>
-                      <strong className="font-bold text-stone-900">
-                        561.1K+
-                      </strong>{' '}
-                      {lang === 'ID' ? 'Ucapan & Doa' : 'Wishes & Prayers'}
+                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Proteksi Key Unik'
+                          : 'Unique Key Protection'}
+                      </p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        {lang === 'ID'
+                          ? 'Akses Tamu Privat & Aman'
+                          : 'Private & Secure Guest Access'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -6960,7 +7040,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* Right 5 Cols — Realistic iPhone 15 Pro Mockup Frame */}
                 <div className="lg:col-span-5 flex flex-col items-center">
                   {(() => {
-                    const heroThemes = MULTI_EVENT_THEME_CATALOG.slice(0, 8);
+                    const categoryThemes = MULTI_EVENT_THEME_CATALOG.filter(
+                      (t) => t.eventType === simEventType
+                    );
+                    const heroThemes =
+                      categoryThemes.length > 0
+                        ? categoryThemes.slice(0, 8)
+                        : MULTI_EVENT_THEME_CATALOG.slice(0, 8);
                     const currentPhoneTheme =
                       activeCatalogTheme || heroThemes[0];
                     const phoneCoverImg =
@@ -6993,6 +7079,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               alt={
                                 currentPhoneTheme?.name || 'Invitation Preview'
                               }
+                              onError={(e) => {
+                                e.currentTarget.src =
+                                  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+                              }}
                               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
                             <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/85" />
@@ -7004,7 +7094,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                             {/* Center Couple Names & Countdown Circles */}
                             <div className="relative z-10 px-5 text-center text-white space-y-3 my-auto">
-                              <p className="text-[10px] uppercase tracking-[0.25em] text-rose-100 font-semibold">
+                              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FAF3E3] font-semibold">
                                 {currentPhoneTheme?.eventType === 'BIRTHDAY'
                                   ? 'BIRTHDAY CELEBRATION'
                                   : currentPhoneTheme?.eventType ===
@@ -7040,7 +7130,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     <p className="text-xs font-extrabold text-white leading-none">
                                       {cd.val}
                                     </p>
-                                    <p className="text-[9px] text-rose-100 mt-0.5">
+                                    <p className="text-[9px] text-[#FAF3E3] mt-0.5">
                                       {cd.label}
                                     </p>
                                   </div>
@@ -7050,7 +7140,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {/* Guest Name Box */}
                               <div className="pt-2">
                                 <div className="inline-block px-4 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25">
-                                  <p className="text-[9px] uppercase tracking-widest text-rose-100">
+                                  <p className="text-[9px] uppercase tracking-widest text-[#FAF3E3]">
                                     To:
                                   </p>
                                   <p className="text-xs font-bold text-white mt-0.5">
@@ -7065,7 +7155,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             {/* Bottom Navigation Dock inside Phone */}
                             <div className="relative z-10 px-4 pb-4">
                               <div className="rounded-2xl bg-white/95 backdrop-blur-md px-3 py-2 flex items-center justify-around text-[9px] font-bold text-stone-800 shadow-lg">
-                                <span className="text-[#9E1B46]">Home</span>
+                                <span className="text-[#8B6914]">Home</span>
                                 <span>Acara</span>
                                 <span>Galeri</span>
                                 <span>Kado</span>
@@ -7075,7 +7165,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Pink Pagination Dots Below Phone */}
+                        {/* Champagne Gold Pagination Dots Below Phone */}
                         <div className="flex justify-center items-center gap-2 mt-5">
                           {heroThemes.map((tItem) => {
                             const isDotActive =
@@ -7093,8 +7183,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 title={tItem.name}
                                 className={`h-2.5 rounded-full transition-all cursor-pointer ${
                                   isDotActive
-                                    ? 'w-7 bg-[#9E1B46]'
-                                    : 'w-2.5 bg-rose-200 hover:bg-rose-300'
+                                    ? 'w-7 bg-[#8B6914]'
+                                    : 'w-2.5 bg-stone-300 hover:bg-stone-400'
                                 }`}
                               />
                             );
@@ -7108,435 +7198,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 2: KENAPA RATUSAN RIBU PASANGAN MEMILIH MEPLANNER?        */}
-            {/* ================================================================= */}
-            <section className="bg-white py-16 sm:py-20">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto">
-                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-                    {lang === 'ID'
-                      ? 'Kenapa Ratusan Ribu Pasangan Memilih MEPlanner?'
-                      : 'Why Do Hundreds of Thousands of Couples Choose MEPlanner?'}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
-                    {lang === 'ID'
-                      ? 'Dirancang agar siapa saja bisa membuat undangan digital yang tampak mewah, hangat, dan siap dibagikan tanpa ribet.'
-                      : 'Designed so anyone can create a luxurious, warm digital invitation ready to share effortlessly.'}
-                  </p>
-                </div>
-
-                {/* 4 Clean Borderless Columns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12 text-center">
-                  {[
-                    {
-                      icon: Sparkles,
-                      title:
-                        lang === 'ID'
-                          ? 'Desain Eksklusif & Modern'
-                          : 'Exclusive & Modern Designs',
-                      desc:
-                        lang === 'ID'
-                          ? 'Puluhan tema siap pakai untuk berbagai acara spesialmu.'
-                          : 'Dozens of ready-to-use themes for your special celebrations.',
-                    },
-                    {
-                      icon: LayoutDashboard,
-                      title:
-                        lang === 'ID'
-                          ? 'Edit Mudah Tanpa Skill'
-                          : 'Easy Editing Without Skills',
-                      desc:
-                        lang === 'ID'
-                          ? 'Ubah teks, foto, musik dan warna dalam hitungan menit.'
-                          : 'Customize text, photos, music, and colors in minutes.',
-                    },
-                    {
-                      icon: Send,
-                      title:
-                        lang === 'ID'
-                          ? 'Personalisasi Undangan'
-                          : 'Personalized Invitations',
-                      desc:
-                        lang === 'ID'
-                          ? 'Tulis nama tamu & kirim cepat lewat WhatsApp atau link pribadi.'
-                          : 'Add guest names & share quickly via WhatsApp or personal link.',
-                    },
-                    {
-                      icon: Award,
-                      title:
-                        lang === 'ID'
-                          ? 'Fitur Paling Lengkap'
-                          : 'Most Complete Features',
-                      desc:
-                        lang === 'ID'
-                          ? 'Dari RSVP, Galeri, Buku Tamu, Kado, Event Planner hingga AI.'
-                          : 'From RSVP, Gallery, Guestbook, Gifts, Event Planner to AI.',
-                    },
-                  ].map((item) => {
-                    const IconComp = item.icon;
-                    return (
-                      <div
-                        key={item.title}
-                        className="flex flex-col items-center"
-                      >
-                        <div className="w-36 h-36 mx-auto mb-5 rounded-3xl bg-[#FDF4F6] flex items-center justify-center text-[#9E1B46]">
-                          <IconComp className="w-12 h-12 stroke-[1.6]" />
-                        </div>
-                        <h3 className="text-base font-bold text-stone-900">
-                          {item.title}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-stone-600 mt-1.5 leading-relaxed max-w-xs">
-                          {item.desc}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/* SECTION 3: DAMPAK KAMI HINGGA SAAT INI (MINT-SAGE ECO SECTION)    */}
-            {/* ================================================================= */}
-            <section className="bg-[#EFF8F4] py-14 sm:py-16">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-3xl mx-auto space-y-3">
-                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-                    {lang === 'ID'
-                      ? 'Dampak Kami Hingga Saat Ini'
-                      : 'Our Impact So Far'}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                    {lang === 'ID'
-                      ? 'Setiap undangan digital yang dibuat di MEPlanner membantu mengurangi penggunaan kertas dari undangan cetak serta emisi karbon dari proses produksi dan distribusinya.'
-                      : 'Every digital invitation created on MEPlanner helps reduce paper waste from printed cards and carbon emissions from production and courier delivery.'}
-                  </p>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setIsEcoModalOpen(true)}
-                      className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline underline-offset-4 cursor-pointer"
-                    >
-                      {lang === 'ID'
-                        ? 'Bagaimana kami menghitung dampak ini?'
-                        : 'How do we calculate this impact?'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3 Clean White Horizontal Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-5xl mx-auto">
-                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
-                      🌿
-                    </div>
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        56.4 Ton
-                      </p>
-                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
-                        {lang === 'ID'
-                          ? 'Kertas berhasil dihindari'
-                          : 'Paper waste avoided'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
-                      🌍
-                    </div>
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        347 tCO2e
-                      </p>
-                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
-                        {lang === 'ID'
-                          ? 'Emisi karbon berhasil dikurangi'
-                          : 'Carbon emissions reduced'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
-                      💌
-                    </div>
-                    <div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
-                        3.1M+
-                      </p>
-                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
-                        {lang === 'ID'
-                          ? 'Undangan digital dibagikan'
-                          : 'Digital invitations shared'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-center text-xs sm:text-sm text-emerald-950 font-medium mt-8">
-                  {lang === 'ID'
-                    ? '💚 Bersama kita ciptakan kenangan indah tanpa meninggalkan jejak negatif pada bumi.'
-                    : '💚 Together we create beautiful memories without leaving a negative footprint on our planet.'}
-                </p>
-              </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/* SECTION 4: LEBIH DARI SEKEDAR UNDANGAN DIGITAL (#fitur)           */}
-            {/* ================================================================= */}
-            <section id="fitur" className="bg-white py-16 sm:py-20 scroll-mt-16">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto">
-                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
-                    {lang === 'ID'
-                      ? 'Lebih dari Sekedar Undangan Digital'
-                      : 'More Than Just a Digital Invitation'}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
-                    {lang === 'ID'
-                      ? 'MEPlanner menghadirkan ekosistem lengkap yang membuat persiapan dan hari bahagiamu semakin berkesan.'
-                      : 'MEPlanner brings a complete ecosystem that makes your preparation and special day truly unforgettable.'}
-                  </p>
-                </div>
-
-                {/* 4 Pastel Tinted Vertical Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 max-w-6xl mx-auto">
-                  {/* Card 1: Undangan Digital */}
-                  <div className="bg-[#FFF9FA] border border-[#F8DCE3] rounded-3xl p-6 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-rose-100/80 text-[#9E1B46] flex items-center justify-center">
-                        <Sparkles className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-lg font-bold text-stone-900">
-                        {lang === 'ID'
-                          ? 'Undangan Digital'
-                          : 'Digital Invitations'}
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        {lang === 'ID'
-                          ? 'Beragam tema modern yang bisa disesuaikan penuh untuk pernikahan atau acara spesialmu.'
-                          : 'Modern themes fully customizable for your wedding or special event.'}
-                      </p>
-                    </div>
-                    <ul className="space-y-2 pt-5 mt-5 border-t border-rose-200/60 text-xs font-semibold text-stone-800">
-                      {[
-                        lang === 'ID'
-                          ? 'Puluhan Tema Siap Pakai'
-                          : '31+ Ready-to-Use Themes',
-                        lang === 'ID'
-                          ? 'Kustomisasi Fleksibel'
-                          : 'Flexible Customization',
-                        lang === 'ID'
-                          ? 'Aktif Selamanya'
-                          : 'Active Forever',
-                      ].map((pt) => (
-                        <li key={pt} className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-[#9E1B46] shrink-0" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Card 2: Kado Hadiah */}
-                  <div className="bg-[#FFFDF7] border border-[#F7E5C8] rounded-3xl p-6 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-amber-100/80 text-amber-800 flex items-center justify-center">
-                        <Wallet className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-lg font-bold text-stone-900">
-                        {lang === 'ID' ? 'Kado Hadiah' : 'Gift Registry'}
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        {lang === 'ID'
-                          ? 'Terima kado dengan cara modern, cashless, langsung ke alamat atau lewat daftar impianmu.'
-                          : 'Receive gifts the modern way: cashless, shipped to your address, or via wishlist.'}
-                      </p>
-                    </div>
-                    <ul className="space-y-2 pt-5 mt-5 border-t border-amber-200/60 text-xs font-semibold text-stone-800">
-                      {[
-                        lang === 'ID' ? 'Kado Cashless' : 'Cashless Envelope',
-                        lang === 'ID' ? 'Kirim ke Alamat' : 'Ship to Address',
-                        lang === 'ID' ? 'Wishlist Kado' : 'Gift Wishlist',
-                      ].map((pt) => (
-                        <li key={pt} className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Card 3: Event Planner */}
-                  <div className="bg-[#F8FCF9] border border-[#D5EEDB] rounded-3xl p-6 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
-                        <Calendar className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-lg font-bold text-stone-900">
-                        Event Planner
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        {lang === 'ID'
-                          ? 'Rencanakan pernikahan lebih terarah dengan manajemen Budget dan To-Do List.'
-                          : 'Plan your celebration systematically with integrated Budget and To-Do List management.'}
-                      </p>
-                    </div>
-                    <ul className="space-y-2 pt-5 mt-5 border-t border-emerald-200/60 text-xs font-semibold text-stone-800">
-                      {[
-                        lang === 'ID' ? 'Manajemen Budget' : 'Budget Tracker',
-                        lang === 'ID'
-                          ? 'To-Do List Terarah'
-                          : 'Guided To-Do List',
-                        lang === 'ID'
-                          ? 'Ringkas & Mudah Dipakai'
-                          : 'Simple & Easy to Use',
-                      ].map((pt) => (
-                        <li key={pt} className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Card 4: MEPlanner AI */}
-                  <div className="bg-[#F7FAFF] border border-[#D6E6FC] rounded-3xl p-6 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-100/80 text-blue-700 flex items-center justify-center">
-                        <BookOpen className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-lg font-bold text-stone-900">
-                        MEPlanner AI
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        {lang === 'ID'
-                          ? 'Teknologi AI pintar untuk merangkum ucapan & doa tamu jadi insight hangat penuh makna.'
-                          : 'Smart AI technology summarizing guest wishes & prayers into warm, meaningful insights.'}
-                      </p>
-                    </div>
-                    <ul className="space-y-2 pt-5 mt-5 border-t border-blue-200/60 text-xs font-semibold text-stone-800">
-                      {[
-                        'AI Wishes Insight',
-                        lang === 'ID'
-                          ? 'Moderasi Otomatis'
-                          : 'Auto Moderation',
-                        lang === 'ID' ? 'Cepat & Akurat' : 'Fast & Accurate',
-                      ].map((pt) => (
-                        <li key={pt} className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/* SECTION 5: DEEP BURGUNDY BANNER "SAMBUT SETIAP TAMU LEBIH RAPI"   */}
-            {/* ================================================================= */}
-            <section className="py-6">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="rounded-3xl bg-gradient-to-r from-[#4A0E23] via-[#631530] to-[#4A0E23] text-white p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
-                  <div className="lg:col-span-7 space-y-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">
-                      {lang === 'ID'
-                        ? 'LAYANAN EKSKLUSIF DI HARI-H'
-                        : 'EXCLUSIVE EVENT-DAY SERVICE'}
-                    </p>
-                    <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-white leading-tight">
-                      {lang === 'ID'
-                        ? 'Sambut Setiap Tamu dengan Lebih Rapi'
-                        : 'Welcome Every Guest with Seamless Elegance'}
-                    </h2>
-                    <p className="text-xs sm:text-sm text-rose-100 leading-relaxed max-w-xl">
-                      {lang === 'ID'
-                        ? 'Dengan Guest Reception, proses check-in tamu menjadi lebih cepat, terdata otomatis dan memberikan kesan profesional sejak langkah pertama.'
-                        : 'With Guest Reception, guest check-in becomes faster, automatically recorded, and leaves a professional impression from the very first step.'}
-                    </p>
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (onOpenDemoManager) {
-                            onOpenDemoManager(
-                              activeDummyMeta.id,
-                              simPackageTier,
-                              activeCatalogTheme?.id
-                            );
-                          } else {
-                            onOpenAdminPortal();
-                          }
-                        }}
-                        className="px-6 py-3 rounded-xl bg-white text-[#631530] font-bold text-sm hover:bg-rose-50 transition-all shadow-sm cursor-pointer"
-                      >
-                        {lang === 'ID'
-                          ? 'Kenali Guest Reception'
-                          : 'Explore Guest Reception'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
-                  <div className="lg:col-span-5">
-                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 space-y-4">
-                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                          <span className="text-xs font-bold text-white">
-                            Guest Reception Live Screen
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-200">
-                          QR Check-In Ready
-                        </span>
-                      </div>
-                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
-                        <div className="w-12 h-12 rounded-xl bg-[#FDF4F6] text-[#9E1B46] flex items-center justify-center shrink-0">
-                          <QrCode className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#9E1B46]">
-                            {lang === 'ID'
-                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
-                              : 'WELCOME HONORED GUEST'}
-                          </p>
-                          <p className="text-sm font-extrabold text-stone-900 truncate">
-                            Bpk/Ibu Tamu VIP &amp; Keluarga
-                          </p>
-                          <p className="text-[11px] text-stone-600">
-                            VIP Table 01 &bull; 2 Pax Terverifikasi
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/* SECTION 6: #tema PILIHAN TEMA UNDANGAN DI DALAM PHONE MOCKUP      */}
+            {/* SECTION 2 (#tema): KATALOG TEMA LINTAS ACARA                      */}
             {/* ================================================================= */}
             <section
               id="tema"
-              className="bg-[#FCF6F7] py-16 sm:py-20 scroll-mt-16"
+              className="bg-white py-16 sm:py-20 border-b border-stone-200/80 scroll-mt-16"
             >
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto">
                   <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Pilihan Tema Undangan yang Siap Dipakai'
-                      : 'Ready-to-Use Invitation Themes'}
+                      ? 'Katalog Tema Lintas Acara'
+                      : 'Multi-Event Theme Catalog'}
                   </h2>
                   <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
                     {lang === 'ID'
-                      ? 'Setiap tema dirancang dengan detail, responsif di semua perangkat dan mudah disesuaikan.'
-                      : 'Every theme is crafted with care, responsive across all devices, and effortless to customize.'}
+                      ? 'Pilih kategori acara di bawah ini. Setiap tema tersinkronisasi penuh dengan editor Management Planner dan layar undangan tamu.'
+                      : 'Select an event category below. Every theme syncs seamlessly with the Management Planner editor and guest invitation screen.'}
                   </p>
                 </div>
 
@@ -7581,8 +7259,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         }}
                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                           isAct
-                            ? 'bg-[#9E1B46] text-white shadow-xs'
-                            : 'bg-white hover:bg-rose-50 text-stone-800 border border-stone-200/80'
+                            ? 'bg-stone-900 text-white shadow-xs'
+                            : 'bg-white hover:bg-[#FAF3E3] text-stone-800 border border-stone-200'
                         }`}
                       >
                         {evBtn.label}
@@ -7591,7 +7269,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   })}
                 </div>
 
-                {/* 4-Column Grid of Clean Phone Mockup Cards (Zero Cluttered Overlay Badges!) */}
+                {/* 4-Column Grid of Clean Phone Mockup Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 max-w-6xl mx-auto">
                   {(showAllCatalogThemes
                     ? filteredCatalogThemes
@@ -7623,7 +7301,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     return (
                       <div
                         key={theme.id}
-                        className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col items-center"
+                        className="bg-white rounded-3xl p-4 border border-stone-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col items-center"
                       >
                         {/* Realistic iPhone Mockup — Clean Unobstructed Cover */}
                         <div
@@ -7634,6 +7312,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             src={theme.coverBgUrl || theme.thumbnailUrl}
                             alt={theme.name}
                             loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src =
+                                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+                            }}
                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/80" />
@@ -7680,16 +7362,38 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </p>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleApplyCatalogThemeDemo(theme)}
-                          className="w-full py-2.5 rounded-xl bg-[#F06292] hover:bg-[#EC407A] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {lang === 'ID' ? 'Lihat Demo' : 'View Demo'}
-                          </span>
-                        </button>
+                        {/* Two Clean Action Buttons Side by Side */}
+                        <div className="grid grid-cols-2 gap-2 w-full">
+                          <button
+                            type="button"
+                            onClick={() => handleApplyCatalogThemeDemo(theme)}
+                            className="py-2.5 px-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-900 border border-stone-300 font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
+                            <span>
+                              {lang === 'ID' ? 'Demo Live' : 'Live Demo'}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCatalogThemeId(theme.id);
+                              setSelectedDemoClientId(theme.dummyClientId);
+                              setSimEventType(theme.eventType);
+                              setSimThemeOverride(theme.themePreset);
+                              setGoogleOnboardingPackageId('GRATIS');
+                              setGoogleOnboardingEventType(theme.eventType);
+                              setGoogleOnboardingThemeId(theme.id);
+                              setIsGoogleOnboardingModalOpen(true);
+                            }}
+                            className="py-2.5 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                          >
+                            <span>
+                              {lang === 'ID' ? 'Pakai Tema' : 'Use Theme'}
+                            </span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -7701,7 +7405,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowAllCatalogThemes((prev) => !prev)}
-                      className="px-6 py-3 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                      className="px-6 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                     >
                       <span>
                         {showAllCatalogThemes
@@ -7719,76 +7423,264 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 7: CARA BARU MENERIMA KADO DENGAN LEBIH MUDAH             */}
+            {/* SECTION 3 (#fitur): 4 PILAR EKOSISTEM MEPLANNER                   */}
             {/* ================================================================= */}
-            <section className="bg-white py-16 sm:py-20 border-b border-stone-100">
+            <section
+              id="fitur"
+              className="bg-[#FAF8F5] py-16 sm:py-20 border-b border-stone-200/80 scroll-mt-16"
+            >
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto">
                   <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Cara Baru Menerima Kado dengan Lebih Mudah'
-                      : 'An Easier New Way to Receive Gifts'}
+                      ? '4 Pilar Ekosistem MEPlanner'
+                      : '4 Core Pillars of MEPlanner'}
                   </h2>
                   <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
                     {lang === 'ID'
-                      ? 'Tamu bisa memilih cara memberi yang paling nyaman, sementara kamu menerimanya dengan aman dan praktis.'
-                      : 'Guests can choose the most convenient way to give, while you receive their gifts safely and effortlessly.'}
+                      ? 'Dirancang dari nol sebagai ruang kerja terpadu antara katalog desain, manajemen acara, privasi tamu, dan pengalaman hari-H.'
+                      : 'Engineered from the ground up as a unified workspace connecting design catalog, event management, guest privacy, and event-day execution.'}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-5xl mx-auto">
-                  {[
-                    {
-                      icon: CreditCard,
-                      title:
-                        lang === 'ID' ? 'Kado Cashless' : 'Cashless Envelope',
-                      desc:
-                        lang === 'ID'
-                          ? 'Terima kado secara cashless dengan cepat, aman dan transparan melalui Bank, QRIS, PayPal & USDT.'
-                          : 'Receive cashless gifts quickly, safely, and transparently via Bank Transfer, QRIS, PayPal & USDT.',
-                    },
-                    {
-                      icon: Building2,
-                      title:
-                        lang === 'ID' ? 'Kirim ke Alamat' : 'Ship to Address',
-                      desc:
-                        lang === 'ID'
-                          ? 'Tamu dapat mengirim kado langsung ke alamat yang telah ditentukan lengkap dengan petunjuk kurir.'
-                          : 'Guests can ship physical gifts directly to your designated recipient address with courier notes.',
-                    },
-                    {
-                      icon: Sparkles,
-                      title: lang === 'ID' ? 'Wishlist Kado' : 'Gift Wishlist',
-                      desc:
-                        lang === 'ID'
-                          ? 'Buat daftar kado impian agar hadiah yang diterima sesuai kebutuhan dan tidak dobel.'
-                          : 'Create a dream gift wishlist so every present you receive matches your needs without duplicates.',
-                    },
-                  ].map((giftCard) => {
-                    const IconComp = giftCard.icon;
-                    return (
-                      <div
-                        key={giftCard.title}
-                        className="rounded-3xl bg-white border border-stone-200/80 p-6 shadow-2xs space-y-3 text-center"
-                      >
-                        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDF4F6] text-[#9E1B46] flex items-center justify-center">
-                          <IconComp className="w-7 h-7" />
-                        </div>
-                        <h3 className="text-base font-bold text-stone-900">
-                          {giftCard.title}
-                        </h3>
-                        <p className="text-xs text-stone-600 leading-relaxed">
-                          {giftCard.desc}
-                        </p>
+                {/* 4 Clean Luxury White Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 max-w-6xl mx-auto">
+                  {/* Pillar 1: Sinkronisasi Katalog & Planner */}
+                  <div className="bg-white border border-stone-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-2xs">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center">
+                        <LayoutDashboard className="w-6 h-6" />
                       </div>
-                    );
-                  })}
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Sinkronisasi Katalog & Planner'
+                          : 'Catalog & Planner Sync'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Tema di katalog langsung diterapkan ke workspace lengkap dengan Live Preview Samping.'
+                          : 'Catalog themes apply directly to your workspace complete with a side-by-side Live Preview.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-stone-200/80 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID'
+                          ? '31 Tema Multi-Kategori'
+                          : '31 Multi-Event Themes',
+                        lang === 'ID'
+                          ? 'Live Preview Samping'
+                          : 'Side-by-Side Live Preview',
+                        lang === 'ID'
+                          ? '5 Arketipe Tata Letak'
+                          : '5 Layout Archetypes',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Pillar 2: Akses Tamu Berbasis Key Unik */}
+                  <div className="bg-white border border-stone-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-2xs">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center">
+                        <KeyRound className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Akses Tamu Berbasis Key Unik'
+                          : 'Unique Key Guest Access'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Privasi tamu terjaga; undangan hanya dapat dibuka menggunakan Key unik tanpa bocor di pencarian publik.'
+                          : 'Guest privacy stays protected; invitations open exclusively via unique Keys with zero public directory leaks.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-stone-200/80 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID'
+                          ? 'Token Key 21 Karakter'
+                          : '21-Char Unique Key Token',
+                        lang === 'ID'
+                          ? 'Bebas Bocor Data Tamu'
+                          : 'Zero Guest Data Leaks',
+                        lang === 'ID'
+                          ? 'Sapaan Nama Personal'
+                          : 'Personalized Guest Greeting',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Pillar 3: Manajemen Jadwal, Budget & Tamu VIP */}
+                  <div className="bg-white border border-stone-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-2xs">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Manajemen Jadwal, Budget & Tamu VIP'
+                          : 'Schedule, Budget & VIP Guest CRM'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Atur switch Acara Utama, hitung mundur otomatis, alokasi anggaran, checklist panitia, dan blast WhatsApp.'
+                          : 'Control primary event switches, automated countdowns, budget allocation, committee checklists, and WhatsApp blasts.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-stone-200/80 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID'
+                          ? 'Switch Sesi Acara Utama'
+                          : 'Primary Session Switch',
+                        lang === 'ID'
+                          ? 'Kalkulator Budget & Vendor'
+                          : 'Budget & Vendor Tracker',
+                        lang === 'ID'
+                          ? 'Blast WhatsApp 1-Klik'
+                          : '1-Click WhatsApp Blast',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Pillar 4: Musik Bebas Klaim & Amplop Digital */}
+                  <div className="bg-white border border-stone-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-2xs">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center">
+                        <Music className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Musik Bebas Klaim & Amplop Digital'
+                          : 'Royalty-Free Music & Digital Envelope'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Pustaka musik NCS bebas hak cipta, embed Spotify/YouTube, serta rekening & QRIS fleksibel sesuai tuan rumah.'
+                          : 'Curated NCS copyright-free audio, Spotify/YouTube embeds, and flexible host bank accounts & QRIS.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-stone-200/80 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID'
+                          ? 'Musik NCS Bebas Klaim'
+                          : 'NCS Royalty-Free Library',
+                        lang === 'ID'
+                          ? 'Embed Spotify & YouTube'
+                          : 'Spotify & YouTube Embed',
+                        lang === 'ID'
+                          ? 'Amplop Bank, QRIS & Alamat'
+                          : 'Bank, QRIS & Gift Address',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 8: 6 PAKET KOMERSIAL RESMI MEPLANNER (#paket)             */}
+            {/* SECTION 4: LAYAR PENERIMA TAMU & CHECK-IN HARI-H (GUEST RECEPTION)*/}
+            {/* ================================================================= */}
+            <section className="py-10 bg-white border-b border-stone-200/80">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="rounded-3xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 border border-[#D4AF37]/40 text-white p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+                  <div className="lg:col-span-7 space-y-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                      {lang === 'ID'
+                        ? 'LAYAR PENERIMA TAMU & CHECK-IN HARI-H'
+                        : 'EVENT-DAY GUEST RECEPTION & CHECK-IN'}
+                    </p>
+                    <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-white leading-tight">
+                      {lang === 'ID'
+                        ? 'Sambut Tamu Kehormatan dengan Check-In QR & Key Instan'
+                        : 'Welcome Honored Guests with Instant QR & Key Check-In'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-xl">
+                      {lang === 'ID'
+                        ? 'Layar Penerima Tamu (Guest Reception) memudahkan tim protokol dan panitia memverifikasi kehadiran tamu VIP, nomor meja, dan kuota pax secara real-time di pintu ballroom.'
+                        : 'The Guest Reception screen empowers your protocol and usher team to verify VIP arrivals, table assignments, and pax headcount in real time at the venue entrance.'}
+                    </p>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onOpenDemoManager) {
+                            onOpenDemoManager(
+                              activeDummyMeta.id,
+                              simPackageTier,
+                              activeCatalogTheme?.id
+                            );
+                          } else {
+                            onOpenAdminPortal();
+                          }
+                        }}
+                        className="px-6 py-3 rounded-xl bg-[#8B6914] hover:bg-[#735610] text-white font-bold text-sm transition-all shadow-sm cursor-pointer"
+                      >
+                        {lang === 'ID'
+                          ? 'Coba Layar Penerima Tamu'
+                          : 'Try Guest Reception Screen'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
+                  <div className="lg:col-span-5">
+                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-[#D4AF37]/30 p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                          <span className="text-xs font-bold text-white">
+                            Guest Reception Live Screen
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#FAF3E3]">
+                          QR &amp; Key Ready
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
+                        <div className="w-12 h-12 rounded-xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
+                          <QrCode className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B6914]">
+                            {lang === 'ID'
+                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
+                              : 'WELCOME HONORED GUEST'}
+                          </p>
+                          <p className="text-sm font-extrabold text-stone-900 truncate">
+                            Bpk/Ibu Tamu VIP &amp; Keluarga
+                          </p>
+                          <p className="text-[11px] text-stone-600">
+                            VIP Table 01 &bull; 2 Pax Terverifikasi
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 5: 6 PAKET KOMERSIAL RESMI MEPLANNER (#paket)             */}
             {/* ================================================================= */}
             <section
               id="paket"
@@ -7797,13 +7689,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="text-center max-w-2xl mx-auto space-y-3">
                 <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                   {lang === 'ID'
-                    ? 'Pilihan Paket Harga MEPlanner'
-                    : 'MEPlanner Pricing Plans'}
+                    ? 'Pilihan Paket Lisensi MEPlanner'
+                    : 'MEPlanner License Plans'}
                 </h2>
                 <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                   {lang === 'ID'
-                    ? 'Mulai dari paket Gratis atau pilih paket lengkap dengan fitur RSVP, Galeri, Musik, Kado, Event Planner & AI. Sekali bayar, aktif selamanya.'
-                    : 'Start free or unlock complete features with RSVP, Gallery, Music, Gift Registry, Event Planner & AI. One-time payment, active forever.'}
+                    ? 'Mulai dari paket Gratis atau pilih paket lisensi lengkap dengan ruang kerja Management Planner, proteksi Key unik, dan layar penerima tamu. Sekali bayar, aktif selamanya.'
+                    : 'Start free or unlock complete license tiers with Management Planner workspace, unique Key protection, and guest reception screen. One-time payment, active forever.'}
                 </p>
               </div>
 
@@ -7819,7 +7711,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         isRoyal
                           ? 'bg-[#FFFDF9] text-stone-900 border-2 border-[#D4AF37] shadow-md relative'
                           : isExclusive
-                            ? 'bg-[#FFF9FA] text-stone-900 border-2 border-[#9E1B46] shadow-md'
+                            ? 'bg-[#FAF8F5] text-stone-900 border-2 border-stone-900 shadow-md'
                             : 'bg-white text-stone-900 border border-stone-200/90 shadow-2xs'
                       }`}
                     >
@@ -7829,7 +7721,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
                               {pkg.name}
                             </h3>
-                            <span className="text-[11px] font-bold text-[#9E1B46]">
+                            <span className="text-[11px] font-bold text-[#8B6914]">
                               {pkg.discountBadge}
                             </span>
                           </div>
@@ -7843,9 +7735,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
                                   isRoyal
                                     ? 'text-[#8B6914]'
-                                    : isExclusive
-                                      ? 'text-[#9E1B46]'
-                                      : 'text-stone-900'
+                                    : 'text-stone-900'
                                 }`}
                               >
                                 {pkg.priceMain}
@@ -7866,10 +7756,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <CheckCircle2
                                 className={`w-4 h-4 shrink-0 mt-0.5 ${
                                   isRoyal
-                                    ? 'text-[#9A742B]'
+                                    ? 'text-[#8B6914]'
                                     : isExclusive
-                                      ? 'text-[#9E1B46]'
-                                      : 'text-emerald-600'
+                                      ? 'text-stone-900'
+                                      : 'text-[#8B6914]'
                                 }`}
                               />
                               <span className="text-stone-700">{f}</span>
@@ -7885,9 +7775,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           className={`w-full max-w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer ${
                             isRoyal
                               ? 'bg-[#8B6914] hover:bg-[#735610] text-white shadow-xs'
-                              : isExclusive
-                                ? 'bg-[#9E1B46] hover:bg-[#821539] text-white shadow-xs'
-                                : 'bg-stone-900 hover:bg-stone-800 text-white shadow-2xs'
+                              : 'bg-stone-900 hover:bg-stone-800 text-white shadow-2xs'
                           }`}
                         >
                           <span className="truncate">
@@ -7904,23 +7792,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 9: ARTIKEL & INSPIRASI TERBARU (#blog)                    */}
+            {/* SECTION 6: PANDUAN & ARTIKEL PERSIAPAN ACARA (#blog)              */}
             {/* ================================================================= */}
             <section
               id="blog"
-              className="py-16 sm:py-20 bg-[#FCF6F7] border-t border-stone-200/70 scroll-mt-16"
+              className="py-16 sm:py-20 bg-[#FAF8F5] border-t border-stone-200/80 scroll-mt-16"
             >
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
                 <div className="text-center max-w-2xl mx-auto space-y-2">
                   <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Artikel & Inspirasi Terbaru'
-                      : 'Latest Articles & Inspiration'}
+                      ? 'Panduan & Inspirasi Persiapan Acara'
+                      : 'Event Planning Guides & Inspiration'}
                   </h2>
                   <p className="text-xs sm:text-sm text-stone-600">
                     {lang === 'ID'
-                      ? 'Panduan praktis dan inspirasi untuk membantu persiapan hari bahagiamu.'
-                      : 'Practical guides and inspiration to help prepare your special celebration.'}
+                      ? 'Panduan praktis manajemen anggaran, protokol tamu VIP, dan etika undangan digital.'
+                      : 'Practical guides on budget management, VIP guest protocol, and digital invitation etiquette.'}
                   </p>
                 </div>
 
@@ -7929,7 +7817,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <div
                       key={art.id}
                       onClick={() => setActiveBlogArticle(art)}
-                      className="group cursor-pointer rounded-2xl bg-white border border-stone-200/80 hover:border-[#9E1B46] overflow-hidden flex flex-col justify-between transition-all shadow-2xs"
+                      className="group cursor-pointer rounded-2xl bg-white border border-stone-200/90 hover:border-[#D4AF37] overflow-hidden flex flex-col justify-between transition-all shadow-2xs"
                     >
                       <div>
                         <div className="relative h-36 overflow-hidden">
@@ -7937,14 +7825,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             src={art.imageUrl}
                             alt={lang === 'ID' ? art.titleId : art.titleEn}
                             loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src =
+                                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+                            }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         </div>
                         <div className="p-4 space-y-2">
-                          <p className="text-[10px] font-bold text-[#9E1B46] uppercase tracking-wider">
+                          <p className="text-[10px] font-bold text-[#8B6914] uppercase tracking-wider">
                             {art.category} &bull; {art.readTime}
                           </p>
-                          <h3 className="font-sans text-xs sm:text-sm font-bold text-stone-900 line-clamp-3 group-hover:text-[#9E1B46] transition-colors leading-snug">
+                          <h3 className="font-sans text-xs sm:text-sm font-bold text-stone-900 line-clamp-3 group-hover:text-[#8B6914] transition-colors leading-snug">
                             {lang === 'ID' ? art.titleId : art.titleEn}
                           </h3>
                           <p className="text-[11px] text-stone-600 line-clamp-3 leading-relaxed">
@@ -7952,7 +7844,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </p>
                         </div>
                       </div>
-                      <div className="px-4 py-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-[#9E1B46]">
+                      <div className="px-4 py-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-[#8B6914]">
                         <span>
                           {lang === 'ID'
                             ? 'Baca Selengkapnya'
@@ -7967,7 +7859,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 10: FAQ INTERAKTIF & CUSTOMER SERVICE (#faq)              */}
+            {/* SECTION 7: FAQ INTERAKTIF & CUSTOMER SERVICE (#faq)               */}
             {/* ================================================================= */}
             <section
               id="faq"
@@ -7997,7 +7889,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           key={item.qId}
                           className={`rounded-2xl border transition-all overflow-hidden ${
                             isOpen
-                              ? 'bg-white border-[#9E1B46] shadow-2xs'
+                              ? 'bg-white border-[#D4AF37] shadow-2xs'
                               : 'bg-white border-stone-200/90 hover:border-stone-300'
                           }`}
                         >
@@ -8010,13 +7902,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {lang === 'ID' ? item.qId : item.qEn}
                             </span>
                             <ChevronDown
-                              className={`w-4 h-4 text-[#9E1B46] shrink-0 transition-transform ${
+                              className={`w-4 h-4 text-[#8B6914] shrink-0 transition-transform ${
                                 isOpen ? 'rotate-180' : ''
                               }`}
                             />
                           </button>
                           {isOpen && (
-                            <div className="px-4 pb-4 pt-2 border-t border-stone-100 text-xs text-stone-600 leading-relaxed bg-[#FCF6F7]/50">
+                            <div className="px-4 pb-4 pt-2 border-t border-stone-100 text-xs text-stone-600 leading-relaxed bg-[#FAF8F5]">
                               {lang === 'ID' ? item.aId : item.aEn}
                             </div>
                           )}
@@ -8027,7 +7919,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* Right 5 Cols: Customer Service & MEPlanner AI Assistant */}
-                <div className="lg:col-span-5 rounded-3xl bg-[#FCF5F6] border border-rose-200/80 p-6 space-y-5">
+                <div className="lg:col-span-5 rounded-3xl bg-[#FAF8F5] border border-stone-200/90 p-6 space-y-5">
                   <div>
                     <h3 className="font-editorial text-xl font-bold text-stone-900">
                       {lang === 'ID'
@@ -8053,8 +7945,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             onClick={() => setSelectedAiPromptIdx(pIdx)}
                             className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-[#9E1B46] text-white border-[#9E1B46] shadow-2xs'
-                                : 'bg-white hover:bg-rose-50 text-stone-800 border-stone-200'
+                                ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                                : 'bg-white hover:bg-[#FAF3E3] text-stone-800 border-stone-200'
                             }`}
                           >
                             {lang === 'ID' ? prm.questionId : prm.questionEn}
@@ -8063,17 +7955,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       })}
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-white border border-rose-200 text-xs text-stone-800 leading-relaxed font-medium">
+                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200 text-xs text-stone-800 leading-relaxed font-medium">
                       {lang === 'ID'
                         ? AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerId
                         : AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerEn}
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-rose-200/60 flex flex-col sm:flex-row gap-2.5">
+                  <div className="pt-2 border-t border-stone-200/80 flex flex-col sm:flex-row gap-2.5">
                     <a
                       href={mailtoGeneralSupportUrl}
-                      className="flex-1 py-3 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-all"
+                      className="flex-1 py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-all"
                     >
                       <Mail className="w-4 h-4 shrink-0" />
                       <span>
@@ -8091,97 +7983,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       </main>
 
       {/* ================================================================= */}
-      {/* MODAL 1: BAGAIMANA KAMI MENGHITUNG DAMPAK LINGKUNGAN (ECO-MODAL)   */}
-      {/* ================================================================= */}
-      {isEcoModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setIsEcoModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-3xl bg-white border border-emerald-200 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-4 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between gap-3">
-              <h4 className="font-sans text-sm sm:text-base font-bold text-stone-900">
-                {lang === 'ID'
-                  ? 'Bagaimana Kami Menghitung Dampak Ini?'
-                  : 'How Do We Calculate This Environmental Impact?'}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setIsEcoModalOpen(false)}
-                className="p-1.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 sm:p-6 space-y-4 text-xs text-stone-700 leading-relaxed max-h-[78vh] overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-emerald-800 text-sm">
-                    1. Kertas (Undangan A5 &amp; Amplop)
-                  </p>
-                  <p className="text-stone-600">
-                    Satu set undangan cetak fisik rata-rata membutuhkan kartu A5
-                    art carton tebal (210–260 gsm), amplop berlapis, serta plastik
-                    kemasan (~18–20 gram per undangan). Mengalikan jutaan
-                    undangan digital yang dibagikan menghasilkan penghematan{' '}
-                    <strong className="text-stone-900">56.4 Ton kertas</strong>.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-stone-900 text-sm">
-                    2. Tinta Cetak &amp; Laminasi Kimia
-                  </p>
-                  <p className="text-stone-600">
-                    Meniadakan penggunaan tinta offset berbasis minyak, foil emas
-                    panas (hotprint), dan laminasi plastik doff/glossy yang sulit
-                    terurai di tanah dalam puluhan tahun.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-stone-900 text-sm">
-                    3. Distribusi &amp; Emisi Transportasi
-                  </p>
-                  <p className="text-stone-600">
-                    Undangan fisik memerlukan pengiriman kurir motor/mobil/pesawat
-                    ke tiap alamat tamu. Distribusi digital via WhatsApp menekan
-                    emisi hingga <strong className="text-stone-900">347 tCO2e</strong>.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-emerald-800 text-sm">
-                    4. Prinsip Perhitungan Konservatif
-                  </p>
-                  <p className="text-stone-600">
-                    Kami menggunakan faktor konversi siklus hidup kertas &amp;
-                    logistik konservatif setelah dikurangi estimasi konsumsi
-                    energi server cloud modern yang efisien.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEcoModalOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer"
-                >
-                  {lang === 'ID' ? 'Mengerti & Tutup' : 'Got It & Close'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================================================================= */}
-      {/* MODAL 2: PEMBACA ARTIKEL & INSPIRASI BLOG (activeBlogArticle)      */}
+      {/* MODAL 1: PEMBACA ARTIKEL & INSPIRASI BLOG (activeBlogArticle)      */}
       {/* ================================================================= */}
       {activeBlogArticle && (
         <div
@@ -8200,6 +8002,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? activeBlogArticle.titleId
                     : activeBlogArticle.titleEn
                 }
+                onError={(e) => {
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+                }}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -8211,7 +8017,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <X className="w-4 h-4" />
               </button>
               <div className="absolute bottom-3 left-5 right-5 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-200">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#FAF3E3]">
                   {activeBlogArticle.category} &bull; {activeBlogArticle.readTime}
                 </p>
                 <h4 className="font-sans text-base sm:text-xl font-bold text-white">
@@ -8230,7 +8036,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </p>
 
               <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200 space-y-2.5">
-                <p className="font-bold text-[#9E1B46] uppercase tracking-wider text-[10px]">
+                <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[10px]">
                   {lang === 'ID'
                     ? 'Poin Utama & Checklist Praktis:'
                     : 'Key Takeaways & Practical Checklist:'}
@@ -8241,14 +8047,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     : activeBlogArticle.highlightsEn
                   ).map((pt) => (
                     <li key={pt} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0 mt-0.5" />
                       <span>{pt}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <p className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold">
+              <p className="p-3.5 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-stone-900 font-semibold">
                 {lang === 'ID'
                   ? activeBlogArticle.conclusionId
                   : activeBlogArticle.conclusionEn}
@@ -8261,7 +8067,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     setActiveBlogArticle(null);
                     handleSelectPackageForCheckout('PREMIUM');
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs cursor-pointer"
                 >
                   {lang === 'ID'
                     ? 'Coba di Paket Premium (Rp 51.750)'
@@ -8314,7 +8120,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         onOpenAdminPortal();
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                   >
                     <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
                     <span>
@@ -8390,7 +8196,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 sm:px-6 py-4 bg-[#FCF5F6] border-b border-rose-100 flex items-center justify-between gap-3">
+            <div className="px-5 sm:px-6 py-4 bg-[#FAF8F5] border-b border-stone-200 flex items-center justify-between gap-3">
               <div>
                 <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
                   {lang === 'ID'
@@ -8423,7 +8229,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       : 'Unique Invitation Key'}
                   </label>
                   <div className="relative">
-                    <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <KeyRound className="w-4 h-4 text-[#8B6914] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       value={guestCodeInput}
@@ -8436,21 +8242,21 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? 'Tempel Key Undangan di sini...'
                           : 'Paste your Invitation Key here...'
                       }
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-mono font-semibold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-mono font-semibold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 focus:border-[#8B6914]"
                       autoFocus
                     />
                   </div>
                 </div>
 
                 {lookupGateError && (
-                  <p className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold leading-relaxed">
+                  <p className="p-3 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-stone-900 text-xs font-semibold leading-relaxed">
                     {lookupGateError}
                   </p>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
                 >
                   <span>
                     {lang === 'ID' ? 'Buka Undangan →' : 'Open Invitation →'}
@@ -8475,7 +8281,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 sm:px-6 py-4 bg-[#FCF5F6] border-b border-rose-100 flex items-center justify-between gap-3">
+            <div className="px-5 sm:px-6 py-4 bg-[#FAF8F5] border-b border-stone-200 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center shrink-0">
                   <svg
@@ -8502,7 +8308,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-[#9E1B46]">
+                  <p className="text-[11px] font-bold text-[#8B6914]">
                     {lang === 'ID'
                       ? `Paket Terpilih: ${googleOnboardingPackageId}`
                       : `Selected Plan: ${googleOnboardingPackageId}`}
@@ -8542,26 +8348,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   value={googleOnboardingEmail}
                   onChange={(e) => setGoogleOnboardingEmail(e.target.value)}
                   placeholder="nama.anda@gmail.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 focus:border-[#8B6914]"
                 />
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-semibold text-stone-500">
-                    {lang === 'ID' ? 'Contoh cepat:' : 'Quick fill:'}
-                  </span>
-                  {[
-                    'pasangan.bahagia@gmail.com',
-                    'panitia.acara@gmail.com',
-                  ].map((sampleEmail) => (
-                    <button
-                      key={sampleEmail}
-                      type="button"
-                      onClick={() => setGoogleOnboardingEmail(sampleEmail)}
-                      className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[#9E1B46] text-[10px] font-bold transition-all cursor-pointer"
-                    >
-                      {sampleEmail}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Field 2: Kategori Acara (5 Pills) */}
@@ -8597,8 +8385,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         }}
                         className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#9E1B46] text-white border-[#9E1B46]'
-                            : 'bg-stone-50 hover:bg-rose-50 text-stone-700 border-stone-200'
+                            ? 'bg-stone-900 text-white border-stone-900'
+                            : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
                         }`}
                       >
                         {evItem.label}
@@ -8632,7 +8420,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             ? 'Contoh: Royal Anniversary Gala'
                             : 'Contoh: Rayhan & Clarissa'
                   }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 focus:border-[#8B6914]"
                 />
               </div>
 
@@ -8646,7 +8434,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <select
                   value={googleOnboardingThemeId}
                   onChange={(e) => setGoogleOnboardingThemeId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 focus:border-[#8B6914]"
                 >
                   {MULTI_EVENT_THEME_CATALOG.filter(
                     (t) => t.eventType === googleOnboardingEventType
@@ -8662,7 +8450,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <span>
                     {lang === 'ID'
@@ -8693,7 +8481,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   href={developerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#9E1B46] hover:underline"
+                  className="text-[#8B6914] hover:underline"
                 >
                   omeko42
                 </a>{' '}
@@ -8701,8 +8489,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </p>
               <p className="text-[11px] text-stone-500 mt-0.5">
                 {lang === 'ID'
-                  ? 'Platform Undangan Digital & Persiapan Acara Modern'
-                  : 'Modern Digital Invitation & Event Planning Platform'}
+                  ? 'Platform Undangan Digital & Manajemen Acara Terpadu'
+                  : 'Unified Digital Invitation & Event Management Platform'}
               </p>
             </div>
           </div>
@@ -8711,9 +8499,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <a
               href={mailtoGeneralSupportUrl}
               title={`Hubungi Email Resmi MEPlanner (${businessEmail})`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200 text-stone-800 text-xs font-semibold transition-all"
             >
-              <Mail className="w-3.5 h-3.5 text-[#9E1B46]" />
+              <Mail className="w-3.5 h-3.5 text-[#8B6914]" />
               <span>{businessEmail}</span>
             </a>
 
@@ -8721,7 +8509,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-semibold transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all"
             >
               <span>Eko Agung Krisdianto</span>
             </a>

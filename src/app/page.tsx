@@ -1030,27 +1030,13 @@ function WeddingAppContent() {
         localPart === 'e98.bisnis';
 
       if (isOwnerAccount) {
-        const ownerUser: AdminUser = {
-          id: 'superadmin-owner',
-          username: 'superadmin',
-          nama: 'Eko Agung Krisdianto (Superadmin)',
-          role: 'SUPERADMIN',
-          jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
-          email:
-            email === 'e98.bisnis@gmail.com'
-              ? 'e98.bisnis@gmail.com'
-              : 'agungkrisdianto98@gmail.com',
-          isDefaultUser: true,
-          clientId: 'client-utama',
-          clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
-            state.settings.brideNickname || 'Selo'
-          }`,
-        };
-        handleLoginSuccess(
-          ownerUser,
+        setIsLoginModalOpen(true);
+        setAuthModalMode('SIGN_IN');
+        setLoginIdentifier(email);
+        setLoginErrorMsg(
           loginLang === 'EN'
-            ? 'Welcome back, Eko (Superadmin / Owner)! Full Superadmin access enabled.'
-            : 'Selamat datang kembali, Eko (Superadmin / Owner)! Akses Superadmin aktif.'
+            ? 'System Owner account detected. Please enter your password to verify Superadmin access.'
+            : 'Akun Pemilik Sistem terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses Superadmin.'
         );
         return;
       }
@@ -1343,30 +1329,15 @@ function WeddingAppContent() {
       localPart === 'e98.bisnis';
 
     if (isOwnerAccount) {
-      const ownerUser: AdminUser = {
-        id: 'superadmin-owner',
-        username: 'superadmin',
-        nama: 'Eko Agung Krisdianto (Superadmin)',
-        role: 'SUPERADMIN',
-        jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
-        email:
-          normalizedEmail === 'e98.bisnis@gmail.com'
-            ? 'e98.bisnis@gmail.com'
-            : 'agungkrisdianto98@gmail.com',
-        isDefaultUser: true,
-        clientId: 'client-utama',
-        clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
-          state.settings.brideNickname || 'Selo'
-        }`,
-      };
       setGmailAddressInput('');
       setGmailEventTitleInput('');
       setIsGmailExpanded(false);
-      handleLoginSuccess(
-        ownerUser,
+      setAuthModalMode('SIGN_IN');
+      setLoginIdentifier(normalizedEmail);
+      setLoginErrorMsg(
         loginLang === 'EN'
-          ? 'Welcome back, Eko (Superadmin / Owner)! Full Superadmin access enabled.'
-          : 'Selamat datang kembali, Eko (Superadmin / Owner)! Akses Superadmin aktif.'
+          ? 'System Owner account detected. Please enter your password to verify Superadmin access.'
+          : 'Akun Pemilik Sistem terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses Superadmin.'
       );
       return;
     }
@@ -1397,6 +1368,15 @@ function WeddingAppContent() {
       return;
     }
 
+    const lowerId = cleanId.toLowerCase();
+    const isProtectedSuperadmin =
+      lowerId === 'agungkrisdianto98@gmail.com' ||
+      lowerId === 'e98.bisnis@gmail.com' ||
+      lowerId === 'omeko42@gmail.com' ||
+      lowerId === 'agungkrisdianto98' ||
+      lowerId === 'omeko42' ||
+      lowerId === 'superadmin';
+
     setIsSubmittingLogin(true);
     try {
       const res = await fetch('/api/auth', {
@@ -1417,9 +1397,8 @@ function WeddingAppContent() {
         return;
       }
 
-      // If not found in /api/auth and user entered a regular client @gmail.com address, sign in via Google Workspace
-      const lowerId = cleanId.toLowerCase();
-      if (lowerId.endsWith('@gmail.com')) {
+      // Never allow Superadmin accounts to bypass password verification
+      if (!isProtectedSuperadmin && lowerId.endsWith('@gmail.com')) {
         setLoginIdentifier('');
         setLoginPassword('');
         handleGmailLoginSubmit(undefined, cleanId);
@@ -1433,8 +1412,7 @@ function WeddingAppContent() {
             : 'Email/username atau kata sandi belum sesuai.')
       );
     } catch {
-      const lowerId = cleanId.toLowerCase();
-      if (lowerId.endsWith('@gmail.com')) {
+      if (!isProtectedSuperadmin && lowerId.endsWith('@gmail.com')) {
         setLoginIdentifier('');
         setLoginPassword('');
         handleGmailLoginSubmit(undefined, cleanId);
@@ -1464,12 +1442,19 @@ function WeddingAppContent() {
     }
 
     const lower = code.toLowerCase();
-    if (lower === 'omeko42' || lower === 'e98.bisnis@gmail.com') {
+    if (
+      lower === 'omeko42' ||
+      lower === 'e98.bisnis@gmail.com' ||
+      lower === 'agungkrisdianto98@gmail.com'
+    ) {
       setAccessCodeInput('');
-      void handleQuickCreateWithGoogle({
-        email: 'e98.bisnis@gmail.com',
-        packageId: 'ENTERPRISE',
-      });
+      setAuthModalMode('SIGN_IN');
+      setLoginIdentifier(lower);
+      setLoginErrorMsg(
+        loginLang === 'ID'
+          ? 'Akun Pemilik Sistem terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi.'
+          : 'System Owner account detected. Please enter your password to verify.'
+      );
       return;
     }
 
@@ -3140,7 +3125,7 @@ function WeddingAppContent() {
           }}
         >
           <div className="max-w-[420px] w-full my-auto">
-            {/* Top Brand Bar (Matches Wevitation Clean Header Above Card) */}
+            {/* Top Brand Bar */}
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-white/95 shadow-sm flex items-center justify-center shrink-0">
@@ -3151,7 +3136,7 @@ function WeddingAppContent() {
                     MEPlanner
                   </p>
                   <p className="text-[11px] text-stone-200 font-medium">
-                    online event &amp; wedding invitation
+                    My Event Planner &bull; Undangan &amp; Manajemen Acara
                   </p>
                 </div>
               </div>
@@ -3209,11 +3194,11 @@ function WeddingAppContent() {
               {authModalMode === 'SIGN_IN' && (
                 <>
                   <div className="text-center mb-6">
-                    <p className="text-base font-medium text-stone-700">
-                      {loginLang === 'ID' ? 'Masuk ke' : 'Sign In to'}
+                    <p className="text-sm font-medium text-stone-600">
+                      {loginLang === 'ID' ? 'Masuk ke Ruang Kerja' : 'Sign In to Workspace'}
                     </p>
                     <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
-                      MEPlanner
+                      ME<span className="text-[#8B6914]">Planner</span>
                     </h3>
                   </div>
 
@@ -3223,13 +3208,18 @@ function WeddingAppContent() {
                   >
                     <div>
                       <label className="block text-xs font-bold text-stone-800 mb-1.5">
-                        Email
+                        {loginLang === 'ID' ? 'Email atau Username' : 'Email or Username'}
                       </label>
                       <input
                         type="text"
                         value={loginIdentifier}
                         onChange={(e) => setLoginIdentifier(e.target.value)}
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        placeholder={
+                          loginLang === 'ID'
+                            ? 'Masukkan email atau username Anda'
+                            : 'Enter your email or username'
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
@@ -3244,22 +3234,23 @@ function WeddingAppContent() {
                           onClick={() =>
                             setLoginErrorMsg(
                               loginLang === 'ID'
-                                ? 'Silakan hubungi e98.bisnis@gmail.com untuk reset password.'
-                                : 'Please contact e98.bisnis@gmail.com to reset your password.'
+                                ? 'Silakan hubungi e98.bisnis@gmail.com untuk bantuan reset kata sandi.'
+                                : 'Please contact e98.bisnis@gmail.com for password reset assistance.'
                             )
                           }
-                          className="text-xs font-semibold text-[#9E1B46] hover:underline cursor-pointer"
+                          className="text-xs font-semibold text-[#8B6914] hover:underline cursor-pointer"
                         >
                           {loginLang === 'ID'
-                            ? 'Lupa Password ?'
-                            : 'Forgot Password ?'}
+                            ? 'Lupa Password?'
+                            : 'Forgot Password?'}
                         </button>
                       </div>
                       <input
                         type="password"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        placeholder="••••••••"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
@@ -3267,13 +3258,15 @@ function WeddingAppContent() {
                     <button
                       type="submit"
                       disabled={isSubmittingLogin}
-                      className="w-full h-11 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-sm transition-all shadow-xs cursor-pointer disabled:opacity-60"
+                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all shadow-xs cursor-pointer disabled:opacity-60"
                     >
                       {isSubmittingLogin
                         ? loginLang === 'ID'
                           ? 'Memproses...'
                           : 'Signing In...'
-                        : 'Sign In'}
+                        : loginLang === 'ID'
+                          ? 'Masuk'
+                          : 'Sign In'}
                     </button>
                   </form>
 
@@ -3286,23 +3279,10 @@ function WeddingAppContent() {
                       type="button"
                       onClick={() => {
                         setLoginErrorMsg('');
-                        setAuthModalMode('ACCESS_CODE');
-                      }}
-                      className="w-full h-11 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white font-semibold text-sm transition-all cursor-pointer"
-                    >
-                      {loginLang === 'ID'
-                        ? 'Masuk dengan kode akses'
-                        : 'Sign in with access code'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginErrorMsg('');
-                        setShowCustomGoogleInput(false);
+                        setShowCustomGoogleInput(true);
                         setAuthModalMode('GOOGLE_CHOOSER');
                       }}
-                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -3337,23 +3317,13 @@ function WeddingAppContent() {
                       type="button"
                       onClick={() => {
                         setLoginErrorMsg('');
-                        setShowCustomGoogleInput(false);
-                        setAuthModalMode('GOOGLE_CHOOSER');
+                        setAuthModalMode('ACCESS_CODE');
                       }}
-                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-stone-800 font-semibold text-sm transition-all cursor-pointer"
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="w-4 h-4 shrink-0 fill-current text-stone-900"
-                        aria-hidden="true"
-                      >
-                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                      </svg>
-                      <span>
-                        {loginLang === 'ID'
-                          ? 'Masuk dengan Apple'
-                          : 'Sign in with Apple'}
-                      </span>
+                      {loginLang === 'ID'
+                        ? 'Masuk dengan Kode Akses Workspace'
+                        : 'Sign in with Workspace Access Code'}
                     </button>
 
                     <button
@@ -3362,11 +3332,11 @@ function WeddingAppContent() {
                         setLoginErrorMsg('');
                         setAuthModalMode('REGISTER');
                       }}
-                      className="w-full h-11 rounded-lg bg-[#FCEEF2] hover:bg-[#F8DCE5] text-[#9E1B46] font-semibold text-sm transition-all cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-semibold text-sm transition-all cursor-pointer"
                     >
                       {loginLang === 'ID'
-                        ? 'Buat Akun Baru'
-                        : 'Create New Account'}
+                        ? 'Buat Akun Baru (Gratis)'
+                        : 'Create New Account (Free)'}
                     </button>
                   </div>
                 </>
@@ -3399,102 +3369,27 @@ function WeddingAppContent() {
                     </svg>
                     <h3 className="text-xl font-bold text-stone-900">
                       {loginLang === 'ID'
-                        ? 'Pilih akun'
-                        : 'Choose an account'}
+                        ? 'Masuk dengan Google'
+                        : 'Sign in with Google'}
                     </h3>
                     <p className="text-xs text-stone-500 mt-1">
                       {loginLang === 'ID'
-                        ? 'untuk melanjutkan ke '
-                        : 'to continue to '}
-                      <span className="font-bold text-[#9E1B46]">MEPlanner</span>
+                        ? 'Gunakan akun Google Anda untuk melanjutkan ke '
+                        : 'Use your Google account to continue to '}
+                      <span className="font-bold text-[#8B6914]">MEPlanner</span>
                     </p>
                   </div>
 
-                  <div className="divide-y divide-stone-200 border-y border-stone-200">
-                    {[
-                      {
-                        name:
-                          loginLang === 'ID'
-                            ? 'Pasangan & Tuan Rumah Acara'
-                            : 'Couple & Event Host',
-                        email: 'mempelai.meplanner@gmail.com',
-                        initials: 'PT',
-                        bg: 'bg-[#9E1B46]',
-                      },
-                      {
-                        name:
-                          loginLang === 'ID'
-                            ? 'Tim Event & Wedding Organizer'
-                            : 'Event & Wedding Organizer',
-                        email: 'organizer.meplanner@gmail.com',
-                        initials: 'WO',
-                        bg: 'bg-indigo-600',
-                      },
-                      {
-                        name: 'Eko Agung Krisdianto (Superadmin)',
-                        email: 'agungkrisdianto98@gmail.com',
-                        initials: 'EA',
-                        bg: 'bg-emerald-700',
-                      },
-                      {
-                        name: 'Eko Agung K. (Official Business)',
-                        email: 'e98.bisnis@gmail.com',
-                        initials: 'EB',
-                        bg: 'bg-teal-700',
-                      },
-                    ].map((acc) => (
-                      <button
-                        key={acc.email}
-                        type="button"
-                        onClick={() => {
-                          void handleQuickCreateWithGoogle({
-                            email: acc.email,
-                            displayName: acc.name,
-                            packageId: 'GRATIS',
-                            catalogThemeId: demoSelectedThemeId,
-                          });
-                        }}
-                        className="w-full py-3 px-2 hover:bg-stone-50 flex items-center gap-3 text-left transition-colors cursor-pointer"
-                      >
-                        <div
-                          className={`w-9 h-9 rounded-full ${acc.bg} text-white text-xs font-bold flex items-center justify-center shrink-0`}
-                        >
-                          {acc.initials}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-stone-900 truncate">
-                            {acc.name}
-                          </p>
-                          <p className="text-xs text-stone-500 truncate">
-                            {acc.email}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowCustomGoogleInput((prev) => !prev)
-                      }
-                      className="w-full py-3 px-2 hover:bg-stone-50 flex items-center gap-3 text-left transition-colors cursor-pointer"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-stone-100 text-stone-600 flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-semibold text-stone-700">
+                  <form
+                    onSubmit={(e) => handleGmailLoginSubmit(e)}
+                    className="space-y-3.5"
+                  >
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1.5">
                         {loginLang === 'ID'
-                          ? 'Gunakan akun lain'
-                          : 'Use another account'}
-                      </span>
-                    </button>
-                  </div>
-
-                  {showCustomGoogleInput && (
-                    <form
-                      onSubmit={(e) => handleGmailLoginSubmit(e)}
-                      className="mt-3 space-y-2.5"
-                    >
+                          ? 'Alamat Email Google (@gmail.com)'
+                          : 'Google Email Address (@gmail.com)'}
+                      </label>
                       <input
                         type="email"
                         autoFocus
@@ -3502,20 +3397,42 @@ function WeddingAppContent() {
                         onChange={(e) => setGmailAddressInput(e.target.value)}
                         placeholder={
                           loginLang === 'ID'
-                            ? 'nama@gmail.com'
-                            : 'yourname@gmail.com'
+                            ? 'nama.anda@gmail.com'
+                            : 'your.name@gmail.com'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
-                      <button
-                        type="submit"
-                        className="w-full h-10 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-xs transition-all cursor-pointer"
-                      >
-                        {loginLang === 'ID' ? 'Lanjutkan' : 'Continue'}
-                      </button>
-                    </form>
-                  )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1.5">
+                        {loginLang === 'ID'
+                          ? 'Nama Pasangan / Acara (Opsional untuk Akun Baru)'
+                          : 'Couple / Event Name (Optional for New Workspace)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={gmailEventTitleInput}
+                        onChange={(e) =>
+                          setGmailEventTitleInput(e.target.value)
+                        }
+                        placeholder={
+                          loginLang === 'ID'
+                            ? 'Contoh: Andi & Rina'
+                            : 'Example: Andi & Rina'
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all cursor-pointer"
+                    >
+                      {loginLang === 'ID' ? 'Lanjutkan' : 'Continue'}
+                    </button>
+                  </form>
 
                   <button
                     type="button"
@@ -3560,14 +3477,14 @@ function WeddingAppContent() {
                             ? 'Masukkan kode akses...'
                             : 'Enter access code...'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white font-semibold text-sm transition-all cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all cursor-pointer"
                     >
                       {loginLang === 'ID' ? 'Masuk' : 'Sign In'}
                     </button>
@@ -3591,11 +3508,11 @@ function WeddingAppContent() {
               {authModalMode === 'REGISTER' && (
                 <div>
                   <div className="text-center mb-5">
-                    <p className="text-base font-medium text-stone-700">
-                      {loginLang === 'ID' ? 'Buat Akun Baru' : 'Create Account'}
+                    <p className="text-sm font-medium text-stone-600">
+                      {loginLang === 'ID' ? 'Buat Ruang Kerja Baru' : 'Create New Workspace'}
                     </p>
                     <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
-                      MEPlanner
+                      ME<span className="text-[#8B6914]">Planner</span>
                     </h3>
                   </div>
 
@@ -3617,7 +3534,7 @@ function WeddingAppContent() {
                             ? 'Contoh: Andi & Rina'
                             : 'Example: Andi & Rina'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
@@ -3635,7 +3552,7 @@ function WeddingAppContent() {
                             e.target.value as EventCategoryType
                           )
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                       >
                         <option value="WEDDING">
                           {loginLang === 'ID' ? 'Pernikahan' : 'Wedding'}
@@ -3647,7 +3564,7 @@ function WeddingAppContent() {
                           {loginLang === 'ID' ? 'Wisuda' : 'Graduation'}
                         </option>
                         <option value="MEETING">
-                          {loginLang === 'ID' ? 'Rapat' : 'Meeting'}
+                          {loginLang === 'ID' ? 'Rapat Resmi' : 'Corporate Meeting'}
                         </option>
                         <option value="GALA_DINNER">Gala Dinner</option>
                       </select>
@@ -3662,7 +3579,7 @@ function WeddingAppContent() {
                         value={gmailAddressInput}
                         onChange={(e) => setGmailAddressInput(e.target.value)}
                         placeholder="nama@gmail.com"
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
@@ -3677,14 +3594,14 @@ function WeddingAppContent() {
                         onChange={(e) =>
                           setRegisterPasswordInput(e.target.value)
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
                         required
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-sm transition-all shadow-xs cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all shadow-xs cursor-pointer"
                     >
                       {loginLang === 'ID'
                         ? 'Buat Akun Gratis & Masuk ke Management'
@@ -3697,10 +3614,10 @@ function WeddingAppContent() {
                       type="button"
                       onClick={() => {
                         setLoginErrorMsg('');
-                        setShowCustomGoogleInput(false);
+                        setShowCustomGoogleInput(true);
                         setAuthModalMode('GOOGLE_CHOOSER');
                       }}
-                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                      className="w-full h-11 rounded-lg bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                     >
                       <svg
                         viewBox="0 0 24 24"

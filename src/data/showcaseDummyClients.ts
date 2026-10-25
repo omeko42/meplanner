@@ -741,7 +741,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     coverImageUrl:
       'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: 'Sidang Terbuka & Tasyakuran Wisuda Cum Laude',
     description:
@@ -759,7 +759,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
       'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#4A6B53',
@@ -779,7 +779,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
       'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#3B669E',
@@ -2320,7 +2320,7 @@ export function getShowcaseDummyClientState(
       : meta.eventType === 'BIRTHDAY'
         ? 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85'
         : meta.eventType === 'GRADUATION'
-          ? 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85'
+          ? 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85'
           : meta.eventType === 'MEETING'
             ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85'
             : 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85';
@@ -2331,7 +2331,7 @@ export function getShowcaseDummyClientState(
       : meta.eventType === 'BIRTHDAY'
         ? 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85'
         : meta.eventType === 'GRADUATION'
-          ? 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=85'
+          ? 'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1600&q=85'
           : meta.eventType === 'MEETING'
             ? 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85'
             : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85';

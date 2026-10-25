@@ -477,37 +477,9 @@ export function getStoredAdminUser(): AdminUser | null {
     const raw = localStorage.getItem(ADMIN_AUTH_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as AdminUser;
-    const lowerEmail = (parsed.email || '').trim().toLowerCase();
-    const lowerUser = (parsed.username || '').trim().toLowerCase();
-    if (
-      lowerEmail === 'agungkrisdianto98@gmail.com' ||
-      lowerUser === 'agungkrisdianto98@gmail.com' ||
-      lowerUser === 'agungkrisdianto98' ||
-      lowerEmail === 'e98.bisnis@gmail.com' ||
-      lowerUser === 'e98.bisnis@gmail.com' ||
-      lowerUser === 'omeko42' ||
-      parsed.id === 'usr-gmail-agungkrisdiant'
-    ) {
-      const upgraded: AdminUser = {
-        ...parsed,
-        id: 'superadmin-owner',
-        username: 'superadmin',
-        nama: 'Eko Agung Krisdianto (Superadmin)',
-        role: 'SUPERADMIN',
-        jabatan: 'Superadmin • Pemilik Sistem',
-        email:
-          lowerEmail === 'e98.bisnis@gmail.com'
-            ? 'e98.bisnis@gmail.com'
-            : 'agungkrisdianto98@gmail.com',
-        clientId: 'client-utama',
-        isDefaultUser: true,
-      };
-      try {
-        localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(upgraded));
-      } catch {
-        // Ignore
-      }
-      return upgraded;
+    if (parsed.id === 'usr-gmail-agungkrisdiant') {
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+      return null;
     }
     return parsed;
   } catch {

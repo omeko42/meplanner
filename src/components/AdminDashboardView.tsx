@@ -251,6 +251,25 @@ const BACKGROUND_PRESETS = [
   },
 ];
 
+const THEME_PREVIEW_FALLBACK_DATA_URI =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360">
+      <defs>
+        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FAF3E3"/>
+          <stop offset="50%" stop-color="#E8D5B5"/>
+          <stop offset="100%" stop-color="#C5A059"/>
+        </linearGradient>
+      </defs>
+      <rect width="600" height="360" fill="url(#g)"/>
+      <rect x="20" y="20" width="560" height="320" rx="16" fill="none" stroke="#8B6914" stroke-opacity="0.35" stroke-width="2"/>
+      <circle cx="300" cy="155" r="32" fill="#FFFDF9" fill-opacity="0.8" stroke="#B68D40" stroke-width="2"/>
+      <path d="M284 164 L295 148 L305 158 L313 150 L322 164 Z" fill="#8B6914" opacity="0.75"/>
+      <text x="300" y="225" text-anchor="middle" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="#5C4018">MEPlanner Exclusive Theme</text>
+    </svg>`
+  );
+
 type ManagerThemePresetKey =
   | 'champagne_gold'
   | 'sage_botanical'
@@ -12852,7 +12871,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: false,
                               petals: true,
                               swatches: ['#C5A059', '#8B6914', '#FAF3E3'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80',
+                              coverBgUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=900&q=80',
                             },
                             {
                               id: 'executive-summit',
@@ -12932,6 +12951,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     src={presetItem.coverBgUrl}
                                     alt={presetItem.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.currentTarget;
+                                      if (target.src !== THEME_PREVIEW_FALLBACK_DATA_URI) {
+                                        target.src = THEME_PREVIEW_FALLBACK_DATA_URI;
+                                      }
+                                    }}
                                   />
                                 </div>
                                 <div className="p-2.5 space-y-1.5 bg-white">
@@ -13057,6 +13082,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 src={preset.url}
                                 alt={preset.label}
                                 className="w-10 h-10 rounded-lg object-cover border border-[#D4AF37]/30 shrink-0"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (target.src !== THEME_PREVIEW_FALLBACK_DATA_URI) {
+                                    target.src = THEME_PREVIEW_FALLBACK_DATA_URI;
+                                  }
+                                }}
                               />
                               <div className="min-w-0">
                                 <p className="font-bold text-xs text-stone-900 truncate">
@@ -13490,6 +13521,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 style={getPhotoAdjustStyle(
                                                   slide.adjustment
                                                 )}
+                                                onError={(e) => {
+                                                  const target = e.currentTarget;
+                                                  if (target.src !== THEME_PREVIEW_FALLBACK_DATA_URI) {
+                                                    target.src = THEME_PREVIEW_FALLBACK_DATA_URI;
+                                                  }
+                                                }}
                                               />
                                             </button>
 
