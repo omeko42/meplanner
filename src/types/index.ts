@@ -401,6 +401,40 @@ export interface WeddingSettings {
   bgOverlayOpacity?: number; // 40 to 95 (percentage of bright pearl overlay)
   bgBlurIntensity?: 'none' | 'sm' | 'md' | 'lg';
   themePreset?: InvitationThemePresetId;
+  selectedCatalogThemeId?: string;
+  selectedCatalogThemeName?: string;
+  themeLayoutArchetype?:
+    | 'EDITORIAL_CLASSIC'
+    | 'POLAROID_MAGAZINE'
+    | 'BOTANICAL_AIRY'
+    | 'NUSANTARA_HERITAGE'
+    | 'MODERN_BENTO';
+
+  // Package & Subscription Synchronization (Catalog <-> Manager <-> Public Invitation)
+  subscriptionPackageId?:
+    | 'GRATIS'
+    | 'PREMIUM'
+    | 'BUSINESS'
+    | 'ENTERPRISE'
+    | 'MITRA_SILVER'
+    | 'MITRA_GOLD';
+  ownerGoogleEmail?: string;
+
+  // Extended Catalog-Synced Invitation Modules (Live Streaming, Wishlist, IG Story)
+  showLiveStreaming?: boolean;
+  liveStreamingPlatform?: string;
+  liveStreamingUrl?: string;
+  liveStreamingLabel?: string;
+  giftWishlistItems?: Array<{
+    id: string;
+    itemName: string;
+    priceEstimate?: string;
+    storeUrl?: string;
+    reservedBy?: string;
+  }>;
+  showIgStorySection?: boolean;
+  igFilterUrl?: string;
+  igStoryNote?: string;
 
   // Photo Zoom & Pan Adjustments for Couple, Backgrounds, etc.
   photoAdjustments?: {

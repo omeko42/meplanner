@@ -41,6 +41,8 @@ import {
   ClientWorkspaceData,
   InvitationInteractionType,
   CommercialPaymentTransaction,
+  EventCategoryType,
+  InvitationThemePresetId,
 } from '@/types';
 import {
   INITIAL_SETTINGS,
@@ -356,6 +358,9 @@ function WeddingAppContent() {
   const [loginLang, setLoginLang] = useState<'ID' | 'EN'>('ID');
   const [isGmailExpanded, setIsGmailExpanded] = useState(false);
   const [gmailAddressInput, setGmailAddressInput] = useState('');
+  const [gmailEventTitleInput, setGmailEventTitleInput] = useState('');
+  const [gmailEventTypeInput, setGmailEventTypeInput] =
+    useState<EventCategoryType>('WEDDING');
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -370,6 +375,9 @@ function WeddingAppContent() {
   );
   const [demoPackageTier, setDemoPackageTier] =
     useState<ShowcasePackageTier>('ROYAL VIP');
+  const [demoSelectedThemeId, setDemoSelectedThemeId] = useState<
+    string | undefined
+  >(undefined);
   const [demoManagerClientId, setDemoManagerClientId] = useState<string | null>(
     null
   );
@@ -795,7 +803,8 @@ function WeddingAppContent() {
       setDemoCustomOverrides((prev) => {
         const baseDummy = getShowcaseDummyClientState(
           resolvedId,
-          demoPackageTier
+          demoPackageTier,
+          demoSelectedThemeId
         );
         const existingOverride = prev[resolvedId];
         const currentMerged: WeddingDatabaseSchema = existingOverride
@@ -821,15 +830,24 @@ function WeddingAppContent() {
         };
       });
     },
-    [demoPackageTier]
+    [demoPackageTier, demoSelectedThemeId]
   );
 
   const handleOpenDemoManager = useCallback(
-    (dummyClientId: string, tier?: ShowcasePackageTier) => {
+    (
+      dummyClientId: string,
+      tier?: ShowcasePackageTier,
+      catalogThemeId?: string
+    ) => {
       weddingMusicPlayer.stop();
       const resolvedDummyId =
         resolveShowcaseDummyClientId(dummyClientId) || dummyClientId;
       if (tier) setDemoPackageTier(tier);
+      if (catalogThemeId !== undefined) {
+        setDemoSelectedThemeId(catalogThemeId);
+      } else if (!SHOWCASE_DUMMY_CLIENT_METAS.some((m) => m.id === dummyClientId || m.slug === dummyClientId)) {
+        setDemoSelectedThemeId(dummyClientId);
+      }
       setIsUrlGuestSessionCleared(true);
       setPreviewOverrideGuest(null);
       setManualGuestLookup({});
@@ -848,7 +866,11 @@ function WeddingAppContent() {
       publicSelectedClientId &&
       isShowcaseDummyClientId(publicSelectedClientId)
     ) {
-      handleOpenDemoManager(publicSelectedClientId, demoPackageTier);
+      handleOpenDemoManager(
+        publicSelectedClientId,
+        demoPackageTier,
+        demoSelectedThemeId
+      );
       return;
     }
     setIsUrlGuestSessionCleared(true);
@@ -902,6 +924,323 @@ function WeddingAppContent() {
     });
   };
 
+  const handleQuickCreateWithGoogle = useCallback(
+    async (payload: {
+      email: string;
+      displayName?: string;
+      eventTitle?: string;
+      eventType?: EventCategoryType;
+      packageId:
+        | 'GRATIS'
+        | 'PREMIUM'
+        | 'BUSINESS'
+        | 'ENTERPRISE'
+        | 'MITRA_SILVER'
+        | 'MITRA_GOLD';
+      catalogThemeId?: string;
+      catalogThemeName?: string;
+      themePreset?: InvitationThemePresetId;
+      themeLayoutArchetype?:
+        | 'EDITORIAL_CLASSIC'
+        | 'POLAROID_MAGAZINE'
+        | 'BOTANICAL_AIRY'
+        | 'NUSANTARA_HERITAGE'
+        | 'MODERN_BENTO';
+      coverImageUrl?: string;
+      heroImageUrl?: string;
+    }) => {
+      weddingMusicPlayer.stop();
+      const rawEmail = payload.email.trim().toLowerCase();
+      const email = rawEmail.includes('@') ? rawEmail : `${rawEmail}@gmail.com`;
+      const localPart = email.split('@')[0] || 'planner';
+
+      const isOwnerAccount =
+        email === 'e98.bisnis@gmail.com' ||
+        email === 'omeko42@gmail.com' ||
+        rawEmail === 'omeko42' ||
+        localPart === 'omeko42' ||
+        localPart === 'e98.bisnis';
+
+      if (isOwnerAccount) {
+        const ownerUser: AdminUser = {
+          id: 'usr-owner-eko',
+          username: 'eko',
+          nama: 'Eko Agung K. (Owner)',
+          role: 'SUPERADMIN',
+          jabatan: 'Owner & Lead Developer (omeko42)',
+          email: 'e98.bisnis@gmail.com',
+          clientId: 'client-utama',
+          clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
+            state.settings.brideNickname || 'Selo'
+          }`,
+        };
+        handleLoginSuccess(
+          ownerUser,
+          loginLang === 'EN'
+            ? 'Welcome back, Eko (Owner / Developer)! Full Superadmin access enabled.'
+            : 'Selamat datang kembali, Eko (Owner / Developer)! Akses Superadmin aktif.'
+        );
+        return;
+      }
+
+      const cleanSlug =
+        email.replace(/[^a-z0-9]/g, '').slice(0, 14) || 'planner';
+      const clientId = `client-gmail-${cleanSlug}`;
+
+      const mappedTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP' =
+        payload.packageId === 'GRATIS'
+          ? 'STARTER'
+          : payload.packageId === 'PREMIUM' || payload.packageId === 'BUSINESS'
+            ? 'EXCLUSIVE'
+            : 'ROYAL VIP';
+      const groupTier: ClientGroupItem['packageTier'] =
+        mappedTier === 'ROYAL VIP' ? 'ROYAL_VIP' : mappedTier;
+      const storageQuotaMb =
+        payload.packageId === 'GRATIS'
+          ? 50
+          : payload.packageId === 'PREMIUM' || payload.packageId === 'BUSINESS'
+            ? 500
+            : 2048;
+
+      const effectiveEventType: EventCategoryType =
+        payload.eventType || 'WEDDING';
+      const dummyIdForEvent =
+        effectiveEventType === 'BIRTHDAY'
+          ? 'client-demo-birthday'
+          : effectiveEventType === 'GRADUATION'
+            ? 'client-demo-graduation'
+            : effectiveEventType === 'MEETING'
+              ? 'client-demo-meeting'
+              : effectiveEventType === 'GALA_DINNER'
+                ? 'client-demo-gala'
+                : 'client-demo-wedding';
+
+      const baseTemplate = getShowcaseDummyClientState(
+        dummyIdForEvent,
+        mappedTier,
+        payload.catalogThemeId || demoSelectedThemeId
+      );
+
+      const formattedDisplayName =
+        payload.displayName?.trim() ||
+        localPart
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+          .trim() ||
+        'Planner Host';
+
+      const cleanEventTitle = payload.eventTitle?.trim() || '';
+      const effectiveCoupleLabel =
+        cleanEventTitle ||
+        (effectiveEventType === 'WEDDING'
+          ? `${formattedDisplayName} & Partner`
+          : formattedDisplayName);
+
+      let profileOverrides: Partial<WeddingSettings> = {};
+      if (cleanEventTitle) {
+        if (cleanEventTitle.includes('&')) {
+          const parts = cleanEventTitle.split('&').map((p) => p.trim());
+          const p1 = parts[0] || formattedDisplayName;
+          const p2 = parts[1] || 'Partner';
+          profileOverrides = {
+            groomFullName: p1,
+            groomNickname: p1.split(' ')[0] || p1,
+            brideFullName: p2,
+            brideNickname: p2.split(' ')[0] || p2,
+            showSecondProfile: true,
+          };
+        } else {
+          profileOverrides = {
+            groomFullName: cleanEventTitle,
+            groomNickname: cleanEventTitle.split(' ')[0] || cleanEventTitle,
+            showSecondProfile: false,
+          };
+        }
+      }
+
+      const nowIso = new Date().toISOString();
+      const customizedSettings: WeddingSettings & Record<string, unknown> = {
+        ...baseTemplate.settings,
+        ...profileOverrides,
+        siteTitle: cleanEventTitle
+          ? `MEPlanner • ${cleanEventTitle}`
+          : baseTemplate.settings.siteTitle,
+        activeClientId: clientId,
+        eventType: effectiveEventType,
+        storageQuotaLimitMb: storageQuotaMb,
+        subscriptionPackageId: payload.packageId,
+        ownerGoogleEmail: email,
+        selectedCatalogThemeId: payload.catalogThemeId || demoSelectedThemeId,
+        selectedCatalogThemeName: payload.catalogThemeName,
+        ...(payload.themePreset ? { themePreset: payload.themePreset } : {}),
+        ...(payload.themeLayoutArchetype
+          ? {
+              themeLayoutArchetype: payload.themeLayoutArchetype,
+              layoutArchetype: payload.themeLayoutArchetype,
+              showFloralOrnaments:
+                payload.themeLayoutArchetype === 'BOTANICAL_AIRY',
+            }
+          : {}),
+        ...(payload.coverImageUrl
+          ? {
+              coverBgUrl: payload.coverImageUrl,
+              coverSlides: [
+                {
+                  id: 'g-cov-1',
+                  imageUrl: payload.coverImageUrl,
+                  title: payload.catalogThemeName || 'Cover',
+                },
+              ],
+            }
+          : {}),
+        ...(payload.heroImageUrl
+          ? {
+              heroPrewedUrl: payload.heroImageUrl,
+              heroSlides: [
+                {
+                  id: 'g-her-1',
+                  imageUrl: payload.heroImageUrl,
+                  title: payload.catalogThemeName || 'Hero',
+                },
+              ],
+            }
+          : {}),
+        updatedAt: nowIso,
+        updatedBy: email,
+      };
+      delete customizedSettings.clientWorkspaces;
+
+      const newGroup: ClientGroupItem = {
+        id: clientId,
+        clientCode: cleanSlug.toUpperCase().slice(0, 12),
+        clientName: `Client (${payload.packageId}) • ${effectiveCoupleLabel}`,
+        coupleLabel: effectiveCoupleLabel,
+        packageTier: groupTier,
+        status: 'ACTIVE',
+        eventType: effectiveEventType,
+        notes: `Google Workspace (${email}) • Paket ${payload.packageId} • Quota ${storageQuotaMb}MB`,
+        createdAt: nowIso,
+      };
+
+      const nextWorkspace: ClientWorkspaceData = {
+        clientId,
+        settings: customizedSettings,
+        tasks: baseTemplate.tasks,
+        guests: baseTemplate.guests,
+        wishes: baseTemplate.wishes,
+        budgetItems: baseTemplate.budgetItems,
+        updatedAt: nowIso,
+      };
+
+      const sessionUser: AdminUser = {
+        id: `usr-gmail-${cleanSlug}`,
+        username: email,
+        nama: `${formattedDisplayName} (${payload.packageId})`,
+        role: 'MEMPELAI_PRIA',
+        jabatan: `Paket ${payload.packageId} • ${effectiveEventType}`,
+        email,
+        clientId,
+        clientName: newGroup.clientName,
+      };
+
+      let savedRootState: WeddingDatabaseSchema | null = null;
+      setState((prevRoot) => {
+        const existingGroups = Array.isArray(prevRoot.settings.clientGroups)
+          ? [...prevRoot.settings.clientGroups]
+          : [];
+        const existingGroupIdx = existingGroups.findIndex(
+          (g) => g.id === clientId
+        );
+        if (existingGroupIdx >= 0) {
+          existingGroups[existingGroupIdx] = {
+            ...existingGroups[existingGroupIdx],
+            ...newGroup,
+          };
+        } else {
+          existingGroups.push(newGroup);
+        }
+
+        const existingWorkspace = prevRoot.settings.clientWorkspaces?.[clientId];
+        const mergedWorkspace: ClientWorkspaceData =
+          existingWorkspace && !cleanEventTitle && !payload.catalogThemeId
+            ? {
+                ...existingWorkspace,
+                settings: {
+                  ...existingWorkspace.settings,
+                  subscriptionPackageId: payload.packageId,
+                  ownerGoogleEmail: email,
+                  storageQuotaLimitMb: storageQuotaMb,
+                  updatedAt: nowIso,
+                } as WeddingSettings,
+                updatedAt: nowIso,
+              }
+            : nextWorkspace;
+
+        const existingUsers = Array.isArray(prevRoot.adminUsers)
+          ? [...prevRoot.adminUsers]
+          : [];
+        const userIdx = existingUsers.findIndex(
+          (u) => u.id === sessionUser.id || u.username === email
+        );
+        if (userIdx >= 0) {
+          existingUsers[userIdx] = { ...existingUsers[userIdx], ...sessionUser };
+        } else {
+          existingUsers.push(sessionUser);
+        }
+
+        const nextRoot: WeddingDatabaseSchema = {
+          ...prevRoot,
+          adminUsers: existingUsers,
+          settings: {
+            ...prevRoot.settings,
+            activeClientId: clientId,
+            clientGroups: existingGroups,
+            clientWorkspaces: {
+              ...(prevRoot.settings.clientWorkspaces || {}),
+              [clientId]: mergedWorkspace,
+            },
+            updatedAt: nowIso,
+          },
+          lastSyncedAt: nowIso,
+        };
+        const saved = saveClientState(nextRoot, true);
+        savedRootState = saved;
+        return saved;
+      });
+
+      if (savedRootState) {
+        void saveStateToSupabase(savedRootState);
+      }
+
+      setSelectedAdminWorkspaceId(clientId);
+      setAdminUser(sessionUser);
+      saveStoredAdminUser(sessionUser);
+      setIsUrlGuestSessionCleared(true);
+      setPreviewOverrideGuest(null);
+      setManualGuestLookup({});
+      setDemoManagerClientId(null);
+      setPublicSelectedClientId(clientId);
+      setIsLoginModalOpen(false);
+      setLoginErrorMsg('');
+      setLoginWelcomeToast(
+        loginLang === 'EN'
+          ? `Workspace "${effectiveCoupleLabel}" (${payload.packageId}) created! Welcome to Management.`
+          : `Workspace "${effectiveCoupleLabel}" (Paket ${payload.packageId}) berhasil dibuat! Selamat datang di Management.`
+      );
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/');
+      }
+      changeViewMode('ADMIN');
+    },
+    [
+      state.settings.groomNickname,
+      state.settings.brideNickname,
+      demoSelectedThemeId,
+      loginLang,
+      changeViewMode,
+    ]
+  );
+
   const handleGmailLoginSubmit = (
     e?: React.FormEvent,
     overrideEmail?: string
@@ -942,6 +1281,7 @@ function WeddingAppContent() {
         }`,
       };
       setGmailAddressInput('');
+      setGmailEventTitleInput('');
       setIsGmailExpanded(false);
       handleLoginSuccess(
         ownerUser,
@@ -952,45 +1292,17 @@ function WeddingAppContent() {
       return;
     }
 
-    const formattedDisplayName =
-      localPart
-        .replace(/[._-]+/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase())
-        .trim() || 'Planner Guest';
-
-    const targetClientId =
-      publicSelectedClientId &&
-      !isShowcaseDummyClientId(publicSelectedClientId)
-        ? publicSelectedClientId
-        : 'client-utama';
-    const targetGrp = clientGroups.find((g) => g.id === targetClientId);
-
-    const gmailClientUser: AdminUser = {
-      id: `usr-gmail-${localPart.replace(/[^a-z0-9]/gi, '') || 'user'}`,
-      username: localPart,
-      nama: formattedDisplayName,
-      role: 'MEMPELAI_PRIA',
-      jabatan:
-        loginLang === 'EN'
-          ? 'Google (Gmail) Planner Session'
-          : 'Sesi Planner Google (Gmail)',
-      email: normalizedEmail,
-      clientId: targetClientId,
-      clientName:
-        targetGrp?.clientName ||
-        `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
-          state.settings.brideNickname || 'Selo'
-        }`,
-    };
-
+    const titleToUse = gmailEventTitleInput.trim();
     setGmailAddressInput('');
+    setGmailEventTitleInput('');
     setIsGmailExpanded(false);
-    handleLoginSuccess(
-      gmailClientUser,
-      loginLang === 'EN'
-        ? `Signed in with Google as ${formattedDisplayName} (${normalizedEmail})`
-        : `Berhasil masuk via Google sebagai ${formattedDisplayName} (${normalizedEmail})`
-    );
+    void handleQuickCreateWithGoogle({
+      email: normalizedEmail,
+      eventTitle: titleToUse || undefined,
+      eventType: gmailEventTypeInput,
+      packageId: 'GRATIS',
+      catalogThemeId: demoSelectedThemeId,
+    });
   };
 
   const handlePlannerCredentialsSubmit = async (e: React.FormEvent) => {
@@ -1190,7 +1502,8 @@ function WeddingAppContent() {
     if (isShowcaseDummyClientId(activePublicClientId)) {
       const baseDummy = getShowcaseDummyClientState(
         activePublicClientId,
-        demoPackageTier
+        demoPackageTier,
+        demoSelectedThemeId
       );
       const override = demoCustomOverrides[activePublicClientId];
       if (!override) return baseDummy;
@@ -1206,6 +1519,7 @@ function WeddingAppContent() {
     activePublicClientId,
     clientGroups,
     demoPackageTier,
+    demoSelectedThemeId,
     demoCustomOverrides,
   ]);
 
@@ -2177,7 +2491,8 @@ function WeddingAppContent() {
     }
     const baseDummy = getShowcaseDummyClientState(
       demoManagerClientId,
-      demoPackageTier
+      demoPackageTier,
+      demoSelectedThemeId
     );
     const override = demoCustomOverrides[demoManagerClientId];
     if (!override) return baseDummy;
@@ -2186,7 +2501,12 @@ function WeddingAppContent() {
       ...override,
       settings: { ...baseDummy.settings, ...(override.settings || {}) },
     };
-  }, [demoManagerClientId, demoPackageTier, demoCustomOverrides]);
+  }, [
+    demoManagerClientId,
+    demoPackageTier,
+    demoSelectedThemeId,
+    demoCustomOverrides,
+  ]);
 
   const activeDemoAdminUser = useMemo<AdminUser | null>(() => {
     if (!demoManagerClientId || !isShowcaseDummyClientId(demoManagerClientId)) {
@@ -2238,7 +2558,11 @@ function WeddingAppContent() {
         <button
           type="button"
           onClick={() =>
-            handleOpenDemoManager(activeDummyClientIdForSandbox, demoPackageTier)
+            handleOpenDemoManager(
+              activeDummyClientIdForSandbox,
+              demoPackageTier,
+              demoSelectedThemeId
+            )
           }
           title="Buka Demo Planner untuk Dummy Client ini"
           className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
@@ -2516,7 +2840,7 @@ function WeddingAppContent() {
             activeWorkspaceClientId={demoManagerClientId!}
             onSwitchWorkspaceClient={(cid) => {
               if (isShowcaseDummyClientId(cid)) {
-                handleOpenDemoManager(cid, demoPackageTier);
+                handleOpenDemoManager(cid, demoPackageTier, demoSelectedThemeId);
               }
             }}
             onOpenLandingPage={handleOpenLandingPage}
@@ -2557,6 +2881,7 @@ function WeddingAppContent() {
           adminUserName={adminUser?.nama}
           onOpenAdminPortal={handleOpenAdminPortal}
           onOpenDemoManager={handleOpenDemoManager}
+          onQuickCreateWithGoogle={handleQuickCreateWithGoogle}
           onSelectClientInvitation={handleSelectClientInvitationFromLanding}
           onUpsertCommercialPayment={handleUpsertCommercialPayment}
         />
@@ -2741,28 +3066,104 @@ function WeddingAppContent() {
                     onSubmit={(e) => handleGmailLoginSubmit(e)}
                     className="mt-3 pt-3 border-t border-stone-200/80 space-y-2.5"
                   >
-                    <label className="block text-[11px] font-bold text-stone-700">
-                      {loginLang === 'EN'
-                        ? 'Enter your @gmail.com address'
-                        : 'Masukkan alamat @gmail.com Anda'}
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        {loginLang === 'EN'
+                          ? 'Enter your @gmail.com address'
+                          : 'Masukkan alamat @gmail.com Anda'}
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          autoFocus
+                          value={gmailAddressInput}
+                          onChange={(e) => setGmailAddressInput(e.target.value)}
+                          placeholder={
+                            loginLang === 'EN'
+                              ? 'yourname@gmail.com'
+                              : 'nama@gmail.com'
+                          }
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 focus:outline-none bg-white font-medium text-sm text-stone-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        {loginLang === 'EN'
+                          ? 'Event / Couple Name (Optional)'
+                          : 'Nama Acara / Pasangan (Opsional)'}
+                      </label>
                       <input
-                        type="email"
-                        autoFocus
-                        value={gmailAddressInput}
-                        onChange={(e) => setGmailAddressInput(e.target.value)}
+                        type="text"
+                        value={gmailEventTitleInput}
+                        onChange={(e) => setGmailEventTitleInput(e.target.value)}
                         placeholder={
                           loginLang === 'EN'
-                            ? 'yourname@gmail.com'
-                            : 'nama@gmail.com'
+                            ? 'Example: Andi & Rina'
+                            : 'Contoh: Andi & Rina'
                         }
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 focus:outline-none bg-white font-medium text-sm text-stone-900"
+                        className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 focus:outline-none bg-white font-medium text-xs sm:text-sm text-stone-900"
                       />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        {loginLang === 'EN'
+                          ? 'Event Category'
+                          : 'Kategori Acara'}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {(
+                          [
+                            {
+                              id: 'WEDDING' as EventCategoryType,
+                              labelId: '💍 Pernikahan',
+                              labelEn: '💍 Wedding',
+                            },
+                            {
+                              id: 'BIRTHDAY' as EventCategoryType,
+                              labelId: '🎂 Ulang Tahun',
+                              labelEn: '🎂 Birthday',
+                            },
+                            {
+                              id: 'GRADUATION' as EventCategoryType,
+                              labelId: '🎓 Wisuda',
+                              labelEn: '🎓 Graduation',
+                            },
+                            {
+                              id: 'MEETING' as EventCategoryType,
+                              labelId: '🏛️ Rapat',
+                              labelEn: '🏛️ Meeting',
+                            },
+                            {
+                              id: 'GALA_DINNER' as EventCategoryType,
+                              labelId: '🥂 Gala Dinner',
+                              labelEn: '🥂 Gala Dinner',
+                            },
+                          ] as const
+                        ).map((cat) => {
+                          const isSelected = gmailEventTypeInput === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setGmailEventTypeInput(cat.id)}
+                              className={`px-2 py-1.5 rounded-xl border text-[10px] sm:text-[11px] font-extrabold transition-all text-left truncate ${
+                                isSelected
+                                  ? 'bg-indigo-50 border-indigo-400 text-indigo-800 shadow-sm'
+                                  : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-600'
+                              }`}
+                            >
+                              {loginLang === 'EN' ? cat.labelEn : cat.labelId}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                       <span className="text-[10px] font-semibold text-stone-500">
                         {loginLang === 'EN' ? 'Quick pick:' : 'Pilih cepat:'}
                       </span>
@@ -2802,8 +3203,8 @@ function WeddingAppContent() {
                     >
                       <span>
                         {loginLang === 'EN'
-                          ? 'Continue with Gmail'
-                          : 'Lanjutkan dengan Gmail'}
+                          ? 'Create Workspace & Open Planner'
+                          : 'Buat Workspace & Buka Planner'}
                       </span>
                     </button>
                   </form>

@@ -50,6 +50,7 @@ import {
   CommercialPaymentTransaction,
   EventCategoryType,
   GuestWish,
+  InvitationThemePresetId,
   RsvpStatus,
   WeddingGuest,
   WeddingSettings,
@@ -2358,7 +2359,30 @@ interface CommercialLandingViewProps {
   isAdminLoggedIn: boolean;
   adminUserName?: string;
   onOpenAdminPortal: () => void;
-  onOpenDemoManager?: (dummyClientId: string, tier: ShowcasePackageTier) => void;
+  onOpenDemoManager?: (
+    dummyClientId: string,
+    tier: ShowcasePackageTier,
+    catalogThemeId?: string
+  ) => void;
+  onQuickCreateWithGoogle?: (payload: {
+    email: string;
+    displayName?: string;
+    eventTitle?: string;
+    eventType?: EventCategoryType;
+    packageId:
+      | 'GRATIS'
+      | 'PREMIUM'
+      | 'BUSINESS'
+      | 'ENTERPRISE'
+      | 'MITRA_SILVER'
+      | 'MITRA_GOLD';
+    catalogThemeId?: string;
+    catalogThemeName?: string;
+    themePreset?: InvitationThemePresetId;
+    themeLayoutArchetype?: ThemeLayoutArchetype;
+    coverImageUrl?: string;
+    heroImageUrl?: string;
+  }) => void;
   onSelectClientInvitation: (
     clientId: string,
     guestTo?: string,
@@ -2383,6 +2407,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   adminUserName,
   onOpenAdminPortal,
   onOpenDemoManager,
+  onQuickCreateWithGoogle,
   onSelectClientInvitation,
   onUpsertCommercialPayment,
 }) => {
@@ -2465,6 +2490,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     useState<BlogArticleItem | null>(null);
   const [openFaqIdx, setOpenFaqIdx] = useState<number>(0);
   const [selectedAiPromptIdx, setSelectedAiPromptIdx] = useState<number>(0);
+
+  // Instant Google / Gmail Workspace Creation Modal States
+  const [isGoogleOnboardingModalOpen, setIsGoogleOnboardingModalOpen] =
+    useState(false);
+  const [googleOnboardingPackageId, setGoogleOnboardingPackageId] = useState<
+    | 'GRATIS'
+    | 'PREMIUM'
+    | 'BUSINESS'
+    | 'ENTERPRISE'
+    | 'MITRA_SILVER'
+    | 'MITRA_GOLD'
+  >('GRATIS');
+  const [googleOnboardingEmail, setGoogleOnboardingEmail] = useState('');
+  const [googleOnboardingEventTitle, setGoogleOnboardingEventTitle] =
+    useState('');
+  const [googleOnboardingEventType, setGoogleOnboardingEventType] =
+    useState<EventCategoryType>('WEDDING');
+  const [googleOnboardingThemeId, setGoogleOnboardingThemeId] =
+    useState<string>('wed-timeless-snapshot');
 
   // 24-hour price lock countdown timer during Step 2
   useEffect(() => {
@@ -3460,6 +3504,75 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     return activeSelectedPackage.priceMain;
   }, [lang, selectedChannel, activeSelectedPackage]);
 
+  const openGoogleOnboardingModal = (
+    pkgId:
+      | 'GRATIS'
+      | 'PREMIUM'
+      | 'BUSINESS'
+      | 'ENTERPRISE'
+      | 'MITRA_SILVER'
+      | 'MITRA_GOLD' = 'GRATIS'
+  ) => {
+    const initialEvType: EventCategoryType =
+      activeCatalogTheme?.eventType || simEventType || 'WEDDING';
+    const matchingTheme =
+      activeCatalogTheme && activeCatalogTheme.eventType === initialEvType
+        ? activeCatalogTheme
+        : MULTI_EVENT_THEME_CATALOG.find(
+            (t) => t.eventType === initialEvType
+          ) || MULTI_EVENT_THEME_CATALOG[0];
+
+    setGoogleOnboardingPackageId(pkgId);
+    setGoogleOnboardingEventType(initialEvType);
+    setGoogleOnboardingThemeId(matchingTheme?.id || 'wed-timeless-snapshot');
+    setIsGoogleOnboardingModalOpen(true);
+  };
+
+  const handleGoogleOnboardingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const chosenTheme =
+      MULTI_EVENT_THEME_CATALOG.find((t) => t.id === googleOnboardingThemeId) ||
+      activeCatalogTheme ||
+      MULTI_EVENT_THEME_CATALOG[0];
+
+    const defaultTitleByEvent: Record<EventCategoryType, string> = {
+      WEDDING: 'Rayhan & Clarissa',
+      BIRTHDAY: 'Sweet 17th Aurelia',
+      GRADUATION: 'Syukuran Wisuda Kevin',
+      MEETING: 'Rapat Tahunan Nusantara',
+      GALA_DINNER: 'Royal Anniversary Gala',
+    };
+
+    const finalEmail =
+      googleOnboardingEmail.trim() || 'pasangan.bahagia@gmail.com';
+    const finalTitle =
+      googleOnboardingEventTitle.trim() ||
+      defaultTitleByEvent[googleOnboardingEventType] ||
+      'Rayhan & Clarissa';
+
+    setIsGoogleOnboardingModalOpen(false);
+
+    if (onQuickCreateWithGoogle) {
+      onQuickCreateWithGoogle({
+        email: finalEmail,
+        displayName: finalTitle,
+        eventTitle: finalTitle,
+        eventType: googleOnboardingEventType,
+        packageId: googleOnboardingPackageId,
+        catalogThemeId: chosenTheme?.id,
+        catalogThemeName: chosenTheme?.name,
+        themePreset: chosenTheme?.themePreset,
+        themeLayoutArchetype: chosenTheme?.layoutArchetype,
+        coverImageUrl: chosenTheme?.coverBgUrl || chosenTheme?.thumbnailUrl,
+        heroImageUrl: chosenTheme?.heroPrewedUrl || chosenTheme?.thumbnailUrl,
+      });
+    } else if (onOpenDemoManager) {
+      onOpenDemoManager(activeDummyMeta.id, simPackageTier, chosenTheme?.id);
+    } else {
+      onOpenAdminPortal();
+    }
+  };
+
   const handleSelectPackageForCheckout = (
     pkgIdOrTier: WevPackageId | 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
   ) => {
@@ -3470,8 +3583,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     const chosen = matchedById || matchedByTier || commercialPackages[1];
     setSelectedWevPackageId(chosen.id);
     setSelectedCheckoutTier(chosen.tier);
-    if (chosen.id === 'GRATIS' && !paymentReference.trim()) {
-      setPaymentReference(`FREE-TRIAL-14D`);
+    if (chosen.id === 'GRATIS') {
+      openGoogleOnboardingModal('GRATIS');
+      return;
     }
     setIsCheckoutPageOpen(true);
     setCheckoutError(null);
@@ -5722,7 +5836,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     role="menuitem"
                     onClick={() => {
                       setIsPlannerMenuOpen(false);
-                      onOpenAdminPortal();
+                      openGoogleOnboardingModal('GRATIS');
                     }}
                     className="w-full text-left p-2.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#D4AF37]/60 flex items-center gap-3 transition-all group shadow-2xs"
                   >
@@ -5758,8 +5872,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </p>
                       <p className="text-[10px] font-semibold text-stone-500 truncate">
                         {lang === 'ID'
-                          ? 'Akses cepat akun Google Resmi'
-                          : 'Quick Google Workspace SSO'}
+                          ? 'Buat undangan & buka Management'
+                          : 'Create invitation & open Management'}
                       </p>
                     </div>
                     <ArrowRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] group-hover:translate-x-0.5 transition-all shrink-0" />
@@ -5772,7 +5886,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     onClick={() => {
                       setIsPlannerMenuOpen(false);
                       if (onOpenDemoManager) {
-                        onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                        onOpenDemoManager(
+                          activeDummyMeta.id,
+                          simPackageTier,
+                          activeCatalogTheme?.id
+                        );
                       }
                     }}
                     className="w-full text-left p-2.5 rounded-xl bg-[#FAF8F5] hover:bg-emerald-50/70 border border-stone-200/90 hover:border-emerald-400/70 flex items-center gap-3 transition-all group shadow-2xs"
@@ -6896,6 +7014,54 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     {/* Action Buttons on Step 3 */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-200 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCheckoutPageOpen(false);
+                            if (onQuickCreateWithGoogle) {
+                              onQuickCreateWithGoogle({
+                                email:
+                                  buyerEmail.trim() || 'klien@gmail.com',
+                                displayName:
+                                  buyerCoupleName.trim() || 'Rayhan & Clarissa',
+                                eventTitle:
+                                  buyerCoupleName.trim() || 'Rayhan & Clarissa',
+                                eventType:
+                                  activeCatalogTheme?.eventType ||
+                                  simEventType ||
+                                  'WEDDING',
+                                packageId: selectedWevPackageId,
+                                catalogThemeId: activeCatalogTheme?.id,
+                                catalogThemeName: activeCatalogTheme?.name,
+                                themePreset: activeCatalogTheme?.themePreset,
+                                themeLayoutArchetype:
+                                  activeCatalogTheme?.layoutArchetype,
+                                coverImageUrl:
+                                  activeCatalogTheme?.coverBgUrl ||
+                                  activeCatalogTheme?.thumbnailUrl,
+                                heroImageUrl:
+                                  activeCatalogTheme?.heroPrewedUrl ||
+                                  activeCatalogTheme?.thumbnailUrl,
+                              });
+                            } else if (onOpenDemoManager) {
+                              onOpenDemoManager(
+                                activeDummyMeta.id,
+                                simPackageTier,
+                                activeCatalogTheme?.id
+                              );
+                            } else {
+                              onOpenAdminPortal();
+                            }
+                          }}
+                          className="max-w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-sm transition-all text-center leading-snug cursor-pointer"
+                        >
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          <span className="min-w-0 break-words">
+                            {lang === 'ID'
+                              ? '🚀 Buka Management Planner Sesuai Paket Ini'
+                              : '🚀 Open Management Planner for This Package'}
+                          </span>
+                        </button>
                         <a
                           href={mailtoPostPaymentUrl}
                           className="max-w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-sm hover:opacity-95 transition-all text-center leading-snug"
@@ -7323,7 +7489,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     type="button"
                     onClick={() => {
                       if (onOpenDemoManager) {
-                        onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                        onOpenDemoManager(
+                          activeDummyMeta.id,
+                          simPackageTier,
+                          activeCatalogTheme?.id
+                        );
                       } else {
                         onOpenAdminPortal();
                       }
@@ -7360,7 +7530,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       isAdminLoggedIn={false}
                       onOpenAdminPortal={() => {
                         if (onOpenDemoManager) {
-                          onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                          onOpenDemoManager(
+                            activeDummyMeta.id,
+                            simPackageTier,
+                            activeCatalogTheme?.id
+                          );
                         } else {
                           onOpenAdminPortal();
                         }
@@ -8102,9 +8276,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           : 'How It Works in 5 Easy Steps'}
                       </h4>
                     </div>
-                    <a
-                      href="#paket"
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto shadow-xs"
+                    <button
+                      type="button"
+                      onClick={() => openGoogleOnboardingModal('GRATIS')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto shadow-xs cursor-pointer"
                     >
                       <span>
                         {lang === 'ID'
@@ -8112,7 +8287,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           : 'Start with Rp 0 Free Plan'}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -9074,7 +9249,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   onOpenAdminPortal={() => {
                     setLightboxScreenshot(null);
                     if (onOpenDemoManager) {
-                      onOpenDemoManager(activeDummyMeta.id, simPackageTier);
+                      onOpenDemoManager(
+                        activeDummyMeta.id,
+                        simPackageTier,
+                        activeCatalogTheme?.id
+                      );
                     } else {
                       onOpenAdminPortal();
                     }
@@ -9278,6 +9457,223 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL BUAT UNDANGAN VIA AKUN GOOGLE (GMAIL)                       */}
+      {/* ================================================================= */}
+      {isGoogleOnboardingModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsGoogleOnboardingModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl bg-white border border-stone-200/90 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-emerald-50/70 border-b border-stone-200/90 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center shrink-0">
+                  <svg
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill="#4285F4"
+                      d="M23.49 12.275c0-.85-.075-1.675-.215-2.475H12v4.685h6.445a5.51 5.51 0 0 1-2.39 3.615v3.005h3.87c2.265-2.085 3.565-5.155 3.565-8.83Z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.955-1.075 7.94-2.91l-3.87-3.005c-1.075.72-2.45 1.145-4.07 1.145-3.13 0-5.78-2.115-6.725-4.955H1.275v3.1C3.25 21.3 7.31 24 12 24Z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.275 14.275A7.21 7.21 0 0 1 4.9 12c0-.79.135-1.555.375-2.275v-3.1H1.275A11.99 11.99 0 0 0 0 12c0 1.935.465 3.765 1.275 5.375l4-3.1Z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.77c1.76 0 3.34.605 4.585 1.795l3.44-3.44C17.95 1.19 15.235 0 12 0 7.31 0 3.25 2.7 1.275 6.625l4 3.1C6.22 6.885 8.87 4.77 12 4.77Z"
+                    />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold">
+                      {lang === 'ID'
+                        ? `Paket Terpilih: ${googleOnboardingPackageId} (Langsung Aktif di Management)`
+                        : `Selected Plan: ${googleOnboardingPackageId} (Instant Management Activation)`}
+                    </span>
+                  </div>
+                  <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900 mt-0.5 truncate">
+                    {lang === 'ID'
+                      ? 'Buat Undangan via Akun Google (Gmail)'
+                      : 'Create Invitation via Google Account (Gmail)'}
+                  </h4>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGoogleOnboardingModalOpen(false)}
+                className="p-1.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 hover:text-stone-900 transition-all cursor-pointer shrink-0"
+                title={lang === 'ID' ? 'Tutup' : 'Close'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body Form */}
+            <form
+              onSubmit={handleGoogleOnboardingSubmit}
+              className="p-5 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+            >
+              {/* Field 1: Alamat Akun Google (@gmail.com) */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-stone-700">
+                  {lang === 'ID'
+                    ? '1. Alamat Akun Google (@gmail.com) *'
+                    : '1. Google Account Email (@gmail.com) *'}
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={googleOnboardingEmail}
+                  onChange={(e) => setGoogleOnboardingEmail(e.target.value)}
+                  placeholder="nama.anda@gmail.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-semibold text-stone-500">
+                    {lang === 'ID' ? 'Contoh cepat:' : 'Quick fill:'}
+                  </span>
+                  {[
+                    'pasangan.bahagia@gmail.com',
+                    'panitia.acara@gmail.com',
+                  ].map((sampleEmail) => (
+                    <button
+                      key={sampleEmail}
+                      type="button"
+                      onClick={() => setGoogleOnboardingEmail(sampleEmail)}
+                      className="px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-bold transition-all cursor-pointer"
+                    >
+                      {sampleEmail}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Field 2: Kategori Acara (5 Pills) */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-stone-700">
+                  {lang === 'ID'
+                    ? '2. Pilih Kategori Acara'
+                    : '2. Select Event Category'}
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(
+                    [
+                      { id: 'WEDDING' as const, label: '💍 Pernikahan' },
+                      { id: 'BIRTHDAY' as const, label: '🎂 Ulang Tahun' },
+                      { id: 'GRADUATION' as const, label: '🎓 Wisuda' },
+                      { id: 'MEETING' as const, label: '🏛️ Rapat Resmi' },
+                      { id: 'GALA_DINNER' as const, label: '🥂 Gala Dinner' },
+                    ] as const
+                  ).map((evItem) => {
+                    const isSelected = googleOnboardingEventType === evItem.id;
+                    return (
+                      <button
+                        key={evItem.id}
+                        type="button"
+                        onClick={() => {
+                          setGoogleOnboardingEventType(evItem.id);
+                          const firstTheme = MULTI_EVENT_THEME_CATALOG.find(
+                            (t) => t.eventType === evItem.id
+                          );
+                          if (firstTheme) {
+                            setGoogleOnboardingThemeId(firstTheme.id);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914] shadow-2xs'
+                            : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        {evItem.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Field 3: Nama Pasangan / Judul Acara */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-stone-700">
+                  {lang === 'ID'
+                    ? '3. Nama Pasangan / Judul Acara'
+                    : '3. Couple Name / Event Title'}
+                </label>
+                <input
+                  type="text"
+                  value={googleOnboardingEventTitle}
+                  onChange={(e) =>
+                    setGoogleOnboardingEventTitle(e.target.value)
+                  }
+                  placeholder={
+                    googleOnboardingEventType === 'BIRTHDAY'
+                      ? 'Contoh: Sweet 17th Aurelia'
+                      : googleOnboardingEventType === 'GRADUATION'
+                        ? 'Contoh: Syukuran Wisuda Kevin'
+                        : googleOnboardingEventType === 'MEETING'
+                          ? 'Contoh: Rapat Tahunan Nusantara'
+                          : googleOnboardingEventType === 'GALA_DINNER'
+                            ? 'Contoh: Royal Anniversary Gala'
+                            : 'Contoh: Rayhan & Clarissa'
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                />
+              </div>
+
+              {/* Field 4: Pilih Tema Awal (Sinkron 31 Tema Katalog) */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-stone-700">
+                  {lang === 'ID'
+                    ? '4. Pilih Tema Awal (Sinkron 31 Tema Katalog)'
+                    : '4. Choose Initial Theme (Synced with 31 Catalog Themes)'}
+                </label>
+                <select
+                  value={googleOnboardingThemeId}
+                  onChange={(e) => setGoogleOnboardingThemeId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                >
+                  {MULTI_EVENT_THEME_CATALOG.filter(
+                    (t) => t.eventType === googleOnboardingEventType
+                  ).map((themeItem) => (
+                    <option key={themeItem.id} value={themeItem.id}>
+                      {themeItem.name} — {themeItem.styleCategory} (
+                      {themeItem.layoutArchetype})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Primary CTA Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#9A742B] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <span>
+                    {lang === 'ID'
+                      ? '🚀 Masuk dengan Google & Buka Management Sekarang'
+                      : '🚀 Sign in with Google & Open Management Now'}
+                  </span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

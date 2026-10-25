@@ -2326,7 +2326,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     coverBgUrl ||
     settings.groomPhotoUrl;
   const [giftCategoryFilter, setGiftCategoryFilter] = useState<
-    'ALL' | 'BANK' | 'QRIS' | 'GLOBAL_CRYPTO'
+    'ALL' | 'BANK' | 'QRIS' | 'GLOBAL_CRYPTO' | 'WISHLIST'
   >('ALL');
 
   // ============================================================================
@@ -4295,6 +4295,58 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               );
             })}
           </div>
+
+          {/* LIVE STREAMING ACARA CARD (WHEN ENABLED IN SETTINGS) */}
+          {Boolean(settings.showLiveStreaming && settings.liveStreamingUrl?.trim()) && (
+            <div className="mt-6 sm:mt-8 max-w-3xl mx-auto">
+              <div
+                className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl ${
+                  layoutArchetype === 'NUSANTARA_HERITAGE'
+                    ? 'bg-[#FFFDF9]/95 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_18px_50px_rgba(175,145,95,0.16)]'
+                    : 'bg-gradient-to-r from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/85 border border-[#D4AF37]/50 shadow-[0_16px_45px_rgba(175,145,95,0.14)]'
+                }`}
+              >
+                <div className="space-y-1.5 text-left min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold uppercase tracking-wider">
+                      <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                      <span>
+                        {settings.liveStreamingPlatform?.trim() ||
+                          'YouTube / Zoom Live'}
+                      </span>
+                    </span>
+                    <span className="text-[11px] font-bold text-[#8B6914]">
+                      {lang === 'ID' ? 'Siaran Langsung' : 'Live Broadcast'}
+                    </span>
+                  </div>
+                  <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
+                    {settings.liveStreamingLabel?.trim() ||
+                      (lang === 'ID'
+                        ? '🎥 Live Streaming Acara'
+                        : '🎥 Live Event Streaming')}
+                  </h3>
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Bagi Bapak/Ibu/Saudara/i yang berhalangan hadir secara langsung, silakan menyaksikan momen bahagia kami secara virtual melalui tautan resmi berikut.'
+                      : 'For family and friends who are unable to attend in person, please join and witness our joyful moment virtually via the official stream link.'}
+                  </p>
+                </div>
+
+                <a
+                  href={settings.liveStreamingUrl?.trim()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <span>
+                    {lang === 'ID'
+                      ? 'Tonton Live Streaming ↗'
+                      : 'Watch Live Stream ↗'}
+                  </span>
+                </a>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -5098,8 +5150,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   : 'Your prayers and blessings are the greatest gift to us. However, if you wish to send a digital gift, crypto transfer, or wedding present, you may use the official channels below:')}
             </p>
 
-            {/* Segmented Gift Category Filter Tabs (Semua | Rekening Bank | QRIS | Global & Crypto) */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 max-w-xl mx-auto mb-6 relative z-10 shadow-2xs">
+            {/* Segmented Gift Category Filter Tabs (Semua | Rekening Bank | QRIS | Global & Crypto | Wishlist Kado) */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 max-w-2xl mx-auto mb-6 relative z-10 shadow-2xs">
               {[
                 {
                   id: 'ALL' as const,
@@ -5117,6 +5169,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   id: 'GLOBAL_CRYPTO' as const,
                   label: lang === 'ID' ? '🌐 Global & Crypto' : '🌐 Global & Crypto',
                 },
+                ...(Array.isArray(settings.giftWishlistItems) &&
+                settings.giftWishlistItems.length > 0
+                  ? [
+                      {
+                        id: 'WISHLIST' as const,
+                        label:
+                          lang === 'ID' ? '🎁 Wishlist Kado' : '🎁 Gift Registry',
+                      },
+                    ]
+                  : []),
               ].map((tab) => {
                 const isSelected = giftCategoryFilter === tab.id;
                 return (
@@ -5136,7 +5198,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               })}
             </div>
 
-            {giftCategoryFilter !== 'QRIS' && settings.bankAccounts.length > 0 && (
+            {giftCategoryFilter !== 'QRIS' &&
+              giftCategoryFilter !== 'WISHLIST' &&
+              settings.bankAccounts.length > 0 && (
               <div
                 className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch relative z-10 ${
                   settings.bankAccounts.length === 1
@@ -5437,6 +5501,135 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   )}
               </div>
             )}
+
+            {/* WISHLIST KADO / GIFT REGISTRY CARDS (WHEN CONFIGURED) */}
+            {(giftCategoryFilter === 'ALL' || giftCategoryFilter === 'WISHLIST') &&
+              Array.isArray(settings.giftWishlistItems) &&
+              settings.giftWishlistItems.length > 0 && (
+                <div className="pt-5 mt-5 border-t border-stone-200/80 space-y-4 relative z-10 text-left">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
+                        {lang === 'ID'
+                          ? '🎁 Referensi Kado Pilihan (Gift Registry)'
+                          : '🎁 Curated Gift Wishlist Registry'}
+                      </span>
+                      <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Daftar Wishlist Kado Mempelai / Tuan Rumah'
+                          : 'Host & Couple Gift Registry'}
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-bold">
+                      {settings.giftWishlistItems.length}{' '}
+                      {lang === 'ID' ? 'Item Kado' : 'Wishlist Items'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {settings.giftWishlistItems.map((item, wIdx) => {
+                      const targetHref =
+                        item.storeUrl && item.storeUrl.trim() !== ''
+                          ? item.storeUrl.trim()
+                          : '#rsvp';
+                      const isExternalStore = /^https?:\/\//i.test(targetHref);
+                      return (
+                        <div
+                          key={item.id || wIdx}
+                          className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-3 shadow-2xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="px-2 py-0.5 rounded-md bg-white border border-[#D4AF37]/35 text-[#8B6914] text-[10px] font-extrabold">
+                                🎁 Wishlist #{wIdx + 1}
+                              </span>
+                              {item.reservedBy && (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold truncate">
+                                  ✓ {item.reservedBy}
+                                </span>
+                              )}
+                            </div>
+                            <p className="font-editorial text-sm sm:text-base font-bold text-stone-900 pt-1 break-words">
+                              {item.itemName}
+                            </p>
+                            {item.priceEstimate && (
+                              <p className="text-xs font-semibold text-[#9A742B]">
+                                {item.priceEstimate}
+                              </p>
+                            )}
+                          </div>
+
+                          <a
+                            href={targetHref}
+                            target={isExternalStore ? '_blank' : undefined}
+                            rel={
+                              isExternalStore ? 'noopener noreferrer' : undefined
+                            }
+                            className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <span>
+                              {lang === 'ID'
+                                ? 'Lihat Barang / Kirim Kado ↗'
+                                : 'View Item / Send Gift ↗'}
+                            </span>
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+          </div>
+        </section>
+      )}
+
+      {/* SECTION: FILTER & STORY INSTAGRAM (WHEN ENABLED IN SETTINGS) */}
+      {Boolean(settings.showIgStorySection && settings.igFilterUrl?.trim()) && (
+        <section className="relative z-10 py-4 sm:py-6 px-3 sm:px-4 max-w-5xl mx-auto">
+          <div
+            className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl ${
+              layoutArchetype === 'NUSANTARA_HERITAGE'
+                ? 'bg-[#FFFDF9]/95 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_18px_50px_rgba(175,145,95,0.16)]'
+                : 'bg-white/90 border border-[#D4AF37]/45 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
+            }`}
+          >
+            <div className="flex items-start gap-3.5 text-left min-w-0">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0">
+                <Camera className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B]">
+                  {lang === 'ID'
+                    ? '📸 Filter & Story Instagram'
+                    : '📸 Instagram Story & Filter'}
+                </span>
+                <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
+                  {lang === 'ID'
+                    ? 'Bagikan Momen Kebahagiaan di Instagram Story'
+                    : 'Share Our Joyful Moments on Instagram Story'}
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {settings.igStoryNote?.trim() ||
+                    (lang === 'ID'
+                      ? 'Gunakan filter Instagram eksklusif acara kami dan tandai akun kami saat membagikan momen indah Anda.'
+                      : 'Use our exclusive event Instagram filter and tag us when sharing your wonderful moments.')}
+                </p>
+              </div>
+            </div>
+
+            <a
+              href={settings.igFilterUrl?.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <Camera className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                {lang === 'ID'
+                  ? 'Buka Filter Instagram ↗'
+                  : 'Open Instagram Filter ↗'}
+              </span>
+            </a>
           </div>
         </section>
       )}

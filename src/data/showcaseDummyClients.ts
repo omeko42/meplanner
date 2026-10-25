@@ -306,6 +306,7 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
 
 export interface MeplannerThemeCatalogItem {
   id: string;
+  aliases?: string[];
   name: string;
   styleBadge: string;
   eventType: EventCategoryType;
@@ -333,29 +334,31 @@ export interface MeplannerThemeCatalogItem {
 
 export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   // ============================================================================
-  // 10 WEDDING THEMES (WEDDING -> client-demo-wedding)
+  // WEDDING THEMES (WEDDING -> client-demo-wedding)
   // ============================================================================
   {
     id: 'timeless-snapshot',
+    aliases: ['wed-timeless-snapshot'],
     name: 'Timeless Snapshot',
     styleBadge: 'Editorial Foto',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     themePreset: 'champagne_gold',
-    frameStyle: 'ARCH_DOME',
+    frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: 'Editorial Portrait • Grand Ballroom Hotel Mulia Senayan',
     description:
-      'Tema pernikahan bergaya majalah editorial klasik dengan fokus potret mempelai berbingkai lengkung kubah emas (Arch Dome) dan tipografi serif mewah.',
+      'Tema pernikahan bergaya majalah editorial klasik dengan fokus potret mempelai dan tipografi serif mewah.',
     showFloralCorners: true,
   },
   {
     id: 'serein-botanical',
+    aliases: ['wed-serein', 'serein'],
     name: 'Serein',
     styleBadge: 'Floral & Botanical',
     eventType: 'WEDDING',
@@ -364,7 +367,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
       'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#5E8C6A',
@@ -375,25 +378,87 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'mildness-blush',
+    aliases: ['wed-mildness', 'mildness'],
     name: 'Mildness',
     styleBadge: 'Minimalis Pastel',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
-    themePreset: 'blush_rose',
+    themePreset: 'champagne_gold',
     frameStyle: 'CIRCLE',
     layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D88290',
-    previewSubtitle: 'Soft Romance • Intimate Rose Quartz Celebration',
+    previewSubtitle: 'Soft Romance • Intimate Minimalist Celebration',
     description:
-      'Sentuhan pastel mawar lembut dengan tata letak minimalis bersih dan bingkai lingkaran klasik yang memancarkan kehangatan cinta kasih.',
+      'Sentuhan minimalis bersih dan bingkai lingkaran klasik yang memancarkan kehangatan cinta kasih.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'snap-photo',
+    aliases: ['wed-snap-photo'],
+    name: 'Snap Photo',
+    styleBadge: 'Editorial Foto',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'blush_rose',
+    frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'POLAROID_MAGAZINE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D88290',
+    previewSubtitle: 'Polaroid Collage • Romantic Editorial Prewedding',
+    description:
+      'Kolase polaroid romantis bergaya majalah modern untuk menonjolkan galeri prewedding HD.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'visual-journey',
+    aliases: ['wed-visual-journey'],
+    name: 'Visual Journey',
+    styleBadge: 'Editorial Foto',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'POLAROID_MAGAZINE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#CC704E',
+    previewSubtitle: 'Cinematic Love Story • Full-Bleed Visual Flow',
+    description:
+      'Alur cerita cinta sinematik dengan transisi slideshow layar penuh dan palet terracotta hangat.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'elegant-light',
+    aliases: ['wed-elegant-light'],
+    name: 'Elegant Light',
+    styleBadge: 'Floral Luxury',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: 'Luminous Ballroom • Gold Floral Corners',
+    description:
+      'Kemewahan ballroom terang dengan ornamen sudut bunga emas berkilau dan tata letak klasik simetris.',
     showFloralCorners: true,
   },
   {
     id: 'culture-javanese',
+    aliases: ['wed-culture-javanese', 'wed-royal-heritage', 'royal-heritage'],
     name: 'Culture: Javanese Kraton',
     styleBadge: 'Adat Nusantara',
     eventType: 'WEDDING',
@@ -402,9 +467,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#CC704E',
     previewSubtitle: 'Panggih & Royal Kraton • Pendopo Agung Heritage',
     description:
@@ -413,6 +478,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'wayang-heritage',
+    aliases: ['wed-wayang', 'wayang'],
     name: 'Wayang Heritage Gold',
     styleBadge: 'Adat Nusantara',
     eventType: 'WEDDING',
@@ -421,9 +487,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#C5A059',
     previewSubtitle: 'Mahakarya Budaya • Gunungan & Kemilau Emas Klasik',
     description:
@@ -432,6 +498,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'blubloom-azure',
+    aliases: ['wed-blubloom', 'blubloom'],
     name: 'BluBloom',
     styleBadge: 'Floral & Royal',
     eventType: 'WEDDING',
@@ -440,9 +507,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#3B669E',
     previewSubtitle: 'Azure Hydrangea • Royal Blue Ballroom Reception',
     description:
@@ -451,64 +518,112 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'midnight-elegance',
+    aliases: [
+      'wed-midnight-elegance',
+      'pearl-ivory-elegance',
+      'wed-pearl-ivory-elegance',
+    ],
     name: 'Pearl & Ivory Elegance',
     styleBadge: 'Light Luxury',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'royal_navy',
+    frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#284B7A',
+    previewSubtitle: 'Pearl & Ivory Ballroom • Resepsi Kehormatan Berkilau',
+    description:
+      'Kemewahan terang berbalut mutiara gading (Pearl & Ivory) dengan kontras biru royal lembut dan tata letak klasik untuk resepsi di hotel bintang lima.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'espresso-rustic',
+    aliases: ['wed-espresso', 'espresso'],
+    name: 'Espresso & Warm Linen',
+    styleBadge: 'Rustic Warm',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'POLAROID_MAGAZINE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#B85D3B',
+    previewSubtitle: 'Warm Barn & Linen • Intimate Sunset Gathering',
+    description:
+      'Sentuhan hangat kopi espresso, linen krem, dan kayu senja yang menciptakan keakraban tak terlupakan bersama sahabat dan keluarga.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'simple-rustic-3',
+    aliases: ['wed-simple-rustic-3'],
+    name: 'Simple Rustic #3',
+    styleBadge: 'Minimalis Rustic',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'CIRCLE',
+    layoutArchetype: 'BOTANICAL_AIRY',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#C87D55',
+    previewSubtitle: 'Natural Linen & Terracotta • Outdoor Intimate Wedding',
+    description:
+      'Sentuhan rustic terracotta dan linen krem yang hangat dan bersahaja dengan ornamen botanikal alami.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'photovit-editorial',
+    aliases: ['wed-photovit-black', 'photovit-black'],
+    name: 'Photovit: Editorial',
+    styleBadge: 'Modern Magazine',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     themePreset: 'royal_navy',
     frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
-    accentHex: '#284B7A',
-    previewSubtitle: 'Pearl & Ivory Ballroom • Resepsi Kehormatan Berkilau',
+      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#3B669E',
+    previewSubtitle: 'Vogue Prewedding • High-Fashion Bento Layout',
     description:
-      'Kemewahan terang berbalut mutiara gading (Pearl & Ivory) dengan kontras biru royal lembut dan bingkai potret editorial tegas untuk resepsi di hotel bintang lima.',
-    showFloralCorners: true,
+      'Tata letak majalah mode kontemporer dengan grid Bento bersih dan bingkai persegi panjang presisi.',
+    showFloralCorners: false,
   },
   {
-    id: 'espresso-rustic',
-    name: 'Espresso & Simple Rustic',
-    styleBadge: 'Rustic Warm',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    themePreset: 'terracotta_rust',
-    frameStyle: 'ARCH_DOME',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
-    coverImageUrl:
-      'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1400&q=85',
-    heroImageUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1600&q=85',
-    accentHex: '#B85D3B',
-    previewSubtitle: 'Warm Barn & Pine • Intimate Sunset Gathering',
-    description:
-      'Sentuhan hangat kopi espresso, kayu senja, dan bunga kering (dried florals) yang menciptakan keakraban tak terlupakan bersama sahabat dan keluarga.',
-    showFloralCorners: true,
-  },
-  {
-    id: 'photovit-editorial',
-    name: 'Photovit: Black & Green',
-    styleBadge: 'Modern Magazine',
+    id: 'photovit-green',
+    aliases: ['wed-photovit-green'],
+    name: 'Photovit: Green',
+    styleBadge: 'Botanical Bento',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     themePreset: 'sage_botanical',
     frameStyle: 'EDITORIAL_RECT',
-    layoutArchetype: 'POLAROID_MAGAZINE',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1509927083803-4bd519298ac4?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#4A6B53',
-    previewSubtitle: 'Vogue Prewedding • High-Fashion Editorial Layout',
+    previewSubtitle: 'Emerald Garden Editorial • Modern Bento Suite',
     description:
-      'Gaya majalah fotografi kontemporer dengan bingkai persegi panjang presisi dan aksen zamrud-botanikal untuk menonjolkan galeri prewedding resolusi tinggi.',
-    showFloralCorners: false,
+      'Editorial outdoor garden wedding dengan bingkai zamrud tropis dan tata letak Bento modern.',
+    showFloralCorners: true,
   },
   {
     id: 'peppy-modern',
-    name: 'Peppy & Visual Journey',
+    aliases: ['wed-peppy', 'peppy'],
+    name: 'Peppy',
     styleBadge: 'Trendy Colorful',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
@@ -516,13 +631,13 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'CIRCLE',
     layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#C86D7C',
     previewSubtitle: 'Joyful Storyteller • Modern Couple Celebration',
     description:
-      'Desain penuh energi muda dan ekspresif yang menonjolkan kisah perjalanan cinta (Visual Love Story) dengan warna-warna ceria dan dinamis.',
+      'Desain penuh energi muda dan ekspresif yang menonjolkan kisah perjalanan cinta dengan warna-warna ceria dan dinamis.',
     showFloralCorners: true,
   },
 
@@ -531,6 +646,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   // ============================================================================
   {
     id: 'bday-sweet-17',
+    aliases: ['bday-sweet-17-rose', 'sweet-17', 'sweet-17-rose'],
     name: 'Sweet 17th Rose Soirée',
     styleBadge: 'Glamour Teen',
     eventType: 'BIRTHDAY',
@@ -539,9 +655,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'CIRCLE',
     layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D88290',
     previewSubtitle: 'Sweet 17th Candle Ceremony • The Glasshouse Ritz-Carlton',
     description:
@@ -550,36 +666,38 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'bday-peppy-pop',
-    name: 'Peppy Confetti Milestone',
+    aliases: ['bday-peppy-confetti', 'peppy-confetti', 'peppy-pop'],
+    name: 'Peppy Confetti Pop',
     styleBadge: 'Fun & Vibrant',
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     themePreset: 'champagne_gold',
-    frameStyle: 'CIRCLE',
+    frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: 'Sparkling Birthday Bash • Music, Games & After Party',
     description:
-      'Suasana pesta ulang tahun yang meriah dengan sentuhan kilau emas confetti, cocok untuk ulang tahun ke-1, ke-17, ke-21, maupun kejutan sahabat.',
-    showFloralCorners: true,
+      'Suasana pesta ulang tahun yang meriah dengan sentuhan kilau emas confetti dan bingkai foto polaroid.',
+    showFloralCorners: false,
   },
   {
     id: 'bday-golden-50',
+    aliases: ['bday-golden-jubilee', 'golden-50', 'golden-jubilee'],
     name: 'Golden Jubilee 50th',
     styleBadge: 'Luxury Family',
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#C5A059',
     previewSubtitle: 'Golden Age Tribute • Syukuran Keluarga Besar & Kolega',
     description:
@@ -588,17 +706,18 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'bday-garden-party',
-    name: 'Botanical Garden Soirée',
+    aliases: ['bday-botanical-garden', 'botanical-garden', 'garden-party'],
+    name: 'Botanical Garden Party',
     styleBadge: 'Outdoor Floral',
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     themePreset: 'sage_botanical',
-    frameStyle: 'ARCH_DOME',
+    frameStyle: 'CIRCLE',
     layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#5E8C6A',
     previewSubtitle: 'Afternoon Tea & Garden Brunch • Private Patio Venue',
     description:
@@ -611,26 +730,28 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   // ============================================================================
   {
     id: 'grad-cum-laude',
+    aliases: ['grad-cum-laude-gold', 'cum-laude', 'cum-laude-gold'],
     name: 'Cum Laude Academic Gold',
     styleBadge: 'Toga & Scroll',
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
-    layoutArchetype: 'MODERN_BENTO',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: 'Sidang Terbuka & Tasyakuran Wisuda Cum Laude',
     description:
       'Desain kehormatan akademik berpadu aksen medali emas untuk undangan tasyakuran kelulusan Sarjana, Magister, hingga pengukuhan Doktor & Guru Besar.',
-    showFloralCorners: true,
+    showFloralCorners: false,
   },
   {
     id: 'grad-sumpah-dokter',
-    name: 'Sumpah Dokter & Profesi',
+    aliases: ['grad-sumpah-dokter-emerald', 'sumpah-dokter'],
+    name: 'Sumpah Dokter Emerald',
     styleBadge: 'Medical Emerald',
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
@@ -638,36 +759,38 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#4A6B53',
     previewSubtitle: 'Pelantikan & Sumpah Profesi • Fakultas Kedokteran',
     description:
       'Palet hijau zamrud-sage yang bersih dan berwibawa untuk acara Angkat Sumpah Dokter, Spesialis, Apoteker, maupun Pelantikan Profesi.',
-    showFloralCorners: true,
+    showFloralCorners: false,
   },
   {
     id: 'grad-alma-mater',
+    aliases: ['grad-royal-alma-mater', 'alma-mater', 'royal-alma-mater'],
     name: 'Royal Alma Mater Navy',
     styleBadge: 'University Pride',
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
     themePreset: 'royal_navy',
-    frameStyle: 'EDITORIAL_RECT',
+    frameStyle: 'ARCH_DOME',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
       'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#3B669E',
     previewSubtitle: 'Aula Barat ITB & Jamuan Syukuran Keluarga',
     description:
-      'Tampilan formal biru tua bergaya universitas ternama dengan bingkai potret toga editorial dan linimasa perjalanan studi akademik.',
-    showFloralCorners: true,
+      'Tampilan formal biru tua bergaya universitas ternama dengan bingkai potret toga dan linimasa perjalanan studi akademik.',
+    showFloralCorners: false,
   },
   {
     id: 'grad-terracotta-scholar',
+    aliases: ['grad-modern-scholar', 'modern-scholar', 'terracotta-scholar'],
     name: 'Modern Scholar Terracotta',
     styleBadge: 'Editorial Warm',
     eventType: 'GRADUATION',
@@ -676,14 +799,14 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'CIRCLE',
     layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#CC704E',
     previewSubtitle: 'Graduation Dinner & Appreciation Night',
     description:
       'Gaya hangat dan modern dengan sentuhan warna terracotta untuk ramah tamah kelulusan bersama keluarga, sahabat kampus, dan dosen pembimbing.',
-    showFloralCorners: true,
+    showFloralCorners: false,
   },
 
   // ============================================================================
@@ -691,7 +814,13 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   // ============================================================================
   {
     id: 'corp-rakornas-navy',
-    name: 'Executive Summit & Rakornas',
+    aliases: [
+      'corp-executive-summit',
+      'meet-executive-summit',
+      'executive-summit',
+      'rakornas-navy',
+    ],
+    name: 'Executive Summit Navy',
     styleBadge: 'Protokoler Resmi',
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
@@ -699,9 +828,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#284B7A',
     previewSubtitle: 'Rapat Koordinasi Nasional • Raffles Grand Ballroom',
     description:
@@ -710,17 +839,23 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'corp-state-gold',
-    name: 'State & Ministry Protocol',
+    aliases: [
+      'corp-protokol-instansi',
+      'meet-protokol-instansi',
+      'protokol-instansi',
+      'state-gold',
+    ],
+    name: 'Protokol Instansi & Polri',
     styleBadge: 'Instansi / Polri / BUMN',
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
     themePreset: 'champagne_gold',
-    frameStyle: 'EDITORIAL_RECT',
-    layoutArchetype: 'MODERN_BENTO',
+    frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: 'Undangan Kedinasan & Sertijab Pejabat Tinggi',
     description:
@@ -729,17 +864,18 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'corp-green-esg',
-    name: 'Green ESG & Sustainability Forum',
+    aliases: ['meet-green-esg-forum', 'green-esg', 'green-esg-forum'],
+    name: 'Green ESG Forum',
     styleBadge: 'Eco Corporate',
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
     themePreset: 'sage_botanical',
     frameStyle: 'EDITORIAL_RECT',
-    layoutArchetype: 'MODERN_BENTO',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#5E8C6A',
     previewSubtitle: 'Net-Zero & Sustainable Investment Summit 2026',
     description:
@@ -748,7 +884,8 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'corp-tech-keynote',
-    name: 'Digital Transformation Keynote',
+    aliases: ['meet-tech-keynote', 'tech-keynote'],
+    name: 'Tech Keynote Modern',
     styleBadge: 'Modern Tech',
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
@@ -756,9 +893,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'CIRCLE',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#3B669E',
     previewSubtitle: 'Product Launch, AI Keynote & Investor Day',
     description:
@@ -767,11 +904,12 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
 
   // ============================================================================
-  // 3 VIP GALA DINNER THEMES (GALA_DINNER -> client-demo-gala)
+  // 4 VIP GALA DINNER THEMES (GALA_DINNER -> client-demo-gala)
   // ============================================================================
   {
     id: 'gala-royal-sapphire',
-    name: 'Royal Sapphire Award Night',
+    aliases: ['royal-sapphire'],
+    name: 'Royal Sapphire Gala',
     styleBadge: 'Black Tie VIP',
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
@@ -779,18 +917,19 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'EDITORIAL_RECT',
     layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#3B669E',
     previewSubtitle: 'Black-Tie Awarding Night • Astor Ballroom St. Regis',
     description:
       'Kemegahan malam penganugerahan berbalut biru safir untuk jamuan makan malam VVIP, malam apresiasi mitra, dan diplomatik gala.',
-    showFloralCorners: true,
+    showFloralCorners: false,
   },
   {
     id: 'gala-champagne-symphony',
-    name: 'Champagne Gold Orchestra Gala',
+    aliases: ['gala-champagne-orchestra', 'champagne-symphony', 'champagne-orchestra'],
+    name: 'Champagne Gold Orchestra',
     styleBadge: 'Fine Dining',
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
@@ -798,9 +937,9 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     frameStyle: 'ARCH_DOME',
     layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#D4AF37',
     previewSubtitle: '25th Silver Jubilee & 6-Course Symphony Banquet',
     description:
@@ -809,45 +948,144 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'gala-velvet-rose',
-    name: 'Velvet Charity & Appreciation Night',
+    aliases: [
+      'gala-velvet-red',
+      'gala-velvet-red-carpet',
+      'velvet-red',
+      'velvet-red-carpet',
+      'velvet-rose',
+    ],
+    name: 'Velvet Red Carpet',
     styleBadge: 'Red Carpet',
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
-    themePreset: 'terracotta_rust',
+    themePreset: 'blush_rose',
     frameStyle: 'EDITORIAL_RECT',
-    layoutArchetype: 'MODERN_BENTO',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
-      'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1600&q=85',
-    accentHex: '#CC704E',
+      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D88290',
     previewSubtitle: 'Red Carpet Philanthropy & High-Society Soirée',
     description:
-      'Nuansa hangat beludru merah-terracotta yang glamor untuk malam penggalangan dana yayasan (Charity Gala), fashion gala, dan red carpet soirée.',
-    showFloralCorners: true,
+      'Malam karpet merah eksklusif, fashion gala, dan perayaan silver jubilee berbalut rose velvet glamor.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'gala-starlight-award',
+    aliases: ['starlight-award'],
+    name: 'Starlight Award Night',
+    styleBadge: 'Awarding Night',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'CIRCLE',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#CC704E',
+    previewSubtitle: 'Annual Achievement Award Night & Corporate Appreciation',
+    description:
+      'Malam penganugerahan prestasi tahunan dan apresiasi korporasi dengan kemilau emas dan terracotta.',
+    showFloralCorners: false,
   },
 ];
+
+export function findCatalogThemePreset(
+  themeId?: string | null
+): MeplannerThemeCatalogItem | undefined {
+  if (!themeId) return undefined;
+  const raw = themeId.trim().toLowerCase();
+  if (!raw) return undefined;
+
+  const normalizeKey = (val: string) =>
+    val
+      .trim()
+      .toLowerCase()
+      .replace(/^client[-_]/, '')
+      .replace(/_/g, '-');
+
+  const stripCategoryPrefix = (val: string) =>
+    normalizeKey(val).replace(/^(wed|bday|grad|corp|meet|gala)-/, '');
+
+  const clean = normalizeKey(raw);
+  const stripped = stripCategoryPrefix(raw);
+
+  return MEPLANNER_THEME_PRESETS.find((t) => {
+    const tId = normalizeKey(t.id);
+    const tStripped = stripCategoryPrefix(t.id);
+    const tName = t.name.trim().toLowerCase();
+    if (tId === clean || tStripped === stripped || tName === raw) {
+      return true;
+    }
+    if (
+      Array.isArray(t.aliases) &&
+      t.aliases.some((alias) => {
+        const aClean = normalizeKey(alias);
+        const aStripped = stripCategoryPrefix(alias);
+        return aClean === clean || aStripped === stripped;
+      })
+    ) {
+      return true;
+    }
+    return false;
+  });
+}
 
 export function getMeplannerThemeById(
   themeId?: string | null
 ): MeplannerThemeCatalogItem | undefined {
-  if (!themeId) return undefined;
-  const clean = themeId.trim().toLowerCase();
-  const cleanNormalized = clean.replace(/-/g, '_');
-  if (
-    clean === 'elegant-light' ||
-    clean === 'elegant_light' ||
-    clean === 'pearl-ivory-elegance' ||
-    clean === 'pearl_ivory_elegance'
-  ) {
-    return MEPLANNER_THEME_PRESETS.find((t) => t.id === 'midnight-elegance');
-  }
-  return MEPLANNER_THEME_PRESETS.find(
-    (t) =>
-      t.id.toLowerCase() === clean ||
-      t.id.toLowerCase().replace(/-/g, '_') === cleanNormalized ||
-      `client_${t.id.toLowerCase().replace(/-/g, '_')}` === cleanNormalized
-  );
+  return findCatalogThemePreset(themeId);
+}
+
+export function applyCatalogThemeToSettings(
+  settings: WeddingSettings,
+  themeId?: string | null
+): WeddingSettings {
+  const matched = findCatalogThemePreset(themeId);
+  if (!matched) return settings;
+
+  const isBotanicalAiry = matched.layoutArchetype === 'BOTANICAL_AIRY';
+
+  const nextSettings: WeddingSettings & {
+    showFloralCorners?: boolean;
+    layoutArchetype?: ThemeLayoutArchetype;
+  } = {
+    ...settings,
+    selectedCatalogThemeId: matched.id,
+    selectedCatalogThemeName: matched.name,
+    themePreset: matched.themePreset,
+    themeLayoutArchetype: matched.layoutArchetype,
+    layoutArchetype: matched.layoutArchetype,
+    profileFrameStyle: matched.frameStyle,
+    coverBgUrl: matched.coverImageUrl,
+    heroPrewedUrl: matched.heroImageUrl,
+    coverSlides: [
+      {
+        id: 'cat-cover-1',
+        imageUrl: matched.coverImageUrl,
+        url: matched.coverImageUrl,
+        title: matched.name,
+        caption: matched.name,
+      } as any,
+    ],
+    heroSlides: [
+      {
+        id: 'cat-hero-1',
+        imageUrl: matched.heroImageUrl,
+        url: matched.heroImageUrl,
+        title: matched.name,
+        caption: matched.name,
+      } as any,
+    ],
+    showFloralOrnaments: isBotanicalAiry,
+    showFloralCorners: isBotanicalAiry,
+  };
+
+  return nextSettings;
 }
 
 export const USER_REAL_QRIS_URL =
@@ -3013,9 +3251,10 @@ export function getShowcaseDummyClientState(
     updatedBy: 'demo_showcase',
   };
 
-  if (matchedTheme) {
-    (customSettings as any).themeLayoutArchetype = matchedTheme.layoutArchetype;
-  }
+  const finalSettings =
+    customThemeId || matchedTheme
+      ? applyCatalogThemeToSettings(customSettings, customThemeId || matchedTheme?.id)
+      : customSettings;
 
   const allGuests = buildDummyGuestsForClient(meta);
   const allTasks = buildDummyTasksForClient(meta);
@@ -3023,7 +3262,7 @@ export function getShowcaseDummyClientState(
   const allWishes = buildDummyWishesForClient(meta, allGuests);
 
   return {
-    settings: customSettings,
+    settings: finalSettings,
     tasks: allTasks,
     guests: isStarterTier ? allGuests.slice(0, 4) : allGuests,
     wishes: allWishes,

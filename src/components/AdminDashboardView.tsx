@@ -1419,6 +1419,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
   const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
   const [isQuickStudioOpen, setIsQuickStudioOpen] = useState<boolean>(true);
+  const [quickStudioModal, setQuickStudioModal] = useState<
+    null | 'streaming' | 'ig_story'
+  >(null);
+  const [streamingPlatform, setStreamingPlatform] = useState<string>(
+    () => (state.settings as any).liveStreamingPlatform || 'YouTube Live'
+  );
+  const [streamingUrlInput, setStreamingUrlInput] = useState<string>(
+    () => (state.settings as any).liveStreamingUrl || ''
+  );
+  const [igFilterUrlInput, setIgFilterUrlInput] = useState<string>(
+    () => (state.settings as any).igFilterUrl || ''
+  );
+  const [showIgStoryToggle, setShowIgStoryToggle] = useState<boolean>(
+    () => (state.settings as any).showIgStorySection !== false
+  );
+  const [wishlistDraft, setWishlistDraft] = useState<{
+    itemName: string;
+    priceEstimate: string;
+    storeUrl: string;
+  }>({
+    itemName: '',
+    priceEstimate: '',
+    storeUrl: '',
+  });
   const [isGuestReceptionModalOpen, setIsGuestReceptionModalOpen] = useState<boolean>(false);
   const [receptionSearchInput, setReceptionSearchInput] = useState<string>('');
   const [checkedInGuest, setCheckedInGuest] = useState<WeddingGuest | null>(null);
@@ -5178,32 +5202,63 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Active Theme Ribbon, Workspace Switcher (Superadmin), Katalog MEPlanner, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Active Theme Ribbon, Active Package Badge, Workspace Switcher (Superadmin), Katalog MEPlanner, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Active Invitation Theme Ribbon / Pill */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('settings');
-                  setSettingsMenuTab('background');
-                }}
-                title={`Tema Undangan: ${activeManagerTheme.name} — Klik untuk kustomisasi Tema & Latar Undangan`}
-                className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} text-[10px] sm:text-[11px] font-bold transition-all shadow-2xs`}
-              >
-                <span className="inline-flex items-center -space-x-1 shrink-0">
-                  {activeManagerTheme.swatches.map((hex, idx) => (
-                    <span
-                      key={hex + idx}
-                      className="w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
-                      style={{ backgroundColor: hex }}
-                    />
-                  ))}
-                </span>
-                <span className="hidden xl:inline">Tema Undangan:</span>
-                <span className="hidden sm:inline truncate max-w-[130px]">
-                  {activeManagerTheme.name}
-                </span>
-              </button>
+              {/* Active Invitation Theme Ribbon / Pill (Synchronized with Katalog Theme Name) */}
+              {(() => {
+                const syncedCatalogThemeName =
+                  (settingsForm as any).selectedCatalogThemeName ||
+                  (state.settings as any).selectedCatalogThemeName ||
+                  activeManagerTheme.name;
+                const syncedPackageLabel =
+                  (settingsForm as any).subscriptionPackageId ||
+                  (state.settings as any).subscriptionPackageId ||
+                  effectiveClientGroups.find(
+                    (g) => g.id === activeWorkspaceClientId
+                  )?.packageTier ||
+                  'ROYAL VIP';
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('settings');
+                        setSettingsMenuTab('background');
+                        setExpandedBgCardKey('catalog_themes');
+                      }}
+                      title={`🎨 Tema Undangan: ${syncedCatalogThemeName} (${activeManagerTheme.name}) — Klik untuk kustomisasi Tema & Latar Undangan`}
+                      className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} text-[10px] sm:text-[11px] font-bold transition-all shadow-2xs cursor-pointer`}
+                    >
+                      <span className="inline-flex items-center -space-x-1 shrink-0">
+                        {activeManagerTheme.swatches.map((hex, idx) => (
+                          <span
+                            key={hex + idx}
+                            className="w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
+                            style={{ backgroundColor: hex }}
+                          />
+                        ))}
+                      </span>
+                      <span className="hidden xl:inline">🎨 Tema Undangan:</span>
+                      <span className="hidden sm:inline truncate max-w-[145px]">
+                        {syncedCatalogThemeName}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('settings');
+                        setSettingsMenuTab('paket');
+                      }}
+                      title={`Paket Aktif: ${syncedPackageLabel} — Klik untuk melihat / upgrade paket MEPlanner`}
+                      className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider transition-all shadow-2xs cursor-pointer shrink-0"
+                    >
+                      <span>💎</span>
+                      <span>{String(syncedPackageLabel).replace(/_/g, ' ')}</span>
+                    </button>
+                  </>
+                );
+              })()}
 
               {isSuperadmin &&
                 onSwitchWorkspaceClient &&
@@ -7957,29 +8012,48 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'visibilitas' && (
                   <div className="space-y-4 sm:space-y-5">
-                    {/* Panel Title */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
+                    {/* Panel Title + 2-Mode Switcher (Mode 1: Grid Studio vs Mode 2: Daftar Seksi) */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
                           Konten &amp; Seksi Undangan (MEPlanner Studio)
                         </h3>
-                        <InfoTooltip text="Gunakan Pintasan Cepat 15 Modul di bawah atau klik Edit pada masing-masing seksi untuk mengubah isinya." />
+                        <InfoTooltip text="Pilih Mode 1 untuk tampilan Grid Studio 15 Modul, atau Mode 2 untuk tampilan Daftar Seksi berbaris." />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsQuickStudioOpen((prev) => !prev)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-bold transition-all"
-                      >
-                        <span>
-                          {isQuickStudioOpen
-                            ? '▾ Sembunyikan Pintasan 15 Modul'
-                            : '▸ Buka Pintasan 15 Modul'}
-                        </span>
-                      </button>
+                      <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 shrink-0 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickStudioOpen(true);
+                            setExpandedSectionKey(null);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
+                            isQuickStudioOpen
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          ⊞ Mode 1: Grid Studio (15 Modul)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickStudioOpen(false);
+                            setQuickStudioModal(null);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
+                            !isQuickStudioOpen
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          ☰ Mode 2: Daftar Seksi (Baris)
+                        </button>
+                      </div>
                     </div>
 
-                    {/* QUICK STUDIO LAUNCHER CARD (15-TILE ICON GRID + STATUS HEADER + LAYAR PENERIMA TAMU) */}
+                    {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 15-TILE GRID) */}
                     <div className="rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
                       {/* Top Status Banner */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
@@ -8069,7 +8143,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                       </div>
 
-                      {/* 15 Quick Action Tiles + 2 Exclusive Feature Banners */}
+                      {/* MODE 1: 15 Quick Action Tiles + 2 Exclusive Feature Banners */}
                       {isQuickStudioOpen && (
                         <>
                           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
@@ -8077,43 +8151,61 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 icon: '👫',
                                 label: 'Pengantin / Host',
+                                isActiveTile: expandedSectionKey === 'showCoupleSection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showCoupleSection');
-                                  showToast('Membuka editor Profil Pengantin / Host...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showCoupleSection'
+                                      ? null
+                                      : 'showCoupleSection'
+                                  );
                                 },
                               },
                               {
                                 icon: '🎨',
                                 label: 'Tema & Latar',
+                                isActiveTile: false,
                                 onClick: () => setSettingsMenuTab('background'),
                               },
                               {
                                 icon: '📅',
                                 label: 'Acara',
+                                isActiveTile: false,
                                 onClick: () => setSettingsMenuTab('jadwal'),
                               },
                               {
                                 icon: '🖼️',
                                 label: 'Galeri',
+                                isActiveTile: expandedSectionKey === 'showGallerySection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showGallerySection');
-                                  showToast('Membuka editor Galeri Foto...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showGallerySection'
+                                      ? null
+                                      : 'showGallerySection'
+                                  );
                                 },
                               },
                               {
                                 icon: '🎵',
                                 label: 'Musik',
+                                isActiveTile: expandedSectionKey === 'showMusicSection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showMusicSection');
-                                  showToast('Membuka editor Musik & Playlist...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showMusicSection'
+                                      ? null
+                                      : 'showMusicSection'
+                                  );
                                 },
                               },
                               {
                                 icon: '💬',
                                 label: 'Ucapan',
+                                isActiveTile: false,
                                 onClick: () => {
                                   setActiveTab('guests');
                                   setGuestSubTab('wishes');
@@ -8122,65 +8214,115 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 icon: '🎁',
                                 label: 'Kado / Amplop',
+                                isActiveTile: expandedSectionKey === 'showGiftSection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showGiftSection');
-                                  showToast('Membuka editor Kado & Amplop Digital...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showGiftSection'
+                                      ? null
+                                      : 'showGiftSection'
+                                  );
                                 },
                               },
                               {
                                 icon: '✉️',
                                 label: 'RSVP',
+                                isActiveTile: expandedSectionKey === 'showRsvpSection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showRsvpSection');
-                                  showToast('Membuka pengaturan Form RSVP...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showRsvpSection'
+                                      ? null
+                                      : 'showRsvpSection'
+                                  );
                                 },
                               },
                               {
                                 icon: '📺',
                                 label: 'Streaming',
+                                isActiveTile: quickStudioModal === 'streaming',
                                 onClick: () => {
-                                  setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showScheduleSection');
-                                  showToast('Membuka Rangkaian Jadwal & Link Acara...');
+                                  setExpandedSectionKey(null);
+                                  setStreamingPlatform(
+                                    (settingsForm as any).liveStreamingPlatform ||
+                                      (state.settings as any).liveStreamingPlatform ||
+                                      'YouTube Live'
+                                  );
+                                  setStreamingUrlInput(
+                                    (settingsForm as any).liveStreamingUrl ||
+                                      (state.settings as any).liveStreamingUrl ||
+                                      ''
+                                  );
+                                  setQuickStudioModal(
+                                    quickStudioModal === 'streaming'
+                                      ? null
+                                      : 'streaming'
+                                  );
                                 },
                               },
                               {
                                 icon: '💘',
                                 label: 'Kisah Cinta',
+                                isActiveTile: expandedSectionKey === 'showLoveStorySection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showLoveStorySection');
-                                  showToast('Membuka editor Kisah Cinta...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showLoveStorySection'
+                                      ? null
+                                      : 'showLoveStorySection'
+                                  );
                                 },
                               },
                               {
                                 icon: '📸',
                                 label: 'Filter & Story IG',
+                                isActiveTile: quickStudioModal === 'ig_story',
                                 onClick: () => {
-                                  setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showGallerySection');
-                                  showToast('Membuka Galeri & Story...');
+                                  setExpandedSectionKey(null);
+                                  setIgFilterUrlInput(
+                                    (settingsForm as any).igFilterUrl ||
+                                      (state.settings as any).igFilterUrl ||
+                                      ''
+                                  );
+                                  setShowIgStoryToggle(
+                                    (settingsForm as any).showIgStorySection ??
+                                      (state.settings as any).showIgStorySection ??
+                                      true
+                                  );
+                                  setQuickStudioModal(
+                                    quickStudioModal === 'ig_story'
+                                      ? null
+                                      : 'ig_story'
+                                  );
                                 },
                               },
                               {
                                 icon: '❝',
                                 label: 'Quote / Ayat',
+                                isActiveTile: expandedSectionKey === 'showQuoteSection',
                                 onClick: () => {
+                                  setQuickStudioModal(null);
                                   setVisibilitasSubTab('semua');
-                                  setExpandedSectionKey('showQuoteSection');
-                                  showToast('Membuka editor Quote / Ayat Pembuka...');
+                                  setExpandedSectionKey(
+                                    expandedSectionKey === 'showQuoteSection'
+                                      ? null
+                                      : 'showQuoteSection'
+                                  );
                                 },
                               },
                               {
                                 icon: '⚙️',
                                 label: 'Setting Akses',
+                                isActiveTile: false,
                                 onClick: () => setSettingsMenuTab('keamanan'),
                               },
                               {
                                 icon: '📖',
                                 label: 'Buku Tamu',
+                                isActiveTile: false,
                                 onClick: () => {
                                   setActiveTab('guests');
                                   setGuestSubTab('wishes');
@@ -8189,6 +8331,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 icon: '🚀',
                                 label: 'Kirim WA',
+                                isActiveTile: false,
                                 onClick: () => {
                                   setActiveTab('guests');
                                   setGuestSubTab('list');
@@ -8199,7 +8342,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 key={tile.label}
                                 type="button"
                                 onClick={tile.onClick}
-                                className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/70 border border-stone-200/90 hover:border-[#D4AF37] text-stone-800 shadow-2xs flex flex-col items-center justify-center gap-1 text-center transition-all hover:scale-[1.02] cursor-pointer"
+                                className={`p-2.5 rounded-xl border shadow-2xs flex flex-col items-center justify-center gap-1 text-center transition-all hover:scale-[1.02] cursor-pointer ${
+                                  tile.isActiveTile
+                                    ? 'bg-[#FAF3E3] border-2 border-[#B68D40] text-[#8B6914] ring-1 ring-[#D4AF37]/50'
+                                    : 'bg-white hover:bg-[#FAF3E3]/70 border-stone-200/90 hover:border-[#D4AF37] text-stone-800'
+                                }`}
                               >
                                 <span className="text-base sm:text-lg leading-none">
                                   {tile.icon}
@@ -8210,6 +8357,151 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </button>
                             ))}
                           </div>
+
+                          {/* Quick Studio Inline Drawer: Streaming */}
+                          {quickStudioModal === 'streaming' && (
+                            <div className="p-3.5 rounded-xl bg-white border-2 border-[#B68D40] space-y-3 text-xs shadow-sm">
+                              <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                                <span className="font-extrabold text-[#8B6914]">
+                                  📺 Pengaturan Live Streaming Acara (Sinkron ke Undangan)
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuickStudioModal(null)}
+                                  className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px] cursor-pointer"
+                                >
+                                  ✕ Tutup
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <div>
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    Platform Streaming
+                                  </label>
+                                  <select
+                                    value={streamingPlatform}
+                                    onChange={(e) => setStreamingPlatform(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-semibold"
+                                  >
+                                    <option value="YouTube Live">YouTube Live</option>
+                                    <option value="Instagram Live">Instagram Live</option>
+                                    <option value="Zoom Meeting">Zoom Meeting</option>
+                                    <option value="TikTok Live">TikTok Live</option>
+                                  </select>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    Link / URL Siaran Langsung (Kosongkan untuk menonaktifkan)
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={streamingUrlInput}
+                                    onChange={(e) => setStreamingUrlInput(e.target.value)}
+                                    placeholder="https://youtube.com/live/... atau https://zoom.us/j/..."
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const cleanUrl = streamingUrlInput.trim();
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    (nextSettings as any).showLiveStreaming =
+                                      Boolean(cleanUrl);
+                                    (nextSettings as any).liveStreamingPlatform =
+                                      streamingPlatform;
+                                    (nextSettings as any).liveStreamingUrl =
+                                      cleanUrl;
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    setQuickStudioModal(null);
+                                    showToast(
+                                      cleanUrl
+                                        ? `✓ Live Streaming (${streamingPlatform}) diaktifkan di undangan!`
+                                        : '✓ Live Streaming dinonaktifkan dari undangan.'
+                                    );
+                                  }}
+                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs cursor-pointer"
+                                >
+                                  Simpan Live Streaming
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Studio Inline Drawer: Filter & Story IG */}
+                          {quickStudioModal === 'ig_story' && (
+                            <div className="p-3.5 rounded-xl bg-white border-2 border-[#B68D40] space-y-3 text-xs shadow-sm">
+                              <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                                <span className="font-extrabold text-[#8B6914]">
+                                  📸 Pengaturan Kartu Story &amp; Filter Instagram (Sinkron ke Undangan)
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuickStudioModal(null)}
+                                  className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px] cursor-pointer"
+                                >
+                                  ✕ Tutup
+                                </button>
+                              </div>
+                              <div className="space-y-2.5">
+                                <label className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 cursor-pointer">
+                                  <span className="font-bold text-stone-800 text-xs">
+                                    Tampilkan Kartu Story &amp; Filter IG di Undangan
+                                  </span>
+                                  <input
+                                    type="checkbox"
+                                    checked={showIgStoryToggle}
+                                    onChange={(e) => setShowIgStoryToggle(e.target.checked)}
+                                    className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
+                                  />
+                                </label>
+                                <div>
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    Link Filter Instagram / AR Effect (Opsional)
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={igFilterUrlInput}
+                                    onChange={(e) => setIgFilterUrlInput(e.target.value)}
+                                    placeholder="https://instagram.com/ar/..."
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    (nextSettings as any).igFilterUrl =
+                                      igFilterUrlInput.trim();
+                                    (nextSettings as any).showIgStorySection =
+                                      showIgStoryToggle;
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    setQuickStudioModal(null);
+                                    showToast(
+                                      '✓ Pengaturan Filter & Story Instagram berhasil disimpan ke undangan!'
+                                    );
+                                  }}
+                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs cursor-pointer"
+                                >
+                                  Simpan Filter &amp; Story IG
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* 2 Exclusive Feature Banners below the 15-Tile Grid */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -8259,38 +8551,40 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       )}
                     </div>
 
-                    {/* Segmented Champagne Gold Pill Sub-Tabs */}
-                    <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        title="Tampilkan seluruh 9 seksi konten undangan"
-                        onClick={() => setVisibilitasSubTab('semua')}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all ${
-                          visibilitasSubTab === 'semua'
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                            : 'text-stone-600 hover:text-[#8B6914]'
-                        }`}
-                      >
-                        <Eye className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Semua Seksi (9)</span>
-                      </button>
-                      <button
-                        type="button"
-                        title="Kelola momen Kisah Kasih, foto Galeri Prewedding, dan Musik Latar"
-                        onClick={() => {
-                          setVisibilitasSubTab('media');
-                          setExpandedSectionKey(null);
-                        }}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all ${
-                          visibilitasSubTab === 'media'
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                            : 'text-stone-600 hover:text-[#8B6914]'
-                        }`}
-                      >
-                        <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Kisah, Galeri &amp; Musik</span>
-                      </button>
-                    </div>
+                    {/* Segmented Champagne Gold Pill Sub-Tabs (Shown Only in Mode 2: Daftar Seksi) */}
+                    {!isQuickStudioOpen && (
+                      <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          title="Tampilkan seluruh 9 seksi konten undangan"
+                          onClick={() => setVisibilitasSubTab('semua')}
+                          className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all cursor-pointer ${
+                            visibilitasSubTab === 'semua'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          <Eye className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Semua Seksi (9)</span>
+                        </button>
+                        <button
+                          type="button"
+                          title="Kelola momen Kisah Kasih, foto Galeri Prewedding, dan Musik Latar"
+                          onClick={() => {
+                            setVisibilitasSubTab('media');
+                            setExpandedSectionKey(null);
+                          }}
+                          className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap truncate transition-all cursor-pointer ${
+                            visibilitasSubTab === 'media'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Kisah, Galeri &amp; Musik</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Status Summary Row */}
                     {(() => {
@@ -8845,23 +9139,43 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         isSectionShown(s.key)
                       ).length;
 
-                      const displayedSections =
-                        visibilitasSubTab === 'media'
-                          ? allSections.filter((s) => s.group === 'media')
-                          : allSections;
+                      const displayedSections = isQuickStudioOpen
+                        ? expandedSectionKey
+                          ? allSections.filter((s) => s.key === expandedSectionKey)
+                          : []
+                        : visibilitasSubTab === 'media'
+                        ? allSections.filter((s) => s.group === 'media')
+                        : allSections;
 
                       return (
                         <>
-                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
-                            <span className="text-xs text-stone-500">
-                              Klik judul pengaturan di bawah untuk membuka / menutup editor
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0 whitespace-nowrap">
-                              &bull; Seksi Tampil ({activeCount}/{switchableSections.length})
-                            </span>
-                          </div>
+                          {isQuickStudioOpen ? (
+                            expandedSectionKey !== null && (
+                              <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                                <span className="text-xs font-extrabold text-[#8B6914]">
+                                  ✏️ Editor Modul Aktif
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedSectionKey(null)}
+                                  className="px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+                                >
+                                  ✕ Tutup Editor
+                                </button>
+                              </div>
+                            )
+                          ) : (
+                            <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                              <span className="text-xs text-stone-500">
+                                Klik judul pengaturan di bawah untuk membuka / menutup editor
+                              </span>
+                              <span className="px-3 py-1 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold text-[11px] shrink-0 whitespace-nowrap">
+                                &bull; Seksi Tampil ({activeCount}/{switchableSections.length})
+                              </span>
+                            </div>
+                          )}
 
-                          {/* Rows List (Collapsed by Default, Click Title to Expand) */}
+                          {/* Rows List (Collapsed by Default in Mode 2; Active Editor Only in Mode 1) */}
                           <div className="divide-y divide-stone-100">
                             {displayedSections.map((sec) => {
                               const SecIcon = sec.icon;
@@ -10081,11 +10395,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             {isMain && (
                                                               <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
                                                                 ★ Utama
-                                                              </span>
-                                                            )}
-                                                            {isCountdownOn && (
-                                                              <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0 whitespace-nowrap">
-                                                                ⏱ Countdown
                                                               </span>
                                                             )}
                                                             {!isVisibleOnInv && (
@@ -12030,6 +12339,166 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </div>
                                             </div>
 
+                                            {/* 4. Daftar Wishlist Kado (Gift Registry) Sinkron ke Undangan */}
+                                            <div className="p-3 rounded-xl bg-amber-50/40 border border-[#D4AF37]/35 space-y-2.5">
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <div>
+                                                  <p className="font-bold text-stone-800 text-xs">
+                                                    4. 🎁 Daftar Wishlist Kado (Gift Registry)
+                                                  </p>
+                                                  <p className="text-[11px] text-stone-500">
+                                                    Tampilkan referensi kado yang dibutuhkan beserta estimasi harga &amp; link marketplace di undangan.
+                                                  </p>
+                                                </div>
+                                                <span className="px-2 py-0.5 rounded-full bg-white border border-[#D4AF37]/40 text-[#8B6914] font-extrabold text-[10px]">
+                                                  {Array.isArray((settingsForm as any).giftWishlistItems)
+                                                    ? (settingsForm as any).giftWishlistItems.length
+                                                    : 0}{' '}
+                                                  Item Wishlist
+                                                </span>
+                                              </div>
+
+                                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                                <input
+                                                  type="text"
+                                                  value={wishlistDraft.itemName}
+                                                  onChange={(e) =>
+                                                    setWishlistDraft({
+                                                      ...wishlistDraft,
+                                                      itemName: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Nama Barang (cth: Air Fryer Philips 4L)"
+                                                  className="sm:col-span-5 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                />
+                                                <input
+                                                  type="text"
+                                                  value={wishlistDraft.priceEstimate}
+                                                  onChange={(e) =>
+                                                    setWishlistDraft({
+                                                      ...wishlistDraft,
+                                                      priceEstimate: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Estimasi Harga (cth: Rp 950.000)"
+                                                  className="sm:col-span-3 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                />
+                                                <input
+                                                  type="url"
+                                                  value={wishlistDraft.storeUrl}
+                                                  onChange={(e) =>
+                                                    setWishlistDraft({
+                                                      ...wishlistDraft,
+                                                      storeUrl: e.target.value,
+                                                    })
+                                                  }
+                                                  placeholder="Link Tokopedia / Shopee (Opsional)"
+                                                  className="sm:col-span-3 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={async () => {
+                                                    const trimmedName = wishlistDraft.itemName.trim();
+                                                    if (!trimmedName) {
+                                                      showToast('⚠️ Isi nama barang wishlist terlebih dahulu.');
+                                                      return;
+                                                    }
+                                                    const currentItems = Array.isArray(
+                                                      (settingsForm as any).giftWishlistItems
+                                                    )
+                                                      ? (settingsForm as any).giftWishlistItems
+                                                      : [];
+                                                    const nextItems = [
+                                                      ...currentItems,
+                                                      {
+                                                        id: `wish_${Date.now()}`,
+                                                        itemName: trimmedName,
+                                                        priceEstimate: wishlistDraft.priceEstimate.trim(),
+                                                        storeUrl: wishlistDraft.storeUrl.trim(),
+                                                      },
+                                                    ];
+                                                    const nextSettings: WeddingSettings = {
+                                                      ...state.settings,
+                                                      ...settingsForm,
+                                                      updatedBy: adminUser.username,
+                                                    };
+                                                    (nextSettings as any).giftWishlistItems = nextItems;
+                                                    setSettingsFormInternal(nextSettings);
+                                                    await commitImmediateSettings(nextSettings);
+                                                    setWishlistDraft({
+                                                      itemName: '',
+                                                      priceEstimate: '',
+                                                      storeUrl: '',
+                                                    });
+                                                    showToast(`✓ "${trimmedName}" ditambahkan ke Wishlist Kado!`);
+                                                  }}
+                                                  className="sm:col-span-1 px-2.5 py-1.5 rounded-lg bg-[#B68D40] hover:bg-[#9A742B] text-white font-extrabold text-xs cursor-pointer"
+                                                >
+                                                  + Tambah
+                                                </button>
+                                              </div>
+
+                                              {Array.isArray((settingsForm as any).giftWishlistItems) &&
+                                                (settingsForm as any).giftWishlistItems.length > 0 && (
+                                                  <div className="space-y-1.5 pt-1">
+                                                    {(
+                                                      (settingsForm as any).giftWishlistItems as Array<{
+                                                        id: string;
+                                                        itemName: string;
+                                                        priceEstimate?: string;
+                                                        storeUrl?: string;
+                                                      }>
+                                                    ).map((wishItem) => (
+                                                      <div
+                                                        key={wishItem.id}
+                                                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white border border-stone-200 text-xs"
+                                                      >
+                                                        <div className="min-w-0">
+                                                          <p className="font-bold text-stone-800 truncate">
+                                                            🎁 {wishItem.itemName}{' '}
+                                                            {wishItem.priceEstimate && (
+                                                              <span className="text-[#8B6914] font-semibold">
+                                                                ({wishItem.priceEstimate})
+                                                              </span>
+                                                            )}
+                                                          </p>
+                                                          {wishItem.storeUrl && (
+                                                            <p className="text-[10px] text-stone-500 truncate">
+                                                              🔗 {wishItem.storeUrl}
+                                                            </p>
+                                                          )}
+                                                        </div>
+                                                        <button
+                                                          type="button"
+                                                          onClick={async () => {
+                                                            const currentItems = Array.isArray(
+                                                              (settingsForm as any).giftWishlistItems
+                                                            )
+                                                              ? (settingsForm as any).giftWishlistItems
+                                                              : [];
+                                                            const nextItems = currentItems.filter(
+                                                              (it: any) => it.id !== wishItem.id
+                                                            );
+                                                            const nextSettings: WeddingSettings = {
+                                                              ...state.settings,
+                                                              ...settingsForm,
+                                                              updatedBy: adminUser.username,
+                                                            };
+                                                            (nextSettings as any).giftWishlistItems = nextItems;
+                                                            setSettingsFormInternal(nextSettings);
+                                                            await commitImmediateSettings(nextSettings);
+                                                            showToast('✓ Item wishlist dihapus.');
+                                                          }}
+                                                          className="px-2 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] shrink-0 cursor-pointer"
+                                                        >
+                                                          Hapus
+                                                        </button>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                            </div>
+
                                             <div className="flex justify-end">
                                               <button
                                                 type="submit"
@@ -12058,17 +12527,108 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'background' && (
                   <form onSubmit={handleSaveSettingsModal} className="space-y-3.5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3 flex-wrap">
                       <div className="flex items-center gap-2 min-w-0">
                         <Sparkles className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Tema &amp; Latar
+                          Tema &amp; Latar (Sinkron 100% Katalog &rarr; Hasil Undangan)
                         </h3>
-                        <InfoTooltip text="Klik judul masing-masing pengaturan di bawah untuk membuka atau menutup pilihan palet tema warna, preset latar, upload foto/video Cover, Banner Hero, dan Wallpaper Latar." />
+                        <InfoTooltip text="Pilih struktur arketipe desain, tema dari katalog (Timeless Snapshot, Serein, Javanese Kraton, dll.), atau palet warna. Semua pilihan langsung mengubah tampilan undangan publik secara real-time." />
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full border ${activeManagerTheme.badgeIdle} font-bold text-[11px] whitespace-nowrap shrink-0`}>
-                        &bull; {activeManagerTheme.name} &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-2.5 py-1 rounded-full border ${activeManagerTheme.badgeIdle} font-bold text-[11px] whitespace-nowrap shrink-0`}>
+                          🎨 {(settingsForm as any).selectedCatalogThemeName || (state.settings as any).selectedCatalogThemeName || activeManagerTheme.name} &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
+                        </span>
+                        <span className="px-2.5 py-1 rounded-full bg-stone-900 text-[#F3E5AB] font-extrabold text-[10px] uppercase tracking-wider">
+                          📐 {((settingsForm as any).themeLayoutArchetype || (state.settings as any).themeLayoutArchetype || 'EDITORIAL_CLASSIC').replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 0. Pilih Struktur Desain (5 Arketipe Layout) & 16 Tema Katalog Populer */}
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/60 border border-[#D4AF37]/45 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div>
+                          <p className="font-extrabold text-xs sm:text-sm text-stone-900">
+                            0. Pilih Struktur Desain (5 Arketipe Layout) &amp; Katalog Tema Undangan
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            Setiap arketipe dan tema katalog mengubah struktur sampul, tipografi, bingkai foto, dan kartu di halaman undangan publik.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 5 Layout Archetypes Direct Switcher */}
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {[
+                          {
+                            id: 'EDITORIAL_CLASSIC',
+                            label: '✨ Editorial Classic',
+                            desc: 'Serif mewah & lengkung kubah',
+                          },
+                          {
+                            id: 'POLAROID_MAGAZINE',
+                            label: '📸 Polaroid Magazine',
+                            desc: 'Frame polaroid & miring artistik',
+                          },
+                          {
+                            id: 'BOTANICAL_AIRY',
+                            label: '🌿 Botanical Airy',
+                            desc: 'Kapsul organik & nuansa taman',
+                          },
+                          {
+                            id: 'NUSANTARA_HERITAGE',
+                            label: '🏛️ Nusantara Heritage',
+                            desc: 'Bingkai ganda keraton & ornamen emas',
+                          },
+                          {
+                            id: 'MODERN_BENTO',
+                            label: '⊞ Modern Bento',
+                            desc: 'Grid geometris & tipografi tegas',
+                          },
+                        ].map((arch) => {
+                          const currentArch =
+                            (settingsForm as any).themeLayoutArchetype ||
+                            (state.settings as any).themeLayoutArchetype ||
+                            'EDITORIAL_CLASSIC';
+                          const isSelectedArch = currentArch === arch.id;
+                          return (
+                            <button
+                              key={arch.id}
+                              type="button"
+                              onClick={async () => {
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  updatedBy: adminUser.username,
+                                };
+                                (nextSettings as any).themeLayoutArchetype = arch.id;
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                showToast(
+                                  `✓ Struktur Desain Undangan diubah ke "${arch.label}"!`
+                                );
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                isSelectedArch
+                                  ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-[#D4AF37]/60'
+                                  : 'bg-white hover:bg-[#FAF3E3]/70 text-stone-800 border-stone-200 hover:border-[#D4AF37]'
+                              }`}
+                            >
+                              <p className="font-extrabold text-[11px] truncate">
+                                {arch.label}
+                              </p>
+                              <p
+                                className={`text-[10px] truncate mt-0.5 ${
+                                  isSelectedArch ? 'text-stone-300' : 'text-stone-500'
+                                }`}
+                              >
+                                {arch.desc}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* 1. Palet Tema Warna Undangan & Planner (Collapsible) */}
@@ -12178,7 +12738,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       )}
                     </div>
 
-                    {/* 1B. Katalog Preset Tema Sesuai Kategori Acara (12 Tema Eksklusif) */}
+                    {/* 1B. Katalog Preset Tema Sesuai Kategori Acara (16 Tema Eksklusif Sinkron Katalog) */}
                     <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <button
@@ -12193,7 +12753,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
                         >
                           <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
-                            Katalog Preset Tema Sesuai Kategori Acara (12 Desain Eksklusif)
+                            Katalog Preset Tema Sesuai Kategori Acara (16 Desain Eksklusif Sinkron Katalog)
                           </p>
                           <ChevronDown
                             className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
@@ -12218,24 +12778,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
                           }`}
                         >
-                          {expandedBgCardKey === 'catalog_themes' ? 'Tutup' : 'Buka 12 Tema'}
+                          {expandedBgCardKey === 'catalog_themes' ? 'Tutup' : 'Buka 16 Tema'}
                         </button>
                       </div>
 
                       {expandedBgCardKey === 'catalog_themes' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2 border-t border-[#D4AF37]/25">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-[#D4AF37]/25">
                           {[
                             {
+                              id: 'timeless-snapshot',
                               name: 'Timeless Snapshot',
-                              categoryLabel: '💍 Wedding Editorial',
+                              categoryLabel: '💍 Wedding Polaroid',
                               palette: 'champagne_gold' as const,
-                              frameStyle: 'ARCH_DOME' as const,
+                              frameStyle: 'EDITORIAL_RECT' as const,
                               layoutArchetype: 'POLAROID_MAGAZINE' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#D4AF37', '#8B6914', '#FAF3E3'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'serein-botanical',
                               name: 'Serein',
                               categoryLabel: '🌿 Minimalist Botanical',
                               palette: 'sage_botanical' as const,
@@ -12244,8 +12807,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#4A6B53', '#7A9A82', '#EBF3ED'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'mildness-ivory',
                               name: 'Mildness',
                               categoryLabel: '🌸 Romantic Ivory Blush',
                               palette: 'blush_rose' as const,
@@ -12254,9 +12819,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#C86D7C', '#E8A5B0', '#FDF0F2'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80',
                             },
                             {
-                              name: 'Culture: Javanese',
+                              id: 'culture-javanese',
+                              name: 'Culture: Javanese Kraton',
                               categoryLabel: '🏛️ Royal Kraton Heritage',
                               palette: 'champagne_gold' as const,
                               frameStyle: 'ARCH_DOME' as const,
@@ -12264,9 +12831,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#B68D40', '#5C4018', '#FAF0CA'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80',
                             },
                             {
-                              name: 'Wayang Heritage',
+                              id: 'wayang-heritage',
+                              name: 'Wayang Heritage Gold',
                               categoryLabel: '🎭 Nusantara Gold & Rust',
                               palette: 'terracotta_rust' as const,
                               frameStyle: 'ARCH_DOME' as const,
@@ -12274,8 +12843,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#B85D3B', '#D4AF37', '#FBF0EB'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'blubloom-floral',
                               name: 'BluBloom',
                               categoryLabel: '💠 Twilight Floral',
                               palette: 'royal_navy' as const,
@@ -12284,29 +12855,83 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#1E3A5F', '#6B9AC4', '#EDF2F8'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80',
                             },
                             {
-                              name: 'Pearl Elegance',
+                              id: 'light-luxury',
+                              name: 'Light Luxury',
                               categoryLabel: '✨ White Pearl & Gold',
                               palette: 'champagne_gold' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
+                              frameStyle: 'ARCH_DOME' as const,
                               layoutArchetype: 'EDITORIAL_CLASSIC' as const,
                               floral: false,
                               petals: true,
                               swatches: ['#D4AF37', '#FFFDF9', '#F3E9D2'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80',
                             },
                             {
-                              name: 'Espresso Rustic',
-                              categoryLabel: '🍂 Warm Earthy Boho',
+                              id: 'espresso-editorial',
+                              name: 'Espresso',
+                              categoryLabel: '🍂 Warm Earthy Editorial',
                               palette: 'terracotta_rust' as const,
-                              frameStyle: 'ARCH_DOME' as const,
+                              frameStyle: 'EDITORIAL_RECT' as const,
                               layoutArchetype: 'POLAROID_MAGAZINE' as const,
                               floral: true,
                               petals: false,
                               swatches: ['#8C3D20', '#D98A6C', '#F9EBE4'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=900&q=80',
                             },
                             {
-                              name: 'Sweet 17th Soirée',
+                              id: 'photovit-magazine',
+                              name: 'Photovit',
+                              categoryLabel: '📸 Magazine Bento Grid',
+                              palette: 'royal_navy' as const,
+                              frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'MODERN_BENTO' as const,
+                              floral: false,
+                              petals: false,
+                              swatches: ['#1E3A5F', '#94A3B8', '#F8FAFC'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=900&q=80',
+                            },
+                            {
+                              id: 'peppy-pastel',
+                              name: 'Peppy',
+                              categoryLabel: '🎀 Playful Blush Bento',
+                              palette: 'blush_rose' as const,
+                              frameStyle: 'CIRCLE' as const,
+                              layoutArchetype: 'MODERN_BENTO' as const,
+                              floral: true,
+                              petals: true,
+                              swatches: ['#E11D48', '#FBBF24', '#FFF1F2'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=900&q=80',
+                            },
+                            {
+                              id: 'visual-journey',
+                              name: 'Visual Journey',
+                              categoryLabel: '🎞️ Cinematic Polaroid',
+                              palette: 'champagne_gold' as const,
+                              frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
+                              floral: false,
+                              petals: true,
+                              swatches: ['#C5A059', '#292524', '#FAF8F5'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80',
+                            },
+                            {
+                              id: 'snap-photo',
+                              name: 'Snap Photo',
+                              categoryLabel: '📷 Retro Instant Frame',
+                              palette: 'terracotta_rust' as const,
+                              frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
+                              floral: true,
+                              petals: false,
+                              swatches: ['#B85D3B', '#78350F', '#FEF3C7'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80',
+                            },
+                            {
+                              id: 'sweet-17-rose',
+                              name: 'Sweet 17th Rose',
                               categoryLabel: '🎂 Birthday Celebration',
                               palette: 'blush_rose' as const,
                               frameStyle: 'CIRCLE' as const,
@@ -12314,8 +12939,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: true,
                               petals: true,
                               swatches: ['#D88290', '#F3D77D', '#FCECEF'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'cum-laude-gold',
                               name: 'Cum Laude Gold',
                               categoryLabel: '🎓 Graduation Prestige',
                               palette: 'champagne_gold' as const,
@@ -12324,8 +12951,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: false,
                               petals: true,
                               swatches: ['#C5A059', '#8B6914', '#FAF3E3'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'executive-summit',
                               name: 'Executive Summit',
                               categoryLabel: '🏛️ Corporate & Instansi',
                               palette: 'royal_navy' as const,
@@ -12334,8 +12963,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: false,
                               petals: false,
                               swatches: ['#1E3A5F', '#475569', '#F1F5F9'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
                             },
                             {
+                              id: 'royal-sapphire-gala',
                               name: 'Royal Sapphire Gala',
                               categoryLabel: '🥂 VIP Gala Dinner',
                               palette: 'royal_navy' as const,
@@ -12344,22 +12975,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               floral: false,
                               petals: true,
                               swatches: ['#1E3A5F', '#D4AF37', '#EDF2F8'],
+                              coverBgUrl: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
                             },
                           ].map((presetItem) => {
                             const currentLayoutArchetype =
                               (settingsForm as any).themeLayoutArchetype ||
                               (state.settings as any).themeLayoutArchetype ||
                               'EDITORIAL_CLASSIC';
+                            const currentCatalogName =
+                              (settingsForm as any).selectedCatalogThemeName ||
+                              (state.settings as any).selectedCatalogThemeName ||
+                              '';
                             const isCurrent =
-                              activeThemePresetId === presetItem.palette &&
-                              (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
-                                presetItem.frameStyle &&
-                              currentLayoutArchetype === presetItem.layoutArchetype &&
-                              Boolean(settingsForm.showFloralOrnaments !== false) ===
-                                presetItem.floral;
+                              currentCatalogName === presetItem.name ||
+                              (!currentCatalogName &&
+                                activeThemePresetId === presetItem.palette &&
+                                (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
+                                  presetItem.frameStyle &&
+                                currentLayoutArchetype === presetItem.layoutArchetype);
                             return (
                               <button
-                                key={presetItem.name}
+                                key={presetItem.id}
                                 type="button"
                                 onClick={async () => {
                                   const nextSettings: WeddingSettings = {
@@ -12369,14 +13005,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     profileFrameStyle: presetItem.frameStyle,
                                     showFloralOrnaments: presetItem.floral,
                                     showFloatingPetals: presetItem.petals,
+                                    coverBgUrl: presetItem.coverBgUrl,
+                                    heroPrewedUrl: presetItem.coverBgUrl,
                                     updatedBy: adminUser.username,
                                   };
                                   (nextSettings as any).themeLayoutArchetype =
                                     presetItem.layoutArchetype;
+                                  (nextSettings as any).selectedCatalogThemeId = presetItem.id;
+                                  (nextSettings as any).selectedCatalogThemeName =
+                                    presetItem.name;
                                   setSettingsFormInternal(nextSettings);
                                   await commitImmediateSettings(nextSettings);
                                   showToast(
-                                    `✓ Preset Tema "${presetItem.name}" (${presetItem.categoryLabel} • ${presetItem.layoutArchetype}) berhasil diterapkan!`
+                                    `✓ Tema Katalog "${presetItem.name}" (${presetItem.categoryLabel} • ${presetItem.layoutArchetype}) berhasil diterapkan ke undangan!`
                                   );
                                 }}
                                 className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
@@ -12400,11 +13041,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   </div>
                                 </div>
                                 <div>
-                                  <p className="font-extrabold text-xs text-stone-900 truncate">
-                                    {presetItem.name}
-                                  </p>
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="font-extrabold text-xs text-stone-900 truncate">
+                                      {presetItem.name}
+                                    </p>
+                                    {isCurrent && (
+                                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold shrink-0">
+                                        Aktif
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                                    Layout: {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
+                                    {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
                                     {presetItem.frameStyle}
                                   </p>
                                 </div>
@@ -13642,11 +14290,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         {isMain && (
                                           <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
                                             ★ Utama
-                                          </span>
-                                        )}
-                                        {isCountdownOn && (
-                                          <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0 whitespace-nowrap">
-                                            ⏱ Countdown
                                           </span>
                                         )}
                                         {!isVisibleOnInv && (
@@ -19207,25 +19850,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
           </div>
         )}
+      </main>
 
-        {/* ===================================================================
-            FOOTER CREDIT & CONTACT US (ADMIN DASHBOARD)
-           =================================================================== */}
-        <footer className="mt-8 pt-4 pb-2">
-          <div className="rounded-2xl bg-gradient-to-r from-[#FFFDF9] via-[#FAF3E3]/80 to-[#FFFDF9] border border-[#D4AF37]/35 px-4 py-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 text-center sm:text-left">
-              <div className="flex items-center justify-center shrink-0">
-                <WeddingRingsIcon
-                  className="w-7 h-7"
-                  logoUrl={
-                    (settingsForm as any).brandLogoUrl ||
-                    (state.settings as any).brandLogoUrl
-                  }
-                />
-              </div>
-              <div>
-                <p className="text-xs font-extrabold text-stone-900 tracking-wide">
-                  My Event Planner by{' '}
+      {/* ===================================================================
+          FOOTER CREDIT & CONTACT US (FULL-WIDTH EDGE-TO-EDGE MATCHING KATALOG)
+         =================================================================== */}
+      <footer className="w-full bg-white border-t border-stone-200/90 py-6 px-4 sm:px-6 lg:px-8 mt-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="flex items-center justify-center shrink-0">
+              <WeddingRingsIcon
+                className="w-8 h-8"
+                logoUrl={
+                  (settingsForm as any).brandLogoUrl ||
+                  (state.settings as any).brandLogoUrl
+                }
+              />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <p className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-wide">
+                  MEPlanner &mdash; My Event Planner by{' '}
                   <a
                     href={(() => {
                       const raw = (
@@ -19244,60 +19889,63 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </a>{' '}
                   &copy; 2026
                 </p>
-                <p className="text-[10px] text-stone-500">
-                  Enterprise Multi-Client Event &amp; Wedding Planner Suite
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
-                Contact Us:
-              </span>
-              <a
-                href={`mailto:${
-                  (
-                    settingsForm.contactBusinessEmail ??
-                    state.settings.contactBusinessEmail
-                  )?.trim() || 'e98.bisnis@gmail.com'
-                }`}
-                title={`Email Bisnis & Layanan Resmi MEPlanner (${
-                  (
-                    settingsForm.contactBusinessEmail ??
-                    state.settings.contactBusinessEmail
-                  )?.trim() || 'e98.bisnis@gmail.com'
-                })`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-[11px] font-bold transition-all shadow-2xs"
-              >
-                <span>✉️</span>
-                <span>
-                  {(
-                    settingsForm.contactBusinessEmail ??
-                    state.settings.contactBusinessEmail
-                  )?.trim() || 'e98.bisnis@gmail.com'}
+                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
+                  Official MEPlanner SaaS &amp; Multi-Event Planner Cloud Suite
                 </span>
-              </a>
-
-              <a
-                href="https://www.linkedin.com/in/omeko42"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Profil LinkedIn Resmi Eko Agung Krisdianto"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-[11px] font-bold transition-all shadow-2xs"
-              >
-                <svg
-                  className="w-3.5 h-3.5 fill-current"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-                </svg>
-                <span>LinkedIn Eko Agung K.</span>
-              </a>
+              </div>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Platform Multi-Event Readiness Tracker &amp; Undangan Digital Interaktif
+              </p>
             </div>
           </div>
-        </footer>
-      </main>
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
+              HUBUNGI KAMI:
+            </span>
+            <a
+              href={`mailto:${
+                (
+                  settingsForm.contactBusinessEmail ??
+                  state.settings.contactBusinessEmail
+                )?.trim() || 'e98.bisnis@gmail.com'
+              }`}
+              title={`Email Bisnis & Layanan Resmi MEPlanner (${
+                (
+                  settingsForm.contactBusinessEmail ??
+                  state.settings.contactBusinessEmail
+                )?.trim() || 'e98.bisnis@gmail.com'
+              })`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-xs font-bold transition-all shadow-2xs"
+            >
+              <span>✉️</span>
+              <span>
+                {(
+                  settingsForm.contactBusinessEmail ??
+                  state.settings.contactBusinessEmail
+                )?.trim() || 'e98.bisnis@gmail.com'}
+              </span>
+            </a>
+
+            <a
+              href="https://www.linkedin.com/in/omeko42"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Profil LinkedIn Resmi Eko Agung Krisdianto"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition-all shadow-2xs"
+            >
+              <svg
+                className="w-3.5 h-3.5 fill-current shrink-0"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+              </svg>
+              <span>Eko Agung Krisdianto</span>
+            </a>
+          </div>
+        </div>
+      </footer>
 
       {/* =======================================================================
           MODAL 1: TAMBAH / EDIT TUGAS CHECKLIST
