@@ -2768,16 +2768,7 @@ function WeddingAppContent() {
 
   const demoSandboxBar = activeDummyClientIdForSandbox ? (
     <div className="fixed bottom-3 left-3 z-50 flex flex-wrap items-center gap-1 rounded-2xl bg-stone-900/95 px-2 py-1.5 text-[#FAF3E3] border border-[#D4AF37]/60 shadow-[0_14px_34px_rgba(12,10,9,0.55)] backdrop-blur-md max-w-[calc(100vw-1.5rem)]">
-      <img
-        src={MEPLANNER_BRAND_LOGOS.iconBadge}
-        alt="MEPlanner"
-        className="w-5 h-5 rounded-md object-contain shrink-0"
-      />
-      <img
-        src={webkitBundle.categoryBadgeSvg}
-        alt="Theme Badge"
-        className="w-4 h-4 object-contain shrink-0 hidden sm:block"
-      />
+      <WeddingRingsIcon className="w-6 h-6 shrink-0" />
       <button
         type="button"
         onClick={handleOpenLandingPage}
@@ -3194,24 +3185,11 @@ function WeddingAppContent() {
             {/* Top Brand Bar */}
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-white/95 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-1">
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                    alt="MEPlanner Badge"
-                    className="w-7 h-7 object-contain"
-                  />
-                </div>
+                <WeddingRingsIcon className="w-9 h-9 shrink-0" />
                 <div className="leading-tight">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-base font-extrabold text-white tracking-tight">
-                      MEPlanner
-                    </p>
-                    <img
-                      src={webkitBundle.categoryBadgeSvg}
-                      alt="Event Badge"
-                      className="w-4 h-4 object-contain"
-                    />
-                  </div>
+                  <p className="text-base font-extrabold text-white tracking-tight">
+                    MEPlanner
+                  </p>
                   <p className="text-[11px] text-stone-200 font-medium">
                     My Event Planner &bull; Undangan &amp; Manajemen Acara
                   </p>

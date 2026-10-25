@@ -6,10 +6,15 @@ interface WeddingRingsIconProps {
   withSquircleBg?: boolean;
 }
 
+/**
+ * Official MEPlanner App Icon — 3D Champagne Gold Ribbon "M" + 4-Point Star Sparkle
+ * inside a sleek Dark Obsidian Squircle.
+ * Source: D:\EKO\FOTO\MEPlan_Brand_Kit\concepts\meplanner_official_logo_sheet.jpg
+ */
 export const WeddingRingsIcon: React.FC<WeddingRingsIconProps> = ({
-  className = 'w-6 h-6',
+  className = 'w-8 h-8',
   logoUrl,
-  withSquircleBg = false,
+  withSquircleBg = true,
 }) => {
   const uid = React.useId().replace(/:/g, '');
 
@@ -17,8 +22,8 @@ export const WeddingRingsIcon: React.FC<WeddingRingsIconProps> = ({
     return (
       <img
         src={logoUrl}
-        alt="MEPlan — My Event Planner"
-        className={`${className} object-contain rounded-md`}
+        alt="MEPlanner — My Event Planner"
+        className={`${className} object-contain rounded-xl shrink-0`}
       />
     );
   }
@@ -26,13 +31,13 @@ export const WeddingRingsIcon: React.FC<WeddingRingsIconProps> = ({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={withSquircleBg ? '0 0 120 120' : '16 8 94 88'}
+      viewBox="0 0 120 120"
       fill="none"
-      className={className}
+      className={`${className} shrink-0 select-none`}
       aria-hidden="true"
     >
       <defs>
-        {/* Squircle Background */}
+        {/* Obsidian Squircle Background */}
         <linearGradient
           id={`${uid}-bg-squircle`}
           x1="0"
@@ -41,135 +46,163 @@ export const WeddingRingsIcon: React.FC<WeddingRingsIconProps> = ({
           y2="120"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#131629" />
-          <stop offset="100%" stopColor="#090A14" />
+          <stop offset="0%" stopColor="#1E2433" />
+          <stop offset="55%" stopColor="#10141E" />
+          <stop offset="100%" stopColor="#080A0F" />
         </linearGradient>
 
+        {/* Subtle Top Glass Gloss */}
         <linearGradient
-          id={`${uid}-border-glow`}
+          id={`${uid}-top-gloss`}
+          x1="60"
+          y1="4"
+          x2="60"
+          y2="62"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        </linearGradient>
+
+        {/* Gold Rim Border */}
+        <linearGradient
+          id={`${uid}-border-gold`}
           x1="0"
           y1="0"
           x2="120"
           y2="120"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.6" />
-          <stop offset="50%" stopColor="#22D3EE" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#FB7185" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="#FFF3B8" stopOpacity="0.75" />
+          <stop offset="50%" stopColor="#D4AF37" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#8A6412" stopOpacity="0.75" />
         </linearGradient>
 
-        {/* 1. Left Vertical Pillar Gradient (Violet to Deep Royal Blue) */}
+        {/* Primary 3D Champagne Gold Ribbon Gradient */}
         <linearGradient
-          id={`${uid}-pillar-left`}
-          x1="28"
-          y1="30"
-          x2="28"
-          y2="94"
+          id={`${uid}-gold-main`}
+          x1="20"
+          y1="22"
+          x2="96"
+          y2="98"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#A855F7" />
-          <stop offset="50%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#312E81" />
+          <stop offset="0%" stopColor="#FFF7D6" />
+          <stop offset="32%" stopColor="#E6C35C" />
+          <stop offset="68%" stopColor="#C59B27" />
+          <stop offset="100%" stopColor="#8A6412" />
         </linearGradient>
 
-        {/* 2. Left-to-Center Fold Gradient (Deep Indigo Shadow Ribbon) */}
+        {/* Secondary Shaded Gold Pillar Gradient */}
         <linearGradient
-          id={`${uid}-fold-left`}
-          x1="34"
-          y1="34"
-          x2="62"
-          y2="78"
+          id={`${uid}-gold-pillar`}
+          x1="24"
+          y1="96"
+          x2="88"
+          y2="24"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#3730A3" />
-          <stop offset="100%" stopColor="#6D28D9" />
+          <stop offset="0%" stopColor="#8A6412" />
+          <stop offset="48%" stopColor="#D4AF37" />
+          <stop offset="100%" stopColor="#FFF2B2" />
         </linearGradient>
 
-        {/* 3. Right Vertical Pillar Gradient (Blue to Warm Coral/Peach) */}
+        {/* Deep Gold Fold Shadow */}
         <linearGradient
-          id={`${uid}-pillar-right`}
-          x1="84"
-          y1="34"
-          x2="84"
-          y2="94"
+          id={`${uid}-gold-shadow`}
+          x1="30"
+          y1="28"
+          x2="65"
+          y2="82"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="45%" stopColor="#8B5CF6" />
-          <stop offset="100%" stopColor="#FB7185" />
+          <stop offset="0%" stopColor="#7A560E" />
+          <stop offset="100%" stopColor="#B88E22" />
         </linearGradient>
 
-        {/* 4. Center-to-Right Ascending Check Ribbon (Vivid Violet to Electric Cyan) */}
-        <linearGradient
-          id={`${uid}-fold-right`}
-          x1="48"
-          y1="78"
-          x2="90"
-          y2="30"
-          gradientUnits="userSpaceOnUse"
+        <filter
+          id={`${uid}-drop`}
+          x="-15%"
+          y="-15%"
+          width="130%"
+          height="130%"
         >
-          <stop offset="0%" stopColor="#7C3AED" />
-          <stop offset="45%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#00F0FF" />
-        </linearGradient>
-
-        {/* 5. 4-Point Celebration Sparkle Gradient */}
-        <linearGradient
-          id={`${uid}-sparkle`}
-          x1="82"
-          y1="12"
-          x2="106"
-          y2="36"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0%" stopColor="#8B5CF6" />
-          <stop offset="50%" stopColor="#EC4899" />
-          <stop offset="100%" stopColor="#FDA4AF" />
-        </linearGradient>
-
-        <filter id={`${uid}-shadow`} x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000000" floodOpacity="0.35" />
+          <feDropShadow
+            dx="0"
+            dy="4"
+            stdDeviation="4"
+            floodColor="#000000"
+            floodOpacity="0.45"
+          />
         </filter>
       </defs>
 
-      {withSquircleBg && (
+      {withSquircleBg !== false && (
         <>
-          <rect x="4" y="4" width="112" height="112" rx="28" fill={`url(#${uid}-bg-squircle)`} />
+          <rect
+            x="4"
+            y="4"
+            width="112"
+            height="112"
+            rx="28"
+            fill={`url(#${uid}-bg-squircle)`}
+          />
+          <path
+            d="M32 5H88C102.9 5 115 17.1 115 32V52C98 60 79 64 60 64C41 64 22 60 5 52V32C5 17.1 17.1 5 32 5Z"
+            fill={`url(#${uid}-top-gloss)`}
+          />
           <rect
             x="5"
             y="5"
             width="110"
             height="110"
             rx="27"
-            stroke={`url(#${uid}-border-glow)`}
+            stroke={`url(#${uid}-border-gold)`}
             strokeWidth="2"
           />
         </>
       )}
 
-      {/* 3D Origami Ribbon "M" */}
-      <g filter={`url(#${uid}-shadow)`}>
-        {/* Back Layer: Left-to-Center Diagonal Fold */}
-        <path d="M28 32L63 73L51 81L22 44L28 32Z" fill={`url(#${uid}-fold-left)`} />
+      {/* 3D Champagne Gold Ribbon "M" + Star Sparkle */}
+      <g filter={`url(#${uid}-drop)`}>
+        {/* Left Vertical Pillar */}
+        <rect
+          x="22"
+          y="28"
+          width="17"
+          height="64"
+          rx="4"
+          fill={`url(#${uid}-gold-pillar)`}
+        />
 
-        {/* Right Vertical Pillar (Coral Bottom to Blue Top) */}
-        <rect x="74" y="32" width="18" height="60" rx="7" fill={`url(#${uid}-pillar-right)`} />
+        {/* Right Vertical Pillar */}
+        <rect
+          x="74"
+          y="28"
+          width="16"
+          height="58"
+          rx="4"
+          fill={`url(#${uid}-gold-shadow)`}
+        />
 
-        {/* Left Vertical Pillar (Violet Top to Indigo Bottom) */}
-        <rect x="20" y="32" width="18" height="60" rx="7" fill={`url(#${uid}-pillar-left)`} />
-
-        {/* Front Hero Layer: Ascending Cyan Checkmark Ribbon */}
+        {/* Left-to-Center Diagonal Ribbon Fold */}
         <path
-          d="M48.5 76.5L74.5 35.5C76.5 32.3 80 32 83.5 32H85C89.4 32 92 35.5 92 39.5C92 41.5 91.2 43.4 89.8 45.2L62.8 81.2C59.2 86 52 86 48.5 81.2C46.5 78.5 46.8 75.2 48.5 76.5Z"
-          fill={`url(#${uid}-fold-right)`}
+          d="M22 28H37L59 74H45L22 28Z"
+          fill={`url(#${uid}-gold-main)`}
+        />
+
+        {/* Center-to-Right Ascending Ribbon Fold */}
+        <path
+          d="M45 74L69 28H86L59 74H45Z"
+          fill={`url(#${uid}-gold-pillar)`}
+        />
+
+        {/* 4-Point Celebration Star Sparkle Overlapping Bottom-Right */}
+        <path
+          d="M84 48C84 65 88.5 69.5 105 69.5C88.5 69.5 84 74 84 91C84 74 79.5 69.5 63 69.5C79.5 69.5 84 65 84 48Z"
+          fill={`url(#${uid}-gold-main)`}
         />
       </g>
-
-      {/* Iconic 4-Point Event Sparkle (Top Right) */}
-      <path
-        d="M94 12C94 20.5 97.5 24 106 24C97.5 24 94 27.5 94 36C94 27.5 90.5 24 82 24C90.5 24 94 20.5 94 12Z"
-        fill={`url(#${uid}-sparkle)`}
-      />
     </svg>
   );
 };

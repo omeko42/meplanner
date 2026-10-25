@@ -57,6 +57,7 @@ import {
   formatForensicUserAgent,
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { MeplannerDigitalEnvelopeCard } from '@/components/MeplannerWebkitPrimitives';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
   computeGuestInvitationHash,
@@ -5641,6 +5642,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       ? rawPaypalCandidate
                       : `https://${rawPaypalCandidate}`
                     : '';
+
+                  if (!isCrypto && !isPaypal) {
+                    return (
+                      <div key={acc.id} className="inv-reveal inv-reveal-zoom h-full">
+                        <MeplannerDigitalEnvelopeCard
+                          bankName={acc.bankName || 'BCA'}
+                          accountNumber={acc.accountNumber}
+                          accountHolder={acc.accountHolder}
+                          qrisImageUrl={settings.qrisImageUrl}
+                          onCopyAccount={(accNum: string) =>
+                            handleCopyAccount(acc.id, accNum)
+                          }
+                          className="h-full"
+                        />
+                      </div>
+                    );
+                  }
 
                   return (
                     <div

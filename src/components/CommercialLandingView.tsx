@@ -40,6 +40,14 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import {
+  MeplannerOfficialLogo,
+  MeplannerPartnerMedallion,
+  MeplannerDigitalEnvelopeCard,
+  MeplannerLicenseCertificateCard,
+  MeplannerGuestReceptionTerminal,
+  MeplannerAdaptiveButton,
+} from '@/components/MeplannerWebkitPrimitives';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
   ReactGoogleLoginButton,
@@ -5584,57 +5592,27 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* CLEAN TOP NAVBAR — MEPLANNER ORIGINAL WARM EDITORIAL HEADER */}
       <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
-          {/* Left: Official MEPlanner SVG Logo + Icon Badge + Monogram Seal */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          {/* Left: Official MEPlanner Brand Identity */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
+              className="flex items-center gap-2.5 text-left cursor-pointer group"
               title="MEPlanner — My Event Planner"
             >
-              <img
-                src={
-                  (primarySettings as any).brandLogoUrl ||
-                  MEPLANNER_BRAND_LOGOS.iconBadge
-                }
-                alt="MEPlanner Icon Badge"
-                className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-2xs"
+              <MeplannerOfficialLogo
+                variant="light"
+                size="md"
+                showSubtitle={true}
               />
             </button>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCheckoutPageOpen(false)}
-                  className="flex items-center gap-2 text-left cursor-pointer group"
-                >
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.fullLight}
-                    alt="MEPlanner — My Event Planner"
-                    className="h-6 sm:h-7 w-auto object-contain hidden sm:block"
-                  />
-                  <span className="font-sans font-extrabold text-base sm:hidden text-stone-900 tracking-tight leading-none">
-                    ME<span className="text-[#8B6914]">Planner</span>
-                  </span>
-                </button>
-                <span
-                  title="Official MEPlanner Mitra Gold & Enterprise Seal"
-                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[9px] font-extrabold uppercase tracking-wider shrink-0"
-                >
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                    alt="MEP"
-                    className="w-3.5 h-3.5 object-contain"
-                  />
-                  <span>Webkit v3</span>
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 leading-tight truncate mt-0.5">
-                {lang === 'ID'
-                  ? 'My Event Planner • Undangan & Manajemen Acara'
-                  : 'My Event Planner • Event & Invitation Platform'}
-              </p>
-            </div>
+            <span
+              title="Official MEPlanner Mitra Gold & Enterprise Seal"
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[9px] font-extrabold uppercase tracking-wider shrink-0"
+            >
+              <MeplannerPartnerMedallion size={16} />
+              <span>Official Brand Kit</span>
+            </span>
           </div>
 
           {/* Right: Clean Text Links + Cek Undangan + ID/EN + Solid Charcoal Login Button */}
@@ -8233,7 +8211,85 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ))}
                         </div>
                       </div>
+                      {/* 6 Real Theme-Adaptive Buttons Showcase (sheet-theme-adaptive-buttons.jpg) */}
+                      <div className="mt-3 pt-3 border-t border-stone-200/80">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2.5">
+                          6 Tombol Adaptif Lintas-Tema (Nusantara, Botanical, Glamour, Editorial Tape, Academic &amp; Kids 3D)
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          <MeplannerAdaptiveButton
+                            themeStyle="nusantara"
+                            iconSvg={MEPLANNER_ICONS.btnBukaUndangan}
+                            label="Buka Undangan"
+                          />
+                          <MeplannerAdaptiveButton
+                            themeStyle="botanical"
+                            iconSvg={MEPLANNER_ICONS.btnGoogleMaps}
+                            label="Petunjuk Lokasi"
+                          />
+                          <MeplannerAdaptiveButton
+                            themeStyle="glamour"
+                            iconSvg={MEPLANNER_ICONS.btnKirimHadiah}
+                            label="Kirim Tanda Kasih"
+                          />
+                          <MeplannerAdaptiveButton
+                            themeStyle="editorial"
+                            iconSvg={MEPLANNER_ICONS.btnSaveCalendar}
+                            label="SAVE THE DATE"
+                          />
+                          <MeplannerAdaptiveButton
+                            themeStyle="academic"
+                            iconSvg={MEPLANNER_ICONS.badgeGraduationToga}
+                            label="Konfirmasi Hadir"
+                          />
+                          <MeplannerAdaptiveButton
+                            themeStyle="kids"
+                            iconSvg={MEPLANNER_ICONS.badgeBirthdayCrown}
+                            label="Yuk Datang! 🎈"
+                          />
+                        </div>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Row 3: Real Interactive Mockup-8 Components (Digital Envelope Card, Mitra Gold License Certificate & Live Guest Reception Terminal) */}
+                  <div className="pt-3 border-t border-[#D4AF37]/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                        {lang === 'ID'
+                          ? '4. Komponen Komersial Interaktif (Kartu Amplop Digital, Sertifikat Lisensi Mitra Gold & Layar Penerima Tamu VIP):'
+                          : '4. Interactive Commercial Components (Digital Envelope Card, Mitra Gold Certificate & VIP Reception Terminal):'}
+                      </p>
+                      <span className="text-[10px] font-semibold text-stone-500">
+                        {lang === 'ID'
+                          ? 'Klik tombol Salin No. Rekening untuk mencoba interaksi langsung'
+                          : 'Click Copy Account Number to test live interaction'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                      <MeplannerDigitalEnvelopeCard
+                        bankName="BCA"
+                        accountNumber="8720 1948 2910"
+                        accountHolder={
+                          primarySettings.groomFullName
+                            ? `${primarySettings.groomFullName} & ${primarySettings.brideNickname || 'Aulia'}`
+                            : 'Rizky Pratama & Aulia'
+                        }
+                        qrisImageUrl={primarySettings.qrisImageUrl}
+                      />
+                      <MeplannerLicenseCertificateCard
+                        partnerName="PT BINTANG KREASI ORGANIZER"
+                        licenseKey="MEP-GOLD-2026-8891-X99"
+                        tierLabel="MITRA GOLD • 1.000 CLIENT QUOTA"
+                      />
+                    </div>
+                    <MeplannerGuestReceptionTerminal
+                      eventTitle="THE WEDDING OF RIZKY & AULIA"
+                      guestName="Dr. H. Hendra Wijaya, M.Si. & Keluarga"
+                      tableLabel="VVIP — MEJA SAFIR 01"
+                      paxLabel="2 ORANG (HADIR)"
+                      tokenHash="DvVsH3CprCb3URDzq8Tmz"
+                    />
                   </div>
                 </div>
               </div>
@@ -8458,55 +8514,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
+                  {/* Right 5 Cols: Real Interactive Guest Reception Terminal */}
                   <div className="lg:col-span-5">
-                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-[#D4AF37]/30 p-5 space-y-4">
-                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                          <span className="text-xs font-bold text-white">
-                            Guest Reception Live Screen
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-[#FAF3E3]">
-                          QR &amp; Key Ready
-                        </span>
-                      </div>
-
-                      {/* Official Guest Reception SVG Preview */}
-                      <div className="rounded-xl overflow-hidden bg-stone-950/60 border border-[#D4AF37]/35 p-2 flex items-center justify-center">
-                        <img
-                          src={
-                            MEPLANNER_THEME_ASSETS.commercialGuestReceptionScreen
-                          }
-                          alt="Guest Reception Check-In Screen"
-                          className="w-full max-h-40 object-contain rounded-lg"
-                        />
-                      </div>
-
-                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
-                        <div className="w-12 h-12 rounded-xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
-                          <img
-                            src={MEPLANNER_ICONS.floatQrCheckin}
-                            alt="QR Check-In"
-                            className="w-8 h-8 object-contain"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B6914]">
-                            {lang === 'ID'
-                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
-                              : 'WELCOME HONORED GUEST'}
-                          </p>
-                          <p className="text-sm font-extrabold text-stone-900 truncate">
-                            Bpk/Ibu Tamu VIP &amp; Keluarga
-                          </p>
-                          <p className="text-[11px] text-stone-600">
-                            VIP Table 01 &bull; 2 Pax Terverifikasi
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <MeplannerGuestReceptionTerminal
+                      eventTitle="THE WEDDING OF RIZKY & AULIA"
+                      guestName="Dr. H. Hendra Wijaya, M.Si. & Keluarga"
+                      tableLabel="VVIP — MEJA SAFIR 01"
+                      paxLabel="2 ORANG (HADIR)"
+                      tokenHash="DvVsH3CprCb3URDzq8Tmz"
+                    />
                   </div>
                 </div>
               </div>
@@ -9401,23 +9417,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       <footer className="bg-white border-t border-stone-200/80 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="flex items-center justify-center shrink-0">
-              <img
-                src={
-                  (primarySettings as any).brandLogoUrl ||
-                  MEPLANNER_BRAND_LOGOS.iconBadge
-                }
-                alt="MEPlanner Icon Badge"
-                className="w-9 h-9 object-contain"
-              />
-            </div>
+            <MeplannerOfficialLogo
+              variant="light"
+              size="sm"
+              showSubtitle={false}
+            />
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <img
-                  src={MEPLANNER_BRAND_LOGOS.fullLight}
-                  alt="MEPlanner"
-                  className="h-5 w-auto object-contain"
-                />
                 <span className="text-xs sm:text-sm font-bold text-stone-900">
                   by{' '}
                   <a
@@ -9430,12 +9436,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </a>{' '}
                   &copy; 2026
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                    alt="MEP"
-                    className="w-3 h-3 object-contain"
-                  />
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
+                  <MeplannerPartnerMedallion size={14} />
                   <span>Mitra Gold Certified</span>
                 </span>
               </div>

@@ -62,6 +62,13 @@ import {
   ListMusic,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import {
+  MeplannerOfficialLogo,
+  MeplannerPartnerMedallion,
+  MeplannerDigitalEnvelopeCard,
+  MeplannerLicenseCertificateCard,
+  MeplannerGuestReceptionTerminal,
+} from '@/components/MeplannerWebkitPrimitives';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 import {
@@ -5195,21 +5202,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <header className={`fixed top-0 inset-x-0 z-40 ${activeManagerTheme.headerGrad} backdrop-blur-xl text-stone-900 border-b shadow-xs transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
-            {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
+            {/* Brand Title with Official Dark Obsidian Squircle + 3D Champagne Gold Ribbon M */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => onOpenLandingPage?.()}
                 title="Klik untuk membuka Halaman Komersial / Katalog MEPlanner"
-                className="flex items-center gap-1.5 justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                className="flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
               >
-                <img
-                  src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                  alt="MEPlanner Icon Badge"
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-2xs"
-                />
                 <WeddingRingsIcon
-                  className="w-6 h-6 sm:w-7 sm:h-7 hidden md:block"
+                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0"
                   logoUrl={
                     (settingsForm as any).brandLogoUrl ||
                     (state.settings as any).brandLogoUrl
@@ -5234,12 +5236,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         : state.settings.siteTitle}
                     </span>
                   </button>
-                  <img
-                    src={webkitBundle.categoryBadgeSvg}
-                    alt="Active Event Category Badge"
-                    className="w-4 h-4 sm:w-5 sm:h-5 object-contain shrink-0"
-                    title={`Webkit Tema Aktif: ${webkitBundle.clusterLabelId}`}
-                  />
                 </div>
                 <p className={`text-[10px] sm:text-[11px] ${activeManagerTheme.accentPillText} font-medium truncate leading-tight mt-0.5`}>
                   <span className="font-bold">
@@ -5359,6 +5355,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Tracker',
                 title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
                 icon: LayoutDashboard,
+                iconSvg: MEPLANNER_ICONS.navCoverHome,
                 badge: `${metrics.readinessPercent}%`,
               },
               {
@@ -5366,6 +5363,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Checklist',
                 title: 'Daftar Tugas & Persiapan Acara per Timeline',
                 icon: CheckSquare,
+                iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
                 badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
               },
               ...(!isPanitia
@@ -5375,6 +5373,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       label: 'Moneter',
                       title: 'Manajemen Anggaran, Vendor & Pembayaran',
                       icon: Wallet,
+                      iconSvg: MEPLANNER_ICONS.badgeChipAtm,
                       badge: `${state.budgetItems.length} Item`,
                     },
                   ]
@@ -5384,6 +5383,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Tamu',
                 title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
                 icon: Users,
+                iconSvg: MEPLANNER_ICONS.navUcapanWishes,
                 badge: `${metrics.totalGuests} (${metrics.totalPaxQuota} Pax)`,
               },
               {
@@ -5392,6 +5392,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Pengaturan',
                 title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Akun',
                 icon: Settings,
+                iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
                 isActive:
                   activeTab === 'settings' && settingsMenuTab !== 'database',
                 onSelect: () => {
@@ -5408,6 +5409,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 title:
                   'Status Sinkronisasi Supabase Cloud, Backup/Restore JSON, Spreadsheet & Log Audit',
                 icon: FileSpreadsheet,
+                iconSvg: MEPLANNER_ICONS.btnCopyRekening,
                 statusDot:
                   errorAuditCount > 0
                     ? 'error'
@@ -5436,12 +5438,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       label: 'Superadmin',
                       title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                       icon: Shield,
+                      iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                       badge: `${effectiveClientGroups.length} Klien`,
                     },
                   ]
                 : []),
             ].map((tab) => {
               const Icon = tab.icon;
+              const iconSvg = (tab as { iconSvg?: string }).iconSvg;
               const active =
                 typeof (tab as { isActive?: boolean }).isActive === 'boolean'
                   ? (tab as { isActive?: boolean }).isActive!
@@ -5469,7 +5473,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       : `text-stone-600 ${activeManagerTheme.inactiveTabHover}`
                   }`}
                 >
-                  {statusDot ? (
+                  {iconSvg ? (
+                    <img
+                      src={iconSvg}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-4 h-4 object-contain shrink-0"
+                    />
+                  ) : (
+                    <Icon className="w-4 h-4 shrink-0" />
+                  )}
+                  {statusDot && (
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
                         statusDot === 'error'
@@ -5481,8 +5495,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           : 'bg-emerald-500 animate-pulse'
                       }`}
                     />
-                  ) : (
-                    <Icon className="w-4 h-4 shrink-0" />
                   )}
                   <span className="truncate">{tab.label}</span>
                   {tab.badge && (
@@ -5979,20 +5991,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Countdown Hari
                   </span>
-                  <div className="flex items-center gap-1">
-                    <img
-                      src={MEPLANNER_ICONS.navAcaraCalendar}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-5 h-5 object-contain"
-                    />
-                    <img
-                      src={MEPLANNER_ICONS.btnSaveCalendar}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-4 h-4 object-contain opacity-80"
-                    />
-                  </div>
+                  <img
+                    src={MEPLANNER_ICONS.navAcaraCalendar}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-5 h-5 object-contain"
+                  />
                 </div>
                 {activeCountdownEvents.length === 0 ? (
                   <div className="my-3 p-3 rounded-2xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center">
@@ -6066,20 +6070,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                       Moneter
                     </span>
-                    <div className="flex items-center gap-1">
-                      <img
-                        src={MEPLANNER_ICONS.badgeChipAtm}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-5 h-4 object-contain"
-                      />
-                      <img
-                        src={MEPLANNER_ICONS.btnKirimHadiah}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-4 h-4 object-contain"
-                      />
-                    </div>
+                    <img
+                      src={MEPLANNER_ICONS.badgeChipAtm}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-5 h-5 object-contain"
+                    />
                   </div>
                   <div className="my-3">
                     <p className="text-xl sm:text-2xl font-extrabold text-stone-900">
@@ -6111,20 +6107,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Tamu &amp; RSVP
                   </span>
-                  <div className="flex items-center gap-1">
-                    <img
-                      src={MEPLANNER_ICONS.floatQrCheckin}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-5 h-5 object-contain"
-                    />
-                    <img
-                      src={MEPLANNER_ICONS.btnRsvpTicket}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-4 h-4 object-contain"
-                    />
-                  </div>
+                  <img
+                    src={MEPLANNER_ICONS.floatQrCheckin}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-5 h-5 object-contain"
+                  />
                 </div>
                 <div className="my-3">
                   <div className="flex items-baseline gap-2">
@@ -6388,12 +6376,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     className="w-5 h-5 object-contain shrink-0"
                   />
                   <span>Checklist &amp; Timeline ({filteredTasks.length})</span>
-                  <img
-                    src={MEPLANNER_ICONS.btnSaveCalendar}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-4 h-4 object-contain shrink-0 hidden sm:inline-block"
-                  />
                   <InfoTooltip text="Klik kotak pada baris tugas untuk mengubah status (Belum -> Proses -> Selesai), tombol + untuk menambah tugas baru, atau ikon pensil untuk mengedit." />
                 </h2>
                 <div className="flex items-center gap-1 shrink-0">
@@ -6629,12 +6611,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     className="w-6 h-4 object-contain shrink-0"
                   />
                   <span>Pos Moneter ({filteredBudgetItems.length})</span>
-                  <img
-                    src={MEPLANNER_ICONS.btnKirimHadiah}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-4 h-4 object-contain shrink-0 hidden sm:inline-block"
-                  />
                   <InfoTooltip text="Klik + untuk menambah pos pengeluaran/vendor baru, atau ikon pensil untuk merevisi biaya dan status pembayaran." />
                 </h2>
                 <div className="flex items-center gap-1 shrink-0">
@@ -6931,12 +6907,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       className="w-4 h-4 object-contain shrink-0"
                     />
                     <span>🖥️ Layar Penerima Tamu (Hari-H)</span>
-                    <img
-                      src={MEPLANNER_ICONS.btnRsvpTicket}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-3.5 h-3.5 object-contain shrink-0 hidden sm:inline-block"
-                    />
                   </button>
                 </div>
 
@@ -8032,31 +8002,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 className="pointer-events-none select-none absolute -bottom-1 -right-1 w-14 h-14 object-contain opacity-25 rotate-180"
               />
               <div className="relative z-10 flex items-center gap-3 min-w-0">
-                <img
-                  src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                  alt="MEPlanner"
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl object-contain shrink-0 shadow-2xs"
+                <WeddingRingsIcon
+                  className="w-10 h-10 sm:w-11 sm:h-11 shrink-0"
+                  logoUrl={
+                    (settingsForm as any).brandLogoUrl ||
+                    (state.settings as any).brandLogoUrl
+                  }
                 />
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] hidden sm:flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs overflow-hidden">
-                  <WeddingRingsIcon
-                    className="w-5 h-5 sm:w-6 sm:h-6"
-                    logoUrl={
-                      (settingsForm as any).brandLogoUrl ||
-                      (state.settings as any).brandLogoUrl
-                    }
-                  />
-                </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
                       Pengaturan Undangan &amp; Acara
                     </h2>
-                    <img
-                      src={webkitBundle.categoryBadgeSvg}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-4 h-4 sm:w-5 sm:h-5 object-contain shrink-0"
-                    />
                   </div>
                   <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
                     Workspace: <strong className="text-[#8B6914]">{state.settings.groomNickname} &amp; {state.settings.brideNickname}</strong> &bull; Tema:{' '}
@@ -8110,6 +8067,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Konten Undangan',
                     title: 'Atur seksi undangan, kategori acara (MEPlanner — My Event Planner), profil, kisah kasih, galeri & amplop digital',
                     icon: Eye,
+                    iconSvg: MEPLANNER_ICONS.btnBukaUndangan,
                     show: true,
                   },
                   {
@@ -8117,6 +8075,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Tema & Latar',
                     title: 'Atur foto & video background interaktif (maks. 25 MB), katalog 12 preset tema, efek blur, serta musik undangan',
                     icon: Sparkles,
+                    iconSvg: MEPLANNER_ICONS.navCoverHome,
                     show: true,
                   },
                   {
@@ -8124,6 +8083,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Jadwal Acara',
                     title: 'Kelola daftar rangkaian acara, lokasi Google Maps & waktu hitung mundur (Countdown)',
                     icon: Calendar,
+                    iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
                     show: true,
                   },
                   {
@@ -8131,6 +8091,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Akun & Akses',
                     title: 'Kelola akun admin, panitia, kata sandi & hak akses',
                     icon: Lock,
+                    iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
                     show: !isPanitia,
                   },
                   {
@@ -8138,26 +8099,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Database',
                     title: 'Sinkronisasi Supabase Cloud, Google Sheets, Backup/Restore JSON & Kapasitas Storage',
                     icon: FileSpreadsheet,
+                    iconSvg: MEPLANNER_ICONS.btnCopyRekening,
                     show: true,
                   },
                   {
                     id: 'paket' as const,
-                    label: '💎 Upgrade Paket',
+                    label: 'Upgrade Paket',
                     title: 'Upgrade Paket Resmi MEPlanner (Gratis, Premium, Business, Enterprise, Mitra Silver & Gold)',
                     icon: Award,
+                    iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                     show: true,
                   },
                   {
                     id: 'bantuan' as const,
-                    label: '🎧 CS & AI Assistant',
+                    label: 'CS & AI Assistant',
                     title: 'Hubungi Kami, MEPlanner Assistant (Online) & Layanan Customer Service Resmi',
                     icon: MessageSquareHeart,
+                    iconSvg: MEPLANNER_ICONS.navUcapanWishes,
                     show: true,
                   },
                 ]
                   .filter((m) => m.show)
                   .map((menu) => {
-                    const IconComp = menu.icon;
                     const isActive = settingsMenuTab === menu.id;
                     return (
                       <button
@@ -8172,10 +8135,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
-                          <IconComp
-                            className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
-                              isActive ? 'text-[#B68D40]' : 'text-stone-400'
-                            }`}
+                          <img
+                            src={menu.iconSvg}
+                            alt=""
+                            aria-hidden="true"
+                            className="w-4 h-4 lg:w-5 lg:h-5 object-contain shrink-0"
                           />
                           <span className="text-[11px] sm:text-xs lg:text-sm whitespace-nowrap truncate">{menu.label}</span>
                         </div>
@@ -8303,12 +8267,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               className="w-4 h-4 object-contain shrink-0"
                             />
                             <span>Buka Layar Penerima Tamu (Hari-H)</span>
-                            <img
-                              src={MEPLANNER_ICONS.btnRsvpTicket}
-                              alt=""
-                              aria-hidden="true"
-                              className="w-3.5 h-3.5 object-contain shrink-0"
-                            />
                           </button>
                         </div>
                       </div>
@@ -12117,6 +12075,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 9. EDITOR AMPLOP DIGITAL & REKENING */}
                                       {sec.key === 'showGiftSection' && (
                                         <div className="space-y-3">
+                                          {/* Real Interactive Preview of Brushed Champagne Gold + Obsidian Digital Envelope Card */}
+                                          <MeplannerDigitalEnvelopeCard
+                                            bankName={
+                                              state.settings.bankAccounts?.[0]?.bankName ||
+                                              'BCA'
+                                            }
+                                            accountNumber={
+                                              state.settings.bankAccounts?.[0]?.accountNumber ||
+                                              '8720 1948 2910'
+                                            }
+                                            accountHolder={
+                                              state.settings.bankAccounts?.[0]?.accountHolder ||
+                                              `${state.settings.groomFullName || 'Rizky Pratama'} & ${state.settings.brideNickname || 'Aulia'}`
+                                            }
+                                            qrisImageUrl={state.settings.qrisImageUrl}
+                                            onCopyAccount={(accNum: string) => {
+                                              navigator.clipboard?.writeText(accNum);
+                                              showToast(`✓ Nomor rekening ${accNum} berhasil disalin!`);
+                                            }}
+                                          />
                                           <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
@@ -15540,45 +15518,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Visual Preview of Commercial License Tier Seals & VIP Guest Reception Screen */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-extrabold text-[#8B6914]">
-                            🏅 Segel Lisensi Resmi MEPlanner (Tier Seals)
-                          </span>
-                          <img
-                            src={MEPLANNER_ICONS.badgeChipAtm}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-5 h-4 object-contain"
-                          />
-                        </div>
-                        <img
-                          src={MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals}
-                          alt="MEPlanner Commercial License Tier Seals"
-                          className="w-full h-28 sm:h-32 object-contain rounded-xl bg-white border border-stone-200/80 p-1.5"
-                        />
-                      </div>
-
-                      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-extrabold text-[#8B6914]">
-                            🖥️ Layar Penerima Tamu VIP (Guest Reception Desk)
-                          </span>
-                          <img
-                            src={MEPLANNER_ICONS.floatQrCheckin}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-4 h-4 object-contain"
-                          />
-                        </div>
-                        <img
-                          src={MEPLANNER_THEME_ASSETS.commercialGuestReceptionScreen}
-                          alt="MEPlanner Guest Reception Screen Preview"
-                          className="w-full h-28 sm:h-32 object-contain rounded-xl bg-white border border-stone-200/80 p-1.5"
-                        />
-                      </div>
+                    {/* Real Interactive Mitra Gold License Certificate & Digital Envelope Cards */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
+                      <MeplannerLicenseCertificateCard
+                        partnerName={
+                          adminUser.nama ||
+                          `${state.settings.groomNickname} & ${state.settings.brideNickname} Organizer`
+                        }
+                        licenseKey={`MEP-GOLD-2026-${(state.settings.activeClientId || '8891-X99').toUpperCase().slice(0, 8)}`}
+                        tierLabel="MITRA GOLD • 1.000 CLIENT QUOTA"
+                      />
+                      <MeplannerDigitalEnvelopeCard
+                        bankName={
+                          state.settings.bankAccounts?.[0]?.bankName ||
+                          'BCA'
+                        }
+                        accountNumber={
+                          state.settings.bankAccounts?.[0]?.accountNumber ||
+                          '8720 1948 2910'
+                        }
+                        accountHolder={
+                          state.settings.bankAccounts?.[0]?.accountHolder ||
+                          `${state.settings.groomFullName || 'Rizky Pratama'} & ${state.settings.brideNickname || 'Aulia'}`
+                        }
+                        qrisImageUrl={state.settings.qrisImageUrl}
+                        onCopyAccount={(accNum: string) => {
+                          navigator.clipboard?.writeText(accNum);
+                          showToast(`✓ Nomor rekening ${accNum} berhasil disalin!`);
+                        }}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -24986,20 +24954,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* Top Bar */}
             <div className="relative z-10 flex items-start justify-between gap-3 border-b border-[#D4AF37]/30 pb-4">
               <div className="flex items-center gap-3 min-w-0">
-                <img
-                  src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                  alt="MEPlanner"
-                  className="w-11 h-11 rounded-2xl object-contain shrink-0 shadow-2xs"
+                <WeddingRingsIcon
+                  className="w-11 h-11 shrink-0"
+                  logoUrl={
+                    (settingsForm as any).brandLogoUrl ||
+                    (state.settings as any).brandLogoUrl
+                  }
                 />
-                <div className="w-11 h-11 rounded-2xl bg-white border border-[#D4AF37]/60 hidden sm:flex items-center justify-center shrink-0 shadow-2xs">
-                  <WeddingRingsIcon
-                    className="w-7 h-7"
-                    logoUrl={
-                      (settingsForm as any).brandLogoUrl ||
-                      (state.settings as any).brandLogoUrl
-                    }
-                  />
-                </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
@@ -25012,12 +24973,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <span>Layar Penerima Tamu Hari-H</span>
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] text-[#8B6914] font-bold">
-                      <img
-                        src={MEPLANNER_ICONS.btnRsvpTicket}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-3.5 h-3.5 object-contain"
-                      />
                       <span>MEPlanner Guest Reception</span>
                     </span>
                   </div>
@@ -25039,24 +24994,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </button>
             </div>
 
-            {/* Visual Preview Banner of Commercial Guest Reception Screen */}
-            {!checkedInGuest && (
-              <div className="relative z-10 p-3 rounded-2xl bg-white/90 border border-[#D4AF37]/40 flex flex-col sm:flex-row items-center gap-3">
-                <img
-                  src={MEPLANNER_THEME_ASSETS.commercialGuestReceptionScreen}
-                  alt="Preview Layar Sapaan Penerima Tamu VIP"
-                  className="w-full sm:w-44 h-24 object-contain rounded-xl bg-[#FAF8F5] border border-stone-200/80 p-1 shrink-0"
-                />
-                <div className="space-y-1 text-center sm:text-left">
-                  <p className="text-xs font-extrabold text-stone-900">
-                    Mode Layar Sapaan Penerima Tamu (Meja Buku Tamu Hari-H)
-                  </p>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">
-                    Ketik nama tamu, kode undangan (<span className="font-mono font-bold">INV-0001</span>), atau scan QR/Key Hash unik tamu di bawah untuk menampilkan layar sambutan VIP secara langsung.
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Real Interactive Live Guest Reception & QR Check-In Terminal */}
+            <div className="relative z-10">
+              <MeplannerGuestReceptionTerminal
+                eventTitle={
+                  state.settings.showSecondProfile === false
+                    ? state.settings.groomFullName.toUpperCase()
+                    : `THE WEDDING OF ${state.settings.groomNickname.toUpperCase()} & ${state.settings.brideNickname.toUpperCase()}`
+                }
+                guestName={
+                  checkedInGuest?.guestName ||
+                  state.guests[0]?.guestName ||
+                  'Dr. H. Hendra Wijaya, M.Si. & Keluarga'
+                }
+                tableLabel={
+                  String(
+                    checkedInGuest?.priority || state.guests[0]?.priority || 'VIP'
+                  )
+                    .toUpperCase()
+                    .includes('VIP')
+                    ? 'VVIP — MEJA SAFIR 01'
+                    : `${checkedInGuest?.priority || state.guests[0]?.priority || 'VIP'} — MEJA UTAMA`
+                }
+                paxLabel={`${
+                  checkedInGuest?.confirmedPax ||
+                  checkedInGuest?.pax ||
+                  state.guests[0]?.confirmedPax ||
+                  state.guests[0]?.pax ||
+                  2
+                } ORANG (HADIR)`}
+                tokenHash={
+                  checkedInGuest
+                    ? computeGuestInvitationHash(
+                        state.settings.activeClientId || 'client-utama',
+                        checkedInGuest
+                      )
+                    : state.guests[0]
+                    ? computeGuestInvitationHash(
+                        state.settings.activeClientId || 'client-utama',
+                        state.guests[0]
+                      )
+                    : 'DvVsH3CprCb3URDzq8Tmz'
+                }
+              />
+            </div>
 
             {/* Grand VIP Welcome Screen Banner (When a Guest is Checked-In) */}
             {checkedInGuest && (
@@ -25252,12 +25233,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Tracker',
               title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
               icon: LayoutDashboard,
+              iconSvg: MEPLANNER_ICONS.navCoverHome,
             },
             {
               id: 'checklist' as AdminModuleTab,
               label: 'Checklist',
               title: 'Daftar Tugas & Persiapan Acara per Timeline',
               icon: CheckSquare,
+              iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
             },
             ...(!isPanitia
               ? [
@@ -25266,6 +25249,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Moneter',
                     title: 'Manajemen Anggaran, Vendor & Pembayaran',
                     icon: Wallet,
+                    iconSvg: MEPLANNER_ICONS.badgeChipAtm,
                   },
                 ]
               : []),
@@ -25274,12 +25258,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Tamu',
               title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
               icon: Users,
+              iconSvg: MEPLANNER_ICONS.navUcapanWishes,
             },
             {
               id: 'settings' as AdminModuleTab,
               label: 'Setelan',
               title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
               icon: Settings,
+              iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
             },
             ...(isSuperadmin
               ? [
@@ -25288,11 +25274,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Owner',
                     title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                     icon: Shield,
+                    iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                   },
                 ]
               : []),
           ].map((tab) => {
-            const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
@@ -25309,10 +25295,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     : `text-stone-500 ${activeManagerTheme.inactiveTabHover} font-semibold`
                 }`}
               >
-                <Icon
-                  className={`w-4 h-4 shrink-0 ${
-                    active ? 'text-white' : 'text-stone-400'
-                  }`}
+                <img
+                  src={tab.iconSvg}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-4 h-4 object-contain shrink-0"
                 />
                 <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight whitespace-nowrap truncate max-w-full px-0.5">
                   {tab.label}
