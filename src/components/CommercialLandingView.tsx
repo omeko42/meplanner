@@ -4097,7 +4097,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       }}
                       className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all border ${
                         isSelected
-                          ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] shadow-2xs'
+                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                           : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-[#D4AF37]/30'
                       }`}
                     >
@@ -4307,7 +4307,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ].map((b) => (
                             <div
                               key={b.l}
-                              className="py-1 rounded-lg bg-stone-900 text-[#E6C76B] text-center font-mono text-[10px] font-extrabold"
+                              className="py-1 rounded-lg bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-center font-mono text-[10px] font-extrabold"
                             >
                               {b.v}
                               {b.l}
@@ -4373,7 +4373,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? 'Log Aktivitas & Audit Kesiapan Live'
                           : 'Live Readiness & Activity Audit Log'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                      <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[9px] font-extrabold">
                         REAL-TIME
                       </span>
                     </div>
@@ -4467,7 +4467,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
                         simChecklistPhase === ph.id
-                          ? 'bg-stone-900 text-[#E6C76B] border border-[#D4AF37]'
+                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border border-[#B68D40]'
                           : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border border-stone-200'
                       }`}
                     >
@@ -4518,7 +4518,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </button>
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[9px] font-extrabold">
                               {task.phase}
                             </span>
                             <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[9px] font-extrabold">
@@ -4630,7 +4630,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       ? 'Rincian Kontrak Vendor & Status Pelunasan (5 Vendor Utama)'
                       : 'Vendor Contracts & Payment Settlement Breakdown (5 Core Vendors)'}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-[#E6C76B] font-mono text-[10px] font-extrabold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-white border border-[#D4AF37]/50 text-[#8B6914] font-mono text-[10px] font-extrabold">
                     AUDIT MONETER TRANSPARAN
                   </span>
                 </div>
@@ -4692,7 +4692,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3.5 rounded-2xl border border-[#D4AF37]/40">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-xl bg-stone-900 text-[#E6C76B] text-xs font-extrabold">
+                  <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-xs font-extrabold">
                     Paket {simPackageTier}: {tierQuotaLabel}
                   </span>
                   <span className="px-3 py-1 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-xs font-extrabold">
@@ -4787,35 +4787,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* Right 5 Cols: Live Auto-Generated WhatsApp Message Preview */}
-                <div className="lg:col-span-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 text-emerald-50 border border-[#D4AF37]/50 space-y-3">
+                <div className="lg:col-span-5 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-[#F4FBF7] to-white text-stone-900 border border-emerald-300 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E6C76B]">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
                       {lang === 'ID'
                         ? 'Pratinjau Pesan WhatsApp Otomatis'
                         : 'Auto-Generated WhatsApp Preview'}
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-300 text-emerald-800 font-mono text-[9px] font-extrabold">
                       {selectedWaGuest.pax} Pax • Link Personal
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 text-[11px] leading-relaxed space-y-2 font-sans text-stone-200">
+                  <div className="p-3.5 rounded-xl bg-white border border-emerald-200 text-[11px] leading-relaxed space-y-2 font-sans text-stone-800 shadow-2xs">
                     <p>
                       Kepada Yth.{' '}
-                      <strong className="text-[#E6C76B]">
+                      <strong className="text-emerald-800">
                         {selectedWaGuest.name}
                       </strong>
                     </p>
                     <p>
                       Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu
                       untuk menghadiri acara{' '}
-                      <strong className="text-white">
+                      <strong className="text-stone-900">
                         {activePreset.titleFull}
                       </strong>{' '}
                       pada <strong>{activePreset.eventDate}</strong> di{' '}
                       <strong>{activePreset.eventVenue}</strong>.
                     </p>
-                    <p className="font-mono text-[10px] text-[#E6C76B] break-all bg-white/5 p-2 rounded-lg border border-[#D4AF37]/30">
+                    <p className="font-mono text-[10px] text-[#8B6914] break-all bg-[#FAF3E3]/70 p-2 rounded-lg border border-[#D4AF37]/40">
                       🔗 Link Undangan Personal: {waPreviewLink}
                     </p>
                   </div>
@@ -4826,7 +4826,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       e.stopPropagation();
                       handleCopySimWaLink('preview-wa', waPreviewLink);
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs"
                   >
                     {copiedSimWaLinkKey === 'preview-wa' ? (
                       <>
@@ -4947,7 +4947,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           setShowcaseViewMode('invitation_sim');
                           setSimIsOpened(true);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 text-[11px] font-extrabold inline-flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] text-[11px] font-extrabold inline-flex items-center gap-1.5 shadow-2xs"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Lihat Hasil di Undangan</span>
@@ -5131,7 +5131,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
                           1. SAMPUL DEPAN (COVER)
                         </span>
                         <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300">
@@ -5140,7 +5140,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             alt="Cover Slot"
                             className="w-full h-full object-cover"
                           />
-                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-white/90 text-stone-900 border border-stone-200 text-[9px] font-bold shadow-2xs">
                             {isStarterTier
                               ? '1 Foto HD'
                               : '3 Foto HD • Slideshow'}
@@ -5152,7 +5152,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
                           2. BANNER HERO ATAS
                         </span>
                         <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300">
@@ -5161,7 +5161,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             alt="Hero Slot"
                             className="w-full h-full object-cover"
                           />
-                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/75 text-white text-[9px] font-bold">
+                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-white/90 text-stone-900 border border-stone-200 text-[9px] font-bold shadow-2xs">
                             Feathered Alpha-Mask
                           </span>
                         </div>
@@ -5171,16 +5171,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-2">
-                        <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#E6C76B] text-[9px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
                           3. WALLPAPER &amp; VIDEO 25 MB
                         </span>
-                        <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300 bg-stone-900">
+                        <div className="h-24 rounded-xl overflow-hidden relative border border-stone-300 bg-[#FAF3E3]">
                           <img
                             src={activePreset.galleryPhotos[2].url}
                             alt="Wallpaper Slot"
-                            className="w-full h-full object-cover opacity-70"
+                            className="w-full h-full object-cover opacity-85"
                           />
-                          <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold bg-black/30">
+                          <span className="absolute inset-0 flex items-center justify-center text-stone-900 text-[10px] font-extrabold bg-white/65 backdrop-blur-2xs">
                             {isStarterTier
                               ? '🔒 Video 25MB (EXCLUSIVE+)'
                               : '🎬 MP4 18.4 MB Aktif'}
@@ -5212,7 +5212,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }}
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
                                 simStudioTransition === tr.id
-                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
                                   : 'bg-white text-stone-700 border-stone-300'
                               }`}
                             >
@@ -5247,7 +5247,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }}
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all ${
                                 simVideoFitMode === vf.id
-                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
                                   : 'bg-white text-stone-700 border-stone-300'
                               }`}
                             >
@@ -5273,7 +5273,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           key={ses.badge}
                           className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-1.5"
                         >
-                          <span className="px-2 py-0.5 rounded bg-stone-900 text-[#E6C76B] font-mono text-[9px] font-extrabold">
+                          <span className="px-2 py-0.5 rounded bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[9px] font-extrabold">
                             {ses.badge}
                           </span>
                           <p className="text-sm font-extrabold text-stone-900">
@@ -5298,7 +5298,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <h5 className="font-serif text-base font-extrabold text-stone-900">
                         Manajemen Akun Login Keluarga &amp; Tim Panitia EO/WO
                       </h5>
-                      <span className="px-2.5 py-1 rounded-full bg-stone-900 text-[#E6C76B] text-[10px] font-extrabold">
+                      <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-[10px] font-extrabold">
                         Paket {simPackageTier}: {tierLoginLabel}
                       </span>
                     </div>
@@ -6080,7 +6080,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 <div
                                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                                     isActive
-                                      ? 'bg-stone-900 text-[#D4AF37]'
+                                      ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
                                       : 'bg-white border border-[#D4AF37]/35 text-[#8B6914]'
                                   }`}
                                 >
@@ -6161,9 +6161,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             ? 'Batas waktu kunci harga promo selama 24 jam'
                             : '24-hour promotional price lock countdown timer'
                         }
-                        className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900 text-[#E6C76B] text-xs font-mono font-extrabold"
+                        className="max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-mono font-extrabold shadow-2xs"
                       >
-                        <Clock className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                         <span className="truncate">
                           {lang === 'ID'
                             ? `Kunci Harga: ${formatCountdown(countdownSeconds)}`
@@ -6275,11 +6275,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               selectedChannel.accountOrWalletAddress
                             )
                           }
-                          className="w-full max-w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 transition-all"
+                          className="w-full max-w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-[11px] inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all"
                         >
                           {copiedPaymentKey === 'target-wallet' ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <Check className="w-3.5 h-3.5 text-white shrink-0" />
                               <span className="truncate">
                                 {lang === 'ID'
                                   ? 'Alamat / Rekening Tersalin!'
@@ -6335,9 +6335,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               ? 'Bayar otomatis 1-klik menggunakan MetaMask, TrustWallet, atau TronLink'
                               : 'One-click payment via MetaMask, TrustWallet, or TronLink'
                           }
-                          className="w-full max-w-full py-3 px-4 rounded-2xl bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all text-center leading-snug"
+                          className="w-full max-w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all text-center leading-snug"
                         >
-                          <Coins className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          <Coins className="w-4 h-4 text-white shrink-0" />
                           <span className="min-w-0 break-words">
                             {isConnectingWeb3
                               ? lang === 'ID'
@@ -6644,16 +6644,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* SCREEN 3: SERTIFIKAT KEAMANAN, BUKTI PEMBAYARAN & KONTAK PRIORITAS    */}
                 {/* ===================================================================== */}
                 {checkoutWizardStep === 3 && (
-                  <div className="rounded-3xl bg-emerald-950 text-emerald-50 border-2 border-[#D4AF37] p-5 sm:p-7 shadow-[0_20px_50px_rgba(6,78,59,0.28)] space-y-5 animate-fadeIn min-w-0 overflow-hidden">
-                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-emerald-800/80">
+                  <div className="rounded-3xl bg-gradient-to-br from-emerald-50/90 via-[#FFFDF9] to-amber-50/60 border-2 border-emerald-400 text-stone-900 p-5 sm:p-7 shadow-[0_18px_45px_rgba(16,185,129,0.12)] space-y-5 animate-fadeIn min-w-0 overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-emerald-200">
                       <div className="min-w-0">
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
                           {lang === 'ID'
                             ? 'Langkah 3 dari 3 • Pembayaran Tercatat & Sertifikat Keamanan'
                             : 'Step 3 of 3 • Payment Recorded & Security Certificate'}
                         </span>
-                        <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-white mt-0.5 flex items-center gap-2">
-                          <FileCheck2 className="w-6 h-6 text-[#D4AF37] shrink-0" />
+                        <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-stone-900 mt-0.5 flex items-center gap-2">
+                          <FileCheck2 className="w-6 h-6 text-emerald-600 shrink-0" />
                           <span>
                             {lang === 'ID'
                               ? 'Sertifikat Konfirmasi Pembayaran Idempoten'
@@ -6666,8 +6666,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                           activeTransaction?.onChainVerified ||
                           activeTransaction?.status === 'PAID_VERIFIED'
-                            ? 'bg-emerald-400 text-stone-950'
-                            : 'bg-[#D4AF37] text-stone-950'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]'
                         }`}
                       >
                         {activeTransaction?.onChainVerified
@@ -6683,31 +6683,31 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Digital Certificate Details */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-black/30 p-4 rounded-2xl border border-emerald-800/70 font-mono min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white p-4 rounded-2xl border border-emerald-200 text-stone-800 font-mono min-w-0 shadow-2xs">
                       <div className="min-w-0">
-                        <span className="text-emerald-300/80 text-[10px] block">
+                        <span className="text-emerald-700 text-[10px] font-bold block">
                           Order ID:
                         </span>
-                        <strong className="text-white break-all">
+                        <strong className="text-stone-900 break-all">
                           {activeTransaction?.orderId || currentOrderId}
                         </strong>
                       </div>
                       <div className="min-w-0">
-                        <span className="text-emerald-300/80 text-[10px] block">
+                        <span className="text-emerald-700 text-[10px] font-bold block">
                           Idempotency Key:
                         </span>
-                        <strong className="text-[#E6C76B] break-all">
+                        <strong className="text-[#8B6914] break-all">
                           {activeTransaction?.idempotencyKey ||
                             currentIdempotencyKey}
                         </strong>
                       </div>
                       <div className="min-w-0">
-                        <span className="text-emerald-300/80 text-[10px] block">
+                        <span className="text-emerald-700 text-[10px] font-bold block">
                           {lang === 'ID'
                             ? 'Paket & Nominal:'
                             : 'Plan & Amount:'}
                         </span>
-                        <strong className="text-white break-words">
+                        <strong className="text-stone-900 break-words">
                           {activeTransaction?.packageTier ||
                             selectedCheckoutTier}{' '}
                           •{' '}
@@ -6716,12 +6716,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </strong>
                       </div>
                       <div className="min-w-0">
-                        <span className="text-emerald-300/80 text-[10px] block">
+                        <span className="text-emerald-700 text-[10px] font-bold block">
                           {lang === 'ID'
                             ? 'Metode & Referensi:'
                             : 'Wallet & Reference:'}
                         </span>
-                        <strong className="text-white break-all">
+                        <strong className="text-stone-900 break-all">
                           {activeTransaction?.channelProviderName ||
                             selectedChannel?.providerName}{' '}
                           (
@@ -6746,7 +6746,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 ? 'Lihat bukti transaksi on-chain di Blockchain Explorer'
                                 : 'View on-chain transaction proof on Blockchain Explorer'
                             }
-                            className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-[#D4AF37] text-[#E6C76B] text-xs font-extrabold transition-all"
+                            className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37] text-[#8B6914] text-xs font-extrabold transition-all"
                           >
                             <Coins className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">
@@ -6758,7 +6758,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </a>
                         )}
                         {activeTransaction?.provisionedClientId && (
-                          <span className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-extrabold break-all">
+                          <span className="max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-extrabold break-all">
                             🚀 Workspace Klien Otomatis Siap (
                             {activeTransaction.provisionedClientId})
                           </span>
@@ -6767,16 +6767,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     )}
 
                     {/* Exact SLA Message & Priority Email Contact */}
-                    <div className="p-4 rounded-2xl bg-emerald-900/60 border border-[#D4AF37]/45 flex items-start gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-[#D4AF37] text-stone-950 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="p-4 rounded-2xl bg-white border border-[#D4AF37]/50 flex items-start gap-3 min-w-0 shadow-2xs">
+                      <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0 mt-0.5">
                         <Clock className="w-5 h-5" />
                       </div>
-                      <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed min-w-0">
+                      <div className="space-y-1.5 text-xs sm:text-sm text-stone-700 leading-relaxed min-w-0">
                         {lang === 'ID' ? (
                           <p>
                             Terima kasih! Pembayaran Anda telah tercatat. Tim
                             kami akan menghubungi Anda melalui email maksimal{' '}
-                            <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
+                            <strong className="text-[#8B6914] underline decoration-[#D4AF37]/60 underline-offset-2">
                               H+3 setelah pembayaran
                             </strong>{' '}
                             untuk pengiriman akses 4 Akun Default &amp;
@@ -6784,7 +6784,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             prioritas, silakan hubungi:{' '}
                             <a
                               href={mailtoPostPaymentUrl}
-                              className="font-extrabold text-[#E6C76B] underline hover:text-white break-all"
+                              className="font-extrabold text-emerald-700 underline hover:text-emerald-900 break-all"
                             >
                               {businessEmail}
                             </a>
@@ -6795,7 +6795,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             Thank you! Your payment confirmation has been
                             recorded. Our team will contact you via email within
                             a maximum of{' '}
-                            <strong className="text-[#E6C76B] underline decoration-[#D4AF37]/60 underline-offset-2">
+                            <strong className="text-[#8B6914] underline decoration-[#D4AF37]/60 underline-offset-2">
                               3 days (D+3) after payment
                             </strong>{' '}
                             with your 4 Core Accounts &amp; Client Workspace
@@ -6803,7 +6803,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             confirmation, please contact:{' '}
                             <a
                               href={mailtoPostPaymentUrl}
-                              className="font-extrabold text-[#E6C76B] underline hover:text-white break-all"
+                              className="font-extrabold text-emerald-700 underline hover:text-emerald-900 break-all"
                             >
                               {businessEmail}
                             </a>
@@ -6814,7 +6814,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
 
                     {/* Action Buttons on Step 3 */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-800/80 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-200 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <a
                           href={mailtoPostPaymentUrl}
@@ -6835,11 +6835,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               businessEmail
                             )
                           }
-                          className="max-w-full py-2.5 px-3.5 rounded-xl bg-emerald-900/90 hover:bg-emerald-800 text-emerald-100 border border-[#D4AF37]/40 font-bold text-xs inline-flex items-center gap-1.5 transition-all"
+                          className="max-w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-2xs"
                         >
                           {copiedPaymentKey === 'official-email' ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-[#E6C76B] shrink-0" />
+                              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                               <span>
                                 {lang === 'ID'
                                   ? 'Email Tersalin!'
@@ -6848,7 +6848,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-[#E6C76B] shrink-0" />
+                              <Copy className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
                               <span>
                                 {lang === 'ID'
                                   ? 'Salin Email Resmi'
@@ -6862,7 +6862,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setCheckoutWizardStep(2)}
-                        className="max-w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-100 text-xs font-bold transition-all"
+                        className="max-w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200 text-stone-700 text-xs font-bold transition-all shadow-2xs"
                       >
                         {lang === 'ID'
                           ? '← Lihat Detail Pembayaran'

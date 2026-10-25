@@ -195,14 +195,17 @@ function resolveThemeLayoutArchetype(
     return 'NUSANTARA_HERITAGE';
   }
 
-  if (themeKey === 'sage_botanical' || themeKey === 'blush_rose') {
+  if (
+    themeKey === 'sage_botanical' ||
+    themeKey === 'blush_rose' ||
+    themeKey === 'blubloom_azure'
+  ) {
     return 'BOTANICAL_AIRY';
   }
 
   if (
     settings.profileFrameStyle === 'EDITORIAL_RECT' ||
     themeKey === 'espresso_rustic' ||
-    themeKey === 'blubloom_azure' ||
     rawEventCategory === 'BIRTHDAY'
   ) {
     return 'POLAROID_MAGAZINE';
@@ -412,6 +415,10 @@ const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
     </div>
   );
 };
+
+const BotanicalCornerSprig: React.FC<FloralCornerOrnamentProps> = (props) => (
+  <FloralCornerOrnament {...props} />
+);
 
 const FLOATING_PETALS_DATA = [
   { id: 1, left: '6%', duration: '13s', delay: '0s', size: 14, isSparkle: false },
@@ -2211,6 +2218,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     coverBgUrl ||
     heroPrewedUrl ||
     settings.groomPhotoUrl;
+  const heroFeatureImageUrl =
+    heroSlidesList[0]?.imageUrl ||
+    heroPrewedUrl ||
+    coverSlidesList[0]?.imageUrl ||
+    coverBgUrl ||
+    settings.groomPhotoUrl;
+  const [giftCategoryFilter, setGiftCategoryFilter] = useState<
+    'ALL' | 'BANK' | 'QRIS' | 'GLOBAL_CRYPTO'
+  >('ALL');
 
   // ============================================================================
   // 0. SUPERADMIN MODERATION: MAINTENANCE / PAUSED VIEW MODE
@@ -2915,85 +2931,111 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       </header>
 
       {/* HERO PREWEDDING BANNER & LIVE COUNTDOWN — ARCHETYPE-ADAPTIVE */}
-      <section className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-10 sm:pb-14 px-3 sm:px-4">
+      <section
+        id="pembuka"
+        className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-10 sm:pb-14 px-3 sm:px-4"
+      >
         <div className="max-w-5xl mx-auto">
           <div
-            className={`inv-reveal inv-reveal-up relative overflow-hidden bg-[#FFFDF9] backdrop-blur-xl ${
+            className={`inv-reveal inv-reveal-up relative overflow-hidden backdrop-blur-xl ${
               layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'rounded-3xl sm:rounded-[2.5rem] border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
+                ? 'rounded-3xl sm:rounded-[2.5rem] bg-[#fdf8f0] border-2 border-[#C89D54] outline outline-1 outline-offset-4 outline-[#8b5a2b]/35 shadow-[0_25px_70px_rgba(139,90,43,0.18)]'
                 : layoutArchetype === 'MODERN_BENTO'
-                ? 'rounded-3xl p-4 sm:p-6 border border-stone-200/95 shadow-[0_20px_60px_rgba(40,75,122,0.12)]'
+                ? 'rounded-3xl bg-white border border-stone-200/95 shadow-[0_20px_60px_rgba(40,75,122,0.12)]'
                 : layoutArchetype === 'BOTANICAL_AIRY'
-                ? 'rounded-t-[4rem] sm:rounded-t-[6rem] rounded-b-[2.5rem] border-2 border-white shadow-[0_25px_70px_rgba(94,140,106,0.14)] pt-2'
+                ? 'rounded-t-[4rem] sm:rounded-t-[6rem] rounded-b-[2.5rem] bg-[#FFFDF9] border-2 border-white shadow-[0_25px_70px_rgba(94,140,106,0.14)] pt-2'
                 : layoutArchetype === 'POLAROID_MAGAZINE'
-                ? 'rounded-3xl border border-stone-200/90 shadow-[0_25px_70px_rgba(160,130,85,0.16)] pt-2'
-                : 'rounded-3xl sm:rounded-[2.5rem] border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)]'
+                ? 'rounded-3xl bg-[#FFFDF9] border border-stone-200/90 shadow-[0_25px_70px_rgba(160,130,85,0.16)]'
+                : 'rounded-3xl sm:rounded-[2.5rem] bg-[#FFFDF9] border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)]'
             }`}
           >
+            {layoutArchetype === 'POLAROID_MAGAZINE' && (
+              <div
+                aria-hidden="true"
+                className="h-1.5 w-full bg-gradient-to-r from-[#ff6b6b] via-[#ffb347] to-[#D4AF37]"
+              />
+            )}
+
+            {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+              <div className="relative z-20 px-5 sm:px-10 pt-7 sm:pt-9 pb-4 text-center bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_transparent)] border-b border-[#C89D54]/35">
+                <p className="text-sm sm:text-base font-serif text-[#8b5a2b] tracking-[0.22em] mb-1">
+                  ꧋ ꧁༺ ꦩꦠꦸꦂꦤꦸꦮꦸꦤ꧀ ༻꧂ ꧋
+                </p>
+                <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.28em] text-[#8b5a2b]/90 mb-2.5">
+                  {settings.heroBadgeText?.trim() || coverBadgeLabel} &bull; Matur Nuwun
+                </p>
+                <NusantaraCarvingOrnament position="top" />
+              </div>
+            )}
+
             <FloralCornerOrnament position="top-left" enabled={showFloral} />
             <FloralCornerOrnament position="top-right" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
             {/* Hero Media Presentation — Distinct per Layout Archetype */}
-            {(heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim())) && (
+            {(Boolean(heroFeatureImageUrl) ||
+              heroSlidesList.length > 0 ||
+              Boolean(settings.heroVideoUrl?.trim())) && (
               <>
                 {layoutArchetype === 'POLAROID_MAGAZINE' ? (
-                  /* ARCHETYPE 1: BINGKAI POLAROID / MAGAZINE MAT FRAME */
-                  <div className="p-3 sm:p-5 bg-white rounded-2xl shadow-xl border border-stone-200/90 mx-4 sm:mx-8 mt-6 relative z-20">
-                    <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[480px] rounded-xl overflow-hidden bg-[#FAF8F5]">
-                      {settings.heroVideoUrl?.trim() ? (
-                        <AdaptiveVideoLayer
-                          videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
-                          focusY={videoFocusY}
-                          desktopMode={videoDesktopMode}
-                        />
-                      ) : (
-                        <BackgroundSlideshowLayer
-                          slides={heroSlidesList}
-                          transitionStyle={galleryTransitionStyle}
-                          transitionDurationMs={galleryTransitionMs}
-                          slideIntervalSeconds={gallerySlideSeconds}
-                          fallbackAdjust={heroAdj}
-                          altLabel="Prewedding Polaroid"
-                        />
-                      )}
-                      {settings.showHeroBadge === true &&
-                        Boolean(settings.heroBadgeText?.trim()) && (
-                          <div className="absolute top-3.5 sm:top-4 left-3.5 sm:left-4 z-20 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/90 backdrop-blur-md border border-stone-200 text-[#8B6914] text-[10px] sm:text-xs font-extrabold tracking-widest uppercase shadow-xs">
-                            <EventCrestIcon
-                              eventType={eventType}
-                              className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
-                            />
-                            <span>{settings.heroBadgeText?.trim()}</span>
-                          </div>
+                  /* ARCHETYPE 1: POLAROID SNAPSHOT CARD (TIMELESS SNAPSHOT / SNAP PHOTO / PEPPY) */
+                  <div className="px-4 sm:px-8">
+                    <div className="max-w-md mx-auto mt-6 p-3 sm:p-4 pb-9 bg-white rounded-2xl shadow-[0_18px_45px_rgba(28,25,23,0.14)] border border-stone-200 rotate-[-0.6deg] relative z-20">
+                      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF8F5]">
+                        {settings.heroVideoUrl?.trim() ? (
+                          <AdaptiveVideoLayer
+                            videoUrl={settings.heroVideoUrl}
+                            posterUrl={heroFeatureImageUrl}
+                            focusY={videoFocusY}
+                            desktopMode={videoDesktopMode}
+                          />
+                        ) : (
+                          <BackgroundSlideshowLayer
+                            slides={heroSlidesList}
+                            transitionStyle={galleryTransitionStyle}
+                            transitionDurationMs={galleryTransitionMs}
+                            slideIntervalSeconds={gallerySlideSeconds}
+                            fallbackAdjust={heroAdj}
+                            altLabel="Prewedding Polaroid"
+                          />
                         )}
-                    </div>
-                    <div className="pt-3.5 sm:pt-4 pb-1 px-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-script text-2xl sm:text-3xl text-[#8B6914] -rotate-1 leading-none">
-                        {displayTitleShort}
-                      </p>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-dashed border-[#D4AF37]/75 bg-[#FAF3E3]/80 text-[#8B6914] text-[10px] sm:text-xs font-extrabold uppercase tracking-widest rotate-1">
-                        <Calendar className="w-3 h-3 text-[#B68D40]" />
-                        <span>
-                          {mainScheduleEvent?.dateLabel ||
-                            activeCountdownEvent?.dateLabel ||
-                            settings.event2DateLabel}
+                        {settings.showHeroBadge === true &&
+                          Boolean(settings.heroBadgeText?.trim()) && (
+                            <div className="absolute top-3.5 left-3.5 z-20 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/95 backdrop-blur-md border border-stone-200 text-[#8B6914] text-[10px] sm:text-xs font-extrabold tracking-widest uppercase shadow-xs">
+                              <EventCrestIcon
+                                eventType={eventType}
+                                className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
+                              />
+                              <span>{settings.heroBadgeText?.trim()}</span>
+                            </div>
+                          )}
+                      </div>
+                      <div className="pt-4 px-2 flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-script text-2xl sm:text-3xl text-[#8B6914] -rotate-1 leading-none">
+                          {displayTitleShort}
+                        </p>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-dashed border-[#D4AF37]/75 bg-[#FAF3E3]/85 text-[#8B6914] text-[10px] sm:text-xs font-extrabold uppercase tracking-widest rotate-1">
+                          <Calendar className="w-3 h-3 text-[#B68D40]" />
+                          <span>
+                            {mainScheduleEvent?.dateLabel ||
+                              activeCountdownEvent?.dateLabel ||
+                              settings.event2DateLabel}
+                          </span>
                         </span>
-                      </span>
+                      </div>
                     </div>
                   </div>
                 ) : layoutArchetype === 'BOTANICAL_AIRY' ? (
-                  /* ARCHETYPE 2: JENDELA KUBAH BOTANI MEWAH */
+                  /* ARCHETYPE 2: CENTERED BOTANICAL ARCH WINDOW (SEREIN / MILDNESS / BLUBLOOM / GARDEN PARTY) */
                   <div className="px-4 sm:px-8">
-                    <div className="relative rounded-t-[12rem] rounded-b-[2.5rem] border-4 border-white shadow-xl mx-auto max-w-2xl mt-6 overflow-hidden aspect-[4/3] bg-[#FAF8F5] z-20">
-                      <FloralCornerOrnament
+                    <div className="relative max-w-md mx-auto mt-6 aspect-[4/5] rounded-t-[12rem] rounded-b-3xl overflow-hidden border-4 border-white shadow-lg bg-[#FAF8F5] z-20">
+                      <BotanicalCornerSprig
                         position="bottom-left"
                         size="sm"
                         enabled={showFloral}
                       />
-                      <FloralCornerOrnament
+                      <BotanicalCornerSprig
                         position="bottom-right"
                         size="sm"
                         enabled={showFloral}
@@ -3001,7 +3043,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       {settings.heroVideoUrl?.trim() ? (
                         <AdaptiveVideoLayer
                           videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
+                          posterUrl={heroFeatureImageUrl}
                           focusY={videoFocusY}
                           desktopMode={videoDesktopMode}
                         />
@@ -3015,59 +3057,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           altLabel="Botanical Arch Banner"
                         />
                       )}
-                      <div className="absolute inset-x-0 bottom-0 h-20 z-10 bg-gradient-to-t from-white/75 to-transparent pointer-events-none" />
-                      {settings.showHeroBadge === true &&
-                        Boolean(settings.heroBadgeText?.trim()) && (
-                          <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xs whitespace-nowrap">
-                            <EventCrestIcon
-                              eventType={eventType}
-                              className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
-                            />
-                            <span>{settings.heroBadgeText?.trim()}</span>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                ) : layoutArchetype === 'NUSANTARA_HERITAGE' ? (
-                  /* ARCHETYPE 3: BINGKAI ORNAMEN GANDA NUSANTARA / KRATON */
-                  <div className="mx-4 sm:mx-8 mt-6 rounded-2xl overflow-hidden border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-xl aspect-[4/3] sm:aspect-[16/9] max-h-[500px] relative z-20 bg-[#FAF8F5]">
-                    {settings.heroVideoUrl?.trim() ? (
-                      <AdaptiveVideoLayer
-                        videoUrl={settings.heroVideoUrl}
-                        posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
-                        focusY={videoFocusY}
-                        desktopMode={videoDesktopMode}
-                      />
-                    ) : (
-                      <BackgroundSlideshowLayer
-                        slides={heroSlidesList}
-                        transitionStyle={galleryTransitionStyle}
-                        transitionDurationMs={galleryTransitionMs}
-                        slideIntervalSeconds={gallerySlideSeconds}
-                        fallbackAdjust={heroAdj}
-                        altLabel="Nusantara Heritage Banner"
-                      />
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 h-24 z-10 bg-gradient-to-t from-[#FFFDF9]/90 via-[#FFFDF9]/30 to-transparent pointer-events-none" />
-                    {settings.showHeroBadge === true &&
-                      Boolean(settings.heroBadgeText?.trim()) && (
-                        <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[#FFFDF9]/90 backdrop-blur-md border border-[#C5A059]/60 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xs whitespace-nowrap">
+                      <div className="absolute inset-x-0 bottom-0 h-24 z-10 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
+                      {settings.showHeroBadge !== false && (
+                        <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[#FAF3E3]/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xs whitespace-nowrap">
                           <EventCrestIcon
                             eventType={eventType}
                             className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
                           />
-                          <span>{settings.heroBadgeText?.trim()}</span>
+                          <span>{settings.heroBadgeText?.trim() || coverBadgeLabel}</span>
                         </div>
                       )}
+                    </div>
                   </div>
-                ) : layoutArchetype === 'MODERN_BENTO' ? (
-                  /* ARCHETYPE 4: MODERN BENTO GRID + 2-COLUMN BENTO STRIP */
-                  <div className="relative z-20">
-                    <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[480px] rounded-2xl overflow-hidden border border-stone-200/90 shadow-md bg-[#FAF8F5]">
+                ) : layoutArchetype === 'NUSANTARA_HERITAGE' ? (
+                  /* ARCHETYPE 3: BINGKAI PARCHMENT & ORNAMEN GANDA NUSANTARA / KRATON (WAYANG) */
+                  <div className="mx-4 sm:mx-8 mt-5 p-2 sm:p-3 rounded-2xl bg-[#f5e9d6] border-2 border-[#8b5a2b]/55 outline outline-1 outline-offset-4 outline-[#C89D54]/60 shadow-xl relative z-20">
+                    <div className="relative rounded-xl overflow-hidden aspect-[4/3] sm:aspect-[16/9] max-h-[480px] bg-[#fdf8f0]">
                       {settings.heroVideoUrl?.trim() ? (
                         <AdaptiveVideoLayer
                           videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
+                          posterUrl={heroFeatureImageUrl}
                           focusY={videoFocusY}
                           desktopMode={videoDesktopMode}
                         />
@@ -3078,23 +3087,81 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           transitionDurationMs={galleryTransitionMs}
                           slideIntervalSeconds={gallerySlideSeconds}
                           fallbackAdjust={heroAdj}
-                          altLabel="Modern Bento Banner"
+                          altLabel="Nusantara Heritage Banner"
                         />
                       )}
-                      {settings.showHeroBadge === true &&
-                        Boolean(settings.heroBadgeText?.trim()) && (
-                          <div className="absolute top-3.5 left-3.5 z-20 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-white/95 backdrop-blur-md border border-stone-200 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-xs">
+                      <div className="absolute inset-x-0 bottom-0 h-24 z-10 bg-gradient-to-t from-[#fdf8f0]/90 via-[#fdf8f0]/30 to-transparent pointer-events-none" />
+                    </div>
+                  </div>
+                ) : layoutArchetype === 'MODERN_BENTO' ? (
+                  /* ARCHETYPE 4: FULL-BLEED OVERLAY HERO (VISUAL JOURNEY) + 2-COLUMN BENTO STRIP */
+                  <div className="relative z-20">
+                    <div className="relative min-h-[460px] sm:min-h-[540px] flex flex-col justify-end p-6 sm:p-12 text-center overflow-hidden rounded-t-3xl bg-stone-900">
+                      <div className="absolute inset-0 w-full h-full">
+                        {settings.heroVideoUrl?.trim() ? (
+                          <AdaptiveVideoLayer
+                            videoUrl={settings.heroVideoUrl}
+                            posterUrl={heroFeatureImageUrl}
+                            focusY={videoFocusY}
+                            desktopMode={videoDesktopMode}
+                          />
+                        ) : heroSlidesList.length > 0 ? (
+                          <BackgroundSlideshowLayer
+                            slides={heroSlidesList}
+                            transitionStyle={galleryTransitionStyle}
+                            transitionDurationMs={galleryTransitionMs}
+                            slideIntervalSeconds={gallerySlideSeconds}
+                            fallbackAdjust={heroAdj}
+                            altLabel="Modern Bento Full-Bleed Hero"
+                          />
+                        ) : (
+                          <img
+                            src={heroFeatureImageUrl}
+                            alt={displayTitleFull}
+                            className="absolute inset-0 w-full h-full object-cover object-center"
+                          />
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-900/35 to-transparent pointer-events-none z-10" />
+
+                      <div className="relative z-20 max-w-3xl mx-auto flex flex-col items-center">
+                        {settings.showHeroBadge !== false && (
+                          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/35 text-white text-[10px] sm:text-xs font-bold tracking-[0.22em] uppercase shadow-xs mb-3.5">
                             <EventCrestIcon
                               eventType={eventType}
-                              className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
+                              className="w-3.5 h-3.5 text-[#F3D77D] shrink-0"
                             />
-                            <span>{settings.heroBadgeText?.trim()}</span>
+                            <span>{settings.heroBadgeText?.trim() || coverBadgeLabel}</span>
                           </div>
                         )}
+
+                        {hasSecondProfile ? (
+                          <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3.5 flex-wrap">
+                            <span>{settings.groomFullName}</span>
+                            <span className="font-script text-3xl sm:text-5xl text-[#F3D77D] font-normal px-1">
+                              &amp;
+                            </span>
+                            <span>{settings.brideFullName}</span>
+                          </h1>
+                        ) : (
+                          <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
+                            {displayTitleFull}
+                          </h1>
+                        )}
+
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-white/95 text-xs sm:text-sm font-semibold tracking-wider shadow-xs">
+                          <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
+                          <span>
+                            {mainScheduleEvent?.dateLabel ||
+                              activeCountdownEvent?.dateLabel ||
+                              settings.event2DateLabel}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Bento Strip 2 Columns Below Hero Photo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3.5 text-left">
+                    {/* Bento Strip 2 Columns Below Full-Bleed Hero Photo */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 sm:px-6 pt-4 text-left">
                       <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3.5 sm:p-4 flex items-start gap-3 shadow-2xs">
                         <div className="w-10 h-10 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shrink-0">
                           <Calendar className="w-5 h-5" />
@@ -3152,7 +3219,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       {settings.heroVideoUrl?.trim() ? (
                         <AdaptiveVideoLayer
                           videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroSlidesList[0]?.imageUrl || heroPrewedUrl}
+                          posterUrl={heroFeatureImageUrl}
                           focusY={videoFocusY}
                           desktopMode={videoDesktopMode}
                         />
@@ -3192,49 +3259,55 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   : 'pt-6 sm:pt-8'
               }`}
             >
-              {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
-                <NusantaraCarvingOrnament position="top" className="mb-4 sm:mb-6" />
-              ) : (
-                <div
-                  aria-hidden="true"
-                  className="flex items-center justify-center gap-3 mb-4 sm:mb-6"
-                >
-                  <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                  <EventCrestIcon
-                    eventType={eventType}
-                    className="w-4 h-4 text-[#B68D40]"
-                  />
-                  <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
-                </div>
-              )}
+              {layoutArchetype !== 'MODERN_BENTO' && (
+                <>
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
+                    <NusantaraCarvingOrnament position="top" className="mb-4 sm:mb-6" />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="flex items-center justify-center gap-3 mb-4 sm:mb-6"
+                    >
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
+                      <EventCrestIcon
+                        eventType={eventType}
+                        className="w-4 h-4 text-[#B68D40]"
+                      />
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                    </div>
+                  )}
 
-              {hasSecondProfile ? (
-                <h1 className="max-w-3xl mx-auto mb-6 sm:mb-8 flex flex-col items-center justify-center">
-                  <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
-                    {settings.groomFullName}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="flex items-center justify-center gap-3 my-2 sm:my-3.5"
-                  >
-                    <span className="w-8 sm:w-14 h-px bg-gradient-to-r from-transparent to-[#D4AF37]/70" />
-                    <span className="font-script text-2xl sm:text-4xl text-[#B68D40] leading-none px-1">
-                      &amp;
-                    </span>
-                    <span className="w-8 sm:w-14 h-px bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
-                  </span>
-                  <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
-                    {settings.brideFullName}
-                  </span>
-                </h1>
-              ) : (
-                <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-6 sm:mb-8 break-words">
-                  {displayTitleFull}
-                </h1>
-              )}
+                  {hasSecondProfile ? (
+                    <h1 className="max-w-3xl mx-auto mb-6 sm:mb-8 flex flex-col items-center justify-center">
+                      <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
+                        {settings.groomFullName}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="flex items-center justify-center gap-3 my-2 sm:my-3.5"
+                      >
+                        <span className="w-8 sm:w-14 h-px bg-gradient-to-r from-transparent to-[#D4AF37]/70" />
+                        <span className="font-script text-2xl sm:text-4xl text-[#B68D40] leading-none px-1">
+                          {layoutArchetype === 'NUSANTARA_HERITAGE'
+                            ? '꧁༺ & ༻꧂'
+                            : '&'}
+                        </span>
+                        <span className="w-8 sm:w-14 h-px bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
+                      </span>
+                      <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
+                        {settings.brideFullName}
+                      </span>
+                    </h1>
+                  ) : (
+                    <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-6 sm:mb-8 break-words">
+                      {displayTitleFull}
+                    </h1>
+                  )}
 
-              {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-                <NusantaraCarvingOrnament position="bottom" className="mb-5 sm:mb-7" />
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                    <NusantaraCarvingOrnament position="bottom" className="mb-5 sm:mb-7" />
+                  )}
+                </>
               )}
 
               <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8 sm:mb-10">
@@ -3382,7 +3455,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
       </section>
 
-      {/* SECTION: PROFIL MEMPELAI / HOST (1-COL SPOTLIGHT OR 2-COL SYMMETRICAL CARDS) */}
+      {/* SECTION: PROFIL MEMPELAI / HOST (ARCHETYPE-DISTINCT PROFILE CARDS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
@@ -3400,121 +3473,88 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           >
             {/* Primary Host / Groom Card */}
             <div
-              className={`inv-reveal inv-reveal-left relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)] ${
+              className={`inv-reveal inv-reveal-left relative h-full min-w-0 overflow-hidden backdrop-blur-xl p-5 sm:p-8 flex flex-col justify-between transition-all ${
                 layoutArchetype === 'NUSANTARA_HERITAGE'
-                  ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
-                  : 'border border-white/95'
+                  ? 'rounded-3xl bg-[#fdf8f0]/95 border-2 border-[#C89D54] outline outline-1 outline-offset-4 outline-[#8b5a2b]/35 text-center items-center shadow-[0_18px_50px_rgba(139,90,43,0.15)]'
+                  : layoutArchetype === 'MODERN_BENTO'
+                  ? 'rounded-3xl bg-white border border-stone-200/95 text-center sm:text-left shadow-[0_18px_50px_rgba(40,75,122,0.10)]'
+                  : layoutArchetype === 'POLAROID_MAGAZINE'
+                  ? 'rounded-2xl bg-white border border-stone-200/95 text-center items-center shadow-[0_18px_45px_rgba(28,25,23,0.12)]'
+                  : 'rounded-3xl bg-white/85 border border-white/95 text-center items-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]'
               }`}
             >
               <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
               <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
 
-              <div className="flex flex-col items-center w-full relative z-10">
-                {settings.showProfilePhotos !== false && (
-                  <div className="relative mb-5 sm:mb-6 shrink-0">
-                    <FloralCornerOrnament
-                      position="bottom-left"
-                      size="sm"
-                      className="-bottom-3 -left-6 opacity-90"
-                      enabled={showFloral}
-                    />
-                    <FloralCornerOrnament
-                      position="bottom-right"
-                      size="sm"
-                      className="-bottom-3 -right-6 opacity-90"
-                      enabled={showFloral}
-                    />
-                    <div
-                      className={`${
-                        layoutArchetype === 'POLAROID_MAGAZINE'
-                          ? 'w-40 h-52 sm:w-52 sm:h-64 p-2.5 pb-6 bg-white rounded-2xl border border-stone-200 shadow-xl'
-                          : settings.profileFrameStyle === 'CIRCLE'
-                          ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                          : settings.profileFrameStyle === 'EDITORIAL_RECT'
-                          ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                          : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                      } overflow-hidden bg-stone-100 relative`}
-                    >
-                      <img
-                        src={settings.groomPhotoUrl}
-                        alt={settings.groomFullName}
-                        className={`w-full h-full object-cover object-center ${
-                          layoutArchetype === 'POLAROID_MAGAZINE' ? 'rounded-xl' : ''
-                        }`}
-                        style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
-                      />
+              {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                <NusantaraCarvingOrnament position="top" className="mb-3" />
+              )}
+
+              {layoutArchetype === 'MODERN_BENTO' ? (
+                /* MODERN BENTO: Horizontal / Editorial Magazine Profile Layout */
+                <div className="w-full relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
+                      <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                        {settings.eventHostRoleLabel ||
+                          (settings.groomRankAndTitle &&
+                          settings.groomRankAndTitle !== 'Mempelai Pria'
+                            ? settings.groomRankAndTitle
+                            : eventMeta.primaryRoleBadge)}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
+                        PROFILE &bull; 01
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                      {settings.showProfilePhotos !== false && (
+                        <div className="w-36 h-44 sm:w-40 sm:h-48 rounded-2xl overflow-hidden border border-stone-200 shadow-md bg-stone-100 shrink-0 relative">
+                          <img
+                            src={settings.groomPhotoUrl}
+                            alt={settings.groomFullName}
+                            className="w-full h-full object-cover object-center"
+                            style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1.5 leading-snug break-words">
+                          {settings.groomFullName}
+                        </h3>
+                        {(settings.groomUnit || settings.groomOrigin) &&
+                          (settings.groomUnit || settings.groomOrigin).trim() !== '-' && (
+                            <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3">
+                              {settings.groomUnit || settings.groomOrigin}
+                            </p>
+                          )}
+                        {settings.groomParents &&
+                          settings.groomParents.trim() !== '' &&
+                          settings.groomParents.trim() !== '-' && (
+                            <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 text-xs text-stone-600 leading-relaxed">
+                              {settings.groomParents}
+                            </div>
+                          )}
+                      </div>
                     </div>
                   </div>
-                )}
-                <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                  {settings.eventHostRoleLabel ||
-                    (settings.groomRankAndTitle &&
-                    settings.groomRankAndTitle !== 'Mempelai Pria'
-                      ? settings.groomRankAndTitle
-                      : eventMeta.primaryRoleBadge)}
-                </span>
-                <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
-                  {settings.groomFullName}
-                </h3>
-                {(settings.groomUnit || settings.groomOrigin) &&
-                  (settings.groomUnit || settings.groomOrigin).trim() !== '-' && (
-                    <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
-                      {settings.groomUnit || settings.groomOrigin}
-                    </p>
+
+                  {Boolean(
+                    settings.groomUnit &&
+                      settings.groomUnit.trim() !== '' &&
+                      settings.groomOrigin &&
+                      settings.groomOrigin.trim() !== '' &&
+                      settings.groomOrigin.trim() !== '-'
+                  ) && (
+                    <div className="pt-3 mt-4 border-t border-stone-200/80 w-full flex items-center justify-center sm:justify-start gap-2 text-xs text-stone-500 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
+                      <span>{settings.groomOrigin}</span>
+                    </div>
                   )}
-                {settings.groomParents &&
-                  settings.groomParents.trim() !== '' &&
-                  settings.groomParents.trim() !== '-' && (
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
-                      {settings.groomParents}
-                    </p>
-                  )}
-              </div>
-              {Boolean(
-                settings.groomUnit &&
-                  settings.groomUnit.trim() !== '' &&
-                  settings.groomOrigin &&
-                  settings.groomOrigin.trim() !== '' &&
-                  settings.groomOrigin.trim() !== '-'
-              ) && (
-                <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
-                  <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
-                  <span>{settings.groomOrigin}</span>
                 </div>
-              )}
-            </div>
-
-            {hasSecondProfile && (
-              <>
-                {/* Calligraphic "&" Separator Between Groom & Bride */}
-                <div
-                  aria-hidden="true"
-                  className="flex md:hidden items-center justify-center -my-1"
-                >
-                  <span className="font-script text-4xl text-[#B68D40] px-4 py-1 rounded-full bg-white/90 border border-[#D4AF37]/45 shadow-sm">
-                    &amp;
-                  </span>
-                </div>
-                <div
-                  aria-hidden="true"
-                  className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-                >
-                  <span className="w-14 h-14 rounded-full bg-white/95 border-2 border-[#D4AF37]/60 shadow-[0_10px_30px_rgba(197,160,89,0.28)] flex items-center justify-center font-script text-4xl sm:text-5xl text-[#B68D40]">
-                    &amp;
-                  </span>
-                </div>
-
-                {/* Secondary Host / Bride Card */}
-                <div
-                  className={`inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-8 text-center flex flex-col items-center justify-between shadow-[0_18px_50px_rgba(175,145,95,0.12)] ${
-                    layoutArchetype === 'NUSANTARA_HERITAGE'
-                      ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
-                      : 'border border-white/95'
-                  }`}
-                >
-                  <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
-                  <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
-
+              ) : (
+                /* POLAROID_MAGAZINE / NUSANTARA_HERITAGE / BOTANICAL_AIRY / EDITORIAL_CLASSIC */
+                <>
                   <div className="flex flex-col items-center w-full relative z-10">
                     {settings.showProfilePhotos !== false && (
                       <div className="relative mb-5 sm:mb-6 shrink-0">
@@ -3530,52 +3570,272 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           className="-bottom-3 -right-6 opacity-90"
                           enabled={showFloral}
                         />
-                        <div
-                          className={`${
-                            layoutArchetype === 'POLAROID_MAGAZINE'
-                              ? 'w-40 h-52 sm:w-52 sm:h-64 p-2.5 pb-6 bg-white rounded-2xl border border-stone-200 shadow-xl'
-                              : settings.profileFrameStyle === 'CIRCLE'
-                              ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                              : settings.profileFrameStyle === 'EDITORIAL_RECT'
-                              ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                              : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                          } overflow-hidden bg-stone-100 relative`}
-                        >
-                          <img
-                            src={settings.bridePhotoUrl}
-                            alt={settings.brideFullName}
-                            className={`w-full h-full object-cover object-center ${
-                              layoutArchetype === 'POLAROID_MAGAZINE' ? 'rounded-xl' : ''
-                            }`}
-                            style={getPhotoAdjustStyle(
-                              settings.photoAdjustments?.bridePhotoUrl
-                            )}
-                          />
-                        </div>
+                        {layoutArchetype === 'POLAROID_MAGAZINE' ? (
+                          <div className="w-44 sm:w-52 p-2.5 pb-4 bg-white rounded-2xl border border-stone-200 shadow-[0_14px_32px_rgba(28,25,23,0.14)] rotate-[-1deg]">
+                            <div className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-stone-100">
+                              <img
+                                src={settings.groomPhotoUrl}
+                                alt={settings.groomFullName}
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settings.photoAdjustments?.groomPhotoUrl
+                                )}
+                              />
+                            </div>
+                            <div className="pt-2.5 px-1 flex items-center justify-between gap-1 border-b border-dashed border-stone-200/80 pb-1">
+                              <span className="font-script text-xl sm:text-2xl text-[#8B6914] leading-none truncate">
+                                {settings.groomNickname || settings.groomFullName}
+                              </span>
+                              <Camera className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className={`${
+                              layoutArchetype === 'NUSANTARA_HERITAGE'
+                                ? 'w-36 h-48 sm:w-48 sm:h-64 rounded-2xl border-2 border-[#8b5a2b]/65 outline outline-1 outline-offset-4 outline-[#C89D54] shadow-xl'
+                                : settings.profileFrameStyle === 'CIRCLE'
+                                ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                                : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                                ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                                : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                            } overflow-hidden bg-stone-100 relative`}
+                          >
+                            <img
+                              src={settings.groomPhotoUrl}
+                              alt={settings.groomFullName}
+                              className="w-full h-full object-cover object-center"
+                              style={getPhotoAdjustStyle(
+                                settings.photoAdjustments?.groomPhotoUrl
+                              )}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                     <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                      {settings.brideTitle &&
-                      settings.brideTitle !== 'Mempelai Wanita'
-                        ? settings.brideTitle
-                        : eventMeta.secondaryRoleBadge}
+                      {settings.eventHostRoleLabel ||
+                        (settings.groomRankAndTitle &&
+                        settings.groomRankAndTitle !== 'Mempelai Pria'
+                          ? settings.groomRankAndTitle
+                          : eventMeta.primaryRoleBadge)}
                     </span>
                     <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
-                      {settings.brideFullName}
+                      {settings.groomFullName}
                     </h3>
-                    {settings.brideOrigin && settings.brideOrigin.trim() !== '-' && (
-                      <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
-                        {settings.brideOrigin}
-                      </p>
-                    )}
-                    {settings.brideParents &&
-                      settings.brideParents.trim() !== '' &&
-                      settings.brideParents.trim() !== '-' && (
+                    {(settings.groomUnit || settings.groomOrigin) &&
+                      (settings.groomUnit || settings.groomOrigin).trim() !== '-' && (
+                        <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
+                          {settings.groomUnit || settings.groomOrigin}
+                        </p>
+                      )}
+                    {settings.groomParents &&
+                      settings.groomParents.trim() !== '' &&
+                      settings.groomParents.trim() !== '-' && (
                         <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
-                          {settings.brideParents}
+                          {settings.groomParents}
                         </p>
                       )}
                   </div>
+                  {Boolean(
+                    settings.groomUnit &&
+                      settings.groomUnit.trim() !== '' &&
+                      settings.groomOrigin &&
+                      settings.groomOrigin.trim() !== '' &&
+                      settings.groomOrigin.trim() !== '-'
+                  ) && (
+                    <div className="pt-3 border-t border-stone-200/80 w-full flex items-center justify-center gap-2 text-xs text-stone-500 font-medium mt-auto relative z-10">
+                      <MapPin className="w-3.5 h-3.5 text-[#B68D40]" />
+                      <span>{settings.groomOrigin}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {hasSecondProfile && (
+              <>
+                {/* Calligraphic / Nusantara Ornament Separator Between Groom & Bride */}
+                <div
+                  aria-hidden="true"
+                  className="flex md:hidden items-center justify-center -my-1"
+                >
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
+                    <span className="font-serif text-sm font-bold text-[#8b5a2b] px-4 py-1.5 rounded-full bg-[#fdf8f0] border-2 border-[#C89D54] shadow-sm tracking-widest">
+                      ꧋ ꧁༺ &amp; ༻꧂ ꧋
+                    </span>
+                  ) : (
+                    <span className="font-script text-4xl text-[#B68D40] px-4 py-1 rounded-full bg-white/90 border border-[#D4AF37]/45 shadow-sm">
+                      &amp;
+                    </span>
+                  )}
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                >
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
+                    <span className="px-3.5 py-2 rounded-full bg-[#fdf8f0] border-2 border-[#C89D54] outline outline-1 outline-offset-2 outline-[#8b5a2b]/40 shadow-[0_10px_30px_rgba(139,90,43,0.25)] flex items-center justify-center font-serif text-xs font-bold text-[#8b5a2b] whitespace-nowrap">
+                      ꧁༺ &amp; ༻꧂
+                    </span>
+                  ) : (
+                    <span className="w-14 h-14 rounded-full bg-white/95 border-2 border-[#D4AF37]/60 shadow-[0_10px_30px_rgba(197,160,89,0.28)] flex items-center justify-center font-script text-4xl sm:text-5xl text-[#B68D40]">
+                      &amp;
+                    </span>
+                  )}
+                </div>
+
+                {/* Secondary Host / Bride Card */}
+                <div
+                  className={`inv-reveal inv-reveal-right relative h-full min-w-0 overflow-hidden backdrop-blur-xl p-5 sm:p-8 flex flex-col justify-between transition-all ${
+                    layoutArchetype === 'NUSANTARA_HERITAGE'
+                      ? 'rounded-3xl bg-[#fdf8f0]/95 border-2 border-[#C89D54] outline outline-1 outline-offset-4 outline-[#8b5a2b]/35 text-center items-center shadow-[0_18px_50px_rgba(139,90,43,0.15)]'
+                      : layoutArchetype === 'MODERN_BENTO'
+                      ? 'rounded-3xl bg-white border border-stone-200/95 text-center sm:text-left shadow-[0_18px_50px_rgba(40,75,122,0.10)]'
+                      : layoutArchetype === 'POLAROID_MAGAZINE'
+                      ? 'rounded-2xl bg-white border border-stone-200/95 text-center items-center shadow-[0_18px_45px_rgba(28,25,23,0.12)]'
+                      : 'rounded-3xl bg-white/85 border border-white/95 text-center items-center shadow-[0_18px_50px_rgba(175,145,95,0.12)]'
+                  }`}
+                >
+                  <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
+                  <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
+
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                    <NusantaraCarvingOrnament position="top" className="mb-3" />
+                  )}
+
+                  {layoutArchetype === 'MODERN_BENTO' ? (
+                    /* MODERN BENTO: Horizontal / Editorial Magazine Profile Layout */
+                    <div className="w-full relative z-10 flex flex-col h-full justify-between">
+                      <div>
+                        <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
+                          <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                            {settings.brideTitle &&
+                            settings.brideTitle !== 'Mempelai Wanita'
+                              ? settings.brideTitle
+                              : eventMeta.secondaryRoleBadge}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
+                            PROFILE &bull; 02
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                          {settings.showProfilePhotos !== false && (
+                            <div className="w-36 h-44 sm:w-40 sm:h-48 rounded-2xl overflow-hidden border border-stone-200 shadow-md bg-stone-100 shrink-0 relative">
+                              <img
+                                src={settings.bridePhotoUrl}
+                                alt={settings.brideFullName}
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settings.photoAdjustments?.bridePhotoUrl
+                                )}
+                              />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 mb-1.5 leading-snug break-words">
+                              {settings.brideFullName}
+                            </h3>
+                            {settings.brideOrigin && settings.brideOrigin.trim() !== '-' && (
+                              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3">
+                                {settings.brideOrigin}
+                              </p>
+                            )}
+                            {settings.brideParents &&
+                              settings.brideParents.trim() !== '' &&
+                              settings.brideParents.trim() !== '-' && (
+                                <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 text-xs text-stone-600 leading-relaxed">
+                                  {settings.brideParents}
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* POLAROID_MAGAZINE / NUSANTARA_HERITAGE / BOTANICAL_AIRY / EDITORIAL_CLASSIC */
+                    <div className="flex flex-col items-center w-full relative z-10">
+                      {settings.showProfilePhotos !== false && (
+                        <div className="relative mb-5 sm:mb-6 shrink-0">
+                          <FloralCornerOrnament
+                            position="bottom-left"
+                            size="sm"
+                            className="-bottom-3 -left-6 opacity-90"
+                            enabled={showFloral}
+                          />
+                          <FloralCornerOrnament
+                            position="bottom-right"
+                            size="sm"
+                            className="-bottom-3 -right-6 opacity-90"
+                            enabled={showFloral}
+                          />
+                          {layoutArchetype === 'POLAROID_MAGAZINE' ? (
+                            <div className="w-44 sm:w-52 p-2.5 pb-4 bg-white rounded-2xl border border-stone-200 shadow-[0_14px_32px_rgba(28,25,23,0.14)] rotate-[1deg]">
+                              <div className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-stone-100">
+                                <img
+                                  src={settings.bridePhotoUrl}
+                                  alt={settings.brideFullName}
+                                  className="w-full h-full object-cover object-center"
+                                  style={getPhotoAdjustStyle(
+                                    settings.photoAdjustments?.bridePhotoUrl
+                                  )}
+                                />
+                              </div>
+                              <div className="pt-2.5 px-1 flex items-center justify-between gap-1 border-b border-dashed border-stone-200/80 pb-1">
+                                <span className="font-script text-xl sm:text-2xl text-[#8B6914] leading-none truncate">
+                                  {settings.brideNickname || settings.brideFullName}
+                                </span>
+                                <Camera className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className={`${
+                                layoutArchetype === 'NUSANTARA_HERITAGE'
+                                  ? 'w-36 h-48 sm:w-48 sm:h-64 rounded-2xl border-2 border-[#8b5a2b]/65 outline outline-1 outline-offset-4 outline-[#C89D54] shadow-xl'
+                                  : settings.profileFrameStyle === 'CIRCLE'
+                                  ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                                  : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                                  ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                                  : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
+                              } overflow-hidden bg-stone-100 relative`}
+                            >
+                              <img
+                                src={settings.bridePhotoUrl}
+                                alt={settings.brideFullName}
+                                className="w-full h-full object-cover object-center"
+                                style={getPhotoAdjustStyle(
+                                  settings.photoAdjustments?.bridePhotoUrl
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
+                        {settings.brideTitle &&
+                        settings.brideTitle !== 'Mempelai Wanita'
+                          ? settings.brideTitle
+                          : eventMeta.secondaryRoleBadge}
+                      </span>
+                      <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
+                        {settings.brideFullName}
+                      </h3>
+                      {settings.brideOrigin && settings.brideOrigin.trim() !== '-' && (
+                        <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mb-3.5 sm:mb-4 min-h-[1.25rem]">
+                          {settings.brideOrigin}
+                        </p>
+                      )}
+                      {settings.brideParents &&
+                        settings.brideParents.trim() !== '' &&
+                        settings.brideParents.trim() !== '-' && (
+                          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
+                            {settings.brideParents}
+                          </p>
+                        )}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -4498,14 +4758,52 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   ? 'Amplop Digital & Tanda Kasih'
                   : 'Digital Envelope & Wedding Gift')}
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed relative z-10">
+            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-5 leading-relaxed relative z-10">
               {settings.giftSectionSubtitle?.trim() ||
                 (lang === 'ID'
                   ? 'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui informasi resmi berikut:'
                   : 'Your prayers and blessings are the greatest gift to us. However, if you wish to send a digital gift, crypto transfer, or wedding present, you may use the official channels below:')}
             </p>
 
-            {settings.bankAccounts.length > 0 && (
+            {/* Segmented Gift Category Filter Tabs (Semua | Rekening Bank | QRIS | Global & Crypto) */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 max-w-xl mx-auto mb-6 relative z-10 shadow-2xs">
+              {[
+                {
+                  id: 'ALL' as const,
+                  label: lang === 'ID' ? 'Semua' : 'All Methods',
+                },
+                {
+                  id: 'BANK' as const,
+                  label: lang === 'ID' ? '🏦 Rekening Bank' : '🏦 Bank Transfer',
+                },
+                {
+                  id: 'QRIS' as const,
+                  label: '📱 QRIS',
+                },
+                {
+                  id: 'GLOBAL_CRYPTO' as const,
+                  label: lang === 'ID' ? '🌐 Global & Crypto' : '🌐 Global & Crypto',
+                },
+              ].map((tab) => {
+                const isSelected = giftCategoryFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setGiftCategoryFilter(tab.id)}
+                    className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white shadow-sm'
+                        : 'bg-white/80 hover:bg-[#FAF3E3] text-stone-700 hover:text-[#8B6914] border border-stone-200/80'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {giftCategoryFilter !== 'QRIS' && settings.bankAccounts.length > 0 && (
               <div
                 className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch relative z-10 ${
                   settings.bankAccounts.length === 1
@@ -4515,7 +4813,36 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     : 'md:grid-cols-3'
                 }`}
               >
-                {settings.bankAccounts.map((acc) => {
+                {(settings.bankAccounts.filter((acc) => {
+                  const accType = acc.type || 'BANK';
+                  if (giftCategoryFilter === 'BANK') {
+                    return accType === 'BANK' || accType === 'EWALLET';
+                  }
+                  if (giftCategoryFilter === 'GLOBAL_CRYPTO') {
+                    return (
+                      accType === 'CRYPTO' ||
+                      accType === 'PAYPAL' ||
+                      accType === 'EWALLET'
+                    );
+                  }
+                  return true;
+                }).length > 0
+                  ? settings.bankAccounts.filter((acc) => {
+                      const accType = acc.type || 'BANK';
+                      if (giftCategoryFilter === 'BANK') {
+                        return accType === 'BANK' || accType === 'EWALLET';
+                      }
+                      if (giftCategoryFilter === 'GLOBAL_CRYPTO') {
+                        return (
+                          accType === 'CRYPTO' ||
+                          accType === 'PAYPAL' ||
+                          accType === 'EWALLET'
+                        );
+                      }
+                      return true;
+                    })
+                  : settings.bankAccounts
+                ).map((acc) => {
                   const isCopied = copiedAccountId === acc.id;
                   const accType = acc.type || 'BANK';
                   const isCrypto = accType === 'CRYPTO';
