@@ -9,7 +9,7 @@
 # ✨ MEPlan — My Event Planner
 ### **All-in-One Event Readiness Tracker, VIP Guest CRM & Editorial Digital Invitation Suite**
 
-[![Live Platform](https://img.shields.io/badge/LIVE_PLATFORM-MEPlan_Cloud-6366F1?style=for-the-badge&logo=vercel&logoColor=white)](https://my-wedding-manager.vercel.app)
+[![Live Platform](https://img.shields.io/badge/LIVE_PLATFORM-MEPlanner_Cloud-6366F1?style=for-the-badge&logo=vercel&logoColor=white)](https://meplanner.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js_15-App_Router-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript_5-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Cloud_Database_%26_Storage-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
@@ -24,9 +24,9 @@
 
 ---
 
-[**🚀 Buka Live Platform**](https://my-wedding-manager.vercel.app) &nbsp;&bull;&nbsp;
-[**✨ Katalog & Simulasi Interaktif**](https://my-wedding-manager.vercel.app/#showcase) &nbsp;&bull;&nbsp;
-[**💎 Paket Lisensi**](https://my-wedding-manager.vercel.app/#paket) &nbsp;&bull;&nbsp;
+[**🚀 Buka Live Platform**](https://meplanner.vercel.app) &nbsp;&bull;&nbsp;
+[**✨ Katalog & Simulasi Interaktif**](https://meplanner.vercel.app/#showcase) &nbsp;&bull;&nbsp;
+[**💎 Paket Lisensi**](https://meplanner.vercel.app/#paket) &nbsp;&bull;&nbsp;
 [**👨‍💻 Profil Developer (@omeko42)**](https://github.com/omeko42)
 
 </div>
@@ -103,7 +103,7 @@ Setiap perubahan **Palet Tema Warna** di dalam **Planner (`Pengaturan -> Tema & 
 ## 🚀 6 Modul Unggulan Platform
 
 ### 1. 🔗 Direct Hash Guest Link (`/[hash]`) & Dynamic WhatsApp OpenGraph
-- Setiap tamu yang ditambahkan ke dalam CRM otomatis mendapatkan **21-Character Base62 Hash Unik** (contoh: `https://my-wedding-manager.vercel.app/DvVsH3CprCb3URDzq8Tmz`) tanpa perlu mengekspos parameter panjang di URL.
+- Setiap tamu yang ditambahkan ke dalam CRM otomatis mendapatkan **21-Character Base62 Hash Unik** (contoh: `https://meplanner.vercel.app/DvVsH3CprCb3URDzq8Tmz`) tanpa perlu mengekspos parameter panjang di URL.
 - Dilengkapi **Server-Side Dynamic OpenGraph Metadata** yang mengambil *Hero Banner* terbaru langsung dari Supabase Cloud, sehingga saat link dikirim via WhatsApp, gambar *banner* acara dan judul personalisasi tamu langsung tampil otomatis.
 
 ### 2. 🎬 Studio Media 3-Bagian & Musik Bebas Klaim (NCS + Spotify / YouTube)
@@ -165,7 +165,7 @@ Dirancang, dikembangkan, dan dikelola secara penuh oleh:
 - 👤 **Nama Lengkap:** **Eko Agung Krisdianto**
 - 🐙 **GitHub:** [**@omeko42**](https://github.com/omeko42)
 - 💼 **LinkedIn:** [**Eko Agung Krisdianto**](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
-- 🌐 **Official Repository:** [**github.com/omeko42/meplan**](https://github.com/omeko42/meplan)
+- 🌐 **Official Repository:** [**github.com/omeko42/meplanner**](https://github.com/omeko42/meplanner)
 
 ---
 

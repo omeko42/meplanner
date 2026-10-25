@@ -451,7 +451,7 @@ export function buildGuestInvitationUrl(
     originUrl ||
     (typeof window !== 'undefined'
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || 'https://meplan.vercel.app');
+      : process.env.NEXT_PUBLIC_SITE_URL || 'https://meplanner.vercel.app');
   const hashToken = computeGuestInvitationHash(
     clientSlug || 'client-utama',
     guest

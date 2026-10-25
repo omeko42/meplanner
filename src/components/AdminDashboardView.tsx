@@ -633,7 +633,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const baseOrigin =
       typeof window !== 'undefined' && window.location?.origin
         ? window.location.origin
-        : 'https://my-wedding-manager.vercel.app';
+        : 'https://meplanner.vercel.app';
     const cleanUrl = `${baseOrigin}/${guestHashToken}`;
     return { guestHashToken, cleanUrl };
   };
