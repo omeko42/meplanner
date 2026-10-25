@@ -42,6 +42,10 @@ import {
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
+  ReactGoogleLoginButton,
+  type GoogleLoginResponse,
+} from '@/components/ReactGoogleLoginButton';
+import {
   ClientGroupItem,
   ClientWorkspaceData,
   CommercialPaymentCategory,
@@ -8335,6 +8339,44 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onSubmit={handleGoogleOnboardingSubmit}
               className="p-5 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto"
             >
+              {/* Official react-google-login Popup Button */}
+              <div className="space-y-1.5">
+                <ReactGoogleLoginButton
+                  lang={lang}
+                  buttonText={
+                    lang === 'ID'
+                      ? 'Masuk Otomatis dengan Google (Popup OAuth)'
+                      : 'Sign in with Google (OAuth Popup)'
+                  }
+                  onSuccess={(response: GoogleLoginResponse) => {
+                    const selectedThemeObj =
+                      MULTI_EVENT_THEME_CATALOG.find(
+                        (t) => t.id === googleOnboardingThemeId
+                      ) || MULTI_EVENT_THEME_CATALOG[0];
+                    setIsGoogleOnboardingModalOpen(false);
+                    if (onQuickCreateWithGoogle) {
+                      onQuickCreateWithGoogle({
+                        email: response.profileObj.email,
+                        eventTitle:
+                          googleOnboardingEventTitle.trim() ||
+                          response.profileObj.name,
+                        eventType: googleOnboardingEventType,
+                        packageId: googleOnboardingPackageId,
+                        catalogThemeId: selectedThemeObj.id,
+                        catalogThemeName: selectedThemeObj.name,
+                        themePreset: selectedThemeObj.themePreset,
+                        themeLayoutArchetype:
+                          selectedThemeObj.layoutArchetype,
+                        coverImageUrl: selectedThemeObj.coverBgUrl,
+                        heroImageUrl: selectedThemeObj.heroPrewedUrl,
+                      });
+                    } else {
+                      onOpenAdminPortal();
+                    }
+                  }}
+                />
+              </div>
+
               {/* Field 1: Alamat Akun Google (@gmail.com) */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-extrabold text-stone-700">
