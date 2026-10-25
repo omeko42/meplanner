@@ -72,6 +72,7 @@ interface PublicInvitationViewProps {
   isAdminLoggedIn: boolean;
   defaultOpened?: boolean;
   onOpenAdminPortal: () => void;
+  onOpenLandingPage?: () => void;
   onTrackAnalytics?: (payload: {
     type: InvitationInteractionType;
     guestName?: string;
@@ -892,6 +893,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   isAdminLoggedIn,
   defaultOpened = false,
   onOpenAdminPortal,
+  onOpenLandingPage,
   onTrackAnalytics,
   onSubmitRsvp,
 }) => {
@@ -1836,13 +1838,33 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           compact ? 'mt-3 pt-3' : 'mt-5 pt-4 border-t border-[#D4AF37]/25'
         } flex flex-col items-center justify-center gap-2 text-center`}
       >
-        <p className="inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-stone-700">
-          <WeddingRingsIcon
-            className="w-4 h-4 shrink-0"
-            logoUrl={brandLogoUrl}
-          />
+        <p className="inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-stone-700 flex-wrap">
+          {onOpenLandingPage ? (
+            <button
+              type="button"
+              onClick={onOpenLandingPage}
+              title="Buka Halaman Katalog Komersial MEPlan — My Event Planner"
+              className="inline-flex items-center gap-1.5 hover:text-[#8B6914] transition-colors cursor-pointer"
+            >
+              <WeddingRingsIcon
+                className="w-4 h-4 shrink-0"
+                logoUrl={brandLogoUrl}
+              />
+              <span className="underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold">
+                MEPlan &bull; My Event Planner
+              </span>
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <WeddingRingsIcon
+                className="w-4 h-4 shrink-0"
+                logoUrl={brandLogoUrl}
+              />
+              <span>MEPlan &bull; My Event Planner</span>
+            </span>
+          )}
           <span>
-            MEPlan &bull; My Event Planner by{' '}
+            by{' '}
             <a
               href={developerUrl}
               target="_blank"
@@ -1856,6 +1878,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
+          {onOpenLandingPage && (
+            <button
+              type="button"
+              onClick={onOpenLandingPage}
+              title="Buka Halaman Katalog Komersial MEPlan — My Event Planner"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/50 text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <Sparkles className="w-3 h-3 text-[#D4AF37] shrink-0" />
+              <span>{lang === 'ID' ? 'Katalog MEPlan' : 'MEPlan Catalog'}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => void handleSharePublicLink()}

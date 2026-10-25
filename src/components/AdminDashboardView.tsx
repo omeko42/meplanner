@@ -5089,7 +5089,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="flex items-center justify-center shrink-0">
+              <button
+                type="button"
+                onClick={() => onOpenLandingPage?.()}
+                title="Klik untuk membuka Halaman Komersial / Katalog MEPlan"
+                className="flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
+              >
                 <WeddingRingsIcon
                   className="w-8 h-8 sm:w-9 sm:h-9"
                   logoUrl={
@@ -5097,10 +5102,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     (state.settings as any).brandLogoUrl
                   }
                 />
-              </div>
+              </button>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate leading-tight">
+                  <button
+                    type="button"
+                    onClick={() => onOpenLandingPage?.()}
+                    title="Klik untuk membuka Halaman Komersial / Katalog MEPlan"
+                    className="font-serif font-extrabold text-sm sm:text-base text-stone-900 hover:text-[#8B6914] truncate leading-tight text-left cursor-pointer transition-colors"
+                  >
                     <span className="sm:hidden font-sans font-extrabold tracking-tight">MEPlan</span>
                     <span className="hidden sm:inline">
                       {!state.settings.siteTitle ||
@@ -5110,7 +5120,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         ? 'MEPlan — My Event Planner'
                         : state.settings.siteTitle}
                     </span>
-                  </h1>
+                  </button>
                 </div>
                 <p className={`text-[10px] sm:text-[11px] ${activeManagerTheme.accentPillText} font-medium truncate leading-tight mt-0.5`}>
                   <span className="font-bold">
@@ -5206,10 +5216,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenLandingPage}
-                  className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} font-bold text-xs transition-all`}
+                  className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} font-bold text-[10px] sm:text-xs transition-all shrink-0`}
                   title="Buka Halaman Depan Komersial My Event Planner (MEP)"
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span className="lg:hidden">Katalog</span>
                   <span className="hidden lg:inline">Katalog MEP</span>
                 </button>
               )}

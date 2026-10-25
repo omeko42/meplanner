@@ -307,14 +307,22 @@ function WeddingAppContent() {
     return decodeURIComponent(seg);
   }, [pathname]);
   const urlClientParam = searchParams.get('client') || '';
-  const urlGuestTo = searchParams.get('to') || '';
-  const urlGuestCode =
+  const rawUrlGuestTo = searchParams.get('to') || '';
+  const rawUrlGuestCode =
     pathHashSegment ||
     searchParams.get('u') ||
     searchParams.get('code') ||
     searchParams.get('token') ||
     '';
   const urlMode = searchParams.get('mode') || '';
+  const hasInitialGuestOrClientUrl = Boolean(
+    rawUrlGuestCode || urlClientParam || rawUrlGuestTo
+  );
+
+  const [isUrlGuestSessionCleared, setIsUrlGuestSessionCleared] =
+    useState(false);
+  const urlGuestTo = isUrlGuestSessionCleared ? '' : rawUrlGuestTo;
+  const urlGuestCode = isUrlGuestSessionCleared ? '' : rawUrlGuestCode;
 
   const [state, setState] = useState<WeddingDatabaseSchema>(() =>
     getInitialClientState()
@@ -323,6 +331,7 @@ function WeddingAppContent() {
     getStoredAdminUser()
   );
   const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>(() => {
+    if (hasInitialGuestOrClientUrl && urlMode !== 'admin') return 'PUBLIC';
     const storedMode = getStoredViewMode();
     const storedUser = getStoredAdminUser();
     if (storedUser && storedMode === 'ADMIN') return 'ADMIN';
@@ -477,6 +486,14 @@ function WeddingAppContent() {
     if (viewMode === 'ADMIN' || publicSelectedClientId === null) {
       weddingMusicPlayer.stop();
     }
+    if (viewMode === 'ADMIN') {
+      setIsUrlGuestSessionCleared(true);
+      setPreviewOverrideGuest(null);
+      setManualGuestLookup({});
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.history.replaceState({}, '', '/');
+      }
+    }
   }, [viewMode, publicSelectedClientId]);
 
   // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
@@ -503,7 +520,10 @@ function WeddingAppContent() {
           if (authData.user.clientId) {
             setSelectedAdminWorkspaceId(authData.user.clientId);
           }
-          if (urlMode === 'admin' || getStoredViewMode() === 'ADMIN') {
+          if (
+            urlMode === 'admin' ||
+            (!hasInitialGuestOrClientUrl && getStoredViewMode() === 'ADMIN')
+          ) {
             changeViewMode('ADMIN');
           }
         } else if (urlMode === 'admin') {
@@ -783,8 +803,14 @@ function WeddingAppContent() {
       const resolvedDummyId =
         resolveShowcaseDummyClientId(dummyClientId) || dummyClientId;
       if (tier) setDemoPackageTier(tier);
+      setIsUrlGuestSessionCleared(true);
+      setPreviewOverrideGuest(null);
+      setManualGuestLookup({});
       setDemoManagerClientId(resolvedDummyId);
       setPublicSelectedClientId(resolvedDummyId);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/');
+      }
     },
     []
   );
@@ -798,6 +824,12 @@ function WeddingAppContent() {
       handleOpenDemoManager(publicSelectedClientId, demoPackageTier);
       return;
     }
+    setIsUrlGuestSessionCleared(true);
+    setPreviewOverrideGuest(null);
+    setManualGuestLookup({});
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', '/');
+    }
     if (adminUser) {
       changeViewMode('ADMIN');
     } else {
@@ -809,8 +841,14 @@ function WeddingAppContent() {
     setAdminUser(user);
     saveStoredAdminUser(user);
     setSelectedAdminWorkspaceId(user.clientId || 'client-utama');
+    setIsUrlGuestSessionCleared(true);
+    setPreviewOverrideGuest(null);
+    setManualGuestLookup({});
     setDemoManagerClientId(null);
     setIsLoginModalOpen(false);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', '/');
+    }
     changeViewMode('ADMIN');
     appendAuditLog({
       actor: user.username,
@@ -874,10 +912,19 @@ function WeddingAppContent() {
     });
     setAdminUser(null);
     saveStoredAdminUser(null);
+    setIsUrlGuestSessionCleared(true);
+    setPreviewOverrideGuest(null);
+    setManualGuestLookup({});
+    setPublicSelectedClientId(null);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', '/');
+    }
     changeViewMode('PUBLIC');
   };
 
   const handleSwitchToPublicPreview = (guest?: WeddingGuest) => {
+    setIsUrlGuestSessionCleared(true);
+    setManualGuestLookup({});
     if (guest) {
       setPreviewOverrideGuest(guest);
       if (typeof window !== 'undefined') {
@@ -885,6 +932,11 @@ function WeddingAppContent() {
           guest.invitationToken ||
           computeGuestInvitationHash(activeWorkspaceClientId, guest);
         window.history.pushState({}, '', `/${encodeURIComponent(hashToken)}`);
+      }
+    } else {
+      setPreviewOverrideGuest(null);
+      if (typeof window !== 'undefined') {
+        window.history.pushState({}, '', '/');
       }
     }
     setDemoManagerClientId(null);
@@ -894,6 +946,7 @@ function WeddingAppContent() {
 
   const handleOpenLandingPage = () => {
     weddingMusicPlayer.stop();
+    setIsUrlGuestSessionCleared(true);
     setPreviewOverrideGuest(null);
     setManualGuestLookup({});
     setDemoManagerClientId(null);
@@ -2343,6 +2396,7 @@ function WeddingAppContent() {
             guestParamCode={effectiveGuestCode}
             isAdminLoggedIn={Boolean(adminUser)}
             onOpenAdminPortal={handleOpenAdminPortal}
+            onOpenLandingPage={handleOpenLandingPage}
             onTrackAnalytics={handleTrackPublicAnalytics}
             onSubmitRsvp={handleSubmitPublicRsvp}
           />
