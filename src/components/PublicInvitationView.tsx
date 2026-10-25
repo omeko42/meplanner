@@ -71,6 +71,7 @@ interface PublicInvitationViewProps {
   guestParamCode: string;
   isAdminLoggedIn: boolean;
   defaultOpened?: boolean;
+  externalLang?: 'ID' | 'EN';
   onOpenAdminPortal: () => void;
   onOpenLandingPage?: () => void;
   onTrackAnalytics?: (payload: {
@@ -419,6 +420,68 @@ const FloralCornerOrnament: React.FC<FloralCornerOrnamentProps> = ({
 const BotanicalCornerSprig: React.FC<FloralCornerOrnamentProps> = (props) => (
   <FloralCornerOrnament {...props} />
 );
+
+const NusantaraGoldCornerBracket: React.FC<{
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  enabled?: boolean;
+}> = ({ position, enabled = true }) => {
+  if (!enabled) return null;
+  const posClasses =
+    position === 'top-left'
+      ? 'top-3 left-3 border-t-2 border-l-2 rounded-tl-xl'
+      : position === 'top-right'
+      ? 'top-3 right-3 border-t-2 border-r-2 rounded-tr-xl'
+      : position === 'bottom-left'
+      ? 'bottom-3 left-3 border-b-2 border-l-2 rounded-bl-xl'
+      : 'bottom-3 right-3 border-b-2 border-r-2 rounded-br-xl';
+  const diamondPos =
+    position === 'top-left'
+      ? 'top-1.5 left-1.5'
+      : position === 'top-right'
+      ? 'top-1.5 right-1.5'
+      : position === 'bottom-left'
+      ? 'bottom-1.5 left-1.5'
+      : 'bottom-1.5 right-1.5';
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none select-none absolute z-10 w-10 h-10 sm:w-14 sm:h-14 border-[#C89D54] ${posClasses}`}
+    >
+      <span
+        className={`absolute w-2.5 h-2.5 rotate-45 bg-[#C89D54]/30 border border-[#8b5a2b] ${diamondPos}`}
+      />
+    </div>
+  );
+};
+
+function resolveNaturalEventBadge(
+  rawBadge: string | undefined,
+  eventType: EventCategoryType,
+  lang: 'ID' | 'EN'
+): string {
+  const naturalByType: Record<EventCategoryType, string> = {
+    WEDDING: lang === 'ID' ? 'Undangan Pernikahan' : 'The Wedding Of',
+    BIRTHDAY: lang === 'ID' ? 'Perayaan Ulang Tahun' : 'Birthday Celebration',
+    GRADUATION: lang === 'ID' ? 'Syukuran Wisuda' : 'Graduation Celebration',
+    MEETING:
+      lang === 'ID' ? 'Undangan Rapat Resmi' : 'Official Executive Invitation',
+    GALA_DINNER:
+      lang === 'ID' ? 'Malam Apresiasi & Gala Dinner' : 'Royal Gala Dinner',
+  };
+  const fallback = naturalByType[eventType] || naturalByType.WEDDING;
+  if (!rawBadge || !rawBadge.trim()) return fallback;
+  const cleaned = rawBadge.trim();
+  if (/tema\s*:|theme\s*:/i.test(cleaned)) {
+    return fallback;
+  }
+  if (
+    lang === 'EN' &&
+    /undangan|pernikahan|perayaan|syukuran|mempelai|hari bahagia/i.test(cleaned)
+  ) {
+    return fallback;
+  }
+  return cleaned;
+}
 
 const FLOATING_PETALS_DATA = [
   { id: 1, left: '6%', duration: '13s', delay: '0s', size: 14, isSparkle: false },
@@ -1063,6 +1126,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   guestParamCode,
   isAdminLoggedIn,
   defaultOpened = false,
+  externalLang,
   onOpenAdminPortal,
   onOpenLandingPage,
   onTrackAnalytics,
@@ -1070,16 +1134,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 }) => {
   const [isOpened, setIsOpened] = useState(Boolean(defaultOpened));
   const [isOpeningTransition, setIsOpeningTransition] = useState(false);
-  const [lang, setLang] = useState<'ID' | 'EN'>(settings.defaultLanguage || 'ID');
+  const [lang, setLang] = useState<'ID' | 'EN'>(
+    externalLang || settings.defaultLanguage || 'ID'
+  );
   const [shareCopiedToast, setShareCopiedToast] = useState(false);
   const hasTrackedPageViewRef = useRef(false);
   const invitationContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (settings.defaultLanguage) {
+    if (externalLang) {
+      setLang(externalLang);
+    }
+  }, [externalLang]);
+
+  useEffect(() => {
+    if (!externalLang && settings.defaultLanguage) {
       setLang(settings.defaultLanguage);
     }
-  }, [settings.defaultLanguage]);
+  }, [externalLang, settings.defaultLanguage]);
 
   const [isPlayingMusic, setIsPlayingMusic] = useState(() =>
     weddingMusicPlayer.getStatus()
@@ -1295,7 +1367,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const eventType = settings.eventType || 'WEDDING';
   const isWeddingEvent = eventType === 'WEDDING';
-  const showFloral = settings.showFloralOrnaments !== false;
+  const activeThemeKey = resolveInvitationThemePreset(settings.themePreset);
+  const activeVeilRgb = INVITATION_THEME_VEIL_RGB[activeThemeKey];
+  const layoutArchetype = resolveThemeLayoutArchetype(settings, activeThemeKey);
+  const showFloral =
+    settings.showFloralOrnaments !== false && layoutArchetype === 'BOTANICAL_AIRY';
   const showPetals = settings.showFloatingPetals !== false;
   const hasSecondProfile =
     typeof settings.showSecondProfile === 'boolean'
@@ -1479,56 +1555,84 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ? `${settings.groomFullName} & ${settings.brideFullName}`
     : settings.groomFullName;
 
-  const coverBadgeLabel = settings.coverBadgeText?.trim() || eventMeta.coverBadge;
+  const coverBadgeLabel = resolveNaturalEventBadge(
+    settings.coverBadgeText,
+    eventType,
+    lang
+  );
+  const sanitizedHeroBadge = resolveNaturalEventBadge(
+    settings.heroBadgeText,
+    eventType,
+    lang
+  );
   const coverGreetingLabel =
-    settings.coverGreetingLabel?.trim() ||
-    (lang === 'ID' ? 'Kepada Yth.' : 'Dear Honored Guest');
+    lang === 'EN'
+      ? settings.coverGreetingLabel &&
+        !/kepada\s*yth/i.test(settings.coverGreetingLabel)
+        ? settings.coverGreetingLabel.trim()
+        : 'Dear Honored Guest'
+      : settings.coverGreetingLabel?.trim() || 'Kepada Yth.';
   const coverApology =
-    settings.coverApologyNote !== undefined
+    lang === 'EN'
+      ? '*We apologize if there is any misspelling of your name or title'
+      : settings.coverApologyNote !== undefined
       ? settings.coverApologyNote.trim()
-      : lang === 'ID'
-      ? '*Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar'
-      : '*We apologize if there is any misspelling of your name or title';
+      : '*Mohon maaf apabila terdapat kekeliruan penulisan nama atau gelar';
   const coverButtonLabel =
-    settings.coverButtonLabel?.trim() ||
-    (lang === 'ID' ? 'Buka Undangan' : 'Open Invitation');
+    lang === 'EN'
+      ? settings.coverButtonLabel &&
+        !/buka\s*undangan/i.test(settings.coverButtonLabel)
+        ? settings.coverButtonLabel.trim()
+        : 'Open Invitation'
+      : settings.coverButtonLabel?.trim() || 'Buka Undangan';
   const countdownLabel =
-    settings.countdownSectionLabel?.trim() ||
-    (lang === 'ID'
+    lang === 'EN'
       ? isWeddingEvent
-        ? 'Menuju Hari Bahagia'
-        : 'Menuju Hari Pelaksanaan'
-      : 'Counting Down to the Event');
+        ? 'Counting Down to the Wedding'
+        : 'Counting Down to the Event'
+      : settings.countdownSectionLabel?.trim() ||
+        (isWeddingEvent ? 'Menuju Hari Bahagia' : 'Menuju Hari Pelaksanaan');
   const profileTitle =
-    settings.profileSectionTitle?.trim() || eventMeta.profileSectionTitle;
+    lang === 'EN'
+      ? eventMeta.profileSectionTitle
+      : settings.profileSectionTitle?.trim() || eventMeta.profileSectionTitle;
   const scheduleTitle =
-    settings.scheduleSectionTitle?.trim() || eventMeta.scheduleTitle;
-  const storyTitle = settings.storySectionTitle?.trim() || eventMeta.storyTitle;
-  const rsvpTitle = settings.rsvpSectionTitle?.trim() || eventMeta.rsvpTitle;
+    lang === 'EN'
+      ? eventMeta.scheduleTitle
+      : settings.scheduleSectionTitle?.trim() || eventMeta.scheduleTitle;
+  const storyTitle =
+    lang === 'EN'
+      ? eventMeta.storyTitle
+      : settings.storySectionTitle?.trim() || eventMeta.storyTitle;
+  const rsvpTitle =
+    lang === 'EN'
+      ? eventMeta.rsvpTitle
+      : settings.rsvpSectionTitle?.trim() || eventMeta.rsvpTitle;
   const rsvpSubtitle =
-    settings.rsvpSectionSubtitle?.trim() ||
-    (lang === 'ID'
-      ? 'Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time'
-      : 'Your attendance confirmation and wishes will be saved automatically in real-time');
+    lang === 'EN'
+      ? 'Your attendance confirmation and warm wishes will be saved automatically in real-time'
+      : settings.rsvpSectionSubtitle?.trim() ||
+        'Konfirmasi kehadiran dan ucapan Anda akan tersimpan otomatis secara real-time';
   const rsvpMessageLabel =
-    settings.rsvpMessageLabel?.trim() ||
-    (lang === 'ID'
+    lang === 'EN'
       ? isWeddingEvent
-        ? 'Ucapan & Doa Restu'
-        : 'Ucapan / Catatan Kehadiran'
-      : 'Wishes & Notes');
-  const wishesTitle = settings.wishesSectionTitle?.trim() || eventMeta.wishesTitle;
+        ? 'Warm Wishes & Blessings'
+        : 'Wishes & Attendance Notes'
+      : settings.rsvpMessageLabel?.trim() ||
+        (isWeddingEvent ? 'Ucapan & Doa Restu' : 'Ucapan / Catatan Kehadiran');
+  const wishesTitle =
+    lang === 'EN'
+      ? eventMeta.wishesTitle
+      : settings.wishesSectionTitle?.trim() || eventMeta.wishesTitle;
   const closingBadge =
     settings.closingBadgeText !== undefined
       ? settings.closingBadgeText.trim()
       : 'Thank You & Blessing';
   const closingSignature =
-    settings.closingSignatureLabel?.trim() ||
-    (lang === 'ID'
-      ? isWeddingEvent
-        ? 'Kami yang berbahagia,'
-        : 'Hormat kami,'
-      : 'With love & gratitude,');
+    lang === 'EN'
+      ? 'With love & gratitude,'
+      : settings.closingSignatureLabel?.trim() ||
+        (isWeddingEvent ? 'Kami yang berbahagia,' : 'Hormat kami,');
 
   const activeClientId = settings.activeClientId || 'client-utama';
 
@@ -2209,9 +2313,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     );
   }, [publicVisibleWishes, coverGuestSearch]);
 
-  const activeThemeKey = resolveInvitationThemePreset(settings.themePreset);
-  const activeVeilRgb = INVITATION_THEME_VEIL_RGB[activeThemeKey];
-  const layoutArchetype = resolveThemeLayoutArchetype(settings, activeThemeKey);
   const coverFeatureImageUrl =
     coverSlidesList[0]?.imageUrl ||
     heroSlidesList[0]?.imageUrl ||
@@ -2420,7 +2521,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 : layoutArchetype === 'BOTANICAL_AIRY'
                 ? 'rounded-t-[10rem] sm:rounded-t-[13rem] rounded-b-[2.5rem] bg-white/90 border-4 border-white shadow-[0_25px_70px_rgba(94,140,106,0.16)] pt-10 sm:pt-14'
                 : layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'rounded-3xl bg-[#FFFDF9]/92 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_25px_70px_rgba(160,130,85,0.20)]'
+                ? 'rounded-3xl bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] border-y-4 border-double border-[#C89D54] border-x-2 border-x-[#C89D54]/80 shadow-[0_25px_70px_rgba(139,90,43,0.20)]'
                 : layoutArchetype === 'MODERN_BENTO'
                 ? 'rounded-3xl bg-white/92 border border-stone-200/90 shadow-[0_25px_70px_rgba(40,75,122,0.14)] p-5 sm:p-8'
                 : 'rounded-3xl sm:rounded-[2.25rem] bg-white/85 border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
@@ -2430,6 +2531,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <FloralCornerOrnament position="top-right" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
+            <NusantaraGoldCornerBracket
+              position="top-left"
+              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+            />
+            <NusantaraGoldCornerBracket
+              position="top-right"
+              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+            />
+            <NusantaraGoldCornerBracket
+              position="bottom-left"
+              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+            />
+            <NusantaraGoldCornerBracket
+              position="bottom-right"
+              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+            />
 
             <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
@@ -2648,32 +2765,52 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         />
       </div>
 
-      {/* TOP FLOATING GLASS NAVIGATION */}
-      <header className="fixed top-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]">
+      {/* TOP FLOATING GLASS NAVIGATION — ARCHETYPE-ADAPTIVE */}
+      <header
+        className={`fixed top-0 inset-x-0 z-40 backdrop-blur-xl transition-all ${
+          layoutArchetype === 'NUSANTARA_HERITAGE'
+            ? 'bg-[#fdf8f0]/95 border-b-2 border-double border-[#C89D54] shadow-[0_4px_25px_rgba(139,90,43,0.12)]'
+            : layoutArchetype === 'POLAROID_MAGAZINE'
+            ? 'bg-[#F7F3EE]/95 border-b border-stone-300/90 shadow-2xs'
+            : layoutArchetype === 'BOTANICAL_AIRY'
+            ? 'bg-[#F6FAF7]/90 border-b border-emerald-200/70 shadow-2xs'
+            : layoutArchetype === 'MODERN_BENTO'
+            ? 'bg-white/95 border-b border-stone-200/95 shadow-2xs'
+            : 'bg-white/85 border-b border-[#D4AF37]/25 shadow-[0_4px_25px_rgba(180,150,100,0.08)]'
+        }`}
+      >
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 flex items-center justify-center shrink-0 shadow-2xs">
-              <span className="font-editorial font-bold text-xs sm:text-sm text-[#8B6914] tracking-tighter">
+            <div
+              className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center shrink-0 shadow-2xs ${
+                layoutArchetype === 'NUSANTARA_HERITAGE'
+                  ? 'rounded-lg bg-[#f5e9d6] border-2 border-[#C89D54] text-[#6b4226]'
+                  : layoutArchetype === 'POLAROID_MAGAZINE'
+                  ? 'rounded-lg bg-white border border-stone-300 text-stone-900 -rotate-3'
+                  : layoutArchetype === 'MODERN_BENTO'
+                  ? 'rounded-xl bg-stone-900 text-white'
+                  : 'rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#EFE1C6] border border-[#D4AF37]/50 text-[#8B6914]'
+              }`}
+            >
+              <span className="font-editorial font-bold text-xs sm:text-sm tracking-tighter">
                 {initialsMonogram}
               </span>
             </div>
             <div className="truncate">
-              <p className="font-editorial text-xs sm:text-base font-bold text-stone-900 truncate">
+              <p
+                className={`font-editorial text-xs sm:text-base font-bold truncate ${
+                  layoutArchetype === 'NUSANTARA_HERITAGE'
+                    ? 'text-[#6b4226]'
+                    : 'text-stone-900'
+                }`}
+              >
                 {displayTitleShort}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
+                {sanitizedHeroBadge} &bull;{' '}
                 {mainScheduleEvent?.dateLabel ||
                   activeCountdownEvent?.dateLabel ||
                   settings.event2DateLabel}
-                {mainScheduleEvent?.venue ||
-                activeCountdownEvent?.venue ||
-                settings.event2Venue
-                  ? ` • ${
-                      mainScheduleEvent?.venue ||
-                      activeCountdownEvent?.venue ||
-                      settings.event2Venue
-                    }`
-                  : ''}
               </p>
             </div>
           </div>
@@ -2930,496 +3067,462 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
       </header>
 
-      {/* HERO PREWEDDING BANNER & LIVE COUNTDOWN — ARCHETYPE-ADAPTIVE */}
+      {/* HERO PREWEDDING BANNER & LIVE COUNTDOWN — 5 DISTINCT WEBSITE ARCHETYPES */}
       <section
         id="pembuka"
         className="relative z-10 overflow-hidden pt-4 sm:pt-8 pb-10 sm:pb-14 px-3 sm:px-4"
       >
         <div className="max-w-5xl mx-auto">
-          <div
-            className={`inv-reveal inv-reveal-up relative overflow-hidden backdrop-blur-xl ${
-              layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'rounded-3xl sm:rounded-[2.5rem] bg-[#fdf8f0] border-2 border-[#C89D54] outline outline-1 outline-offset-4 outline-[#8b5a2b]/35 shadow-[0_25px_70px_rgba(139,90,43,0.18)]'
-                : layoutArchetype === 'MODERN_BENTO'
-                ? 'rounded-3xl bg-white border border-stone-200/95 shadow-[0_20px_60px_rgba(40,75,122,0.12)]'
-                : layoutArchetype === 'BOTANICAL_AIRY'
-                ? 'rounded-t-[4rem] sm:rounded-t-[6rem] rounded-b-[2.5rem] bg-[#FFFDF9] border-2 border-white shadow-[0_25px_70px_rgba(94,140,106,0.14)] pt-2'
-                : layoutArchetype === 'POLAROID_MAGAZINE'
-                ? 'rounded-3xl bg-[#FFFDF9] border border-stone-200/90 shadow-[0_25px_70px_rgba(160,130,85,0.16)]'
-                : 'rounded-3xl sm:rounded-[2.5rem] bg-[#FFFDF9] border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.16)]'
-            }`}
-          >
-            {layoutArchetype === 'POLAROID_MAGAZINE' && (
-              <div
-                aria-hidden="true"
-                className="h-1.5 w-full bg-gradient-to-r from-[#ff6b6b] via-[#ffb347] to-[#D4AF37]"
-              />
-            )}
+          {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
+            /* ============================================================================
+               A. NUSANTARA_HERITAGE (CULTURE: JAVANESE / WAYANG / SUNDANESE)
+               Kraton Batik Parchment Hero + Top Royal Serif Names + Gunungan Arch Medallion
+               ============================================================================ */
+            <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] border-y-4 border-double border-[#C89D54] border-x-2 border-x-[#C89D54]/80 py-10 sm:py-14 px-5 sm:px-12 text-center shadow-[0_25px_70px_rgba(139,90,43,0.18)]">
+              <NusantaraGoldCornerBracket position="top-left" />
+              <NusantaraGoldCornerBracket position="top-right" />
+              <NusantaraGoldCornerBracket position="bottom-left" />
+              <NusantaraGoldCornerBracket position="bottom-right" />
 
-            {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-              <div className="relative z-20 px-5 sm:px-10 pt-7 sm:pt-9 pb-4 text-center bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_transparent)] border-b border-[#C89D54]/35">
-                <p className="text-sm sm:text-base font-serif text-[#8b5a2b] tracking-[0.22em] mb-1">
+              <div className="relative z-20 max-w-3xl mx-auto">
+                {/* 1. Top Javanese Aksara & Gunungan/Carving Crest */}
+                <p className="text-sm sm:text-base font-serif text-[#8b5a2b] tracking-[0.22em] mb-1.5">
                   ꧋ ꧁༺ ꦩꦠꦸꦂꦤꦸꦮꦸꦤ꧀ ༻꧂ ꧋
                 </p>
-                <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.28em] text-[#8b5a2b]/90 mb-2.5">
-                  {settings.heroBadgeText?.trim() || coverBadgeLabel} &bull; Matur Nuwun
+                <NusantaraCarvingOrnament position="top" className="mb-3" />
+
+                {/* 2. Event Title in Spaced Uppercase Serif */}
+                <p className="text-[11px] sm:text-xs font-serif font-extrabold uppercase tracking-[0.32em] text-[#8b5a2b] mb-3">
+                  {isWeddingEvent
+                    ? lang === 'ID'
+                      ? 'PAWIWAHAN AGENG • UNDANGAN PERNIKAHAN'
+                      : 'ROYAL HERITAGE • THE WEDDING OF'
+                    : sanitizedHeroBadge}
                 </p>
-                <NusantaraCarvingOrnament position="top" />
-              </div>
-            )}
 
-            <FloralCornerOrnament position="top-left" enabled={showFloral} />
-            <FloralCornerOrnament position="top-right" enabled={showFloral} />
-            <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
-            <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
-
-            {/* Hero Media Presentation — Distinct per Layout Archetype */}
-            {(Boolean(heroFeatureImageUrl) ||
-              heroSlidesList.length > 0 ||
-              Boolean(settings.heroVideoUrl?.trim())) && (
-              <>
-                {layoutArchetype === 'POLAROID_MAGAZINE' ? (
-                  /* ARCHETYPE 1: POLAROID SNAPSHOT CARD (TIMELESS SNAPSHOT / SNAP PHOTO / PEPPY) */
-                  <div className="px-4 sm:px-8">
-                    <div className="max-w-md mx-auto mt-6 p-3 sm:p-4 pb-9 bg-white rounded-2xl shadow-[0_18px_45px_rgba(28,25,23,0.14)] border border-stone-200 rotate-[-0.6deg] relative z-20">
-                      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF8F5]">
-                        {settings.heroVideoUrl?.trim() ? (
-                          <AdaptiveVideoLayer
-                            videoUrl={settings.heroVideoUrl}
-                            posterUrl={heroFeatureImageUrl}
-                            focusY={videoFocusY}
-                            desktopMode={videoDesktopMode}
-                          />
-                        ) : (
-                          <BackgroundSlideshowLayer
-                            slides={heroSlidesList}
-                            transitionStyle={galleryTransitionStyle}
-                            transitionDurationMs={galleryTransitionMs}
-                            slideIntervalSeconds={gallerySlideSeconds}
-                            fallbackAdjust={heroAdj}
-                            altLabel="Prewedding Polaroid"
-                          />
-                        )}
-                        {settings.showHeroBadge === true &&
-                          Boolean(settings.heroBadgeText?.trim()) && (
-                            <div className="absolute top-3.5 left-3.5 z-20 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/95 backdrop-blur-md border border-stone-200 text-[#8B6914] text-[10px] sm:text-xs font-extrabold tracking-widest uppercase shadow-xs">
-                              <EventCrestIcon
-                                eventType={eventType}
-                                className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
-                              />
-                              <span>{settings.heroBadgeText?.trim()}</span>
-                            </div>
-                          )}
-                      </div>
-                      <div className="pt-4 px-2 flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-script text-2xl sm:text-3xl text-[#8B6914] -rotate-1 leading-none">
-                          {displayTitleShort}
-                        </p>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-dashed border-[#D4AF37]/75 bg-[#FAF3E3]/85 text-[#8B6914] text-[10px] sm:text-xs font-extrabold uppercase tracking-widest rotate-1">
-                          <Calendar className="w-3 h-3 text-[#B68D40]" />
-                          <span>
-                            {mainScheduleEvent?.dateLabel ||
-                              activeCountdownEvent?.dateLabel ||
-                              settings.event2DateLabel}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : layoutArchetype === 'BOTANICAL_AIRY' ? (
-                  /* ARCHETYPE 2: CENTERED BOTANICAL ARCH WINDOW (SEREIN / MILDNESS / BLUBLOOM / GARDEN PARTY) */
-                  <div className="px-4 sm:px-8">
-                    <div className="relative max-w-md mx-auto mt-6 aspect-[4/5] rounded-t-[12rem] rounded-b-3xl overflow-hidden border-4 border-white shadow-lg bg-[#FAF8F5] z-20">
-                      <BotanicalCornerSprig
-                        position="bottom-left"
-                        size="sm"
-                        enabled={showFloral}
-                      />
-                      <BotanicalCornerSprig
-                        position="bottom-right"
-                        size="sm"
-                        enabled={showFloral}
-                      />
-                      {settings.heroVideoUrl?.trim() ? (
-                        <AdaptiveVideoLayer
-                          videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroFeatureImageUrl}
-                          focusY={videoFocusY}
-                          desktopMode={videoDesktopMode}
-                        />
-                      ) : (
-                        <BackgroundSlideshowLayer
-                          slides={heroSlidesList}
-                          transitionStyle={galleryTransitionStyle}
-                          transitionDurationMs={galleryTransitionMs}
-                          slideIntervalSeconds={gallerySlideSeconds}
-                          fallbackAdjust={heroAdj}
-                          altLabel="Botanical Arch Banner"
-                        />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 h-24 z-10 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
-                      {settings.showHeroBadge !== false && (
-                        <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[#FAF3E3]/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xs whitespace-nowrap">
-                          <EventCrestIcon
-                            eventType={eventType}
-                            className="w-3.5 h-3.5 text-[#B68D40] shrink-0"
-                          />
-                          <span>{settings.heroBadgeText?.trim() || coverBadgeLabel}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : layoutArchetype === 'NUSANTARA_HERITAGE' ? (
-                  /* ARCHETYPE 3: BINGKAI PARCHMENT & ORNAMEN GANDA NUSANTARA / KRATON (WAYANG) */
-                  <div className="mx-4 sm:mx-8 mt-5 p-2 sm:p-3 rounded-2xl bg-[#f5e9d6] border-2 border-[#8b5a2b]/55 outline outline-1 outline-offset-4 outline-[#C89D54]/60 shadow-xl relative z-20">
-                    <div className="relative rounded-xl overflow-hidden aspect-[4/3] sm:aspect-[16/9] max-h-[480px] bg-[#fdf8f0]">
-                      {settings.heroVideoUrl?.trim() ? (
-                        <AdaptiveVideoLayer
-                          videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroFeatureImageUrl}
-                          focusY={videoFocusY}
-                          desktopMode={videoDesktopMode}
-                        />
-                      ) : (
-                        <BackgroundSlideshowLayer
-                          slides={heroSlidesList}
-                          transitionStyle={galleryTransitionStyle}
-                          transitionDurationMs={galleryTransitionMs}
-                          slideIntervalSeconds={gallerySlideSeconds}
-                          fallbackAdjust={heroAdj}
-                          altLabel="Nusantara Heritage Banner"
-                        />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 h-24 z-10 bg-gradient-to-t from-[#fdf8f0]/90 via-[#fdf8f0]/30 to-transparent pointer-events-none" />
-                    </div>
-                  </div>
-                ) : layoutArchetype === 'MODERN_BENTO' ? (
-                  /* ARCHETYPE 4: FULL-BLEED OVERLAY HERO (VISUAL JOURNEY) + 2-COLUMN BENTO STRIP */
-                  <div className="relative z-20">
-                    <div className="relative min-h-[460px] sm:min-h-[540px] flex flex-col justify-end p-6 sm:p-12 text-center overflow-hidden rounded-t-3xl bg-stone-900">
-                      <div className="absolute inset-0 w-full h-full">
-                        {settings.heroVideoUrl?.trim() ? (
-                          <AdaptiveVideoLayer
-                            videoUrl={settings.heroVideoUrl}
-                            posterUrl={heroFeatureImageUrl}
-                            focusY={videoFocusY}
-                            desktopMode={videoDesktopMode}
-                          />
-                        ) : heroSlidesList.length > 0 ? (
-                          <BackgroundSlideshowLayer
-                            slides={heroSlidesList}
-                            transitionStyle={galleryTransitionStyle}
-                            transitionDurationMs={galleryTransitionMs}
-                            slideIntervalSeconds={gallerySlideSeconds}
-                            fallbackAdjust={heroAdj}
-                            altLabel="Modern Bento Full-Bleed Hero"
-                          />
-                        ) : (
-                          <img
-                            src={heroFeatureImageUrl}
-                            alt={displayTitleFull}
-                            className="absolute inset-0 w-full h-full object-cover object-center"
-                          />
-                        )}
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-900/35 to-transparent pointer-events-none z-10" />
-
-                      <div className="relative z-20 max-w-3xl mx-auto flex flex-col items-center">
-                        {settings.showHeroBadge !== false && (
-                          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/35 text-white text-[10px] sm:text-xs font-bold tracking-[0.22em] uppercase shadow-xs mb-3.5">
-                            <EventCrestIcon
-                              eventType={eventType}
-                              className="w-3.5 h-3.5 text-[#F3D77D] shrink-0"
-                            />
-                            <span>{settings.heroBadgeText?.trim() || coverBadgeLabel}</span>
-                          </div>
-                        )}
-
-                        {hasSecondProfile ? (
-                          <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3.5 flex-wrap">
-                            <span>{settings.groomFullName}</span>
-                            <span className="font-script text-3xl sm:text-5xl text-[#F3D77D] font-normal px-1">
-                              &amp;
-                            </span>
-                            <span>{settings.brideFullName}</span>
-                          </h1>
-                        ) : (
-                          <h1 className="font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
-                            {displayTitleFull}
-                          </h1>
-                        )}
-
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-white/95 text-xs sm:text-sm font-semibold tracking-wider shadow-xs">
-                          <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
-                          <span>
-                            {mainScheduleEvent?.dateLabel ||
-                              activeCountdownEvent?.dateLabel ||
-                              settings.event2DateLabel}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bento Strip 2 Columns Below Full-Bleed Hero Photo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 sm:px-6 pt-4 text-left">
-                      <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3.5 sm:p-4 flex items-start gap-3 shadow-2xs">
-                        <div className="w-10 h-10 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shrink-0">
-                          <Calendar className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B]">
-                            {lang === 'ID' ? 'Jadwal Pelaksanaan' : 'Date & Schedule'}
-                          </p>
-                          <p className="text-xs sm:text-sm font-bold text-stone-900 truncate mt-0.5">
-                            {mainScheduleEvent?.dateLabel ||
-                              activeCountdownEvent?.dateLabel ||
-                              settings.event2DateLabel}
-                          </p>
-                          <p className="text-[11px] text-stone-600 truncate">
-                            {mainScheduleEvent?.timeLabel ||
-                              activeCountdownEvent?.timeLabel ||
-                              settings.event2TimeLabel}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3.5 sm:p-4 flex items-start gap-3 shadow-2xs">
-                        <div className="w-10 h-10 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shrink-0">
-                          <MapPin className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B]">
-                            {lang === 'ID' ? 'Lokasi Utama' : 'Primary Venue'}
-                          </p>
-                          <p className="text-xs sm:text-sm font-bold text-stone-900 truncate mt-0.5">
-                            {mainScheduleEvent?.venue ||
-                              activeCountdownEvent?.venue ||
-                              settings.event2Venue}
-                          </p>
-                          <p className="text-[11px] text-stone-600 truncate">
-                            {mainScheduleEvent?.address ||
-                              activeCountdownEvent?.address ||
-                              settings.event2Address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* ARCHETYPE 5: EDITORIAL CLASSIC FEATHERED BANNER */
-                  <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] max-h-[540px] overflow-hidden">
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        WebkitMaskImage:
-                          'linear-gradient(to bottom, black 0%, black 58%, rgba(0,0,0,0.38) 80%, transparent 100%)',
-                        maskImage:
-                          'linear-gradient(to bottom, black 0%, black 58%, rgba(0,0,0,0.38) 80%, transparent 100%)',
-                      }}
+                {/* 3. Couple / Host Names in Grand Javanese Royal Gold Serif at the Top */}
+                {hasSecondProfile ? (
+                  <h1 className="max-w-3xl mx-auto mb-4 flex flex-col items-center justify-center">
+                    <span className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug break-words">
+                      {settings.groomFullName}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="flex items-center justify-center gap-3 my-2 sm:my-3"
                     >
-                      {settings.heroVideoUrl?.trim() ? (
-                        <AdaptiveVideoLayer
-                          videoUrl={settings.heroVideoUrl}
-                          posterUrl={heroFeatureImageUrl}
-                          focusY={videoFocusY}
-                          desktopMode={videoDesktopMode}
-                        />
-                      ) : (
-                        <BackgroundSlideshowLayer
-                          slides={heroSlidesList}
-                          transitionStyle={galleryTransitionStyle}
-                          transitionDurationMs={galleryTransitionMs}
-                          slideIntervalSeconds={gallerySlideSeconds}
-                          fallbackAdjust={heroAdj}
-                          altLabel="Prewedding Banner"
-                        />
-                      )}
-                    </div>
-                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#FFFDF9] via-[#FFFDF9]/65 to-transparent pointer-events-none" />
-                    {settings.showHeroBadge === true &&
-                      Boolean(settings.heroBadgeText?.trim()) && (
-                        <div className="absolute top-3.5 sm:top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase shadow-xs whitespace-nowrap">
-                          <EventCrestIcon
-                            eventType={eventType}
-                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0"
-                          />
-                          <span>{settings.heroBadgeText?.trim()}</span>
-                        </div>
-                      )}
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-[#C89D54]" />
+                      <span className="font-serif text-lg sm:text-2xl text-[#8b5a2b] font-bold px-2">
+                        ꧁༺ &amp; ༻꧂
+                      </span>
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent to-[#C89D54]" />
+                    </span>
+                    <span className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug break-words">
+                      {settings.brideFullName}
+                    </span>
+                  </h1>
+                ) : (
+                  <h1 className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug mb-4 break-words">
+                    {displayTitleFull}
+                  </h1>
+                )}
+
+                <NusantaraCarvingOrnament position="bottom" className="mb-6" />
+
+                {/* 4. Centerpiece Javanese Gunungan / Arch Portrait Medallion */}
+                {(Boolean(heroFeatureImageUrl) ||
+                  heroSlidesList.length > 0 ||
+                  Boolean(settings.heroVideoUrl?.trim())) && (
+                  <div className="max-w-xs sm:max-w-sm mx-auto my-6 aspect-[4/5] rounded-t-full rounded-b-2xl overflow-hidden border-4 border-double border-[#C89D54] shadow-xl relative bg-[#f5e9d6]">
+                    {settings.heroVideoUrl?.trim() ? (
+                      <AdaptiveVideoLayer
+                        videoUrl={settings.heroVideoUrl}
+                        posterUrl={heroFeatureImageUrl}
+                        focusY={videoFocusY}
+                        desktopMode={videoDesktopMode}
+                      />
+                    ) : (
+                      <BackgroundSlideshowLayer
+                        slides={heroSlidesList}
+                        transitionStyle={galleryTransitionStyle}
+                        transitionDurationMs={galleryTransitionMs}
+                        slideIntervalSeconds={gallerySlideSeconds}
+                        fallbackAdjust={heroAdj}
+                        altLabel="Nusantara Gunungan Medallion"
+                      />
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-20 z-10 bg-gradient-to-t from-[#6b4226]/55 to-transparent pointer-events-none" />
                   </div>
                 )}
-              </>
-            )}
 
-            {/* Hero Content Below / Overlapping Banner */}
-            <div
-              className={`px-5 sm:px-10 md:px-14 pb-10 sm:pb-14 text-center relative z-20 ${
-                layoutArchetype === 'EDITORIAL_CLASSIC' &&
-                (heroSlidesList.length > 0 || Boolean(settings.heroVideoUrl?.trim()))
-                  ? 'pt-2 -mt-10 sm:-mt-16'
-                  : 'pt-6 sm:pt-8'
-              }`}
-            >
-              {layoutArchetype !== 'MODERN_BENTO' && (
-                <>
-                  {layoutArchetype === 'NUSANTARA_HERITAGE' ? (
-                    <NusantaraCarvingOrnament position="top" className="mb-4 sm:mb-6" />
-                  ) : (
-                    <div
-                      aria-hidden="true"
-                      className="flex items-center justify-center gap-3 mb-4 sm:mb-6"
-                    >
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent via-[#C5A059] to-[#D4AF37]" />
-                      <EventCrestIcon
-                        eventType={eventType}
-                        className="w-4 h-4 text-[#B68D40]"
-                      />
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent via-[#C5A059] to-[#D4AF37]" />
+                <p className="max-w-2xl mx-auto text-xs sm:text-base text-[#6b4226]/90 leading-relaxed mb-6">
+                  {settings.invitationOpeningText}
+                </p>
+
+                {/* 5. Traditional Date & Venue Plaque */}
+                <div className="bg-[#f5e9d6] border border-[#d5be97] rounded-2xl p-4 sm:p-5 max-w-lg mx-auto mb-8 shadow-sm">
+                  <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.25em] text-[#8b5a2b] mb-1">
+                    {lang === 'ID' ? 'Wanci & Sasana Pawiwahan' : 'Sacred Date & Venue'}
+                  </p>
+                  <p className="font-editorial text-base sm:text-xl font-bold text-[#6b4226]">
+                    {mainScheduleEvent?.dateLabel ||
+                      activeCountdownEvent?.dateLabel ||
+                      settings.event2DateLabel}
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-[#8b5a2b] mt-1">
+                    {mainScheduleEvent?.venue ||
+                      activeCountdownEvent?.venue ||
+                      settings.event2Venue}
+                  </p>
+                </div>
+
+                {/* Kraton Countdown */}
+                {activeCountdownEvent && (
+                  <div className="max-w-xl mx-auto mb-8 space-y-4">
+                    <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[#f5e9d6] border border-[#C89D54] text-[#6b4226] text-[10px] sm:text-xs font-bold">
+                      <Clock className="w-3.5 h-3.5 text-[#8b5a2b]" />
+                      <span>{countdownLabel}</span>
                     </div>
+                    <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+                      {[
+                        { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
+                        { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
+                        { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
+                        { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-2xl bg-[#fdf8f0] border-2 border-[#C89D54] outline outline-1 outline-offset-2 outline-[#8b5a2b]/30 p-2.5 sm:p-4 shadow-md"
+                        >
+                          <div className="font-editorial text-xl sm:text-4xl font-bold text-[#6b4226]">
+                            {String(item.value).padStart(2, '0')}
+                          </div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-widest text-[#8b5a2b] font-semibold mt-0.5">
+                            {item.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {settings.showSaveToCalendarButton !== false && (
+                      <div className="pt-2 flex justify-center">
+                        <a
+                          href={googleCalendarUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#f5e9d6] hover:bg-[#ebd8b7] border border-[#C89D54] text-[#6b4226] text-xs font-bold shadow-sm transition-all"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-[#8b5a2b]" />
+                          <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
+                          <ExternalLink className="w-3 h-3 text-[#8b5a2b]" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                  <div className="max-w-2xl mx-auto rounded-2xl bg-[#f5e9d6]/90 border-2 border-[#C89D54]/80 p-5 sm:p-7 shadow-2xs">
+                    <p className="font-editorial italic text-xs sm:text-base text-[#6b4226] leading-relaxed mb-2">
+                      &ldquo;{settings.quoteVerse}&rdquo;
+                    </p>
+                    {settings.quoteSource && (
+                      <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#8b5a2b]">
+                        — {settings.quoteSource} —
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : layoutArchetype === 'MODERN_BENTO' ? (
+            /* ============================================================================
+               B. MODERN_BENTO (VISUAL JOURNEY / EXECUTIVE SUMMIT / CUM LAUDE)
+               Desktop Split-Screen 12-Col Hero (Left 7 Cols Cinema Photo + Right 5 Cols Editorial Bento)
+               ============================================================================ */
+            <div className="inv-reveal inv-reveal-up grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-lg">
+              {/* Left 7 Cols: Full-Height Cinema Photo with Overlaid Names & Date at Bottom-Left */}
+              <div className="lg:col-span-7 min-h-[420px] lg:min-h-[560px] relative flex flex-col justify-end p-6 sm:p-10 text-left overflow-hidden bg-stone-900">
+                <div className="absolute inset-0 w-full h-full">
+                  {settings.heroVideoUrl?.trim() ? (
+                    <AdaptiveVideoLayer
+                      videoUrl={settings.heroVideoUrl}
+                      posterUrl={heroFeatureImageUrl}
+                      focusY={videoFocusY}
+                      desktopMode={videoDesktopMode}
+                    />
+                  ) : heroSlidesList.length > 0 ? (
+                    <BackgroundSlideshowLayer
+                      slides={heroSlidesList}
+                      transitionStyle={galleryTransitionStyle}
+                      transitionDurationMs={galleryTransitionMs}
+                      slideIntervalSeconds={gallerySlideSeconds}
+                      fallbackAdjust={heroAdj}
+                      altLabel="Modern Bento Split-Screen Hero"
+                    />
+                  ) : (
+                    <img
+                      src={heroFeatureImageUrl}
+                      alt={displayTitleFull}
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                    />
                   )}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-900/35 to-transparent pointer-events-none z-10" />
+
+                <div className="relative z-20 max-w-xl">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/35 text-white text-[10px] font-bold tracking-[0.22em] uppercase mb-3">
+                    <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#F3D77D]" />
+                    <span>{sanitizedHeroBadge}</span>
+                  </span>
 
                   {hasSecondProfile ? (
-                    <h1 className="max-w-3xl mx-auto mb-6 sm:mb-8 flex flex-col items-center justify-center">
-                      <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
-                        {settings.groomFullName}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="flex items-center justify-center gap-3 my-2 sm:my-3.5"
-                      >
-                        <span className="w-8 sm:w-14 h-px bg-gradient-to-r from-transparent to-[#D4AF37]/70" />
-                        <span className="font-script text-2xl sm:text-4xl text-[#B68D40] leading-none px-1">
-                          {layoutArchetype === 'NUSANTARA_HERITAGE'
-                            ? '꧁༺ & ༻꧂'
-                            : '&'}
-                        </span>
-                        <span className="w-8 sm:w-14 h-px bg-gradient-to-l from-transparent to-[#D4AF37]/70" />
-                      </span>
-                      <span className="font-editorial text-xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight leading-snug break-words">
-                        {settings.brideFullName}
-                      </span>
+                    <h1 className="font-editorial text-2xl sm:text-4xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
+                      {settings.groomFullName}{' '}
+                      <span className="font-script text-3xl sm:text-4xl text-[#F3D77D] font-normal px-1">
+                        &amp;
+                      </span>{' '}
+                      {settings.brideFullName}
                     </h1>
                   ) : (
-                    <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-6 sm:mb-8 break-words">
+                    <h1 className="font-editorial text-2xl sm:text-4xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
                       {displayTitleFull}
                     </h1>
                   )}
 
-                  {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-                    <NusantaraCarvingOrnament position="bottom" className="mb-5 sm:mb-7" />
-                  )}
-                </>
-              )}
-
-              <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8 sm:mb-10">
-                {settings.invitationOpeningText}
-              </p>
-
-              {/* Countdown Timer Boxes (Conditional via enableCountdown Switch & Archetype-Styled) */}
-              {activeCountdownEvent && (
-                <div className="max-w-xl mx-auto mb-8 sm:mb-10 space-y-4 sm:space-y-5">
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
-                    <Clock className="w-3.5 h-3.5" />
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs font-semibold">
+                    <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
                     <span>
-                      {countdownLabel}
-                      {countdownEvents.length === 1
-                        ? ` • ${activeCountdownEvent.title}`
-                        : ''}
+                      {mainScheduleEvent?.dateLabel ||
+                        activeCountdownEvent?.dateLabel ||
+                        settings.event2DateLabel}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right 5 Cols: Clean White Editorial Column */}
+              <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-white text-left space-y-5">
+                <div>
+                  <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                      <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#B68D40]" />
+                      <span>{sanitizedHeroBadge}</span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-stone-400 uppercase tracking-widest">
+                      {initialsMonogram}
                     </span>
                   </div>
 
-                  {countdownEvents.length > 1 && (
-                    <div className="flex flex-wrap items-center justify-center gap-1.5">
-                      {countdownEvents.map((ev) => {
-                        const isSelected = activeCountdownEvent.id === ev.id;
-                        return (
-                          <button
-                            key={ev.id}
-                            type="button"
-                            onClick={() => setSelectedCountdownEventId(ev.id)}
-                            className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border transition-all ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
-                                : 'bg-white/85 hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
-                            }`}
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
+                    {settings.invitationOpeningText}
+                  </p>
+
+                  {/* 4-Box Bento Countdown */}
+                  {activeCountdownEvent && (
+                    <div className="space-y-2.5 mb-5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B] flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{countdownLabel}</span>
+                        </span>
+                        {settings.showSaveToCalendarButton !== false && (
+                          <a
+                            href={googleCalendarUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-bold text-[#8B6914] hover:underline inline-flex items-center gap-1"
                           >
-                            {ev.title}
-                          </button>
-                        );
-                      })}
+                            <span>{lang === 'ID' ? 'Simpan Kalender' : 'Save Date'}</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
+                          { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
+                          { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
+                          { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
+                        ].map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-2xl bg-[#FAF8F5] border border-stone-200/95 border-b-2 border-b-[#D4AF37]/60 p-2.5 text-center shadow-2xs"
+                          >
+                            <div className="font-editorial text-lg sm:text-2xl font-bold text-[#9A742B]">
+                              {String(item.value).padStart(2, '0')}
+                            </div>
+                            <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-stone-500 font-semibold">
+                              {item.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-4 gap-2.5 sm:gap-4 items-stretch">
+                  {/* Primary Venue Card */}
+                  <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3.5 flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center text-[#8B6914] shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B]">
+                        {lang === 'ID' ? 'Lokasi Utama' : 'Primary Venue'}
+                      </p>
+                      <p className="text-xs sm:text-sm font-bold text-stone-900 truncate mt-0.5">
+                        {mainScheduleEvent?.venue ||
+                          activeCountdownEvent?.venue ||
+                          settings.event2Venue}
+                      </p>
+                      <p className="text-[11px] text-stone-600 line-clamp-1">
+                        {mainScheduleEvent?.address ||
+                          activeCountdownEvent?.address ||
+                          settings.event2Address}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quote in Right Bento Column */}
+                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                  <div className="rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-4">
+                    <p className="font-editorial italic text-xs text-stone-700 leading-relaxed mb-1.5">
+                      &ldquo;{settings.quoteVerse}&rdquo;
+                    </p>
+                    {settings.quoteSource && (
+                      <p className="text-[10px] font-bold tracking-widest uppercase text-[#9A742B]">
+                        — {settings.quoteSource}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : layoutArchetype === 'POLAROID_MAGAZINE' ? (
+            /* ============================================================================
+               C. POLAROID_MAGAZINE (TIMELESS SNAPSHOT / SNAP PHOTO / PHOTOVIT / PEPPY)
+               Editorial Magazine / Scrapbook Collage Hero + Headline ABOVE Tilted Polaroid
+               ============================================================================ */
+            <div className="inv-reveal inv-reveal-up bg-[#F7F3EE] p-6 sm:p-10 rounded-3xl border border-stone-200/90 shadow-[0_22px_60px_rgba(28,25,23,0.12)] text-center relative overflow-hidden">
+              {/* Top Magazine Masthead Row */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-6 border-b-2 border-stone-900/15">
+                <span className="text-[10px] sm:text-xs font-mono font-extrabold uppercase tracking-[0.22em] text-stone-700">
+                  ISSUE NO. 01 &bull; {sanitizedHeroBadge}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-dashed border-[#8B6914]/70 bg-white text-[#8B6914] text-[10px] sm:text-xs font-mono font-extrabold uppercase tracking-widest rotate-1 shadow-2xs">
+                  <Calendar className="w-3 h-3 text-[#B68D40]" />
+                  <span>
+                    {mainScheduleEvent?.dateLabel ||
+                      activeCountdownEvent?.dateLabel ||
+                      settings.event2DateLabel}
+                  </span>
+                </span>
+              </div>
+
+              {/* Large Editorial Magazine Headline ABOVE the Photo */}
+              <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.35em] text-[#8B6914] mb-2">
+                {lang === 'ID' ? 'EDISI SPESIAL PERAYAAN' : 'THE CELEBRATION OF'}
+              </p>
+              {hasSecondProfile ? (
+                <h1 className="max-w-3xl mx-auto font-editorial text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight uppercase leading-tight mb-6 break-words">
+                  {settings.groomFullName}{' '}
+                  <span className="font-script text-3xl sm:text-5xl text-[#B68D40] lowercase font-normal px-1">
+                    &amp;
+                  </span>{' '}
+                  {settings.brideFullName}
+                </h1>
+              ) : (
+                <h1 className="max-w-3xl mx-auto font-editorial text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight uppercase leading-tight mb-6 break-words">
+                  {displayTitleFull}
+                </h1>
+              )}
+
+              {/* Centerpiece Tilted Polaroid Photo Frame */}
+              {(Boolean(heroFeatureImageUrl) ||
+                heroSlidesList.length > 0 ||
+                Boolean(settings.heroVideoUrl?.trim())) && (
+                <div className="max-w-md mx-auto my-6 bg-white p-3.5 sm:p-4 pb-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-stone-200 rotate-[-1.5deg] relative z-20">
+                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF8F5]">
+                    {settings.heroVideoUrl?.trim() ? (
+                      <AdaptiveVideoLayer
+                        videoUrl={settings.heroVideoUrl}
+                        posterUrl={heroFeatureImageUrl}
+                        focusY={videoFocusY}
+                        desktopMode={videoDesktopMode}
+                      />
+                    ) : (
+                      <BackgroundSlideshowLayer
+                        slides={heroSlidesList}
+                        transitionStyle={galleryTransitionStyle}
+                        transitionDurationMs={galleryTransitionMs}
+                        slideIntervalSeconds={gallerySlideSeconds}
+                        fallbackAdjust={heroAdj}
+                        altLabel="Polaroid Magazine Snapshot"
+                      />
+                    )}
+                  </div>
+                  <div className="pt-4 px-2 flex items-center justify-between gap-2">
+                    <p className="font-script text-2xl sm:text-3xl text-[#8B6914] leading-none">
+                      {displayTitleShort}
+                    </p>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-500">
+                      {mainScheduleEvent?.venue ||
+                        activeCountdownEvent?.venue ||
+                        settings.event2Venue}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mt-6 mb-8">
+                {settings.invitationOpeningText}
+              </p>
+
+              {/* Polaroid Capsule Countdown */}
+              {activeCountdownEvent && (
+                <div className="max-w-xl mx-auto mb-8 space-y-4">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white border border-stone-300 text-stone-800 text-[10px] sm:text-xs font-bold">
+                    <Clock className="w-3.5 h-3.5 text-[#B68D40]" />
+                    <span>{countdownLabel}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
                     {[
                       { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
                       { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
-                      {
-                        label: lang === 'ID' ? 'Menit' : 'Minutes',
-                        value: countdown.minutes,
-                      },
-                      {
-                        label: lang === 'ID' ? 'Detik' : 'Seconds',
-                        value: countdown.seconds,
-                      },
+                      { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
+                      { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
                     ].map((item) => (
                       <div
                         key={item.label}
-                        className={`inv-reveal inv-reveal-zoom h-full flex flex-col items-center justify-center ${
-                          layoutArchetype === 'BOTANICAL_AIRY'
-                            ? 'rounded-full bg-white/90 backdrop-blur-md border-2 border-white ring-1 ring-[#D4AF37]/35 py-3.5 sm:py-5 px-2 shadow-[0_10px_28px_rgba(94,140,106,0.12)]'
-                            : layoutArchetype === 'POLAROID_MAGAZINE'
-                            ? 'rounded-full bg-white border-2 border-stone-200/90 py-3 sm:py-4 px-2 shadow-md'
-                            : layoutArchetype === 'MODERN_BENTO'
-                            ? 'rounded-2xl bg-[#FAF8F5] border border-stone-200/95 border-b-2 border-b-[#D4AF37]/60 p-3 sm:p-4 shadow-xs'
-                            : layoutArchetype === 'NUSANTARA_HERITAGE'
-                            ? 'rounded-2xl bg-[#FFFDF9] border-2 border-[#C5A059]/60 outline outline-1 outline-offset-2 outline-[#C5A059]/30 p-2.5 sm:p-4 shadow-md'
-                            : 'rounded-2xl bg-white/90 backdrop-blur-md border border-[#D4AF37]/35 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)]'
-                        }`}
+                        className="rounded-full bg-white border-2 border-stone-200/90 py-3 sm:py-4 px-2 shadow-md"
                       >
-                        <div className="font-editorial text-xl sm:text-4xl font-bold text-[#9A742B]">
+                        <div className="font-editorial text-xl sm:text-4xl font-bold text-stone-900">
                           {String(item.value).padStart(2, '0')}
                         </div>
-                        <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-stone-500 font-semibold mt-0.5">
+                        <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-semibold mt-0.5">
                           {item.label}
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Save The Date (Google Calendar) Interactive Pill Button */}
                   {settings.showSaveToCalendarButton !== false && (
                     <div className="pt-2 flex justify-center">
                       <a
                         href={googleCalendarUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title={
-                          lang === 'ID'
-                            ? 'Simpan jadwal acara ini ke Google Calendar (Save The Date)'
-                            : 'Save this event to Google Calendar'
-                        }
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold whitespace-nowrap shadow-[0_6px_20px_rgba(197,160,89,0.18)] hover:shadow-[0_10px_25px_rgba(197,160,89,0.28)] hover:scale-[1.02] transition-all"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-stone-300 text-stone-900 text-xs font-bold shadow-xs transition-all"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                        <span className="whitespace-nowrap truncate">
-                          {lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}
-                        </span>
-                        <ExternalLink className="w-3 h-3 text-[#B68D40] shrink-0" />
+                        <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                        <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
+                        <ExternalLink className="w-3 h-3 text-[#B68D40]" />
                       </a>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Verse / Quote Card (Conditional via showQuoteSection) */}
               {settings.showQuoteSection !== false && settings.quoteVerse && (
-                <div
-                  className={`inv-reveal inv-reveal-up max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 p-5 sm:p-8 shadow-2xs mb-8 sm:mb-10 ${
-                    layoutArchetype === 'NUSANTARA_HERITAGE'
-                      ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
-                      : 'border border-[#D4AF37]/35'
-                  }`}
-                >
+                <div className="max-w-2xl mx-auto rounded-2xl bg-white border border-stone-200 p-5 sm:p-7 shadow-2xs">
                   <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
                     &ldquo;{settings.quoteVerse}&rdquo;
                   </p>
@@ -3430,28 +3533,258 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   )}
                 </div>
               )}
+            </div>
+          ) : layoutArchetype === 'BOTANICAL_AIRY' ? (
+            /* ============================================================================
+               D. BOTANICAL_AIRY (SEREIN / BLUBLOOM / MILDNESS / GARDEN PARTY)
+               Pastel Watercolor & Tall Cathedral Arch Hero + Botanical Corner Sprigs
+               ============================================================================ */
+            <div className="inv-reveal inv-reveal-up relative overflow-hidden bg-gradient-to-b from-white via-[#F6FAF7] to-white p-6 sm:p-12 rounded-[2.5rem] border border-emerald-200/70 text-center shadow-[0_24px_65px_rgba(94,140,106,0.14)]">
+              <FloralCornerOrnament position="top-left" enabled={showFloral} />
+              <FloralCornerOrnament position="top-right" enabled={showFloral} />
+              <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
+              <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
 
-              {/* Animated Scroll-Down Mouse Indicator Pill */}
-              <div className="mt-8 sm:mt-10 flex justify-center">
-                <a
-                  href="#mempelai"
-                  title={
-                    lang === 'ID'
-                      ? 'Gulir ke bawah untuk melihat rangkaian acara lengkap'
-                      : 'Scroll down to view full event schedule'
-                  }
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#D4AF37]/35 text-[10px] sm:text-xs font-semibold text-[#8B6914] whitespace-nowrap shadow-2xs hover:bg-[#FAF3E3] transition-all"
-                >
-                  <span className="w-4 h-6 rounded-full border-2 border-[#B68D40] flex items-start justify-center p-0.5 shrink-0">
-                    <span className="w-1 h-1.5 rounded-full bg-[#B68D40] animate-bounce" />
-                  </span>
-                  <span className="whitespace-nowrap truncate">
-                    {lang === 'ID' ? 'Lihat Rangkaian Acara' : 'Explore Schedule'}
-                  </span>
-                </a>
+              <div className="relative z-20 max-w-3xl mx-auto">
+                {/* Soft Pastel Pill Badge at the Very Top */}
+                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/90 border border-emerald-300/70 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-[0.22em] uppercase shadow-2xs mb-4">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40]" />
+                  <span>{sanitizedHeroBadge}</span>
+                </div>
+
+                {/* Couple Names in Romantic Script / Serif ABOVE Cathedral Arch */}
+                {hasSecondProfile ? (
+                  <h1 className="max-w-3xl mx-auto mb-4 flex flex-col items-center justify-center">
+                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
+                      {settings.groomFullName}
+                    </span>
+                    <span className="font-script text-3xl sm:text-5xl text-[#B68D40] my-1.5 leading-none">
+                      &amp;
+                    </span>
+                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
+                      {settings.brideFullName}
+                    </span>
+                  </h1>
+                ) : (
+                  <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-4">
+                    {displayTitleFull}
+                  </h1>
+                )}
+
+                {/* Tall Cathedral Arch Photo */}
+                {(Boolean(heroFeatureImageUrl) ||
+                  heroSlidesList.length > 0 ||
+                  Boolean(settings.heroVideoUrl?.trim())) && (
+                  <div className="relative max-w-xs sm:max-w-sm mx-auto my-6 aspect-[3/4] rounded-t-[10rem] rounded-b-3xl overflow-hidden border-4 border-white shadow-lg bg-[#FAF8F5]">
+                    <BotanicalCornerSprig position="bottom-left" size="sm" enabled={showFloral} />
+                    <BotanicalCornerSprig position="bottom-right" size="sm" enabled={showFloral} />
+                    {settings.heroVideoUrl?.trim() ? (
+                      <AdaptiveVideoLayer
+                        videoUrl={settings.heroVideoUrl}
+                        posterUrl={heroFeatureImageUrl}
+                        focusY={videoFocusY}
+                        desktopMode={videoDesktopMode}
+                      />
+                    ) : (
+                      <BackgroundSlideshowLayer
+                        slides={heroSlidesList}
+                        transitionStyle={galleryTransitionStyle}
+                        transitionDurationMs={galleryTransitionMs}
+                        slideIntervalSeconds={gallerySlideSeconds}
+                        fallbackAdjust={heroAdj}
+                        altLabel="Botanical Cathedral Arch"
+                      />
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-20 z-10 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
+                  </div>
+                )}
+
+                <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8">
+                  {settings.invitationOpeningText}
+                </p>
+
+                {/* Airy Pill Countdown */}
+                {activeCountdownEvent && (
+                  <div className="max-w-xl mx-auto mb-8 space-y-4">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 border border-emerald-200/80 text-[#8B6914] text-[10px] sm:text-xs font-bold">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{countdownLabel}</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+                      {[
+                        { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
+                        { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
+                        { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
+                        { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-full bg-white/95 backdrop-blur-md border-2 border-white ring-1 ring-[#D4AF37]/35 py-3.5 sm:py-5 px-2 shadow-[0_10px_28px_rgba(94,140,106,0.12)]"
+                        >
+                          <div className="font-editorial text-xl sm:text-4xl font-bold text-[#9A742B]">
+                            {String(item.value).padStart(2, '0')}
+                          </div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-semibold mt-0.5">
+                            {item.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {settings.showSaveToCalendarButton !== false && (
+                      <div className="pt-2 flex justify-center">
+                        <a
+                          href={googleCalendarUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-bold shadow-sm transition-all"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                          <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
+                          <ExternalLink className="w-3 h-3 text-[#B68D40]" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                  <div className="max-w-2xl mx-auto rounded-3xl bg-white/90 border border-emerald-200/70 p-5 sm:p-7 shadow-2xs">
+                    <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
+                      &ldquo;{settings.quoteVerse}&rdquo;
+                    </p>
+                    {settings.quoteSource && (
+                      <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
+                        — {settings.quoteSource} —
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          ) : (
+            /* ============================================================================
+               E. EDITORIAL_CLASSIC (LIGHT LUXURY / CHAMPAGNE SYMPHONY / GOLDEN JUBILEE)
+               Classic Ivory Luxury Card with Fine Gold Hairlines & Balanced Symmetry
+               ============================================================================ */
+            <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#FFFDF9] border border-[#D4AF37]/45 outline outline-1 -outline-offset-8 outline-[#D4AF37]/25 p-6 sm:p-12 text-center shadow-[0_25px_70px_rgba(160,130,85,0.16)]">
+              <div className="relative z-20 max-w-3xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase mb-5">
+                  <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#B68D40]" />
+                  <span>{sanitizedHeroBadge}</span>
+                </div>
+
+                {hasSecondProfile ? (
+                  <h1 className="max-w-3xl mx-auto mb-5 flex flex-col items-center justify-center">
+                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
+                      {settings.groomFullName}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="flex items-center justify-center gap-3 my-2 sm:my-3"
+                    >
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-[#D4AF37]" />
+                      <span className="font-script text-3xl sm:text-4xl text-[#B68D40] leading-none px-1">
+                        &amp;
+                      </span>
+                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent to-[#D4AF37]" />
+                    </span>
+                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
+                      {settings.brideFullName}
+                    </span>
+                  </h1>
+                ) : (
+                  <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-5">
+                    {displayTitleFull}
+                  </h1>
+                )}
+
+                {(Boolean(heroFeatureImageUrl) ||
+                  heroSlidesList.length > 0 ||
+                  Boolean(settings.heroVideoUrl?.trim())) && (
+                  <div className="relative max-w-2xl mx-auto my-6 aspect-[16/10] rounded-t-[3.5rem] rounded-b-2xl overflow-hidden border-2 border-[#D4AF37]/50 shadow-xl bg-[#FAF8F5]">
+                    {settings.heroVideoUrl?.trim() ? (
+                      <AdaptiveVideoLayer
+                        videoUrl={settings.heroVideoUrl}
+                        posterUrl={heroFeatureImageUrl}
+                        focusY={videoFocusY}
+                        desktopMode={videoDesktopMode}
+                      />
+                    ) : (
+                      <BackgroundSlideshowLayer
+                        slides={heroSlidesList}
+                        transitionStyle={galleryTransitionStyle}
+                        transitionDurationMs={galleryTransitionMs}
+                        slideIntervalSeconds={gallerySlideSeconds}
+                        fallbackAdjust={heroAdj}
+                        altLabel="Editorial Classic Banner"
+                      />
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-20 z-10 bg-gradient-to-t from-[#FFFDF9]/80 to-transparent pointer-events-none" />
+                  </div>
+                )}
+
+                <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8">
+                  {settings.invitationOpeningText}
+                </p>
+
+                {activeCountdownEvent && (
+                  <div className="max-w-xl mx-auto mb-8 space-y-4">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{countdownLabel}</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+                      {[
+                        { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
+                        { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
+                        { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
+                        { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-2xl bg-white/95 border border-[#D4AF37]/40 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)]"
+                        >
+                          <div className="font-editorial text-xl sm:text-4xl font-bold text-[#9A742B]">
+                            {String(item.value).padStart(2, '0')}
+                          </div>
+                          <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-semibold mt-0.5">
+                            {item.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {settings.showSaveToCalendarButton !== false && (
+                      <div className="pt-2 flex justify-center">
+                        <a
+                          href={googleCalendarUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold shadow-sm transition-all"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                          <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
+                          <ExternalLink className="w-3 h-3 text-[#B68D40]" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                  <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-5 sm:p-7 shadow-2xs">
+                    <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
+                      &ldquo;{settings.quoteVerse}&rdquo;
+                    </p>
+                    {settings.quoteSource && (
+                      <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
+                        — {settings.quoteSource} —
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
