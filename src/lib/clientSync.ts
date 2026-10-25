@@ -244,6 +244,33 @@ function normalizeParsedState(
       'BCA / Mandiri / BRI / BNI (Konfirmasi via Email Resmi Gmail: e98.bisnis@gmail.com)';
   }
 
+  // Purge any accidental non-superadmin workspace created for owner email agungkrisdianto98@gmail.com
+  if (Array.isArray(mergedSettings.clientGroups)) {
+    mergedSettings.clientGroups = mergedSettings.clientGroups.filter(
+      (g) => g.id !== 'client-gmail-agungkrisdiant'
+    );
+  }
+  if (
+    mergedSettings.clientWorkspaces &&
+    'client-gmail-agungkrisdiant' in mergedSettings.clientWorkspaces
+  ) {
+    const nextWs = { ...mergedSettings.clientWorkspaces };
+    delete nextWs['client-gmail-agungkrisdiant'];
+    mergedSettings.clientWorkspaces = nextWs;
+  }
+  if (mergedSettings.activeClientId === 'client-gmail-agungkrisdiant') {
+    mergedSettings.activeClientId = 'client-utama';
+  }
+
+  const rawAdminUsers =
+    Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
+      ? parsed.adminUsers.filter(
+          (u) =>
+            u.id !== 'usr-gmail-agungkrisdiant' &&
+            u.username?.toLowerCase() !== 'agungkrisdianto98@gmail.com'
+        )
+      : INITIAL_ADMIN_USERS;
+
   return {
     settings: mergedSettings,
     tasks: cleanTasks,
@@ -252,10 +279,7 @@ function normalizeParsedState(
     budgetItems: Array.isArray(parsed.budgetItems)
       ? parsed.budgetItems
       : INITIAL_BUDGET_ITEMS,
-    adminUsers:
-      Array.isArray(parsed.adminUsers) && parsed.adminUsers.length > 0
-        ? parsed.adminUsers
-        : INITIAL_ADMIN_USERS,
+    adminUsers: rawAdminUsers.length > 0 ? rawAdminUsers : INITIAL_ADMIN_USERS,
     lastSyncedAt: parsed.lastSyncedAt || '2026-01-01T00:00:00.000Z',
   };
 }
@@ -452,7 +476,40 @@ export function getStoredAdminUser(): AdminUser | null {
   try {
     const raw = localStorage.getItem(ADMIN_AUTH_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as AdminUser;
+    const parsed = JSON.parse(raw) as AdminUser;
+    const lowerEmail = (parsed.email || '').trim().toLowerCase();
+    const lowerUser = (parsed.username || '').trim().toLowerCase();
+    if (
+      lowerEmail === 'agungkrisdianto98@gmail.com' ||
+      lowerUser === 'agungkrisdianto98@gmail.com' ||
+      lowerUser === 'agungkrisdianto98' ||
+      lowerEmail === 'e98.bisnis@gmail.com' ||
+      lowerUser === 'e98.bisnis@gmail.com' ||
+      lowerUser === 'omeko42' ||
+      parsed.id === 'usr-gmail-agungkrisdiant'
+    ) {
+      const upgraded: AdminUser = {
+        ...parsed,
+        id: 'superadmin-owner',
+        username: 'superadmin',
+        nama: 'Eko Agung Krisdianto (Superadmin)',
+        role: 'SUPERADMIN',
+        jabatan: 'Superadmin • Pemilik Sistem',
+        email:
+          lowerEmail === 'e98.bisnis@gmail.com'
+            ? 'e98.bisnis@gmail.com'
+            : 'agungkrisdianto98@gmail.com',
+        clientId: 'client-utama',
+        isDefaultUser: true,
+      };
+      try {
+        localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(upgraded));
+      } catch {
+        // Ignore
+      }
+      return upgraded;
+    }
+    return parsed;
   } catch {
     return null;
   }

@@ -63,6 +63,7 @@ import {
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { PublicInvitationView } from '@/components/PublicInvitationView';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -397,9 +398,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   >('ALL');
   const [commentAuditSearch, setCommentAuditSearch] = useState('');
   const isPanitia = adminUser.role === 'PANITIA';
+  const lowerAdminUsername = (adminUser.username || '').trim().toLowerCase();
+  const lowerAdminEmail = (adminUser.email || '').trim().toLowerCase();
   const isSuperadmin =
     adminUser.role === 'SUPERADMIN' ||
-    adminUser.username.trim().toLowerCase() === 'superadmin';
+    lowerAdminUsername === 'superadmin' ||
+    lowerAdminUsername === 'omeko42' ||
+    lowerAdminUsername === 'agungkrisdianto98@gmail.com' ||
+    lowerAdminUsername === 'e98.bisnis@gmail.com' ||
+    lowerAdminEmail === 'agungkrisdianto98@gmail.com' ||
+    lowerAdminEmail === 'e98.bisnis@gmail.com';
   const userClientId = adminUser.clientId || 'client-utama';
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
     if (typeof window !== 'undefined') {
@@ -1419,6 +1427,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [keamananSubTab, setKeamananSubTab] = useState<'utama' | 'panitia'>('utama');
   const [visibilitasSubTab, setVisibilitasSubTab] = useState<'semua' | 'media'>('semua');
   const [isQuickStudioOpen, setIsQuickStudioOpen] = useState<boolean>(true);
+  const [showSplitLivePreview, setShowSplitLivePreview] = useState<boolean>(false);
+  const [livePreviewDefaultOpened, setLivePreviewDefaultOpened] = useState<boolean>(true);
   const [quickStudioModal, setQuickStudioModal] = useState<
     null | 'streaming' | 'ig_story'
   >(null);
@@ -5202,64 +5212,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Active Theme Ribbon, Active Package Badge, Workspace Switcher (Superadmin), Katalog MEPlanner, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Workspace Switcher (Superadmin), Katalog MEPlanner, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Active Invitation Theme Ribbon / Pill (Synchronized with Katalog Theme Name) */}
-              {(() => {
-                const syncedCatalogThemeName =
-                  (settingsForm as any).selectedCatalogThemeName ||
-                  (state.settings as any).selectedCatalogThemeName ||
-                  activeManagerTheme.name;
-                const syncedPackageLabel =
-                  (settingsForm as any).subscriptionPackageId ||
-                  (state.settings as any).subscriptionPackageId ||
-                  effectiveClientGroups.find(
-                    (g) => g.id === activeWorkspaceClientId
-                  )?.packageTier ||
-                  'ROYAL VIP';
-                return (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('settings');
-                        setSettingsMenuTab('background');
-                        setExpandedBgCardKey('catalog_themes');
-                      }}
-                      title={`🎨 Tema Undangan: ${syncedCatalogThemeName} (${activeManagerTheme.name}) — Klik untuk kustomisasi Tema & Latar Undangan`}
-                      className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} text-[10px] sm:text-[11px] font-bold transition-all shadow-2xs cursor-pointer`}
-                    >
-                      <span className="inline-flex items-center -space-x-1 shrink-0">
-                        {activeManagerTheme.swatches.map((hex, idx) => (
-                          <span
-                            key={hex + idx}
-                            className="w-2.5 h-2.5 rounded-full border border-white shadow-2xs"
-                            style={{ backgroundColor: hex }}
-                          />
-                        ))}
-                      </span>
-                      <span className="hidden xl:inline">🎨 Tema Undangan:</span>
-                      <span className="hidden sm:inline truncate max-w-[145px]">
-                        {syncedCatalogThemeName}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('settings');
-                        setSettingsMenuTab('paket');
-                      }}
-                      title={`Paket Aktif: ${syncedPackageLabel} — Klik untuk melihat / upgrade paket MEPlanner`}
-                      className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider transition-all shadow-2xs cursor-pointer shrink-0"
-                    >
-                      <span>💎</span>
-                      <span>{String(syncedPackageLabel).replace(/_/g, ' ')}</span>
-                    </button>
-                  </>
-                );
-              })()}
-
               {isSuperadmin &&
                 onSwitchWorkspaceClient &&
                 effectiveClientGroups.length > 0 && (
@@ -6916,7 +6870,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setGuestListViewMode('list')}
                         className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
                           guestListViewMode === 'list'
-                            ? 'bg-stone-900 text-[#E6C76B] shadow-2xs'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
                             : 'text-stone-600 hover:text-stone-900'
                         }`}
                         title="Tampilan Baris Ringkas (Klik nama untuk detail)"
@@ -6928,7 +6882,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setGuestListViewMode('grid')}
                         className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
                           guestListViewMode === 'grid'
-                            ? 'bg-stone-900 text-[#E6C76B] shadow-2xs'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
                             : 'text-stone-600 hover:text-stone-900'
                         }`}
                         title="Tampilan Kartu Grid (Semua detail langsung terlihat rapi)"
@@ -7062,9 +7016,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   }
                                 }}
                                 title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 transition-colors cursor-pointer shrink-0"
                               >
-                                <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
+                                <KeyRound className="w-2.5 h-2.5 text-[#8B6914] shrink-0" />
                                 <span>{guestHashToken}</span>
                               </button>
                             </div>
@@ -7384,9 +7338,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   }
                                 }}
                                 title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 transition-colors cursor-pointer shrink-0"
                               >
-                                <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
+                                <KeyRound className="w-2.5 h-2.5 text-[#8B6914] shrink-0" />
                                 <span>{guestHashToken}</span>
                               </button>
                             </div>
@@ -7697,7 +7651,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 onClick={() => setGuestCurrentPage(p)}
                                 className={`min-w-[30px] h-7 px-2 rounded-lg border text-xs font-extrabold transition-all cursor-pointer ${
                                   safeGuestPage === p
-                                    ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37] shadow-2xs'
+                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                                     : 'bg-white hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
                                 }`}
                               >
@@ -7879,9 +7833,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
            ===================================================================== */}
         {activeTab === 'settings' && (
-          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5">
+          <div className={`${showSplitLivePreview ? 'max-w-7xl' : 'max-w-5xl'} mx-auto space-y-4 sm:space-y-5 transition-all`}>
             {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
-            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs overflow-hidden">
                   <WeddingRingsIcon
@@ -7894,21 +7848,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
-                    Pengaturan
+                    Pengaturan Undangan &amp; Acara
                   </h2>
-                  <p className="text-[11px] sm:text-xs text-[#9A742B] font-medium truncate mt-0.5">
-                    {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
-                    {state.settings.groomNickname} &amp; {state.settings.brideNickname}
+                  <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
+                    Workspace: <strong className="text-[#8B6914]">{state.settings.groomNickname} &amp; {state.settings.brideNickname}</strong> &bull; Tema:{' '}
+                    <strong className="text-stone-800">
+                      {(settingsForm as any).selectedCatalogThemeName ||
+                        (state.settings as any).selectedCatalogThemeName ||
+                        activeManagerTheme.name}
+                    </strong>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowSplitLivePreview((prev) => !prev)}
+                  className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+                    showSplitLivePreview
+                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
+                      : 'bg-white hover:bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
+                  }`}
+                  title="Tampilkan / sembunyikan Live Preview HP di samping kanan editor"
+                >
+                  <span>📱</span>
+                  <span>
+                    {showSplitLivePreview
+                      ? 'Tutup Live Preview'
+                      : 'Live Preview Samping'}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => onSwitchToPublicPreview()}
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
-                  title="Buka tampilan undangan publik"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors cursor-pointer"
+                  title="Buka tampilan undangan publik layar penuh"
                 >
                   <Eye className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                   <span className="hidden sm:inline">Pratinjau Undangan</span>
@@ -7916,8 +7891,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT PANEL) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+            {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT + OPTIONAL STICKY LIVE PREVIEW PHONE */}
+            <div className="flex flex-col xl:flex-row gap-5 items-start">
+              <div className="flex-1 min-w-0 w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
               <div className="lg:col-span-4 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {[
@@ -8502,51 +8478,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </div>
                             </div>
                           )}
-
-                          {/* 2 Exclusive Feature Banners below the 15-Tile Grid */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCheckedInGuest(null);
-                                setReceptionSearchInput('');
-                                setIsGuestReceptionModalOpen(true);
-                              }}
-                              className="p-3 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-stone-900 border border-[#D4AF37]/55 flex items-center justify-between gap-2.5 text-left shadow-xs transition-all cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="text-lg shrink-0">📋</span>
-                                <div className="min-w-0">
-                                  <p className="text-[11px] sm:text-xs font-extrabold text-stone-900 truncate">
-                                    Check-In &amp; Layar Penerima Tamu
-                                  </p>
-                                  <p className="text-[10px] text-[#8B6914] font-semibold truncate">
-                                    Guest Reception Hari-H &bull; Scan / Ketik Kode Tamu
-                                  </p>
-                                </div>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-[#8B6914] shrink-0" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setActiveTab('readiness')}
-                              className="p-3 rounded-xl bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] hover:from-[#F3E5C8] hover:to-[#FAF3E3] text-stone-900 border border-[#D4AF37]/60 flex items-center justify-between gap-2.5 text-left shadow-xs transition-all cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="text-lg shrink-0">📊</span>
-                                <div className="min-w-0">
-                                  <p className="text-[11px] sm:text-xs font-extrabold text-stone-900 truncate">
-                                    Event Planner (Tracker &amp; Budget)
-                                  </p>
-                                  <p className="text-[10px] text-[#8B6914] font-semibold truncate">
-                                    Kesiapan {metrics.readinessPercent}% &bull; Checklist &amp; Moneter
-                                  </p>
-                                </div>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-[#8B6914] shrink-0" />
-                            </button>
-                          </div>
                         </>
                       )}
                     </div>
@@ -10415,28 +10346,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                     : ev.id
                                                                 )
                                                               }
-                                                              title="Buka/tutup pengaturan Switch (Acara Utama, Countdown, Tampil) & form edit"
-                                                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
-                                                                isEvExpanded
-                                                                  ? 'bg-stone-900 text-[#E6C76B] border-[#D4AF37]'
-                                                                  : 'bg-stone-100 hover:bg-stone-200/80 text-stone-700 border-stone-200'
-                                                              }`}
-                                                            >
-                                                              <Settings className="w-3.5 h-3.5 shrink-0" />
-                                                              <span className="hidden sm:inline">
-                                                                Switch
-                                                              </span>
-                                                            </button>
-
-                                                            <button
-                                                              type="button"
-                                                              onClick={() =>
-                                                                setExpandedScheduleEventId(
-                                                                  isEvExpanded
-                                                                    ? null
-                                                                    : ev.id
-                                                                )
-                                                              }
                                                               className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
                                                                 isEvExpanded
                                                                   ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
@@ -10445,7 +10354,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             >
                                                               {isEvExpanded
                                                                 ? 'Tutup'
-                                                                : 'Edit'}
+                                                                : 'Edit & Switch'}
                                                             </button>
 
                                                             <button
@@ -12527,21 +12436,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =============================================================== */}
                 {settingsMenuTab === 'background' && (
                   <form onSubmit={handleSaveSettingsModal} className="space-y-3.5 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3 flex-wrap">
+                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <Sparkles className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Tema &amp; Latar (Sinkron 100% Katalog &rarr; Hasil Undangan)
+                          Tema &amp; Latar
                         </h3>
                         <InfoTooltip text="Pilih struktur arketipe desain, tema dari katalog (Timeless Snapshot, Serein, Javanese Kraton, dll.), atau palet warna. Semua pilihan langsung mengubah tampilan undangan publik secara real-time." />
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`px-2.5 py-1 rounded-full border ${activeManagerTheme.badgeIdle} font-bold text-[11px] whitespace-nowrap shrink-0`}>
-                          🎨 {(settingsForm as any).selectedCatalogThemeName || (state.settings as any).selectedCatalogThemeName || activeManagerTheme.name} &bull; Veil {settingsForm.bgOverlayOpacity ?? 88}%
-                        </span>
-                        <span className="px-2.5 py-1 rounded-full bg-stone-900 text-[#F3E5AB] font-extrabold text-[10px] uppercase tracking-wider">
-                          📐 {((settingsForm as any).themeLayoutArchetype || (state.settings as any).themeLayoutArchetype || 'EDITORIAL_CLASSIC').replace('_', ' ')}
-                        </span>
                       </div>
                     </div>
 
@@ -12611,7 +12512,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }}
                               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                                 isSelectedArch
-                                  ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-[#D4AF37]/60'
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs ring-2 ring-[#D4AF37]/50'
                                   : 'bg-white hover:bg-[#FAF3E3]/70 text-stone-800 border-stone-200 hover:border-[#D4AF37]'
                               }`}
                             >
@@ -12620,7 +12521,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </p>
                               <p
                                 className={`text-[10px] truncate mt-0.5 ${
-                                  isSelectedArch ? 'text-stone-300' : 'text-stone-500'
+                                  isSelectedArch ? 'text-white/95' : 'text-stone-500'
                                 }`}
                               >
                                 {arch.desc}
@@ -13020,41 +12921,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     `✓ Tema Katalog "${presetItem.name}" (${presetItem.categoryLabel} • ${presetItem.layoutArchetype}) berhasil diterapkan ke undangan!`
                                   );
                                 }}
-                                className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                                className={`rounded-xl border text-left transition-all flex flex-col justify-between overflow-hidden cursor-pointer ${
                                   isCurrent
                                     ? 'bg-white ring-2 ring-[#B68D40] border-[#B68D40] shadow-xs'
-                                    : 'bg-white hover:bg-[#FAF3E3]/70 border-stone-200/90 hover:border-[#D4AF37]'
+                                    : 'bg-white hover:bg-[#FAF3E3]/60 border-stone-200/90 hover:border-[#D4AF37]'
                                 }`}
                               >
-                                <div className="flex items-center justify-between gap-1.5">
-                                  <span className="text-[10px] font-bold text-[#8B6914] truncate">
-                                    {presetItem.categoryLabel}
-                                  </span>
-                                  <div className="flex items-center -space-x-1 shrink-0">
-                                    {presetItem.swatches.map((hex, idx) => (
-                                      <span
-                                        key={hex + idx}
-                                        className="w-3 h-3 rounded-full border border-white shadow-2xs"
-                                        style={{ backgroundColor: hex }}
-                                      />
-                                    ))}
-                                  </div>
+                                <div className="h-24 w-full overflow-hidden bg-stone-100 border-b border-stone-100">
+                                  <img
+                                    src={presetItem.coverBgUrl}
+                                    alt={presetItem.name}
+                                    className="w-full h-full object-cover"
+                                  />
                                 </div>
-                                <div>
-                                  <div className="flex items-center justify-between gap-1">
-                                    <p className="font-extrabold text-xs text-stone-900 truncate">
-                                      {presetItem.name}
-                                    </p>
-                                    {isCurrent && (
-                                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold shrink-0">
-                                        Aktif
-                                      </span>
-                                    )}
+                                <div className="p-2.5 space-y-1.5 bg-white">
+                                  <div className="flex items-center justify-between gap-1.5">
+                                    <span className="text-[10px] font-bold text-[#8B6914] truncate">
+                                      {presetItem.categoryLabel}
+                                    </span>
+                                    <div className="flex items-center -space-x-1 shrink-0">
+                                      {presetItem.swatches.map((hex, idx) => (
+                                        <span
+                                          key={hex + idx}
+                                          className="w-3 h-3 rounded-full border border-white shadow-2xs"
+                                          style={{ backgroundColor: hex }}
+                                        />
+                                      ))}
+                                    </div>
                                   </div>
-                                  <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                                    {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
-                                    {presetItem.frameStyle}
-                                  </p>
+                                  <div>
+                                    <div className="flex items-center justify-between gap-1">
+                                      <p className="font-extrabold text-xs text-stone-900 truncate">
+                                        {presetItem.name}
+                                      </p>
+                                      {isCurrent && (
+                                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold shrink-0">
+                                          Aktif
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-stone-500 truncate mt-0.5">
+                                      {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
+                                      {presetItem.frameStyle}
+                                    </p>
+                                  </div>
                                 </div>
                               </button>
                             );
@@ -15535,6 +15445,70 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 )}
               </div>
+              </div>
+
+              {/* STICKY RIGHT-HAND MOBILE LIVE PREVIEW FRAME (WHEN showSplitLivePreview IS TRUE) */}
+              {showSplitLivePreview && (
+                <div className="sticky top-20 w-full xl:w-[390px] shrink-0 space-y-2.5">
+                  <div className="bg-white rounded-2xl border border-[#D4AF37]/40 p-3 shadow-xs flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      <span className="text-xs font-extrabold text-stone-900 truncate">
+                        📱 Live Preview Undangan
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setLivePreviewDefaultOpened(false)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+                          !livePreviewDefaultOpened
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white'
+                            : 'bg-stone-100 text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        Sampul
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLivePreviewDefaultOpened(true)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+                          livePreviewDefaultOpened
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white'
+                            : 'bg-stone-100 text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        Isi Undangan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSplitLivePreview(false)}
+                        title="Tutup Live Preview Samping"
+                        className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 text-[10px] font-bold cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-[640px] rounded-[32px] border-[6px] border-stone-900 overflow-hidden shadow-xl bg-white [transform:translateZ(0)] relative">
+                    <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+                      <PublicInvitationView
+                        key={livePreviewDefaultOpened ? 'preview-opened' : 'preview-cover'}
+                        settings={{ ...state.settings, ...settingsForm }}
+                        guests={state.guests}
+                        wishes={state.wishes}
+                        guestParamName="Tamu Kehormatan VIP"
+                        guestParamCode=""
+                        defaultOpened={livePreviewDefaultOpened}
+                        isAdminLoggedIn={true}
+                        onOpenAdminPortal={() => {}}
+                        onSubmitRsvp={async () => {}}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -15552,11 +15526,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
-                    Superadmin
+                    Panel Superadmin Multi-Klien
                   </h2>
-                  <p className="text-[11px] sm:text-xs text-[#9A742B] font-medium truncate mt-0.5">
-                    {adminUser.nama} &bull; @{adminUser.username} &bull;{' '}
-                    {effectiveClientGroups.length} Klien Komersial Aktif
+                  <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
+                    Manajemen Lisensi, Gateway Pembayaran &amp; {effectiveClientGroups.length} Klien Komersial Aktif
                   </p>
                 </div>
               </div>

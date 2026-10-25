@@ -356,6 +356,12 @@ function WeddingAppContent() {
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginLang, setLoginLang] = useState<'ID' | 'EN'>('ID');
+  const [authModalMode, setAuthModalMode] = useState<
+    'SIGN_IN' | 'ACCESS_CODE' | 'REGISTER' | 'GOOGLE_CHOOSER'
+  >('SIGN_IN');
+  const [showCustomGoogleInput, setShowCustomGoogleInput] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [registerPasswordInput, setRegisterPasswordInput] = useState('');
   const [isGmailExpanded, setIsGmailExpanded] = useState(false);
   const [gmailAddressInput, setGmailAddressInput] = useState('');
   const [gmailEventTitleInput, setGmailEventTitleInput] = useState('');
@@ -434,26 +440,69 @@ function WeddingAppContent() {
     });
 
   const activeWorkspaceClientId = useMemo(() => {
+    const lowerUser = (adminUser?.username || '').trim().toLowerCase();
+    const lowerEmail = (adminUser?.email || '').trim().toLowerCase();
     const isSuper =
       adminUser?.role === 'SUPERADMIN' ||
-      adminUser?.username?.trim().toLowerCase() === 'superadmin';
+      lowerUser === 'superadmin' ||
+      lowerUser === 'omeko42' ||
+      lowerUser === 'agungkrisdianto98@gmail.com' ||
+      lowerUser === 'e98.bisnis@gmail.com' ||
+      lowerEmail === 'agungkrisdianto98@gmail.com' ||
+      lowerEmail === 'e98.bisnis@gmail.com';
     if (!isSuper) {
       return adminUser?.clientId || 'client-utama';
     }
-    return selectedAdminWorkspaceId || 'client-utama';
+    return selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant'
+      ? 'client-utama'
+      : selectedAdminWorkspaceId || 'client-utama';
   }, [adminUser, selectedAdminWorkspaceId]);
+
+  const resolveExactKeyAcrossWorkspaces = useCallback(
+    (rawKey: string) => {
+      const k = rawKey.trim();
+      if (!k) return null;
+      const hashMatch = resolveGuestByHashTokenAcrossWorkspaces(
+        k,
+        allWorkspacesForHashLookup
+      );
+      if (hashMatch && hashMatch.hashToken === k) {
+        return hashMatch;
+      }
+      const kUpper = k.toUpperCase();
+      for (const ws of allWorkspacesForHashLookup) {
+        for (const g of ws.guests || []) {
+          const explicitToken = g.invitationToken?.trim();
+          const invCode = g.invitationCode?.trim();
+          if (
+            (explicitToken && explicitToken === k) ||
+            (invCode && invCode.toUpperCase() === kUpper)
+          ) {
+            return {
+              clientId: ws.clientId,
+              clientLabel: ws.clientLabel,
+              guest: g,
+              hashToken: computeGuestInvitationHash(ws.clientId, g),
+            };
+          }
+        }
+      }
+      return hashMatch;
+    },
+    [allWorkspacesForHashLookup]
+  );
 
   // Public view routing: null = show Commercial Landing Page (/); string = show PublicInvitationView for that clientId
   const [publicSelectedClientId, setPublicSelectedClientId] = useState<
     string | null
   >(() => {
     if (urlGuestCode) {
-      const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
+      const resolvedKey = resolveGuestByHashTokenAcrossWorkspaces(
         urlGuestCode,
         allWorkspacesForHashLookup
       );
-      if (resolvedHash) {
-        return resolvedHash.clientId;
+      if (resolvedKey) {
+        return resolvedKey.clientId;
       }
     }
     if (urlClientParam || urlGuestTo || urlGuestCode) {
@@ -469,14 +518,14 @@ function WeddingAppContent() {
     code?: string;
   }>(() => {
     if (urlGuestCode) {
-      const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
+      const resolvedKey = resolveGuestByHashTokenAcrossWorkspaces(
         urlGuestCode,
         allWorkspacesForHashLookup
       );
-      if (resolvedHash) {
+      if (resolvedKey) {
         return {
-          to: resolvedHash.guest.guestName,
-          code: resolvedHash.hashToken,
+          to: resolvedKey.guest.guestName,
+          code: resolvedKey.hashToken,
         };
       }
     }
@@ -485,15 +534,12 @@ function WeddingAppContent() {
 
   useEffect(() => {
     if (urlGuestCode) {
-      const resolvedHash = resolveGuestByHashTokenAcrossWorkspaces(
-        urlGuestCode,
-        allWorkspacesForHashLookup
-      );
-      if (resolvedHash) {
-        setPublicSelectedClientId(resolvedHash.clientId);
+      const resolvedKey = resolveExactKeyAcrossWorkspaces(urlGuestCode);
+      if (resolvedKey) {
+        setPublicSelectedClientId(resolvedKey.clientId);
         setManualGuestLookup({
-          to: resolvedHash.guest.guestName,
-          code: resolvedHash.hashToken,
+          to: resolvedKey.guest.guestName,
+          code: resolvedKey.hashToken,
         });
         return;
       }
@@ -509,7 +555,7 @@ function WeddingAppContent() {
     urlGuestTo,
     urlGuestCode,
     clientGroups,
-    allWorkspacesForHashLookup,
+    resolveExactKeyAcrossWorkspaces,
   ]);
 
   const changeViewMode = useCallback((mode: 'PUBLIC' | 'ADMIN') => {
@@ -544,6 +590,14 @@ function WeddingAppContent() {
             setAdminUser(null);
             if (urlMode === 'admin') {
               setIsLoginModalOpen(true);
+            }
+          } else {
+            setAdminUser(cachedUser);
+            if (
+              cachedUser.role === 'SUPERADMIN' &&
+              selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant'
+            ) {
+              setSelectedAdminWorkspaceId('client-utama');
             }
           }
           return;
@@ -882,9 +936,20 @@ function WeddingAppContent() {
     if (adminUser) {
       changeViewMode('ADMIN');
     } else {
+      setAuthModalMode('SIGN_IN');
+      setShowCustomGoogleInput(false);
+      setLoginErrorMsg('');
       setIsLoginModalOpen(true);
     }
   };
+
+  useEffect(() => {
+    if (isLoginModalOpen) {
+      setAuthModalMode('SIGN_IN');
+      setShowCustomGoogleInput(false);
+      setLoginErrorMsg('');
+    }
+  }, [isLoginModalOpen]);
 
   useEffect(() => {
     if (!loginWelcomeToast) return;
@@ -955,20 +1020,27 @@ function WeddingAppContent() {
       const localPart = email.split('@')[0] || 'planner';
 
       const isOwnerAccount =
+        email === 'agungkrisdianto98@gmail.com' ||
         email === 'e98.bisnis@gmail.com' ||
         email === 'omeko42@gmail.com' ||
+        rawEmail === 'agungkrisdianto98' ||
         rawEmail === 'omeko42' ||
+        localPart === 'agungkrisdianto98' ||
         localPart === 'omeko42' ||
         localPart === 'e98.bisnis';
 
       if (isOwnerAccount) {
         const ownerUser: AdminUser = {
-          id: 'usr-owner-eko',
-          username: 'eko',
-          nama: 'Eko Agung K. (Owner)',
+          id: 'superadmin-owner',
+          username: 'superadmin',
+          nama: 'Eko Agung Krisdianto (Superadmin)',
           role: 'SUPERADMIN',
-          jabatan: 'Owner & Lead Developer (omeko42)',
-          email: 'e98.bisnis@gmail.com',
+          jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
+          email:
+            email === 'e98.bisnis@gmail.com'
+              ? 'e98.bisnis@gmail.com'
+              : 'agungkrisdianto98@gmail.com',
+          isDefaultUser: true,
           clientId: 'client-utama',
           clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
             state.settings.brideNickname || 'Selo'
@@ -977,8 +1049,8 @@ function WeddingAppContent() {
         handleLoginSuccess(
           ownerUser,
           loginLang === 'EN'
-            ? 'Welcome back, Eko (Owner / Developer)! Full Superadmin access enabled.'
-            : 'Selamat datang kembali, Eko (Owner / Developer)! Akses Superadmin aktif.'
+            ? 'Welcome back, Eko (Superadmin / Owner)! Full Superadmin access enabled.'
+            : 'Selamat datang kembali, Eko (Superadmin / Owner)! Akses Superadmin aktif.'
         );
         return;
       }
@@ -1261,20 +1333,27 @@ function WeddingAppContent() {
     const localPart = normalizedEmail.split('@')[0] || 'planner';
 
     const isOwnerAccount =
+      normalizedEmail === 'agungkrisdianto98@gmail.com' ||
       normalizedEmail === 'e98.bisnis@gmail.com' ||
       normalizedEmail === 'omeko42@gmail.com' ||
+      raw === 'agungkrisdianto98' ||
       raw === 'omeko42' ||
+      localPart === 'agungkrisdianto98' ||
       localPart === 'omeko42' ||
       localPart === 'e98.bisnis';
 
     if (isOwnerAccount) {
       const ownerUser: AdminUser = {
-        id: 'usr-owner-eko',
-        username: 'eko',
-        nama: 'Eko Agung K. (Owner)',
+        id: 'superadmin-owner',
+        username: 'superadmin',
+        nama: 'Eko Agung Krisdianto (Superadmin)',
         role: 'SUPERADMIN',
-        jabatan: 'Owner & Lead Developer (omeko42)',
-        email: 'e98.bisnis@gmail.com',
+        jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
+        email:
+          normalizedEmail === 'e98.bisnis@gmail.com'
+            ? 'e98.bisnis@gmail.com'
+            : 'agungkrisdianto98@gmail.com',
+        isDefaultUser: true,
         clientId: 'client-utama',
         clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
           state.settings.brideNickname || 'Selo'
@@ -1286,8 +1365,8 @@ function WeddingAppContent() {
       handleLoginSuccess(
         ownerUser,
         loginLang === 'EN'
-          ? 'Welcome back, Eko (Owner / Developer)! Full Superadmin access enabled.'
-          : 'Selamat datang kembali, Eko (Owner / Developer)! Akses Superadmin aktif.'
+          ? 'Welcome back, Eko (Superadmin / Owner)! Full Superadmin access enabled.'
+          : 'Selamat datang kembali, Eko (Superadmin / Owner)! Akses Superadmin aktif.'
       );
       return;
     }
@@ -1312,15 +1391,9 @@ function WeddingAppContent() {
     if (!cleanId || !loginPassword) {
       setLoginErrorMsg(
         loginLang === 'EN'
-          ? 'Please enter both username and password.'
-          : 'Mohon isi username dan kata sandi Anda.'
+          ? 'Please enter both email/username and password.'
+          : 'Mohon isi email/username dan kata sandi Anda.'
       );
-      return;
-    }
-
-    // Support entering a Gmail address directly in the username field too
-    if (cleanId.toLowerCase().endsWith('@gmail.com')) {
-      handleGmailLoginSubmit(undefined, cleanId);
       return;
     }
 
@@ -1337,28 +1410,152 @@ function WeddingAppContent() {
       });
 
       const json = await res.json();
-      if (!res.ok || !json.success || !json.user) {
-        setLoginErrorMsg(
-          json.error ||
-            (loginLang === 'EN'
-              ? 'Invalid username or password. You can also sign in with Google (Gmail) above.'
-              : 'Username atau kata sandi belum sesuai. Anda juga dapat masuk cepat dengan Google (Gmail) di atas.')
-        );
+      if (res.ok && json.success && json.user) {
+        setLoginIdentifier('');
+        setLoginPassword('');
+        handleLoginSuccess(json.user as AdminUser);
         return;
       }
 
-      setLoginIdentifier('');
-      setLoginPassword('');
-      handleLoginSuccess(json.user as AdminUser);
+      // If not found in /api/auth and user entered a regular client @gmail.com address, sign in via Google Workspace
+      const lowerId = cleanId.toLowerCase();
+      if (lowerId.endsWith('@gmail.com')) {
+        setLoginIdentifier('');
+        setLoginPassword('');
+        handleGmailLoginSubmit(undefined, cleanId);
+        return;
+      }
+
+      setLoginErrorMsg(
+        json.error ||
+          (loginLang === 'EN'
+            ? 'Invalid email/username or password.'
+            : 'Email/username atau kata sandi belum sesuai.')
+      );
     } catch {
+      const lowerId = cleanId.toLowerCase();
+      if (lowerId.endsWith('@gmail.com')) {
+        setLoginIdentifier('');
+        setLoginPassword('');
+        handleGmailLoginSubmit(undefined, cleanId);
+        return;
+      }
       setLoginErrorMsg(
         loginLang === 'EN'
           ? 'Unable to reach authentication server. Please check your connection or use Google Sign-In.'
-          : 'Gagal menghubungi server otentikasi. Periksa koneksi Anda atau gunakan Masuk dengan Google (Gmail).'
+          : 'Gagal menghubungi server otentikasi. Periksa koneksi Anda atau gunakan Masuk dengan Google.'
       );
     } finally {
       setIsSubmittingLogin(false);
     }
+  };
+
+  const handleAccessCodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginErrorMsg('');
+    const code = accessCodeInput.trim();
+    if (!code) {
+      setLoginErrorMsg(
+        loginLang === 'ID'
+          ? 'Silakan masukkan kode akses undangan atau workspace.'
+          : 'Please enter an invitation or workspace access code.'
+      );
+      return;
+    }
+
+    const lower = code.toLowerCase();
+    if (lower === 'omeko42' || lower === 'e98.bisnis@gmail.com') {
+      setAccessCodeInput('');
+      void handleQuickCreateWithGoogle({
+        email: 'e98.bisnis@gmail.com',
+        packageId: 'ENTERPRISE',
+      });
+      return;
+    }
+
+    const keyMatch = resolveExactKeyAcrossWorkspaces(code);
+    if (keyMatch) {
+      setAccessCodeInput('');
+      setIsLoginModalOpen(false);
+      handleSelectClientInvitationFromLanding(
+        keyMatch.clientId,
+        keyMatch.guest.guestName,
+        keyMatch.hashToken
+      );
+      return;
+    }
+
+    const dummyMeta = SHOWCASE_DUMMY_CLIENT_METAS.find(
+      (m) =>
+        m.id.toLowerCase() === lower ||
+        m.slug.toLowerCase() === lower
+    );
+    if (dummyMeta) {
+      setAccessCodeInput('');
+      setIsLoginModalOpen(false);
+      handleOpenDemoManager(
+        dummyMeta.id,
+        demoPackageTier,
+        demoSelectedThemeId
+      );
+      return;
+    }
+
+    const matchedGroup = clientGroups.find(
+      (g) =>
+        g.id.toLowerCase() === lower ||
+        g.clientCode.toLowerCase() === lower
+    );
+    if (matchedGroup) {
+      setAccessCodeInput('');
+      const wsUser: AdminUser = {
+        id: `usr-code-${matchedGroup.id}`,
+        username: matchedGroup.clientCode.toLowerCase(),
+        nama: matchedGroup.coupleLabel || matchedGroup.clientName,
+        role: 'MEMPELAI_PRIA',
+        jabatan: `Workspace • ${matchedGroup.packageTier}`,
+        email: `${matchedGroup.clientCode.toLowerCase()}@meplanner.id`,
+        clientId: matchedGroup.id,
+        clientName: matchedGroup.clientName,
+      };
+      handleLoginSuccess(wsUser);
+      return;
+    }
+
+    setLoginErrorMsg(
+      loginLang === 'ID'
+        ? 'Kode akses tidak ditemukan. Pastikan kode akses 21 karakter atau kode workspace sesuai.'
+        : 'Access code not found. Please check your 21-character invitation key or workspace code.'
+    );
+  };
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginErrorMsg('');
+    const rawEmail = gmailAddressInput.trim().toLowerCase();
+    const rawTitle = gmailEventTitleInput.trim();
+    if (!rawEmail) {
+      setLoginErrorMsg(
+        loginLang === 'ID'
+          ? 'Mohon isi alamat Email Anda.'
+          : 'Please enter your Email address.'
+      );
+      return;
+    }
+    const normalizedEmail = rawEmail.includes('@')
+      ? rawEmail
+      : `${rawEmail}@gmail.com`;
+    setGmailAddressInput('');
+    setGmailEventTitleInput('');
+    setRegisterPasswordInput('');
+    void handleQuickCreateWithGoogle({
+      email: normalizedEmail,
+      displayName: rawTitle || undefined,
+      eventTitle: rawTitle || undefined,
+      eventType: gmailEventTypeInput,
+      packageId: 'GRATIS',
+      catalogThemeId: demoSelectedThemeId,
+    });
   };
 
   const handleSyncStateAndUser = (
@@ -2935,460 +3132,620 @@ function WeddingAppContent() {
 
       {isLoginModalOpen && (
         <div
-          className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-50 bg-stone-900/55 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setIsLoginModalOpen(false);
             }
           }}
         >
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[92dvh] overflow-y-auto shadow-[0_24px_64px_rgba(28,25,23,0.18)] border-t sm:border border-stone-200 text-stone-800 pb-safe">
-            {/* Warm, Bright Editorial Header with ID | EN Language Toggle */}
-            <div className="bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE2] p-5 sm:p-6 relative border-b border-stone-200/90">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-[#D4AF37]/40 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8B6914]">
-                  <Sparkles className="w-3 h-3 text-[#C5A059]" />
-                  {loginLang === 'EN'
-                    ? 'Planner & Host Portal'
-                    : 'Portal Planner & Mempelai'}
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className="inline-flex items-center rounded-full bg-white p-0.5 border border-stone-200 shadow-sm"
-                    role="group"
-                    aria-label="Language switcher"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setLoginLang('ID')}
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-all ${
-                        loginLang === 'ID'
-                          ? 'bg-[#C5A059] text-white shadow-sm'
-                          : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                    >
-                      ID
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLoginLang('EN')}
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-all ${
-                        loginLang === 'EN'
-                          ? 'bg-[#C5A059] text-white shadow-sm'
-                          : 'text-stone-500 hover:text-stone-800'
-                      }`}
-                    >
-                      EN
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsLoginModalOpen(false)}
-                    className="p-1.5 rounded-full bg-white hover:bg-stone-100 text-stone-500 hover:text-stone-800 border border-stone-200 transition-colors"
-                    aria-label={loginLang === 'EN' ? 'Close' : 'Tutup'}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+          <div className="max-w-[420px] w-full my-auto">
+            {/* Top Brand Bar (Matches Wevitation Clean Header Above Card) */}
+            <div className="flex items-center justify-between mb-4 px-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/95 shadow-sm flex items-center justify-center shrink-0">
+                  <WeddingRingsIcon className="w-6 h-6" />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-sm flex items-center justify-center shrink-0">
-                  <WeddingRingsIcon className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 leading-snug">
-                    {loginLang === 'EN'
-                      ? 'Welcome to MEPlanner'
-                      : 'Selamat Datang di MEPlanner'}
-                  </h3>
-                  <p className="text-xs text-stone-600 mt-0.5 leading-relaxed">
-                    {loginLang === 'EN'
-                      ? 'Manage your digital invitation, guest list, RSVP & event budget in one warm place.'
-                      : 'Kelola undangan digital, daftar tamu, RSVP & anggaran acara Anda dengan nyaman.'}
+                <div className="leading-tight">
+                  <p className="text-base font-extrabold text-white tracking-tight">
+                    MEPlanner
+                  </p>
+                  <p className="text-[11px] text-stone-200 font-medium">
+                    online event &amp; wedding invitation
                   </p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="inline-flex items-center rounded-lg bg-white/15 p-0.5 border border-white/20 backdrop-blur-xs"
+                  role="group"
+                  aria-label="Language switcher"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLoginLang('ID')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                      loginLang === 'ID'
+                        ? 'bg-white text-stone-900 shadow-xs'
+                        : 'text-white/80 hover:text-white'
+                    }`}
+                  >
+                    ID
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginLang('EN')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                      loginLang === 'EN'
+                        ? 'bg-white text-stone-900 shadow-xs'
+                        : 'text-white/80 hover:text-white'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label={loginLang === 'EN' ? 'Close' : 'Tutup'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="p-5 sm:p-6 space-y-4 text-xs sm:text-sm">
+            {/* Minimalist White Card (max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl) */}
+            <div className="max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl text-stone-800">
               {loginErrorMsg && (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2.5 text-xs font-medium">
+                <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{loginErrorMsg}</span>
                 </div>
               )}
 
-              {/* OPTION 1: Sign in with Google (Gmail) */}
-              <div className="rounded-2xl border border-stone-200/90 bg-gradient-to-b from-white to-[#FAF8F5] p-3.5 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsGmailExpanded((prev) => !prev);
-                    setLoginErrorMsg('');
-                  }}
-                  className="w-full py-3 px-4 rounded-xl bg-white hover:bg-stone-50 active:bg-stone-100 text-stone-800 font-extrabold text-xs sm:text-sm border border-stone-200/90 shadow-sm flex items-center justify-center gap-3 transition-all"
-                >
-                  {/* Official 4-Color Google 'G' SVG Logo */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-5 h-5 shrink-0"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill="#4285F4"
-                      d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
-                    />
-                  </svg>
-                  <span>
-                    {loginLang === 'EN'
-                      ? 'Continue with Google (Gmail)'
-                      : 'Masuk dengan Google (Gmail)'}
-                  </span>
-                </button>
+              {authModalMode === 'SIGN_IN' && (
+                <>
+                  <div className="text-center mb-6">
+                    <p className="text-base font-medium text-stone-700">
+                      {loginLang === 'ID' ? 'Masuk ke' : 'Sign In to'}
+                    </p>
+                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
+                      MEPlanner
+                    </h3>
+                  </div>
 
-                {isGmailExpanded && (
                   <form
-                    onSubmit={(e) => handleGmailLoginSubmit(e)}
-                    className="mt-3 pt-3 border-t border-stone-200/80 space-y-2.5"
+                    onSubmit={handlePlannerCredentialsSubmit}
+                    className="space-y-4"
                   >
                     <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                        {loginLang === 'EN'
-                          ? 'Enter your @gmail.com address'
-                          : 'Masukkan alamat @gmail.com Anda'}
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="email"
-                          autoFocus
-                          value={gmailAddressInput}
-                          onChange={(e) => setGmailAddressInput(e.target.value)}
-                          placeholder={
-                            loginLang === 'EN'
-                              ? 'yourname@gmail.com'
-                              : 'nama@gmail.com'
-                          }
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 focus:outline-none bg-white font-medium text-sm text-stone-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                        {loginLang === 'EN'
-                          ? 'Event / Couple Name (Optional)'
-                          : 'Nama Acara / Pasangan (Opsional)'}
+                      <label className="block text-xs font-bold text-stone-800 mb-1.5">
+                        Email
                       </label>
                       <input
                         type="text"
-                        value={gmailEventTitleInput}
-                        onChange={(e) => setGmailEventTitleInput(e.target.value)}
-                        placeholder={
-                          loginLang === 'EN'
-                            ? 'Example: Andi & Rina'
-                            : 'Contoh: Andi & Rina'
-                        }
-                        className="w-full px-3.5 py-2 rounded-xl border border-stone-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 focus:outline-none bg-white font-medium text-xs sm:text-sm text-stone-900"
+                        value={loginIdentifier}
+                        onChange={(e) => setLoginIdentifier(e.target.value)}
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                        {loginLang === 'EN'
-                          ? 'Event Category'
-                          : 'Kategori Acara'}
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                        {(
-                          [
-                            {
-                              id: 'WEDDING' as EventCategoryType,
-                              labelId: '💍 Pernikahan',
-                              labelEn: '💍 Wedding',
-                            },
-                            {
-                              id: 'BIRTHDAY' as EventCategoryType,
-                              labelId: '🎂 Ulang Tahun',
-                              labelEn: '🎂 Birthday',
-                            },
-                            {
-                              id: 'GRADUATION' as EventCategoryType,
-                              labelId: '🎓 Wisuda',
-                              labelEn: '🎓 Graduation',
-                            },
-                            {
-                              id: 'MEETING' as EventCategoryType,
-                              labelId: '🏛️ Rapat',
-                              labelEn: '🏛️ Meeting',
-                            },
-                            {
-                              id: 'GALA_DINNER' as EventCategoryType,
-                              labelId: '🥂 Gala Dinner',
-                              labelEn: '🥂 Gala Dinner',
-                            },
-                          ] as const
-                        ).map((cat) => {
-                          const isSelected = gmailEventTypeInput === cat.id;
-                          return (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => setGmailEventTypeInput(cat.id)}
-                              className={`px-2 py-1.5 rounded-xl border text-[10px] sm:text-[11px] font-extrabold transition-all text-left truncate ${
-                                isSelected
-                                  ? 'bg-indigo-50 border-indigo-400 text-indigo-800 shadow-sm'
-                                  : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-600'
-                              }`}
-                            >
-                              {loginLang === 'EN' ? cat.labelEn : cat.labelId}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                      <span className="text-[10px] font-semibold text-stone-500">
-                        {loginLang === 'EN' ? 'Quick pick:' : 'Pilih cepat:'}
-                      </span>
-                      {[
-                        {
-                          label:
-                            loginLang === 'EN'
-                              ? 'Bride & Groom'
-                              : 'Mempelai & Keluarga',
-                          email: 'mempelai.bahagia@gmail.com',
-                        },
-                        {
-                          label:
-                            loginLang === 'EN'
-                              ? 'Event Committee'
-                              : 'Panitia Acara',
-                          email: 'panitia.acara@gmail.com',
-                        },
-                      ].map((preset) => (
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-stone-800">
+                          Password
+                        </label>
                         <button
-                          key={preset.email}
                           type="button"
-                          onClick={() => {
-                            setGmailAddressInput(preset.email);
-                            handleGmailLoginSubmit(undefined, preset.email);
-                          }}
-                          className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-indigo-50 hover:text-indigo-700 text-stone-600 border border-stone-200/80 text-[10px] font-bold transition-colors"
+                          onClick={() =>
+                            setLoginErrorMsg(
+                              loginLang === 'ID'
+                                ? 'Silakan hubungi e98.bisnis@gmail.com untuk reset password.'
+                                : 'Please contact e98.bisnis@gmail.com to reset your password.'
+                            )
+                          }
+                          className="text-xs font-semibold text-[#9E1B46] hover:underline cursor-pointer"
                         >
-                          {preset.label} ({preset.email})
+                          {loginLang === 'ID'
+                            ? 'Lupa Password ?'
+                            : 'Forgot Password ?'}
                         </button>
-                      ))}
+                      </div>
+                      <input
+                        type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
+                      disabled={isSubmittingLogin}
+                      className="w-full h-11 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-sm transition-all shadow-xs cursor-pointer disabled:opacity-60"
                     >
-                      <span>
-                        {loginLang === 'EN'
-                          ? 'Create Workspace & Open Planner'
-                          : 'Buat Workspace & Buka Planner'}
-                      </span>
+                      {isSubmittingLogin
+                        ? loginLang === 'ID'
+                          ? 'Memproses...'
+                          : 'Signing In...'
+                        : 'Sign In'}
                     </button>
                   </form>
-                )}
-              </div>
 
-              {/* Divider */}
-              <div className="relative flex items-center py-0.5">
-                <div className="flex-grow border-t border-stone-200" />
-                <span className="shrink-0 mx-3 text-[11px] font-semibold text-stone-400">
-                  {loginLang === 'EN'
-                    ? 'or sign in with Planner account'
-                    : 'atau masuk dengan akun Planner'}
-                </span>
-                <div className="flex-grow border-t border-stone-200" />
-              </div>
-
-              {/* OPTION 2: Username & Password Form */}
-              <form
-                onSubmit={handlePlannerCredentialsSubmit}
-                className="space-y-3.5"
-              >
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1.5 text-xs">
-                    {loginLang === 'EN'
-                      ? 'Planner Username'
-                      : 'Username Akun Planner'}
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      autoComplete="username"
-                      value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder={
-                        loginLang === 'EN'
-                          ? 'Enter your username...'
-                          : 'Masukkan username akun...'
-                      }
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-sm text-stone-900"
-                    />
+                  <div className="py-3 text-center text-xs font-medium text-stone-400 uppercase tracking-wider">
+                    {loginLang === 'ID' ? 'ATAU' : 'OR'}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1.5 text-xs">
-                    {loginLang === 'EN' ? 'Password' : 'Kata Sandi'}
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type={showLoginPassword ? 'text' : 'password'}
-                      required
-                      autoComplete="current-password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder={
-                        loginLang === 'EN'
-                          ? 'Enter your password...'
-                          : 'Masukkan kata sandi...'
-                      }
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 focus:outline-none bg-[#FAF8F5] font-medium text-sm text-stone-900"
-                    />
+                  <div className="space-y-2.5">
                     <button
                       type="button"
-                      onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
-                      tabIndex={-1}
+                      onClick={() => {
+                        setLoginErrorMsg('');
+                        setAuthModalMode('ACCESS_CODE');
+                      }}
+                      className="w-full h-11 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white font-semibold text-sm transition-all cursor-pointer"
                     >
-                      {showLoginPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      {loginLang === 'ID'
+                        ? 'Masuk dengan kode akses'
+                        : 'Sign in with access code'}
                     </button>
-                  </div>
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmittingLogin}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-60"
-                >
-                  {isSubmittingLogin ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>
-                        {loginLang === 'EN'
-                          ? 'Signing in...'
-                          : 'Memverifikasi Sesi...'}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <KeyRound className="w-4 h-4" />
-                      <span>
-                        {loginLang === 'EN'
-                          ? 'Sign In to Planner'
-                          : 'Masuk ke Planner'}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Collapsible Quick Demo Accounts */}
-              <div className="pt-1 border-t border-stone-200/80">
-                <button
-                  type="button"
-                  onClick={() => setIsQuickDemoOpen((prev) => !prev)}
-                  className="w-full py-2 px-3 rounded-xl bg-[#FAF8F5] hover:bg-stone-100 text-stone-700 font-bold text-xs flex items-center justify-between border border-stone-200/80 transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-                    {loginLang === 'EN'
-                      ? 'Quick Demo Accounts (1-Click Try)'
-                      : 'Lihat Akun Demo Cepat (1-Klik Coba)'}
-                  </span>
-                  {isQuickDemoOpen ? (
-                    <ChevronUp className="w-4 h-4 text-stone-500" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-stone-500" />
-                  )}
-                </button>
-
-                {isQuickDemoOpen && (
-                  <div className="mt-2.5 grid grid-cols-1 gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        handleGmailLoginSubmit(
-                          undefined,
-                          'pasangan.mempelai@gmail.com'
-                        )
-                      }
-                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-amber-50/70 border border-stone-200 hover:border-[#D4AF37]/60 text-left transition-all"
+                      onClick={() => {
+                        setLoginErrorMsg('');
+                        setShowCustomGoogleInput(false);
+                        setAuthModalMode('GOOGLE_CHOOSER');
+                      }}
+                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                     >
-                      <div>
-                        <p className="text-xs font-extrabold text-stone-800">
-                          {loginLang === 'EN'
-                            ? 'Bride & Groom Planner'
-                            : 'Akun Mempelai & Keluarga'}
-                        </p>
-                        <p className="text-[11px] text-stone-500">
-                          pasangan.mempelai@gmail.com
-                        </p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100/80 text-[#8B6914] text-[10px] font-extrabold">
-                        {loginLang === 'EN' ? 'Enter →' : 'Masuk →'}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-4 h-4 shrink-0"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill="#4285F4"
+                          d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
+                        />
+                      </svg>
+                      <span>
+                        {loginLang === 'ID'
+                          ? 'Masuk dengan Google'
+                          : 'Sign in with Google'}
                       </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => {
-                        setIsLoginModalOpen(false);
-                        handleOpenDemoManager(
-                          'client-demo-wedding',
-                          demoPackageTier
-                        );
+                        setLoginErrorMsg('');
+                        setShowCustomGoogleInput(false);
+                        setAuthModalMode('GOOGLE_CHOOSER');
                       }}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-indigo-50/60 border border-stone-200 hover:border-indigo-300 text-left transition-all"
+                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
                     >
-                      <div>
-                        <p className="text-xs font-extrabold text-stone-800">
-                          {loginLang === 'EN'
-                            ? 'Interactive Demo Sandbox (5 Event Themes)'
-                            : 'Mode Demo Sandbox (5 Tema Acara)'}
-                        </p>
-                        <p className="text-[11px] text-stone-500">
-                          {loginLang === 'EN'
-                            ? 'Try editing without signing in'
-                            : 'Coba fitur editor tanpa perlu akun'}
-                        </p>
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-4 h-4 shrink-0 fill-current text-stone-900"
+                        aria-hidden="true"
+                      >
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                      </svg>
+                      <span>
+                        {loginLang === 'ID'
+                          ? 'Masuk dengan Apple'
+                          : 'Sign in with Apple'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginErrorMsg('');
+                        setAuthModalMode('REGISTER');
+                      }}
+                      className="w-full h-11 rounded-lg bg-[#FCEEF2] hover:bg-[#F8DCE5] text-[#9E1B46] font-semibold text-sm transition-all cursor-pointer"
+                    >
+                      {loginLang === 'ID'
+                        ? 'Buat Akun Baru'
+                        : 'Create New Account'}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {authModalMode === 'GOOGLE_CHOOSER' && (
+                <div>
+                  <div className="flex flex-col items-center text-center mb-5">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-7 h-7 mb-2.5"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill="#4285F4"
+                        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
+                      />
+                    </svg>
+                    <h3 className="text-xl font-bold text-stone-900">
+                      {loginLang === 'ID'
+                        ? 'Pilih akun'
+                        : 'Choose an account'}
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {loginLang === 'ID'
+                        ? 'untuk melanjutkan ke '
+                        : 'to continue to '}
+                      <span className="font-bold text-[#9E1B46]">MEPlanner</span>
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-stone-200 border-y border-stone-200">
+                    {[
+                      {
+                        name:
+                          loginLang === 'ID'
+                            ? 'Pasangan & Tuan Rumah Acara'
+                            : 'Couple & Event Host',
+                        email: 'mempelai.meplanner@gmail.com',
+                        initials: 'PT',
+                        bg: 'bg-[#9E1B46]',
+                      },
+                      {
+                        name:
+                          loginLang === 'ID'
+                            ? 'Tim Event & Wedding Organizer'
+                            : 'Event & Wedding Organizer',
+                        email: 'organizer.meplanner@gmail.com',
+                        initials: 'WO',
+                        bg: 'bg-indigo-600',
+                      },
+                      {
+                        name: 'Eko Agung Krisdianto (Superadmin)',
+                        email: 'agungkrisdianto98@gmail.com',
+                        initials: 'EA',
+                        bg: 'bg-emerald-700',
+                      },
+                      {
+                        name: 'Eko Agung K. (Official Business)',
+                        email: 'e98.bisnis@gmail.com',
+                        initials: 'EB',
+                        bg: 'bg-teal-700',
+                      },
+                    ].map((acc) => (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        onClick={() => {
+                          void handleQuickCreateWithGoogle({
+                            email: acc.email,
+                            displayName: acc.name,
+                            packageId: 'GRATIS',
+                            catalogThemeId: demoSelectedThemeId,
+                          });
+                        }}
+                        className="w-full py-3 px-2 hover:bg-stone-50 flex items-center gap-3 text-left transition-colors cursor-pointer"
+                      >
+                        <div
+                          className={`w-9 h-9 rounded-full ${acc.bg} text-white text-xs font-bold flex items-center justify-center shrink-0`}
+                        >
+                          {acc.initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-stone-900 truncate">
+                            {acc.name}
+                          </p>
+                          <p className="text-xs text-stone-500 truncate">
+                            {acc.email}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowCustomGoogleInput((prev) => !prev)
+                      }
+                      className="w-full py-3 px-2 hover:bg-stone-50 flex items-center gap-3 text-left transition-colors cursor-pointer"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-stone-100 text-stone-600 flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4" />
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-extrabold">
-                        {loginLang === 'EN' ? 'Try Demo →' : 'Buka Demo →'}
+                      <span className="text-sm font-semibold text-stone-700">
+                        {loginLang === 'ID'
+                          ? 'Gunakan akun lain'
+                          : 'Use another account'}
                       </span>
                     </button>
                   </div>
-                )}
-              </div>
+
+                  {showCustomGoogleInput && (
+                    <form
+                      onSubmit={(e) => handleGmailLoginSubmit(e)}
+                      className="mt-3 space-y-2.5"
+                    >
+                      <input
+                        type="email"
+                        autoFocus
+                        value={gmailAddressInput}
+                        onChange={(e) => setGmailAddressInput(e.target.value)}
+                        placeholder={
+                          loginLang === 'ID'
+                            ? 'nama@gmail.com'
+                            : 'yourname@gmail.com'
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="w-full h-10 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-xs transition-all cursor-pointer"
+                      >
+                        {loginLang === 'ID' ? 'Lanjutkan' : 'Continue'}
+                      </button>
+                    </form>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginErrorMsg('');
+                      setAuthModalMode('SIGN_IN');
+                    }}
+                    className="mt-5 w-full text-center text-xs font-semibold text-stone-500 hover:text-stone-900 cursor-pointer"
+                  >
+                    {loginLang === 'ID'
+                      ? '← Kembali ke halaman Sign In'
+                      : '← Back to Sign In'}
+                  </button>
+                </div>
+              )}
+
+              {authModalMode === 'ACCESS_CODE' && (
+                <div>
+                  <div className="text-center mb-6">
+                    <p className="text-base font-medium text-stone-700">
+                      {loginLang === 'ID' ? 'Masuk dengan' : 'Sign In with'}
+                    </p>
+                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
+                      {loginLang === 'ID' ? 'Kode Akses' : 'Access Code'}
+                    </h3>
+                  </div>
+
+                  <form onSubmit={handleAccessCodeSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1.5">
+                        {loginLang === 'ID'
+                          ? 'Kode Akses Undangan / Workspace'
+                          : 'Invitation / Workspace Access Code'}
+                      </label>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={accessCodeInput}
+                        onChange={(e) => setAccessCodeInput(e.target.value)}
+                        placeholder={
+                          loginLang === 'ID'
+                            ? 'Masukkan kode akses...'
+                            : 'Enter access code...'
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full h-11 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white font-semibold text-sm transition-all cursor-pointer"
+                    >
+                      {loginLang === 'ID' ? 'Masuk' : 'Sign In'}
+                    </button>
+                  </form>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginErrorMsg('');
+                      setAuthModalMode('SIGN_IN');
+                    }}
+                    className="mt-5 w-full text-center text-xs font-semibold text-stone-500 hover:text-stone-900 cursor-pointer"
+                  >
+                    {loginLang === 'ID'
+                      ? '← Kembali ke Sign In'
+                      : '← Back to Sign In'}
+                  </button>
+                </div>
+              )}
+
+              {authModalMode === 'REGISTER' && (
+                <div>
+                  <div className="text-center mb-5">
+                    <p className="text-base font-medium text-stone-700">
+                      {loginLang === 'ID' ? 'Buat Akun Baru' : 'Create Account'}
+                    </p>
+                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
+                      MEPlanner
+                    </h3>
+                  </div>
+
+                  <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1">
+                        {loginLang === 'ID'
+                          ? 'Nama Pasangan / Acara'
+                          : 'Couple / Event Name'}
+                      </label>
+                      <input
+                        type="text"
+                        value={gmailEventTitleInput}
+                        onChange={(e) =>
+                          setGmailEventTitleInput(e.target.value)
+                        }
+                        placeholder={
+                          loginLang === 'ID'
+                            ? 'Contoh: Andi & Rina'
+                            : 'Example: Andi & Rina'
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1">
+                        {loginLang === 'ID'
+                          ? 'Kategori Acara'
+                          : 'Event Category'}
+                      </label>
+                      <select
+                        value={gmailEventTypeInput}
+                        onChange={(e) =>
+                          setGmailEventTypeInput(
+                            e.target.value as EventCategoryType
+                          )
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                      >
+                        <option value="WEDDING">
+                          {loginLang === 'ID' ? 'Pernikahan' : 'Wedding'}
+                        </option>
+                        <option value="BIRTHDAY">
+                          {loginLang === 'ID' ? 'Ulang Tahun' : 'Birthday'}
+                        </option>
+                        <option value="GRADUATION">
+                          {loginLang === 'ID' ? 'Wisuda' : 'Graduation'}
+                        </option>
+                        <option value="MEETING">
+                          {loginLang === 'ID' ? 'Rapat' : 'Meeting'}
+                        </option>
+                        <option value="GALA_DINNER">Gala Dinner</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={gmailAddressInput}
+                        onChange={(e) => setGmailAddressInput(e.target.value)}
+                        placeholder="nama@gmail.com"
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 mb-1">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={registerPasswordInput}
+                        onChange={(e) =>
+                          setRegisterPasswordInput(e.target.value)
+                        }
+                        className="w-full h-11 px-4 rounded-lg bg-[#F3F5F9] border border-transparent focus:border-[#9E1B46] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full h-11 rounded-lg bg-[#9E1B46] hover:bg-[#821539] text-white font-semibold text-sm transition-all shadow-xs cursor-pointer"
+                    >
+                      {loginLang === 'ID'
+                        ? 'Buat Akun Gratis & Masuk ke Management'
+                        : 'Create Free Account & Enter Management'}
+                    </button>
+                  </form>
+
+                  <div className="mt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginErrorMsg('');
+                        setShowCustomGoogleInput(false);
+                        setAuthModalMode('GOOGLE_CHOOSER');
+                      }}
+                      className="w-full h-11 rounded-lg bg-[#F3F5F9] hover:bg-[#E5E8F0] text-stone-800 font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-4 h-4 shrink-0"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill="#4285F4"
+                          d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
+                        />
+                      </svg>
+                      <span>
+                        {loginLang === 'ID'
+                          ? 'Daftar dengan Google'
+                          : 'Sign up with Google'}
+                      </span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginErrorMsg('');
+                      setAuthModalMode('SIGN_IN');
+                    }}
+                    className="mt-4 w-full text-center text-xs font-semibold text-stone-500 hover:text-stone-900 cursor-pointer"
+                  >
+                    {loginLang === 'ID'
+                      ? '← Kembali ke Sign In'
+                      : '← Back to Sign In'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

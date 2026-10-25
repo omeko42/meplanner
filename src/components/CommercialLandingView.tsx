@@ -2737,13 +2737,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     setShowcaseViewMode('invitation_sim');
     setSimIsOpened(true);
     setIsCheckoutPageOpen(false);
-    if (typeof document !== 'undefined') {
-      window.setTimeout(() => {
-        document
-          .getElementById('live-simulator-stage')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 60);
-    }
+    setLightboxScreenshot({
+      title: `${theme.name} — ${theme.styleCategory}`,
+      badge:
+        lang === 'ID'
+          ? `PRATINJAU TEMA • ${theme.tierBadge}`
+          : `THEME DEMO • ${theme.tierBadge}`,
+      desc: lang === 'ID' ? theme.taglineId : theme.taglineEn,
+      imageUrl: theme.coverBgUrl || theme.thumbnailUrl,
+      mode: 'invitation_sim',
+    });
   };
 
   const activeDummyMeta = useMemo(
@@ -5523,396 +5526,158 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const handleQuickLookupSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowLookupSuggestions(false);
-    const trimmed = guestCodeInput.trim();
-    if (trimmed.length < 3) {
-      if (isAdminLoggedIn) {
-        setLookupGateError(null);
-        setIsGuestLookupModalOpen(false);
-        onSelectClientInvitation(selectedLookupClientId);
-        return;
-      }
+    const cleanKey = guestCodeInput.trim();
+    if (!cleanKey) {
       setLookupGateError(
         lang === 'ID'
-          ? 'Masukkan Nama Tamu atau Kode Undangan Personal Anda (contoh: INV-0001 atau Fiorencia) untuk membuka undangan.'
-          : 'Enter your Registered Guest Name or Personal Invitation Code (e.g., INV-0001 or Fiorencia) to open the invitation.'
+          ? 'Key undangan tidak valid atau tidak ditemukan. Pastikan Anda memasukkan Key unik yang dikirimkan kepada Anda.'
+          : 'Invalid or unknown Invitation Key. Please enter the exact unique Key sent to you.'
       );
       return;
     }
 
-    // 1. Primary Multi-Client Hash Token Resolution across ALL Workspaces + Dummy Clients
-    const hashResolved = resolveGuestByHashTokenAcrossWorkspaces(
-      trimmed,
-      allWorkspacesForHashLookup
+    const exactKeyMatch = allSearchableClientGuests.find(
+      (item) => item.hashToken === cleanKey
     );
-    if (hashResolved) {
+    if (exactKeyMatch) {
       setLookupGateError(null);
       setIsGuestLookupModalOpen(false);
       onSelectClientInvitation(
-        hashResolved.clientId,
-        hashResolved.guest.guestName,
-        hashResolved.hashToken
+        exactKeyMatch.clientId,
+        exactKeyMatch.guest.guestName,
+        exactKeyMatch.hashToken
       );
       return;
     }
 
-    // 2. Fallback: Match by exact/partial hashToken, invitationCode, or guestName across searchable guests
-    const lower = trimmed.toLowerCase();
-    const matchedItem =
-      allSearchableClientGuests.find(
-        (item) =>
-          item.hashToken.toLowerCase() === lower ||
-          item.guest.invitationCode.toLowerCase() === lower ||
-          item.guest.guestName.toLowerCase() === lower
-      ) ||
-      allSearchableClientGuests.find(
-        (item) =>
-          item.hashToken.toLowerCase().includes(lower) ||
-          item.guest.guestName.toLowerCase().includes(lower) ||
-          item.guest.invitationCode.toLowerCase().includes(lower)
-      );
-    if (matchedItem) {
-      setLookupGateError(null);
-      setIsGuestLookupModalOpen(false);
-      onSelectClientInvitation(
-        matchedItem.clientId,
-        matchedItem.guest.guestName,
-        matchedItem.hashToken
-      );
-      return;
-    }
-    if (isAdminLoggedIn) {
-      setLookupGateError(null);
-      setIsGuestLookupModalOpen(false);
-      onSelectClientInvitation(selectedLookupClientId, trimmed, undefined);
-      return;
-    }
     setLookupGateError(
       lang === 'ID'
-        ? 'Nama Tamu atau Kode Undangan tidak ditemukan. Pastikan ejaan sesuai atau pilih salah satu contoh tamu di bawah.'
-        : 'Guest Name or Invitation Code not found. Please check your spelling or click one of the sample guests below.'
+        ? 'Key undangan tidak valid atau tidak ditemukan. Pastikan Anda memasukkan Key unik yang dikirimkan kepada Anda.'
+        : 'Invalid or unknown Invitation Key. Please enter the exact unique Key sent to you.'
     );
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#FCFBF8] text-stone-900 flex flex-col justify-between selection:bg-amber-500/20">
-      {/* TOP FIXED NAVBAR — OFFICIAL MEPlanner BRIGHT EDITORIAL LIGHT IDENTITY */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-stone-200/90 shadow-[0_4px_24px_rgba(28,25,23,0.06)]">
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
-          {/* Brand Logo & Title */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+    <div className="min-h-screen pt-16 sm:pt-18 overflow-x-clip bg-white text-stone-900 flex flex-col justify-between selection:bg-[#9E1B46]/15">
+      {/* CLEAN TOP NAVBAR — WEVITATION-INSPIRED AIRY EDITORIAL HEADER REBRANDED AS MEPLANNER */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
+          {/* Left: Logo + MEPlanner (online event & wedding invitation) */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-              title="MEPlanner — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
+              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
+              title="MEPlanner — online event & wedding invitation"
             >
               <WeddingRingsIcon
-                className="w-7 h-7 sm:w-9 sm:h-9"
+                className="w-8 h-8 sm:w-9 sm:h-9"
                 logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setIsCheckoutPageOpen(false)}
-                  title="MEPlanner — My Event Planner"
-                  className="font-sans font-extrabold text-sm sm:text-lg text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
-                >
-                  <span className="font-sans font-extrabold tracking-tight text-stone-900">
-                    ME
-                    <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
-                      Planner
-                    </span>
-                  </span>
-                </button>
-              </div>
-              <p className="text-[9px] sm:text-[11px] font-bold text-stone-500 leading-tight truncate">
-                by{' '}
-                <a
-                  href={developerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#8B6914] hover:underline"
-                  title="GitHub Profile @omeko42"
-                >
-                  omeko42
-                </a>
+              <button
+                type="button"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="font-sans font-extrabold text-base sm:text-xl text-stone-900 tracking-tight leading-none text-left block cursor-pointer"
+              >
+                ME<span className="text-[#9E1B46]">Planner</span>
+              </button>
+              <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 leading-tight truncate mt-0.5">
+                online event &amp; wedding invitation
               </p>
             </div>
           </div>
 
-          {/* Center Navigation Links — Simulator | 31 Tema | Fitur | Paket | FAQ */}
-          <nav className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <a
-              href="#showcase"
-              onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? 'Lihat Simulator Undangan & Demo Planner'
-                  : 'Explore Live Invitation Simulator & Demo Planner'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Simulator' : 'Simulator'}
-              </span>
-            </a>
-
-            <a
-              href="#tema"
-              onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? 'Eksplorasi 31 Tema Desain Multi-Event'
-                  : 'Explore 31 Multi-Event Design Themes'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 shrink-0" />
-              <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? '31 Tema' : '31 Themes'}
-              </span>
-            </a>
-
-            <a
-              href="#fitur"
-              onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? 'Fitur 4 Pilar Ekosistem & 6 Modul Persiapan Acara'
-                  : '4 Ecosystem Pillars & 6 Event Readiness Modules'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 shrink-0" />
-              <span className="hidden md:inline whitespace-nowrap truncate">
+          {/* Right: Clean Borderless Text Links + Cek Undangan + ID/EN + Solid Burgundy Login Button */}
+          <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+            <nav className="hidden md:flex items-center gap-5 lg:gap-6">
+              <a
+                href="#"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
+                {lang === 'ID' ? 'Beranda' : 'Home'}
+              </a>
+              <a
+                href="#tema"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
+                {lang === 'ID' ? 'Tema' : 'Themes'}
+              </a>
+              <a
+                href="#fitur"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
                 {lang === 'ID' ? 'Fitur' : 'Features'}
-              </span>
-            </a>
-
-            <a
-              href="#paket"
-              onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? '6 Pilihan Paket Resmi MEPlanner (Gratis s/d Mitra Gold)'
-                  : '6 Official MEPlanner Packages (Free to Mitra Gold)'
-              }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-[#D4AF37]/50 bg-[#FAF3E3]/70 hover:bg-[#FAF3E3] text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
-              <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Paket & Harga' : 'Pricing'}
-              </span>
-            </a>
-
-            <a
-              href="#faq"
-              onClick={() => setIsCheckoutPageOpen(false)}
-              title={
-                lang === 'ID'
-                  ? 'Tanya Jawab (FAQ) & Bantuan MEPlanner AI'
-                  : 'FAQ & MEPlanner AI Support'
-              }
-              className="hidden lg:inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
-            >
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
-              <span>FAQ</span>
-            </a>
+              </a>
+              <a
+                href="#paket"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
+                {lang === 'ID' ? 'Harga' : 'Pricing'}
+              </a>
+              <a
+                href="#blog"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
+                Blog
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="text-sm font-medium text-stone-700 hover:text-[#9E1B46] transition-colors"
+              >
+                FAQ
+              </a>
+            </nav>
 
             <button
               type="button"
               onClick={() => {
                 setLookupGateError(null);
+                setGuestCodeInput('');
                 setIsGuestLookupModalOpen(true);
               }}
+              className="text-xs sm:text-sm font-semibold text-stone-700 hover:text-[#9E1B46] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
               title={
                 lang === 'ID'
-                  ? 'Cek & Buka Undangan Anda menggunakan Nama Tamu atau Kode Undangan Personal'
-                  : 'Check & Open Your Invitation using Guest Name or Personal Invitation Code'
+                  ? 'Cek Undangan dengan Key Unik'
+                  : 'Check Invitation by Unique Key'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-[#D4AF37]/55 bg-[#FFFDF9] hover:bg-[#FAF3E3] text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all cursor-pointer"
             >
-              <KeyRound className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span className="hidden sm:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Cek Undangan' : 'Check Invitation'}
-              </span>
+              <KeyRound className="w-3.5 h-3.5 text-[#9E1B46] shrink-0" />
+              <span>{lang === 'ID' ? 'Cek Undangan' : 'Check Invitation'}</span>
             </button>
-          </nav>
 
-          {/* Right Action Buttons — ID/EN + Planner Lock Popover (Login & Demo) */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Bilingual Language Switcher */}
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
+              className="text-xs sm:text-sm font-semibold text-stone-600 hover:text-[#9E1B46] transition-colors cursor-pointer"
               title={
                 lang === 'ID'
-                  ? 'Ganti Bahasa ke Bahasa Inggris (EN)'
-                  : 'Switch Language to Indonesian (ID)'
+                  ? 'Switch Language to English (EN)'
+                  : 'Ganti Bahasa ke Indonesia (ID)'
               }
-              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200/90 text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
-              <span>{lang}</span>
+              {lang}
             </button>
 
-            {/* Single Lock-Icon Planner Button Opening 2-Option Popover Modal Below (Login & Demo) */}
-            <div ref={plannerMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setIsPlannerMenuOpen((prev) => !prev)}
-                aria-expanded={isPlannerMenuOpen}
-                aria-haspopup="menu"
-                title={
-                  lang === 'ID'
-                    ? 'Akses Portal Planner (Login Akun atau Simulasi Demo)'
-                    : 'Access Planner Portal (Account Login or Interactive Demo)'
-                }
-                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#9A742B] hover:from-[#B68D40] hover:to-[#8B6914] text-white text-xs font-extrabold whitespace-nowrap shadow-sm transition-all"
-              >
-                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
-                <span>Planner</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    isPlannerMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {isPlannerMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full mt-2.5 w-64 sm:w-72 rounded-2xl bg-white/98 backdrop-blur-2xl border border-[#D4AF37]/45 shadow-[0_20px_50px_rgba(28,25,23,0.16)] p-2.5 z-50 space-y-2"
-                >
-                  <div className="px-2 py-1 flex items-center justify-between border-b border-stone-200/80">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                      {lang === 'ID'
-                        ? 'Akses Portal Planner'
-                        : 'Planner Portal Access'}
-                    </span>
-                    <Lock className="w-3 h-3 text-[#B68D40]" />
-                  </div>
-
-                  {/* Popup Option Card 1 — Login Planner */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsPlannerMenuOpen(false);
-                      onOpenAdminPortal();
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-[#FFFDF9] to-[#FAF3E3] hover:from-[#FAF3E3] hover:to-[#F3E5C8] border border-[#D4AF37]/45 flex items-center gap-3 transition-all group shadow-2xs"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C5A059] to-[#9A742B] flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                      <Lock className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
-                        {isAdminLoggedIn
-                          ? lang === 'ID'
-                            ? 'Buka Planner Aktif'
-                            : 'Open Active Planner'
-                          : lang === 'ID'
-                            ? 'Login Planner'
-                            : 'Planner Login'}
-                      </p>
-                      <p className="text-[10px] font-semibold text-stone-600 truncate">
-                        {isAdminLoggedIn
-                          ? adminUserName || 'Workspace Aktif'
-                          : lang === 'ID'
-                            ? 'Masuk akun Klien, EO/WO & Owner'
-                            : 'Sign in for Client, EO & Owner'}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#8B6914] group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </button>
-
-                  {/* Popup Option Card 1B — Masuk dengan Google (Gmail) */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsPlannerMenuOpen(false);
-                      openGoogleOnboardingModal('GRATIS');
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-[#D4AF37]/60 flex items-center gap-3 transition-all group shadow-2xs"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fill="#4285F4"
-                          d="M23.49 12.275c0-.85-.075-1.675-.215-2.475H12v4.685h6.445a5.51 5.51 0 0 1-2.39 3.615v3.005h3.87c2.265-2.085 3.565-5.155 3.565-8.83Z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 24c3.24 0 5.955-1.075 7.94-2.91l-3.87-3.005c-1.075.72-2.45 1.145-4.07 1.145-3.13 0-5.78-2.115-6.725-4.955H1.275v3.1C3.25 21.3 7.31 24 12 24Z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.275 14.275A7.21 7.21 0 0 1 4.9 12c0-.79.135-1.555.375-2.275v-3.1H1.275A11.99 11.99 0 0 0 0 12c0 1.935.465 3.765 1.275 5.375l4-3.1Z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 4.77c1.76 0 3.34.605 4.585 1.795l3.44-3.44C17.95 1.19 15.235 0 12 0 7.31 0 3.25 2.7 1.275 6.625l4 3.1C6.22 6.885 8.87 4.77 12 4.77Z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
-                        {lang === 'ID'
-                          ? 'Masuk dengan Gmail / Google'
-                          : 'Sign in with Gmail / Google'}
-                      </p>
-                      <p className="text-[10px] font-semibold text-stone-500 truncate">
-                        {lang === 'ID'
-                          ? 'Buat undangan & buka Management'
-                          : 'Create invitation & open Management'}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </button>
-
-                  {/* Popup Option Card 2 — Demo Planner */}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsPlannerMenuOpen(false);
-                      if (onOpenDemoManager) {
-                        onOpenDemoManager(
-                          activeDummyMeta.id,
-                          simPackageTier,
-                          activeCatalogTheme?.id
-                        );
-                      }
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl bg-[#FAF8F5] hover:bg-emerald-50/70 border border-stone-200/90 hover:border-emerald-400/70 flex items-center gap-3 transition-all group shadow-2xs"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <LayoutDashboard className="w-4 h-4 text-emerald-700" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-emerald-800 group-hover:text-emerald-950 transition-colors truncate">
-                        {lang === 'ID' ? 'Demo Planner' : 'Planner Demo'}
-                      </p>
-                      <p className="text-[10px] font-semibold text-stone-600 truncate">
-                        {lang === 'ID'
-                          ? `Simulasi interaktif (${activeDummyMeta.labelId})`
-                          : `Interactive sandbox (${activeDummyMeta.labelEn})`}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-700 group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => onOpenAdminPortal()}
+              className="px-5 py-2 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
+            >
+              {isAdminLoggedIn
+                ? lang === 'ID'
+                  ? 'Dashboard'
+                  : 'Dashboard'
+                : 'Login'}
+            </button>
           </div>
         </div>
       </header>
@@ -7121,151 +6886,309 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </section>
         ) : (
-          /* MAIN LANDING PAGE VIEW (HERO + 1:1 SHOWCASE + 31 TEMA + 4 PILAR & 6 MODUL + ECO-IMPACT + 6 PAKET + BLOG + FAQ & AI) */
+          /* MAIN LANDING PAGE VIEW — CLEAN AIRY WEVITATION-INSPIRED LAYOUT REBRANDED AS MEPLANNER */
           <>
             {/* ================================================================= */}
-            {/* OFFICIAL MEPlanner HERO + MULTI-EVENT PILLS (BRIGHT LIGHT THEME)  */}
+            {/* SECTION 1: CLEAN SPLIT HERO WITH REALISTIC IPHONE 15 PRO MOCKUP   */}
             {/* ================================================================= */}
-            <section className="relative overflow-hidden py-8 sm:py-12 border-b border-stone-200/90 bg-gradient-to-b from-[#FFFDF9] via-[#FAF6F0] to-[#FCFBF8]">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -top-24 left-1/4 w-80 h-80 rounded-full bg-[#D4AF37]/15 blur-3xl"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -bottom-24 right-1/4 w-80 h-80 rounded-full bg-rose-300/15 blur-3xl"
-              />
-
-              <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 text-center space-y-5">
-                <div
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full shadow-2xs"
-                  title="MEPlanner — My Event Planner by omeko42"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                  <span className="whitespace-nowrap truncate">
+            <section className="bg-[#FCF5F6] py-14 sm:py-20 border-b border-rose-100/70">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                {/* Left 7 Cols */}
+                <div className="lg:col-span-7 text-left">
+                  <h1 className="font-editorial text-3xl sm:text-5xl lg:text-[52px] font-bold text-stone-900 leading-[1.15] tracking-tight">
                     {lang === 'ID'
-                      ? 'MEPlanner • My Event Planner (Platform Persiapan Acara & Undangan Digital)'
-                      : 'MEPlanner • My Event Planner (Event Planning & Digital Invitation Platform)'}
-                  </span>
-                </div>
+                      ? 'Undangan Digital Modern & Elegan, Siap Dibagikan Dalam Hitungan Menit'
+                      : 'Modern & Elegant Digital Invitations, Ready to Share in Minutes'}
+                  </h1>
 
-                <h2 className="font-serif text-2xl sm:text-4xl lg:text-[44px] font-extrabold text-stone-900 tracking-tight max-w-3xl mx-auto leading-[1.16]">
-                  {lang === 'ID' ? (
-                    <>
-                      Sebar Kabar Bahagia &amp; Kelola Acara Lebih Mudah,{' '}
-                      <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
-                        Hangat &amp; Berkelas
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Share Your Joyful News &amp; Plan Events With{' '}
-                      <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
-                        Warmth &amp; Elegance
-                      </span>
-                    </>
-                  )}
-                </h2>
+                  <p className="text-stone-600 text-sm sm:text-base leading-relaxed mt-5 max-w-xl">
+                    {lang === 'ID'
+                      ? 'Buat undangan digital yang cantik, cepat dan mudah diedit – lengkap dengan RSVP Online, Galeri, Musik, Kado, Event Planner dan fitur AI yang membantu persiapan hari bahagiamu.'
+                      : 'Create beautiful, fast, and easy-to-edit digital invitations – complete with Online RSVP, Gallery, Music, Gift Registry, Event Planner, and AI features for your special day.'}
+                  </p>
 
-                <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto leading-relaxed">
-                  {lang === 'ID'
-                    ? 'Buat undangan digital cantik dalam hitungan menit, kelola daftar tamu VIP & konfirmasi kehadiran (RSVP), pantau anggaran vendor, serta terima tanda kasih digital dari keluarga dan sahabat terdekat.'
-                    : 'Create beautiful digital invitations in minutes, manage VIP guest lists & RSVPs, track vendor budgets, and receive digital gifts from family and friends.'}
-                </p>
-
-                {/* 3 Warm Key Benefit Pills */}
-                <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold text-stone-700">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-stone-200/90 shadow-2xs">
-                    <span>✨</span>
-                    <span>
-                      {lang === 'ID'
-                        ? '31+ Tema Eksklusif Siap Pakai'
-                        : '31+ Exclusive Ready Themes'}
-                    </span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-stone-200/90 shadow-2xs">
-                    <span>💌</span>
-                    <span>
-                      {lang === 'ID'
-                        ? 'Kirim WA Personal & Buku Tamu'
-                        : 'Personal WhatsApp & Guestbook'}
-                    </span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-stone-200/90 shadow-2xs">
-                    <span>📋</span>
-                    <span>
-                      {lang === 'ID'
-                        ? 'Checklist Persiapan & Anggaran Acara'
-                        : 'Event Checklist & Budget Planner'}
-                    </span>
-                  </span>
-                </div>
-
-                {/* Primary Hero CTA Buttons + Cek Undangan Tamu */}
-                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPackageForCheckout('STARTER')}
-                    className="px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-[#C5A059] via-[#B68D40] to-[#9A742B] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <span>
+                  {/* 2 Clean CTA Buttons */}
+                  <div className="mt-7 flex flex-wrap items-center gap-3.5">
+                    <button
+                      type="button"
+                      onClick={() => onOpenAdminPortal()}
+                      className="px-6 py-3.5 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
+                    >
                       {lang === 'ID'
                         ? 'Buat Undangan Gratis'
                         : 'Create Free Invitation'}
-                    </span>
-                  </button>
-                  <a
-                    href="#tema"
-                    className="px-4 py-2.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-stone-200/90 text-stone-800 hover:text-[#8B6914] font-extrabold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
-                    <span>
-                      {lang === 'ID' ? 'Lihat 31 Tema' : 'Explore 31 Themes'}
-                    </span>
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => setIsGuestLookupModalOpen(true)}
-                    className="px-4 py-2.5 rounded-full bg-amber-50 hover:bg-amber-100/90 border border-amber-300/90 text-amber-900 font-extrabold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                  >
-                    <KeyRound className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? '🔑 Cek Undangan Tamu'
-                        : '🔑 Check Guest Invitation'}
-                    </span>
-                  </button>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById('tema')
+                          ?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                      className="px-6 py-3.5 rounded-xl bg-white hover:bg-rose-50 text-[#9E1B46] border border-[#E6A8B8] font-bold text-sm transition-all cursor-pointer"
+                    >
+                      {lang === 'ID' ? 'Lihat Demo' : 'View Demo'}
+                    </button>
+                  </div>
+
+                  {/* Single-Line Social Proof Stats */}
+                  <div className="mt-8 flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-600">
+                    <div>
+                      <strong className="font-bold text-stone-900">
+                        203.4K+
+                      </strong>{' '}
+                      {lang === 'ID' ? 'Pasangan & Acara' : 'Couples & Events'}
+                    </div>
+                    <span className="text-stone-300">|</span>
+                    <div>
+                      <strong className="font-bold text-stone-900">
+                        3.1M+
+                      </strong>{' '}
+                      {lang === 'ID' ? 'Tamu Undangan' : 'Invited Guests'}
+                    </div>
+                    <span className="text-stone-300">|</span>
+                    <div>
+                      <strong className="font-bold text-stone-900">
+                        561.1K+
+                      </strong>{' '}
+                      {lang === 'ID' ? 'Ucapan & Doa' : 'Wishes & Prayers'}
+                    </div>
+                  </div>
                 </div>
 
-                {/* 5 Concise Event Category Pills */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-                  {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
-                    const isCurrentSim =
-                      showcaseViewMode === 'invitation_sim' &&
-                      activeDummyMeta.id === meta.id;
+                {/* Right 5 Cols — Realistic iPhone 15 Pro Mockup Frame */}
+                <div className="lg:col-span-5 flex flex-col items-center">
+                  {(() => {
+                    const heroThemes = MULTI_EVENT_THEME_CATALOG.slice(0, 8);
+                    const currentPhoneTheme =
+                      activeCatalogTheme || heroThemes[0];
+                    const phoneCoverImg =
+                      currentPhoneTheme?.coverBgUrl ||
+                      currentPhoneTheme?.thumbnailUrl ||
+                      activeDummyState.settings.coverBgUrl;
+
                     return (
-                      <button
-                        key={meta.id}
-                        type="button"
-                        onClick={() => {
-                          handleSelectDummyClient(meta.id);
-                          setShowcaseViewMode('invitation_sim');
-                          scrollToShowcase();
-                        }}
-                        title={`${meta.coupleLabel} • ${
-                          lang === 'ID' ? 'Tema' : 'Theme'
-                        }: ${meta.themeLabel}`}
-                        className={`inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all shadow-2xs cursor-pointer ${
-                          isCurrentSim
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914] shadow-sm'
-                            : 'bg-white hover:bg-[#FAF3E3] border-stone-200/90 text-stone-700 hover:text-[#8B6914]'
-                        }`}
+                      <>
+                        <div
+                          onClick={() => {
+                            if (currentPhoneTheme) {
+                              handleApplyCatalogThemeDemo(currentPhoneTheme);
+                            } else {
+                              openSimInvitationLightbox();
+                            }
+                          }}
+                          title={
+                            lang === 'ID'
+                              ? 'Klik layar HP untuk membuka Demo Interaktif'
+                              : 'Click phone screen to open Interactive Demo'
+                          }
+                          className="w-[270px] sm:w-[295px] mx-auto rounded-[46px] border-[10px] border-stone-900 bg-white shadow-[0_25px_60px_rgba(0,0,0,0.18)] overflow-hidden relative cursor-pointer group"
+                        >
+                          {/* Inside Phone Screen */}
+                          <div className="h-[500px] overflow-hidden relative bg-stone-950 flex flex-col justify-between">
+                            {/* Background Cover Photo */}
+                            <img
+                              src={phoneCoverImg}
+                              alt={
+                                currentPhoneTheme?.name || 'Invitation Preview'
+                              }
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/85" />
+
+                            {/* Top Dynamic Island Pill */}
+                            <div className="relative z-10 pt-2">
+                              <div className="w-24 h-5 bg-stone-950 rounded-full mx-auto shadow-inner" />
+                            </div>
+
+                            {/* Center Couple Names & Countdown Circles */}
+                            <div className="relative z-10 px-5 text-center text-white space-y-3 my-auto">
+                              <p className="text-[10px] uppercase tracking-[0.25em] text-rose-100 font-semibold">
+                                {currentPhoneTheme?.eventType === 'BIRTHDAY'
+                                  ? 'BIRTHDAY CELEBRATION'
+                                  : currentPhoneTheme?.eventType ===
+                                      'GRADUATION'
+                                    ? 'GRADUATION CELEBRATION'
+                                    : currentPhoneTheme?.eventType === 'MEETING'
+                                      ? 'EXECUTIVE SUMMIT'
+                                      : currentPhoneTheme?.eventType ===
+                                          'GALA_DINNER'
+                                        ? 'ROYAL GALA DINNER'
+                                        : 'THE WEDDING OF'}
+                              </p>
+                              <h3 className="font-editorial italic text-2xl sm:text-3xl font-bold tracking-wide text-white drop-shadow-sm">
+                                {activeDummyMeta.coupleLabel}
+                              </h3>
+                              <p className="text-[11px] text-white/90 font-medium">
+                                {currentPhoneTheme?.name ||
+                                  activeDummyMeta.themeLabel}
+                              </p>
+
+                              {/* 4 Countdown Circles */}
+                              <div className="grid grid-cols-4 gap-2 pt-2 max-w-[220px] mx-auto">
+                                {[
+                                  { val: '151', label: 'Days' },
+                                  { val: '22', label: 'Hrs' },
+                                  { val: '12', label: 'Min' },
+                                  { val: '36', label: 'Sec' },
+                                ].map((cd) => (
+                                  <div
+                                    key={cd.label}
+                                    className="rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 py-2 px-1 text-center"
+                                  >
+                                    <p className="text-xs font-extrabold text-white leading-none">
+                                      {cd.val}
+                                    </p>
+                                    <p className="text-[9px] text-rose-100 mt-0.5">
+                                      {cd.label}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Guest Name Box */}
+                              <div className="pt-2">
+                                <div className="inline-block px-4 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25">
+                                  <p className="text-[9px] uppercase tracking-widest text-rose-100">
+                                    To:
+                                  </p>
+                                  <p className="text-xs font-bold text-white mt-0.5">
+                                    {lang === 'ID'
+                                      ? 'Tamu Kehormatan'
+                                      : 'Honored Guest'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Bottom Navigation Dock inside Phone */}
+                            <div className="relative z-10 px-4 pb-4">
+                              <div className="rounded-2xl bg-white/95 backdrop-blur-md px-3 py-2 flex items-center justify-around text-[9px] font-bold text-stone-800 shadow-lg">
+                                <span className="text-[#9E1B46]">Home</span>
+                                <span>Acara</span>
+                                <span>Galeri</span>
+                                <span>Kado</span>
+                                <span>RSVP</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Pink Pagination Dots Below Phone */}
+                        <div className="flex justify-center items-center gap-2 mt-5">
+                          {heroThemes.map((tItem) => {
+                            const isDotActive =
+                              currentPhoneTheme?.id === tItem.id;
+                            return (
+                              <button
+                                key={tItem.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCatalogThemeId(tItem.id);
+                                  setSelectedDemoClientId(tItem.dummyClientId);
+                                  setSimEventType(tItem.eventType);
+                                  setSimThemeOverride(tItem.themePreset);
+                                }}
+                                title={tItem.name}
+                                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                                  isDotActive
+                                    ? 'w-7 bg-[#9E1B46]'
+                                    : 'w-2.5 bg-rose-200 hover:bg-rose-300'
+                                }`}
+                              />
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 2: KENAPA RATUSAN RIBU PASANGAN MEMILIH MEPLANNER?        */}
+            {/* ================================================================= */}
+            <section className="bg-white py-16 sm:py-20">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Kenapa Ratusan Ribu Pasangan Memilih MEPlanner?'
+                      : 'Why Do Hundreds of Thousands of Couples Choose MEPlanner?'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Dirancang agar siapa saja bisa membuat undangan digital yang tampak mewah, hangat, dan siap dibagikan tanpa ribet.'
+                      : 'Designed so anyone can create a luxurious, warm digital invitation ready to share effortlessly.'}
+                  </p>
+                </div>
+
+                {/* 4 Clean Borderless Columns */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12 text-center">
+                  {[
+                    {
+                      icon: Sparkles,
+                      title:
+                        lang === 'ID'
+                          ? 'Desain Eksklusif & Modern'
+                          : 'Exclusive & Modern Designs',
+                      desc:
+                        lang === 'ID'
+                          ? 'Puluhan tema siap pakai untuk berbagai acara spesialmu.'
+                          : 'Dozens of ready-to-use themes for your special celebrations.',
+                    },
+                    {
+                      icon: LayoutDashboard,
+                      title:
+                        lang === 'ID'
+                          ? 'Edit Mudah Tanpa Skill'
+                          : 'Easy Editing Without Skills',
+                      desc:
+                        lang === 'ID'
+                          ? 'Ubah teks, foto, musik dan warna dalam hitungan menit.'
+                          : 'Customize text, photos, music, and colors in minutes.',
+                    },
+                    {
+                      icon: Send,
+                      title:
+                        lang === 'ID'
+                          ? 'Personalisasi Undangan'
+                          : 'Personalized Invitations',
+                      desc:
+                        lang === 'ID'
+                          ? 'Tulis nama tamu & kirim cepat lewat WhatsApp atau link pribadi.'
+                          : 'Add guest names & share quickly via WhatsApp or personal link.',
+                    },
+                    {
+                      icon: Award,
+                      title:
+                        lang === 'ID'
+                          ? 'Fitur Paling Lengkap'
+                          : 'Most Complete Features',
+                      desc:
+                        lang === 'ID'
+                          ? 'Dari RSVP, Galeri, Buku Tamu, Kado, Event Planner hingga AI.'
+                          : 'From RSVP, Gallery, Guestbook, Gifts, Event Planner to AI.',
+                    },
+                  ].map((item) => {
+                    const IconComp = item.icon;
+                    return (
+                      <div
+                        key={item.title}
+                        className="flex flex-col items-center"
                       >
-                        <span>
-                          {getEventCategoryLabel(meta.eventType, lang)}
-                        </span>
-                      </button>
+                        <div className="w-36 h-36 mx-auto mb-5 rounded-3xl bg-[#FDF4F6] flex items-center justify-center text-[#9E1B46]">
+                          <IconComp className="w-12 h-12 stroke-[1.6]" />
+                        </div>
+                        <h3 className="text-base font-bold text-stone-900">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-stone-600 mt-1.5 leading-relaxed max-w-xs">
+                          {item.desc}
+                        </p>
+                      </div>
                     );
                   })}
                 </div>
@@ -7273,846 +7196,521 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 1: REAL <PublicInvitationView /> & PLANNER SHOWCASE       */}
+            {/* SECTION 3: DAMPAK KAMI HINGGA SAAT INI (MINT-SAGE ECO SECTION)    */}
             {/* ================================================================= */}
-            <section
-              id="showcase"
-              className="py-8 sm:py-12 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-5"
-            >
-              {/* Clean 2-Row Header: Row 1 = Title + 2 Mode Pills, Row 2 = Active Theme Pill right below title */}
-              <div
-                id="live-simulator-stage"
-                className="space-y-2 scroll-mt-20"
-              >
-                {/* Row 1: Title on Left, 2-Tab Mode Switcher on Right */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="font-serif text-lg sm:text-2xl font-extrabold text-stone-900 truncate">
+            <section className="bg-[#EFF8F4] py-14 sm:py-16">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-3xl mx-auto space-y-3">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Dampak Kami Hingga Saat Ini'
+                      : 'Our Impact So Far'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Setiap undangan digital yang dibuat di MEPlanner membantu mengurangi penggunaan kertas dari undangan cetak serta emisi karbon dari proses produksi dan distribusinya.'
+                      : 'Every digital invitation created on MEPlanner helps reduce paper waste from printed cards and carbon emissions from production and courier delivery.'}
+                  </p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEcoModalOpen(true)}
+                      className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline underline-offset-4 cursor-pointer"
+                    >
                       {lang === 'ID'
-                        ? 'Simulator Undangan & Planner Live'
-                        : 'Live Invitation & Planner Simulator'}
-                    </h3>
-                    <InfoTooltip
-                      text={
-                        lang === 'ID'
-                          ? 'Menampilkan pratinjau undangan interaktif untuk 5 jenis acara yang tersinkron langsung dengan 31 Tema Desain & pilihan paket MEPlanner.'
-                          : 'Displays the live interactive invitation preview for 5 event categories synced with all 31 Themes & MEPlanner package tiers.'
-                      }
-                    />
-                  </div>
-
-                  {/* Concise 2-Tab Switcher */}
-                  <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-white border border-stone-200/90 shadow-2xs shrink-0 self-start sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => setShowcaseViewMode('invitation_sim')}
-                      title={
-                        lang === 'ID'
-                          ? 'Tampilkan Pratinjau Undangan Asli'
-                          : 'Show Real Invitation Preview'
-                      }
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                        showcaseViewMode === 'invitation_sim'
-                          ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
-                          : 'text-stone-600 hover:text-stone-900'
-                      }`}
-                    >
-                      <span>
-                        {lang === 'ID' ? '💌 Undangan' : '💌 Invitation'}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowcaseViewMode('dashboard_modules')}
-                      title={
-                        lang === 'ID'
-                          ? 'Tampilkan Pratinjau 5 Modul Planner'
-                          : 'Show 5 Planner Modules Preview'
-                      }
-                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                        showcaseViewMode === 'dashboard_modules'
-                          ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
-                          : 'text-stone-600 hover:text-stone-900'
-                      }`}
-                    >
-                      <span>
-                        {lang === 'ID' ? '📊 Modul Planner' : '📊 Planner'}
-                      </span>
+                        ? 'Bagaimana kami menghitung dampak ini?'
+                        : 'How do we calculate this impact?'}
                     </button>
                   </div>
                 </div>
 
-                {/* Row 2: Active Theme Subtitle Pill right below title */}
-                {activeCatalogTheme && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold shadow-2xs">
-                      <span>
+                {/* 3 Clean White Horizontal Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-5xl mx-auto">
+                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
+                      🌿
+                    </div>
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        56.4 Ton
+                      </p>
+                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
                         {lang === 'ID'
-                          ? `🎨 Tema Aktif: ${activeCatalogTheme.name} (${activeCatalogTheme.styleCategory})`
-                          : `🎨 Active Theme: ${activeCatalogTheme.name} (${activeCatalogTheme.styleCategory})`}
-                      </span>
-                    </span>
+                          ? 'Kertas berhasil dihindari'
+                          : 'Paper waste avoided'}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Single Compact Simulator Control Bar: 5 Event Pills + 3 Tier Pills + Cover/Inside + Fullscreen + Demo */}
-              <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-wrap items-center justify-between gap-2">
-                {/* Left: 5 Event Category Pills */}
-                <div className="flex flex-wrap items-center gap-1">
-                  {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
-                    const isSelected = activeDummyMeta.id === meta.id;
+                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
+                      🌍
+                    </div>
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        347 tCO2e
+                      </p>
+                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
+                        {lang === 'ID'
+                          ? 'Emisi karbon berhasil dikurangi'
+                          : 'Carbon emissions reduced'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-6 shadow-2xs border-l-4 border-emerald-500 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xl">
+                      💌
+                    </div>
+                    <div>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+                        3.1M+
+                      </p>
+                      <p className="text-xs sm:text-sm font-medium text-stone-600 mt-0.5">
+                        {lang === 'ID'
+                          ? 'Undangan digital dibagikan'
+                          : 'Digital invitations shared'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-center text-xs sm:text-sm text-emerald-950 font-medium mt-8">
+                  {lang === 'ID'
+                    ? '💚 Bersama kita ciptakan kenangan indah tanpa meninggalkan jejak negatif pada bumi.'
+                    : '💚 Together we create beautiful memories without leaving a negative footprint on our planet.'}
+                </p>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 4: LEBIH DARI SEKEDAR UNDANGAN DIGITAL (#fitur)           */}
+            {/* ================================================================= */}
+            <section id="fitur" className="bg-white py-16 sm:py-20 scroll-mt-16">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Lebih dari Sekedar Undangan Digital'
+                      : 'More Than Just a Digital Invitation'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'MEPlanner menghadirkan ekosistem lengkap yang membuat persiapan dan hari bahagiamu semakin berkesan.'
+                      : 'MEPlanner brings a complete ecosystem that makes your preparation and special day truly unforgettable.'}
+                  </p>
+                </div>
+
+                {/* 4 Pastel Tinted Vertical Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 max-w-6xl mx-auto">
+                  {/* Card 1: Undangan Digital */}
+                  <div className="bg-[#FFF9FA] border border-[#F8DCE3] rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-100/80 text-[#9E1B46] flex items-center justify-center">
+                        <Sparkles className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID'
+                          ? 'Undangan Digital'
+                          : 'Digital Invitations'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Beragam tema modern yang bisa disesuaikan penuh untuk pernikahan atau acara spesialmu.'
+                          : 'Modern themes fully customizable for your wedding or special event.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-rose-200/60 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID'
+                          ? 'Puluhan Tema Siap Pakai'
+                          : '31+ Ready-to-Use Themes',
+                        lang === 'ID'
+                          ? 'Kustomisasi Fleksibel'
+                          : 'Flexible Customization',
+                        lang === 'ID'
+                          ? 'Aktif Selamanya'
+                          : 'Active Forever',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#9E1B46] shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Card 2: Kado Hadiah */}
+                  <div className="bg-[#FFFDF7] border border-[#F7E5C8] rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100/80 text-amber-800 flex items-center justify-center">
+                        <Wallet className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        {lang === 'ID' ? 'Kado Hadiah' : 'Gift Registry'}
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Terima kado dengan cara modern, cashless, langsung ke alamat atau lewat daftar impianmu.'
+                          : 'Receive gifts the modern way: cashless, shipped to your address, or via wishlist.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-amber-200/60 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID' ? 'Kado Cashless' : 'Cashless Envelope',
+                        lang === 'ID' ? 'Kirim ke Alamat' : 'Ship to Address',
+                        lang === 'ID' ? 'Wishlist Kado' : 'Gift Wishlist',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Card 3: Event Planner */}
+                  <div className="bg-[#F8FCF9] border border-[#D5EEDB] rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        Event Planner
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Rencanakan pernikahan lebih terarah dengan manajemen Budget dan To-Do List.'
+                          : 'Plan your celebration systematically with integrated Budget and To-Do List management.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-emerald-200/60 text-xs font-semibold text-stone-800">
+                      {[
+                        lang === 'ID' ? 'Manajemen Budget' : 'Budget Tracker',
+                        lang === 'ID'
+                          ? 'To-Do List Terarah'
+                          : 'Guided To-Do List',
+                        lang === 'ID'
+                          ? 'Ringkas & Mudah Dipakai'
+                          : 'Simple & Easy to Use',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Card 4: MEPlanner AI */}
+                  <div className="bg-[#F7FAFF] border border-[#D6E6FC] rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-100/80 text-blue-700 flex items-center justify-center">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-stone-900">
+                        MEPlanner AI
+                      </h3>
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        {lang === 'ID'
+                          ? 'Teknologi AI pintar untuk merangkum ucapan & doa tamu jadi insight hangat penuh makna.'
+                          : 'Smart AI technology summarizing guest wishes & prayers into warm, meaningful insights.'}
+                      </p>
+                    </div>
+                    <ul className="space-y-2 pt-5 mt-5 border-t border-blue-200/60 text-xs font-semibold text-stone-800">
+                      {[
+                        'AI Wishes Insight',
+                        lang === 'ID'
+                          ? 'Moderasi Otomatis'
+                          : 'Auto Moderation',
+                        lang === 'ID' ? 'Cepat & Akurat' : 'Fast & Accurate',
+                      ].map((pt) => (
+                        <li key={pt} className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 5: DEEP BURGUNDY BANNER "SAMBUT SETIAP TAMU LEBIH RAPI"   */}
+            {/* ================================================================= */}
+            <section className="py-6">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="rounded-3xl bg-gradient-to-r from-[#4A0E23] via-[#631530] to-[#4A0E23] text-white p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+                  <div className="lg:col-span-7 space-y-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">
+                      {lang === 'ID'
+                        ? 'LAYANAN EKSKLUSIF DI HARI-H'
+                        : 'EXCLUSIVE EVENT-DAY SERVICE'}
+                    </p>
+                    <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-white leading-tight">
+                      {lang === 'ID'
+                        ? 'Sambut Setiap Tamu dengan Lebih Rapi'
+                        : 'Welcome Every Guest with Seamless Elegance'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-rose-100 leading-relaxed max-w-xl">
+                      {lang === 'ID'
+                        ? 'Dengan Guest Reception, proses check-in tamu menjadi lebih cepat, terdata otomatis dan memberikan kesan profesional sejak langkah pertama.'
+                        : 'With Guest Reception, guest check-in becomes faster, automatically recorded, and leaves a professional impression from the very first step.'}
+                    </p>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onOpenDemoManager) {
+                            onOpenDemoManager(
+                              activeDummyMeta.id,
+                              simPackageTier,
+                              activeCatalogTheme?.id
+                            );
+                          } else {
+                            onOpenAdminPortal();
+                          }
+                        }}
+                        className="px-6 py-3 rounded-xl bg-white text-[#631530] font-bold text-sm hover:bg-rose-50 transition-all shadow-sm cursor-pointer"
+                      >
+                        {lang === 'ID'
+                          ? 'Kenali Guest Reception'
+                          : 'Explore Guest Reception'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
+                  <div className="lg:col-span-5">
+                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                          <span className="text-xs font-bold text-white">
+                            Guest Reception Live Screen
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-200">
+                          QR Check-In Ready
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
+                        <div className="w-12 h-12 rounded-xl bg-[#FDF4F6] text-[#9E1B46] flex items-center justify-center shrink-0">
+                          <QrCode className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#9E1B46]">
+                            {lang === 'ID'
+                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
+                              : 'WELCOME HONORED GUEST'}
+                          </p>
+                          <p className="text-sm font-extrabold text-stone-900 truncate">
+                            Bpk/Ibu Tamu VIP &amp; Keluarga
+                          </p>
+                          <p className="text-[11px] text-stone-600">
+                            VIP Table 01 &bull; 2 Pax Terverifikasi
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 6: #tema PILIHAN TEMA UNDANGAN DI DALAM PHONE MOCKUP      */}
+            {/* ================================================================= */}
+            <section
+              id="tema"
+              className="bg-[#FCF6F7] py-16 sm:py-20 scroll-mt-16"
+            >
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Pilihan Tema Undangan yang Siap Dipakai'
+                      : 'Ready-to-Use Invitation Themes'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Setiap tema dirancang dengan detail, responsif di semua perangkat dan mudah disesuaikan.'
+                      : 'Every theme is crafted with care, responsive across all devices, and effortless to customize.'}
+                  </p>
+                </div>
+
+                {/* Clean Category Filter Tabs */}
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
+                  {(
+                    [
+                      {
+                        id: 'ALL' as const,
+                        label: lang === 'ID' ? 'Semua Tema' : 'All Themes',
+                      },
+                      {
+                        id: 'WEDDING' as const,
+                        label: lang === 'ID' ? 'Pernikahan' : 'Wedding',
+                      },
+                      {
+                        id: 'BIRTHDAY' as const,
+                        label: lang === 'ID' ? 'Ulang Tahun' : 'Birthday',
+                      },
+                      {
+                        id: 'GRADUATION' as const,
+                        label: lang === 'ID' ? 'Wisuda' : 'Graduation',
+                      },
+                      {
+                        id: 'MEETING' as const,
+                        label: lang === 'ID' ? 'Rapat Resmi' : 'Corporate',
+                      },
+                      {
+                        id: 'GALA_DINNER' as const,
+                        label: lang === 'ID' ? 'Gala Dinner' : 'Gala Dinner',
+                      },
+                    ] as const
+                  ).map((evBtn) => {
+                    const isAct = catalogEventFilter === evBtn.id;
                     return (
                       <button
-                        key={meta.id}
+                        key={evBtn.id}
                         type="button"
-                        onClick={() => handleSelectDummyClient(meta.id)}
-                        title={`${meta.coupleLabel} • ${
-                          lang === 'ID' ? 'Tema' : 'Theme'
-                        }: ${meta.themeLabel}`}
-                        className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-extrabold transition-all inline-flex items-center gap-1 whitespace-nowrap cursor-pointer ${
-                          isSelected
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914]'
-                            : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200/90'
+                        onClick={() => {
+                          setCatalogEventFilter(evBtn.id);
+                          setCatalogStyleFilter('ALL');
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          isAct
+                            ? 'bg-[#9E1B46] text-white shadow-xs'
+                            : 'bg-white hover:bg-rose-50 text-stone-800 border border-stone-200/80'
                         }`}
                       >
-                        <span>
-                          {getEventCategoryLabel(meta.eventType, lang)}
-                        </span>
+                        {evBtn.label}
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Right: 3 Package Tier Pills + Sampul/Isi + Layar Penuh + Demo */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <div className="inline-flex flex-wrap items-center gap-0.5 p-0.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90">
-                    {(
-                      [
-                        {
-                          tier: 'STARTER' as const,
-                          labelId: 'Gratis',
-                          labelEn: 'Free',
-                          tip: 'Rp 0 • 1 Slide Statis • 14 Hari',
-                        },
-                        {
-                          tier: 'EXCLUSIVE' as const,
-                          labelId: 'Premium',
-                          labelEn: 'Premium',
-                          tip: 'Rp 51.750 - Rp 74.250 • Slideshow • Galeri & Musik',
-                        },
-                        {
-                          tier: 'ROYAL VIP' as const,
-                          labelId: 'VIP / Mitra',
-                          labelEn: 'VIP / Agency',
-                          tip: 'Rp 180.000 - Rp 750.000 • Video HD • White-Label',
-                        },
-                      ] as const
-                    ).map((tItem) => {
-                      const isTierActive = simPackageTier === tItem.tier;
-                      return (
-                        <button
-                          key={tItem.tier}
-                          type="button"
-                          onClick={() => setSimPackageTier(tItem.tier)}
-                          title={tItem.tip}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
-                            isTierActive
-                              ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
-                              : 'text-stone-600 hover:text-stone-900'
-                          }`}
-                        >
-                          {lang === 'ID' ? tItem.labelId : tItem.labelEn}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {showcaseViewMode === 'invitation_sim' && (
-                    <div className="inline-flex items-center p-0.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90">
-                      <button
-                        type="button"
-                        onClick={() => setSimIsOpened(false)}
-                        title={
-                          lang === 'ID'
-                            ? 'Tampilkan Sampul Pembuka'
-                            : 'Show Invitation Cover'
-                        }
-                        className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
-                          !simIsOpened
-                            ? 'bg-[#8B6914] text-white'
-                            : 'text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        {lang === 'ID' ? 'Sampul' : 'Cover'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSimIsOpened(true)}
-                        title={
-                          lang === 'ID'
-                            ? 'Tampilkan Isi Undangan Terbuka'
-                            : 'Show Opened Invitation'
-                        }
-                        className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
-                          simIsOpened
-                            ? 'bg-[#8B6914] text-white'
-                            : 'text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        {lang === 'ID' ? 'Isi' : 'Inside'}
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSelectClientInvitation(
-                        activeDummyMeta.id,
-                        activeDummyMeta.sampleGuestName,
-                        activeDummyMeta.sampleHashToken
-                      )
-                    }
-                    title={
-                      lang === 'ID'
-                        ? `Buka Undangan ${activeDummyMeta.coupleLabel} di Layar Penuh`
-                        : `Open ${activeDummyMeta.coupleLabel} Invitation Fullscreen`
-                    }
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap cursor-pointer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span>{lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onOpenDemoManager) {
-                        onOpenDemoManager(
-                          activeDummyMeta.id,
-                          simPackageTier,
-                          activeCatalogTheme?.id
-                        );
-                      } else {
-                        onOpenAdminPortal();
-                      }
-                    }}
-                    title={
-                      lang === 'ID'
-                        ? `Buka Demo Planner (${activeDummyMeta.coupleLabel})`
-                        : `Open Demo Planner (${activeDummyMeta.coupleLabel})`
-                    }
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap cursor-pointer"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                    <span>Demo</span>
-                  </button>
-                </div>
-              </div>
-
-              {showcaseViewMode === 'invitation_sim' ? (
-                /* ================================================================= */
-                /* TAB 1: FULL-WIDTH REAL <PublicInvitationView /> VIEWPORT          */
-                /* ================================================================= */
-                <div className="relative rounded-3xl border-2 border-[#D4AF37]/45 shadow-[0_20px_60px_rgba(28,25,23,0.12)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
-                  <div className="h-[680px] sm:h-[760px] overflow-y-auto overflow-x-hidden">
-                    <PublicInvitationView
-                      key={`${activeDummyMeta.id}-${simPackageTier}-${effectiveSimThemePreset}-${selectedCatalogThemeId}-${
-                        simIsOpened ? 'open' : 'cover'
-                      }-${lang}`}
-                      settings={activeDummyState.settings}
-                      guests={activeDummyState.guests}
-                      wishes={effectiveDummyWishes}
-                      guestParamName={activeDummyMeta.sampleGuestName}
-                      guestParamCode={activeDummyMeta.sampleHashToken}
-                      defaultOpened={simIsOpened}
-                      isAdminLoggedIn={false}
-                      onOpenAdminPortal={() => {
-                        if (onOpenDemoManager) {
-                          onOpenDemoManager(
-                            activeDummyMeta.id,
-                            simPackageTier,
-                            activeCatalogTheme?.id
-                          );
-                        } else {
-                          onOpenAdminPortal();
-                        }
-                      }}
-                      onSubmitRsvp={handleDummyLiveRsvpSubmit}
-                      {...({ externalLang: lang } as any)}
-                    />
-                  </div>
-                </div>
-              ) : (
-                /* ================================================================= */
-                /* TAB 2: 1:1 PLANNER REPLICA + 5 INTERACTIVE MODULES                */
-                /* ================================================================= */
-                <>
-                  {/* Featured Interactive Browser Frame Preview (1:1 AdminDashboardView Replica) */}
-                  {(() => {
-                    const currentShot =
-                      OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx] ||
-                      OFFICIAL_PRODUCT_SCREENSHOTS[0];
-                    const currentTitle =
-                      lang === 'ID' ? currentShot.titleId : currentShot.titleEn;
-                    const currentDesc =
-                      lang === 'ID' ? currentShot.descId : currentShot.descEn;
-
-                    return (
-                      <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.1)] overflow-hidden">
-                        {/* Browser Window Top Bar */}
-                        <div className="px-3.5 sm:px-5 py-2.5 bg-[#FAF8F5] text-stone-900 border-b border-stone-200/90 flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
-                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
-                            </div>
-                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
-                              {currentShot.badge}
-                            </span>
-                            <span className="hidden md:inline-block font-mono text-[11px] text-stone-500 truncate">
-                              https://meplanner.vercel.app/planner/{currentShot.id}
-                            </span>
-                            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-extrabold whitespace-nowrap">
-                              ● 1:1 PLANNER WORKSPACE ({simPackageTier})
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveShowcaseIdx(
-                                  (prev) =>
-                                    (prev -
-                                      1 +
-                                      OFFICIAL_PRODUCT_SCREENSHOTS.length) %
-                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
-                                )
-                              }
-                              title={
-                                lang === 'ID'
-                                  ? 'Modul Sebelumnya'
-                                  : 'Previous Module'
-                              }
-                              className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
-                            >
-                              <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <span className="text-[11px] font-mono font-bold text-[#8B6914] px-1.5">
-                              {activeShowcaseIdx + 1} /{' '}
-                              {OFFICIAL_PRODUCT_SCREENSHOTS.length}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveShowcaseIdx(
-                                  (prev) =>
-                                    (prev + 1) %
-                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
-                                )
-                              }
-                              title={
-                                lang === 'ID'
-                                  ? 'Modul Berikutnya'
-                                  : 'Next Module'
-                              }
-                              className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openLightboxAt(activeShowcaseIdx)}
-                              title={
-                                lang === 'ID'
-                                  ? 'Perbesar Layar Penuh'
-                                  : 'Zoom Fullscreen'
-                              }
-                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
-                            >
-                              <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-                              <span className="whitespace-nowrap truncate">
-                                {lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Live Vector-Sharp Interactive React UI Viewport (1:1 AdminDashboardView) */}
-                        <div
-                          data-inv-theme={effectiveSimThemePreset}
-                          className="relative bg-[#FAF8F5] overflow-hidden"
-                        >
-                          {renderLiveDashboardModule(currentShot.id)}
-                        </div>
-
-                        {/* Active Screenshot Description & Prev/Next Footer */}
-                        <div className="p-4 sm:p-5 bg-[#FAF8F5] border-t border-stone-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[10px] font-extrabold whitespace-nowrap">
-                                {currentShot.badge}
-                              </span>
-                              <h4 className="font-sans text-base sm:text-lg font-extrabold text-stone-900">
-                                {currentTitle}
-                              </h4>
-                            </div>
-                            <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
-                              {currentDesc}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveShowcaseIdx(
-                                  (prev) =>
-                                    (prev -
-                                      1 +
-                                      OFFICIAL_PRODUCT_SCREENSHOTS.length) %
-                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
-                                )
-                              }
-                              title={
-                                lang === 'ID'
-                                  ? 'Lihat Modul Sebelumnya'
-                                  : 'View Previous Module'
-                              }
-                              className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200/90 text-stone-700 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
-                            >
-                              <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
-                              <span>
-                                {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
-                              </span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveShowcaseIdx(
-                                  (prev) =>
-                                    (prev + 1) %
-                                    OFFICIAL_PRODUCT_SCREENSHOTS.length
-                                )
-                              }
-                              title={
-                                lang === 'ID'
-                                  ? 'Lihat Modul Berikutnya'
-                                  : 'View Next Module'
-                              }
-                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
-                            >
-                              <span>
-                                {lang === 'ID' ? 'Berikutnya' : 'Next'}
-                              </span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* 5-Card Thumbnail Grid Below Featured Frame */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 min-w-0">
-                    {OFFICIAL_PRODUCT_SCREENSHOTS.map((shot, idx) => {
-                      const isSelected = activeShowcaseIdx === idx;
-                      const shotTitle =
-                        lang === 'ID' ? shot.titleId : shot.titleEn;
-                      const shotDesc =
-                        lang === 'ID' ? shot.descId : shot.descEn;
-                      return (
-                        <div
-                          key={shot.id}
-                          onClick={() => setActiveShowcaseIdx(idx)}
-                          className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
-                            isSelected
-                              ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
-                              : 'border-stone-200/90 hover:border-[#D4AF37] shadow-2xs hover:-translate-y-0.5'
-                          }`}
-                        >
-                          <div>
-                            <div className="relative h-24 bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E5C8] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="px-2 py-0.5 rounded-md bg-white/90 border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[9px] font-extrabold whitespace-nowrap">
-                                  {lang === 'ID' ? shot.tabId : shot.tabEn}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openLightboxAt(idx);
-                                  }}
-                                  title={
-                                    lang === 'ID'
-                                      ? `Perbesar ${shotTitle}`
-                                      : `Zoom ${shotTitle}`
-                                  }
-                                  className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
-                                >
-                                  <Maximize2 className="w-3 h-3 text-[#8B6914]" />
-                                </button>
-                              </div>
-                              <div className="rounded-xl bg-white/90 border border-[#D4AF37]/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-extrabold text-stone-900 truncate">
-                                  {shot.kpiSummary}
-                                </span>
-                                <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[8px] font-extrabold shrink-0">
-                                  1:1 UI
-                                </span>
-                              </div>
-                            </div>
-                            <div className="p-3 space-y-1">
-                              <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
-                                {shot.badge}
-                              </p>
-                              <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
-                                {shotTitle}
-                              </h5>
-                              <p className="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">
-                                {shotDesc}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/80 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
-                              {isSelected
-                                ? lang === 'ID'
-                                  ? '● Sedang Aktif'
-                                  : '● Active'
-                                : lang === 'ID'
-                                  ? 'Klik untuk Buka'
-                                  : 'Click to Open'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openLightboxAt(idx);
-                              }}
-                              title={
-                                lang === 'ID'
-                                  ? 'Buka Layar Penuh'
-                                  : 'Open Fullscreen'
-                              }
-                              className="text-[10px] font-extrabold text-stone-700 hover:text-[#8B6914] underline whitespace-nowrap"
-                            >
-                              {lang === 'ID' ? 'Zoom' : 'Zoom'}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-
-              {/* ================================================================= */}
-              {/* KATALOG 31 TEMA DESAIN EKSKLUSIF MULTI-EVENT (#tema)               */}
-              {/* ================================================================= */}
-              <div
-                id="tema"
-                className="pt-8 border-t border-stone-200/90 space-y-5 scroll-mt-20"
-              >
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
-                      {lang === 'ID'
-                        ? 'Katalog Desain Eksklusif MEPlanner • 5 Arketipe Tata Letak'
-                        : 'Exclusive MEPlanner Theme Catalog • 5 Layout Archetypes'}
-                    </span>
-                    <h3 className="font-serif text-xl sm:text-3xl font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? '31 Tema Detail Sesuai Event Terpilih'
-                        : '31 Curated Themes Across All Event Categories'}
-                    </h3>
-                    <p className="text-xs text-stone-600 max-w-2xl">
-                      {lang === 'ID'
-                        ? 'Pilih tema favorit Anda lalu klik "Lihat Demo" untuk menerapkan struktur tata letak (Polaroid Magazine, Botanical Airy, Nusantara Heritage, Modern Bento, Editorial Classic), palet warna, dan bingkai profil langsung ke Simulator di atas!'
-                        : 'Pick any theme below and click "Live Demo" to apply its layout structure, color palette, profile frame, and ornaments directly to the live simulator above!'}
-                    </p>
-                  </div>
-
-                  {/* Search Input */}
-                  <div className="relative w-full md:w-64 shrink-0">
-                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={catalogSearchQuery}
-                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
-                      placeholder={
-                        lang === 'ID'
-                          ? 'Cari nama tema (Serein, Wayang...)'
-                          : 'Search theme (Serein, Wayang...)'
-                      }
-                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-stone-200/90 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:border-[#B68D40] focus:outline-none shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Filter Bar: Event Category + Style Category */}
-                <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 mr-1">
-                      {lang === 'ID' ? 'Event:' : 'Event:'}
-                    </span>
-                    {(
-                      [
-                        {
-                          id: 'ALL' as const,
-                          label:
-                            lang === 'ID'
-                              ? `Semua Event (${MULTI_EVENT_THEME_CATALOG.length})`
-                              : `All Events (${MULTI_EVENT_THEME_CATALOG.length})`,
-                        },
-                        {
-                          id: 'WEDDING' as const,
-                          label:
-                            lang === 'ID'
-                              ? '💍 Pernikahan (15)'
-                              : '💍 Wedding (15)',
-                        },
-                        {
-                          id: 'BIRTHDAY' as const,
-                          label:
-                            lang === 'ID'
-                              ? '🎂 Ulang Tahun (4)'
-                              : '🎂 Birthday (4)',
-                        },
-                        {
-                          id: 'GRADUATION' as const,
-                          label:
-                            lang === 'ID'
-                              ? '🎓 Wisuda (4)'
-                              : '🎓 Graduation (4)',
-                        },
-                        {
-                          id: 'MEETING' as const,
-                          label:
-                            lang === 'ID'
-                              ? '🏛️ Rapat Resmi (4)'
-                              : '🏛️ Corporate (4)',
-                        },
-                        {
-                          id: 'GALA_DINNER' as const,
-                          label:
-                            lang === 'ID'
-                              ? '🥂 Gala Dinner (4)'
-                              : '🥂 Gala Dinner (4)',
-                        },
-                      ] as const
-                    ).map((evBtn) => {
-                      const isAct = catalogEventFilter === evBtn.id;
-                      return (
-                        <button
-                          key={evBtn.id}
-                          type="button"
-                          onClick={() => {
-                            setCatalogEventFilter(evBtn.id);
-                            setShowAllCatalogThemes(true);
-                          }}
-                          className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border transition-all ${
-                            isAct
-                              ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914]'
-                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200/90'
-                          }`}
-                        >
-                          {evBtn.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 mr-1">
-                        {lang === 'ID' ? 'Gaya:' : 'Style:'}
-                      </span>
-                      {(
-                        [
-                          'ALL',
-                          'Minimalis',
-                          'Floral',
-                          'Adat & Budaya',
-                          'Editorial Foto',
-                          'Light Luxury',
-                        ] as const
-                      ).map((st) => {
-                        const isStAct = catalogStyleFilter === st;
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => {
-                              setCatalogStyleFilter(st);
-                              setShowAllCatalogThemes(true);
-                            }}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
-                              isStAct
-                                ? 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]'
-                                : 'bg-[#FAF8F5] text-stone-600 hover:text-stone-900 border border-stone-200/90'
-                            }`}
-                          >
-                            {st === 'ALL'
-                              ? lang === 'ID'
-                                ? 'Semua Gaya'
-                                : 'All Styles'
-                              : st}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <span className="text-[11px] font-bold text-[#8B6914]">
-                      {lang === 'ID'
-                        ? `Menampilkan ${filteredCatalogThemes.length} tema siap pakai`
-                        : `Showing ${filteredCatalogThemes.length} ready-to-use themes`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Theme Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 4-Column Grid of Clean Phone Mockup Cards (Zero Cluttered Overlay Badges!) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 max-w-6xl mx-auto">
                   {(showAllCatalogThemes
                     ? filteredCatalogThemes
-                    : filteredCatalogThemes.slice(0, 12)
+                    : filteredCatalogThemes.slice(0, 8)
                   ).map((theme) => {
-                    const isCurrentTheme =
-                      activeCatalogTheme?.id === theme.id &&
-                      showcaseViewMode === 'invitation_sim';
-                    const evLabel =
+                    const dummyMetaForTheme =
+                      SHOWCASE_DUMMY_CLIENT_METAS.find(
+                        (m) => m.id === theme.dummyClientId
+                      ) || SHOWCASE_DUMMY_CLIENT_METAS[0];
+                    const cleanCategoryText =
                       theme.eventType === 'WEDDING'
-                        ? '💍 Pernikahan'
+                        ? lang === 'ID'
+                          ? 'Pernikahan'
+                          : 'Wedding'
                         : theme.eventType === 'BIRTHDAY'
-                          ? '🎂 Ulang Tahun'
+                          ? lang === 'ID'
+                            ? 'Ulang Tahun'
+                            : 'Birthday'
                           : theme.eventType === 'GRADUATION'
-                            ? '🎓 Wisuda'
+                            ? lang === 'ID'
+                              ? 'Wisuda'
+                              : 'Graduation'
                             : theme.eventType === 'MEETING'
-                              ? '🏛️ Rapat Resmi'
-                              : '🥂 Gala Dinner';
-                    const archetypeLabel =
-                      theme.layoutArchetype === 'POLAROID_MAGAZINE'
-                        ? '📸 Polaroid Magazine'
-                        : theme.layoutArchetype === 'BOTANICAL_AIRY'
-                          ? '🌿 Botanical Airy'
-                          : theme.layoutArchetype === 'NUSANTARA_HERITAGE'
-                            ? '🏛️ Nusantara Heritage'
-                            : theme.layoutArchetype === 'MODERN_BENTO'
-                              ? '⊞ Modern Bento'
-                              : '✨ Editorial Classic';
+                              ? lang === 'ID'
+                                ? 'Rapat Resmi'
+                                : 'Corporate'
+                              : 'Gala Dinner';
 
                     return (
                       <div
                         key={theme.id}
-                        className={`group rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
-                          isCurrentTheme
-                            ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/40 shadow-lg -translate-y-0.5'
-                            : 'border-stone-200/90 hover:border-[#D4AF37] shadow-sm hover:-translate-y-0.5'
-                        }`}
+                        className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col items-center"
                       >
-                        <div>
-                          <div className="relative h-44 overflow-hidden bg-[#FAF8F5]">
-                            <img
-                              src={theme.thumbnailUrl}
-                              alt={theme.name}
-                              loading="lazy"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-stone-900/65 via-transparent to-transparent" />
-                            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                              <span className="px-2 py-0.5 rounded-full bg-white/92 backdrop-blur-md border border-stone-200 text-stone-900 text-[9px] font-extrabold shadow-2xs">
-                                {evLabel}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3]/95 border border-[#D4AF37]/60 text-[#8B6914] text-[9px] font-extrabold shadow-2xs">
-                                {theme.tierBadge}
-                              </span>
-                            </div>
-                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
-                              <span className="px-2 py-0.5 rounded-md bg-white/92 border border-stone-200 text-stone-800 text-[9px] font-extrabold shadow-2xs">
-                                {archetypeLabel}
-                              </span>
-                              <div
-                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/90 border border-stone-200 shadow-2xs"
-                                title="Palet Warna Tema"
-                              >
-                                {theme.paletteColors.map((hex) => (
-                                  <span
-                                    key={hex}
-                                    className="w-2.5 h-2.5 rounded-full border border-stone-300"
-                                    style={{ backgroundColor: hex }}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                        {/* Realistic iPhone Mockup — Clean Unobstructed Cover */}
+                        <div
+                          onClick={() => handleApplyCatalogThemeDemo(theme)}
+                          className="w-[200px] mx-auto rounded-[32px] border-[6px] border-stone-900 aspect-[9/18] overflow-hidden relative shadow-md bg-stone-950 cursor-pointer group"
+                        >
+                          <img
+                            src={theme.coverBgUrl || theme.thumbnailUrl}
+                            alt={theme.name}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/80" />
 
-                          <div className="p-3.5 space-y-1.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="font-serif text-sm font-extrabold text-stone-900 truncate">
-                                {theme.name}
+                          {/* Dynamic Island Notch */}
+                          <div className="w-14 h-3 bg-stone-950 rounded-full mx-auto mt-1.5 relative z-10" />
+
+                          {/* Phone Screen Content — Clean High-Contrast White Typography */}
+                          <div className="relative z-10 h-[calc(100%-20px)] flex flex-col justify-between p-4 text-center text-white">
+                            <div className="pt-2">
+                              <p className="text-[8px] uppercase tracking-[0.22em] text-white/90 font-semibold">
+                                {theme.eventType === 'WEDDING'
+                                  ? 'THE WEDDING OF'
+                                  : cleanCategoryText.toUpperCase()}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1.5 my-auto">
+                              <h4 className="font-editorial italic text-lg font-bold text-white leading-snug drop-shadow-sm">
+                                {dummyMetaForTheme.coupleLabel}
                               </h4>
-                              <span className="text-[9px] font-mono text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded border border-[#D4AF37]/35 shrink-0">
-                                {theme.profileFrameStyle === 'ARCH_DOME'
-                                  ? 'Arch Dome'
-                                  : theme.profileFrameStyle === 'CIRCLE'
-                                    ? 'Circle'
-                                    : 'Editorial'}
+                              <p className="text-[10px] text-white/90 font-medium">
+                                {theme.styleCategory}
+                              </p>
+                            </div>
+
+                            <div className="pb-1">
+                              <span className="inline-block px-3.5 py-1.5 rounded-full bg-white text-stone-900 text-[9px] font-bold shadow-xs">
+                                {lang === 'ID'
+                                  ? 'Buka Undangan'
+                                  : 'Open Invitation'}
                               </span>
                             </div>
-                            <p className="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">
-                              {lang === 'ID' ? theme.taglineId : theme.taglineEn}
-                            </p>
                           </div>
                         </div>
 
-                        <div className="p-3 pt-0 flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleApplyCatalogThemeDemo(theme)}
-                            className={`w-full py-2 px-3 rounded-xl text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                              isCurrentTheme
-                                ? 'bg-emerald-600 text-white shadow-2xs'
-                                : 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white shadow-2xs'
-                            }`}
-                          >
-                            <Eye className="w-3.5 h-3.5 shrink-0" />
-                            <span>
-                              {isCurrentTheme
-                                ? lang === 'ID'
-                                  ? '✓ Sedang Tampil di Simulator'
-                                  : '✓ Active in Simulator'
-                                : lang === 'ID'
-                                  ? 'Lihat Demo'
-                                  : 'Live Demo'}
-                            </span>
-                          </button>
+                        {/* Centered High-Contrast Theme Title & Subtle Category Text on White Card */}
+                        <div className="text-center mt-3.5 mb-3">
+                          <h3 className="text-sm font-bold text-stone-900">
+                            {theme.name}
+                          </h3>
+                          <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                            {cleanCategoryText} &bull; {theme.styleCategory}
+                          </p>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApplyCatalogThemeDemo(theme)}
+                          className="w-full py-2.5 rounded-xl bg-[#F06292] hover:bg-[#EC407A] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {lang === 'ID' ? 'Lihat Demo' : 'View Demo'}
+                          </span>
+                        </button>
                       </div>
                     );
                   })}
                 </div>
 
-                {filteredCatalogThemes.length > 12 && (
-                  <div className="text-center pt-2">
+                {/* Pagination / View All 31 Themes Controls */}
+                {filteredCatalogThemes.length > 8 && (
+                  <div className="mt-10 flex flex-col items-center gap-4">
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowAllCatalogThemes((prev) => !prev)
-                      }
-                      className="px-5 py-2.5 rounded-2xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-extrabold inline-flex items-center gap-2 transition-all shadow-2xs"
+                      onClick={() => setShowAllCatalogThemes((prev) => !prev)}
+                      className="px-6 py-3 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[#B68D40]" />
                       <span>
                         {showAllCatalogThemes
                           ? lang === 'ID'
-                            ? 'Ringkas Tampilan Tema (12 Tema Utama)'
-                            : 'Show Compact Theme Grid (12 Themes)'
+                            ? 'Tampilkan Lebih Sedikit (8 Tema Utama)'
+                            : 'Show Compact Grid (8 Themes)'
                           : lang === 'ID'
-                            ? `Tampilkan Semua ${filteredCatalogThemes.length} Tema Desain Multi-Event`
-                            : `View All ${filteredCatalogThemes.length} Multi-Event Themes`}
+                            ? `Lihat Semua ${filteredCatalogThemes.length} Tema`
+                            : `View All ${filteredCatalogThemes.length} Themes`}
                       </span>
                     </button>
                   </div>
@@ -8120,464 +7718,92 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
             </section>
 
-            {/* SECTION 2: 4 PILAR EKOSISTEM + 5 LANGKAH MUDAH + 6 MODUL UNGGULAN MEPLANNER */}
-            <section
-              id="fitur"
-              className="py-12 sm:py-16 bg-[#F7F4ED] border-y border-stone-200/90 space-y-12"
-            >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-                {/* 4 PILAR EKOSISTEM ("LEBIH DARI SEKADAR UNDANGAN DIGITAL") */}
-                <div className="space-y-6">
-                  <div className="text-center max-w-3xl mx-auto">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
-                      {lang === 'ID'
-                        ? 'Ekosistem Terlengkap MEPlanner — My Event Planner'
-                        : 'Complete All-in-One Event & Invitation Ecosystem'}
-                    </span>
-                    <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-stone-900 mt-1">
-                      {lang === 'ID'
-                        ? 'Lebih dari Sekadar Undangan Digital'
-                        : 'More Than Just a Digital Invitation'}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-600 mt-2">
-                      {lang === 'ID'
-                        ? '4 Pilar Utama yang menyatukan undangan interaktif, manajemen kado modern, persiapan acara 8 domain, hingga kecerdasan buatan MEPlanner AI.'
-                        : '4 Core Pillars uniting interactive invitations, modern gift registries, 8-domain event planning, and MEPlanner AI.'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(lang === 'ID'
-                      ? [
-                          {
-                            badge: 'PILAR 1 • UNDANGAN',
-                            title: '1. Undangan Digital Multi-Event',
-                            desc: '31+ tema desain eksklusif dengan 5 karakter tata letak unik (Pernikahan, Ulang Tahun, Wisuda, Rapat, Gala), musik latar NCS/Spotify/MP3, galeri HD, & hitung mundur multi-sesi.',
-                            highlights: [
-                              '31+ Tema & 5 Arketipe Layout',
-                              '3 Bingkai Foto & Ornamen',
-                              'Aktif Selamanya (Sekali Bayar)',
-                            ],
-                          },
-                          {
-                            badge: 'PILAR 2 • KADO & HADIAH',
-                            title: '2. Kado Cashless & Gift Registry',
-                            desc: 'Terima tanda kasih via Transfer Bank, QRIS Nasional, PayPal, & Crypto USDT, lengkap dengan fitur Kirim Kado Fisik ke Alamat & Wishlist.',
-                            highlights: [
-                              'Amplop Digital Multi-Currency',
-                              'Kirim Kado ke Alamat Rumah',
-                              'Wishlist / Gift Registry Tamu',
-                            ],
-                          },
-                          {
-                            badge: 'PILAR 3 • EVENT PLANNER',
-                            title: '3. Event Planner Terpadu',
-                            desc: 'Kelola Budget vs Realisasi kontrak vendor, To-Do List H-6 Bulan s/d Hari-H, pembagian PIC keluarga/WO, dan timeline acara dalam 1 workspace.',
-                            highlights: [
-                              'Kalkulator Pagu & DP Vendor',
-                              'Checklist Bertahap & PIC',
-                              '4 Akun Inti + Tim WO/EO',
-                            ],
-                          },
-                          {
-                            badge: 'PILAR 4 • AI & HARI-H',
-                            title: '4. MEPlanner AI & Layar Tamu',
-                            desc: 'Analisis sentimen ucapan & doa berbasis AI (AI Wishes Insight), moderasi otomatis, serta Layar Penerima Tamu (Guest Reception) saat Hari-H.',
-                            highlights: [
-                              'MEPlanner AI Wishes Insight',
-                              'Layar Penerima Tamu Hari-H',
-                              '21-Char Hash & QR Check-In',
-                            ],
-                          },
-                        ]
-                      : [
-                          {
-                            badge: 'PILLAR 1 • INVITATIONS',
-                            title: '1. Multi-Event Digital Invitations',
-                            desc: '31+ curated themes with 5 distinct layout archetypes across Wedding, Birthday, Graduation, Corporate & Gala with custom music, HD gallery, and multi-session countdowns.',
-                            highlights: [
-                              '31+ Themes & 5 Layout Archetypes',
-                              '3 Profile Frames & Ornaments',
-                              'Lifetime Active Access',
-                            ],
-                          },
-                          {
-                            badge: 'PILLAR 2 • GIFTS & REGISTRY',
-                            title: '2. Cashless Gift & Wishlist Registry',
-                            desc: 'Receive digital envelopes via Bank Transfer, QRIS, PayPal & Crypto USDT, plus physical gift shipping address & wishlist registry.',
-                            highlights: [
-                              'Multi-Currency Digital Envelope',
-                              'Direct Gift Shipping Address',
-                              'Interactive Wishlist Registry',
-                            ],
-                          },
-                          {
-                            badge: 'PILLAR 3 • EVENT PLANNER',
-                            title: '3. Integrated Event Planner',
-                            desc: 'Track vendor budgets vs actual contracts, 6-Month phased To-Do Lists, family/WO PIC ownership, and run-of-show timelines.',
-                            highlights: [
-                              'Vendor Budget & DP Tracker',
-                              'Phased Checklist & PIC Roles',
-                              '4 Core Logins + WO Team',
-                            ],
-                          },
-                          {
-                            badge: 'PILLAR 4 • AI & RECEPTION',
-                            title: '4. MEPlanner AI & Guest Reception',
-                            desc: 'AI-powered guestbook sentiment summary (AI Wishes Insight), auto-moderation, and live Guest Reception check-in screen on Event Day.',
-                            highlights: [
-                              'MEPlanner AI Wishes Insight',
-                              'Live Guest Reception Screen',
-                              '21-Char Hash & QR Check-In',
-                            ],
-                          },
-                        ]
-                    ).map((pil) => (
-                      <div
-                        key={pil.title}
-                        className="p-5 rounded-3xl bg-white border border-stone-200/90 hover:border-indigo-400 transition-all flex flex-col justify-between gap-4 shadow-sm"
-                      >
-                        <div className="space-y-2.5">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[9px] font-extrabold">
-                            {pil.badge}
-                          </span>
-                          <h4 className="font-sans text-base font-extrabold text-stone-900">
-                            {pil.title}
-                          </h4>
-                          <p className="text-xs text-stone-600 leading-relaxed">
-                            {pil.desc}
-                          </p>
-                        </div>
-                        <ul className="space-y-1.5 pt-3 border-t border-stone-200 text-[11px] text-emerald-700 font-bold">
-                          {pil.highlights.map((h) => (
-                            <li key={h} className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span>{h}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
+            {/* ================================================================= */}
+            {/* SECTION 7: CARA BARU MENERIMA KADO DENGAN LEBIH MUDAH             */}
+            {/* ================================================================= */}
+            <section className="bg-white py-16 sm:py-20 border-b border-stone-100">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
+                    {lang === 'ID'
+                      ? 'Cara Baru Menerima Kado dengan Lebih Mudah'
+                      : 'An Easier New Way to Receive Gifts'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
+                    {lang === 'ID'
+                      ? 'Tamu bisa memilih cara memberi yang paling nyaman, sementara kamu menerimanya dengan aman dan praktis.'
+                      : 'Guests can choose the most convenient way to give, while you receive their gifts safely and effortlessly.'}
+                  </p>
                 </div>
 
-                {/* CARA KERJA DALAM 5 LANGKAH MUDAH */}
-                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-white via-[#FAF6EE] to-white border border-stone-200/90 shadow-sm space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700">
-                        {lang === 'ID'
-                          ? 'Alur Pembuatan Instan'
-                          : 'Instant Setup Workflow'}
-                      </span>
-                      <h4 className="font-sans text-lg sm:text-2xl font-extrabold text-stone-900">
-                        {lang === 'ID'
-                          ? 'Cara Kerja dalam 5 Langkah Mudah'
-                          : 'How It Works in 5 Easy Steps'}
-                      </h4>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openGoogleOnboardingModal('GRATIS')}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto shadow-xs cursor-pointer"
-                    >
-                      <span>
-                        {lang === 'ID'
-                          ? 'Mulai dari Paket Gratis Rp 0'
-                          : 'Start with Rp 0 Free Plan'}
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    {(lang === 'ID'
-                      ? [
-                          {
-                            step: '01',
-                            title: 'Daftar & Lengkapi Data',
-                            desc: 'Pilih jenis acara, isi profil tuan rumah/mempelai, jadwal multi-sesi, & koordinat Google Maps.',
-                          },
-                          {
-                            step: '02',
-                            title: 'Pilih Desain Tema',
-                            desc: 'Bebas pilih & ganti dari 31+ tema desain eksklusif beserta 5 arketipe layout & bingkai foto.',
-                          },
-                          {
-                            step: '03',
-                            title: 'Tambah Daftar Tamu',
-                            desc: 'Input atau impor daftar tamu VIP lengkap dengan alokasi kuota Pax & kategori prioritas.',
-                          },
-                          {
-                            step: '04',
-                            title: 'Bagikan Link & Kode Tamu',
-                            desc: 'Kirim undangan WhatsApp personal 1-klik dengan Kode Undangan Personal Tamu yang unik.',
-                          },
-                          {
-                            step: '05',
-                            title: 'Pantau RSVP & Layar Tamu',
-                            desc: 'Pantau konfirmasi kehadiran, tanda kasih digital, ucapan doa, & Layar Penerima Tamu Hari-H.',
-                          },
-                        ]
-                      : [
-                          {
-                            step: '01',
-                            title: 'Register & Fill Event Info',
-                            desc: 'Select your event type, host profiles, multi-session schedule, and Google Maps coordinates.',
-                          },
-                          {
-                            step: '02',
-                            title: 'Pick Your Theme',
-                            desc: 'Choose and switch anytime among 31+ curated themes, 5 layout styles, and photo frames.',
-                          },
-                          {
-                            step: '03',
-                            title: 'Add Guest List',
-                            desc: 'Add or import VIP guests with custom Pax quotas and priority badges.',
-                          },
-                          {
-                            step: '04',
-                            title: 'Share Link & Guest Key',
-                            desc: 'Send 1-click personalized WhatsApp links with unique Personal Guest Invitation Codes.',
-                          },
-                          {
-                            step: '05',
-                            title: 'Track RSVP & Reception',
-                            desc: 'Monitor live RSVPs, digital gifts, guest wishes, and Event Day Guest Reception.',
-                          },
-                        ]
-                    ).map((stItem) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-5xl mx-auto">
+                  {[
+                    {
+                      icon: CreditCard,
+                      title:
+                        lang === 'ID' ? 'Kado Cashless' : 'Cashless Envelope',
+                      desc:
+                        lang === 'ID'
+                          ? 'Terima kado secara cashless dengan cepat, aman dan transparan melalui Bank, QRIS, PayPal & USDT.'
+                          : 'Receive cashless gifts quickly, safely, and transparently via Bank Transfer, QRIS, PayPal & USDT.',
+                    },
+                    {
+                      icon: Building2,
+                      title:
+                        lang === 'ID' ? 'Kirim ke Alamat' : 'Ship to Address',
+                      desc:
+                        lang === 'ID'
+                          ? 'Tamu dapat mengirim kado langsung ke alamat yang telah ditentukan lengkap dengan petunjuk kurir.'
+                          : 'Guests can ship physical gifts directly to your designated recipient address with courier notes.',
+                    },
+                    {
+                      icon: Sparkles,
+                      title: lang === 'ID' ? 'Wishlist Kado' : 'Gift Wishlist',
+                      desc:
+                        lang === 'ID'
+                          ? 'Buat daftar kado impian agar hadiah yang diterima sesuai kebutuhan dan tidak dobel.'
+                          : 'Create a dream gift wishlist so every present you receive matches your needs without duplicates.',
+                    },
+                  ].map((giftCard) => {
+                    const IconComp = giftCard.icon;
+                    return (
                       <div
-                        key={stItem.step}
-                        className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1.5"
+                        key={giftCard.title}
+                        className="rounded-3xl bg-white border border-stone-200/80 p-6 shadow-2xs space-y-3 text-center"
                       >
-                        <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[10px] font-extrabold">
-                          {lang === 'ID' ? `LANGKAH ${stItem.step}` : `STEP ${stItem.step}`}
-                        </span>
-                        <h5 className="text-xs sm:text-sm font-extrabold text-stone-900 pt-1">
-                          {stItem.title}
-                        </h5>
-                        <p className="text-[11px] text-stone-600 leading-relaxed">
-                          {stItem.desc}
+                        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDF4F6] text-[#9E1B46] flex items-center justify-center">
+                          <IconComp className="w-7 h-7" />
+                        </div>
+                        <h3 className="text-base font-bold text-stone-900">
+                          {giftCard.title}
+                        </h3>
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          {giftCard.desc}
                         </p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 6 MODUL TERINTEGRASI DALAM 1 EKOSISTEM */}
-                <div>
-                  <div className="text-center max-w-3xl mx-auto mb-8">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
-                      {lang === 'ID'
-                        ? 'Solusi Persiapan Acara Lengkap & Praktis'
-                        : 'Complete & Practical Event Planning Suite'}
-                    </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
-                      {lang === 'ID'
-                        ? '6 Fitur Utama dalam 1 Tempat'
-                        : '6 Essential Features in 1 Place'}
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 min-w-0">
-                    {(lang === 'ID'
-                      ? [
-                          {
-                            icon: LayoutDashboard,
-                            title: '1. Pantau 8 Tahap Persiapan Acara',
-                            desc: 'Pantau kemajuan persiapan dokumen pernikahan/acara, tempat ibadah/KUA, konsumsi, busana, vendor, hingga kesiapan Hari-H dengan tenang.',
-                          },
-                          {
-                            icon: Calendar,
-                            title: '2. Daftar Tugas & Pembagian Peran',
-                            desc: 'Susun jadwal tugas dari 6 bulan sebelum acara hingga selesai, lengkap dengan pembagian tugas untuk keluarga maupun panitia.',
-                          },
-                          {
-                            icon: Wallet,
-                            title: '3. Catatan Anggaran & Amplop Digital',
-                            desc: 'Catat rencana anggaran dan pembayaran DP/pelunasan vendor, serta sediakan amplop digital Bank, QRIS, maupun PayPal.',
-                          },
-                          {
-                            icon: Send,
-                            title: '4. Daftar Tamu VIP & Kode Undangan Personal',
-                            desc: 'Kelola tamu penting dengan Kode Undangan Personal Tamu dan kirim pesan WhatsApp sopan otomatis dalam 1 klik.',
-                          },
-                          {
-                            icon: ImageIcon,
-                            title: '5. Galeri Foto & Musik Latar Pilihan',
-                            desc: 'Unggah foto kenangan terbaik dengan pemotong foto otomatis serta tambahkan musik latar favorit agar undangan semakin berkesan.',
-                          },
-                          {
-                            icon: Shield,
-                            title: '6. Kolaborasi Keluarga & Wedding Organizer',
-                            desc: 'Ajak pasangan, keluarga, dan tim penerima tamu mengelola acara bersama, lengkap dengan opsi nama/logo WO untuk paket Mitra.',
-                          },
-                        ]
-                      : [
-                          {
-                            icon: LayoutDashboard,
-                            title: '1. 8-Stage Event Readiness Tracker',
-                            desc: 'Monitor preparation progress across venue, documents, catering, attire, vendors, and Event Day operations with peace of mind.',
-                          },
-                          {
-                            icon: Calendar,
-                            title: '2. Phased Checklist & Team Roles',
-                            desc: 'Organize tasks from 6 months prior to post-event with clear role assignments for hosts, family, or event committee.',
-                          },
-                          {
-                            icon: Wallet,
-                            title: '3. Vendor Budget & Digital Envelope',
-                            desc: 'Track estimated vs actual vendor payments, deposit status, plus Digital Envelopes via Bank Transfer, QRIS, or PayPal.',
-                          },
-                          {
-                            icon: Send,
-                            title: '4. VIP Guest List & Personal Invitation Code',
-                            desc: 'Manage VIP guests with unique Personal Guest Invitation Codes and send polite 1-click WhatsApp invitations effortlessly.',
-                          },
-                          {
-                            icon: ImageIcon,
-                            title: '5. Photo Gallery & Background Music',
-                            desc: 'Upload high-resolution photos with built-in photo framing and add romantic background music to make your invitation memorable.',
-                          },
-                          {
-                            icon: Shield,
-                            title: '6. Family & Event Organizer Collaboration',
-                            desc: 'Invite your partner, family, and reception team to collaborate seamlessly, with custom agency branding on Partner tiers.',
-                          },
-                        ]
-                    ).map((feat) => {
-                      const Icon = feat.icon;
-                      return (
-                        <div
-                          key={feat.title}
-                          className="min-w-0 p-5 rounded-2xl bg-white border border-stone-200/90 hover:border-indigo-400 transition-all space-y-2.5 shadow-sm"
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center">
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <h4 className="font-extrabold text-stone-900 text-sm">
-                            {feat.title}
-                          </h4>
-                          <p className="text-xs text-stone-600 leading-relaxed">
-                            {feat.desc}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 2B: DAMPAK LINGKUNGAN HIJAU (ECO-IMPACT + MODAL)          */}
-            {/* ================================================================= */}
-            <section className="py-10 sm:py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="rounded-3xl bg-gradient-to-br from-emerald-50 via-[#F4FBF7] to-white border-2 border-emerald-300/80 p-6 sm:p-8 shadow-[0_14px_35px_rgba(16,185,129,0.1)] space-y-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="space-y-1.5 max-w-2xl">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider">
-                      🌿 Gerakan Undangan Ramah Lingkungan • Sustainability Impact
-                    </span>
-                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Setiap Undangan Digital Ikut Menjaga Bumi'
-                        : 'Every Digital Invitation Helps Protect Our Planet'}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                      {lang === 'ID'
-                        ? 'Dengan beralih dari undangan cetak fisik (kertas art carton, amplop, plastik & pengiriman kurir) ke undangan digital MEPlanner, jutaan lembar kertas dan emisi karbon berhasil dihindari.'
-                        : 'By switching from printed paper invitations and physical courier shipping to MEPlanner digital invitations, tons of paper and carbon emissions are avoided.'}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsEcoModalOpen(true)}
-                    className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs inline-flex items-center gap-2 self-start lg:self-auto shrink-0 shadow-sm transition-all"
-                  >
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Bagaimana kami menghitung dampak ini?'
-                        : 'How do we calculate this impact?'}
-                    </span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-emerald-700">
-                      46.8 Ton
-                    </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Kertas berhasil dihindari'
-                        : 'Paper waste avoided'}
-                    </p>
-                    <p className="text-[11px] text-stone-600">
-                      {lang === 'ID'
-                        ? 'Setara penghematan ribuan batang pohon dewasa dari kertas A5 & amplop tebal.'
-                        : 'Equivalent to saving thousands of mature trees from A5 cards & envelopes.'}
-                    </p>
-                  </div>
-
-                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-indigo-700">
-                      288 tCO2e
-                    </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Emisi karbon berhasil dikurangi'
-                        : 'Carbon emissions reduced'}
-                    </p>
-                    <p className="text-[11px] text-stone-600">
-                      {lang === 'ID'
-                        ? 'Mengurangi jejak karbon produksi pabrik kertas, tinta cetak, dan transportasi distribusi.'
-                        : 'Eliminates carbon footprint from paper mills, chemical inks, and courier transport.'}
-                    </p>
-                  </div>
-
-                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-[#9A742B]">
-                      2.5 M+
-                    </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Undangan digital dibagikan'
-                        : 'Digital invitations shared'}
-                    </p>
-                    <p className="text-[11px] text-stone-600">
-                      {lang === 'ID'
-                        ? 'Terkirim instan dalam hitungan detik ke seluruh Indonesia & mancanegara via WhatsApp.'
-                        : 'Delivered instantaneously across Indonesia & worldwide via WhatsApp.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ================================================================= */}
-            {/* SECTION 3: 6 PAKET KOMERSIAL RESMI MEPLANNER                      */}
+            {/* SECTION 8: 6 PAKET KOMERSIAL RESMI MEPLANNER (#paket)             */}
             {/* ================================================================= */}
             <section
               id="paket"
-              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-16"
+              className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-16"
             >
-              <div className="text-center max-w-3xl mx-auto space-y-3">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 border border-[#D4AF37]/60 text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest">
-                  ✨ Penawaran Spesial Peluncuran Resmi • Sekali Bayar Aktif Selamanya
-                </span>
-                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-stone-900">
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                   {lang === 'ID'
-                    ? '6 Pilihan Paket MEPlanner (Gratis s/d Mitra WO/EO)'
-                    : '6 MEPlanner Packages (Free Trial to Agency White-Label)'}
-                </h3>
-                <p className="text-xs sm:text-sm text-stone-600">
+                    ? 'Pilihan Paket Harga MEPlanner'
+                    : 'MEPlanner Pricing Plans'}
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                   {lang === 'ID'
-                    ? 'Nikmati seluruh fitur undangan digital interaktif 5 arketipe desain + Full Event Planner 8 Domain. Sekali bayar, undangan aktif selamanya!'
-                    : 'Unlock all interactive digital invitation features with 5 layout archetypes + 8-Domain Event Planner. One-time payment, active forever!'}
+                    ? 'Mulai dari paket Gratis atau pilih paket lengkap dengan fitur RSVP, Galeri, Musik, Kado, Event Planner & AI. Sekali bayar, aktif selamanya.'
+                    : 'Start free or unlock complete features with RSVP, Gallery, Music, Gift Registry, Event Planner & AI. One-time payment, active forever.'}
                 </p>
               </div>
 
@@ -8591,54 +7817,35 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       key={pkg.id}
                       className={`min-w-0 overflow-hidden rounded-3xl p-6 flex flex-col justify-between transition-all ${
                         isRoyal
-                          ? 'bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3] to-[#F7ECDA] text-stone-900 border-2 border-[#D4AF37] shadow-[0_18px_45px_rgba(212,175,55,0.2)] relative'
+                          ? 'bg-[#FFFDF9] text-stone-900 border-2 border-[#D4AF37] shadow-md relative'
                           : isExclusive
-                            ? 'bg-gradient-to-b from-white to-indigo-50/60 text-stone-900 border-2 border-[#6366F1] shadow-[0_16px_38px_rgba(99,102,241,0.14)]'
-                            : 'bg-white text-stone-900 border border-stone-200/90 shadow-sm'
+                            ? 'bg-[#FFF9FA] text-stone-900 border-2 border-[#9E1B46] shadow-md'
+                            : 'bg-white text-stone-900 border border-stone-200/90 shadow-2xs'
                       }`}
                     >
                       <div className="space-y-4 min-w-0">
-                        {/* Package Badge & Discount Pill */}
-                        <div className="flex flex-wrap items-center justify-between gap-1.5">
-                          <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                              isRoyal
-                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-2xs'
-                                : isExclusive
-                                  ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
-                                  : 'bg-stone-100 text-stone-700 border border-stone-200'
-                            }`}
-                          >
-                            {pkg.badge}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-extrabold">
-                            {pkg.discountBadge}
-                          </span>
-                        </div>
-
-                        {/* Title, Subtitle & Official Pricing Block */}
                         <div className="min-w-0">
                           <div className="flex items-baseline justify-between gap-2">
-                            <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-stone-900">
+                            <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
                               {pkg.name}
-                            </h4>
-                            <span className="text-[10px] font-mono font-bold text-stone-500">
-                              {pkg.normalPriceLabel}
+                            </h3>
+                            <span className="text-[11px] font-bold text-[#9E1B46]">
+                              {pkg.discountBadge}
                             </span>
                           </div>
-                          <p className="text-xs text-stone-600 mt-0.5">
+                          <p className="text-xs text-stone-600 mt-1">
                             {pkg.subtitle}
                           </p>
 
-                          <div className="mt-3 pt-3 border-t border-stone-200/80">
+                          <div className="mt-4 pt-4 border-t border-stone-200/80">
                             <div className="flex items-baseline gap-2.5 flex-wrap">
                               <span
                                 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
                                   isRoyal
                                     ? 'text-[#8B6914]'
                                     : isExclusive
-                                      ? 'text-indigo-700'
-                                      : 'text-emerald-700'
+                                      ? 'text-[#9E1B46]'
+                                      : 'text-stone-900'
                                 }`}
                               >
                                 {pkg.priceMain}
@@ -8647,21 +7854,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 {pkg.priceStrike}
                               </span>
                             </div>
-                            <div className="mt-1.5">
-                              <span
-                                className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-lg ${
-                                  isRoyal
-                                    ? 'bg-amber-100/80 text-[#7A5911] border border-[#D4AF37]/50'
-                                    : 'bg-stone-100 text-stone-700 border border-stone-200'
-                                }`}
-                              >
-                                {pkg.priceSubBadge}
-                              </span>
-                            </div>
+                            <p className="text-[11px] font-medium text-stone-600 mt-1">
+                              {pkg.priceSubBadge}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Features List */}
                         <ul className="space-y-2 text-xs pt-1">
                           {pkg.features.map((f) => (
                             <li key={f} className="flex items-start gap-2">
@@ -8670,68 +7868,32 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   isRoyal
                                     ? 'text-[#9A742B]'
                                     : isExclusive
-                                      ? 'text-indigo-600'
+                                      ? 'text-[#9E1B46]'
                                       : 'text-emerald-600'
                                 }`}
                               />
-                              <span
-                                className={
-                                  isRoyal
-                                    ? 'text-stone-800 font-medium'
-                                    : 'text-stone-700'
-                                }
-                              >
-                                {f}
-                              </span>
+                              <span className="text-stone-700">{f}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
 
-                      {/* CTA Buttons: Preview Tier in Live Simulator OR Open Dedicated Checkout Page */}
                       <div className="pt-5 mt-5 border-t border-stone-200/80 space-y-2 min-w-0">
                         <button
                           type="button"
-                          onClick={() => {
-                            setSimPackageTier(pkg.simTier);
-                            setShowcaseViewMode('invitation_sim');
-                            scrollToShowcase();
-                          }}
-                          title={
-                            lang === 'ID'
-                              ? `Uji Coba Simulasi Fitur Paket ${pkg.name} di Simulator Interaktif`
-                              : `Test ${pkg.name} Plan Features in the Interactive Simulator`
-                          }
-                          className={`w-full max-w-full py-2.5 px-3 rounded-xl font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all border ${
-                            isRoyal
-                              ? 'bg-white hover:bg-amber-50 text-[#8B6914] border-[#D4AF37]/60'
-                              : 'bg-stone-50 hover:bg-indigo-50 text-indigo-700 border-stone-200'
-                          }`}
-                        >
-                          <Eye className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">
-                            {lang === 'ID'
-                              ? `Simulasi Paket ${pkg.name}`
-                              : `Preview ${pkg.name} Plan`}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
                           onClick={() => handleSelectPackageForCheckout(pkg.id)}
-                          className={`w-full max-w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all ${
+                          className={`w-full max-w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer ${
                             isRoyal
-                              ? 'bg-gradient-to-r from-[#D4AF37] via-[#E6C76B] to-[#B68D40] text-stone-950 hover:from-[#C5A059] hover:to-[#9A742B] shadow-md'
+                              ? 'bg-[#8B6914] hover:bg-[#735610] text-white shadow-xs'
                               : isExclusive
-                                ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white shadow-md'
-                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                ? 'bg-[#9E1B46] hover:bg-[#821539] text-white shadow-xs'
+                                : 'bg-stone-900 hover:bg-stone-800 text-white shadow-2xs'
                           }`}
                         >
-                          <Wallet className="w-4 h-4 shrink-0" />
                           <span className="truncate">
                             {lang === 'ID'
-                              ? `Pilih Paket ${pkg.name} (${pkg.priceMain})`
-                              : `Select ${pkg.name} (${pkg.priceMain})`}
+                              ? `Pilih Paket ${pkg.name}`
+                              : `Select ${pkg.name}`}
                           </span>
                         </button>
                       </div>
@@ -8742,39 +7904,32 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 4: ARTIKEL & INSPIRASI TERBARU (#blog)                    */}
+            {/* SECTION 9: ARTIKEL & INSPIRASI TERBARU (#blog)                    */}
             {/* ================================================================= */}
             <section
               id="blog"
-              className="py-12 sm:py-16 bg-[#F7F4ED] border-t border-stone-200/90"
+              className="py-16 sm:py-20 bg-[#FCF6F7] border-t border-stone-200/70 scroll-mt-16"
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
-                      {lang === 'ID'
-                        ? 'Wawasan & Panduan Persiapan Acara'
-                        : 'Event Planning Guides & Inspiration'}
-                    </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
-                      {lang === 'ID'
-                        ? 'Artikel & Inspirasi Terbaru'
-                        : 'Latest Articles & Inspiration'}
-                    </h3>
-                  </div>
-                  <span className="text-xs text-stone-600">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+                <div className="text-center max-w-2xl mx-auto space-y-2">
+                  <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                     {lang === 'ID'
-                      ? 'Klik artikel untuk membaca tips lengkap & checklist praktis'
-                      : 'Click any article to read the full guide & checklist'}
-                  </span>
+                      ? 'Artikel & Inspirasi Terbaru'
+                      : 'Latest Articles & Inspiration'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-600">
+                    {lang === 'ID'
+                      ? 'Panduan praktis dan inspirasi untuk membantu persiapan hari bahagiamu.'
+                      : 'Practical guides and inspiration to help prepare your special celebration.'}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
                   {BLOG_ARTICLES.map((art) => (
                     <div
                       key={art.id}
                       onClick={() => setActiveBlogArticle(art)}
-                      className="group cursor-pointer rounded-2xl bg-white border border-stone-200/90 hover:border-indigo-400 overflow-hidden flex flex-col justify-between transition-all shadow-sm"
+                      className="group cursor-pointer rounded-2xl bg-white border border-stone-200/80 hover:border-[#9E1B46] overflow-hidden flex flex-col justify-between transition-all shadow-2xs"
                     >
                       <div>
                         <div className="relative h-36 overflow-hidden">
@@ -8784,24 +7939,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-                          <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-indigo-700 text-[9px] font-extrabold shadow-2xs">
-                            {art.category}
-                          </span>
                         </div>
                         <div className="p-4 space-y-2">
-                          <span className="text-[10px] font-mono text-stone-500">
-                            ⏱️ {art.readTime}
-                          </span>
-                          <h4 className="font-sans text-xs sm:text-sm font-extrabold text-stone-900 line-clamp-3 group-hover:text-indigo-700 transition-colors leading-snug">
+                          <p className="text-[10px] font-bold text-[#9E1B46] uppercase tracking-wider">
+                            {art.category} &bull; {art.readTime}
+                          </p>
+                          <h3 className="font-sans text-xs sm:text-sm font-bold text-stone-900 line-clamp-3 group-hover:text-[#9E1B46] transition-colors leading-snug">
                             {lang === 'ID' ? art.titleId : art.titleEn}
-                          </h4>
+                          </h3>
                           <p className="text-[11px] text-stone-600 line-clamp-3 leading-relaxed">
                             {lang === 'ID' ? art.excerptId : art.excerptEn}
                           </p>
                         </div>
                       </div>
-                      <div className="px-4 py-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-extrabold text-indigo-700">
+                      <div className="px-4 py-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-[#9E1B46]">
                         <span>
                           {lang === 'ID'
                             ? 'Baca Selengkapnya'
@@ -8816,26 +7967,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 5: FAQ INTERAKTIF & CUSTOMER SERVICE + MEPLANNER AI (#faq)*/}
+            {/* SECTION 10: FAQ INTERAKTIF & CUSTOMER SERVICE (#faq)              */}
             {/* ================================================================= */}
             <section
               id="faq"
-              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-16"
+              className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-16"
             >
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Left 7 Cols: Interactive FAQ Accordion */}
-                <div className="lg:col-span-7 space-y-4">
+                <div className="lg:col-span-7 space-y-5">
                   <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
+                    <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
                       {lang === 'ID'
-                        ? 'Pertanyaan yang Sering Diajukan (FAQ)'
-                        : 'Frequently Asked Questions (FAQ)'}
-                    </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
+                        ? 'Pertanyaan yang Sering Diajukan'
+                        : 'Frequently Asked Questions'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-stone-600 mt-1.5">
                       {lang === 'ID'
-                        ? 'Semua Hal Tentang MEPlanner & Fitur Lengkapnya'
-                        : 'Everything About MEPlanner & Complete Features'}
-                    </h3>
+                        ? 'Jawaban cepat seputar pembuatan undangan digital dan fitur MEPlanner.'
+                        : 'Quick answers about creating digital invitations and MEPlanner features.'}
+                    </p>
                   </div>
 
                   <div className="space-y-2.5">
@@ -8846,28 +7997,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           key={item.qId}
                           className={`rounded-2xl border transition-all overflow-hidden ${
                             isOpen
-                              ? 'bg-white border-indigo-400 shadow-sm'
-                              : 'bg-white border-stone-200/90 hover:border-indigo-300'
+                              ? 'bg-white border-[#9E1B46] shadow-2xs'
+                              : 'bg-white border-stone-200/90 hover:border-stone-300'
                           }`}
                         >
                           <button
                             type="button"
-                            onClick={() =>
-                              setOpenFaqIdx(isOpen ? -1 : idx)
-                            }
-                            className="w-full p-4 text-left flex items-center justify-between gap-3"
+                            onClick={() => setOpenFaqIdx(isOpen ? -1 : idx)}
+                            className="w-full p-4 text-left flex items-center justify-between gap-3 cursor-pointer"
                           >
-                            <span className="text-xs sm:text-sm font-extrabold text-stone-900 leading-snug">
+                            <span className="text-xs sm:text-sm font-bold text-stone-900 leading-snug">
                               {lang === 'ID' ? item.qId : item.qEn}
                             </span>
                             <ChevronDown
-                              className={`w-4 h-4 text-indigo-600 shrink-0 transition-transform ${
+                              className={`w-4 h-4 text-[#9E1B46] shrink-0 transition-transform ${
                                 isOpen ? 'rotate-180' : ''
                               }`}
                             />
                           </button>
                           {isOpen && (
-                            <div className="px-4 pb-4 pt-2 border-t border-stone-100 text-xs text-stone-600 leading-relaxed bg-[#FAF8F5]/70">
+                            <div className="px-4 pb-4 pt-2 border-t border-stone-100 text-xs text-stone-600 leading-relaxed bg-[#FCF6F7]/50">
                               {lang === 'ID' ? item.aId : item.aEn}
                             </div>
                           )}
@@ -8878,32 +8027,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* Right 5 Cols: Customer Service & MEPlanner AI Assistant */}
-                <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-white via-[#FAF6EE] to-indigo-50/40 border-2 border-indigo-200 p-5 sm:p-6 shadow-[0_14px_35px_rgba(99,102,241,0.1)] space-y-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold">
-                        ● Online • Layanan Resmi via Gmail
-                      </span>
-                      <h4 className="font-sans text-lg sm:text-xl font-extrabold text-stone-900 mt-2">
-                        {lang === 'ID'
-                          ? 'Masih Ada Pertanyaan? Tanya MEPlanner AI atau CS Kami!'
-                          : 'Still Have Questions? Ask MEPlanner AI or Our CS!'}
-                      </h4>
-                      <p className="text-xs text-stone-600 mt-1">
-                        {lang === 'ID'
-                          ? 'Pilih topik instan di bawah untuk mendapatkan jawaban langsung dari MEPlanner AI, atau hubungi tim Customer Service kami melalui Email Resmi.'
-                          : 'Select a quick topic below for an instant answer from MEPlanner AI, or contact our Customer Service via Official Email.'}
-                      </p>
-                    </div>
+                <div className="lg:col-span-5 rounded-3xl bg-[#FCF5F6] border border-rose-200/80 p-6 space-y-5">
+                  <div>
+                    <h3 className="font-editorial text-xl font-bold text-stone-900">
+                      {lang === 'ID'
+                        ? 'Masih Ada Pertanyaan? Tanya MEPlanner AI atau CS Kami'
+                        : 'Still Have Questions? Ask MEPlanner AI or Our CS'}
+                    </h3>
+                    <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                      {lang === 'ID'
+                        ? 'Pilih topik di bawah untuk jawaban instan dari MEPlanner AI, atau hubungi tim Customer Service kami.'
+                        : 'Select a topic below for an instant answer from MEPlanner AI, or contact our Customer Service.'}
+                    </p>
                   </div>
 
                   {/* Interactive AI Quick Prompts */}
                   <div className="space-y-2">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">
-                      {lang === 'ID'
-                        ? 'Tanya Cepat MEPlanner AI (Klik Pertanyaan):'
-                        : 'Quick Ask MEPlanner AI (Click a Prompt):'}
-                    </p>
                     <div className="flex flex-col gap-1.5">
                       {AI_QUICK_PROMPTS.map((prm, pIdx) => {
                         const isSelected = selectedAiPromptIdx === pIdx;
@@ -8912,10 +8051,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             key={prm.id}
                             type="button"
                             onClick={() => setSelectedAiPromptIdx(pIdx)}
-                            className={`text-left px-3 py-2 rounded-xl text-xs font-extrabold border transition-all ${
+                            className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-indigo-600 shadow-xs'
-                                : 'bg-white hover:bg-indigo-50 text-stone-700 border-stone-200'
+                                ? 'bg-[#9E1B46] text-white border-[#9E1B46] shadow-2xs'
+                                : 'bg-white hover:bg-rose-50 text-stone-800 border-stone-200'
                             }`}
                           >
                             {lang === 'ID' ? prm.questionId : prm.questionEn}
@@ -8924,35 +8063,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       })}
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-xs text-stone-800 leading-relaxed font-medium">
+                    <div className="p-3.5 rounded-2xl bg-white border border-rose-200 text-xs text-stone-800 leading-relaxed font-medium">
                       {lang === 'ID'
                         ? AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerId
                         : AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerEn}
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-stone-200 flex flex-col sm:flex-row gap-2.5">
+                  <div className="pt-2 border-t border-rose-200/60 flex flex-col sm:flex-row gap-2.5">
                     <a
                       href={mailtoGeneralSupportUrl}
-                      className="flex-1 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                      className="flex-1 py-3 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-all"
                     >
                       <Mail className="w-4 h-4 shrink-0" />
                       <span>
                         {lang === 'ID'
-                          ? `Hubungi Email CS (${businessEmail})`
+                          ? `Hubungi CS (${businessEmail})`
                           : `Email Support (${businessEmail})`}
                       </span>
                     </a>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectPackageForCheckout('GRATIS')}
-                      className="py-3 px-4 rounded-2xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-800 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#8B6914]" />
-                      <span>
-                        {lang === 'ID' ? 'Coba Gratis Rp 0' : 'Try Free Rp 0'}
-                      </span>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -8970,24 +8099,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           onClick={() => setIsEcoModalOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl bg-white border-2 border-emerald-300 shadow-2xl overflow-hidden"
+            className="w-full max-w-2xl rounded-3xl bg-white border border-emerald-200 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold">
-                  🌿 METODOLOGI ECO-IMPACT
-                </span>
-                <h4 className="font-sans text-sm sm:text-base font-extrabold text-stone-900">
-                  {lang === 'ID'
-                    ? 'Bagaimana Kami Menghitung Dampak Ini?'
-                    : 'How Do We Calculate This Environmental Impact?'}
-                </h4>
-              </div>
+              <h4 className="font-sans text-sm sm:text-base font-bold text-stone-900">
+                {lang === 'ID'
+                  ? 'Bagaimana Kami Menghitung Dampak Ini?'
+                  : 'How Do We Calculate This Environmental Impact?'}
+              </h4>
               <button
                 type="button"
                 onClick={() => setIsEcoModalOpen(false)}
-                className="p-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                className="p-1.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -9004,12 +8128,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     art carton tebal (210–260 gsm), amplop berlapis, serta plastik
                     kemasan (~18–20 gram per undangan). Mengalikan jutaan
                     undangan digital yang dibagikan menghasilkan penghematan{' '}
-                    <strong className="text-stone-900">46.8 Ton kertas</strong>.
+                    <strong className="text-stone-900">56.4 Ton kertas</strong>.
                   </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-indigo-800 text-sm">
+                  <p className="font-extrabold text-stone-900 text-sm">
                     2. Tinta Cetak &amp; Laminasi Kimia
                   </p>
                   <p className="text-stone-600">
@@ -9020,13 +8144,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
-                  <p className="font-extrabold text-[#8B6914] text-sm">
+                  <p className="font-extrabold text-stone-900 text-sm">
                     3. Distribusi &amp; Emisi Transportasi
                   </p>
                   <p className="text-stone-600">
                     Undangan fisik memerlukan pengiriman kurir motor/mobil/pesawat
                     ke tiap alamat tamu. Distribusi digital via WhatsApp menekan
-                    emisi hingga <strong className="text-stone-900">288 tCO2e</strong>.
+                    emisi hingga <strong className="text-stone-900">347 tCO2e</strong>.
                   </p>
                 </div>
 
@@ -9046,7 +8170,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEcoModalOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer"
                 >
                   {lang === 'ID' ? 'Mengerti & Tutup' : 'Got It & Close'}
                 </button>
@@ -9065,7 +8189,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           onClick={() => setActiveBlogArticle(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl bg-white border-2 border-indigo-200 shadow-2xl overflow-hidden"
+            className="w-full max-w-2xl rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-48 overflow-hidden">
@@ -9078,19 +8202,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 }
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <button
                 type="button"
                 onClick={() => setActiveBlogArticle(null)}
-                className="absolute top-3 right-3 p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                className="absolute top-3 right-3 p-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
               <div className="absolute bottom-3 left-5 right-5 space-y-1">
-                <span className="px-2.5 py-0.5 rounded-full bg-white/95 border border-indigo-200 text-indigo-700 text-[10px] font-extrabold">
-                  {activeBlogArticle.category} • {activeBlogArticle.readTime}
-                </span>
-                <h4 className="font-sans text-base sm:text-xl font-extrabold text-white">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-200">
+                  {activeBlogArticle.category} &bull; {activeBlogArticle.readTime}
+                </p>
+                <h4 className="font-sans text-base sm:text-xl font-bold text-white">
                   {lang === 'ID'
                     ? activeBlogArticle.titleId
                     : activeBlogArticle.titleEn}
@@ -9106,7 +8230,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </p>
 
               <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200 space-y-2.5">
-                <p className="font-extrabold text-indigo-700 uppercase tracking-wider text-[10px]">
+                <p className="font-bold text-[#9E1B46] uppercase tracking-wider text-[10px]">
                   {lang === 'ID'
                     ? 'Poin Utama & Checklist Praktis:'
                     : 'Key Takeaways & Practical Checklist:'}
@@ -9137,16 +8261,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     setActiveBlogArticle(null);
                     handleSelectPackageForCheckout('PREMIUM');
                   }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-extrabold text-xs"
+                  className="px-4 py-2 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs cursor-pointer"
                 >
                   {lang === 'ID'
-                    ? 'Coba Fitur Ini di Paket Premium (Rp 51.750)'
+                    ? 'Coba di Paket Premium (Rp 51.750)'
                     : 'Unlock in Premium Plan (Rp 51,750)'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveBlogArticle(null)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs cursor-pointer"
                 >
                   {lang === 'ID' ? 'Tutup Artikel' : 'Close Article'}
                 </button>
@@ -9167,58 +8291,38 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-3.5 bg-[#FAF8F5] border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 sm:px-6 py-3.5 bg-white border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[10px] font-extrabold whitespace-nowrap">
-                  {lightboxScreenshot.badge}
-                </span>
-                <h4 className="font-sans text-sm sm:text-base font-extrabold text-stone-900 truncate">
+                <h4 className="font-editorial text-sm sm:text-lg font-bold text-stone-900 truncate">
                   {lightboxScreenshot.title}
                 </h4>
-                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[9px] font-extrabold whitespace-nowrap">
-                  ●{' '}
-                  {lang === 'ID'
-                    ? 'PRATINJAU INTERAKTIF LANGSUNG'
-                    : 'LIVE INTERACTIVE PREVIEW'}
-                </span>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {lightboxScreenshot.mode !== 'invitation_sim' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => openLightboxAt(activeShowcaseIdx - 1)}
-                      title={
-                        lang === 'ID'
-                          ? 'Modul Sebelumnya'
-                          : 'Previous Module'
+                {lightboxScreenshot.mode === 'invitation_sim' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLightboxScreenshot(null);
+                      if (onOpenDemoManager) {
+                        onOpenDemoManager(
+                          activeDummyMeta.id,
+                          simPackageTier,
+                          activeCatalogTheme?.id
+                        );
+                      } else {
+                        onOpenAdminPortal();
                       }
-                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
-                      </span>
-                    </button>
-                    <span className="text-xs font-mono font-bold text-indigo-700 px-1">
-                      {activeShowcaseIdx + 1} /{' '}
-                      {OFFICIAL_PRODUCT_SCREENSHOTS.length}
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Buka di Management Planner'
+                        : 'Open in Management Planner'}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => openLightboxAt(activeShowcaseIdx + 1)}
-                      title={
-                        lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
-                      }
-                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
-                    >
-                      <span className="hidden sm:inline">
-                        {lang === 'ID' ? 'Berikutnya' : 'Next'}
-                      </span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
+                  </button>
                 )}
                 <button
                   type="button"
@@ -9226,7 +8330,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   title={
                     lang === 'ID' ? 'Tutup Layar Penuh' : 'Close Fullscreen'
                   }
-                  className="ml-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                  className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                   <span>{lang === 'ID' ? 'Tutup' : 'Close'}</span>
@@ -9238,7 +8342,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div className="flex-1 overflow-y-auto bg-[#FAF8F5]">
               {lightboxScreenshot.mode === 'invitation_sim' ? (
                 <PublicInvitationView
-                  key={`lightbox-${activeDummyMeta.id}-${simPackageTier}-${lang}`}
+                  key={`lightbox-${activeDummyMeta.id}-${simPackageTier}-${selectedCatalogThemeId}-${lang}`}
                   settings={activeDummyState.settings}
                   guests={activeDummyState.guests}
                   wishes={effectiveDummyWishes}
@@ -9269,37 +8373,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 )
               )}
             </div>
-
-            {/* Modal Footer Caption */}
-            <div className="px-4 sm:px-6 py-3 bg-[#FAF8F5] border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <p className="text-xs text-stone-600 leading-relaxed">
-                {lightboxScreenshot.desc}
-              </p>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {OFFICIAL_PRODUCT_SCREENSHOTS.map((s, idx) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => openLightboxAt(idx)}
-                    title={lang === 'ID' ? s.titleId : s.titleEn}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold whitespace-nowrap transition-all ${
-                      activeShowcaseIdx === idx &&
-                      lightboxScreenshot.mode !== 'invitation_sim'
-                        ? 'bg-[#6366F1] text-white'
-                        : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       )}
 
       {/* ================================================================= */}
-      {/* MODAL CEK UNDANGAN TAMU (BY NAMA / KODE UNDANGAN)                 */}
+      {/* MODAL CEK UNDANGAN DENGAN KEY (EXACT HASH TOKEN ONLY — ZERO LEAK) */}
       {/* ================================================================= */}
       {isGuestLookupModalOpen && (
         <div
@@ -9307,155 +8386,77 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           onClick={() => setIsGuestLookupModalOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-3xl bg-white border border-stone-200/90 shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-3xl bg-white border border-stone-200/90 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-amber-50/70 border-b border-stone-200/90 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-amber-100 border border-amber-300/80 text-amber-800 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-4 h-4 text-amber-700" />
-                </div>
-                <div>
-                  <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
-                    {lang === 'ID'
-                      ? '🔑 Cek Undangan Tamu'
-                      : '🔑 Check Guest Invitation'}
-                  </h4>
-                  <p className="text-[11px] text-stone-600">
-                    {lang === 'ID'
-                      ? 'Masukkan Nama Tamu atau Kode Undangan personal Anda'
-                      : 'Enter your Guest Name or personal Invitation Key'}
-                  </p>
-                </div>
+            <div className="px-5 sm:px-6 py-4 bg-[#FCF5F6] border-b border-rose-100 flex items-center justify-between gap-3">
+              <div>
+                <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
+                  {lang === 'ID'
+                    ? '🔑 Cek Undangan dengan Key'
+                    : '🔑 Check Invitation by Key'}
+                </h4>
+                <p className="text-[11px] text-stone-600 mt-0.5">
+                  {lang === 'ID'
+                    ? 'Masukkan Key unik undangan yang tertera pada pesan undangan personal Anda.'
+                    : 'Enter the unique Invitation Key included in your personal invitation message.'}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsGuestLookupModalOpen(false)}
-                className="p-1.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 hover:text-stone-900 transition-all cursor-pointer"
+                className="p-1.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 hover:text-stone-900 transition-all cursor-pointer shrink-0"
                 title={lang === 'ID' ? 'Tutup' : 'Close'}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-5 sm:p-6 space-y-4">
-              <form onSubmit={handleQuickLookupSubmit} className="space-y-3">
-                <div className="relative">
-                  <label className="block text-[11px] font-extrabold text-stone-700 mb-1.5">
+            {/* Body — Exact Key Input Only, Zero Dropdown, Zero Sample Guest List */}
+            <div className="p-5 sm:p-6">
+              <form onSubmit={handleQuickLookupSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1.5">
                     {lang === 'ID'
-                      ? 'Nama Tamu atau Kode / Key Undangan'
-                      : 'Guest Name or Invitation Code / Key'}
+                      ? 'Key Undangan Unik'
+                      : 'Unique Invitation Key'}
                   </label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={guestCodeInput}
-                        onChange={(e) => {
-                          setGuestCodeInput(e.target.value);
-                          setLookupGateError(null);
-                        }}
-                        placeholder={
-                          lang === 'ID'
-                            ? 'Contoh: Fiorencia, Aurelia, atau Kode Undangan...'
-                            : 'e.g. Fiorencia, Aurelia, or Invitation Key...'
-                        }
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-semibold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
-                        autoFocus
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer"
-                    >
-                      <span>
-                        {lang === 'ID' ? 'Buka Undangan' : 'Open Invitation'}
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={guestCodeInput}
+                      onChange={(e) => {
+                        setGuestCodeInput(e.target.value);
+                        setLookupGateError(null);
+                      }}
+                      placeholder={
+                        lang === 'ID'
+                          ? 'Tempel Key Undangan di sini...'
+                          : 'Paste your Invitation Key here...'
+                      }
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-mono font-semibold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
+                      autoFocus
+                    />
                   </div>
-
-                  {/* Autocomplete Dropdown */}
-                  {filteredLookupGuests.length > 0 && (
-                    <div className="mt-2 rounded-2xl bg-white border border-stone-200 shadow-lg divide-y divide-stone-100 overflow-hidden max-h-52 overflow-y-auto">
-                      {filteredLookupGuests.map((item, idx) => (
-                        <button
-                          key={`${item.clientId}-${item.guest.id}-${idx}`}
-                          type="button"
-                          onClick={() => {
-                            setIsGuestLookupModalOpen(false);
-                            setLookupGateError(null);
-                            onSelectClientInvitation(
-                              item.clientId,
-                              item.guest.guestName,
-                              item.hashToken
-                            );
-                          }}
-                          className="w-full px-3.5 py-2.5 text-left hover:bg-[#FAF3E3]/70 flex items-center justify-between gap-2 transition-all cursor-pointer"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-extrabold text-stone-900 truncate">
-                              {item.guest.guestName}
-                            </p>
-                            <p className="text-[10px] text-stone-500 truncate">
-                              {item.clientLabel} &bull;{' '}
-                              {lang === 'ID' ? 'Kode:' : 'Key:'}{' '}
-                              <span className="font-mono font-bold text-amber-800">
-                                {item.guest.invitationCode}
-                              </span>
-                            </p>
-                          </div>
-                          <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold shrink-0">
-                            {lang === 'ID' ? 'Buka →' : 'Open →'}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {lookupGateError && (
-                  <p className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold">
+                  <p className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold leading-relaxed">
                     {lookupGateError}
                   </p>
                 )}
-              </form>
 
-              {/* Sample Guest Pills for Instant 1-Click Testing */}
-              <div className="pt-3 border-t border-stone-200/80 space-y-2">
-                <p className="text-[11px] font-extrabold text-stone-700">
-                  {lang === 'ID'
-                    ? 'Atau coba buka contoh undangan tamu berikut (1-Klik):'
-                    : 'Or try opening one of these sample guest invitations (1-Click):'}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => (
-                    <button
-                      key={meta.id}
-                      type="button"
-                      onClick={() => {
-                        setIsGuestLookupModalOpen(false);
-                        setLookupGateError(null);
-                        onSelectClientInvitation(
-                          meta.id,
-                          meta.sampleGuestName,
-                          meta.sampleHashToken
-                        );
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200/90 hover:border-[#D4AF37] text-stone-800 text-[11px] font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <KeyRound className="w-3 h-3 text-amber-600 shrink-0" />
-                      <span>
-                        {meta.sampleGuestName} (
-                        {getEventCategoryLabel(meta.eventType, lang)})
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <button
+                  type="submit"
+                  className="w-full py-3 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                >
+                  <span>
+                    {lang === 'ID' ? 'Buka Undangan →' : 'Open Invitation →'}
+                  </span>
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -9474,7 +8475,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-emerald-50/70 border-b border-stone-200/90 flex items-center justify-between gap-3">
+            <div className="px-5 sm:px-6 py-4 bg-[#FCF5F6] border-b border-rose-100 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center shrink-0">
                   <svg
@@ -9501,14 +8502,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold">
-                      {lang === 'ID'
-                        ? `Paket Terpilih: ${googleOnboardingPackageId} (Langsung Aktif di Management)`
-                        : `Selected Plan: ${googleOnboardingPackageId} (Instant Management Activation)`}
-                    </span>
-                  </div>
-                  <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900 mt-0.5 truncate">
+                  <p className="text-[11px] font-bold text-[#9E1B46]">
+                    {lang === 'ID'
+                      ? `Paket Terpilih: ${googleOnboardingPackageId}`
+                      : `Selected Plan: ${googleOnboardingPackageId}`}
+                  </p>
+                  <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
                     {lang === 'ID'
                       ? 'Buat Undangan via Akun Google (Gmail)'
                       : 'Create Invitation via Google Account (Gmail)'}
@@ -9543,7 +8542,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   value={googleOnboardingEmail}
                   onChange={(e) => setGoogleOnboardingEmail(e.target.value)}
                   placeholder="nama.anda@gmail.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
                 />
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   <span className="text-[10px] font-semibold text-stone-500">
@@ -9557,7 +8556,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       key={sampleEmail}
                       type="button"
                       onClick={() => setGoogleOnboardingEmail(sampleEmail)}
-                      className="px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-bold transition-all cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[#9E1B46] text-[10px] font-bold transition-all cursor-pointer"
                     >
                       {sampleEmail}
                     </button>
@@ -9575,11 +8574,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="flex flex-wrap gap-1.5">
                   {(
                     [
-                      { id: 'WEDDING' as const, label: '💍 Pernikahan' },
-                      { id: 'BIRTHDAY' as const, label: '🎂 Ulang Tahun' },
-                      { id: 'GRADUATION' as const, label: '🎓 Wisuda' },
-                      { id: 'MEETING' as const, label: '🏛️ Rapat Resmi' },
-                      { id: 'GALA_DINNER' as const, label: '🥂 Gala Dinner' },
+                      { id: 'WEDDING' as const, label: 'Pernikahan' },
+                      { id: 'BIRTHDAY' as const, label: 'Ulang Tahun' },
+                      { id: 'GRADUATION' as const, label: 'Wisuda' },
+                      { id: 'MEETING' as const, label: 'Rapat Resmi' },
+                      { id: 'GALA_DINNER' as const, label: 'Gala Dinner' },
                     ] as const
                   ).map((evItem) => {
                     const isSelected = googleOnboardingEventType === evItem.id;
@@ -9596,10 +8595,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             setGoogleOnboardingThemeId(firstTheme.id);
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold border transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914] shadow-2xs'
-                            : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200'
+                            ? 'bg-[#9E1B46] text-white border-[#9E1B46]'
+                            : 'bg-stone-50 hover:bg-rose-50 text-stone-700 border-stone-200'
                         }`}
                       >
                         {evItem.label}
@@ -9633,7 +8632,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             ? 'Contoh: Royal Anniversary Gala'
                             : 'Contoh: Rayhan & Clarissa'
                   }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
                 />
               </div>
 
@@ -9647,14 +8646,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <select
                   value={googleOnboardingThemeId}
                   onChange={(e) => setGoogleOnboardingThemeId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#9E1B46]/30 focus:border-[#9E1B46]"
                 >
                   {MULTI_EVENT_THEME_CATALOG.filter(
                     (t) => t.eventType === googleOnboardingEventType
                   ).map((themeItem) => (
                     <option key={themeItem.id} value={themeItem.id}>
-                      {themeItem.name} — {themeItem.styleCategory} (
-                      {themeItem.layoutArchetype})
+                      {themeItem.name} — {themeItem.styleCategory}
                     </option>
                   ))}
                 </select>
@@ -9664,12 +8662,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#9A742B] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-[#9E1B46] hover:bg-[#821539] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <span>
                     {lang === 'ID'
-                      ? '🚀 Masuk dengan Google & Buka Management Sekarang'
-                      : '🚀 Sign in with Google & Open Management Now'}
+                      ? 'Masuk dengan Google & Buka Management Sekarang'
+                      : 'Sign in with Google & Open Management Now'}
                   </span>
                 </button>
               </div>
@@ -9678,9 +8676,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       )}
 
-      {/* OFFICIAL FOOTER CREDIT & CONTACT US (Bright Editorial Light Theme) */}
-      <footer className="bg-white border-t border-stone-200/90 py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* CLEAN FOOTER */}
+      <footer className="bg-white border-t border-stone-200/80 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
             <div className="flex items-center justify-center shrink-0">
               <WeddingRingsIcon
@@ -9689,44 +8687,33 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               />
             </div>
             <div>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                  MEPlanner — My Event Planner by{' '}
-                  <a
-                    href={developerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-indigo-700 hover:text-indigo-900 underline decoration-indigo-400 underline-offset-2"
-                  >
-                    omeko42
-                  </a>{' '}
-                  &copy; 2026
-                </p>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-bold">
-                  <Sparkles className="w-2.5 h-2.5 text-[#8B6914]" />
-                  <span>
-                    Official MEPlanner SaaS &amp; Multi-Event Planner Cloud Suite
-                  </span>
-                </span>
-              </div>
-              <p className="text-[11px] text-stone-600 mt-0.5">
+              <p className="text-xs sm:text-sm font-bold text-stone-900">
+                MEPlanner — My Event Planner by{' '}
+                <a
+                  href={developerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#9E1B46] hover:underline"
+                >
+                  omeko42
+                </a>{' '}
+                &copy; 2026
+              </p>
+              <p className="text-[11px] text-stone-500 mt-0.5">
                 {lang === 'ID'
-                  ? 'Platform Multi-Event Readiness Tracker & Undangan Digital Interaktif (Wedding, Birthday, Graduation, Rapat & Gala Dinner)'
-                  : 'Multi-Event Readiness Tracker & Interactive Digital Invitation Platform (Wedding, Birthday, Graduation, Corporate & Gala Dinner)'}
+                  ? 'Platform Undangan Digital & Persiapan Acara Modern'
+                  : 'Modern Digital Invitation & Event Planning Platform'}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest font-extrabold text-stone-500">
-              {lang === 'ID' ? 'Hubungi Kami:' : 'Contact Us:'}
-            </span>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <a
               href={mailtoGeneralSupportUrl}
               title={`Hubungi Email Resmi MEPlanner (${businessEmail})`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-all"
             >
-              <Mail className="w-3.5 h-3.5 text-indigo-700" />
+              <Mail className="w-3.5 h-3.5 text-[#9E1B46]" />
               <span>{businessEmail}</span>
             </a>
 
@@ -9734,15 +8721,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-semibold transition-all"
             >
-              <svg
-                className="w-3.5 h-3.5 fill-current"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-              </svg>
               <span>Eko Agung Krisdianto</span>
             </a>
           </div>
