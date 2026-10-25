@@ -1468,6 +1468,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [expandedScheduleEventId, setExpandedScheduleEventId] = useState<
     string | null
   >(null);
+  // Expanded individual guest row inside Daftar Tamu (default null = collapsed 1-row)
+  const [expandedGuestId, setExpandedGuestId] = useState<string | null>(null);
   // Expanded sub-card inside Tema & Latar (default null = collapsed)
   const [expandedBgCardKey, setExpandedBgCardKey] = useState<string | null>(
     null
@@ -6884,16 +6886,38 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       ])
                     ).sort((a, b) => a - b);
 
+                    const isGuestExpanded = expandedGuestId === guest.id;
+
                     return (
                       <div
                         key={guest.id}
-                        className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
+                        className="py-3 transition-colors"
                       >
-                        <div className="space-y-1.5 min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <h3 className="font-bold text-xs sm:text-base text-stone-900">
-                              {guest.guestName}
-                            </h3>
+                        {/* BARIS UTAMA 1 BARIS: Nama + Key Hash di Kiri, Kirim WA + Aksi di Kanan */}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedGuestId(
+                                  isGuestExpanded ? null : guest.id
+                                )
+                              }
+                              title="Klik nama tamu untuk membuka atau menutup detail Prioritas, Format Undangan, RSVP, Kuota Pax & Instansi"
+                              className="inline-flex items-center gap-1.5 text-left min-w-0 group cursor-pointer"
+                            >
+                              <h3 className="font-bold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] truncate transition-colors">
+                                {guest.guestName}
+                              </h3>
+                              <ChevronDown
+                                className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                  isGuestExpanded
+                                    ? 'rotate-180 text-[#8B6914]'
+                                    : ''
+                                }`}
+                              />
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {
@@ -6905,135 +6929,226 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 }
                               }}
                               title={`Klik untuk menyalin Link Undangan Personal: ${waData.inviteUrl}`}
-                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/50 transition-colors cursor-pointer shrink-0"
                             >
                               <KeyRound className="w-2.5 h-2.5 text-[#D4AF37] shrink-0" />
                               <span>{guestHashToken}</span>
                             </button>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                              {guest.priority}
-                            </span>
-
-                            {/* Penanda Cetak Undangan Langsung di Baris Tamu: Cetak Tebal | Cetak Biasa | Online */}
-                            <select
-                              aria-label={`Penanda undangan ${guest.guestName}`}
-                              value={currentFormat}
-                              onChange={async (e) => {
-                                const nextFormat = e.target.value as InvitationFormat;
-                                await onUpsertGuest({
-                                  ...guest,
-                                  invitationFormat: nextFormat,
-                                  updatedBy: adminUser.username,
-                                });
-                                showToast(
-                                  `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
-                                );
-                              }}
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer transition-colors ${
-                                currentFormat === 'Cetak Tebal'
-                                  ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
-                                  : currentFormat === 'Cetak Biasa'
-                                  ? 'bg-[#FAF8F5] text-stone-800 border-stone-300'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                              }`}
-                            >
-                              <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
-                              <option value="Cetak Biasa">✉️ Cetak Biasa</option>
-                              <option value="Online">🌐 Online (Link)</option>
-                            </select>
-
-                            {/* Status RSVP & Pax Langsung di Baris Tamu */}
-                            <select
-                              aria-label={`Status RSVP ${guest.guestName}`}
-                              value={guest.rsvpStatus}
-                              onChange={async (e) => {
-                                const nextRsvp = e.target.value as RsvpStatus;
-                                await onUpsertGuest({
-                                  ...guest,
-                                  rsvpStatus: nextRsvp,
-                                  confirmedPax:
-                                    nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
-                                  updatedBy: adminUser.username,
-                                });
-                                showToast(
-                                  `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
-                                );
-                              }}
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border cursor-pointer ${
-                                guest.rsvpStatus === 'Hadir'
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                  : guest.rsvpStatus === 'Tidak Hadir'
-                                  ? 'bg-rose-100 text-rose-800 border-rose-300'
-                                  : 'bg-stone-100 text-stone-700 border-stone-300'
-                              }`}
-                            >
-                              <option value="Belum Konfirmasi">Belum Konfirmasi</option>
-                              <option value="Hadir">✓ Hadir</option>
-                              <option value="Masih Ragu">Masih Ragu</option>
-                              <option value="Tidak Hadir">✕ Tidak Hadir</option>
-                            </select>
-
-                            <select
-                              aria-label={`Jumlah Pax ${guest.guestName}`}
-                              value={String(currentGuestPax)}
-                              onChange={async (e) => {
-                                if (e.target.value === 'CUSTOM') {
-                                  setEditingGuest(guest);
-                                  return;
-                                }
-                                const nextPax = Math.max(
-                                  1,
-                                  Number(e.target.value) || 1
-                                );
-                                await onUpsertGuest({
-                                  ...guest,
-                                  pax: nextPax,
-                                  confirmedPax:
-                                    guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
-                                  updatedBy: adminUser.username,
-                                });
-                                showToast(
-                                  `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
-                                );
-                              }}
-                              className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#FAF8F5] text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
-                            >
-                              {paxOptions.map((num) => (
-                                <option key={num} value={String(num)}>
-                                  {num} Pax
-                                </option>
-                              ))}
-                              <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
-                            </select>
                           </div>
 
-                          <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
-                            <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                            <span>
-                              {!guest.institution ||
-                              guest.institution.trim() === '' ||
-                              guest.institution.trim() === '-'
-                                ? 'di Tempat'
-                                : guest.institution}{' '}
-                              &bull; {guest.guestType} &bull; {guest.side}
-                            </span>
-                            {!isOnlineGuest && guest.address && (
-                              <span>&bull; {guest.address}</span>
-                            )}
-                            {!isOnlineGuest && guest.deliveryStatus && (
-                              <span className="text-[#8B6914] font-semibold">
-                                &bull; {guest.deliveryStatus}
-                              </span>
-                            )}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap max-w-full shrink-0">
+                            <a
+                              href={waData.waHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() =>
+                                recordAdminAnalyticsEvent(
+                                  'SHARE_WA',
+                                  guest,
+                                  `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guestHashToken})`
+                                )
+                              }
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs whitespace-nowrap"
+                            >
+                              <Send className="w-3 h-3 shrink-0" /> Kirim WA
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => openGuestWaPreview(guest)}
+                              className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 whitespace-nowrap"
+                            >
+                              Teks WA
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(waData.inviteUrl);
+                                setCopiedGuestLinkId(guest.id);
+                                setTimeout(() => setCopiedGuestLinkId(null), 2000);
+                                recordAdminAnalyticsEvent(
+                                  'COPY_LINK',
+                                  guest,
+                                  `Menyalin link undangan untuk ${guest.guestName} (${guestHashToken})`
+                                );
+                                showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
+                              }}
+                              className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1 whitespace-nowrap"
+                            >
+                              {isLinkCopied ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-600 shrink-0" /> Disalin
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3 shrink-0" /> Link
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onSwitchToPublicPreview(guest)}
+                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                              title="Preview Undangan"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingGuest(guest)}
+                              className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
+                              title="Edit Tamu"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                requestConfirm({
+                                  title: 'Hapus Tamu Undangan?',
+                                  message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
+                                  confirmLabel: 'Ya, Hapus Tamu',
+                                  variant: 'danger',
+                                  onConfirm: async () => {
+                                    await onDeleteGuest(guest.id);
+                                    showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
+                                  },
+                                })
+                              }
+                              className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
+                              title="Hapus Tamu"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
 
-                          {/* Jika Tamu ONLINE: Tampilkan Link Undangan Masing-Masing Langsung Agar Tinggal Kirim/Salin */}
-                          {isOnlineGuest && (
+                        {/* PANEL DETAIL SAAT NAMA TAMU DIKLIK */}
+                        {isGuestExpanded && (
+                          <div className="mt-2.5 pt-2.5 border-t border-stone-200/80 bg-[#FAF8F5]/80 rounded-xl p-3 space-y-2.5">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] sm:text-[11px] font-bold">
+                                {guest.priority}
+                              </span>
+
+                              {/* Penanda Cetak Undangan: Cetak Tebal | Cetak Biasa | Online */}
+                              <select
+                                aria-label={`Penanda undangan ${guest.guestName}`}
+                                value={currentFormat}
+                                onChange={async (e) => {
+                                  const nextFormat = e.target.value as InvitationFormat;
+                                  await onUpsertGuest({
+                                    ...guest,
+                                    invitationFormat: nextFormat,
+                                    updatedBy: adminUser.username,
+                                  });
+                                  showToast(
+                                    `Penanda undangan "${guest.guestName}" diubah menjadi ${nextFormat}.`
+                                  );
+                                }}
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer transition-colors ${
+                                  currentFormat === 'Cetak Tebal'
+                                    ? 'bg-gradient-to-r from-[#FAF3E3] to-[#EFE1C6] text-[#8B6914] border-[#D4AF37]'
+                                    : currentFormat === 'Cetak Biasa'
+                                    ? 'bg-white text-stone-800 border-stone-300'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                }`}
+                              >
+                                <option value="Cetak Tebal">🖨️ Cetak Tebal</option>
+                                <option value="Cetak Biasa">✉️ Cetak Biasa</option>
+                                <option value="Online">🌐 Online (Link)</option>
+                              </select>
+
+                              {/* Status RSVP */}
+                              <select
+                                aria-label={`Status RSVP ${guest.guestName}`}
+                                value={guest.rsvpStatus}
+                                onChange={async (e) => {
+                                  const nextRsvp = e.target.value as RsvpStatus;
+                                  await onUpsertGuest({
+                                    ...guest,
+                                    rsvpStatus: nextRsvp,
+                                    confirmedPax:
+                                      nextRsvp === 'Tidak Hadir' ? 0 : currentGuestPax,
+                                    updatedBy: adminUser.username,
+                                  });
+                                  showToast(
+                                    `RSVP "${guest.guestName}" diubah menjadi ${nextRsvp}.`
+                                  );
+                                }}
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border cursor-pointer ${
+                                  guest.rsvpStatus === 'Hadir'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : guest.rsvpStatus === 'Tidak Hadir'
+                                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                    : 'bg-white text-stone-700 border-stone-300'
+                                }`}
+                              >
+                                <option value="Belum Konfirmasi">Belum Konfirmasi</option>
+                                <option value="Hadir">✓ Hadir</option>
+                                <option value="Masih Ragu">Masih Ragu</option>
+                                <option value="Tidak Hadir">✕ Tidak Hadir</option>
+                              </select>
+
+                              {/* Jumlah Pax */}
+                              <select
+                                aria-label={`Jumlah Pax ${guest.guestName}`}
+                                value={String(currentGuestPax)}
+                                onChange={async (e) => {
+                                  if (e.target.value === 'CUSTOM') {
+                                    setEditingGuest(guest);
+                                    return;
+                                  }
+                                  const nextPax = Math.max(
+                                    1,
+                                    Number(e.target.value) || 1
+                                  );
+                                  await onUpsertGuest({
+                                    ...guest,
+                                    pax: nextPax,
+                                    confirmedPax:
+                                      guest.rsvpStatus === 'Tidak Hadir' ? 0 : nextPax,
+                                    updatedBy: adminUser.username,
+                                  });
+                                  showToast(
+                                    `Kuota Pax "${guest.guestName}" diubah menjadi ${nextPax} Pax.`
+                                  );
+                                }}
+                                className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-white text-[#8B6914] border border-[#D4AF37]/40 cursor-pointer"
+                              >
+                                {paxOptions.map((num) => (
+                                  <option key={num} value={String(num)}>
+                                    {num} Pax
+                                  </option>
+                                ))}
+                                <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
+                              </select>
+                            </div>
+
+                            <p className="text-[11px] sm:text-xs text-stone-600 flex items-center gap-1.5 flex-wrap">
+                              <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                              <span>
+                                {!guest.institution ||
+                                guest.institution.trim() === '' ||
+                                guest.institution.trim() === '-'
+                                  ? 'di Tempat'
+                                  : guest.institution}{' '}
+                                &bull; {guest.guestType} &bull; {guest.side}
+                              </span>
+                              {!isOnlineGuest && guest.address && (
+                                <span>&bull; {guest.address}</span>
+                              )}
+                              {!isOnlineGuest && guest.deliveryStatus && (
+                                <span className="text-[#8B6914] font-semibold">
+                                  &bull; {guest.deliveryStatus}
+                                </span>
+                              )}
+                            </p>
+
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 border border-emerald-200 max-w-full">
                               <span className="text-[10px] font-bold text-emerald-800 shrink-0">
                                 Link:
                               </span>
-                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[200px] sm:max-w-[380px]">
+                              <span className="font-mono text-[11px] text-emerald-900 truncate max-w-[200px] sm:max-w-[420px]">
                                 {waData.inviteUrl}
                               </span>
                               <button
@@ -7056,97 +7171,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 {isLinkCopied ? 'Tersalin!' : 'Salin'}
                               </button>
                             </div>
-                          )}
 
-                          {guest.notes && (
-                            <p className="text-xs text-stone-500">{guest.notes}</p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5 flex-wrap max-w-full pt-1 lg:pt-0">
-                          <a
-                            href={waData.waHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() =>
-                              recordAdminAnalyticsEvent(
-                                'SHARE_WA',
-                                guest,
-                                `Mengirim undangan via WhatsApp ke ${guest.guestName} (${guestHashToken})`
-                              )
-                            }
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
-                          >
-                            <Send className="w-3 h-3" /> Kirim WA
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => openGuestWaPreview(guest)}
-                            className="px-3 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40"
-                          >
-                            Teks WA
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(waData.inviteUrl);
-                              setCopiedGuestLinkId(guest.id);
-                              setTimeout(() => setCopiedGuestLinkId(null), 2000);
-                              recordAdminAnalyticsEvent(
-                                'COPY_LINK',
-                                guest,
-                                `Menyalin link undangan untuk ${guest.guestName} (${guestHashToken})`
-                              );
-                              showToast(`Link undangan ${guest.guestName} berhasil disalin!`);
-                            }}
-                            className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center gap-1"
-                          >
-                            {isLinkCopied ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-600" /> Disalin
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" /> Link
-                              </>
+                            {guest.notes && (
+                              <p className="text-xs text-stone-500">{guest.notes}</p>
                             )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onSwitchToPublicPreview(guest)}
-                            className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
-                            title="Preview Undangan"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingGuest(guest)}
-                            className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
-                            title="Edit Tamu"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              requestConfirm({
-                                title: 'Hapus Tamu Undangan?',
-                                message: `Data tamu "${guest.guestName}" beserta link undangannya akan dihapus permanen dari database Supabase.`,
-                                confirmLabel: 'Ya, Hapus Tamu',
-                                variant: 'danger',
-                                onConfirm: async () => {
-                                  await onDeleteGuest(guest.id);
-                                  showToast(`Tamu "${guest.guestName}" berhasil dihapus dari Supabase.`);
-                                },
-                              })
-                            }
-                            className="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-stone-400 hover:text-rose-600"
-                            title="Hapus Tamu"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -9235,8 +9265,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             : 'bg-white border-stone-200/90'
                                                         }`}
                                                       >
-                                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-                                                          {/* Clickable Event Header */}
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                          {/* Clickable 1-Row Event Header */}
                                                           <button
                                                             type="button"
                                                             onClick={() =>
@@ -9246,11 +9276,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                                   : ev.id
                                                               )
                                                             }
-                                                            title="Klik nama acara untuk membuka atau menutup form edit acara ini"
-                                                            className="flex items-start gap-2.5 min-w-0 text-left flex-1 group cursor-pointer"
+                                                            title="Klik nama acara untuk membuka atau menutup detail & form edit acara ini"
+                                                            className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer"
                                                           >
                                                             <div
-                                                              className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 mt-0.5 font-extrabold text-[11px] ${
+                                                              className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
                                                                 isMain
                                                                   ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
                                                                   : isVisibleOnInv
@@ -9260,49 +9290,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             >
                                                               {evIdx + 1}
                                                             </div>
-                                                            <div className="min-w-0 flex-1">
-                                                              <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors">
-                                                                  {ev.title}
-                                                                </span>
-                                                                <ChevronDown
-                                                                  className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
-                                                                    isEvExpanded
-                                                                      ? 'rotate-180 text-[#8B6914]'
-                                                                      : ''
-                                                                  }`}
-                                                                />
-                                                                {ev.badge && (
-                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/35 font-bold">
-                                                                    {ev.badge}
-                                                                  </span>
-                                                                )}
-                                                                {isMain && (
-                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
-                                                                    ★ ACARA UTAMA
-                                                                  </span>
-                                                                )}
-                                                                {isCountdownOn && (
-                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                                                                    ⏱ Countdown
-                                                                  </span>
-                                                                )}
-                                                                {!isVisibleOnInv && (
-                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
-                                                                    Disembunyikan
-                                                                  </span>
-                                                                )}
-                                                              </div>
-                                                              <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">
-                                                                {ev.dateLabel} &bull;{' '}
-                                                                {ev.timeLabel} &bull;{' '}
-                                                                {ev.venue}
-                                                              </p>
-                                                            </div>
+                                                            <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
+                                                              {ev.title}
+                                                            </span>
+                                                            <ChevronDown
+                                                              className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                                                isEvExpanded
+                                                                  ? 'rotate-180 text-[#8B6914]'
+                                                                  : ''
+                                                              }`}
+                                                            />
+                                                            {isMain && (
+                                                              <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
+                                                                ★ Utama
+                                                              </span>
+                                                            )}
                                                           </button>
 
                                                           {/* Switches & Action Buttons */}
-                                                          <div className="flex items-center gap-2 self-end lg:self-center flex-wrap justify-end shrink-0">
+                                                          <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap justify-end shrink-0">
                                                             {/* Switch 1: Acara Utama */}
                                                             <div
                                                               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
@@ -9463,6 +9469,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                             }
                                                             className="mt-3 pt-3 border-t border-stone-200/80 space-y-2.5"
                                                           >
+                                                            {/* Full-Width Event Summary Badges & Info Strip */}
+                                                            <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E5D5B5]/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600">
+                                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                                {ev.badge && (
+                                                                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold">
+                                                                    {ev.badge}
+                                                                  </span>
+                                                                )}
+                                                                {isMain && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold">
+                                                                    ★ Acara Utama
+                                                                  </span>
+                                                                )}
+                                                                {isCountdownOn && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                                                                    ⏱ Countdown Aktif
+                                                                  </span>
+                                                                )}
+                                                                {!isVisibleOnInv && (
+                                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
+                                                                    Disembunyikan dari Undangan
+                                                                  </span>
+                                                                )}
+                                                              </div>
+                                                              <span className="text-[11px] text-stone-600 font-medium">
+                                                                {ev.dateLabel} &bull; {ev.timeLabel} &bull; {ev.venue}
+                                                              </span>
+                                                            </div>
                                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                                               <div>
                                                                 <label className="block font-bold text-stone-700 mb-0.5 text-[11px]">
@@ -12269,7 +12303,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         Belum ada rangkaian acara. Klik <strong>+ Tambah Acara</strong> untuk menambahkan jadwal.
                       </div>
                     ) : (
-                      <div className="divide-y divide-stone-100">
+                      <div className="space-y-2.5">
                         {(() => {
                           const currentMainId = (
                             scheduleEvents.find((e) => e.isMainEvent) ||
@@ -12277,191 +12311,253 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             scheduleEvents[0]
                           )?.id;
 
-                          return scheduleEvents.map((ev) => {
+                          return scheduleEvents.map((ev, evIdx) => {
                             const isMain = ev.id === currentMainId;
                             const isCountdownOn = Boolean(ev.enableCountdown);
                             const isVisibleOnInv =
                               ev.showOnInvitation !== false;
+                            const isEvExpanded =
+                              expandedScheduleEventId === ev.id;
 
                             return (
                               <div
                                 key={ev.id}
-                                className="py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0 overflow-hidden"
+                                className={`p-3 rounded-xl border transition-all ${
+                                  isMain
+                                    ? 'bg-gradient-to-r from-white via-[#FAF8F5] to-[#FAF3E3]/50 border-[#D4AF37] shadow-2xs'
+                                    : 'bg-white border-stone-200/90 hover:border-[#D4AF37]/50'
+                                }`}
                               >
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEditScheduleEvent(ev)}
-                                  title="Klik nama acara untuk mengedit jadwal acara ini"
-                                  className="flex items-start gap-3 min-w-0 text-left flex-1 group cursor-pointer"
-                                >
-                                  <div
-                                    className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                                      isMain
-                                        ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
-                                        : isCountdownOn
-                                          ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
-                                          : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
-                                    }`}
-                                  >
-                                    {isCountdownOn ? (
-                                      <Clock className="w-4 h-4" />
-                                    ) : (
-                                      <Calendar className="w-4 h-4" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <p className="font-bold text-stone-900 group-hover:text-[#8B6914] transition-colors">
-                                        {ev.title}
-                                      </p>
-                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/30 font-bold">
-                                        {ev.badge}
-                                      </span>
-                                      {isMain && (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
-                                          ★ ACARA UTAMA
-                                        </span>
-                                      )}
-                                      {!isVisibleOnInv && (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
-                                          Disembunyikan
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-stone-500 mt-0.5">
-                                      {ev.dateLabel} &bull; {ev.timeLabel} &bull; {ev.venue}
-                                    </p>
-                                  </div>
-                                </button>
-
-                                <div className="flex items-center gap-2 self-end lg:self-center flex-wrap max-w-full justify-end">
-                                  {/* Switch 1: Acara Utama */}
-                                  <div
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                      isMain
-                                        ? 'bg-[#FAF3E3] border-[#D4AF37]'
-                                        : 'bg-stone-50 border-stone-200'
-                                    }`}
-                                    title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
-                                  >
-                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                      Acara Utama
-                                    </span>
-                                    <button
-                                      type="button"
-                                      role="switch"
-                                      aria-checked={isMain}
-                                      onClick={() =>
-                                        handleSetMainScheduleEvent(ev.id)
-                                      }
-                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                        isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
-                                      }`}
-                                    >
-                                      <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                          isMain
-                                            ? 'translate-x-4'
-                                            : 'translate-x-0'
-                                        }`}
-                                      />
-                                    </button>
-                                  </div>
-
-                                  {/* Switch 2: Countdown */}
-                                  <div
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                      isCountdownOn
-                                        ? 'bg-emerald-50/70 border-emerald-200'
-                                        : 'bg-stone-50 border-stone-200'
-                                    }`}
-                                    title="Aktifkan/matikan Countdown untuk acara ini"
-                                  >
-                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                      Countdown
-                                    </span>
-                                    <button
-                                      type="button"
-                                      role="switch"
-                                      aria-checked={isCountdownOn}
-                                      onClick={() =>
-                                        handleToggleEventCountdownSwitch(
-                                          ev.id,
-                                          ev.title
-                                        )
-                                      }
-                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                        isCountdownOn
-                                          ? 'bg-emerald-600'
-                                          : 'bg-stone-300'
-                                      }`}
-                                    >
-                                      <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                          isCountdownOn
-                                            ? 'translate-x-4'
-                                            : 'translate-x-0'
-                                        }`}
-                                      />
-                                    </button>
-                                  </div>
-
-                                  {/* Switch 3: Tampil */}
-                                  <div
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
-                                      isVisibleOnInv
-                                        ? 'bg-emerald-50/70 border-emerald-200'
-                                        : 'bg-rose-50/70 border-rose-200'
-                                    }`}
-                                    title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
-                                  >
-                                    <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
-                                      Tampil
-                                    </span>
-                                    <button
-                                      type="button"
-                                      role="switch"
-                                      aria-checked={isVisibleOnInv}
-                                      onClick={() =>
-                                        handleToggleSingleEventVisibility(
-                                          ev.id,
-                                          ev.title
-                                        )
-                                      }
-                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                                        isVisibleOnInv
-                                          ? 'bg-emerald-600'
-                                          : 'bg-stone-300'
-                                      }`}
-                                    >
-                                      <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
-                                          isVisibleOnInv
-                                            ? 'translate-x-4'
-                                            : 'translate-x-0'
-                                        }`}
-                                      />
-                                    </button>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditScheduleEvent(ev)}
-                                    className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
-                                  >
-                                    Edit
-                                  </button>
-
+                                {/* ROW 1 (1 Clean Line: Nama Acara + ChevronDown on Left, Switches & Actions on Right) */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      handleDeleteScheduleEvent(ev.id, ev.title)
+                                      setExpandedScheduleEventId(
+                                        isEvExpanded ? null : ev.id
+                                      )
                                     }
-                                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                    title="Klik nama acara untuk membuka atau menutup detail jadwal acara ini"
+                                    className="flex items-center gap-2 min-w-0 text-left flex-1 group cursor-pointer"
                                   >
-                                    Hapus
+                                    <div
+                                      className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
+                                        isMain
+                                          ? 'bg-gradient-to-br from-[#C5A059] to-[#B68D40] border-[#9A742B] text-white'
+                                          : isCountdownOn
+                                            ? 'bg-[#FAF3E3] border-[#D4AF37]/45 text-[#8B6914]'
+                                            : 'bg-[#FAF8F5] border-stone-200 text-stone-500'
+                                      }`}
+                                    >
+                                      {evIdx + 1}
+                                    </div>
+                                    <span className="font-extrabold text-xs sm:text-sm text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
+                                      {ev.title}
+                                    </span>
+                                    <ChevronDown
+                                      className={`w-3.5 h-3.5 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
+                                        isEvExpanded
+                                          ? 'rotate-180 text-[#8B6914]'
+                                          : ''
+                                      }`}
+                                    />
+                                    {isMain && (
+                                      <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs shrink-0 whitespace-nowrap">
+                                        ★ Utama
+                                      </span>
+                                    )}
                                   </button>
+
+                                  <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap max-w-full justify-end shrink-0">
+                                    {/* Switch 1: Acara Utama */}
+                                    <div
+                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                        isMain
+                                          ? 'bg-[#FAF3E3] border-[#D4AF37]'
+                                          : 'bg-stone-50 border-stone-200'
+                                      }`}
+                                      title="Jadikan Acara Utama (menentukan tanggal & lokasi utama undangan)"
+                                    >
+                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                        Acara Utama
+                                      </span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isMain}
+                                        onClick={() =>
+                                          handleSetMainScheduleEvent(ev.id)
+                                        }
+                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                          isMain ? 'bg-[#B68D40]' : 'bg-stone-300'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                            isMain
+                                              ? 'translate-x-4'
+                                              : 'translate-x-0'
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
+
+                                    {/* Switch 2: Countdown */}
+                                    <div
+                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                        isCountdownOn
+                                          ? 'bg-emerald-50/70 border-emerald-200'
+                                          : 'bg-stone-50 border-stone-200'
+                                      }`}
+                                      title="Aktifkan/matikan Countdown untuk acara ini"
+                                    >
+                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                        Countdown
+                                      </span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isCountdownOn}
+                                        onClick={() =>
+                                          handleToggleEventCountdownSwitch(
+                                            ev.id,
+                                            ev.title
+                                          )
+                                        }
+                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                          isCountdownOn
+                                            ? 'bg-emerald-600'
+                                            : 'bg-stone-300'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                            isCountdownOn
+                                              ? 'translate-x-4'
+                                              : 'translate-x-0'
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
+
+                                    {/* Switch 3: Tampil */}
+                                    <div
+                                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                                        isVisibleOnInv
+                                          ? 'bg-emerald-50/70 border-emerald-200'
+                                          : 'bg-rose-50/70 border-rose-200'
+                                      }`}
+                                      title="Tampilkan atau sembunyikan acara ini di halaman undangan publik"
+                                    >
+                                      <span className="text-[10px] font-bold text-stone-700 whitespace-nowrap">
+                                        Tampil
+                                      </span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isVisibleOnInv}
+                                        onClick={() =>
+                                          handleToggleSingleEventVisibility(
+                                            ev.id,
+                                            ev.title
+                                          )
+                                        }
+                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                          isVisibleOnInv
+                                            ? 'bg-emerald-600'
+                                            : 'bg-stone-300'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-2xs transition duration-200 ease-in-out ${
+                                            isVisibleOnInv
+                                              ? 'translate-x-4'
+                                              : 'translate-x-0'
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditScheduleEvent(ev)}
+                                      className="px-2.5 py-1 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDeleteScheduleEvent(ev.id, ev.title)
+                                      }
+                                      className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer"
+                                    >
+                                      Hapus
+                                    </button>
+                                  </div>
                                 </div>
+
+                                {/* EXPANDED DETAIL DRAWER (Shown when Event Name is clicked) */}
+                                {isEvExpanded && (
+                                  <div className="mt-2.5 pt-2.5 border-t border-stone-200/80 space-y-2 text-xs">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        {ev.badge && (
+                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 font-bold">
+                                            {ev.badge}
+                                          </span>
+                                        )}
+                                        {isMain && (
+                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold shadow-2xs">
+                                            ★ Acara Utama
+                                          </span>
+                                        )}
+                                        {isCountdownOn && (
+                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                                            ⏱ Countdown Aktif
+                                          </span>
+                                        )}
+                                        {!isVisibleOnInv && (
+                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold">
+                                            Disembunyikan dari Undangan
+                                          </span>
+                                        )}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditScheduleEvent(ev)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-[#E6C76B] border border-[#D4AF37]/40 text-[10px] font-bold cursor-pointer"
+                                      >
+                                        <span>✏️ Edit Detail Acara</span>
+                                      </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#FAF8F5] border border-stone-200/80 text-[11px] text-stone-700">
+                                      <div>
+                                        <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                          Hari, Tanggal &amp; Jam
+                                        </span>
+                                        <span className="font-semibold text-stone-800">
+                                          {ev.dateLabel || '-'} &bull; {ev.timeLabel || '-'}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                                          Lokasi / Gedung
+                                        </span>
+                                        <span className="font-semibold text-stone-800">
+                                          {ev.venue || '-'}
+                                        </span>
+                                        {ev.address && (
+                                          <span className="block text-[10px] text-stone-500 mt-0.5">
+                                            {ev.address}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           });
