@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="bell-gold" x1="12" y1="8" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .bell-ring { transform-origin: 32px 12px; animation: ringBell 2.4s ease-in-out infinite; }
+      @keyframes ringBell {
+        0%, 100% { transform: rotate(0deg); }
+        15% { transform: rotate(10deg); }
+        30% { transform: rotate(-10deg); }
+        45% { transform: rotate(6deg); }
+        60% { transform: rotate(-6deg); }
+        75% { transform: rotate(0deg); }
+      }
+    </style>
+  </defs>
+  <g class="bell-ring">
+    <!-- Top Ring -->
+    <circle cx="32" cy="11" r="3.5" stroke="url(#bell-gold)" stroke-width="2.2" />
+    <!-- Bell Dome -->
+    <path d="M18 38 V28 C18 19.5 24 14 32 14 C40 14 46 19.5 46 28 V38 L51 44 H13 L18 38 Z" fill="url(#bell-gold)" stroke="#FFFBEB" stroke-width="1.4" stroke-linejoin="round" />
+    <!-- Bell Clapper -->
+    <path d="M27 45 C27 48 29.2 50.5 32 50.5 C34.8 50.5 37 48 37 45" fill="#FDE68A" stroke="#9A6F1A" stroke-width="1.5" />
+    <!-- Plus / Add Reminder Symbol on Bell -->
+    <circle cx="32" cy="30" r="6.5" fill="#0F172A" />
+    <path d="M32 27 V33 M29 30 H35" stroke="#FDE68A" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>

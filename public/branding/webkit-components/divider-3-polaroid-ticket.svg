@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 56" fill="none">
+  <!-- Perforated Ticket Cut Line -->
+  <line x1="20" y1="28" x2="400" y2="28" stroke="#C86D51" stroke-width="1.6" stroke-dasharray="6 6"/>
+  <!-- Center Editorial Issue Badge -->
+  <rect x="158" y="14" width="104" height="28" rx="14" fill="#FFFDF9" stroke="#1C1917" stroke-width="1.4"/>
+  <text x="210" y="32" text-anchor="middle" fill="#1C1917" font-family="monospace" font-size="10" font-weight="bold" letter-spacing="2">★ ISSUE '26 ★</text>
+  <!-- Left Scissors Icon -->
+  <circle cx="44" cy="22" r="4.5" stroke="#C86D51" stroke-width="1.5"/>
+  <circle cx="44" cy="34" r="4.5" stroke="#C86D51" stroke-width="1.5"/>
+  <path d="M48 24L62 32M48 32L62 24" stroke="#C86D51" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

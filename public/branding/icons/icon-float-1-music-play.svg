@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="vinyl-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .disc-spin { transform-origin: 32px 32px; animation: spinDisc 5s linear infinite; }
+      .note-float { transform-origin: 48px 16px; animation: floatNote 2.2s ease-in-out infinite; }
+      @keyframes spinDisc {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes floatNote {
+        0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
+        50% { transform: translateY(-4px) scale(1.15); opacity: 1; }
+      }
+    </style>
+  </defs>
+  <g class="disc-spin">
+    <circle cx="32" cy="32" r="23" fill="#0F172A" stroke="url(#vinyl-gold)" stroke-width="2.4" />
+    <circle cx="32" cy="32" r="17" stroke="#334155" stroke-width="1.2" stroke-dasharray="8 4" />
+    <circle cx="32" cy="32" r="9" fill="url(#vinyl-gold)" />
+    <circle cx="32" cy="32" r="3" fill="#0F172A" />
+  </g>
+  <!-- Floating Musical Note -->
+  <g class="note-float">
+    <path d="M44 26 V12 L54 9 V23" stroke="#FDE68A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="41.5" cy="26.5" r="3.2" fill="#FDE68A" />
+    <circle cx="51.5" cy="23.5" r="3.2" fill="#FDE68A" />
+  </g>
+</svg>

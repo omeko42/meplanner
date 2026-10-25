@@ -62,6 +62,14 @@ import {
   computeGuestInvitationHash,
   matchGuestWithinSingleClient,
 } from '@/lib/guestTokenHash';
+import {
+  MEPLANNER_BRAND_LOGOS,
+  MEPLANNER_ICONS,
+  MEPLANNER_WEBKIT_COMPONENTS,
+  MEPLANNER_THEME_ASSETS,
+  resolveThemeWebkitBundle,
+  ThemeWebkitBundle,
+} from '@/lib/meplannerBrandKit';
 
 interface PublicInvitationViewProps {
   settings: WeddingSettings;
@@ -449,6 +457,146 @@ const NusantaraGoldCornerBracket: React.FC<{
     >
       <span
         className={`absolute w-2.5 h-2.5 rotate-45 bg-[#C89D54]/30 border border-[#8b5a2b] ${diamondPos}`}
+      />
+    </div>
+  );
+};
+
+const WebkitThreeLayerCornering: React.FC<{
+  bundle: ThemeWebkitBundle;
+  enabled?: boolean;
+}> = ({ bundle, enabled = true }) => {
+  if (!enabled) return null;
+  const isDedicatedTop = bundle.cornerClusterTopSvg.includes('corner-top-');
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none select-none absolute inset-0 overflow-hidden z-20"
+    >
+      {/* Top-Left Hanging Corner */}
+      <div className="pointer-events-none select-none absolute -top-2 -left-2 w-28 h-28 sm:w-40 sm:h-40 origin-top-left animate-floral-sway">
+        <img
+          src={bundle.cornerClusterTopSvg}
+          alt=""
+          className={`w-full h-full object-contain ${
+            isDedicatedTop ? '' : 'scale-y-[-1]'
+          }`}
+        />
+      </div>
+
+      {/* Top-Right Hanging Corner */}
+      <div className="pointer-events-none select-none absolute -top-2 -right-2 w-28 h-28 sm:w-40 sm:h-40 origin-top-right animate-floral-sway-reverse">
+        <img
+          src={bundle.cornerClusterTopSvg}
+          alt=""
+          className={`w-full h-full object-contain scale-x-[-1] ${
+            isDedicatedTop ? '' : 'scale-y-[-1]'
+          }`}
+        />
+      </div>
+
+      {/* Bottom-Left 3-Layer Bouquet Stack */}
+      <div className="pointer-events-none select-none absolute -bottom-2 -left-2.5 w-32 h-32 sm:w-44 sm:h-44 z-[21] origin-bottom-left animate-floral-sway">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain"
+        />
+      </div>
+      <div className="pointer-events-none select-none absolute -bottom-5 left-5 sm:left-7 w-24 h-24 sm:w-32 sm:h-32 z-[22] origin-bottom-left rotate-6 scale-95 opacity-95 animate-floral-sway-reverse">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain"
+        />
+      </div>
+      <div className="pointer-events-none select-none absolute -bottom-7 left-12 sm:left-16 w-20 h-20 sm:w-28 sm:h-28 z-[23] origin-bottom rotate-12 scale-90 opacity-90 animate-floral-sway">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      {/* Bottom-Right 3-Layer Mirrored Bouquet Stack */}
+      <div className="pointer-events-none select-none absolute -bottom-2 -right-2.5 w-32 h-32 sm:w-44 sm:h-44 z-[21] origin-bottom-right animate-floral-sway-reverse">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain scale-x-[-1]"
+        />
+      </div>
+      <div className="pointer-events-none select-none absolute -bottom-5 right-5 sm:right-7 w-24 h-24 sm:w-32 sm:h-32 z-[22] origin-bottom-right -rotate-6 scale-95 opacity-95 animate-floral-sway">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain scale-x-[-1]"
+        />
+      </div>
+      <div className="pointer-events-none select-none absolute -bottom-7 right-12 sm:right-16 w-20 h-20 sm:w-28 sm:h-28 z-[23] origin-bottom -rotate-12 scale-90 opacity-90 animate-floral-sway-reverse">
+        <img
+          src={bundle.cornerClusterBottomSvg}
+          alt=""
+          className="w-full h-full object-contain scale-x-[-1]"
+        />
+      </div>
+    </div>
+  );
+};
+
+const WebkitCardFourCorners: React.FC<{
+  cornerSvg: string;
+  size?: 'sm' | 'md';
+  enabled?: boolean;
+}> = ({ cornerSvg, size = 'md', enabled = true }) => {
+  if (!enabled || !cornerSvg) return null;
+  const dimClass =
+    size === 'sm' ? 'w-9 h-9 sm:w-11 sm:h-11' : 'w-11 h-11 sm:w-14 sm:h-14';
+  return (
+    <>
+      <img
+        src={cornerSvg}
+        alt=""
+        aria-hidden="true"
+        className={`pointer-events-none select-none absolute top-1.5 left-1.5 z-10 object-contain opacity-80 ${dimClass}`}
+      />
+      <img
+        src={cornerSvg}
+        alt=""
+        aria-hidden="true"
+        className={`pointer-events-none select-none absolute top-1.5 right-1.5 z-10 object-contain opacity-80 scale-x-[-1] ${dimClass}`}
+      />
+      <img
+        src={cornerSvg}
+        alt=""
+        aria-hidden="true"
+        className={`pointer-events-none select-none absolute bottom-1.5 left-1.5 z-10 object-contain opacity-80 scale-y-[-1] ${dimClass}`}
+      />
+      <img
+        src={cornerSvg}
+        alt=""
+        aria-hidden="true"
+        className={`pointer-events-none select-none absolute bottom-1.5 right-1.5 z-10 object-contain opacity-80 scale-x-[-1] scale-y-[-1] ${dimClass}`}
+      />
+    </>
+  );
+};
+
+const WebkitSectionDivider: React.FC<{
+  src: string;
+  className?: string;
+}> = ({ src, className = '' }) => {
+  if (!src) return null;
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none select-none relative z-10 flex items-center justify-center py-2 sm:py-3.5 px-4 max-w-3xl mx-auto ${className}`}
+    >
+      <img
+        src={src}
+        alt=""
+        className="w-52 sm:w-72 md:w-80 h-8 sm:h-12 object-contain opacity-90 drop-shadow-[0_2px_8px_rgba(197,160,89,0.24)]"
       />
     </div>
   );
@@ -1178,6 +1326,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   );
   const [copiedAccountId, setCopiedAccountId] = useState<string | null>(null);
   const [showQrisModal, setShowQrisModal] = useState(false);
+  const [showGuestQrModal, setShowGuestQrModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhotoItem | null>(null);
 
   const showLoveStory = settings.showLoveStorySection !== false;
@@ -1370,6 +1519,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const activeThemeKey = resolveInvitationThemePreset(settings.themePreset);
   const activeVeilRgb = INVITATION_THEME_VEIL_RGB[activeThemeKey];
   const layoutArchetype = resolveThemeLayoutArchetype(settings, activeThemeKey);
+  const webkitBundle = useMemo(
+    () =>
+      resolveThemeWebkitBundle({
+        catalogThemeId:
+          (settings as WeddingSettings & { catalogThemeId?: string })
+            .catalogThemeId || settings.selectedCatalogThemeId,
+        themePreset: settings.themePreset,
+        layoutArchetype: settings.themeLayoutArchetype || layoutArchetype,
+        eventType: settings.eventType,
+      }),
+    [settings, layoutArchetype]
+  );
+  const showCorneringOrnaments = settings.showFloralOrnaments !== false;
   const showFloral =
     settings.showFloralOrnaments !== false && layoutArchetype === 'BOTANICAL_AIRY';
   const showPetals = settings.showFloatingPetals !== false;
@@ -2102,8 +2264,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         : rawDevUrl;
     const businessEmail =
       settings.contactBusinessEmail?.trim() || 'e98.bisnis@gmail.com';
-    const brandLogoUrl = (settings as WeddingSettings & { brandLogoUrl?: string })
-      .brandLogoUrl;
+    const brandLogoUrl =
+      (settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl ||
+      MEPLANNER_BRAND_LOGOS.iconBadge;
 
     return (
       <div
@@ -2527,6 +2690,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 : 'rounded-3xl sm:rounded-[2.25rem] bg-white/85 border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
             }`}
           >
+            <WebkitThreeLayerCornering
+              bundle={webkitBundle}
+              enabled={showCorneringOrnaments}
+            />
             <FloralCornerOrnament position="top-left" enabled={showFloral} />
             <FloralCornerOrnament position="top-right" enabled={showFloral} />
             <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
@@ -2703,15 +2870,29 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               )}
             </div>
 
-            {/* Open Invitation Button */}
-            <button
-              type="button"
-              onClick={handleOpenInvitation}
-              className="w-full sm:w-auto group relative z-10 inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
-            >
-              <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
-              <span>{coverButtonLabel}</span>
-            </button>
+            {/* Theme Wax Seal / Stamp / Medal / Crown Badge + Open Invitation Button */}
+            <div className="relative z-10 flex flex-col items-center justify-center gap-3">
+              {webkitBundle.badgeOrnamentSvg && (
+                <img
+                  src={webkitBundle.badgeOrnamentSvg}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-[0_6px_16px_rgba(197,160,89,0.38)] pointer-events-none select-none"
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleOpenInvitation}
+                className="w-full sm:w-auto group relative z-10 inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <img
+                  src={MEPLANNER_ICONS.btnBukaUndangan}
+                  alt=""
+                  className="w-5 h-5 shrink-0 transition-transform group-hover:rotate-6"
+                />
+                <span>{coverButtonLabel}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2816,28 +2997,37 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
-            {/* Button 1: Individual Play/Pause Pill with Spinning Vinyl & Equalizer Bars */}
+            {/* Button 1: Individual Play/Pause Pill with Official Spinning Vinyl Widget & Float Music Icons */}
             <button
               type="button"
               onClick={handleToggleMusic}
-              className={`inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-[#D4AF37]/45 bg-white/90 shadow-2xs text-xs font-bold transition-all ${
+              className={`inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-[#D4AF37]/45 bg-white/90 shadow-2xs text-xs font-bold transition-all cursor-pointer ${
                 isPlayingMusic
                   ? 'bg-[#FAF3E3] text-[#8B6914]'
                   : 'text-stone-600 hover:bg-stone-50'
               }`}
               title={isPlayingMusic ? 'Jeda Musik (Pause)' : 'Putar Musik (Play)'}
             >
-              {isPlayingMusic ? (
-                <span className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-[#D4AF37] via-[#8B6914] to-stone-900 animate-spin-vinyl shrink-0 shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FAF3E3]" />
-                </span>
-              ) : (
-                <Play className="w-3.5 h-3.5 text-[#B68D40]" />
-              )}
-              <span className="hidden sm:inline max-w-[130px] truncate">
+              <img
+                src={MEPLANNER_WEBKIT_COMPONENTS.widgetVinylMusicDisc}
+                alt=""
+                className={`w-5 h-5 object-contain shrink-0 ${
+                  isPlayingMusic && !isMusicMuted ? 'animate-spin-vinyl' : ''
+                }`}
+              />
+              <img
+                src={
+                  isPlayingMusic && !isMusicMuted
+                    ? MEPLANNER_ICONS.floatMusicPlay
+                    : MEPLANNER_ICONS.floatMusicMute
+                }
+                alt=""
+                className="w-4 h-4 object-contain shrink-0"
+              />
+              <span className="hidden sm:inline max-w-[120px] truncate">
                 {currentTrack?.title || settings.musicTitle || 'Musik'}
               </span>
-              {isPlayingMusic && (
+              {isPlayingMusic && !isMusicMuted && (
                 <span
                   aria-hidden="true"
                   className="inline-flex items-end gap-0.5 h-3 ml-0.5 shrink-0"
@@ -2853,7 +3043,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={() => setIsMusicPopoverOpen((v) => !v)}
-              className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 text-xs font-bold shadow-2xs transition-all ${
+              className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 text-xs font-bold shadow-2xs transition-all cursor-pointer ${
                 isMusicPopoverOpen
                   ? 'bg-[#B68D40] text-white'
                   : 'bg-white/90 hover:bg-[#FAF3E3] text-[#8B6914]'
@@ -2862,6 +3052,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             >
               <ListMusic className="w-3.5 h-3.5" />
               <span className="text-[10px] font-extrabold">{playlist.length}</span>
+            </button>
+
+            {/* Button 3: Guest QR Check-in Pass Pill */}
+            <button
+              type="button"
+              onClick={() => setShowGuestQrModal(true)}
+              className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold shadow-2xs transition-all cursor-pointer"
+              title={
+                lang === 'ID'
+                  ? 'Tiket & QR Check-in Buku Tamu'
+                  : 'Guest QR Check-in Ticket'
+              }
+            >
+              <img
+                src={MEPLANNER_ICONS.floatQrCheckin}
+                alt=""
+                className="w-4 h-4 object-contain shrink-0"
+              />
+              <span className="hidden md:inline text-[11px]">QR Pass</span>
             </button>
 
             {/* Popover: Playlist, Play/Pause, Next/Prev & Volume Control */}
@@ -3079,6 +3288,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                Kraton Batik Parchment Hero + Top Royal Serif Names + Gunungan Arch Medallion
                ============================================================================ */
             <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] border-y-4 border-double border-[#C89D54] border-x-2 border-x-[#C89D54]/80 py-10 sm:py-14 px-5 sm:px-12 text-center shadow-[0_25px_70px_rgba(139,90,43,0.18)]">
+              <WebkitThreeLayerCornering
+                bundle={webkitBundle}
+                enabled={showCorneringOrnaments}
+              />
               <NusantaraGoldCornerBracket position="top-left" />
               <NusantaraGoldCornerBracket position="top-right" />
               <NusantaraGoldCornerBracket position="bottom-left" />
@@ -3210,7 +3423,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#f5e9d6] hover:bg-[#ebd8b7] border border-[#C89D54] text-[#6b4226] text-xs font-bold shadow-sm transition-all"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-[#8b5a2b]" />
+                          <img
+                            src={MEPLANNER_ICONS.btnSaveCalendar}
+                            alt=""
+                            className="w-5 h-5 shrink-0"
+                          />
                           <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
                           <ExternalLink className="w-3 h-3 text-[#8b5a2b]" />
                         </a>
@@ -3238,7 +3455,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                B. MODERN_BENTO (VISUAL JOURNEY / EXECUTIVE SUMMIT / CUM LAUDE)
                Desktop Split-Screen 12-Col Hero (Left 7 Cols Cinema Photo + Right 5 Cols Editorial Bento)
                ============================================================================ */
-            <div className="inv-reveal inv-reveal-up grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-lg">
+            <div className="inv-reveal inv-reveal-up relative grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-lg">
+              <WebkitThreeLayerCornering
+                bundle={webkitBundle}
+                enabled={showCorneringOrnaments}
+              />
               {/* Left 7 Cols: Full-Height Cinema Photo with Overlaid Names & Date at Bottom-Left */}
               <div className="lg:col-span-7 min-h-[420px] lg:min-h-[560px] relative flex flex-col justify-end p-6 sm:p-10 text-left overflow-hidden bg-stone-900">
                 <div className="absolute inset-0 w-full h-full">
@@ -3329,8 +3550,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             href={googleCalendarUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] font-bold text-[#8B6914] hover:underline inline-flex items-center gap-1"
+                            className="text-[10px] font-bold text-[#8B6914] hover:underline inline-flex items-center gap-1.5"
                           >
+                            <img
+                              src={MEPLANNER_ICONS.btnSaveCalendar}
+                              alt=""
+                              className="w-4 h-4 shrink-0"
+                            />
                             <span>{lang === 'ID' ? 'Simpan Kalender' : 'Save Date'}</span>
                             <ExternalLink className="w-2.5 h-2.5" />
                           </a>
@@ -3403,6 +3629,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                Editorial Magazine / Scrapbook Collage Hero + Headline ABOVE Tilted Polaroid
                ============================================================================ */
             <div className="inv-reveal inv-reveal-up bg-[#F7F3EE] p-6 sm:p-10 rounded-3xl border border-stone-200/90 shadow-[0_22px_60px_rgba(28,25,23,0.12)] text-center relative overflow-hidden">
+              <WebkitThreeLayerCornering
+                bundle={webkitBundle}
+                enabled={showCorneringOrnaments}
+              />
               {/* Top Magazine Masthead Row */}
               <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-6 border-b-2 border-stone-900/15">
                 <span className="text-[10px] sm:text-xs font-mono font-extrabold uppercase tracking-[0.22em] text-stone-700">
@@ -3512,7 +3742,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         rel="noopener noreferrer"
                         className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-stone-300 text-stone-900 text-xs font-bold shadow-xs transition-all"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                        <img
+                          src={MEPLANNER_ICONS.btnSaveCalendar}
+                          alt=""
+                          className="w-5 h-5 shrink-0"
+                        />
                         <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
                         <ExternalLink className="w-3 h-3 text-[#B68D40]" />
                       </a>
@@ -3540,6 +3774,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                Pastel Watercolor & Tall Cathedral Arch Hero + Botanical Corner Sprigs
                ============================================================================ */
             <div className="inv-reveal inv-reveal-up relative overflow-hidden bg-gradient-to-b from-white via-[#F6FAF7] to-white p-6 sm:p-12 rounded-[2.5rem] border border-emerald-200/70 text-center shadow-[0_24px_65px_rgba(94,140,106,0.14)]">
+              <WebkitThreeLayerCornering
+                bundle={webkitBundle}
+                enabled={showCorneringOrnaments}
+              />
               <FloralCornerOrnament position="top-left" enabled={showFloral} />
               <FloralCornerOrnament position="top-right" enabled={showFloral} />
               <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
@@ -3638,7 +3876,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-bold shadow-sm transition-all"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                          <img
+                            src={MEPLANNER_ICONS.btnSaveCalendar}
+                            alt=""
+                            className="w-5 h-5 shrink-0"
+                          />
                           <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
                           <ExternalLink className="w-3 h-3 text-[#B68D40]" />
                         </a>
@@ -3667,6 +3909,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                Classic Ivory Luxury Card with Fine Gold Hairlines & Balanced Symmetry
                ============================================================================ */
             <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#FFFDF9] border border-[#D4AF37]/45 outline outline-1 -outline-offset-8 outline-[#D4AF37]/25 p-6 sm:p-12 text-center shadow-[0_25px_70px_rgba(160,130,85,0.16)]">
+              <WebkitThreeLayerCornering
+                bundle={webkitBundle}
+                enabled={showCorneringOrnaments}
+              />
               <div className="relative z-20 max-w-3xl mx-auto">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase mb-5">
                   <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#B68D40]" />
@@ -3761,7 +4007,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold shadow-sm transition-all"
                         >
-                          <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
+                          <img
+                            src={MEPLANNER_ICONS.btnSaveCalendar}
+                            alt=""
+                            className="w-5 h-5 shrink-0"
+                          />
                           <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
                           <ExternalLink className="w-3 h-3 text-[#B68D40]" />
                         </a>
@@ -3788,9 +4038,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </div>
       </section>
 
+      <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+
       {/* SECTION: PROFIL MEMPELAI / HOST (ARCHETYPE-DISTINCT PROFILE CARDS) */}
       {settings.showCoupleSection !== false && (
         <section id="mempelai" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
+          {webkitBundle.themeOrnamentSvg && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none select-none flex justify-center mb-2"
+            >
+              <img
+                src={webkitBundle.themeOrnamentSvg}
+                alt=""
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-90 drop-shadow-[0_4px_12px_rgba(197,160,89,0.25)]"
+              />
+            </div>
+          )}
           <EditorialSectionHeader
             badge={coverBadgeLabel}
             title={profileTitle}
@@ -3828,12 +4092,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="w-full relative z-10 flex flex-col h-full justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
-                      <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                        {settings.eventHostRoleLabel ||
-                          (settings.groomRankAndTitle &&
-                          settings.groomRankAndTitle !== 'Mempelai Pria'
-                            ? settings.groomRankAndTitle
-                            : eventMeta.primaryRoleBadge)}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                        <img
+                          src={webkitBundle.categoryBadgeSvg}
+                          alt=""
+                          className="w-3.5 h-3.5 object-contain shrink-0"
+                        />
+                        <span>
+                          {settings.eventHostRoleLabel ||
+                            (settings.groomRankAndTitle &&
+                            settings.groomRankAndTitle !== 'Mempelai Pria'
+                              ? settings.groomRankAndTitle
+                              : eventMeta.primaryRoleBadge)}
+                        </span>
                       </span>
                       <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
                         PROFILE &bull; 01
@@ -3849,6 +4120,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             className="w-full h-full object-cover object-center"
                             style={getPhotoAdjustStyle(settings.photoAdjustments?.groomPhotoUrl)}
                           />
+                          {webkitBundle.frameOverlaySvg && (
+                            <img
+                              src={webkitBundle.frameOverlaySvg}
+                              alt=""
+                              aria-hidden="true"
+                              className="pointer-events-none select-none absolute inset-0 w-full h-full object-contain z-10 opacity-75"
+                            />
+                          )}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
@@ -3942,16 +4221,31 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                                 settings.photoAdjustments?.groomPhotoUrl
                               )}
                             />
+                            {webkitBundle.frameOverlaySvg && (
+                              <img
+                                src={webkitBundle.frameOverlaySvg}
+                                alt=""
+                                aria-hidden="true"
+                                className="pointer-events-none select-none absolute inset-0 w-full h-full object-contain z-10 opacity-80"
+                              />
+                            )}
                           </div>
                         )}
                       </div>
                     )}
-                    <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                      {settings.eventHostRoleLabel ||
-                        (settings.groomRankAndTitle &&
-                        settings.groomRankAndTitle !== 'Mempelai Pria'
-                          ? settings.groomRankAndTitle
-                          : eventMeta.primaryRoleBadge)}
+                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
+                      <img
+                        src={webkitBundle.categoryBadgeSvg}
+                        alt=""
+                        className="w-3.5 h-3.5 object-contain shrink-0"
+                      />
+                      <span>
+                        {settings.eventHostRoleLabel ||
+                          (settings.groomRankAndTitle &&
+                          settings.groomRankAndTitle !== 'Mempelai Pria'
+                            ? settings.groomRankAndTitle
+                            : eventMeta.primaryRoleBadge)}
+                      </span>
                     </span>
                     <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                       {settings.groomFullName}
@@ -4042,11 +4336,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <div className="w-full relative z-10 flex flex-col h-full justify-between">
                       <div>
                         <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
-                          <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                            {settings.brideTitle &&
-                            settings.brideTitle !== 'Mempelai Wanita'
-                              ? settings.brideTitle
-                              : eventMeta.secondaryRoleBadge}
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                            <img
+                              src={webkitBundle.categoryBadgeSvg}
+                              alt=""
+                              className="w-3.5 h-3.5 object-contain shrink-0"
+                            />
+                            <span>
+                              {settings.brideTitle &&
+                              settings.brideTitle !== 'Mempelai Wanita'
+                                ? settings.brideTitle
+                                : eventMeta.secondaryRoleBadge}
+                            </span>
                           </span>
                           <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
                             PROFILE &bull; 02
@@ -4064,6 +4365,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                                   settings.photoAdjustments?.bridePhotoUrl
                                 )}
                               />
+                              {webkitBundle.frameOverlaySvg && (
+                                <img
+                                  src={webkitBundle.frameOverlaySvg}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="pointer-events-none select-none absolute inset-0 w-full h-full object-contain z-10 opacity-75"
+                                />
+                              )}
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
@@ -4142,15 +4451,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                                   settings.photoAdjustments?.bridePhotoUrl
                                 )}
                               />
+                              {webkitBundle.frameOverlaySvg && (
+                                <img
+                                  src={webkitBundle.frameOverlaySvg}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="pointer-events-none select-none absolute inset-0 w-full h-full object-contain z-10 opacity-80"
+                                />
+                              )}
                             </div>
                           )}
                         </div>
                       )}
-                      <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                        {settings.brideTitle &&
-                        settings.brideTitle !== 'Mempelai Wanita'
-                          ? settings.brideTitle
-                          : eventMeta.secondaryRoleBadge}
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
+                        <img
+                          src={webkitBundle.categoryBadgeSvg}
+                          alt=""
+                          className="w-3.5 h-3.5 object-contain shrink-0"
+                        />
+                        <span>
+                          {settings.brideTitle &&
+                          settings.brideTitle !== 'Mempelai Wanita'
+                            ? settings.brideTitle
+                            : eventMeta.secondaryRoleBadge}
+                        </span>
                       </span>
                       <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                         {settings.brideFullName}
@@ -4178,13 +4502,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       {/* SECTION: JADWAL & LOKASI ACARA + INTEGRASI GOOGLE MAPS (SYMMETRICAL CARDS) */}
       {visibleEvents.length > 0 && (
-        <section id="acara" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
-          <EditorialSectionHeader
-            badge={lang === 'ID' ? 'Agenda & Waktu' : 'Date & Venue'}
-            title={scheduleTitle}
-            subtitle={settings.subtitle}
-            archetype={layoutArchetype}
-          />
+        <>
+          <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+          <section id="acara" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
+            <div id="lokasi" className="scroll-mt-24" />
+            <EditorialSectionHeader
+              badge={lang === 'ID' ? 'Agenda & Waktu' : 'Date & Venue'}
+              title={scheduleTitle}
+              subtitle={settings.subtitle}
+              archetype={layoutArchetype}
+            />
 
           <div
             className={`grid grid-cols-1 gap-4 sm:gap-6 items-stretch ${
@@ -4216,6 +4543,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       : 'bg-white/85 border border-white/95 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
                   }`}
                 >
+                  <WebkitCardFourCorners cornerSvg={webkitBundle.cardCornerSvg} />
                   <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
                   <div className="flex flex-col flex-1 relative z-10">
                     <div className="flex items-center justify-between gap-2 mb-4">
@@ -4282,7 +4610,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           }
                           className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                         >
-                          <MapPin className="w-3.5 h-3.5" />
+                          <img
+                            src={MEPLANNER_ICONS.btnGoogleMaps}
+                            alt=""
+                            className="w-5 h-5 shrink-0"
+                          />
                           <span>
                             {lang === 'ID' ? 'Buka Google Maps' : 'Open Google Maps'}
                           </span>
@@ -4338,6 +4670,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
                 >
+                  <img
+                    src={MEPLANNER_ICONS.floatLivestream}
+                    alt=""
+                    className="w-5 h-5 shrink-0"
+                  />
                   <span>
                     {lang === 'ID'
                       ? 'Tonton Live Streaming ↗'
@@ -4348,11 +4685,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
           )}
         </section>
+        </>
       )}
 
       {/* SECTION: LOVE STORY & GALERI PREWEDDING (CONDITIONAL & SYMMETRICAL) */}
       {(showLoveStory || showGallery) && (
-        <section id="galeri" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
+        <>
+          <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+          <section id="galeri" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
           <EditorialSectionHeader
             badge={lang === 'ID' ? 'Momen Berharga' : 'Precious Moments'}
             title={
@@ -4449,6 +4789,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               </div>
             ))}
+
+          {showLoveStory && showGallery && (
+            <WebkitSectionDivider
+              src={webkitBundle.sectionDividerSvg}
+              className="mb-4"
+            />
+          )}
 
           {/* Smooth Auto-Sliding Photo Gallery Carousel + Interactive Thumbnail Strip */}
           {showGallery &&
@@ -4695,40 +5042,58 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
             ))}
         </section>
+        </>
       )}
 
       {/* SECTION: KONFIRMASI KEHADIRAN (RSVP) & BUKU TAMU REAL-TIME (100% SYMMETRICAL EQUAL-SIZE CARDS) */}
       {settings.showRsvpSection !== false && (
-        <section id="rsvp" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
-          <EditorialSectionHeader
-            badge={lang === 'ID' ? 'RSVP & Buku Tamu' : 'RSVP & Guestbook'}
-            title={rsvpTitle}
-            subtitle={rsvpSubtitle}
-            archetype={layoutArchetype}
-          />
+        <>
+          <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+          <section id="rsvp" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
+            <div id="ucapan" className="scroll-mt-24" />
+            <EditorialSectionHeader
+              badge={lang === 'ID' ? 'RSVP & Buku Tamu' : 'RSVP & Guestbook'}
+              title={rsvpTitle}
+              subtitle={rsvpSubtitle}
+              archetype={layoutArchetype}
+            />
 
           {/* Equal 2-Column Grid with items-stretch and fixed matched desktop height */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
             {/* Left Card: RSVP Form (Exact same width & height as Right Card) */}
             <form
               onSubmit={handleRsvpFormSubmit}
-              className={`inv-reveal inv-reveal-left h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm ${
+              className={`inv-reveal inv-reveal-left relative h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between text-xs sm:text-sm ${
                 layoutArchetype === 'NUSANTARA_HERITAGE'
                   ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
                   : 'border border-white/95'
               }`}
             >
-              <div className="space-y-3.5 sm:space-y-4">
+              <WebkitCardFourCorners cornerSvg={webkitBundle.cardCornerSvg} />
+              <div className="space-y-3.5 sm:space-y-4 relative z-10">
                 <div className="flex items-center justify-between gap-2 pb-3 border-b border-stone-200/80 flex-wrap">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <Users className="w-5 h-5 text-[#B68D40] shrink-0" />
+                    <img
+                      src={MEPLANNER_ICONS.btnRsvpTicket}
+                      alt=""
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
                     <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
                       {lang === 'ID' ? 'Form RSVP Kehadiran' : 'RSVP Attendance Form'}
                     </h3>
                   </div>
-                  <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
-                    {lang === 'ID' ? 'Konfirmasi Online' : 'Online RSVP'}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowGuestQrModal(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-bold transition-all shrink-0 cursor-pointer"
+                  >
+                    <img
+                      src={MEPLANNER_ICONS.floatQrCheckin}
+                      alt=""
+                      className="w-3.5 h-3.5 object-contain shrink-0"
+                    />
+                    <span>{lang === 'ID' ? 'Tiket QR Tamu' : 'Guest QR Pass'}</span>
+                  </button>
                 </div>
 
                 {rsvpSubmittedSuccess && (
@@ -4935,13 +5300,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 mt-auto">
+              <div className="pt-4 mt-auto relative z-10">
                 <button
                   type="submit"
                   disabled={isSubmittingRsvp || Boolean(settings.disableRsvpSubmission)}
-                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
+                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  <Send className="w-4 h-4 shrink-0" />
+                  <img
+                    src={MEPLANNER_ICONS.btnRsvpTicket}
+                    alt=""
+                    className="w-5 h-5 shrink-0"
+                  />
                   <span className="truncate">
                     {settings.disableRsvpSubmission
                       ? lang === 'ID'
@@ -4961,15 +5330,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
             {/* Right Card: Live Guestbook Wishes Feed (Exact same width & height as Left Card) */}
             <div
-              className={`inv-reveal inv-reveal-right h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between ${
+              className={`inv-reveal inv-reveal-right relative h-full lg:h-[600px] min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col justify-between ${
                 layoutArchetype === 'NUSANTARA_HERITAGE'
                   ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
                   : 'border border-white/95'
               }`}
             >
-              <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-200/80 shrink-0 flex-wrap">
+              <WebkitCardFourCorners cornerSvg={webkitBundle.cardCornerSvg} />
+              <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-200/80 shrink-0 flex-wrap relative z-10">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <MessageSquareHeart className="w-5 h-5 text-[#B68D40] shrink-0" />
+                  <img
+                    src={MEPLANNER_ICONS.navUcapanWishes}
+                    alt=""
+                    className="w-5 h-5 object-contain shrink-0"
+                  />
                   <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
                     {wishesTitle} ({publicVisibleWishes.length})
                   </h3>
@@ -5111,29 +5485,37 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             </div>
           </div>
         </section>
+        </>
       )}
 
       {/* SECTION: AMPLOP DIGITAL & TANDA KASIH (LUXURY PEARL & CHAMPAGNE GOLD LIGHT CARDS) */}
       {settings.showGiftSection !== false && (
-        <section id="gift" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div id="amplop" className="scroll-mt-20" />
-          <div
-            className={`inv-reveal inv-reveal-up relative min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)] ${
-              layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
-                : 'border border-white/95'
-            }`}
-          >
-            <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
-            <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
+        <>
+          <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+          <section id="gift" className="relative z-10 py-10 sm:py-16 px-3 sm:px-4 max-w-5xl mx-auto">
+            <div id="amplop" className="scroll-mt-20" />
+            <div
+              className={`inv-reveal inv-reveal-up relative min-w-0 overflow-hidden rounded-3xl bg-white/85 backdrop-blur-xl p-5 sm:p-8 text-center shadow-[0_18px_50px_rgba(175,145,95,0.12)] ${
+                layoutArchetype === 'NUSANTARA_HERITAGE'
+                  ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
+                  : 'border border-white/95'
+              }`}
+            >
+              <WebkitCardFourCorners cornerSvg={webkitBundle.cardCornerSvg} />
+              <FloralCornerOrnament position="top-left" size="sm" enabled={showFloral} />
+              <FloralCornerOrnament position="top-right" size="sm" enabled={showFloral} />
 
-            {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-              <NusantaraCarvingOrnament position="top" className="mb-3" />
-            )}
+              {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                <NusantaraCarvingOrnament position="top" className="mb-3" />
+              )}
 
-            <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B] relative z-10">
-              <Gift className="w-6 h-6" />
-            </div>
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-3 text-[#9A742B] relative z-10 shadow-2xs">
+                <img
+                  src={MEPLANNER_ICONS.btnKirimHadiah}
+                  alt=""
+                  className="w-7 h-7 object-contain"
+                />
+              </div>
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold relative z-10">
               Wedding Gift
             </span>
@@ -5265,6 +5647,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       key={acc.id}
                       className="inv-reveal inv-reveal-zoom relative h-full min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 text-stone-900 shadow-lg transition-all"
                     >
+                      <WebkitCardFourCorners
+                        cornerSvg={webkitBundle.cardCornerSvg}
+                        size="sm"
+                      />
                       {/* Subtle Metallic Card Watermark Circle */}
                       <div
                         aria-hidden="true"
@@ -5302,9 +5688,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           )}
                         </div>
 
-                        {/* Luxury Metallic VIP Card Row: EMV Smart Chip + Bank/Issuer Name */}
+                        {/* Luxury Metallic VIP Card Row: Official ATM Chip SVG + Bank/Issuer Name */}
                         <div className="flex items-center justify-between gap-2 mb-2.5">
-                          <GoldEmvChipIcon className="w-10 h-7 drop-shadow-2xs" />
+                          <img
+                            src={MEPLANNER_ICONS.badgeChipAtm}
+                            alt=""
+                            className="w-10 h-8 object-contain shrink-0 drop-shadow-2xs"
+                          />
                           <span className="font-editorial text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#8B6914] text-right">
                             {acc.bankName || (isPaypal ? 'PayPal' : 'Bank')}
                           </span>
@@ -5360,7 +5750,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 shrink-0" />
+                              <img
+                                src={MEPLANNER_ICONS.btnCopyRekening}
+                                alt=""
+                                className="w-4 h-4 shrink-0"
+                              />
                               <span className="truncate">
                                 {isCrypto
                                   ? lang === 'ID'
@@ -5418,8 +5812,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         );
                         setShowQrisModal(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all cursor-pointer"
                     >
+                      <img
+                        src={MEPLANNER_ICONS.badgeChipAtm}
+                        alt=""
+                        className="w-5 h-4 object-contain shrink-0"
+                      />
                       <QrCode className="w-4 h-4 shrink-0" />
                       <span>
                         {lang === 'ID'
@@ -5435,8 +5834,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <div className="max-w-2xl mx-auto min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                            <Award className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                            <img
+                              src={MEPLANNER_ICONS.badgeKadoFisik}
+                              alt=""
+                              className="w-4 h-4 object-contain shrink-0"
+                            />
                             <span>
                               {lang === 'ID'
                                 ? 'KIRIM KADO / BINGKISAN FISIK'
@@ -5488,7 +5891,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5 shrink-0" />
+                            <img
+                              src={MEPLANNER_ICONS.btnCopyRekening}
+                              alt=""
+                              className="w-4 h-4 shrink-0"
+                            />
                             <span>
                               {lang === 'ID'
                                 ? 'Salin Alamat Kado'
@@ -5509,10 +5916,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="pt-5 mt-5 border-t border-stone-200/80 space-y-4 relative z-10 text-left">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
-                        {lang === 'ID'
-                          ? '🎁 Referensi Kado Pilihan (Gift Registry)'
-                          : '🎁 Curated Gift Wishlist Registry'}
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
+                        <img
+                          src={MEPLANNER_ICONS.badgeKadoFisik}
+                          alt=""
+                          className="w-4 h-4 object-contain shrink-0"
+                        />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Referensi Kado Pilihan (Gift Registry)'
+                            : 'Curated Gift Wishlist Registry'}
+                        </span>
                       </span>
                       <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
                         {lang === 'ID'
@@ -5567,6 +5981,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             }
                             className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all"
                           >
+                            <img
+                              src={MEPLANNER_ICONS.btnKirimHadiah}
+                              alt=""
+                              className="w-4 h-4 object-contain shrink-0"
+                            />
                             <span>
                               {lang === 'ID'
                                 ? 'Lihat Barang / Kirim Kado ↗'
@@ -5581,6 +6000,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               )}
           </div>
         </section>
+        </>
       )}
 
       {/* SECTION: FILTER & STORY INSTAGRAM (WHEN ENABLED IN SETTINGS) */}
@@ -5634,8 +6054,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         </section>
       )}
 
+      {/* WEBKIT SECTION DIVIDER */}
+      <WebkitSectionDivider src={webkitBundle.sectionDividerSvg} />
+
       {/* CLOSING FOOTER CARD (HIGH-CONTRAST PEARL & CHAMPAGNE GOLD CARD) */}
-      <footer className="relative z-10 pt-6 sm:pt-10 pb-12 sm:pb-16 px-3 sm:px-4 max-w-5xl mx-auto">
+      <footer className="relative z-10 pt-4 sm:pt-6 pb-12 sm:pb-16 px-3 sm:px-4 max-w-5xl mx-auto">
         <div
           className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl bg-[#FFFDF9]/96 backdrop-blur-2xl p-7 sm:p-12 md:p-14 text-center shadow-[0_18px_50px_rgba(175,145,95,0.16)] ${
             layoutArchetype === 'NUSANTARA_HERITAGE'
@@ -5643,6 +6066,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               : 'border border-white/95'
           }`}
         >
+          {/* 3-Layer Stacked Cornering System on Closing Card */}
+          <WebkitThreeLayerCornering
+            bundle={webkitBundle}
+            enabled={showCorneringOrnaments}
+          />
           <FloralCornerOrnament position="top-left" enabled={showFloral} />
           <FloralCornerOrnament position="top-right" enabled={showFloral} />
           <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
@@ -5697,83 +6125,207 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             )}
           </div>
 
-          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-8 sm:mt-10 mb-3.5" />
-          <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80 mb-2">
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-8 sm:mt-10 mb-3.5 relative z-10" />
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80 mb-2 relative z-10">
             All-in-One My Event Planner &amp; Digital Invitation
           </p>
 
-          {renderDeveloperCreditBar(false)}
+          <div className="relative z-10">{renderDeveloperCreditBar(false)}</div>
         </div>
       </footer>
 
-      {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE DOCK WITH VISIBLE ICON + LABEL) */}
-      <nav className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md sm:w-auto sm:max-w-none bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/45 rounded-2xl sm:rounded-full px-1.5 sm:px-3.5 py-1.5 sm:py-2 shadow-[0_12px_35px_rgba(160,130,85,0.24)] flex items-center justify-around sm:justify-center gap-0.5 sm:gap-2">
+      {/* FLOATING SIDE UTILITY WIDGETS (SPINNING VINYL DISC + QR CHECK-IN PASS) */}
+      <div className="fixed right-3 sm:right-5 bottom-20 sm:bottom-24 z-40 flex flex-col items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => setShowGuestQrModal(true)}
+          title={lang === 'ID' ? 'Tiket QR Tamu' : 'Guest QR Pass'}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/95 backdrop-blur-xl border border-[#D4AF37]/60 shadow-[0_8px_24px_rgba(160,130,85,0.28)] flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+        >
+          <img
+            src={MEPLANNER_ICONS.floatQrCheckin}
+            alt="QR Check-in"
+            className="w-6 h-6 object-contain"
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleToggleMusic}
+          title={isPlayingMusic ? 'Pause Music' : 'Play Music'}
+          className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/95 backdrop-blur-xl border border-[#D4AF37]/65 shadow-[0_8px_24px_rgba(160,130,85,0.3)] flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+        >
+          <img
+            src={MEPLANNER_WEBKIT_COMPONENTS.widgetVinylMusicDisc}
+            alt="Vinyl Music Disc"
+            className={`w-9 h-9 sm:w-10 sm:h-10 object-contain ${
+              isPlayingMusic && !isMusicMuted ? 'animate-spin' : 'opacity-65'
+            }`}
+            style={{ animationDuration: '6s' }}
+          />
+          <img
+            src={
+              isPlayingMusic && !isMusicMuted
+                ? MEPLANNER_ICONS.floatMusicPlay
+                : MEPLANNER_ICONS.floatMusicMute
+            }
+            alt={isPlayingMusic && !isMusicMuted ? 'Playing' : 'Muted'}
+            className="w-4 h-4 object-contain absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5 shadow-xs border border-[#D4AF37]/40"
+          />
+        </button>
+      </div>
+
+      {/* BOTTOM FLOATING NAVIGATION BAR (6 OFFICIAL ANIMATED SVG ICONS FROM MEPLANNER_ICONS) */}
+      <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1rem)] max-w-lg sm:w-auto sm:max-w-none bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/50 rounded-2xl sm:rounded-full px-1.5 sm:px-3.5 py-1.5 sm:py-2 shadow-[0_12px_35px_rgba(160,130,85,0.26)] flex items-center justify-around sm:justify-center gap-0.5 sm:gap-1.5">
         {[
-          ...(settings.showCoupleSection !== false
-            ? [
-                {
-                  href: '#mempelai',
-                  label: lang === 'ID' ? 'Mempelai' : 'Couple',
-                  icon: Heart,
-                },
-              ]
-            : []),
-          ...(visibleEvents.length > 0
-            ? [
-                {
-                  href: '#acara',
-                  label: lang === 'ID' ? 'Acara' : 'Schedule',
-                  icon: Calendar,
-                },
-              ]
-            : []),
-          ...(showLoveStory || showGallery
-            ? [
-                {
-                  href: '#galeri',
-                  label: showGallery
-                    ? lang === 'ID'
-                      ? 'Galeri'
-                      : 'Gallery'
-                    : lang === 'ID'
-                    ? 'Kisah'
-                    : 'Story',
-                  icon: showGallery ? Camera : Heart,
-                },
-              ]
-            : []),
-          ...(settings.showRsvpSection !== false
-            ? [
-                {
-                  href: '#rsvp',
-                  label: lang === 'ID' ? 'RSVP & Doa' : 'RSVP & Wishes',
-                  icon: MessageSquareHeart,
-                },
-              ]
-            : []),
-          ...(settings.showGiftSection !== false
-            ? [
-                {
-                  href: '#gift',
-                  label: lang === 'ID' ? 'Amplop' : 'Gift',
-                  icon: Gift,
-                },
-              ]
-            : []),
-        ].map((nav) => {
-          const IconComp = nav.icon;
-          return (
+          {
+            href: '#pembuka',
+            label: lang === 'ID' ? 'Sampul' : 'Cover',
+            iconSrc: MEPLANNER_ICONS.navCoverHome,
+            visible: true,
+          },
+          {
+            href: '#mempelai',
+            label: lang === 'ID' ? 'Profil' : 'Profile',
+            iconSrc: MEPLANNER_ICONS.navMempelaiHeart,
+            visible: settings.showCoupleSection !== false,
+          },
+          {
+            href: '#acara',
+            label: lang === 'ID' ? 'Acara' : 'Schedule',
+            iconSrc: MEPLANNER_ICONS.navAcaraCalendar,
+            visible: visibleEvents.length > 0,
+          },
+          {
+            href: '#lokasi',
+            label: lang === 'ID' ? 'Lokasi' : 'Venue',
+            iconSrc: MEPLANNER_ICONS.navLokasiMap,
+            visible: visibleEvents.length > 0,
+          },
+          {
+            href: '#galeri',
+            label: lang === 'ID' ? 'Galeri' : 'Gallery',
+            iconSrc: MEPLANNER_ICONS.navGaleriCamera,
+            visible: showLoveStory || showGallery,
+          },
+          {
+            href: '#rsvp',
+            label: lang === 'ID' ? 'Ucapan' : 'Wishes',
+            iconSrc: MEPLANNER_ICONS.navUcapanWishes,
+            visible: settings.showRsvpSection !== false,
+          },
+        ]
+          .filter((item) => item.visible)
+          .map((nav) => (
             <a
-              key={nav.href}
+              key={nav.href + nav.label}
               href={nav.href}
-              className="flex-1 sm:flex-initial px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-full text-[10px] sm:text-xs font-bold text-stone-700 hover:text-[#8B6914] hover:bg-[#FAF3E3] flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-colors"
+              onClick={(e) => {
+                const targetEl = document.querySelector(nav.href);
+                if (targetEl) {
+                  e.preventDefault();
+                  targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="flex-1 sm:flex-initial px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-full text-[10px] sm:text-xs font-bold text-stone-700 hover:text-[#8B6914] hover:bg-[#FAF3E3] flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all group"
             >
-              <IconComp className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-[#B68D40] shrink-0" />
+              <img
+                src={nav.iconSrc}
+                alt={nav.label}
+                className="w-5 h-5 sm:w-4 sm:h-4 object-contain shrink-0 group-hover:scale-110 transition-transform"
+              />
               <span className="truncate">{nav.label}</span>
             </a>
-          );
-        })}
+          ))}
       </nav>
+
+      {/* GUEST QR CHECK-IN PASS MODAL */}
+      {showGuestQrModal && (
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowGuestQrModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-sm w-full p-6 text-center text-stone-900 relative shadow-2xl border border-[#D4AF37]/55 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <WebkitCardFourCorners cornerSvg={webkitBundle.cardCornerSvg} />
+            <button
+              type="button"
+              onClick={() => setShowGuestQrModal(false)}
+              className="absolute top-4 right-4 z-20 p-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-2.5 shadow-2xs">
+                <img
+                  src={MEPLANNER_ICONS.floatQrCheckin}
+                  alt="QR Check-in"
+                  className="w-7 h-7 object-contain"
+                />
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.22em] text-[#9A742B] font-bold block mb-1">
+                {lang === 'ID' ? 'TIKET BUKU TAMU DIGITAL' : 'DIGITAL GUEST RECEPTION PASS'}
+              </span>
+              <h3 className="font-serif text-lg font-bold text-stone-900">
+                {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5 mb-4">
+                {displayTitleShort}
+                {mainScheduleEvent?.dateLabel ||
+                activeCountdownEvent?.dateLabel ||
+                settings.event2DateLabel
+                  ? ` • ${
+                      mainScheduleEvent?.dateLabel ||
+                      activeCountdownEvent?.dateLabel ||
+                      settings.event2DateLabel
+                    }`
+                  : ''}
+              </p>
+
+              <div className="w-52 h-52 mx-auto rounded-2xl border-2 border-[#D4AF37]/60 bg-[#FAF8F5] flex flex-col items-center justify-center p-3 mb-3 shadow-inner relative">
+                <QrCode className="w-36 h-36 text-stone-800" />
+                <span className="text-[10px] font-mono font-bold text-[#8B6914] mt-1.5 tracking-widest uppercase">
+                  PASS-
+                  {encodeURIComponent(
+                    effectiveMatchedGuest?.guestName || resolvedGuestDisplayName || 'GUEST'
+                  )
+                    .slice(0, 8)
+                    .toUpperCase()}
+                </span>
+              </div>
+
+              <div className="rounded-xl bg-[#FAF8F5] border border-[#E6D5B8]/60 p-2.5 mb-4 flex items-center gap-2.5 text-left">
+                <img
+                  src={MEPLANNER_THEME_ASSETS.commercialGuestReceptionScreen}
+                  alt="Guest Reception"
+                  className="w-12 h-12 rounded-lg object-cover border border-[#D4AF37]/40 shrink-0"
+                />
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  {lang === 'ID'
+                    ? 'Tunjukkan kode QR ini kepada petugas penerima tamu di meja registrasi untuk Check-In kehadiran otomatis.'
+                    : 'Present this QR pass at the reception desk for instant digital guest check-in.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowGuestQrModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <img
+                  src={MEPLANNER_ICONS.btnRsvpTicket}
+                  alt=""
+                  className="w-4 h-4 object-contain"
+                />
+                <span>{lang === 'ID' ? 'Selesai & Tutup Tiket' : 'Done & Close Pass'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QRIS MODAL */}
       {showQrisModal && (

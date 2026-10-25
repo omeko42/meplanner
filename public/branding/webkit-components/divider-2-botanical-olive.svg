@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 56" fill="none">
+  <line x1="24" y1="28" x2="156" y2="28" stroke="#84A98C" stroke-width="1.2" stroke-opacity="0.6"/>
+  <line x1="264" y1="28" x2="396" y2="28" stroke="#84A98C" stroke-width="1.2" stroke-opacity="0.6"/>
+  <!-- Left Leaf Sprig -->
+  <path d="M140 28C162 24 182 24 200 28" stroke="#4D7157" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="162" cy="20" rx="12" ry="5.5" transform="rotate(-20 162 20)" fill="#5E8468"/>
+  <ellipse cx="180" cy="35" rx="11" ry="5" transform="rotate(18 180 35)" fill="#84A98C"/>
+  <!-- Right Leaf Sprig -->
+  <path d="M280 28C258 24 238 24 220 28" stroke="#4D7157" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="258" cy="20" rx="12" ry="5.5" transform="rotate(20 258 20)" fill="#5E8468"/>
+  <ellipse cx="240" cy="35" rx="11" ry="5" transform="rotate(-18 240 35)" fill="#84A98C"/>
+  <!-- Center Blossom -->
+  <circle cx="210" cy="28" r="10" fill="#FFFDF9" stroke="#C5A059" stroke-width="1.4"/>
+  <circle cx="210" cy="28" r="4" fill="#D4AF37"/>
+</svg>

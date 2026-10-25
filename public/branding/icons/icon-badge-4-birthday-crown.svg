@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="crown-gold" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .crown-float { transform-origin: 32px 32px; animation: crownHover 2.8s ease-in-out infinite; }
+      @keyframes crownHover {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-3px) scale(1.04); }
+      }
+    </style>
+  </defs>
+  <g class="crown-float">
+    <path d="M10 46 L14 22 L25 32 L32 16 L39 32 L50 22 L54 46 H10 Z" fill="url(#crown-gold)" stroke="#FFFBEB" stroke-width="1.6" stroke-linejoin="round" />
+    <rect x="10" y="46" width="44" height="6" rx="2" fill="#9A6F1A" stroke="#FDE68A" stroke-width="1.2" />
+    <!-- Crown Jewels -->
+    <circle cx="32" cy="13" r="3" fill="#FB7185" stroke="#FFFBEB" stroke-width="1" />
+    <circle cx="13" cy="19" r="2.5" fill="#38BDF8" />
+    <circle cx="51" cy="19" r="2.5" fill="#38BDF8" />
+    <circle cx="32" cy="38" r="3.2" fill="#FFF1F2" />
+  </g>
+</svg>

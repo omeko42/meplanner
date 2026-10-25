@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="navyBg" x1="0" y1="0" x2="400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#162B4C"/>
+      <stop offset="100%" stop-color="#0B172A"/>
+    </linearGradient>
+    <linearGradient id="royalGold" x1="60" y1="40" x2="340" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#9A742B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Royal Navy Velvet Base -->
+  <rect width="400" height="520" rx="28" fill="url(#navyBg)"/>
+  <rect x="16" y="16" width="368" height="488" rx="20" stroke="url(#royalGold)" stroke-width="1.5"/>
+  <rect x="24" y="24" width="352" height="472" rx="14" stroke="url(#royalGold)" stroke-width="0.75" stroke-opacity="0.5"/>
+
+  <!-- Royal Academic & Gala Heraldic Crest -->
+  <g transform="translate(200, 128)">
+    <!-- Laurel Wreath Left & Right -->
+    <path d="M-56 28C-68 -4 -48 -42 -12 -54" stroke="url(#royalGold)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M56 28C68 -4 48 -42 12 -54" stroke="url(#royalGold)" stroke-width="2" stroke-linecap="round"/>
+    <!-- Shield Emblem -->
+    <path d="M-36 -36H36V6C36 34 0 52 0 52C0 52 -36 34 -36 6V-36Z" fill="#10213B" stroke="url(#royalGold)" stroke-width="2.2"/>
+    <!-- Mortarboard / Star Emblem Inside Shield -->
+    <path d="M0 -22L-22 -11L0 0L22 -11L0 -22Z" fill="url(#royalGold)"/>
+    <path d="M-12 -5V8C-12 13 -6 17 0 17C6 17 12 13 12 8V-5" stroke="url(#royalGold)" stroke-width="1.8"/>
+    <circle cx="0" cy="-48" r="4" fill="url(#royalGold)"/>
+  </g>
+
+  <!-- Structured Geometric Portrait Frame -->
+  <rect x="86" y="210" width="228" height="172" rx="14" fill="#12233E" stroke="url(#royalGold)" stroke-width="1.6"/>
+  <text x="200" y="276" text-anchor="middle" fill="#FAF0CA" font-family="Georgia, serif" font-size="11" letter-spacing="3">CUM LAUDE &amp; HONORS</text>
+  <text x="200" y="308" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, serif" font-size="20" font-weight="bold">dr. Naufal Arkan</text>
+  <text x="200" y="334" text-anchor="middle" fill="url(#royalGold)" font-family="sans-serif" font-size="10" font-weight="bold" letter-spacing="2">FAKULTAS KEDOKTERAN • 2026</text>
+
+  <!-- Bottom Gold Pill -->
+  <rect x="104" y="424" width="192" height="38" rx="19" fill="url(#royalGold)"/>
+  <text x="200" y="447" text-anchor="middle" fill="#0B172A" font-family="sans-serif" font-size="10" font-weight="bold" letter-spacing="2">KONFIRMASI KEHADIRAN</text>
+</svg>

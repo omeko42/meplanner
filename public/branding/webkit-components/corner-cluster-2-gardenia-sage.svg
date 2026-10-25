@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 24px 296px;
+      animation: swayBack 5.4s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 36px 284px;
+      animation: swayMid 4.0s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 44px 276px;
+      animation: swayFront 3.1s ease-in-out infinite alternate;
+    }
+    @keyframes swayBack {
+      0% { transform: rotate(-3.5deg); }
+      100% { transform: rotate(4.5deg) scale(1.02); }
+    }
+    @keyframes swayMid {
+      0% { transform: rotate(4deg) translateY(0); }
+      100% { transform: rotate(-3.5deg) translateY(-4px); }
+    }
+    @keyframes swayFront {
+      0% { transform: rotate(-2deg) scale(1); }
+      100% { transform: rotate(3.2deg) scale(1.03); }
+    }
+  </style>
+  <defs>
+    <radialGradient id="whiteGardenia" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="65%" stop-color="#F4EFE6"/>
+      <stop offset="100%" stop-color="#D6C7B2"/>
+    </radialGradient>
+    <linearGradient id="sageLeaf1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#89AD93"/>
+      <stop offset="100%" stop-color="#43684E"/>
+    </linearGradient>
+    <linearGradient id="sageLeaf2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A8C6B0"/>
+      <stop offset="100%" stop-color="#5E8468"/>
+    </linearGradient>
+    <filter id="gardenShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1F3526" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Long Sweeping Eucalyptus & Olive Branches -->
+  <g class="layer-back">
+    <path d="M22 298C36 196 58 106 96 24" stroke="#43684E" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M26 294C118 258 198 232 292 238" stroke="#43684E" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="44" cy="176" rx="22" ry="13" transform="rotate(-65 44 176)" fill="url(#sageLeaf1)"/>
+    <ellipse cx="64" cy="122" rx="22" ry="12" transform="rotate(-55 64 122)" fill="url(#sageLeaf2)"/>
+    <ellipse cx="84" cy="68" rx="19" ry="10" transform="rotate(-45 84 68)" fill="url(#sageLeaf1)"/>
+    <ellipse cx="76" cy="152" rx="20" ry="11" transform="rotate(-15 76 152)" fill="url(#sageLeaf2)"/>
+    <ellipse cx="164" cy="252" rx="24" ry="12" transform="rotate(-20 164 252)" fill="url(#sageLeaf1)"/>
+    <ellipse cx="218" cy="242" rx="22" ry="11" transform="rotate(-8 218 242)" fill="url(#sageLeaf2)"/>
+    <ellipse cx="264" cy="238" rx="18" ry="9" transform="rotate(5 264 238)" fill="url(#sageLeaf1)"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Golden Baby's Breath Sprigs & Silver Dollar Eucalyptus -->
+  <g class="layer-mid" filter="url(#gardenShadow)">
+    <path d="M34 286C88 202 142 134 204 78" stroke="#C5A059" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="116" cy="164" r="19" fill="url(#sageLeaf2)"/>
+    <circle cx="148" cy="130" r="17" fill="url(#sageLeaf1)"/>
+    <circle cx="178" cy="102" r="14" fill="url(#sageLeaf2)"/>
+    <!-- Golden Berries & Baby's Breath -->
+    <circle cx="128" cy="96" r="5" fill="#FAF0CA" stroke="#C5A059" stroke-width="1.2"/>
+    <circle cx="144" cy="84" r="4" fill="#D4AF37"/>
+    <circle cx="196" cy="156" r="5" fill="#FAF0CA" stroke="#C5A059" stroke-width="1.2"/>
+    <circle cx="212" cy="168" r="4" fill="#D4AF37"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Double White Gardenia Blossoms -->
+  <g class="layer-front" filter="url(#gardenShadow)">
+    <!-- Main Gardenia 1 -->
+    <g transform="translate(86, 214)">
+      <circle cx="-14" cy="-12" r="24" fill="url(#whiteGardenia)"/>
+      <circle cx="14" cy="-12" r="24" fill="url(#whiteGardenia)"/>
+      <circle cx="-14" cy="14" r="24" fill="url(#whiteGardenia)"/>
+      <circle cx="14" cy="14" r="24" fill="url(#whiteGardenia)"/>
+      <circle cx="0" cy="0" r="18" fill="#FFFFFF"/>
+      <circle cx="0" cy="0" r="6.5" fill="#D4AF37"/>
+    </g>
+    <!-- Secondary Gardenia 2 -->
+    <g transform="translate(148, 186)">
+      <circle cx="-10" cy="-10" r="18" fill="url(#whiteGardenia)"/>
+      <circle cx="10" cy="-10" r="18" fill="url(#whiteGardenia)"/>
+      <circle cx="-10" cy="10" r="18" fill="url(#whiteGardenia)"/>
+      <circle cx="10" cy="10" r="18" fill="url(#whiteGardenia)"/>
+      <circle cx="0" cy="0" r="13" fill="#FFFFFF"/>
+      <circle cx="0" cy="0" r="5" fill="#C5A059"/>
+    </g>
+  </g>
+</svg>

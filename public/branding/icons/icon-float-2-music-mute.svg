@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="mute-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#64748B" />
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="23" fill="#0F172A" stroke="url(#mute-gold)" stroke-width="2.4" />
+  <!-- Music Note Muted -->
+  <path d="M29 39 V22 L41 19 V35" stroke="#94A3B8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="25.5" cy="39.5" r="3.8" fill="#94A3B8" />
+  <circle cx="37.5" cy="35.5" r="3.8" fill="#94A3B8" />
+  <!-- Diagonal Mute Slash -->
+  <line x1="16" y1="16" x2="48" y2="48" stroke="#F43F5E" stroke-width="3.2" stroke-linecap="round" />
+</svg>

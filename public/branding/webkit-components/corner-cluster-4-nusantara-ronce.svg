@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 24px 304px;
+      animation: gununganSway 5.8s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 36px 296px;
+      animation: ukirWave 4.2s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 64px 288px;
+      animation: lotusBloom 3.4s ease-in-out infinite alternate;
+    }
+    @keyframes gununganSway {
+      0% { transform: rotate(-2deg) scale(0.99); }
+      100% { transform: rotate(2.5deg) scale(1.02); }
+    }
+    @keyframes ukirWave {
+      0% { transform: rotate(2.5deg); }
+      100% { transform: rotate(-3deg); }
+    }
+    @keyframes lotusBloom {
+      0% { transform: scale(0.97) rotate(-1.5deg); }
+      100% { transform: scale(1.04) rotate(2deg); }
+    }
+  </style>
+  <defs>
+    <linearGradient id="kratonGoldB" x1="0" y1="320" x2="260" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7A5918"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="85%" stop-color="#FAF0CA"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+    <radialGradient id="melatiFlor" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="70%" stop-color="#F5EFE0"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </radialGradient>
+    <filter id="kratonShadowB" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#170C07" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Upright Golden Gunungan Kayon Rising from Bottom-Left (0,320) -->
+  <g class="layer-back" filter="url(#kratonShadowB)">
+    <!-- Upright Gunungan Leaf Silhouette -->
+    <path d="M58 108C58 108 112 174 112 232C112 272 86 304 58 312C30 304 4 272 4 232C4 174 58 108 58 108Z" fill="#2A170E" stroke="url(#kratonGoldB)" stroke-width="2.5"/>
+    <path d="M58 128C58 128 96 180 96 230C96 260 78 286 58 294C38 286 20 260 20 230C20 180 58 128 58 128Z" stroke="url(#kratonGoldB)" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <!-- Tree of Life Kalpataru Stem inside Gunungan -->
+    <line x1="58" y1="142" x2="58" y2="294" stroke="url(#kratonGoldB)" stroke-width="2"/>
+    <path d="M58 190C76 178 86 192 74 206M58 190C40 178 30 192 42 206" stroke="url(#kratonGoldB)" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M58 228C80 214 90 232 76 246M58 228C36 214 26 232 40 246" stroke="url(#kratonGoldB)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Sweeping Javanese Ukiran Gold Filigree Along Bottom-Left Base -->
+  <g class="layer-mid" filter="url(#kratonShadowB)">
+    <path d="M8 312H248C188 304 136 282 96 246C62 216 32 178 12 132V312H8Z" fill="#23120B" fill-opacity="0.9" stroke="url(#kratonGoldB)" stroke-width="2.2"/>
+    <path d="M26 296C78 292 128 272 164 238C144 230 132 242 134 256" stroke="url(#kratonGoldB)" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M92 298C136 294 176 280 208 258" stroke="url(#kratonGoldB)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Blooming Kraton Lotus & Melati Rosettes at Bottom Corner -->
+  <g class="layer-front" filter="url(#kratonShadowB)">
+    <!-- Golden Lotus & Jasmine Rosette 1 -->
+    <g transform="translate(68, 268)">
+      <circle cx="0" cy="-14" r="11" fill="url(#melatiFlor)"/>
+      <circle cx="14" cy="0" r="11" fill="url(#melatiFlor)"/>
+      <circle cx="0" cy="14" r="11" fill="url(#melatiFlor)"/>
+      <circle cx="-14" cy="0" r="11" fill="url(#melatiFlor)"/>
+      <circle cx="-10" cy="-10" r="10" fill="url(#melatiFlor)"/>
+      <circle cx="10" cy="-10" r="10" fill="url(#melatiFlor)"/>
+      <circle cx="-10" cy="10" r="10" fill="url(#melatiFlor)"/>
+      <circle cx="10" cy="10" r="10" fill="url(#melatiFlor)"/>
+      <circle cx="0" cy="0" r="10" fill="url(#kratonGoldB)"/>
+    </g>
+    <!-- Secondary Melati Bud -->
+    <g transform="translate(128, 282)">
+      <circle cx="0" cy="-9" r="8" fill="url(#melatiFlor)"/>
+      <circle cx="9" cy="0" r="8" fill="url(#melatiFlor)"/>
+      <circle cx="0" cy="9" r="8" fill="url(#melatiFlor)"/>
+      <circle cx="-9" cy="0" r="8" fill="url(#melatiFlor)"/>
+      <circle cx="0" cy="0" r="7" fill="url(#kratonGoldB)"/>
+    </g>
+  </g>
+</svg>

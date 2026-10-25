@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEPlanner — Custom Icon Pack & Theme-Adaptive Button Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Courier+Prime:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #060811;
+      color: #F8FAFC;
+    }
+    .checker-dark {
+      background-image: radial-gradient(#1E293B 1px, transparent 1px);
+      background-size: 14px 14px;
+      background-color: #0B0F1E;
+    }
+
+    /* =====================================================
+       6 THEME-ADAPTIVE BUTTON STYLES (HOVER / ACTIVE / GLOW)
+       ===================================================== */
+    /* 1. Nusantara Javanese Kraton Gold */
+    .btn-theme-nusantara {
+      background: linear-gradient(135deg, #3B2313 0%, #1F1209 100%);
+      border: 1.5px solid #D4AF37;
+      color: #FEF3C7;
+      font-family: 'Cormorant Garamond', serif;
+      letter-spacing: 0.08em;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.22), inset 0 0 12px rgba(212, 175, 55, 0.18);
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .btn-theme-nusantara:hover {
+      background: linear-gradient(135deg, #D4AF37 0%, #9A6F1A 100%);
+      color: #1A0F07;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 26px rgba(212, 175, 55, 0.45);
+    }
+
+    /* 2. Botanical & BluBloom Garden (Gaya Ayi & Satrio) */
+    .btn-theme-botanical {
+      background: linear-gradient(135deg, rgba(71, 108, 138, 0.85) 0%, rgba(44, 76, 62, 0.9) 100%);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(186, 230, 253, 0.55);
+      color: #F0F9FF;
+      box-shadow: 0 8px 20px rgba(56, 102, 130, 0.28);
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .btn-theme-botanical:hover {
+      background: linear-gradient(135deg, #5B8DB8 0%, #3D6B58 100%);
+      border-color: #E0F2FE;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 26px rgba(91, 141, 184, 0.45);
+    }
+
+    /* 3. Sweet 17 Crystal Rose-Gold Glamour */
+    .btn-theme-glamour {
+      background: linear-gradient(135deg, #F472B6 0%, #C084FC 55%, #FB7185 100%);
+      border: 2px dotted #FFF1F2;
+      color: #FFFFFF;
+      box-shadow: 0 8px 24px rgba(244, 114, 182, 0.4), inset 0 1px 8px rgba(255, 255, 255, 0.45);
+      transition: all 0.3s ease;
+    }
+    .btn-theme-glamour:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 12px 30px rgba(244, 114, 182, 0.65);
+    }
+
+    /* 4. Polaroid Editorial Washi Stamp */
+    .btn-theme-editorial {
+      background: #F5EFE6;
+      border: 1.5px dashed #1C1917;
+      color: #1C1917;
+      font-family: 'Courier Prime', monospace;
+      box-shadow: 4px 4px 0px #D97757;
+      transition: all 0.2s ease;
+    }
+    .btn-theme-editorial:hover {
+      background: #D97757;
+      color: #FFFBEB;
+      border-color: #FFFBEB;
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #1C1917;
+    }
+
+    /* 5. Academic Royal Graduation */
+    .btn-theme-academic {
+      background: linear-gradient(135deg, #0F1D3A 0%, #1E3A8A 100%);
+      border: 1.5px solid #FBBF24;
+      color: #FEF3C7;
+      box-shadow: 0 6px 20px rgba(30, 58, 138, 0.5);
+      transition: all 0.3s ease;
+    }
+    .btn-theme-academic:hover {
+      background: linear-gradient(135deg, #1E3A8A 0%, #172554 100%);
+      border-color: #FDE68A;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(251, 191, 36, 0.35);
+    }
+
+    /* 6. Kids Pastel 3D Puffy Cloud */
+    .btn-theme-kids {
+      background: linear-gradient(180deg, #F9A8D4 0%, #F472B6 100%);
+      border: 2px solid #FFFFFF;
+      color: #FFFFFF;
+      box-shadow: 0 5px 0px #BE185D, 0 10px 20px rgba(244, 114, 182, 0.35);
+      transition: all 0.18s ease;
+    }
+    .btn-theme-kids:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0px #BE185D, 0 14px 24px rgba(244, 114, 182, 0.45);
+    }
+    .btn-theme-kids:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0px #BE185D;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-20">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-[#060811]/90 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <img src="meplanner-logo-full-dark.svg" alt="MEPlanner Logo" class="h-11 w-auto" />
+        <span class="hidden md:inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          20 Animated SVG Icons & Theme-Adaptive Buttons
+        </span>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <a href="cornering-motion-studio.html" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold text-emerald-300 transition">
+          🌿 Studio Cornering 3-Layer
+        </a>
+        <a href="theme-studio.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition">
+          🎨 Studio Tema
+        </a>
+        <a href="index.html" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition">
+          💎 Brand Kit Utama
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 pt-10 space-y-14">
+
+    <!-- HERO INTRO -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-semibold mb-3">
+          <span>✨ Custom Interactive Iconography & UI Button Kit</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+          Katalog Ikon Animasi & Tombol Adaptif <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-indigo-400">MEPlanner</span>
+        </h1>
+        <p class="text-slate-400 text-sm mt-2 max-w-3xl">
+          Dirancang khusus untuk navigasi bawah undangan online (Bottom Dock), tombol aksi utama (Buka Undangan, Google Maps, Amplop Digital, Copy Rekening, RSVP, Live Stream), hingga tombol musik & QR Check-in yang otomatis menyesuaikan tema acara.
+        </p>
+      </div>
+    </div>
+
+    <!-- SECTION 1: LIVE INTERACTIVE FLOATING DOCK & CTA BUTTON SIMULATOR -->
+    <section class="rounded-3xl border border-white/10 bg-slate-900/50 p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Live Interactive Simulator</span>
+          <h2 class="text-xl font-bold text-white mt-0.5">Simulasi Tombol Undangan & Floating Navigation Dock per Tema</h2>
+        </div>
+        <!-- Theme Selector Pills for Buttons -->
+        <div class="flex flex-wrap gap-2" id="theme-btn-selector">
+          <button onclick="setButtonTheme('nusantara')" data-theme="nusantara" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">1. Nusantara Gold</button>
+          <button onclick="setButtonTheme('botanical')" data-theme="botanical" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2. BluBloom / Botanical</button>
+          <button onclick="setButtonTheme('glamour')" data-theme="glamour" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3. Sweet 17 Glamour</button>
+          <button onclick="setButtonTheme('editorial')" data-theme="editorial" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4. Polaroid Editorial</button>
+          <button onclick="setButtonTheme('academic')" data-theme="academic" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5. Royal Graduation</button>
+          <button onclick="setButtonTheme('kids')" data-theme="kids" class="theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">6. Kids Pastel 3D</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <!-- Left: Interactive CTA Buttons Preview -->
+        <div class="lg:col-span-7 checker-dark rounded-2xl border border-white/10 p-6 flex flex-col gap-5">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Klik / Hover Tombol Aksi Undangan (CTA Buttons):</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="cta-buttons-preview">
+            <button onclick="triggerBtnToast('Membuka Layar Cover Undangan...')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-1-buka-undangan.svg" class="w-6 h-6" alt="Buka Undangan" />
+              <span>Buka Undangan</span>
+            </button>
+            <button onclick="triggerBtnToast('Membuka Rute Google Maps...')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-4-google-maps.svg" class="w-6 h-6" alt="Petunjuk Lokasi" />
+              <span>Petunjuk Lokasi Maps</span>
+            </button>
+            <button onclick="triggerBtnToast('Membuka Laci Amplop Digital & QRIS...')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-2-kirim-hadiah.svg" class="w-6 h-6" alt="Kirim Hadiah" />
+              <span>Kirim Amplop Digital</span>
+            </button>
+            <button onclick="triggerBtnToast('Nomor Rekening Berhasil Disalin!')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-3-copy-rekening.svg" class="w-6 h-6" alt="Salin Rekening" />
+              <span>Salin No. Rekening</span>
+            </button>
+            <button onclick="triggerBtnToast('Menyimpan Pengingat ke Google Calendar...')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-5-save-calendar.svg" class="w-6 h-6" alt="Simpan Kalender" />
+              <span>Simpan ke Kalender</span>
+            </button>
+            <button onclick="triggerBtnToast('Membuka Tiket QR Check-in Tamu VIP...')" class="adaptive-btn btn-theme-nusantara px-5 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-3">
+              <img src="icons/icon-btn-6-rsvp-ticket.svg" class="w-6 h-6" alt="Konfirmasi RSVP" />
+              <span>Konfirmasi & Tiket QR</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Interactive Floating Bottom Dock + Audio/QR Floating Pill -->
+        <div class="lg:col-span-5 checker-dark rounded-2xl border border-white/10 p-6 flex flex-col justify-between gap-6">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Floating Utility Buttons (Pojok Layar Undangan):</div>
+            <div class="flex items-center justify-center gap-4 py-2">
+              <button onclick="toggleMusicIcon(this)" class="w-12 h-12 rounded-full bg-slate-900/90 border border-amber-400/50 flex items-center justify-center shadow-lg hover:scale-110 transition" title="Play/Mute Musik">
+                <img id="floating-music-img" src="icons/icon-float-1-music-play.svg" class="w-8 h-8" alt="Music" />
+              </button>
+              <button onclick="triggerBtnToast('Menampilkan Modal QR Code Check-in Tamu!')" class="w-12 h-12 rounded-full bg-slate-900/90 border border-amber-400/50 flex items-center justify-center shadow-lg hover:scale-110 transition" title="QR Check-in">
+                <img src="icons/icon-float-4-qr-checkin.svg" class="w-7 h-7" alt="QR Code" />
+              </button>
+              <button onclick="triggerBtnToast('Membuka Siaran Live Streaming Acara!')" class="w-12 h-12 rounded-full bg-slate-900/90 border border-amber-400/50 flex items-center justify-center shadow-lg hover:scale-110 transition" title="Live Stream">
+                <img src="icons/icon-float-3-livestream.svg" class="w-7 h-7" alt="Live Stream" />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Floating Bottom Navigation Dock (6 Menu Utama):</div>
+            <!-- Simulated Mobile Floating Bottom Bar -->
+            <div id="floating-dock-preview" class="rounded-2xl bg-slate-950/90 backdrop-blur-xl border border-amber-400/40 px-3 py-2.5 flex items-center justify-between shadow-2xl">
+              <button onclick="setActiveDock(this, 'Sampul')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 transition">
+                <img src="icons/icon-nav-1-cover-home.svg" class="w-6 h-6" alt="Cover" />
+                <span class="text-[10px] font-bold text-amber-300">Sampul</span>
+              </button>
+              <button onclick="setActiveDock(this, 'Mempelai')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition">
+                <img src="icons/icon-nav-2-mempelai-heart.svg" class="w-6 h-6" alt="Mempelai" />
+                <span class="text-[10px] font-medium text-slate-300">Mempelai</span>
+              </button>
+              <button onclick="setActiveDock(this, 'Acara')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition">
+                <img src="icons/icon-nav-3-acara-calendar.svg" class="w-6 h-6" alt="Acara" />
+                <span class="text-[10px] font-medium text-slate-300">Acara</span>
+              </button>
+              <button onclick="setActiveDock(this, 'Lokasi')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition">
+                <img src="icons/icon-nav-4-lokasi-map.svg" class="w-6 h-6" alt="Lokasi" />
+                <span class="text-[10px] font-medium text-slate-300">Lokasi</span>
+              </button>
+              <button onclick="setActiveDock(this, 'Galeri')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition">
+                <img src="icons/icon-nav-5-galeri-camera.svg" class="w-6 h-6" alt="Galeri" />
+                <span class="text-[10px] font-medium text-slate-300">Galeri</span>
+              </button>
+              <button onclick="setActiveDock(this, 'Ucapan')" class="dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition">
+                <img src="icons/icon-nav-6-ucapan-wishes.svg" class="w-6 h-6" alt="Ucapan" />
+                <span class="text-[10px] font-medium text-slate-300">Ucapan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 20 SELF-ANIMATING VECTOR SVG ICONS GRID -->
+    <section>
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Pure Vector SVG Pack</span>
+          <h2 class="text-2xl font-bold text-white">20 File SVG Ikon Animasi Transparan (Siap Pakai)</h2>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="icons-grid">
+        <!-- Populated dynamically by JS -->
+      </div>
+    </section>
+
+    <!-- SECTION 3: AI DESIGN BOARDS FOR ICONS & THEME BUTTONS -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-bold text-white">Visual Design Sheets — Icon Pack & Theme-Adaptive Buttons</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="rounded-2xl border border-white/10 bg-slate-900/60 overflow-hidden">
+          <img src="icons/sheet-ui-button-icons.jpg" alt="MEPlanner Icon Pack & Button Kit" class="w-full object-cover" />
+          <div class="p-4">
+            <h3 class="font-bold text-white text-sm">16 Custom Luxury Icons, Floating Dock & Interactive CTA States</h3>
+            <p class="text-xs text-slate-400 mt-1">Standar ikonografi utama MEPlanner untuk navigasi bawah, amplop digital, tiket QR, dan tombol aksi undangan.</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-slate-900/60 overflow-hidden">
+          <img src="icons/sheet-theme-adaptive-buttons.jpg" alt="MEPlanner Theme Adaptive Buttons" class="w-full object-cover" />
+          <div class="p-4">
+            <h3 class="font-bold text-white text-sm">6 Theme-Adaptive Button & Badge Families</h3>
+            <p class="text-xs text-slate-400 mt-1">Adaptasi tekstur tombol (Default, Hover, Active, Disabled) untuk Nusantara Kraton, BluBloom Botanical, Sweet 17, Polaroid, Academic, dan Kids.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-3">
+    Berhasil!
+  </div>
+
+  <script>
+    const ICON_LIST = [
+      { file: 'icon-nav-1-cover-home.svg', title: 'Nav 1: Cover & Cincin', cat: 'Bottom Dock' },
+      { file: 'icon-nav-2-mempelai-heart.svg', title: 'Nav 2: Profil Mempelai', cat: 'Bottom Dock' },
+      { file: 'icon-nav-3-acara-calendar.svg', title: 'Nav 3: Tanggal & Waktu', cat: 'Bottom Dock' },
+      { file: 'icon-nav-4-lokasi-map.svg', title: 'Nav 4: Pin Lokasi GPS', cat: 'Bottom Dock' },
+      { file: 'icon-nav-5-galeri-camera.svg', title: 'Nav 5: Galeri Kamera', cat: 'Bottom Dock' },
+      { file: 'icon-nav-6-ucapan-wishes.svg', title: 'Nav 6: Doa & Buku Tamu', cat: 'Bottom Dock' },
+      { file: 'icon-btn-1-buka-undangan.svg', title: 'CTA 1: Buka Undangan', cat: 'Action Button' },
+      { file: 'icon-btn-2-kirim-hadiah.svg', title: 'CTA 2: Amplop Digital', cat: 'Action Button' },
+      { file: 'icon-btn-3-copy-rekening.svg', title: 'CTA 3: Salin Rekening', cat: 'Action Button' },
+      { file: 'icon-btn-4-google-maps.svg', title: 'CTA 4: Petunjuk Peta', cat: 'Action Button' },
+      { file: 'icon-btn-5-save-calendar.svg', title: 'CTA 5: Pengingat Lonceng', cat: 'Action Button' },
+      { file: 'icon-btn-6-rsvp-ticket.svg', title: 'CTA 6: Tiket VIP RSVP', cat: 'Action Button' },
+      { file: 'icon-float-1-music-play.svg', title: 'Float 1: Musik Berputar', cat: 'Floating Widget' },
+      { file: 'icon-float-2-music-mute.svg', title: 'Float 2: Musik Mute', cat: 'Floating Widget' },
+      { file: 'icon-float-3-livestream.svg', title: 'Float 3: Live Streaming', cat: 'Floating Widget' },
+      { file: 'icon-float-4-qr-checkin.svg', title: 'Float 4: Scanner QR Tamu', cat: 'Floating Widget' },
+      { file: 'icon-badge-1-chip-atm.svg', title: 'Badge 1: Chip Kartu ATM', cat: 'Gift & Category' },
+      { file: 'icon-badge-2-kado-fisik.svg', title: 'Badge 2: Kirim Kado Fisik', cat: 'Gift & Category' },
+      { file: 'icon-badge-3-graduation-toga.svg', title: 'Badge 3: Toga Wisuda', cat: 'Gift & Category' },
+      { file: 'icon-badge-4-birthday-crown.svg', title: 'Badge 4: Tiara Sweet 17', cat: 'Gift & Category' }
+    ];
+
+    const grid = document.getElementById('icons-grid');
+    ICON_LIST.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'rounded-2xl border border-white/10 bg-slate-900/70 overflow-hidden flex flex-col justify-between hover:border-amber-400/50 transition group';
+      card.innerHTML = `
+        <div class="p-3 border-b border-white/5 flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300/90">${item.cat}</span>
+          <span class="text-[10px] font-mono text-slate-500 truncate max-w-[110px]">${item.file}</span>
+        </div>
+        <div class="checker-dark p-6 flex items-center justify-center h-32">
+          <img src="icons/${item.file}" alt="${item.title}" class="w-16 h-16 group-hover:scale-110 transition-transform" />
+        </div>
+        <div class="p-3 bg-slate-950/80 border-t border-white/5">
+          <div class="text-xs font-bold text-white mb-2 truncate">${item.title}</div>
+          <div class="flex gap-1.5">
+            <a href="icons/${item.file}" download="${item.file}" class="flex-1 text-center py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600 text-[11px] font-semibold text-indigo-200 hover:text-white transition">
+              ⬇️ .SVG
+            </a>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    function setButtonTheme(themeKey) {
+      const buttons = document.querySelectorAll('.adaptive-btn');
+      const allClasses = [
+        'btn-theme-nusantara',
+        'btn-theme-botanical',
+        'btn-theme-glamour',
+        'btn-theme-editorial',
+        'btn-theme-academic',
+        'btn-theme-kids'
+      ];
+      buttons.forEach(btn => {
+        allClasses.forEach(c => btn.classList.remove(c));
+        btn.classList.add(`btn-theme-${themeKey}`);
+      });
+
+      document.querySelectorAll('.theme-pill').forEach(pill => {
+        if (pill.dataset.theme === themeKey) {
+          pill.className = 'theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
+        } else {
+          pill.className = 'theme-pill px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+        }
+      });
+      triggerBtnToast(`Gaya Tombol diubah ke tema: ${themeKey.toUpperCase()}`);
+    }
+
+    let musicPlaying = true;
+    function toggleMusicIcon(btn) {
+      musicPlaying = !musicPlaying;
+      const img = document.getElementById('floating-music-img');
+      img.src = musicPlaying ? 'icons/icon-float-1-music-play.svg' : 'icons/icon-float-2-music-mute.svg';
+      triggerBtnToast(musicPlaying ? '🎵 Musik Latar Diputar' : '🔇 Musik Latar Dijeda');
+    }
+
+    function setActiveDock(btn, name) {
+      document.querySelectorAll('.dock-item').forEach(el => {
+        el.className = 'dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl hover:bg-white/5 transition';
+        el.querySelector('span').className = 'text-[10px] font-medium text-slate-300';
+      });
+      btn.className = 'dock-item flex flex-col items-center gap-1 px-2 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 transition';
+      btn.querySelector('span').className = 'text-[10px] font-bold text-amber-300';
+      triggerBtnToast(`Navigasi menuju seksi: ${name}`);
+    }
+
+    function triggerBtnToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+      }, 2200);
+    }
+  </script>
+</body>
+</html>

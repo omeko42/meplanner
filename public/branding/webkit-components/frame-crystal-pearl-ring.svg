@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <defs>
+    <linearGradient id="ringRose" x1="0" y1="0" x2="320" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAD2DF"/>
+      <stop offset="50%" stop-color="#C96480"/>
+      <stop offset="100%" stop-color="#8F3952"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer & Inner Rose-Gold Rings (Center is Transparent for Photo) -->
+  <circle cx="160" cy="160" r="136" stroke="url(#ringRose)" stroke-width="14" stroke-opacity="0.28"/>
+  <circle cx="160" cy="160" r="143" stroke="url(#ringRose)" stroke-width="2.2"/>
+  <circle cx="160" cy="160" r="129" stroke="#D4AF37" stroke-width="1.8"/>
+  <!-- 12 Pearl Studs Around the Crystal Ring -->
+  <circle cx="160" cy="24" r="6" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="228" cy="42" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="278" cy="92" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="296" cy="160" r="6" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="278" cy="228" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="228" cy="278" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="160" cy="296" r="6" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="92" cy="278" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="42" cy="228" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="24" cy="160" r="6" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="42" cy="92" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="92" cy="42" r="5.5" fill="#FFFFFF" stroke="#C96480" stroke-width="1.2"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" fill="none">
+  <g transform="rotate(-6 110 70)">
+    <!-- Wavy Postal Cancellation Lines -->
+    <path d="M12 48C28 42 44 54 60 48C76 42 92 54 108 48" stroke="#C86D51" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M12 64C28 58 44 70 60 64C76 58 92 70 108 64" stroke="#C86D51" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M12 80C28 74 44 86 60 80C76 74 92 86 108 80" stroke="#C86D51" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M12 96C28 90 44 102 60 96C76 90 92 102 108 96" stroke="#C86D51" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- Circular Postmark Ring -->
+    <circle cx="152" cy="70" r="50" stroke="#C86D51" stroke-width="2.2" stroke-dasharray="6 3"/>
+    <circle cx="152" cy="70" r="40" stroke="#C86D51" stroke-width="1.2"/>
+    <line x1="112" y1="58" x2="192" y2="58" stroke="#C86D51" stroke-width="1.2"/>
+    <line x1="112" y1="82" x2="192" y2="82" stroke="#C86D51" stroke-width="1.2"/>
+    <text x="152" y="48" text-anchor="middle" fill="#C86D51" font-family="monospace" font-size="8.5" font-weight="bold" letter-spacing="1.5">SAVE THE DATE</text>
+    <text x="152" y="74" text-anchor="middle" fill="#1C1917" font-family="monospace" font-size="12" font-weight="bold" letter-spacing="1">24 OCT 2026</text>
+    <text x="152" y="98" text-anchor="middle" fill="#C86D51" font-family="monospace" font-size="8" font-weight="bold" letter-spacing="1.5">SPECIAL ISSUE</text>
+  </g>
+</svg>

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 28px 292px;
+      animation: swayBack 5.6s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 36px 284px;
+      animation: swayMid 4.1s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 48px 272px;
+      animation: swayFront 3.2s ease-in-out infinite alternate;
+    }
+    @keyframes swayBack {
+      0% { transform: rotate(-4deg) scale(0.99); }
+      100% { transform: rotate(4.5deg) scale(1.02); }
+    }
+    @keyframes swayMid {
+      0% { transform: rotate(3.5deg) translateY(0px); }
+      100% { transform: rotate(-4.5deg) translateY(-4px); }
+    }
+    @keyframes swayFront {
+      0% { transform: rotate(-2.5deg) scale(1); }
+      100% { transform: rotate(3deg) scale(1.03); }
+    }
+  </style>
+  <defs>
+    <radialGradient id="bluePetal1" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#DCEBF7"/>
+      <stop offset="55%" stop-color="#89B0D3"/>
+      <stop offset="100%" stop-color="#3E6B94"/>
+    </radialGradient>
+    <radialGradient id="bluePetal2" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#EBF4FC"/>
+      <stop offset="50%" stop-color="#6A9BC3"/>
+      <stop offset="100%" stop-color="#2C5278"/>
+    </radialGradient>
+    <radialGradient id="pinkDelph" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FCE4EC"/>
+      <stop offset="60%" stop-color="#E580A2"/>
+      <stop offset="100%" stop-color="#A8385D"/>
+    </radialGradient>
+    <linearGradient id="oliveLeaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A9B89E"/>
+      <stop offset="100%" stop-color="#5B6E52"/>
+    </linearGradient>
+    <filter id="softDrop" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1E3A5F" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Wild Meadow Grass, Dusty Teal Reeds & Deep Olive Foliage -->
+  <g class="layer-back">
+    <path d="M24 296C34 210 20 118 8 34" stroke="#6E8E84" stroke-width="2" stroke-linecap="round"/>
+    <path d="M28 294C56 196 48 104 38 18" stroke="#85A399" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M32 296C116 254 208 242 296 262" stroke="#7A9474" stroke-width="2" stroke-linecap="round"/>
+    <path d="M30 290C128 218 214 188 288 194" stroke="#8CA884" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Grass Blades & Olive Leaves -->
+    <ellipse cx="22" cy="112" rx="6" ry="28" transform="rotate(-14 22 112)" fill="#7B9B91" fill-opacity="0.75"/>
+    <ellipse cx="44" cy="88" rx="6" ry="26" transform="rotate(-6 44 88)" fill="#8FAD9E" fill-opacity="0.75"/>
+    <ellipse cx="188" cy="242" rx="26" ry="9" transform="rotate(-12 188 242)" fill="url(#oliveLeaf)" fill-opacity="0.85"/>
+    <ellipse cx="234" cy="252" rx="22" ry="7.5" transform="rotate(-4 234 252)" fill="url(#oliveLeaf)" fill-opacity="0.75"/>
+    <ellipse cx="78" cy="216" rx="28" ry="12" transform="rotate(-42 78 216)" fill="url(#oliveLeaf)"/>
+    <ellipse cx="122" cy="236" rx="26" ry="11" transform="rotate(-25 122 236)" fill="#809475"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Blush Pink Delphinium Spikes & Lavender Sprigs (Like Reference Ayi & Satrio) -->
+  <g class="layer-mid" filter="url(#softDrop)">
+    <!-- Tall Pink Delphinium Stem 1 -->
+    <path d="M36 286C62 192 84 108 112 26" stroke="#5E7356" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- Pink Delphinium Florets along Stem 1 -->
+    <g>
+      <circle cx="64" cy="182" r="16" fill="url(#pinkDelph)"/>
+      <circle cx="52" cy="174" r="12" fill="url(#pinkDelph)"/>
+      <circle cx="76" cy="150" r="15" fill="url(#pinkDelph)"/>
+      <circle cx="64" cy="140" r="12" fill="url(#pinkDelph)"/>
+      <circle cx="88" cy="116" r="14" fill="url(#pinkDelph)"/>
+      <circle cx="76" cy="106" r="11" fill="url(#pinkDelph)"/>
+      <circle cx="98" cy="82" r="12" fill="url(#pinkDelph)"/>
+      <circle cx="106" cy="54" r="9" fill="url(#pinkDelph)"/>
+      <circle cx="112" cy="34" r="6" fill="#F4A5BE"/>
+    </g>
+
+    <!-- Second Pink Spike Branch -->
+    <path d="M40 284C92 198 134 128 176 58" stroke="#5E7356" stroke-width="2.2" stroke-linecap="round"/>
+    <g>
+      <circle cx="108" cy="166" r="15" fill="url(#pinkDelph)"/>
+      <circle cx="124" cy="138" r="14" fill="url(#pinkDelph)"/>
+      <circle cx="142" cy="110" r="13" fill="url(#pinkDelph)"/>
+      <circle cx="158" cy="84" r="10" fill="url(#pinkDelph)"/>
+      <circle cx="172" cy="64" r="7" fill="#F4A5BE"/>
+    </g>
+
+    <!-- Lavender & Periwinkle Bottom Horizontal Cluster -->
+    <circle cx="164" cy="218" r="14" fill="#9D8EC7"/>
+    <circle cx="186" cy="226" r="13" fill="#B3A4DA"/>
+    <circle cx="208" cy="230" r="11" fill="#9D8EC7"/>
+    <circle cx="228" cy="234" r="9" fill="#C5B9E6"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Hero Dusty Blue Hydrangea / Peony Blooms & Warm Tan Leaves -->
+  <g class="layer-front" filter="url(#softDrop)">
+    <!-- Warm Champagne/Tan Foliage Leaves under Main Blooms -->
+    <path d="M22 298C18 252 42 222 78 218C68 254 48 282 22 298Z" fill="#C8BA9E" stroke="#7A6B53" stroke-width="1"/>
+    <path d="M36 294C74 268 112 272 136 298C100 306 64 304 36 294Z" fill="#B5A589" stroke="#7A6B53" stroke-width="1"/>
+
+    <!-- Hero Dusty Blue Flower 1 (Center-Left Large) -->
+    <g transform="translate(96, 192)">
+      <circle cx="-14" cy="-12" r="22" fill="url(#bluePetal1)"/>
+      <circle cx="14" cy="-12" r="22" fill="url(#bluePetal2)"/>
+      <circle cx="-16" cy="12" r="22" fill="url(#bluePetal2)"/>
+      <circle cx="14" cy="14" r="22" fill="url(#bluePetal1)"/>
+      <circle cx="0" cy="-18" r="19" fill="url(#bluePetal2)"/>
+      <circle cx="0" cy="18" r="19" fill="url(#bluePetal1)"/>
+      <circle cx="0" cy="0" r="15" fill="#DCEBF7"/>
+      <circle cx="0" cy="0" r="6" fill="#2A4763"/>
+    </g>
+
+    <!-- Hero Dusty Blue Flower 2 (Top-Right Bloom) -->
+    <g transform="translate(158, 124)">
+      <circle cx="-12" cy="-10" r="19" fill="url(#bluePetal2)"/>
+      <circle cx="12" cy="-10" r="19" fill="url(#bluePetal1)"/>
+      <circle cx="-12" cy="10" r="19" fill="url(#bluePetal1)"/>
+      <circle cx="12" cy="12" r="19" fill="url(#bluePetal2)"/>
+      <circle cx="0" cy="0" r="13" fill="#EBF4FC"/>
+      <circle cx="0" cy="0" r="5" fill="#2A4763"/>
+    </g>
+
+    <!-- Hero Dusty Blue Flower 3 (Bottom-Right Bloom) -->
+    <g transform="translate(142, 242)">
+      <circle cx="-11" cy="-10" r="18" fill="url(#bluePetal1)"/>
+      <circle cx="11" cy="-10" r="18" fill="url(#bluePetal2)"/>
+      <circle cx="-10" cy="10" r="18" fill="url(#bluePetal2)"/>
+      <circle cx="11" cy="10" r="18" fill="url(#bluePetal1)"/>
+      <circle cx="0" cy="0" r="12" fill="#DCEBF7"/>
+      <circle cx="0" cy="0" r="4.5" fill="#2A4763"/>
+    </g>
+
+    <!-- Extending Blue Branch & Bud -->
+    <path d="M174 134C204 128 228 112 244 92" stroke="#5A4632" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="212" cy="132" r="15" fill="url(#bluePetal2)"/>
+    <circle cx="246" cy="90" r="8" fill="url(#bluePetal1)"/>
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="env-gold" x1="8" y1="10" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <linearGradient id="seal-red" x1="24" y1="30" x2="40" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB7185" />
+      <stop offset="100%" stop-color="#9F1239" />
+    </linearGradient>
+    <style>
+      .card-rise { transform-origin: 32px 26px; animation: riseLetter 2.8s ease-in-out infinite; }
+      .seal-pulse { transform-origin: 32px 39px; animation: sealBeat 2.2s ease-in-out infinite; }
+      @keyframes riseLetter {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-4px); }
+      }
+      @keyframes sealBeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.14); }
+      }
+    </style>
+  </defs>
+  <!-- Open Envelope Back Flap -->
+  <path d="M8 26 L32 8 L56 26 V52 C56 54.2 54.2 56 52 56 H12 C9.8 56 8 54.2 8 52 V26 Z" fill="#1E293B" stroke="url(#env-gold)" stroke-width="2.2" />
+  <!-- Rising Invitation Card Inside -->
+  <g class="card-rise">
+    <rect x="15" y="14" width="34" height="28" rx="3" fill="#FFFBEB" stroke="url(#env-gold)" stroke-width="1.6" />
+    <line x1="22" y1="21" x2="42" y2="21" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" />
+    <line x1="25" y1="26" x2="39" y2="26" stroke="#9A6F1A" stroke-width="1.5" stroke-linecap="round" />
+  </g>
+  <!-- Envelope Front Folds -->
+  <path d="M8 26 L32 42 L56 26" stroke="url(#env-gold)" stroke-width="2.2" fill="#0F172A" fill-opacity="0.7" />
+  <path d="M8 54 L26 38 M56 54 L38 38" stroke="url(#env-gold)" stroke-width="1.8" />
+  <!-- Pulsing Crimson Wax Seal with Heart -->
+  <g class="seal-pulse">
+    <circle cx="32" cy="39" r="8.5" fill="url(#seal-red)" stroke="#FDE68A" stroke-width="1.6" />
+    <path d="M32 43 C32 43 28 40 28 37.8 C28 36.4 29 35.5 30.2 35.5 C31 35.5 31.6 36 32 36.6 C32.4 36 33 35.5 33.8 35.5 C35 35.5 36 36.4 36 37.8 C36 40 32 43 32 43 Z" fill="#FFF1F2" />
+  </g>
+</svg>

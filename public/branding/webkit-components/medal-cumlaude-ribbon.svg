@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 190" fill="none">
+  <defs>
+    <linearGradient id="medalGold" x1="20" y1="10" x2="140" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <!-- Bottom Flowing Ribbons -->
+  <path d="M54 114L36 176L60 162L74 180L82 120" fill="#B68D40" stroke="#7A5918" stroke-width="1.2"/>
+  <path d="M106 114L124 176L100 162L86 180L78 120" fill="url(#medalGold)" stroke="#7A5918" stroke-width="1.2"/>
+
+  <!-- Rosette Scalloped Gold Seal -->
+  <circle cx="80" cy="76" r="54" fill="url(#medalGold)" stroke="#FAF0CA" stroke-width="2" stroke-dasharray="7 4"/>
+  <circle cx="80" cy="76" r="44" fill="#162B4C" stroke="url(#medalGold)" stroke-width="2.2"/>
+  <circle cx="80" cy="76" r="38" stroke="#FAF0CA" stroke-width="0.9" stroke-dasharray="3 3"/>
+
+  <!-- Academic Star & Cum Laude Text -->
+  <path d="M80 46L83 53L90 53L84.5 57.5L86.5 64.5L80 60L73.5 64.5L75.5 57.5L70 53L77 53L80 46Z" fill="url(#medalGold)"/>
+  <text x="80" y="79" text-anchor="middle" fill="#FAF0CA" font-family="Georgia, serif" font-size="12" font-weight="bold" letter-spacing="1.5">CUM LAUDE</text>
+  <text x="80" y="95" text-anchor="middle" fill="#D4AF37" font-family="sans-serif" font-size="8.5" font-weight="bold" letter-spacing="2">WITH HONORS</text>
+</svg>

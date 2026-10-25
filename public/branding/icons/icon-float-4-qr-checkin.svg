@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="qr-gold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .laser-scan { animation: scanLine 2.4s ease-in-out infinite; }
+      @keyframes scanLine {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(28px); }
+      }
+    </style>
+  </defs>
+  <!-- Corner Scan Brackets -->
+  <path d="M10 20 V12 C10 10.9 10.9 10 12 10 H20 M44 10 H52 C53.1 10 54 10.9 54 12 V20 M54 44 V52 C54 53.1 53.1 54 52 54 H44 M20 54 H12 C10.9 54 10 53.1 10 52 V44" stroke="url(#qr-gold)" stroke-width="2.6" stroke-linecap="round" />
+  <!-- QR Matrix Blocks -->
+  <rect x="16" y="16" width="12" height="12" rx="2" stroke="#FDE68A" stroke-width="2.2" />
+  <rect x="20" y="20" width="4" height="4" fill="#D4AF37" />
+  <rect x="36" y="16" width="12" height="12" rx="2" stroke="#FDE68A" stroke-width="2.2" />
+  <rect x="40" y="20" width="4" height="4" fill="#D4AF37" />
+  <rect x="16" y="36" width="12" height="12" rx="2" stroke="#FDE68A" stroke-width="2.2" />
+  <rect x="20" y="40" width="4" height="4" fill="#D4AF37" />
+  <!-- QR Data Dots -->
+  <rect x="36" y="36" width="5" height="5" fill="#FDE68A" />
+  <rect x="43" y="36" width="5" height="5" fill="#D4AF37" />
+  <rect x="36" y="43" width="5" height="5" fill="#D4AF37" />
+  <rect x="43" y="43" width="5" height="5" fill="#FDE68A" />
+  <!-- Animated Laser Line -->
+  <g class="laser-scan">
+    <line x1="12" y1="18" x2="52" y2="18" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="chip-gold" x1="8" y1="14" x2="56" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="45%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#854D0E" />
+    </linearGradient>
+    <style>
+      .chip-shimmer { transform-origin: 32px 32px; animation: chipGlow 3s ease-in-out infinite; }
+      @keyframes chipGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.18); }
+      }
+    </style>
+  </defs>
+  <g class="chip-shimmer">
+    <rect x="10" y="16" width="44" height="32" rx="6" fill="url(#chip-gold)" stroke="#FFFBEB" stroke-width="1.6" />
+    <!-- EMV Metallic Circuit Lines -->
+    <line x1="25" y1="16" x2="25" y2="48" stroke="#713F12" stroke-width="1.8" />
+    <line x1="39" y1="16" x2="39" y2="48" stroke="#713F12" stroke-width="1.8" />
+    <line x1="10" y1="27" x2="25" y2="27" stroke="#713F12" stroke-width="1.8" />
+    <line x1="10" y1="37" x2="25" y2="37" stroke="#713F12" stroke-width="1.8" />
+    <line x1="39" y1="27" x2="54" y2="27" stroke="#713F12" stroke-width="1.8" />
+    <line x1="39" y1="37" x2="54" y2="37" stroke="#713F12" stroke-width="1.8" />
+    <rect x="25" y="24" width="14" height="16" rx="3" fill="url(#chip-gold)" stroke="#713F12" stroke-width="1.8" />
+  </g>
+</svg>

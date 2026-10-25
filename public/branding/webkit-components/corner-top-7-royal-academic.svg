@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 20px 20px;
+      animation: decoPulse 6.0s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 28px 28px;
+      animation: laurelSway 4.2s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 54px 20px;
+      animation: tasselSwing 3.3s ease-in-out infinite alternate;
+    }
+    @keyframes decoPulse {
+      0% { transform: scale(0.99); }
+      100% { transform: scale(1.02); }
+    }
+    @keyframes laurelSway {
+      0% { transform: rotate(-3deg); }
+      100% { transform: rotate(4deg); }
+    }
+    @keyframes tasselSwing {
+      0% { transform: rotate(-6deg); }
+      100% { transform: rotate(6.5deg); }
+    }
+  </style>
+  <defs>
+    <linearGradient id="acadGold2" x1="0" y1="0" x2="260" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+    <filter id="acadShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#091326" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Royal Navy & Gold Art-Deco Corner Fan (Top-Left Anchor) -->
+  <g class="layer-back" filter="url(#acadShadow)">
+    <path d="M12 220V12H220C162 24 112 58 72 104C42 138 22 178 12 220Z" fill="#132747" stroke="url(#acadGold2)" stroke-width="2.5"/>
+    <path d="M22 188V22H188" stroke="url(#acadGold2)" stroke-width="1.2"/>
+    <line x1="22" y1="22" x2="146" y2="146" stroke="url(#acadGold2)" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="22" y1="22" x2="176" y2="96" stroke="url(#acadGold2)" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="22" y1="22" x2="96" y2="176" stroke="url(#acadGold2)" stroke-width="1" stroke-opacity="0.6"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Sweeping Golden Laurel Branches -->
+  <g class="layer-mid" filter="url(#acadShadow)">
+    <path d="M28 28C96 42 158 78 214 134" stroke="url(#acadGold2)" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="88" cy="46" rx="18" ry="8" transform="rotate(18 88 46)" fill="url(#acadGold2)"/>
+    <ellipse cx="128" cy="68" rx="18" ry="8" transform="rotate(28 128 68)" fill="url(#acadGold2)"/>
+    <ellipse cx="166" cy="96" rx="17" ry="7.5" transform="rotate(38 166 96)" fill="url(#acadGold2)"/>
+    <ellipse cx="106" cy="66" rx="15" ry="6.5" transform="rotate(-12 106 66)" fill="#FAF0CA"/>
+    <ellipse cx="146" cy="92" rx="15" ry="6.5" transform="rotate(-4 146 92)" fill="#FAF0CA"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Hanging Gold Graduation / Royal Tassel (Hanging Downwards with Gravity) -->
+  <g class="layer-front" filter="url(#acadShadow)">
+    <line x1="54" y1="22" x2="54" y2="178" stroke="url(#acadGold2)" stroke-width="2.5"/>
+    <circle cx="54" cy="182" r="10" fill="url(#acadGold2)"/>
+    <rect x="46" y="190" width="16" height="6" rx="3" fill="#8B6914"/>
+    <path d="M46 196L36 254H72L62 196H46Z" fill="url(#acadGold2)"/>
+    <!-- Corner Heraldic Shield Emblem -->
+    <path d="M24 24H64V54C64 74 44 86 44 86C44 86 24 74 24 54V24Z" fill="#0F1E38" stroke="url(#acadGold2)" stroke-width="2.2"/>
+    <path d="M44 36L28 44L44 52L60 44L44 36Z" fill="url(#acadGold2)"/>
+  </g>
+</svg>

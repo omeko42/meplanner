@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="bentoDark" x1="0" y1="0" x2="400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F1420"/>
+      <stop offset="100%" stop-color="#070A10"/>
+    </linearGradient>
+    <linearGradient id="bentoAccent" x1="0" y1="0" x2="400" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Modern Bento Obsidian Base -->
+  <rect width="400" height="520" rx="28" fill="url(#bentoDark)"/>
+  <rect x="1" y="1" width="398" height="518" rx="27" stroke="url(#bentoAccent)" stroke-opacity="0.4" stroke-width="1.5"/>
+
+  <!-- Top Bento Header Card -->
+  <rect x="24" y="24" width="352" height="76" rx="18" fill="#171F30" stroke="#2D3A54" stroke-width="1"/>
+  <circle cx="52" cy="62" r="10" fill="#22D3EE" fill-opacity="0.2"/>
+  <circle cx="52" cy="62" r="4" fill="#22D3EE"/>
+  <text x="74" y="56" fill="#94A3B8" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="2">VIP ACCESS PASS • KEY VERIFIED</text>
+  <text x="74" y="76" fill="#FFFFFF" font-family="sans-serif" font-size="15" font-weight="bold">EXECUTIVE SUMMIT &amp; GALA 2026</text>
+
+  <!-- Middle Split Bento Grid (2 Columns) -->
+  <rect x="24" y="114" width="210" height="148" rx="18" fill="#151C2C" stroke="#2A364F" stroke-width="1"/>
+  <text x="42" y="144" fill="#22D3EE" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">SESSION 01 • KEYNOTE</text>
+  <text x="42" y="172" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold">Grand Ballroom</text>
+  <text x="42" y="194" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold">Ritz-Carlton</text>
+  <rect x="42" y="216" width="118" height="26" rx="8" fill="#1E293B"/>
+  <text x="101" y="233" text-anchor="middle" fill="#E2E8F0" font-family="monospace" font-size="10" font-weight="bold">09:00 - 17:00 WIB</text>
+
+  <rect x="248" y="114" width="128" height="148" rx="18" fill="#1A2235" stroke="#D4AF37" stroke-opacity="0.5" stroke-width="1.2"/>
+  <text x="312" y="146" text-anchor="middle" fill="#D4AF37" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">SEAT ASSIGNED</text>
+  <text x="312" y="198" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-size="34" font-weight="bold">V-01</text>
+  <text x="312" y="232" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="10" font-weight="bold">VVIP FRONT ROW</text>
+
+  <!-- Perforated Ticket Stub Divider -->
+  <path d="M24 286H376" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 6"/>
+
+  <!-- Bottom QR Check-In & Key Token Card -->
+  <rect x="24" y="308" width="352" height="184" rx="22" fill="#151C2C" stroke="#2D3A54" stroke-width="1.2"/>
+  <!-- Simulated QR Matrix Box -->
+  <rect x="46" y="330" width="116" height="116" rx="14" fill="#FFFFFF"/>
+  <rect x="58" y="342" width="28" height="28" rx="4" stroke="#0F172A" stroke-width="5"/>
+  <rect x="122" y="342" width="28" height="28" rx="4" stroke="#0F172A" stroke-width="5"/>
+  <rect x="58" y="406" width="28" height="28" rx="4" stroke="#0F172A" stroke-width="5"/>
+  <rect x="94" y="378" width="20" height="20" rx="3" fill="#6366F1"/>
+  <rect x="124" y="408" width="12" height="12" fill="#0F172A"/>
+  <rect x="96" y="344" width="12" height="12" fill="#0F172A"/>
+  <rect x="96" y="416" width="16" height="16" fill="#0F172A"/>
+
+  <!-- Guest & 21-Char Token Info -->
+  <text x="182" y="354" fill="#94A3B8" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">HONORED DELEGATE</text>
+  <text x="182" y="380" fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold">Dr. Pratama Wijaya</text>
+  <text x="182" y="402" fill="#22D3EE" font-family="monospace" font-size="10">KEY: JHi4b3XgT2RQIDhZ9coLw</text>
+  <rect x="182" y="420" width="170" height="34" rx="10" fill="url(#bentoAccent)"/>
+  <text x="267" y="441" text-anchor="middle" fill="#070A10" font-family="sans-serif" font-size="10" font-weight="bold" letter-spacing="1.5">SCAN CHECK-IN READY</text>
+</svg>

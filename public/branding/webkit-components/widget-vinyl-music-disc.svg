@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" fill="none">
+  <defs>
+    <linearGradient id="vinylGold" x1="20" y1="20" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <!-- Vinyl Record Base -->
+  <circle cx="70" cy="70" r="58" fill="#141418" stroke="url(#vinylGold)" stroke-width="2.5"/>
+  <!-- Grooves -->
+  <circle cx="70" cy="70" r="48" stroke="#2D2D38" stroke-width="1.2" stroke-dasharray="18 6"/>
+  <circle cx="70" cy="70" r="38" stroke="#2D2D38" stroke-width="1.2" stroke-dasharray="14 5"/>
+  <circle cx="70" cy="70" r="29" stroke="#2D2D38" stroke-width="1.2"/>
+  <!-- Gold Center Label -->
+  <circle cx="70" cy="70" r="21" fill="url(#vinylGold)"/>
+  <circle cx="70" cy="70" r="6" fill="#141418"/>
+  <!-- Floating Musical Note Badge -->
+  <circle cx="108" cy="30" r="16" fill="url(#vinylGold)" stroke="#141418" stroke-width="2"/>
+  <path d="M105 35V23L114 21V33" stroke="#141418" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="103" cy="35" r="2.8" fill="#141418"/>
+  <circle cx="112" cy="33" r="2.8" fill="#141418"/>
+</svg>

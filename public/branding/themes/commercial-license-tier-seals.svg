@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" fill="none">
+  <defs>
+    <linearGradient id="sealGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+    <linearGradient id="sealCrimson" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FDA4AF"/>
+      <stop offset="50%" stop-color="#E11D48"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+    <linearGradient id="sealIndigo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A5B4FC"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#312E81"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="320" rx="24" fill="#0F121C"/>
+
+  <!-- 1. STARTER / GRATIS -->
+  <g transform="translate(24, 28)">
+    <rect width="268" height="122" rx="18" fill="#181C2B" stroke="#334155"/>
+    <circle cx="46" cy="61" r="24" fill="#10B981" fill-opacity="0.15" stroke="#10B981" stroke-width="1.5"/>
+    <text x="46" y="66" text-anchor="middle" fill="#34D399" font-family="sans-serif" font-size="13" font-weight="bold">FREE</text>
+    <text x="84" y="46" fill="#34D399" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">STARTER TRIAL • 14 HARI</text>
+    <text x="84" y="68" fill="#FFFFFF" font-family="Georgia, serif" font-size="18" font-weight="bold">Paket Gratis</text>
+    <text x="84" y="90" fill="#94A3B8" font-family="sans-serif" font-size="11">Rp 0 • 1 Undangan Standar</text>
+  </g>
+
+  <!-- 2. PREMIUM -->
+  <g transform="translate(316, 28)">
+    <rect width="268" height="122" rx="18" fill="#181C2B" stroke="url(#sealGold)" stroke-width="1.8"/>
+    <circle cx="46" cy="61" r="24" fill="url(#sealGold)" fill-opacity="0.2" stroke="url(#sealGold)" stroke-width="1.8"/>
+    <text x="46" y="66" text-anchor="middle" fill="#FDE68A" font-family="Georgia, serif" font-size="13" font-weight="bold">PRO</text>
+    <text x="84" y="46" fill="#FBBF24" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">POPULAR • AKTIF SELAMANYA</text>
+    <text x="84" y="68" fill="#FFFFFF" font-family="Georgia, serif" font-size="18" font-weight="bold">Paket Premium</text>
+    <text x="84" y="90" fill="#E2E8F0" font-family="sans-serif" font-size="11">Rp 51.750 • 31 Tema + Musik + RSVP</text>
+  </g>
+
+  <!-- 3. BUSINESS -->
+  <g transform="translate(608, 28)">
+    <rect width="268" height="122" rx="18" fill="#181C2B" stroke="url(#sealCrimson)" stroke-width="1.8"/>
+    <circle cx="46" cy="61" r="24" fill="url(#sealCrimson)" fill-opacity="0.2" stroke="url(#sealCrimson)" stroke-width="1.8"/>
+    <text x="46" y="66" text-anchor="middle" fill="#FDA4AF" font-family="sans-serif" font-size="12" font-weight="bold">BIZ</text>
+    <text x="84" y="46" fill="#FB7185" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">EXCLUSIVE • PLANNER PENUH</text>
+    <text x="84" y="68" fill="#FFFFFF" font-family="Georgia, serif" font-size="18" font-weight="bold">Paket Business</text>
+    <text x="84" y="90" fill="#E2E8F0" font-family="sans-serif" font-size="11">Rp 120.750 • Budget + QR Check-In</text>
+  </g>
+
+  <!-- 4. ENTERPRISE -->
+  <g transform="translate(24, 170)">
+    <rect width="268" height="122" rx="18" fill="#181C2B" stroke="url(#sealIndigo)" stroke-width="1.8"/>
+    <circle cx="46" cy="61" r="24" fill="url(#sealIndigo)" fill-opacity="0.2" stroke="url(#sealIndigo)" stroke-width="1.8"/>
+    <text x="46" y="66" text-anchor="middle" fill="#A5B4FC" font-family="sans-serif" font-size="12" font-weight="bold">ENT</text>
+    <text x="84" y="46" fill="#818CF8" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">MULTI-EVENT • 5 KLIEN</text>
+    <text x="84" y="68" fill="#FFFFFF" font-family="Georgia, serif" font-size="18" font-weight="bold">Paket Enterprise</text>
+    <text x="84" y="90" fill="#E2E8F0" font-family="sans-serif" font-size="11">Rp 224.250 • 5 Workspace + AI</text>
+  </g>
+
+  <!-- 5. MITRA SILVER -->
+  <g transform="translate(316, 170)">
+    <rect width="268" height="122" rx="18" fill="#181C2B" stroke="#94A3B8" stroke-width="1.8"/>
+    <path d="M46 35L68 45V62C68 76 46 86 46 86C46 86 24 76 24 62V45L46 35Z" fill="#334155" stroke="#E2E8F0" stroke-width="1.5"/>
+    <text x="46" y="65" text-anchor="middle" fill="#F8FAFC" font-family="sans-serif" font-size="10" font-weight="bold">MEP</text>
+    <text x="84" y="46" fill="#CBD5E1" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">AGENCY LICENSE • 20 KLIEN</text>
+    <text x="84" y="68" fill="#FFFFFF" font-family="Georgia, serif" font-size="18" font-weight="bold">Mitra Silver</text>
+    <text x="84" y="90" fill="#94A3B8" font-family="sans-serif" font-size="11">Rp 517.500 • White-Label WO/EO</text>
+  </g>
+
+  <!-- 6. MITRA GOLD -->
+  <g transform="translate(608, 170)">
+    <rect width="268" height="122" rx="18" fill="#1E1910" stroke="url(#sealGold)" stroke-width="2.2"/>
+    <path d="M46 35L68 45V62C68 76 46 86 46 86C46 86 24 76 24 62V45L46 35Z" fill="url(#sealGold)"/>
+    <text x="46" y="65" text-anchor="middle" fill="#170F04" font-family="sans-serif" font-size="10" font-weight="bold">MEP</text>
+    <text x="84" y="46" fill="#FDE68A" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="1.5">UNLIMITED COMMERCIAL SEAL</text>
+    <text x="84" y="68" fill="#FAF0CA" font-family="Georgia, serif" font-size="18" font-weight="bold">Mitra Gold VVIP</text>
+    <text x="84" y="90" fill="#D4AF37" font-family="sans-serif" font-size="11">Rp 1.035.000 • Unlimited Klien</text>
+  </g>
+</svg>

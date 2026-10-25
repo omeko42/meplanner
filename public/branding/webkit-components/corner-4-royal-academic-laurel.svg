@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <linearGradient id="acadGold" x1="0" y1="0" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <!-- Art-Deco Geometric Double Corner Border -->
+  <path d="M10 150V10H150" stroke="url(#acadGold)" stroke-width="2.5"/>
+  <path d="M18 142V18H142" stroke="url(#acadGold)" stroke-width="1.2"/>
+  <rect x="10" y="10" width="22" height="22" stroke="url(#acadGold)" stroke-width="1.5"/>
+  <rect x="18" y="18" width="22" height="22" stroke="url(#acadGold)" stroke-width="1.2"/>
+
+  <!-- Diagonal Academic Laurel Sprig -->
+  <path d="M26 26L88 88" stroke="url(#acadGold)" stroke-width="1.4" stroke-dasharray="2 2"/>
+  <path d="M48 34C56 30 64 34 64 42C56 44 48 40 48 34Z" fill="url(#acadGold)"/>
+  <path d="M34 48C30 56 34 64 42 64C44 56 40 48 34 48Z" fill="url(#acadGold)"/>
+  <path d="M64 50C72 46 80 50 80 58C72 60 64 56 64 50Z" fill="url(#acadGold)" fill-opacity="0.8"/>
+  <path d="M50 64C46 72 50 80 58 80C60 72 56 64 50 64Z" fill="url(#acadGold)" fill-opacity="0.8"/>
+
+  <!-- Corner Diamond Crest -->
+  <path d="M29 18L40 29L29 40L18 29L29 18Z" fill="#162B4C" stroke="url(#acadGold)" stroke-width="1.6"/>
+  <circle cx="29" cy="29" r="3" fill="#FAF0CA"/>
+</svg>

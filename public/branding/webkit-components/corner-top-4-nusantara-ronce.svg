@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 16px 16px;
+      animation: gununganBreathe 6.2s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 88px 14px;
+      animation: ronceSwingA 3.8s ease-in-out infinite alternate;
+    }
+    .layer-front {
+      transform-origin: 42px 14px;
+      animation: ronceSwingB 3.1s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes gununganBreathe {
+      0% { transform: rotate(-1deg) scale(0.99); }
+      100% { transform: rotate(1.5deg) scale(1.02); }
+    }
+    @keyframes ronceSwingA {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5.5deg); }
+    }
+    @keyframes ronceSwingB {
+      0% { transform: rotate(4deg); }
+      100% { transform: rotate(-4.5deg); }
+    }
+  </style>
+  <defs>
+    <linearGradient id="kratonGoldT" x1="0" y1="0" x2="260" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="80%" stop-color="#B68D40"/>
+      <stop offset="100%" stop-color="#7A5918"/>
+    </linearGradient>
+    <radialGradient id="melatiBeadT" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="70%" stop-color="#F5EFE0"/>
+      <stop offset="100%" stop-color="#C7B99B"/>
+    </radialGradient>
+    <filter id="kratonShadowT" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#170C07" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Top-Left Kraton Ukiran Arch -->
+  <g class="layer-back" filter="url(#kratonShadowT)">
+    <path d="M8 220V20C8 13.373 13.373 8 20 8H220C156 20 102 54 62 104C32 140 16 180 8 220Z" fill="#2A170E" stroke="url(#kratonGoldT)" stroke-width="2.5"/>
+    <path d="M18 190V26C18 21.582 21.582 18 26 18H190C138 28 94 58 58 102C36 130 24 160 18 190Z" stroke="url(#kratonGoldT)" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <path d="M30 30C62 32 88 48 98 78C76 70 62 82 62 96C62 108 76 116 88 104" stroke="url(#kratonGoldT)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="34" cy="34" r="9" fill="url(#kratonGoldT)"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Hanging Jasmine Garland 1 (Hanging Downwards with Gravity) -->
+  <g class="layer-mid" filter="url(#kratonShadowT)">
+    <line x1="88" y1="14" x2="88" y2="216" stroke="#D4AF37" stroke-width="1.5"/>
+    <ellipse cx="88" cy="38" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="88" cy="60" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="88" cy="82" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="88" cy="104" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="88" cy="126" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="88" cy="148" rx="6.5" ry="9.5" fill="url(#melatiBeadT)"/>
+    <circle cx="88" cy="172" r="8.5" fill="url(#kratonGoldT)"/>
+    <path d="M88 180L80 208H96L88 180Z" fill="url(#kratonGoldT)"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Hanging Jasmine Garland 2 (Longer Ronce Hanging Downwards) -->
+  <g class="layer-front" filter="url(#kratonShadowT)">
+    <line x1="42" y1="18" x2="42" y2="254" stroke="#D4AF37" stroke-width="1.5"/>
+    <ellipse cx="42" cy="48" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="42" cy="74" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="42" cy="100" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="42" cy="126" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="42" cy="152" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <ellipse cx="42" cy="178" rx="7.5" ry="10.5" fill="url(#melatiBeadT)"/>
+    <circle cx="42" cy="204" r="9.5" fill="url(#kratonGoldT)"/>
+    <path d="M42 214L33 246H51L42 214Z" fill="url(#kratonGoldT)"/>
+  </g>
+</svg>

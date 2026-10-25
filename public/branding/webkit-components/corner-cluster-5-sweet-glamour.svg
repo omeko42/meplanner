@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 28px 292px;
+      animation: balloonFloat 4.8s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 36px 284px;
+      animation: swayMid 3.8s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 48px 272px;
+      animation: swayFront 3.0s ease-in-out infinite alternate;
+    }
+    .sparkle-star {
+      transform-origin: center;
+      animation: starPulse 2.0s ease-in-out infinite alternate;
+    }
+    @keyframes balloonFloat {
+      0% { transform: translateY(0px) rotate(-3deg); }
+      100% { transform: translateY(-10px) rotate(4deg); }
+    }
+    @keyframes swayMid {
+      0% { transform: rotate(3.5deg); }
+      100% { transform: rotate(-4deg); }
+    }
+    @keyframes swayFront {
+      0% { transform: rotate(-2deg) scale(1); }
+      100% { transform: rotate(3deg) scale(1.04); }
+    }
+    @keyframes starPulse {
+      0% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+  <defs>
+    <radialGradient id="roseBalloon" cx="35%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="#FFF0F5"/>
+      <stop offset="45%" stop-color="#E893AD"/>
+      <stop offset="85%" stop-color="#B84B6B"/>
+      <stop offset="100%" stop-color="#7A243E"/>
+    </radialGradient>
+    <radialGradient id="goldBalloon" cx="35%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="#FFFBEB"/>
+      <stop offset="50%" stop-color="#E5C158"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </radialGradient>
+    <radialGradient id="peonyBloom" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#F7B2C8"/>
+      <stop offset="100%" stop-color="#C96480"/>
+    </radialGradient>
+    <filter id="glamShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#5E1B30" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): 3D Metallic Rose-Gold & Champagne Balloons + Ribbon -->
+  <g class="layer-back" filter="url(#glamShadow)">
+    <path d="M58 148C54 196 42 242 28 292" stroke="#D4AF37" stroke-width="1.5"/>
+    <path d="M112 164C92 212 64 252 34 292" stroke="#C96480" stroke-width="1.5"/>
+    <!-- Metallic Rose Balloon -->
+    <ellipse cx="58" cy="96" rx="38" ry="48" fill="url(#roseBalloon)"/>
+    <ellipse cx="44" cy="76" rx="8" ry="16" transform="rotate(-20 44 76)" fill="#FFFFFF" fill-opacity="0.55"/>
+    <!-- Champagne Gold Balloon -->
+    <ellipse cx="114" cy="122" rx="32" ry="40" fill="url(#goldBalloon)"/>
+    <ellipse cx="102" cy="106" rx="7" ry="13" transform="rotate(-20 102 106)" fill="#FFFFFF" fill-opacity="0.55"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Pearl Chains & Blush Foliage -->
+  <g class="layer-mid" filter="url(#glamShadow)">
+    <path d="M36 284C108 248 176 238 258 256" stroke="#D4AF37" stroke-width="1.8" stroke-dasharray="2 8" stroke-linecap="round"/>
+    <circle cx="152" cy="238" r="7" fill="#FFFDF9" stroke="#C96480" stroke-width="1.2"/>
+    <circle cx="182" cy="238" r="6" fill="#FFFDF9" stroke="#C96480" stroke-width="1.2"/>
+    <circle cx="212" cy="244" r="5" fill="#FFFDF9" stroke="#C96480" stroke-width="1.2"/>
+    <!-- Sparkles -->
+    <g class="sparkle-star">
+      <path d="M168 88C168 98 172 102 182 102C172 102 168 106 168 116C168 106 164 102 154 102C164 102 168 98 168 88Z" fill="#D4AF37"/>
+      <path d="M214 156C214 163 217 166 224 166C217 166 214 169 214 176C214 169 211 166 204 166C211 166 214 163 214 156Z" fill="#E893AD"/>
+    </g>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Blooming Blush Peony Cluster -->
+  <g class="layer-front" filter="url(#glamShadow)">
+    <g transform="translate(88, 224)">
+      <circle cx="-14" cy="-12" r="24" fill="url(#peonyBloom)"/>
+      <circle cx="14" cy="-12" r="24" fill="url(#peonyBloom)"/>
+      <circle cx="-14" cy="14" r="24" fill="url(#peonyBloom)"/>
+      <circle cx="14" cy="14" r="24" fill="url(#peonyBloom)"/>
+      <circle cx="0" cy="0" r="17" fill="#FFF0F5"/>
+      <circle cx="0" cy="0" r="6" fill="#D4AF37"/>
+    </g>
+    <g transform="translate(148, 246)">
+      <circle cx="-10" cy="-10" r="17" fill="url(#peonyBloom)"/>
+      <circle cx="10" cy="-10" r="17" fill="url(#peonyBloom)"/>
+      <circle cx="-10" cy="10" r="17" fill="url(#peonyBloom)"/>
+      <circle cx="10" cy="10" r="17" fill="url(#peonyBloom)"/>
+      <circle cx="0" cy="0" r="11" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>

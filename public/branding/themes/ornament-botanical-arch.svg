@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="sageBg" x1="0" y1="0" x2="400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F7FAF7"/>
+      <stop offset="55%" stop-color="#EDF3EE"/>
+      <stop offset="100%" stop-color="#DCE8DF"/>
+    </linearGradient>
+    <linearGradient id="sageLeaf" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5E8468"/>
+      <stop offset="100%" stop-color="#3A5843"/>
+    </linearGradient>
+    <linearGradient id="champagneStroke" x1="60" y1="40" x2="340" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C5A059"/>
+      <stop offset="50%" stop-color="#8F6E32"/>
+      <stop offset="100%" stop-color="#C5A059"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Soft Botanical Alabaster Canvas -->
+  <rect width="400" height="520" rx="28" fill="url(#sageBg)"/>
+
+  <!-- Airy Arch Dome Window -->
+  <path
+    d="M68 210C68 137.1 127.1 78 200 78C272.9 78 332 137.1 332 210V456C332 467 323 476 312 476H88C77 476 68 467 68 456V210Z"
+    fill="#FFFFFF"
+    fill-opacity="0.86"
+    stroke="url(#champagneStroke)"
+    stroke-width="1.6"
+  />
+  <path
+    d="M78 210C78 142.6 132.6 88 200 88C267.4 88 322 142.6 322 210V448C322 458 314 466 304 466H96C86 466 78 458 78 448V210Z"
+    stroke="#6E9277"
+    stroke-width="0.9"
+    stroke-dasharray="3 3"
+    stroke-opacity="0.55"
+  />
+
+  <!-- Top Left Eucalyptus & Olive Branch Wreath -->
+  <g>
+    <path d="M44 176C64 114 118 68 188 56" stroke="#496A52" stroke-width="1.8" stroke-linecap="round"/>
+    <ellipse cx="68" cy="134" rx="18" ry="9" transform="rotate(-48 68 134)" fill="url(#sageLeaf)" fill-opacity="0.85"/>
+    <ellipse cx="96" cy="100" rx="20" ry="9.5" transform="rotate(-35 96 100)" fill="#7CA086" fill-opacity="0.85"/>
+    <ellipse cx="134" cy="74" rx="18" ry="8.5" transform="rotate(-20 134 74)" fill="url(#sageLeaf)" fill-opacity="0.85"/>
+    <ellipse cx="92" cy="132" rx="15" ry="7.5" transform="rotate(15 92 132)" fill="#96B59E" fill-opacity="0.75"/>
+    <ellipse cx="128" cy="98" rx="16" ry="8" transform="rotate(25 128 98)" fill="url(#sageLeaf)" fill-opacity="0.7"/>
+    <circle cx="112" cy="84" r="5" fill="#FAF3E3" stroke="#C5A059" stroke-width="1.2"/>
+    <circle cx="78" cy="116" r="4" fill="#FAF3E3" stroke="#C5A059" stroke-width="1.2"/>
+  </g>
+
+  <!-- Bottom Right Botanical Sprig -->
+  <g>
+    <path d="M356 364C336 426 282 472 212 484" stroke="#496A52" stroke-width="1.8" stroke-linecap="round"/>
+    <ellipse cx="332" cy="406" rx="18" ry="9" transform="rotate(-48 332 406)" fill="url(#sageLeaf)" fill-opacity="0.85"/>
+    <ellipse cx="304" cy="440" rx="20" ry="9.5" transform="rotate(-35 304 440)" fill="#7CA086" fill-opacity="0.85"/>
+    <ellipse cx="266" cy="466" rx="18" ry="8.5" transform="rotate(-20 266 466)" fill="url(#sageLeaf)" fill-opacity="0.85"/>
+    <circle cx="288" cy="456" r="5" fill="#FAF3E3" stroke="#C5A059" stroke-width="1.2"/>
+  </g>
+
+  <!-- Center Botanical Emblem -->
+  <circle cx="200" cy="196" r="46" fill="#F2F7F3" stroke="url(#champagneStroke)" stroke-width="1.5"/>
+  <text x="200" y="203" text-anchor="middle" fill="#3A5843" font-family="Georgia, serif" font-style="italic" font-size="22" font-weight="bold">G &amp; A</text>
+  <text x="200" y="280" text-anchor="middle" fill="#2F4837" font-family="Georgia, serif" font-size="13" letter-spacing="3">GARDENIA BOTANICAL</text>
+</svg>

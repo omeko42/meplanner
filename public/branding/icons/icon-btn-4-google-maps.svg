@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="map-gold" x1="8" y1="10" x2="56" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .nav-arrow { transform-origin: 32px 32px; animation: steerArrow 3s ease-in-out infinite; }
+      @keyframes steerArrow {
+        0%, 100% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(12deg) scale(1.08); }
+      }
+    </style>
+  </defs>
+  <!-- Folded Map Background -->
+  <path d="M8 16 L24 10 L40 16 L56 10 V48 L40 54 L24 48 L8 54 V16 Z" fill="#1E293B" stroke="url(#map-gold)" stroke-width="2.2" stroke-linejoin="round" />
+  <line x1="24" y1="10" x2="24" y2="48" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="3 3" />
+  <line x1="40" y1="16" x2="40" y2="54" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="3 3" />
+  <!-- GPS Navigation Arrow -->
+  <g class="nav-arrow">
+    <path d="M44 20 L20 30 L29 34 L33 43 L44 20 Z" fill="url(#map-gold)" stroke="#FFFBEB" stroke-width="1.5" stroke-linejoin="round" />
+  </g>
+</svg>

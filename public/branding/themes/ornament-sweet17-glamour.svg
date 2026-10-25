@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="blushBg" x1="0" y1="0" x2="400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF9FB"/>
+      <stop offset="50%" stop-color="#FCEEF3"/>
+      <stop offset="100%" stop-color="#F6DCE6"/>
+    </linearGradient>
+    <linearGradient id="roseGold" x1="40" y1="40" x2="360" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F4B8C8"/>
+      <stop offset="50%" stop-color="#C96480"/>
+      <stop offset="100%" stop-color="#8F3952"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Blush Silk Background -->
+  <rect width="400" height="520" rx="28" fill="url(#blushBg)"/>
+  <rect x="18" y="18" width="364" height="484" rx="22" stroke="url(#roseGold)" stroke-width="1.4" stroke-opacity="0.65"/>
+
+  <!-- Floating Celebration Sparkles -->
+  <path d="M84 82C84 92 88 96 98 96C88 96 84 100 84 110C84 100 80 96 70 96C80 96 84 92 84 82Z" fill="#C96480"/>
+  <path d="M322 104C322 111 325 114 332 114C325 114 322 117 322 124C322 117 319 114 312 114C319 114 322 111 322 104Z" fill="#D4AF37"/>
+  <circle cx="308" cy="78" r="3.5" fill="#C96480" fill-opacity="0.6"/>
+  <circle cx="96" cy="136" r="3" fill="#D4AF37" fill-opacity="0.7"/>
+
+  <!-- Crown Tiara Crest -->
+  <path d="M164 86L176 62L200 78L224 62L236 86H164Z" stroke="url(#roseGold)" stroke-width="2" fill="#FCEEF3"/>
+  <circle cx="200" cy="56" r="4" fill="#C96480"/>
+
+  <!-- Crystal Circular Spotlight Portrait Ring -->
+  <circle cx="200" cy="196" r="76" fill="#FFFFFF" stroke="url(#roseGold)" stroke-width="2.5"/>
+  <circle cx="200" cy="196" r="68" stroke="#D4AF37" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="200" y="188" text-anchor="middle" fill="#C96480" font-family="Georgia, serif" font-style="italic" font-size="15">Sweet Seventeen</text>
+  <text x="200" y="218" text-anchor="middle" fill="#7A2841" font-family="Georgia, serif" font-size="28" font-weight="bold">Aurelia • 17</text>
+
+  <!-- Glassmorphism Countdown Pills -->
+  <g transform="translate(56, 306)">
+    <rect x="0" y="0" width="64" height="58" rx="14" fill="#FFFFFF" fill-opacity="0.85" stroke="#E8B4C4" stroke-width="1.2"/>
+    <text x="32" y="28" text-anchor="middle" fill="#7A2841" font-family="sans-serif" font-size="16" font-weight="bold">17</text>
+    <text x="32" y="45" text-anchor="middle" fill="#A64B67" font-family="sans-serif" font-size="9" font-weight="bold">DAYS</text>
+
+    <rect x="74" y="0" width="64" height="58" rx="14" fill="#FFFFFF" fill-opacity="0.85" stroke="#E8B4C4" stroke-width="1.2"/>
+    <text x="106" y="28" text-anchor="middle" fill="#7A2841" font-family="sans-serif" font-size="16" font-weight="bold">19</text>
+    <text x="106" y="45" text-anchor="middle" fill="#A64B67" font-family="sans-serif" font-size="9" font-weight="bold">HOURS</text>
+
+    <rect x="148" y="0" width="64" height="58" rx="14" fill="#FFFFFF" fill-opacity="0.85" stroke="#E8B4C4" stroke-width="1.2"/>
+    <text x="180" y="28" text-anchor="middle" fill="#7A2841" font-family="sans-serif" font-size="16" font-weight="bold">00</text>
+    <text x="180" y="45" text-anchor="middle" fill="#A64B67" font-family="sans-serif" font-size="9" font-weight="bold">MINS</text>
+
+    <rect x="222" y="0" width="64" height="58" rx="14" fill="#FFFFFF" fill-opacity="0.85" stroke="#E8B4C4" stroke-width="1.2"/>
+    <text x="254" y="28" text-anchor="middle" fill="#7A2841" font-family="sans-serif" font-size="16" font-weight="bold">26</text>
+    <text x="254" y="45" text-anchor="middle" fill="#A64B67" font-family="sans-serif" font-size="9" font-weight="bold">SECS</text>
+  </g>
+
+  <!-- RSVP Pill Button -->
+  <rect x="96" y="418" width="208" height="42" rx="21" fill="url(#roseGold)"/>
+  <text x="200" y="443" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-size="10" font-weight="bold" letter-spacing="2">JOIN THE SOIRÉE</text>
+</svg>

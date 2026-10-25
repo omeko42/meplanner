@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" fill="none">
+  <defs>
+    <linearGradient id="archGold" x1="0" y1="0" x2="320" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <!-- Transparent Center Gunungan Arch Frame (Overlay on Couple Portrait) -->
+  <path
+    d="M160 16C160 16 256 108 280 218C298 304 252 368 160 384C68 368 22 304 40 218C64 108 160 16 160 16Z"
+    stroke="url(#archGold)"
+    stroke-width="6"
+  />
+  <path
+    d="M160 30C160 30 246 116 268 218C284 294 242 354 160 370C78 354 36 294 52 218C74 116 160 30 160 30Z"
+    stroke="url(#archGold)"
+    stroke-width="1.8"
+    stroke-dasharray="5 4"
+  />
+  <!-- Top Crown Finial -->
+  <path d="M160 2L170 20L160 32L150 20L160 2Z" fill="url(#archGold)"/>
+  <!-- Bottom Kraton Ribbon -->
+  <rect x="82" y="362" width="156" height="28" rx="14" fill="#2C1910" stroke="url(#archGold)" stroke-width="2"/>
+  <text x="160" y="380" text-anchor="middle" fill="#FAF0CA" font-family="Georgia, serif" font-size="10" font-weight="bold" letter-spacing="2.5">MEMPELAI BERBAHAGIA</text>
+</svg>

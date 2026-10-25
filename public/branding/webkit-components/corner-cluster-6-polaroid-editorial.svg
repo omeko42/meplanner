@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 24px 296px;
+      animation: paperFlutter 5.5s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 40px 280px;
+      animation: pressedSway 3.9s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 140px 210px;
+      animation: stampHover 3.2s ease-in-out infinite alternate;
+    }
+    @keyframes paperFlutter {
+      0% { transform: rotate(-2deg); }
+      100% { transform: rotate(2.5deg); }
+    }
+    @keyframes pressedSway {
+      0% { transform: rotate(3deg); }
+      100% { transform: rotate(-4deg); }
+    }
+    @keyframes stampHover {
+      0% { transform: scale(0.98) rotate(-4deg); }
+      100% { transform: scale(1.03) rotate(-1deg); }
+    }
+  </style>
+  <defs>
+    <filter id="edShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1C1917" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Torn Editorial Craft Paper & Mini Polaroid Corner -->
+  <g class="layer-back" filter="url(#edShadow)">
+    <path d="M12 308V124L42 132L68 118L98 136L134 128L164 152L192 146L218 188L254 218L276 264L304 308H12Z" fill="#EFE6D8" stroke="#D6C7B2" stroke-width="1.2"/>
+    <rect x="28" y="148" width="96" height="114" rx="4" transform="rotate(-8 76 205)" fill="#FFFFFF" stroke="#D6D3D1"/>
+    <rect x="36" y="156" width="80" height="80" transform="rotate(-8 76 196)" fill="#C86D51" fill-opacity="0.85"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Pressed Dried Botanical Sprig & Masking Tape Strip -->
+  <g class="layer-mid" filter="url(#edShadow)">
+    <path d="M36 292C78 212 126 142 184 78" stroke="#57534E" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="96" cy="186" rx="18" ry="8" transform="rotate(-45 96 186)" fill="#78716C"/>
+    <ellipse cx="128" cy="146" rx="18" ry="8" transform="rotate(-38 128 146)" fill="#A8A29E"/>
+    <ellipse cx="158" cy="110" rx="15" ry="7" transform="rotate(-30 158 110)" fill="#78716C"/>
+    <!-- Translucent Masking Tape Strip holding the Sprig -->
+    <rect x="64" y="168" width="84" height="24" transform="rotate(28 106 180)" fill="#F5EBE0" fill-opacity="0.86" stroke="#D6C7B2" stroke-width="0.8"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Editorial Postmark Stamp & Terracotta Wax Dot -->
+  <g class="layer-front" filter="url(#edShadow)">
+    <circle cx="156" cy="226" r="44" fill="#FFFDF9" fill-opacity="0.9" stroke="#C86D51" stroke-width="2" stroke-dasharray="5 3"/>
+    <circle cx="156" cy="226" r="35" stroke="#C86D51" stroke-width="1.2"/>
+    <text x="156" y="218" text-anchor="middle" fill="#C86D51" font-family="monospace" font-size="8.5" font-weight="bold" letter-spacing="1.5">SPECIAL ISSUE</text>
+    <text x="156" y="234" text-anchor="middle" fill="#1C1917" font-family="Georgia, serif" font-style="italic" font-size="13" font-weight="bold">Save the Date</text>
+  </g>
+</svg>

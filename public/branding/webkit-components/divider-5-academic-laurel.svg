@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 56" fill="none">
+  <line x1="20" y1="28" x2="174" y2="28" stroke="#D4AF37" stroke-width="1.5"/>
+  <line x1="246" y1="28" x2="400" y2="28" stroke="#D4AF37" stroke-width="1.5"/>
+  <line x1="60" y1="33" x2="174" y2="33" stroke="#D4AF37" stroke-width="0.8" stroke-opacity="0.6"/>
+  <line x1="246" y1="33" x2="360" y2="33" stroke="#D4AF37" stroke-width="0.8" stroke-opacity="0.6"/>
+  <!-- Center Heraldic Diamond & Mortarboard -->
+  <path d="M210 8L230 28L210 48L190 28L210 8Z" fill="#162B4C" stroke="#D4AF37" stroke-width="1.8"/>
+  <path d="M210 20L198 26L210 32L222 26L210 20Z" fill="#FAF0CA"/>
+</svg>

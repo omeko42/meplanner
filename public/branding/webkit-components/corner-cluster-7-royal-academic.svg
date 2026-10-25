@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 20px 300px;
+      animation: decoBreatheB 5.8s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 28px 292px;
+      animation: laurelSwayUp 4.0s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 64px 256px;
+      animation: crestPulseB 3.2s ease-in-out infinite alternate;
+    }
+    @keyframes decoBreatheB {
+      0% { transform: scale(0.99); }
+      100% { transform: scale(1.02); }
+    }
+    @keyframes laurelSwayUp {
+      0% { transform: rotate(-3deg); }
+      100% { transform: rotate(3.5deg); }
+    }
+    @keyframes crestPulseB {
+      0% { transform: scale(0.97) rotate(-2deg); }
+      100% { transform: scale(1.04) rotate(2deg); }
+    }
+  </style>
+  <defs>
+    <linearGradient id="acadGoldB" x1="0" y1="320" x2="260" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B6914"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#FAF0CA"/>
+    </linearGradient>
+    <filter id="acadShadowB" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#091326" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Bottom-Left Art-Deco Royal Fan Rising from (0,320) -->
+  <g class="layer-back" filter="url(#acadShadowB)">
+    <path d="M12 100V308H220C162 296 112 262 72 216C42 182 22 142 12 100Z" fill="#132747" stroke="url(#acadGoldB)" stroke-width="2.5"/>
+    <path d="M22 132V298H188" stroke="url(#acadGoldB)" stroke-width="1.2"/>
+    <line x1="22" y1="298" x2="146" y2="174" stroke="url(#acadGoldB)" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="22" y1="298" x2="176" y2="224" stroke="url(#acadGoldB)" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="22" y1="298" x2="96" y2="144" stroke="url(#acadGoldB)" stroke-width="1" stroke-opacity="0.6"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Upright Golden Laurel Branches Sweeping Upward & Rightward -->
+  <g class="layer-mid" filter="url(#acadShadowB)">
+    <!-- Vertical Laurel Branch -->
+    <path d="M36 292C44 224 68 164 108 112" stroke="url(#acadGoldB)" stroke-width="2.4" stroke-linecap="round"/>
+    <ellipse cx="44" cy="236" rx="17" ry="7.5" transform="rotate(-65 44 236)" fill="url(#acadGoldB)"/>
+    <ellipse cx="58" cy="194" rx="17" ry="7.5" transform="rotate(-55 58 194)" fill="url(#acadGoldB)"/>
+    <ellipse cx="78" cy="154" rx="16" ry="7" transform="rotate(-45 78 154)" fill="#FAF0CA"/>
+    <!-- Horizontal Laurel Branch -->
+    <path d="M36 292C104 282 164 256 218 214" stroke="url(#acadGoldB)" stroke-width="2.4" stroke-linecap="round"/>
+    <ellipse cx="96" cy="276" rx="17" ry="7.5" transform="rotate(-15 96 276)" fill="url(#acadGoldB)"/>
+    <ellipse cx="138" cy="260" rx="17" ry="7.5" transform="rotate(-25 138 260)" fill="url(#acadGoldB)"/>
+    <ellipse cx="178" cy="238" rx="16" ry="7" transform="rotate(-35 178 238)" fill="#FAF0CA"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Upright Cum Laude Star Rosette & Rolled Diploma Scroll at Bottom-Left -->
+  <g class="layer-front" filter="url(#acadShadowB)">
+    <!-- Rolled Parchment Scroll -->
+    <rect x="38" y="246" width="84" height="22" rx="8" transform="rotate(-28 80 257)" fill="#FAF0CA" stroke="url(#acadGoldB)" stroke-width="2"/>
+    <rect x="72" y="245" width="14" height="24" rx="2" transform="rotate(-28 79 257)" fill="#B91C1C"/>
+    <!-- Golden Academic Star Medallion -->
+    <circle cx="58" cy="262" r="24" fill="#0F1E38" stroke="url(#acadGoldB)" stroke-width="2.5"/>
+    <polygon points="58,243 63,255 76,256 66,264 69,277 58,270 47,277 50,264 40,256 53,255" fill="url(#acadGoldB)"/>
+  </g>
+</svg>

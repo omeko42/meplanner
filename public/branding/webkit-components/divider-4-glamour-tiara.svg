@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 56" fill="none">
+  <line x1="28" y1="32" x2="168" y2="32" stroke="#D47491" stroke-width="1.2" stroke-opacity="0.65"/>
+  <line x1="252" y1="32" x2="392" y2="32" stroke="#D47491" stroke-width="1.2" stroke-opacity="0.65"/>
+  <!-- Center Crown Tiara -->
+  <path d="M182 36L190 18L210 30L230 18L238 36H182Z" fill="#FCEEF3" stroke="#C96480" stroke-width="1.8" stroke-linejoin="round"/>
+  <circle cx="210" cy="12" r="3.5" fill="#D4AF37"/>
+  <circle cx="188" cy="14" r="2.5" fill="#C96480"/>
+  <circle cx="232" cy="14" r="2.5" fill="#C96480"/>
+  <circle cx="160" cy="32" r="4" fill="#FCEEF3" stroke="#C96480" stroke-width="1.2"/>
+  <circle cx="260" cy="32" r="4" fill="#FCEEF3" stroke="#C96480" stroke-width="1.2"/>
+</svg>

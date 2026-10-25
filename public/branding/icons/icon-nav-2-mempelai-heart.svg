@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="gold-grad2" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <linearGradient id="heart-main" x1="12" y1="16" x2="46" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB7185" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+    <style>
+      .float-hearts { transform-origin: 32px 34px; animation: floatCouple 3s ease-in-out infinite; }
+      .sparkle-star { transform-origin: 49px 17px; animation: spinSparkle 3.2s ease-in-out infinite; }
+      @keyframes floatCouple {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-2.5px) scale(1.04); }
+      }
+      @keyframes spinSparkle {
+        0%, 100% { transform: scale(0.85) rotate(0deg); opacity: 0.7; }
+        50% { transform: scale(1.2) rotate(25deg); opacity: 1; }
+      }
+    </style>
+  </defs>
+  <!-- Outer Ornate Wreath Circle -->
+  <circle cx="32" cy="34" r="24" stroke="url(#gold-grad2)" stroke-width="1.8" stroke-dasharray="5 3" fill="#D4AF37" fill-opacity="0.06" />
+  <!-- Twin Overlapping Hearts -->
+  <g class="float-hearts">
+    <!-- Left Primary Heart -->
+    <path d="M28 48 C28 48 12 37 12 26.5 C12 21 16.2 17 21.2 17 C24.4 17 26.8 18.8 28 21.2 C29.2 18.8 31.6 17 34.8 17 C39.8 17 44 21 44 26.5 C44 37 28 48 28 48 Z" fill="url(#heart-main)" stroke="#FFF1F2" stroke-width="1.2" />
+    <!-- Right Golden Companion Heart -->
+    <path d="M40 50 C40 50 28 41.5 28 33.5 C28 29.2 31.2 26 35 26 C37.5 26 39.2 27.4 40 29.2 C40.8 27.4 42.5 26 45 26 C48.8 26 52 29.2 52 33.5 C52 41.5 40 50 40 50 Z" fill="url(#gold-grad2)" stroke="#FFFBEB" stroke-width="1.4" />
+  </g>
+  <!-- Top Sparkle -->
+  <g class="sparkle-star">
+    <path d="M49 9 C49 14.5 51.5 17 57 17 C51.5 17 49 19.5 49 25 C49 19.5 46.5 17 41 17 C46.5 17 49 14.5 49 9 Z" fill="#FDE68A" />
+  </g>
+</svg>

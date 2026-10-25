@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <linearGradient id="ukirGold" x1="0" y1="0" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="40%" stop-color="#D4AF37"/>
+      <stop offset="80%" stop-color="#B68D40"/>
+      <stop offset="100%" stop-color="#7A5918"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer Double Kraton Frame Lines -->
+  <path d="M8 152V28C8 16.954 16.954 8 28 8H152" stroke="url(#ukirGold)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M16 144V34C16 24.059 24.059 16 34 16H144" stroke="url(#ukirGold)" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Javanese Lung-lungan / Ukiran Curling Filigree -->
+  <path d="M16 96C18 60 36 38 66 28C54 44 58 62 72 62C84 62 90 50 82 40C76 32 62 34 58 44" stroke="url(#ukirGold)" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M96 16C60 18 38 36 28 66C44 54 62 58 62 72C62 84 50 90 40 82C32 76 34 62 44 58" stroke="url(#ukirGold)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Kawung Lotus Petal Motif at Corner Apex -->
+  <path d="M22 22C34 20 44 26 46 38C34 40 24 34 22 22Z" fill="url(#ukirGold)" fill-opacity="0.85"/>
+  <path d="M22 22C20 34 26 44 38 46C40 34 34 24 22 22Z" fill="url(#ukirGold)" fill-opacity="0.65"/>
+  <circle cx="24" cy="24" r="5" fill="#FAF0CA" stroke="#7A5918" stroke-width="1.2"/>
+  <circle cx="52" cy="52" r="3.5" fill="url(#ukirGold)"/>
+  <circle cx="26" cy="78" r="2.5" fill="url(#ukirGold)"/>
+  <circle cx="78" cy="26" r="2.5" fill="url(#ukirGold)"/>
+</svg>

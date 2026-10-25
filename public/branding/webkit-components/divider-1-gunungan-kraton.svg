@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 56" fill="none">
+  <defs>
+    <linearGradient id="divGold" x1="0" y1="28" x2="420" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#D4AF37"/>
+      <stop offset="50%" stop-color="#FAF0CA"/>
+      <stop offset="75%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <line x1="16" y1="28" x2="172" y2="28" stroke="url(#divGold)" stroke-width="1.5"/>
+  <line x1="248" y1="28" x2="404" y2="28" stroke="url(#divGold)" stroke-width="1.5"/>
+  <!-- Left & Right Curling Kraton Scrolls -->
+  <path d="M148 28C156 18 168 18 174 28C168 38 156 38 148 28Z" stroke="#D4AF37" stroke-width="1.2"/>
+  <path d="M272 28C264 18 252 18 246 28C252 38 264 38 272 28Z" stroke="#D4AF37" stroke-width="1.2"/>
+  <!-- Center Mini Gunungan Kayon -->
+  <path d="M210 6C210 6 226 20 228 34C229 43 221 50 210 52C199 50 191 43 192 34C194 20 210 6 210 6Z" fill="#2C1910" stroke="#D4AF37" stroke-width="1.8"/>
+  <path d="M210 14V46M202 30L210 24L218 30M200 38L210 32L220 38" stroke="#FAF0CA" stroke-width="1.1" stroke-linecap="round"/>
+</svg>

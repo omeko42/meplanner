@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 24px 296px;
+      animation: pampasWave 6.0s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 36px 284px;
+      animation: swayMid 4.3s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 48px 272px;
+      animation: swayFront 3.4s ease-in-out infinite alternate;
+    }
+    .fairy-bulb {
+      animation: twinkleBulb 2.2s ease-in-out infinite alternate;
+    }
+    @keyframes pampasWave {
+      0% { transform: rotate(-4.5deg) skewX(-2deg); }
+      100% { transform: rotate(5deg) skewX(2deg); }
+    }
+    @keyframes swayMid {
+      0% { transform: rotate(3.5deg); }
+      100% { transform: rotate(-4deg); }
+    }
+    @keyframes swayFront {
+      0% { transform: rotate(-2.5deg) scale(1); }
+      100% { transform: rotate(3deg) scale(1.03); }
+    }
+    @keyframes twinkleBulb {
+      0% { opacity: 0.45; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1.15); }
+    }
+  </style>
+  <defs>
+    <radialGradient id="terraRose" cx="38%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#F7C5A8"/>
+      <stop offset="55%" stop-color="#C86D51"/>
+      <stop offset="100%" stop-color="#7C341E"/>
+    </radialGradient>
+    <radialGradient id="amberRose" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="55%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </radialGradient>
+    <linearGradient id="pampasPlume" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFDF9"/>
+      <stop offset="60%" stop-color="#E8D8C3"/>
+      <stop offset="100%" stop-color="#C2A887"/>
+    </linearGradient>
+    <filter id="rusticShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#29170E" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Fluffy Pampas Plumes & Dried Sun Palm Spear -->
+  <g class="layer-back" filter="url(#rusticShadow)">
+    <!-- Dried Palm Fan Spear -->
+    <path d="M24 296L42 112L64 134L86 98L104 128L132 104L142 142L172 132L24 296Z" fill="#D5BC9B" stroke="#9C7E5A" stroke-width="1.2"/>
+    <!-- Fluffy Pampas Plume 1 (Vertical) -->
+    <ellipse cx="48" cy="116" rx="22" ry="74" transform="rotate(-12 48 116)" fill="url(#pampasPlume)"/>
+    <!-- Fluffy Pampas Plume 2 (Horizontal) -->
+    <ellipse cx="198" cy="248" rx="72" ry="22" transform="rotate(-14 198 248)" fill="url(#pampasPlume)"/>
+  </g>
+
+  <!-- LAYER 2 (MID): Espresso Eucalyptus & Warm Twinkling Fairy Lights -->
+  <g class="layer-mid" filter="url(#rusticShadow)">
+    <path d="M32 288C84 210 144 152 212 96" stroke="#6B442A" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="96" cy="184" rx="18" ry="10" transform="rotate(-38 96 184)" fill="#8C583A"/>
+    <ellipse cx="136" cy="148" rx="18" ry="10" transform="rotate(-32 136 148)" fill="#A66B49"/>
+    <ellipse cx="174" cy="118" rx="15" ry="8" transform="rotate(-25 174 118)" fill="#8C583A"/>
+
+    <!-- Fairy Light String & Glowing Bulbs -->
+    <g class="fairy-bulb">
+      <circle cx="76" cy="82" r="10" fill="#FDE68A" fill-opacity="0.35"/>
+      <circle cx="76" cy="82" r="4.5" fill="#FEF08A"/>
+      <circle cx="156" cy="108" r="10" fill="#FDE68A" fill-opacity="0.35"/>
+      <circle cx="156" cy="108" r="4.5" fill="#FEF08A"/>
+      <circle cx="222" cy="188" r="10" fill="#FDE68A" fill-opacity="0.35"/>
+      <circle cx="222" cy="188" r="4.5" fill="#FEF08A"/>
+    </g>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Burnt Terracotta & Amber Roses -->
+  <g class="layer-front" filter="url(#rusticShadow)">
+    <!-- Terracotta Rose 1 -->
+    <g transform="translate(88, 218)">
+      <circle cx="-13" cy="-12" r="22" fill="url(#terraRose)"/>
+      <circle cx="13" cy="-12" r="22" fill="url(#terraRose)"/>
+      <circle cx="-13" cy="12" r="22" fill="url(#terraRose)"/>
+      <circle cx="13" cy="12" r="22" fill="url(#terraRose)"/>
+      <circle cx="0" cy="0" r="15" fill="#F7C5A8"/>
+      <circle cx="0" cy="0" r="6" fill="#7C341E"/>
+    </g>
+    <!-- Amber Rust Rose 2 -->
+    <g transform="translate(148, 238)">
+      <circle cx="-10" cy="-10" r="17" fill="url(#amberRose)"/>
+      <circle cx="10" cy="-10" r="17" fill="url(#amberRose)"/>
+      <circle cx="-10" cy="10" r="17" fill="url(#amberRose)"/>
+      <circle cx="10" cy="10" r="17" fill="url(#amberRose)"/>
+      <circle cx="0" cy="0" r="11" fill="#FDE68A"/>
+    </g>
+  </g>
+</svg>

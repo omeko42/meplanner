@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 120px 80px;
+      animation: cloudDrift 5.2s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 92px 140px;
+      animation: hotAirFloat 3.8s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 168px 16px;
+      animation: starSwing 2.8s ease-in-out infinite alternate;
+    }
+    @keyframes cloudDrift {
+      0% { transform: translateX(-4px) translateY(0px); }
+      100% { transform: translateX(6px) translateY(-4px); }
+    }
+    @keyframes hotAirFloat {
+      0% { transform: translateY(4px) rotate(-3deg); }
+      100% { transform: translateY(-10px) rotate(3.5deg); }
+    }
+    @keyframes starSwing {
+      0% { transform: rotate(-7deg); }
+      100% { transform: rotate(7deg); }
+    }
+  </style>
+  <defs>
+    <filter id="kidsShadowT" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#1E3A8A" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Top-Left Pastel Rainbow Arch & Fluffy Clouds -->
+  <g class="layer-back" filter="url(#kidsShadowT)">
+    <path d="M16 196C16 96 96 16 196 16" stroke="#FCA5A5" stroke-width="13" stroke-linecap="round"/>
+    <path d="M29 196C29 104 104 29 196 29" stroke="#FDE68A" stroke-width="13" stroke-linecap="round"/>
+    <path d="M42 196C42 112 112 42 196 42" stroke="#93C5FD" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="52" cy="68" r="32" fill="#FFFFFF"/>
+    <circle cx="92" cy="58" r="38" fill="#FFFFFF"/>
+    <circle cx="136" cy="70" r="28" fill="#FFFFFF"/>
+    <circle cx="40" cy="106" r="26" fill="#FFFFFF"/>
+  </g>
+
+  <!-- LAYER 2 (MID): UPRIGHT 3D Hot-Air Balloon (Balloon on Top, Basket Below!) -->
+  <g class="layer-mid" filter="url(#kidsShadowT)">
+    <ellipse cx="86" cy="128" rx="38" ry="45" fill="#BAE6FD"/>
+    <ellipse cx="86" cy="128" rx="22" ry="45" fill="#FEF08A"/>
+    <ellipse cx="86" cy="128" rx="7" ry="45" fill="#FDA4AF"/>
+    <!-- Upright Basket Below Balloon -->
+    <line x1="74" y1="171" x2="78" y2="188" stroke="#92400E" stroke-width="2"/>
+    <line x1="98" y1="171" x2="94" y2="188" stroke="#92400E" stroke-width="2"/>
+    <rect x="72" y="186" width="28" height="20" rx="5" fill="#D97706" stroke="#92400E" stroke-width="1.5"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Hanging Plush Star Mobile (Hanging Downwards from Top) -->
+  <g class="layer-front" filter="url(#kidsShadowT)">
+    <line x1="164" y1="12" x2="164" y2="118" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3 3"/>
+    <path d="M164 102L170 115L184 117L174 127L176 141L164 134L152 141L154 127L144 117L158 115L164 102Z" fill="#FDE047" stroke="#F59E0B" stroke-width="1.5"/>
+    <circle cx="159" cy="121" r="1.8" fill="#1E293B"/>
+    <circle cx="169" cy="121" r="1.8" fill="#1E293B"/>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="gold-grad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <linearGradient id="rose-grad" x1="20" y1="10" x2="44" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDA4AF" />
+      <stop offset="100%" stop-color="#E11D48" />
+    </linearGradient>
+    <style>
+      .heart-pulse { transform-origin: 32px 18px; animation: pulseHeart 2.4s ease-in-out infinite; }
+      .ring-left { transform-origin: 25px 40px; animation: tiltLeft 3.5s ease-in-out infinite; }
+      .ring-right { transform-origin: 39px 40px; animation: tiltRight 3.5s ease-in-out infinite; }
+      @keyframes pulseHeart {
+        0%, 100% { transform: scale(1) translateY(0); }
+        50% { transform: scale(1.14) translateY(-2px); }
+      }
+      @keyframes tiltLeft {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(-4deg); }
+      }
+      @keyframes tiltRight {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(4deg); }
+      }
+    </style>
+  </defs>
+  <!-- Soft Arch Frame -->
+  <path d="M12 54 V28 C12 15 21 8 32 8 C43 8 52 15 52 28 V54 Z" fill="#D4AF37" fill-opacity="0.08" stroke="url(#gold-grad)" stroke-width="1.8" stroke-dasharray="3 2" />
+  <!-- Interlocking Wedding Rings -->
+  <g class="ring-left">
+    <circle cx="25" cy="40" r="10.5" stroke="url(#gold-grad)" stroke-width="3.2" fill="none" />
+    <!-- Diamond on Left Ring -->
+    <polygon points="25,25 28.5,28.5 25,31 21.5,28.5" fill="#E0F2FE" stroke="url(#gold-grad)" stroke-width="1" />
+  </g>
+  <g class="ring-right">
+    <circle cx="39" cy="40" r="10.5" stroke="url(#gold-grad)" stroke-width="3.2" fill="none" />
+  </g>
+  <!-- Pulsing Love Heart at Top -->
+  <g class="heart-pulse">
+    <path d="M32 25 C32 25 23 19 23 14.5 C23 11.8 25.2 10 27.8 10 C29.6 10 31.1 11 32 12.4 C32.9 11 34.4 10 36.2 10 C38.8 10 41 11.8 41 14.5 C41 19 32 25 32 25 Z" fill="url(#rose-grad)" />
+    <path d="M26 13.5 C26.5 12.5 27.5 12 28.5 12" stroke="#FFE4E6" stroke-width="1.2" stroke-linecap="round" />
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="toga-gold" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <style>
+      .tassel-swing { transform-origin: 50px 26px; animation: swingTassel 2.4s ease-in-out infinite; }
+      @keyframes swingTassel {
+        0%, 100% { transform: rotate(-6deg); }
+        50% { transform: rotate(8deg); }
+      }
+    </style>
+  </defs>
+  <!-- Mortarboard Cap Skullcap -->
+  <path d="M18 29 V41 C18 45.5 24.3 49 32 49 C39.7 49 46 45.5 46 41 V29" fill="#1E293B" stroke="url(#toga-gold)" stroke-width="2.2" />
+  <!-- Mortarboard Diamond Top -->
+  <polygon points="32,14 58,26 32,38 6,26" fill="#0F172A" stroke="url(#toga-gold)" stroke-width="2.4" stroke-linejoin="round" />
+  <circle cx="32" cy="26" r="3" fill="url(#toga-gold)" />
+  <!-- Swinging Tassel -->
+  <path d="M32 26 L50 26" stroke="#FDE68A" stroke-width="2" />
+  <g class="tassel-swing">
+    <line x1="50" y1="26" x2="50" y2="39" stroke="url(#toga-gold)" stroke-width="2.4" />
+    <polygon points="50,37 46,47 54,47" fill="url(#toga-gold)" />
+  </g>
+</svg>

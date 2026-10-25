@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" fill="none">
+  <style>
+    .layer-back {
+      transform-origin: 80px 280px;
+      animation: rainbowPulseB 5.4s ease-in-out infinite alternate;
+    }
+    .layer-mid {
+      transform-origin: 76px 190px;
+      animation: balloonRiseB 3.6s ease-in-out infinite alternate-reverse;
+    }
+    .layer-front {
+      transform-origin: 110px 285px;
+      animation: cloudBounceB 3.0s ease-in-out infinite alternate;
+    }
+    @keyframes rainbowPulseB {
+      0% { transform: scale(0.98) rotate(-1.5deg); }
+      100% { transform: scale(1.03) rotate(1.5deg); }
+    }
+    @keyframes balloonRiseB {
+      0% { transform: translateY(4px) rotate(-3deg); }
+      100% { transform: translateY(-10px) rotate(3.5deg); }
+    }
+    @keyframes cloudBounceB {
+      0% { transform: translateX(-3px) translateY(0px); }
+      100% { transform: translateX(5px) translateY(-4px); }
+    }
+  </style>
+  <defs>
+    <filter id="kidsShadowB" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#1E3A8A" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- LAYER 1 (BACK): Pastel Rainbow Arch Rising from Bottom-Left Ground -->
+  <g class="layer-back" filter="url(#kidsShadowB)">
+    <path d="M14 148C98 148 168 218 168 304" stroke="#FCA5A5" stroke-width="14" stroke-linecap="round"/>
+    <path d="M14 162C90 162 154 226 154 304" stroke="#FDE68A" stroke-width="14" stroke-linecap="round"/>
+    <path d="M14 176C82 176 140 234 140 304" stroke="#93C5FD" stroke-width="14" stroke-linecap="round"/>
+  </g>
+
+  <!-- LAYER 2 (MID): UPRIGHT 3D Hot-Air Balloon Floating Up from Bottom Clouds -->
+  <g class="layer-mid" filter="url(#kidsShadowB)">
+    <!-- Upright Hot-Air Balloon (Dome on top, Basket at bottom!) -->
+    <ellipse cx="68" cy="146" rx="38" ry="45" fill="#BAE6FD"/>
+    <ellipse cx="68" cy="146" rx="22" ry="45" fill="#FEF08A"/>
+    <ellipse cx="68" cy="146" rx="7" ry="45" fill="#FDA4AF"/>
+    <line x1="56" y1="189" x2="60" y2="206" stroke="#92400E" stroke-width="2"/>
+    <line x1="80" y1="189" x2="76" y2="206" stroke="#92400E" stroke-width="2"/>
+    <rect x="54" y="204" width="28" height="20" rx="5" fill="#D97706" stroke="#92400E" stroke-width="1.5"/>
+  </g>
+
+  <!-- LAYER 3 (FRONT): Soft Fluffy Cloud Bed at Bottom-Left + Upright Star Wand -->
+  <g class="layer-front" filter="url(#kidsShadowB)">
+    <circle cx="38" cy="276" r="36" fill="#FFFFFF"/>
+    <circle cx="84" cy="272" r="42" fill="#FFFFFF"/>
+    <circle cx="134" cy="282" r="34" fill="#FFFFFF"/>
+    <circle cx="178" cy="292" r="26" fill="#FFFFFF"/>
+    <!-- Cute Upright Smiling Star Resting on the Cloud -->
+    <path d="M126 226L132 239L146 241L136 251L138 265L126 258L114 265L116 251L106 241L120 239L126 226Z" fill="#FDE047" stroke="#F59E0B" stroke-width="1.5"/>
+    <circle cx="121" cy="245" r="1.8" fill="#1E293B"/>
+    <circle cx="131" cy="245" r="1.8" fill="#1E293B"/>
+  </g>
+</svg>

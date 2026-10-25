@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="gift-gold" x1="10" y1="10" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A6F1A" />
+    </linearGradient>
+    <linearGradient id="ribbon-red" x1="20" y1="12" x2="44" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB7185" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+    <style>
+      .gift-shake { transform-origin: 32px 48px; animation: giftWobble 2.6s ease-in-out infinite; }
+      .lid-pop { transform-origin: 32px 24px; animation: popLid 2.6s ease-in-out infinite; }
+      @keyframes giftWobble {
+        0%, 100% { transform: rotate(0deg); }
+        20% { transform: rotate(-4deg); }
+        40% { transform: rotate(4deg); }
+        60% { transform: rotate(-2deg); }
+        80% { transform: rotate(2deg); }
+      }
+      @keyframes popLid {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        30% { transform: translateY(-4px) rotate(-3deg); }
+      }
+    </style>
+  </defs>
+  <g class="gift-shake">
+    <!-- Gift Box Base -->
+    <rect x="13" y="28" width="38" height="26" rx="4" fill="#1E293B" stroke="url(#gift-gold)" stroke-width="2.4" />
+    <!-- Vertical Ribbon -->
+    <rect x="28" y="28" width="8" height="26" fill="url(#ribbon-red)" />
+    <!-- Horizontal Ribbon -->
+    <rect x="13" y="38" width="38" height="6" fill="url(#ribbon-red)" />
+    <!-- Gift Lid & Bow -->
+    <g class="lid-pop">
+      <rect x="10" y="20" width="44" height="8" rx="3" fill="url(#gift-gold)" stroke="#FFFBEB" stroke-width="1.2" />
+      <rect x="28" y="20" width="8" height="8" fill="url(#ribbon-red)" />
+      <!-- Ribbon Bow Loops -->
+      <path d="M32 20 C24 10 16 14 20 20 C24 21 32 20 32 20 Z" fill="url(#ribbon-red)" stroke="#FDE68A" stroke-width="1.4" />
+      <path d="M32 20 C40 10 48 14 44 20 C40 21 32 20 32 20 Z" fill="url(#ribbon-red)" stroke="#FDE68A" stroke-width="1.4" />
+    </g>
+  </g>
+</svg>

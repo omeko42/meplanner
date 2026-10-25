@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <radialGradient id="waxCrimson" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#E11D48"/>
+      <stop offset="55%" stop-color="#9F1239"/>
+      <stop offset="100%" stop-color="#4C0519"/>
+    </radialGradient>
+    <linearGradient id="waxGold" x1="30" y1="30" x2="130" y2="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF0CA"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+    <filter id="waxShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Organic Melted Wax Outer Edge -->
+  <g filter="url(#waxShadow)">
+    <path d="M80 12C95 10 108 18 122 24C136 30 146 44 148 60C150 76 144 92 140 108C136 124 124 138 108 144C92 150 74 148 58 144C42 140 26 132 18 116C10 100 12 82 14 66C16 50 24 32 38 22C52 12 65 14 80 12Z" fill="url(#waxCrimson)" stroke="#7F1D1D" stroke-width="1.5"/>
+    <!-- Inner Embossed Stamp Ring -->
+    <circle cx="80" cy="80" r="48" fill="#881337" stroke="url(#waxGold)" stroke-width="2.2"/>
+    <circle cx="80" cy="80" r="42" stroke="url(#waxGold)" stroke-width="1" stroke-dasharray="3 2"/>
+    <!-- Royal Crown & Monogram M Inside Seal -->
+    <path d="M62 66L69 52L80 61L91 52L98 66H62Z" fill="url(#waxGold)"/>
+    <text x="80" y="96" text-anchor="middle" fill="url(#waxGold)" font-family="Georgia, serif" font-style="italic" font-size="24" font-weight="bold">VIP</text>
+    <text x="80" y="111" text-anchor="middle" fill="#FDA4AF" font-family="sans-serif" font-size="7" font-weight="bold" letter-spacing="2">MEPLANNER</text>
+  </g>
+</svg>

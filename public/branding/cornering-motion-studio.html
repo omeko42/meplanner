@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEPlanner — Live 3-Layer Cornering & Motion Choreography Studio</title>
+  <style>
+    :root {
+      --bg-dark: #090B14;
+      --bg-card: #121626;
+      --gold: #D4AF37;
+      --gold-soft: #FAF0CA;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      padding: 28px 20px 80px;
+      line-height: 1.55;
+    }
+    .container { max-width: 1360px; margin: 0 auto; }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 28px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #151A30 0%, #0D1020 100%);
+      border: 1px solid rgba(212, 175, 55, 0.38);
+      margin-bottom: 28px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--gold-soft);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      margin-bottom: 6px;
+    }
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .studio-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ======================================================================
+       LIVE MOBILE INVITATION SIMULATOR WITH 3-LAYER CORNERING & MOTION
+       (Mirrors hi.inviee.id/ayi-satrio multi-layer cornering + all MEPlanner themes)
+       ====================================================================== */
+    .phone-wrap {
+      position: sticky;
+      top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .phone-frame {
+      width: 375px;
+      height: 690px;
+      border-radius: 48px;
+      border: 10px solid #1E2235;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(212, 175, 55, 0.35);
+      position: relative;
+      overflow: hidden;
+      background: #FAF8F5;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 104px;
+      height: 22px;
+      background: #090B14;
+      border-radius: 99px;
+      z-index: 40;
+    }
+
+    /* 3-LAYER STACKED CORNERING SYSTEM (LIKE REFERENCE SITE) */
+    .corner-group {
+      position: absolute;
+      pointer-events: none;
+      z-index: 20;
+    }
+    /* Top Left Hanging Corner */
+    .corner-tl {
+      top: -18px;
+      left: -24px;
+      width: 195px;
+      height: 195px;
+      transform-origin: top left;
+      animation: rotateInDownLeft 1.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    /* Top Right Hanging Corner */
+    .corner-tr {
+      top: -18px;
+      right: -24px;
+      width: 195px;
+      height: 195px;
+      transform-origin: top right;
+      animation: rotateInDownRight 1.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+    }
+    /* Bottom Left 3-Layer Bouquet Stack (Matches 0af702d / 78d41eb / 6baba4a) */
+    .corner-bl-1 {
+      bottom: -14px;
+      left: -48px;
+      width: 215px;
+      height: 215px;
+      z-index: 21;
+      transform-origin: bottom left;
+      animation: rotateInUpLeft 2.0s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+    }
+    .corner-bl-2 {
+      bottom: -26px;
+      left: -12px;
+      width: 165px;
+      height: 165px;
+      z-index: 22;
+      transform: rotate(8deg);
+      transform-origin: bottom left;
+      animation: rotateInUpLeft 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+    }
+    .corner-bl-3 {
+      bottom: -32px;
+      left: 34px;
+      width: 140px;
+      height: 140px;
+      z-index: 23;
+      transform: rotate(-28deg);
+      transform-origin: bottom center;
+      animation: rotateInUpLeft 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+    }
+
+    /* Bottom Right 3-Layer Mirrored Bouquet Stack (Matches 7484c0e / 9db0fb1 / 72adc21) */
+    .corner-br-1 {
+      bottom: -14px;
+      right: -48px;
+      width: 215px;
+      height: 215px;
+      z-index: 21;
+      transform-origin: bottom right;
+      animation: rotateInUpRight 2.0s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+    }
+    .corner-br-2 {
+      bottom: -26px;
+      right: -12px;
+      width: 165px;
+      height: 165px;
+      z-index: 22;
+      transform-origin: bottom right;
+      animation: rotateInUpRight 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+    }
+    .corner-br-3 {
+      bottom: -32px;
+      right: 34px;
+      width: 140px;
+      height: 140px;
+      z-index: 23;
+      transform-origin: bottom center;
+      animation: rotateInUpRight 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+    }
+
+    .corner-group img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .flip-x { transform: scaleX(-1); }
+    .flip-y { transform: scaleY(-1); }
+    .flip-xy { transform: scale(-1, -1); }
+
+    /* Entrance & Continuous Motion Keyframes */
+    @keyframes rotateInDownLeft {
+      0% { opacity: 0; transform: rotate(-38deg) translate3d(-40px, -40px, 0) scale(0.85); }
+      100% { opacity: 1; transform: rotate(0deg) translate3d(0, 0, 0) scale(1); }
+    }
+    @keyframes rotateInDownRight {
+      0% { opacity: 0; transform: rotate(38deg) translate3d(40px, -40px, 0) scale(0.85); }
+      100% { opacity: 1; transform: rotate(0deg) translate3d(0, 0, 0) scale(1); }
+    }
+    @keyframes rotateInUpLeft {
+      0% { opacity: 0; transform: rotate(28deg) translate3d(-35px, 45px, 0) scale(0.85); }
+      100% { opacity: 1; transform: rotate(0deg) translate3d(0, 0, 0) scale(1); }
+    }
+    @keyframes rotateInUpRight {
+      0% { opacity: 0; transform: rotate(-28deg) translate3d(35px, 45px, 0) scale(0.85); }
+      100% { opacity: 1; transform: rotate(0deg) translate3d(0, 0, 0) scale(1); }
+    }
+
+    /* Muncul Bawah / Muncul Atas / Zoom-In Content Choreography */
+    .muncul-bawah {
+      animation: munculBawah 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+    }
+    .zoom-in {
+      animation: zoomIn Smooth 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+    }
+    .muncul-atas {
+      animation: munculAtas 1.9s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
+    }
+    .muncul-atas-2 {
+      animation: munculAtas 2.0s cubic-bezier(0.22, 1, 0.36, 1) 0.85s both;
+    }
+    @keyframes munculBawah {
+      0% { opacity: 0; transform: translateY(-48px) scale(0.92); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes munculAtas {
+      0% { opacity: 0; transform: translateY(52px) scale(0.92); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes zoomInSmooth {
+      0% { opacity: 0; transform: scale(0.65); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Falling Petals / Sparkles Canvas Overlay */
+    .petal {
+      position: absolute;
+      top: -20px;
+      width: 12px;
+      height: 16px;
+      border-radius: 80% 10% 80% 10%;
+      opacity: 0.75;
+      pointer-events: none;
+      z-index: 30;
+      animation: fallPetal linear infinite;
+    }
+    @keyframes fallPetal {
+      0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
+      15% { opacity: 0.8; }
+      85% { opacity: 0.8; }
+      100% { transform: translateY(710px) translateX(45px) rotate(320deg); opacity: 0; }
+    }
+
+    /* Center Invitation Card Body inside Phone */
+    .inv-body {
+      position: relative;
+      z-index: 15;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 28px 96px;
+      text-align: center;
+      gap: 12px;
+    }
+    .inv-arch-photo {
+      width: 168px;
+      height: 215px;
+      border-radius: 999px 999px 24px 24px;
+      overflow: hidden;
+      border: 3px solid #D4AF37;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+      position: relative;
+    }
+    .inv-arch-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .inv-tag {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+    }
+    .inv-title {
+      font-family: Georgia, 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .inv-quote {
+      font-size: 11px;
+      line-height: 1.55;
+      max-width: 265px;
+      opacity: 0.86;
+      font-style: italic;
+    }
+    .inv-guest-box {
+      margin-top: 4px;
+      padding: 8px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .inv-btn {
+      margin-top: 6px;
+      padding: 10px 24px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      color: #FFFFFF;
+      background: linear-gradient(90deg, #5A8BB0, #3E6B94);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    }
+
+    /* Right Panel Controls & Cards */
+    .panel { display: flex; flex-direction: column; gap: 22px; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px;
+      padding: 20px;
+    }
+    .theme-btn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .theme-btn {
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #181E34;
+      color: #F8FAFC;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .theme-btn:hover, .theme-btn.active {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.16);
+    }
+    .theme-btn strong { display: block; font-size: 13px; }
+    .theme-btn span { font-size: 11px; color: var(--muted); }
+    .action-btn {
+      padding: 11px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--gold);
+      background: var(--gold);
+      color: #090B14;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .cluster-item {
+      background: #171C30;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+    }
+    .cluster-item img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      background: #FAF6EE;
+      border-radius: 12px;
+      padding: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <img src="./meplanner-logo-full-dark.svg" alt="MEPlanner Official Logo" style="height:58px; border-radius:12px;" />
+        <div>
+          <span class="badge">Live Multi-Layer Cornering & Motion Simulator</span>
+          <h1 style="font-size:22px;">Rancangan Cornering 3-Layer & Gerakan Semua Tema MEPlanner</h1>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="action-btn" onclick="replayEntrance()">↻ Putar Ulang Gerakan Masuk (Entrance)</button>
+        <a href="./icon-button-studio.html" class="action-btn" style="text-decoration:none; background:#1E293B; color:#FDE68A;">✨ Studio Ikon &amp; Tombol</a>
+        <a href="./theme-studio.html" class="action-btn" style="text-decoration:none; background:transparent; color:var(--gold-soft);">← Studio Tema</a>
+      </div>
+    </div>
+
+    <div class="studio-grid">
+      <!-- LEFT: LIVE ANIMATED MOBILE INVITATION SIMULATOR -->
+      <div class="phone-wrap">
+        <div id="phoneFrame" class="phone-frame">
+          <div class="phone-notch"></div>
+
+          <!-- Falling Petals / Sparkles Layer -->
+          <div id="petalContainer"></div>
+
+          <!-- TOP LEFT HANGING CORNER (Layer Flip-Y) -->
+          <div id="cTL" class="corner-group corner-tl">
+            <img class="cluster-img flip-y" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Top Left Corner" />
+          </div>
+
+          <!-- TOP RIGHT HANGING CORNER (Layer Flip-XY) -->
+          <div id="cTR" class="corner-group corner-tr">
+            <img class="cluster-img flip-xy" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Top Right Corner" />
+          </div>
+
+          <!-- CENTER INVITATION CONTENT (With muncul-bawah, zoom-in, muncul-atas) -->
+          <div id="invBody" class="inv-body">
+            <p id="invTag" class="inv-tag muncul-bawah">THE WEDDING CELEBRATION</p>
+            <div id="invPhotoWrap" class="inv-arch-photo zoom-in">
+              <img id="invPhoto" src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80" alt="Couple Preview" />
+            </div>
+            <h2 id="invTitle" class="inv-title muncul-atas">Ayi &amp; Satrio</h2>
+            <p id="invQuote" class="inv-quote muncul-atas-2">
+              "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu agar kamu merasa tenteram."
+            </p>
+            <div id="invGuest" class="inv-guest-box muncul-atas-2">
+              Kepada Yth: KELUARGA BESAR BATI 200
+            </div>
+            <button id="invBtn" class="inv-btn muncul-atas-2" onclick="replayEntrance()" style="display:inline-flex; align-items:center; gap:8px;">
+              <img src="./icons/icon-btn-1-buka-undangan.svg" alt="Buka" style="width:20px; height:20px;" />
+              <span>Buka Undangan</span>
+            </button>
+          </div>
+
+          <!-- FLOATING MUSIC & QR WIDGETS (Right Side of Phone) -->
+          <div style="position:absolute; right:10px; top:50%; transform:translateY(-50%); z-index:35; display:flex; flex-direction:column; gap:8px;">
+            <button onclick="this.querySelector('img').src = this.querySelector('img').src.includes('play') ? './icons/icon-float-2-music-mute.svg' : './icons/icon-float-1-music-play.svg'" title="Play/Mute Musik" style="width:36px; height:36px; border-radius:99px; background:rgba(15,23,42,0.82); border:1.5px solid #D4AF37; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+              <img src="./icons/icon-float-1-music-play.svg" alt="Music" style="width:24px; height:24px;" />
+            </button>
+            <button onclick="replayEntrance()" title="QR Check-in Tamu" style="width:36px; height:36px; border-radius:99px; background:rgba(15,23,42,0.82); border:1.5px solid #D4AF37; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+              <img src="./icons/icon-float-4-qr-checkin.svg" alt="QR" style="width:22px; height:22px;" />
+            </button>
+          </div>
+
+          <!-- FLOATING BOTTOM NAVIGATION DOCK (6 Animated Menu Icons) -->
+          <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); z-index:35; width:88%; background:rgba(15,23,42,0.86); backdrop-filter:blur(10px); border:1px solid rgba(212,175,55,0.45); border-radius:18px; padding:6px 10px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 10px 25px rgba(0,0,0,0.35);">
+            <img src="./icons/icon-nav-1-cover-home.svg" title="Sampul" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+            <img src="./icons/icon-nav-2-mempelai-heart.svg" title="Mempelai" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+            <img src="./icons/icon-nav-3-acara-calendar.svg" title="Acara" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+            <img src="./icons/icon-nav-4-lokasi-map.svg" title="Lokasi" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+            <img src="./icons/icon-nav-5-galeri-camera.svg" title="Galeri" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+            <img src="./icons/icon-nav-6-ucapan-wishes.svg" title="Ucapan" style="width:24px; height:24px; cursor:pointer;" onclick="replayEntrance()" />
+          </div>
+
+          <!-- BOTTOM LEFT 3-LAYER STACKED BOUQUET (Mirrors hi.inviee.id/ayi-satrio 0af702d / 78d41eb / 6baba4a) -->
+          <div id="cBL1" class="corner-group corner-bl-1">
+            <img class="cluster-img" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Left Back" />
+          </div>
+          <div id="cBL2" class="corner-group corner-bl-2">
+            <img class="cluster-img" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Left Mid" />
+          </div>
+          <div id="cBL3" class="corner-group corner-bl-3">
+            <img class="cluster-img" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Left Front" />
+          </div>
+
+          <!-- BOTTOM RIGHT 3-LAYER MIRRORED BOUQUET (Mirrors 7484c0e / 9db0fb1 / 72adc21) -->
+          <div id="cBR1" class="corner-group corner-br-1">
+            <img class="cluster-img flip-x" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Right Back" />
+          </div>
+          <div id="cBR2" class="corner-group corner-br-2">
+            <img class="cluster-img flip-x" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Right Mid" />
+          </div>
+          <div id="cBR3" class="corner-group corner-br-3">
+            <img class="cluster-img flip-x" src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Bottom Right Front" />
+          </div>
+        </div>
+        <p style="font-size:12px; color:var(--muted); text-align:center;">
+          💡 Perhatikan 4 sudut layar HP di atas: Setiap sudut tersusun dari <strong>3 Layer Bouquet Bertumpuk</strong> yang bergoyang secara independen tertiup angin + partikel jatuh!
+        </p>
+      </div>
+
+      <!-- RIGHT: THEME CORNERING SWITCHER & ASSET DOWNLOADS -->
+      <div class="panel">
+        <div class="card">
+          <span class="badge">Pilih Tema untuk Melihat Perubahan Cornering & Gerakan Live</span>
+          <h2>8 Sistem Cornering Berlapis untuk Seluruh 31 Tema MEPlanner</h2>
+          <p style="font-size:13px; color:var(--muted); margin-top:4px;">
+            Klik salah satu kelompok tema di bawah ini untuk melihat bagaimana <strong>Cornering 3-Layer</strong> dan <strong>Gerakannya</strong> berubah menyesuaikan karakter acara (bukan cuma 1 bunga biru untuk semua tema):
+          </p>
+
+          <div class="theme-btn-grid">
+            <button class="theme-btn active" onclick="switchCornerTheme(0, this)">
+              <strong>1. BluBloom &amp; Dusty Rose</strong>
+              <span>Gaya Referensi Ayi &amp; Satrio • Hydrangea Biru &amp; Delphinium Pink</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(1, this)">
+              <strong>2. Gardenia Sage Botanical</strong>
+              <span>Gardenia Putih, Daun Eucalyptus &amp; Baby's Breath Emas</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(2, this)">
+              <strong>3. Rustic Wood &amp; Pampas</strong>
+              <span>Bulu Pampas Cream, Daun Palem Kering, Mawar Terracotta &amp; Bohlam</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(3, this)">
+              <strong>4. Javanese Kraton &amp; Ronce</strong>
+              <span>Ukiran Gunungan Emas + Untaian Bunga Melati Ronce Mengayun</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(4, this)">
+              <strong>5. Sweet 17th Blush &amp; Balloon</strong>
+              <span>Peony Pink, Rantai Mutiara, Balon 3D Mengapung &amp; Kilau Bintang</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(5, this)">
+              <strong>6. Photovit Polaroid Editorial</strong>
+              <span>Kertas Sobek Majalah, Selotip Kertas, Bunga Pres &amp; Stempel Pos</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(6, this)">
+              <strong>7. Academic Cum Laude &amp; Gala</strong>
+              <span>Kipas Art-Deco Navy, Daun Laurel Emas &amp; Rumbai Toga Mengayun</span>
+            </button>
+            <button class="theme-btn" onclick="switchCornerTheme(7, this)">
+              <strong>8. Pastel 1st Birthday Cloud</strong>
+              <span>Pelangi Pastel, Awan Mengapung, Balon Udara 3D &amp; Bintang Gantung</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 8 DOWNLOADABLE SELF-ANIMATING SVG CLUSTERS -->
+        <div class="card">
+          <span class="badge">File SVG Vektor Beranimasi Otomatis (Self-Animating 3-Layer SVGs)</span>
+          <h2>Download 8 File SVG Cornering (Sudah Ada Animasi Goyangan di Dalam File SVG-nya!)</h2>
+          <div class="cluster-grid">
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-1-blubloom-garden.svg" alt="Cluster 1" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">1. BluBloom &amp; Dusty Rose</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-1-blubloom-garden.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-2-gardenia-sage.svg" alt="Cluster 2" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">2. Gardenia Sage</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-2-gardenia-sage.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-3-rustic-pampas.svg" alt="Cluster 3" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">3. Rustic Pampas</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-3-rustic-pampas.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-4-nusantara-ronce.svg" style="background:#26150E;" alt="Cluster 4" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">4. Javanese Melati Ronce</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-4-nusantara-ronce.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-5-sweet-glamour.svg" alt="Cluster 5" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">5. Sweet 17th Glamour</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-5-sweet-glamour.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-6-polaroid-editorial.svg" alt="Cluster 6" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">6. Polaroid Editorial</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-6-polaroid-editorial.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-7-royal-academic.svg" style="background:#10203B;" alt="Cluster 7" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">7. Academic &amp; Gala Tassel</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-7-royal-academic.svg" download>Download SVG</a>
+            </div>
+            <div class="cluster-item">
+              <img src="./webkit-components/corner-cluster-8-kids-pastel-cloud.svg" style="background:#E0F2FE;" alt="Cluster 8" />
+              <p style="font-size:12px; font-weight:700; margin:8px 0 6px;">8. Kids Pastel Cloud</p>
+              <a class="action-btn" style="display:block; text-decoration:none; padding:7px;" href="./webkit-components/corner-cluster-8-kids-pastel-cloud.svg" download>Download SVG</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CORNER_THEMES = [
+      {
+        svg: './webkit-components/corner-cluster-1-blubloom-garden.svg',
+        bg: '#F5F9FC',
+        text: '#2E506D',
+        tag: 'THE WEDDING CELEBRATION',
+        title: 'Ayi & Satrio',
+        quote: '"Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu agar kamu merasa tenteram."',
+        guest: 'Kepada Yth: KELUARGA BESAR BATI 200',
+        btnBg: 'linear-gradient(90deg, #C98A96 0%, #C56186 100%)',
+        petalColor: '#89B0D3',
+        photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-2-gardenia-sage.svg',
+        bg: '#F3F7F4',
+        text: '#2F4837',
+        tag: 'GARDENIA BOTANICAL WEDDING',
+        title: 'Gardenia & Julian',
+        quote: '"Cinta tumbuh subur dalam ketulusan doa dan restu kedua keluarga besar."',
+        guest: 'Kepada Yth: Bpk/Ibu Tamu Kehormatan',
+        btnBg: 'linear-gradient(90deg, #5E8468, #3D5D46)',
+        petalColor: '#A8C6B0',
+        photo: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-3-rustic-pampas.svg',
+        bg: '#2A1A11',
+        text: '#FAF0CA',
+        tag: 'RUSTIC WOOD & TERRACOTTA',
+        title: 'Bagas & Nadin',
+        quote: '"Hangatnya senja dan janji suci yang terikat abadi di bawah cahaya bintang."',
+        guest: 'VIP Barn Table • Stone Creek',
+        btnBg: 'linear-gradient(90deg, #C86D51, #8C4A32)',
+        petalColor: '#FDE68A',
+        photo: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-4-nusantara-ronce.svg',
+        bg: '#1E100A',
+        text: '#FAF0CA',
+        tag: 'PAWIWAHAN AGENG KERATON',
+        title: 'Raden Bagus & Dyah Ayu',
+        quote: '"Memayu hayuning kulawarga, nyawiji ing tresna suci."',
+        guest: 'Tamu VVIP • Bangsal Kencana',
+        btnBg: 'linear-gradient(90deg, #D4AF37, #8B6914)',
+        petalColor: '#D4AF37',
+        photo: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-5-sweet-glamour.svg',
+        bg: '#FFF5F8',
+        text: '#7A2841',
+        tag: 'SWEET 17TH BIRTHDAY SOIRÉE',
+        title: "Aurelia's 17th",
+        quote: '"Join us for an unforgettable night of pastel glamour, music, and starlight!"',
+        guest: 'Dresscode: Blush & Rose Gold',
+        btnBg: 'linear-gradient(90deg, #E893AD, #B84B6B)',
+        petalColor: '#F4A5BE',
+        photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-6-polaroid-editorial.svg',
+        bg: '#FAF6EE',
+        text: '#1C1917',
+        tag: 'PHOTOVIT • THE WEDDING ISSUE',
+        title: 'Kevin & Clara',
+        quote: '"Captured in timeless frames, sealed with a vintage postmark."',
+        guest: 'Special Editorial Edition • 2026',
+        btnBg: 'linear-gradient(90deg, #C86D51, #1C1917)',
+        petalColor: '#C86D51',
+        photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-7-royal-academic.svg',
+        bg: '#0E1E38',
+        text: '#FAF0CA',
+        tag: 'SYUKURAN WISUDA & SUMPAH DOKTER',
+        title: 'dr. Naufal Arkan',
+        quote: '"Awal pengabdian mulia bagi kemanusiaan dengan predikat Cum Laude."',
+        guest: 'Auditorium Utama & Grand Ballroom',
+        btnBg: 'linear-gradient(90deg, #D4AF37, #9A742B)',
+        petalColor: '#D4AF37',
+        photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=80'
+      },
+      {
+        svg: './webkit-components/corner-cluster-8-kids-pastel-cloud.svg',
+        bg: '#EFF8FF',
+        text: '#1E3A8A',
+        tag: 'OUR LITTLE WONDER TURNS ONE',
+        title: 'Baby Kenzo • 1st',
+        quote: '"Mari merayakan ulang tahun pertama jagoan kecil kami dengan penuh tawa!"',
+        guest: 'Sunday Party • The Jungle Club',
+        btnBg: 'linear-gradient(90deg, #FB7185, #F59E0B)',
+        petalColor: '#FDE047',
+        photo: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80'
+      }
+    ];
+
+    function spawnPetals(color) {
+      const container = document.getElementById('petalContainer');
+      container.innerHTML = '';
+      for (let i = 0; i < 12; i++) {
+        const p = document.createElement('div');
+        p.className = 'petal';
+        p.style.left = (Math.random() * 90 + 5) + '%';
+        p.style.background = color;
+        p.style.animationDuration = (4.5 + Math.random() * 4) + 's';
+        p.style.animationDelay = (Math.random() * 3) + 's';
+        container.appendChild(p);
+      }
+    }
+
+    function replayEntrance() {
+      const animatedIds = ['cTL', 'cTR', 'cBL1', 'cBL2', 'cBL3', 'cBR1', 'cBR2', 'cBR3', 'invTag', 'invPhotoWrap', 'invTitle', 'invQuote', 'invGuest', 'invBtn'];
+      animatedIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const clone = el.cloneNode(true);
+        el.parentNode.replaceChild(clone, el);
+      });
+    }
+
+    function switchCornerTheme(idx, btnEl) {
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      const t = CORNER_THEMES[idx];
+      const pf = document.getElementById('phoneFrame');
+      pf.style.background = t.bg;
+      pf.style.color = t.text;
+      document.querySelectorAll('.cluster-img').forEach(img => { img.src = t.svg; });
+      document.getElementById('invTag').textContent = t.tag;
+      document.getElementById('invTitle').textContent = t.title;
+      document.getElementById('invQuote').textContent = t.quote;
+      document.getElementById('invGuest').textContent = t.guest;
+      document.getElementById('invGuest').style.color = '#1C1917';
+      document.getElementById('invBtn').style.background = t.btnBg;
+      document.getElementById('invPhoto').src = t.photo;
+      spawnPetals(t.petalColor);
+      replayEntrance();
+    }
+
+    spawnPetals(CORNER_THEMES[0].petalColor);
+  </script>
+</body>
+</html>
