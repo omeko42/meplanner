@@ -22,6 +22,13 @@ export type ShowcasePackageTier =
   | 'MITRA_SILVER'
   | 'MITRA_GOLD';
 
+export type ThemeLayoutArchetype =
+  | 'EDITORIAL_CLASSIC'
+  | 'POLAROID_MAGAZINE'
+  | 'BOTANICAL_AIRY'
+  | 'NUSANTARA_HERITAGE'
+  | 'MODERN_BENTO';
+
 export interface MeplannerPackageTierItem {
   id: ShowcasePackageTier;
   legacyTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
@@ -30,7 +37,6 @@ export interface MeplannerPackageTierItem {
   nameEn: string;
   badgeId: string;
   badgeEn: string;
-  wevitationRefPriceIdr: number;
   priceIdr: number;
   normalPriceIdr: number;
   priceUsd: number;
@@ -54,7 +60,6 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     nameEn: 'Free Trial',
     badgeId: 'Uji Coba Gratis • 14 Hari',
     badgeEn: 'Free Trial • 14 Days',
-    wevitationRefPriceIdr: 0,
     priceIdr: 0,
     normalPriceIdr: 0,
     priceUsd: 0,
@@ -90,9 +95,8 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     category: 'PERSONAL',
     nameId: 'Premium',
     nameEn: 'Premium',
-    badgeId: 'Paling Favorit • 31% OFF (75% Harga Pasar)',
-    badgeEn: 'Most Popular • 31% OFF (75% Market Price)',
-    wevitationRefPriceIdr: 69000,
+    badgeId: 'Promo 31% OFF • Paling Favorit',
+    badgeEn: 'Promo 31% OFF • Most Popular',
     priceIdr: 51750,
     normalPriceIdr: 75000,
     priceUsd: 4,
@@ -135,9 +139,8 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     category: 'PERSONAL',
     nameId: 'Business',
     nameEn: 'Business',
-    badgeId: 'Untuk 2 Acara • 50% OFF (75% Harga Pasar)',
-    badgeEn: 'For 2 Events • 50% OFF (75% Market Price)',
-    wevitationRefPriceIdr: 99000,
+    badgeId: 'Promo 50% OFF • Untuk 2 Acara',
+    badgeEn: 'Promo 50% OFF • For 2 Events',
     priceIdr: 74250,
     normalPriceIdr: 150000,
     priceUsd: 6,
@@ -181,9 +184,8 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     category: 'PERSONAL',
     nameId: 'Enterprise',
     nameEn: 'Enterprise',
-    badgeId: 'Cocok untuk Bisnis Menengah • 52% OFF',
-    badgeEn: 'For Medium Business • 52% OFF',
-    wevitationRefPriceIdr: 240000,
+    badgeId: 'Promo 52% OFF • Untuk 5 Acara',
+    badgeEn: 'Promo 52% OFF • For 5 Events',
     priceIdr: 180000,
     normalPriceIdr: 375000,
     priceUsd: 12,
@@ -222,9 +224,8 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     category: 'MITRA_EO_WO',
     nameId: 'Mitra - Silver',
     nameEn: 'Partner - Silver',
-    badgeId: 'Cocok untuk Bisnis Besar / WO • 54% OFF',
-    badgeEn: 'For Large Business / WO • 54% OFF',
-    wevitationRefPriceIdr: 500000,
+    badgeId: 'Promo 54% OFF • Paket WO / EO 11 Undangan',
+    badgeEn: 'Promo 54% OFF • WO / EO 11 Invitations',
     priceIdr: 375000,
     normalPriceIdr: 825000,
     priceUsd: 25,
@@ -264,9 +265,8 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
     category: 'MITRA_EO_WO',
     nameId: 'Mitra - Gold',
     nameEn: 'Partner - Gold',
-    badgeId: 'Flagship Agensi WO/EO • 56% OFF',
-    badgeEn: 'Flagship WO/EO Agency • 56% OFF',
-    wevitationRefPriceIdr: 1000000,
+    badgeId: 'Promo 56% OFF • Paket Agensi VIP 23 Undangan',
+    badgeEn: 'Promo 56% OFF • VIP Agency 23 Invitations',
     priceIdr: 750000,
     normalPriceIdr: 1725000,
     priceUsd: 49,
@@ -317,6 +317,12 @@ export interface MeplannerThemeCatalogItem {
     | 'royal_navy'
     | 'terracotta_rust';
   frameStyle: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT';
+  layoutArchetype:
+    | 'EDITORIAL_CLASSIC'
+    | 'POLAROID_MAGAZINE'
+    | 'BOTANICAL_AIRY'
+    | 'NUSANTARA_HERITAGE'
+    | 'MODERN_BENTO';
   heroImageUrl: string;
   coverImageUrl: string;
   accentHex: string;
@@ -337,6 +343,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -355,6 +362,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'sage_botanical',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
       'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -373,6 +381,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'blush_rose',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
       'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -391,6 +400,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'terracotta_rust',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -409,6 +419,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -427,6 +438,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'royal_navy',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
       'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -439,20 +451,21 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
   },
   {
     id: 'midnight-elegance',
-    name: 'Midnight Elegance',
-    styleBadge: 'Dark Luxury',
+    name: 'Pearl & Ivory Elegance',
+    styleBadge: 'Light Luxury',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     themePreset: 'royal_navy',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
     accentHex: '#284B7A',
-    previewSubtitle: 'Starlight Black-Tie • Malam Resepsi Kehormatan',
+    previewSubtitle: 'Pearl & Ivory Ballroom • Resepsi Kehormatan Berkilau',
     description:
-      'Kemewahan malam bertabur bintang dengan kontras biru malam (Midnight Navy) dan bingkai potret editorial tegas untuk resepsi malam di hotel bintang lima.',
+      'Kemewahan terang berbalut mutiara gading (Pearl & Ivory) dengan kontras biru royal lembut dan bingkai potret editorial tegas untuk resepsi di hotel bintang lima.',
     showFloralCorners: true,
   },
   {
@@ -463,6 +476,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'terracotta_rust',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -481,6 +495,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'sage_botanical',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -499,6 +514,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-wedding',
     themePreset: 'blush_rose',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -521,6 +537,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-birthday',
     themePreset: 'blush_rose',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
       'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -539,6 +556,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-birthday',
     themePreset: 'champagne_gold',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -557,6 +575,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-birthday',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -575,6 +594,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-birthday',
     themePreset: 'sage_botanical',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'BOTANICAL_AIRY',
     coverImageUrl:
       'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -597,6 +617,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-graduation',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -615,6 +636,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-graduation',
     themePreset: 'sage_botanical',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -633,6 +655,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-graduation',
     themePreset: 'royal_navy',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -651,6 +674,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-graduation',
     themePreset: 'terracotta_rust',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     coverImageUrl:
       'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -673,6 +697,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-meeting',
     themePreset: 'royal_navy',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -691,6 +716,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-meeting',
     themePreset: 'champagne_gold',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -709,6 +735,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-meeting',
     themePreset: 'sage_botanical',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -727,6 +754,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-meeting',
     themePreset: 'royal_navy',
     frameStyle: 'CIRCLE',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -749,6 +777,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-gala',
     themePreset: 'royal_navy',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -767,6 +796,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-gala',
     themePreset: 'champagne_gold',
     frameStyle: 'ARCH_DOME',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     coverImageUrl:
       'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -785,6 +815,7 @@ export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
     dummyClientId: 'client-demo-gala',
     themePreset: 'terracotta_rust',
     frameStyle: 'EDITORIAL_RECT',
+    layoutArchetype: 'MODERN_BENTO',
     coverImageUrl:
       'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
     heroImageUrl:
@@ -803,6 +834,14 @@ export function getMeplannerThemeById(
   if (!themeId) return undefined;
   const clean = themeId.trim().toLowerCase();
   const cleanNormalized = clean.replace(/-/g, '_');
+  if (
+    clean === 'elegant-light' ||
+    clean === 'elegant_light' ||
+    clean === 'pearl-ivory-elegance' ||
+    clean === 'pearl_ivory_elegance'
+  ) {
+    return MEPLANNER_THEME_PRESETS.find((t) => t.id === 'midnight-elegance');
+  }
   return MEPLANNER_THEME_PRESETS.find(
     (t) =>
       t.id.toLowerCase() === clean ||
@@ -820,6 +859,7 @@ export interface ShowcaseDummyClientMeta {
   eventType: EventCategoryType;
   themePreset: InvitationThemePresetId;
   themeLabel: string;
+  layoutArchetype: ThemeLayoutArchetype;
   badgeId: string;
   badgeEn: string;
   labelId: string;
@@ -838,6 +878,7 @@ export const SHOWCASE_DUMMY_CLIENT_METAS: ShowcaseDummyClientMeta[] = [
     eventType: 'WEDDING',
     themePreset: 'champagne_gold',
     themeLabel: 'Champagne Gold',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     badgeId: 'Undangan Pernikahan',
     badgeEn: 'The Wedding Celebration',
     labelId: '💍 Wedding',
@@ -854,6 +895,7 @@ export const SHOWCASE_DUMMY_CLIENT_METAS: ShowcaseDummyClientMeta[] = [
     eventType: 'BIRTHDAY',
     themePreset: 'blush_rose',
     themeLabel: 'Blush Rose',
+    layoutArchetype: 'BOTANICAL_AIRY',
     badgeId: 'Sweet 17th Birthday',
     badgeEn: 'Sweet 17th Soirée',
     labelId: '🎂 Birthday',
@@ -870,6 +912,7 @@ export const SHOWCASE_DUMMY_CLIENT_METAS: ShowcaseDummyClientMeta[] = [
     eventType: 'GRADUATION',
     themePreset: 'royal_navy',
     themeLabel: 'Royal Navy',
+    layoutArchetype: 'MODERN_BENTO',
     badgeId: 'Syukuran Wisuda & Doktor',
     badgeEn: 'Doctoral Graduation',
     labelId: '🎓 Graduation',
@@ -886,6 +929,7 @@ export const SHOWCASE_DUMMY_CLIENT_METAS: ShowcaseDummyClientMeta[] = [
     eventType: 'MEETING',
     themePreset: 'sage_botanical',
     themeLabel: 'Sage Botanical',
+    layoutArchetype: 'MODERN_BENTO',
     badgeId: 'Rapat Kerja & Executive Forum',
     badgeEn: 'Executive Corporate Summit',
     labelId: '🏛️ Rapat',
@@ -902,6 +946,7 @@ export const SHOWCASE_DUMMY_CLIENT_METAS: ShowcaseDummyClientMeta[] = [
     eventType: 'GALA_DINNER',
     themePreset: 'terracotta_rust',
     themeLabel: 'Terracotta Rust',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     badgeId: '25th Anniversary Gala Dinner',
     badgeEn: '25th Anniversary Gala Dinner',
     labelId: '🥂 Gala Dinner',
@@ -2837,7 +2882,25 @@ export function getShowcaseDummyClientState(
       ? matchedTheme.showFloralCorners
       : meta.eventType !== 'MEETING';
 
-  const settings: WeddingSettings & { showFloralCorners?: boolean } = {
+  const defaultLayoutArchetype: ThemeLayoutArchetype =
+    meta.eventType === 'WEDDING'
+      ? 'EDITORIAL_CLASSIC'
+      : meta.eventType === 'BIRTHDAY'
+        ? 'BOTANICAL_AIRY'
+        : meta.eventType === 'GRADUATION'
+          ? 'MODERN_BENTO'
+          : meta.eventType === 'MEETING'
+            ? 'MODERN_BENTO'
+            : 'POLAROID_MAGAZINE';
+
+  const effectiveLayoutArchetype: ThemeLayoutArchetype =
+    matchedTheme?.layoutArchetype || meta.layoutArchetype || defaultLayoutArchetype;
+
+  const customSettings: WeddingSettings & {
+    showFloralCorners?: boolean;
+    themeLayoutArchetype?: ThemeLayoutArchetype;
+    layoutArchetype?: ThemeLayoutArchetype;
+  } = {
     ...INITIAL_SETTINGS,
     siteTitle: matchedTheme
       ? `MEPlanner • ${meta.coupleLabel} — ${matchedTheme.name}`
@@ -2848,6 +2911,8 @@ export function getShowcaseDummyClientState(
     activeClientId: matchedTheme ? matchedTheme.id : meta.id,
     eventType: matchedTheme ? matchedTheme.eventType : meta.eventType,
     themePreset: matchedTheme ? matchedTheme.themePreset : meta.themePreset,
+    themeLayoutArchetype: effectiveLayoutArchetype,
+    layoutArchetype: effectiveLayoutArchetype,
     showFloralOrnaments: showFlorals,
     showFloralCorners: showFlorals,
     showFloatingPetals: showFlorals,
@@ -2936,7 +3001,8 @@ export function getShowcaseDummyClientState(
     qrisImageUrl: USER_REAL_QRIS_URL,
     bankAccounts: bankAccountsForEvent,
     giftRecipientName: profileConfig.giftRecipientName,
-    giftShippingNote: 'Konfirmasi Pengiriman: 0851-9822-2242 (Eko Agung K)',
+    giftShippingNote:
+      'Konfirmasi Pengiriman via Email Resmi: e98.bisnis@gmail.com (Eko Agung K)',
     giftShippingAddress:
       meta.eventType === 'GRADUATION'
         ? 'Jl. Dago Asri I No. 18, Coblong, Kota Bandung 40135'
@@ -2947,13 +3013,17 @@ export function getShowcaseDummyClientState(
     updatedBy: 'demo_showcase',
   };
 
+  if (matchedTheme) {
+    (customSettings as any).themeLayoutArchetype = matchedTheme.layoutArchetype;
+  }
+
   const allGuests = buildDummyGuestsForClient(meta);
   const allTasks = buildDummyTasksForClient(meta);
   const allBudget = buildDummyBudgetForClient(meta);
   const allWishes = buildDummyWishesForClient(meta, allGuests);
 
   return {
-    settings,
+    settings: customSettings,
     tasks: allTasks,
     guests: isStarterTier ? allGuests.slice(0, 4) : allGuests,
     wishes: allWishes,

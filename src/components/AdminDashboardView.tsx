@@ -6742,7 +6742,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setIsGuestReceptionModalOpen(true);
                     }}
                     title="Buka Layar Penerima Tamu (Guest Reception Check-In Hari-H)"
-                    className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/60 bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] text-center transition-all cursor-pointer"
+                    className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
                   >
                     🖥️ Layar Penerima Tamu (Hari-H)
                   </button>
@@ -7904,7 +7904,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {
                     id: 'paket' as const,
                     label: '💎 Upgrade Paket',
-                    title: 'Upgrade Paket MEPlanner (Harga Spesial 75% Kompetitor: Gratis, Premium, Business, Enterprise, Mitra Silver & Gold)',
+                    title: 'Upgrade Paket Resmi MEPlanner (Gratis, Premium, Business, Enterprise, Mitra Silver & Gold)',
                     icon: Award,
                     show: true,
                   },
@@ -7980,7 +7980,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
 
                     {/* QUICK STUDIO LAUNCHER CARD (15-TILE ICON GRID + STATUS HEADER + LAYAR PENERIMA TAMU) */}
-                    <div className="rounded-2xl border-2 border-[#D4AF37]/45 bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/50 p-3.5 sm:p-4 shadow-2xs space-y-3.5">
+                    <div className="rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
                       {/* Top Status Banner */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
                         <div className="min-w-0">
@@ -8010,7 +8010,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setReceptionSearchInput('');
                               setIsGuestReceptionModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/60 font-extrabold text-[11px] sm:text-xs shadow-xs transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-xs transition-all cursor-pointer"
                             title="Buka Layar Penerima Tamu (Guest Reception Hari-H) untuk scan/ketik kode tamu & tampilkan layar sapaan VIP"
                           >
                             <span>🖥️</span>
@@ -8199,7 +8199,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 key={tile.label}
                                 type="button"
                                 onClick={tile.onClick}
-                                className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200/90 hover:border-[#B68D40] flex flex-col items-center justify-center gap-1 text-center shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+                                className="p-2.5 rounded-xl bg-white hover:bg-[#FAF3E3]/70 border border-stone-200/90 hover:border-[#D4AF37] text-stone-800 shadow-2xs flex flex-col items-center justify-center gap-1 text-center transition-all hover:scale-[1.02] cursor-pointer"
                               >
                                 <span className="text-base sm:text-lg leading-none">
                                   {tile.icon}
@@ -8220,20 +8220,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setReceptionSearchInput('');
                                 setIsGuestReceptionModalOpen(true);
                               }}
-                              className="p-3 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-700 text-[#FAF3E3] border border-[#D4AF37]/60 flex items-center justify-between gap-2.5 text-left shadow-xs transition-all cursor-pointer"
+                              className="p-3 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-stone-900 border border-[#D4AF37]/55 flex items-center justify-between gap-2.5 text-left shadow-xs transition-all cursor-pointer"
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <span className="text-lg shrink-0">📋</span>
                                 <div className="min-w-0">
-                                  <p className="text-[11px] sm:text-xs font-extrabold text-[#FAF3E3] truncate">
+                                  <p className="text-[11px] sm:text-xs font-extrabold text-stone-900 truncate">
                                     Check-In &amp; Layar Penerima Tamu
                                   </p>
-                                  <p className="text-[10px] text-[#D4AF37] truncate">
+                                  <p className="text-[10px] text-[#8B6914] font-semibold truncate">
                                     Guest Reception Hari-H &bull; Scan / Ketik Kode Tamu
                                   </p>
                                 </div>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                              <ChevronRight className="w-4 h-4 text-[#8B6914] shrink-0" />
                             </button>
 
                             <button
@@ -12230,6 +12230,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '💍 Wedding Editorial',
                               palette: 'champagne_gold' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#D4AF37', '#8B6914', '#FAF3E3'],
@@ -12239,6 +12240,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🌿 Minimalist Botanical',
                               palette: 'sage_botanical' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'BOTANICAL_AIRY' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#4A6B53', '#7A9A82', '#EBF3ED'],
@@ -12248,6 +12250,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🌸 Romantic Ivory Blush',
                               palette: 'blush_rose' as const,
                               frameStyle: 'CIRCLE' as const,
+                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#C86D7C', '#E8A5B0', '#FDF0F2'],
@@ -12257,6 +12260,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🏛️ Royal Kraton Heritage',
                               palette: 'champagne_gold' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'NUSANTARA_HERITAGE' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#B68D40', '#5C4018', '#FAF0CA'],
@@ -12266,6 +12270,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🎭 Nusantara Gold & Rust',
                               palette: 'terracotta_rust' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'NUSANTARA_HERITAGE' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#B85D3B', '#D4AF37', '#FBF0EB'],
@@ -12275,24 +12280,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '💠 Twilight Floral',
                               palette: 'royal_navy' as const,
                               frameStyle: 'CIRCLE' as const,
+                              layoutArchetype: 'BOTANICAL_AIRY' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#1E3A5F', '#6B9AC4', '#EDF2F8'],
                             },
                             {
-                              name: 'Midnight Elegance',
-                              categoryLabel: '✨ Black-Tie Navy & Gold',
-                              palette: 'royal_navy' as const,
+                              name: 'Pearl Elegance',
+                              categoryLabel: '✨ White Pearl & Gold',
+                              palette: 'champagne_gold' as const,
                               frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
                               floral: false,
                               petals: true,
-                              swatches: ['#152A47', '#C5A059', '#E8EFF7'],
+                              swatches: ['#D4AF37', '#FFFDF9', '#F3E9D2'],
                             },
                             {
                               name: 'Espresso Rustic',
                               categoryLabel: '🍂 Warm Earthy Boho',
                               palette: 'terracotta_rust' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
                               floral: true,
                               petals: false,
                               swatches: ['#8C3D20', '#D98A6C', '#F9EBE4'],
@@ -12302,6 +12310,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🎂 Birthday Celebration',
                               palette: 'blush_rose' as const,
                               frameStyle: 'CIRCLE' as const,
+                              layoutArchetype: 'MODERN_BENTO' as const,
                               floral: true,
                               petals: true,
                               swatches: ['#D88290', '#F3D77D', '#FCECEF'],
@@ -12311,15 +12320,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🎓 Graduation Prestige',
                               palette: 'champagne_gold' as const,
                               frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
                               floral: false,
                               petals: true,
-                              swatches: ['#C5A059', '#1E293B', '#FAF3E3'],
+                              swatches: ['#C5A059', '#8B6914', '#FAF3E3'],
                             },
                             {
                               name: 'Executive Summit',
                               categoryLabel: '🏛️ Corporate & Instansi',
                               palette: 'royal_navy' as const,
                               frameStyle: 'EDITORIAL_RECT' as const,
+                              layoutArchetype: 'MODERN_BENTO' as const,
                               floral: false,
                               petals: false,
                               swatches: ['#1E3A5F', '#475569', '#F1F5F9'],
@@ -12329,15 +12340,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               categoryLabel: '🥂 VIP Gala Dinner',
                               palette: 'royal_navy' as const,
                               frameStyle: 'ARCH_DOME' as const,
+                              layoutArchetype: 'MODERN_BENTO' as const,
                               floral: false,
                               petals: true,
                               swatches: ['#1E3A5F', '#D4AF37', '#EDF2F8'],
                             },
                           ].map((presetItem) => {
+                            const currentLayoutArchetype =
+                              (settingsForm as any).themeLayoutArchetype ||
+                              (state.settings as any).themeLayoutArchetype ||
+                              'EDITORIAL_CLASSIC';
                             const isCurrent =
                               activeThemePresetId === presetItem.palette &&
                               (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
                                 presetItem.frameStyle &&
+                              currentLayoutArchetype === presetItem.layoutArchetype &&
                               Boolean(settingsForm.showFloralOrnaments !== false) ===
                                 presetItem.floral;
                             return (
@@ -12354,16 +12371,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     showFloatingPetals: presetItem.petals,
                                     updatedBy: adminUser.username,
                                   };
+                                  (nextSettings as any).themeLayoutArchetype =
+                                    presetItem.layoutArchetype;
                                   setSettingsFormInternal(nextSettings);
                                   await commitImmediateSettings(nextSettings);
                                   showToast(
-                                    `✓ Preset Tema "${presetItem.name}" (${presetItem.categoryLabel}) berhasil diterapkan!`
+                                    `✓ Preset Tema "${presetItem.name}" (${presetItem.categoryLabel} • ${presetItem.layoutArchetype}) berhasil diterapkan!`
                                   );
                                 }}
                                 className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
                                   isCurrent
                                     ? 'bg-white ring-2 ring-[#B68D40] border-[#B68D40] shadow-xs'
-                                    : 'bg-white hover:bg-[#FAF3E3]/60 border-stone-200/90 hover:border-[#B68D40]'
+                                    : 'bg-white hover:bg-[#FAF3E3]/70 border-stone-200/90 hover:border-[#D4AF37]'
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-1.5">
@@ -12385,8 +12404,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     {presetItem.name}
                                   </p>
                                   <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                                    Frame: {presetItem.frameStyle} &bull; Ornamen:{' '}
-                                    {presetItem.floral ? 'ON' : 'OFF'}
+                                    Layout: {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
+                                    {presetItem.frameStyle}
                                   </p>
                                 </div>
                               </button>
@@ -14497,7 +14516,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===============================================================
-                    MENU 6: UPGRADE PAKET MEPLANNER (HARGA 75% DARI KOMPETITOR)
+                    MENU 6: UPGRADE PAKET RESMI MEPLANNER
                    =============================================================== */}
                 {settingsMenuTab === 'paket' && (
                   <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
@@ -14505,7 +14524,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2 min-w-0">
                         <Award className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Upgrade Paket MEPlanner (Harga Spesial 75% Kompetitor)
+                          Upgrade Paket Resmi MEPlanner
                         </h3>
                       </div>
                       <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
@@ -14605,8 +14624,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           key={pkg.name}
                           className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all ${
                             pkg.popular
-                              ? 'bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3] border-2 border-[#B68D40] shadow-md'
-                              : 'bg-white border-stone-200/90 hover:border-[#D4AF37]'
+                              ? 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 shadow-sm'
+                              : 'bg-white border-stone-200/90 hover:border-[#D4AF37] text-stone-900'
                           }`}
                         >
                           <div className="space-y-2">
@@ -14617,7 +14636,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
                                   pkg.popular
-                                    ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37]'
+                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
                                     : 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
                                 }`}
                               >
@@ -14664,18 +14683,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50'
                                 }`}
                               >
-                                Pilih Paket {pkg.name}
+                                Checkout Paket
                               </button>
                             )}
                             <a
-                              href={`https://wa.me/6281234567890?text=${encodeURIComponent(
-                                `Halo Tim MEPlanner, saya ingin upgrade ke paket *${pkg.name}* (${pkg.price}) untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname}.`
+                              href={`mailto:e98.bisnis@gmail.com?subject=${encodeURIComponent(
+                                `Upgrade Paket MEPlanner - ${pkg.name} (${pkg.price})`
+                              )}&body=${encodeURIComponent(
+                                `Halo Tim MEPlanner,\n\nSaya ingin memilih paket ${pkg.name} (${pkg.price}) untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname}.\n\nTerima kasih.`
                               )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] font-bold text-xs shrink-0"
+                              className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs text-center transition-all ${
+                                !onOpenLandingPage && pkg.popular
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                                  : 'bg-white hover:bg-[#FAF3E3]/70 text-[#8B6914] border border-[#D4AF37]/50 shadow-2xs'
+                              }`}
                             >
-                              Via WA
+                              ✉️ Pilih Paket ({pkg.name})
                             </a>
                           </div>
                         </div>
@@ -14703,7 +14726,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
 
                     {/* Card 1: MEPlanner Assistant (Online) Interactive AI Q&A */}
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/50 border-2 border-[#D4AF37]/45 space-y-3">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 shadow-sm space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="font-extrabold text-xs sm:text-sm text-stone-900">
@@ -14720,7 +14743,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         {[
                           {
                             q: 'Cara pakai Layar Penerima Tamu Hari-H?',
-                            a: `Untuk resepsi ${state.settings.groomNickname} & ${state.settings.brideNickname}, buka menu "Konten Undangan" lalu klik tombol hitam "🖥️ Buka Layar Penerima Tamu (Hari-H)". Petugas buku tamu cukup mengetik Nama Tamu, Kode (mis. INV-0001), atau scan Key Hash unik tamu, lalu klik "✓ Check-In Tamu Hadir" untuk menampilkan layar sapaan VIP penuh!`,
+                            a: `Untuk resepsi ${state.settings.groomNickname} & ${state.settings.brideNickname}, buka menu "Konten Undangan" lalu klik tombol "🖥️ Buka Layar Penerima Tamu (Hari-H)". Petugas buku tamu cukup mengetik Nama Tamu, Kode (mis. INV-0001), atau scan Key Hash unik tamu, lalu klik "✓ Check-In Tamu Hadir" untuk menampilkan layar sapaan VIP penuh!`,
                           },
                           {
                             q: 'Buatkan teks pengantar WhatsApp VIP',
@@ -14731,7 +14754,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             a: `Rekomendasi alokasi anggaran MEPlanner: Katering & Jamuan (40%), Gedung & Dekorasi (25%), Dokumentasi & Hiburan (12%), Busana & MUA (10%), Souvenir & Operasional Panitia (8%), serta Dana Cadangan (5%). Pantau realisasi pembayaran secara akurat di tab "Moneter".`,
                           },
                           {
-                            q: 'Keunggulan Paket MEPlanner (Harga 75%)?',
+                            q: 'Keunggulan Paket Resmi MEPlanner?',
                             a: `Seluruh paket berbayar MEPlanner (mulai Premium Rp 51.750 hingga Mitra Gold Rp 750.000) berlaku AKTIF SELAMANYA tanpa biaya langganan bulanan, mendukung Unlimited Tamu, 12 Tema Eksklusif, Event Planner lengkap, dan Layar Penerima Tamu Hari-H.`,
                           },
                         ].map((item) => (
@@ -14759,8 +14782,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             key={idx}
                             className={`p-2.5 rounded-xl text-xs whitespace-pre-line leading-relaxed ${
                               msg.role === 'user'
-                                ? 'bg-stone-900 text-[#FAF3E3] ml-6 font-semibold'
-                                : 'bg-[#FAF3E3]/70 text-stone-800 border border-[#D4AF37]/30 mr-4'
+                                ? 'bg-gradient-to-r from-[#FAF3E3] to-[#F3E9D2] text-stone-900 border border-[#D4AF37]/45 ml-6 font-bold'
+                                : 'bg-[#FAF6EE] text-stone-800 border border-[#D4AF37]/30 mr-4'
                             }`}
                           >
                             {msg.text}
@@ -14787,7 +14810,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 { role: 'user', text: q },
                                 {
                                   role: 'assistant',
-                                  text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via WhatsApp/Email di bawah.`,
+                                  text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
                                 },
                               ]);
                             }
@@ -14804,7 +14827,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               { role: 'user', text: q },
                               {
                                 role: 'assistant',
-                                text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via WhatsApp/Email di bawah.`,
+                                text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
                               },
                             ]);
                           }}
@@ -14823,36 +14846,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <a
-                          href={`https://wa.me/6281234567890?text=${encodeURIComponent(
-                            `Halo Customer Service MEPlanner, saya butuh bantuan terkait undangan ${state.settings.groomNickname} & ${state.settings.brideNickname}.`
+                          href={`mailto:e98.bisnis@gmail.com?subject=${encodeURIComponent(
+                            `Bantuan MEPlanner - ${state.settings.groomNickname} & ${state.settings.brideNickname}`
+                          )}&body=${encodeURIComponent(
+                            `Halo Customer Service MEPlanner,\n\nSaya butuh bantuan terkait undangan & acara ${state.settings.groomNickname} & ${state.settings.brideNickname}.\n\nTerima kasih.`
                           )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-3 rounded-xl bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200 flex flex-col justify-between gap-1.5 transition-all"
-                        >
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
-                            💬 WhatsApp CS
-                          </span>
-                          <span className="font-bold text-xs text-stone-900">
-                            Chat WhatsApp Support
-                          </span>
-                          <span className="text-[10px] text-emerald-800 font-semibold">
-                            Respon Cepat &bull; Klik untuk Chat
-                          </span>
-                        </a>
-
-                        <a
-                          href="mailto:e98.bisnis@gmail.com?subject=Bantuan%20MEPlanner%20-%20My%20Event%20Planner"
-                          className="p-3 rounded-xl bg-[#FAF3E3]/70 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 flex flex-col justify-between gap-1.5 transition-all"
+                          className="p-3 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] border border-[#D4AF37]/50 flex flex-col justify-between gap-1.5 transition-all shadow-2xs"
                         >
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                            ✉️ Email Resmi
+                            ✉️ Email Resmi Customer Service
                           </span>
-                          <span className="font-bold text-xs text-stone-900 truncate">
+                          <span className="font-extrabold text-xs text-stone-900 truncate">
                             e98.bisnis@gmail.com
                           </span>
                           <span className="text-[10px] text-[#8B6914] font-semibold">
-                            Dukungan Teknis &amp; Kemitraan WO
+                            Kanal Utama Bantuan &amp; Kemitraan WO
                           </span>
                         </a>
 
@@ -14861,10 +14869,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             🕒 Jam Operasional
                           </span>
                           <span className="font-bold text-xs text-stone-900">
-                            Setiap Hari
+                            Setiap Hari 08.00 - 20.00 WIB
                           </span>
                           <span className="text-[10px] text-stone-600 font-semibold">
-                            08.00 - 20.00 WIB
+                            Layanan Dukungan Teknis &amp; Lisensi
+                          </span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col justify-between gap-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
+                            🤖 MEPlanner Assistant Online
+                          </span>
+                          <span className="font-bold text-xs text-stone-900">
+                            Asisten Cerdas 24/7 Aktif
+                          </span>
+                          <span className="text-[10px] text-emerald-800 font-semibold">
+                            Tanya Jawab &amp; Copywriting Instan
                           </span>
                         </div>
                       </div>
@@ -18598,7 +18618,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===========================================================
-                    5. BRANDING OMEKO42, KONTAK WA/EMAIL, BAHASA & PEMBAYARAN KOMERSIAL
+                    5. BRANDING OMEKO42, EMAIL RESMI, BAHASA & PEMBAYARAN KOMERSIAL
                    =========================================================== */}
                 {superadminMenuTab === 'branding' && (
                   <div className="space-y-4">
@@ -18609,16 +18629,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                         <div>
                           <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Pengaturan Branding <span className="text-[#8B6914]">omeko42</span>, Kontak Global &amp; Pembayaran Komersial
+                            Pengaturan Branding <span className="text-[#8B6914]">omeko42</span>, Kontak Email Resmi &amp; Pembayaran Komersial
                           </h3>
                           <p className="text-[11px] text-stone-500">
-                            Kelola link GitHub omeko42, Kontak WA, Email Bisnis (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
+                            Kelola link GitHub omeko42, Email Bisnis Resmi (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Bagian 1: Branding, Kontak WA, Email Bisnis & Bahasa Default */}
+                    {/* Bagian 1: Branding, Email Bisnis & Bahasa Default */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5">
                       <p className="text-xs font-extrabold text-stone-900 uppercase tracking-wider text-[#8B6914]">
                         1. Identitas Developer, Kontak Resmi &amp; Bahasa Default
@@ -18826,7 +18846,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
                             Link Credit &ldquo;omeko42&rdquo; (GitHub / Website):
@@ -18854,29 +18874,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Nomor / Link Kontak WA (&ldquo;Kontak WA&rdquo; Footer &amp; Order):
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              settingsForm.contactWhatsappNumber ??
-                              state.settings.contactWhatsappNumber ??
-                              '089638616516'
-                            }
-                            onChange={(e) =>
-                              setSettingsForm((prev) => ({
-                                ...prev,
-                                contactWhatsappNumber: e.target.value,
-                              }))
-                            }
-                            placeholder="089638616516"
-                            className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Email Bisnis / Klien Luar Negeri:
+                            Email Resmi MEPlanner (Gmail Utama):
                           </label>
                           <input
                             type="email"
@@ -18942,14 +18940,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </button>
                     </div>
 
-                    {/* Toggle Tampilkan Credit & Kontak WA di Footer */}
+                    {/* Toggle Tampilkan Credit & Kontak Email di Footer */}
                     <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50">
                       <div>
                         <p className="text-xs font-extrabold text-stone-900">
-                          Tampilkan Credit &amp; Kontak WA di Footer
+                          Tampilkan Credit &amp; Kontak Email Resmi di Footer
                         </p>
                         <p className="text-[11px] text-stone-500">
-                          Menampilkan tautan credit by omeko42, Kontak WA, dan Email Bisnis pada bagian bawah halaman.
+                          Menampilkan tautan credit by omeko42, Email Bisnis Resmi (e98.bisnis@gmail.com), dan LinkedIn pada bagian bawah halaman.
                         </p>
                       </div>
                       <input
@@ -18989,11 +18987,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 ? 'https://github.com/omeko42'
                                 : raw;
                             })(),
-                            contactWhatsappNumber:
-                              (
-                                settingsForm.contactWhatsappNumber ??
-                                state.settings.contactWhatsappNumber
-                              )?.trim() || '089638616516',
+                            contactWhatsappNumber: '',
                             contactBusinessEmail:
                               (
                                 settingsForm.contactBusinessEmail ??
@@ -19261,48 +19255,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 Contact Us:
               </span>
               <a
-                href={(() => {
-                  const rawWa =
-                    (
-                      settingsForm.contactWhatsappNumber ??
-                      state.settings.contactWhatsappNumber
-                    )?.trim() || '089638616516';
-                  return /^https?:\/\//i.test(rawWa)
-                    ? rawWa
-                    : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
-                })()}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={`Hubungi Kontak WA My Event Planner (${
-                  (
-                    settingsForm.contactWhatsappNumber ??
-                    state.settings.contactWhatsappNumber
-                  )?.trim() || '089638616516'
-                })`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-[11px] font-bold transition-all shadow-2xs"
-              >
-                <svg
-                  className="w-3.5 h-3.5 text-[#8B6914]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                <span>Kontak WA</span>
-              </a>
-
-              <a
                 href={`mailto:${
                   (
                     settingsForm.contactBusinessEmail ??
                     state.settings.contactBusinessEmail
                   )?.trim() || 'e98.bisnis@gmail.com'
                 }`}
-                title={`Email Bisnis & Klien Internasional (${
+                title={`Email Bisnis & Layanan Resmi MEPlanner (${
                   (
                     settingsForm.contactBusinessEmail ??
                     state.settings.contactBusinessEmail
@@ -19320,7 +19279,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </a>
 
               <a
-                href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+                href="https://www.linkedin.com/in/omeko42"
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Profil LinkedIn Resmi Eko Agung Krisdianto"
@@ -23888,17 +23847,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
          ======================================================================= */}
       {isGuestReceptionModalOpen && (
         <div
-          className="fixed inset-0 z-[70] bg-stone-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[70] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
           onClick={() => setIsGuestReceptionModalOpen(false)}
         >
           <div
-            className="max-w-3xl w-full bg-gradient-to-br from-stone-900 via-[#1C1917] to-stone-950 text-[#FAF3E3] rounded-3xl border-2 border-[#D4AF37]/70 shadow-2xl p-4 sm:p-6 space-y-5 my-auto"
+            className="max-w-3xl w-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-5 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top Bar */}
             <div className="flex items-start justify-between gap-3 border-b border-[#D4AF37]/30 pb-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-white border border-[#D4AF37]/60 flex items-center justify-center shrink-0 shadow-2xs">
                   <WeddingRingsIcon
                     className="w-7 h-7"
                     logoUrl={
@@ -23909,14 +23868,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-extrabold uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
                       🖥️ Layar Penerima Tamu Hari-H
                     </span>
-                    <span className="text-[11px] text-[#D4AF37] font-bold">
+                    <span className="text-[11px] text-[#8B6914] font-bold">
                       MEPlanner Guest Reception
                     </span>
                   </div>
-                  <h3 className="font-serif text-base sm:text-xl font-extrabold text-white truncate mt-0.5">
+                  <h3 className="font-serif text-base sm:text-xl font-extrabold text-stone-900 truncate mt-0.5">
                     {state.settings.showSecondProfile === false
                       ? state.settings.groomFullName
                       : `${state.settings.groomNickname} & ${state.settings.brideNickname}`}
@@ -23927,7 +23886,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsGuestReceptionModalOpen(false)}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-stone-200 transition-colors shrink-0 cursor-pointer"
+                className="p-2 rounded-full bg-white hover:bg-[#FAF3E3] text-stone-600 border border-stone-200/90 transition-colors shrink-0 cursor-pointer shadow-2xs"
                 title="Tutup Layar Penerima Tamu"
               >
                 <X className="w-4 h-4" />
@@ -23936,22 +23895,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* Grand VIP Welcome Screen Banner (When a Guest is Checked-In) */}
             {checkedInGuest && (
-              <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#D4AF37]/25 via-[#C5A059]/15 to-stone-900 border-2 border-[#D4AF37] text-center space-y-2 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-                <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-[0.25em] text-[#F3D77D]">
+              <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3] border-2 border-[#B68D40] text-center space-y-2 shadow-md animate-in fade-in zoom-in-95 duration-200">
+                <p className="text-[11px] sm:text-xs font-extrabold uppercase tracking-[0.25em] text-[#8B6914]">
                   ✨ Selamat Datang di Acara Kami ✨
                 </p>
-                <h2 className="font-serif text-xl sm:text-3xl font-extrabold text-white">
+                <h2 className="font-serif text-xl sm:text-3xl font-extrabold text-stone-900">
                   Selamat Datang, {checkedInGuest.guestName}
                 </h2>
-                <p className="text-xs sm:text-sm text-[#FAF3E3]/90 font-semibold">
+                <p className="text-xs sm:text-sm text-stone-700 font-semibold">
                   {checkedInGuest.institution || 'Tamu Kehormatan'} &bull;{' '}
-                  <span className="text-[#F3D77D] font-extrabold">
+                  <span className="text-[#8B6914] font-extrabold">
                     {checkedInGuest.priority}
                   </span>{' '}
                   &bull; {checkedInGuest.confirmedPax || checkedInGuest.pax || 2} Pax
                 </p>
-                <div className="pt-2 flex items-center justify-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/50 text-emerald-200 text-xs font-extrabold">
+                <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-extrabold">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Status: Sudah Hadir (Check-In Tercatat)</span>
                   </span>
@@ -23961,7 +23920,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setCheckedInGuest(null);
                       setReceptionSearchInput('');
                     }}
-                    className="px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold cursor-pointer"
+                    className="px-3 py-1 rounded-full bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 text-xs font-bold cursor-pointer shadow-2xs"
                   >
                     Scan Tamu Berikutnya
                   </button>
@@ -23971,27 +23930,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* Live Reception KPI Row */}
             <div className="grid grid-cols-3 gap-2.5 text-center">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-                <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                <p className="text-[10px] uppercase tracking-wider text-stone-500 font-bold">
                   Total Undangan
                 </p>
-                <p className="text-base sm:text-xl font-extrabold text-white mt-0.5">
+                <p className="text-base sm:text-xl font-extrabold text-stone-900 mt-0.5">
                   {state.guests.length}
                 </p>
               </div>
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-400/30">
-                <p className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold">
+              <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 shadow-2xs">
+                <p className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">
                   Konfirmasi Hadir
                 </p>
-                <p className="text-base sm:text-xl font-extrabold text-emerald-300 mt-0.5">
+                <p className="text-base sm:text-xl font-extrabold text-emerald-800 mt-0.5">
                   {metrics.hadirGuestsCount} ({metrics.hadirPax} Pax)
                 </p>
               </div>
-              <div className="p-3 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40">
-                <p className="text-[10px] uppercase tracking-wider text-[#F3D77D] font-bold">
+              <div className="p-3 rounded-2xl bg-white border border-[#D4AF37]/50 shadow-2xs">
+                <p className="text-[10px] uppercase tracking-wider text-[#8B6914] font-bold">
                   Sudah Check-In Hari-H
                 </p>
-                <p className="text-base sm:text-xl font-extrabold text-[#F3D77D] mt-0.5">
+                <p className="text-base sm:text-xl font-extrabold text-[#8B6914] mt-0.5">
                   {
                     state.guests.filter((g) => g.attendanceStatus === 'Hadir di Lokasi')
                       .length
@@ -24002,17 +23961,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* Search / Scan Input */}
             <div className="space-y-2">
-              <label className="block text-xs font-extrabold text-[#F3D77D]">
+              <label className="block text-xs font-extrabold text-[#8B6914]">
                 🔍 Ketik / Scan Key Hash Unik, Kode Undangan (INV-0001), atau Nama Tamu:
               </label>
               <div className="relative">
-                <Search className="w-4 h-4 text-[#D4AF37] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#B68D40] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={receptionSearchInput}
                   onChange={(e) => setReceptionSearchInput(e.target.value)}
                   placeholder="Contoh: DvVsH3CprCb3URDzq8Tmz atau INV-0001 atau Nama Tamu..."
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-black/50 border-2 border-[#D4AF37]/50 focus:border-[#D4AF37] text-white text-xs sm:text-sm font-medium focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border-2 border-[#D4AF37]/50 focus:border-[#B68D40] text-stone-900 placeholder:text-stone-400 text-xs sm:text-sm font-medium focus:outline-none shadow-2xs"
                 />
               </div>
             </div>
@@ -24045,28 +24004,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   return (
                     <div
                       key={guest.id}
-                      className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all"
+                      className="p-3 rounded-2xl bg-white hover:bg-[#FAF3E3]/70 border border-stone-200/90 hover:border-[#D4AF37] text-stone-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-extrabold text-xs sm:text-sm text-white truncate">
+                          <span className="font-extrabold text-xs sm:text-sm text-stone-900 truncate">
                             {guest.guestName}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#F3D77D] border border-[#D4AF37]/40 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/45 text-[10px] font-bold">
                             {guest.priority}
                           </span>
-                          <span className="text-[10px] font-mono text-stone-400">
+                          <span className="text-[10px] font-mono text-stone-500">
                             {guest.invitationCode} &bull; Key: {guestHash}
                           </span>
                         </div>
-                        <p className="text-[11px] text-stone-300 truncate mt-0.5">
+                        <p className="text-[11px] text-stone-600 truncate mt-0.5">
                           {guest.institution || 'Umum'} &bull; Kuota:{' '}
                           {guest.confirmedPax || guest.pax || 2} Pax &bull; Status:{' '}
                           <span
                             className={
                               isAlreadyPresent
-                                ? 'text-emerald-300 font-bold'
-                                : 'text-amber-300 font-semibold'
+                                ? 'text-emerald-700 font-bold'
+                                : 'text-amber-700 font-semibold'
                             }
                           >
                             {guest.attendanceStatus || 'Belum Dicek'}
@@ -24091,8 +24050,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }}
                         className={`px-3.5 py-2 rounded-xl font-extrabold text-xs shrink-0 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           isAlreadyPresent
-                            ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-400/50 hover:bg-emerald-600/50'
-                            : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-md hover:opacity-95'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200/70'
+                            : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-sm hover:opacity-95'
                         }`}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />

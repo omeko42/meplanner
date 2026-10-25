@@ -1365,7 +1365,14 @@ type CatalogThemeStyle =
   | 'Floral'
   | 'Adat & Budaya'
   | 'Editorial Foto'
-  | 'Dark Luxury';
+  | 'Light Luxury';
+
+type ThemeLayoutArchetype =
+  | 'EDITORIAL_CLASSIC'
+  | 'POLAROID_MAGAZINE'
+  | 'BOTANICAL_AIRY'
+  | 'NUSANTARA_HERITAGE'
+  | 'MODERN_BENTO';
 
 interface CatalogThemeItem {
   id: string;
@@ -1373,6 +1380,7 @@ interface CatalogThemeItem {
   eventType: EventCategoryType;
   dummyClientId: string;
   styleCategory: CatalogThemeStyle;
+  layoutArchetype: ThemeLayoutArchetype;
   themePreset:
     | 'champagne_gold'
     | 'sage_botanical'
@@ -1392,7 +1400,7 @@ interface CatalogThemeItem {
 
 const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
   // =========================================================================
-  // 💍 PERNIKAHAN (15 TEMA EKSKLUSIF — WEVITATION + MEPLANNER SIGNATURE)
+  // 💍 PERNIKAHAN (15 TEMA EKSKLUSIF — KOLEKSI KURASI MEPLANNER)
   // =========================================================================
   {
     id: 'wed-timeless-snapshot',
@@ -1400,6 +1408,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: true,
@@ -1420,6 +1429,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'sage_botanical',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
@@ -1440,6 +1450,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: false,
@@ -1460,6 +1471,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'blush_rose',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
@@ -1480,6 +1492,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
@@ -1500,6 +1513,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Floral',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
@@ -1516,22 +1530,23 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
   },
   {
     id: 'wed-espresso',
-    name: 'Espresso',
+    name: 'Espresso & Warm Linen',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#8C523A', '#CC704E', '#1E1410'],
+    paletteColors: ['#8C523A', '#F5EDE4', '#CC704E'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Palet hangat kopi espresso & perunggu untuk resepsi malam intim',
-    taglineEn: 'Warm espresso & bronze palette for intimate evening receptions',
+    taglineId: 'Palet hangat linen krem & perunggu espresso untuk resepsi intim',
+    taglineEn: 'Warm linen cream & bronze espresso palette for intimate receptions',
     tierBadge: 'Premium',
   },
   {
@@ -1540,6 +1555,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Floral',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'blush_rose',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: true,
@@ -1556,22 +1572,23 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
   },
   {
     id: 'wed-photovit-black',
-    name: 'Photovit: Black',
+    name: 'Photovit: Editorial',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'royal_navy',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#111528', '#D4AF37', '#3B669E'],
+    paletteColors: ['#3B669E', '#F8FAFC', '#D4AF37'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kontras monokrom hitam-emas bergaya majalah mode kelas atas',
-    taglineEn: 'High-fashion black and gold monochrome magazine aesthetic',
+    taglineId: 'Tata letak majalah mode modern dengan grid Bento bersih & elegan',
+    taglineEn: 'High-fashion modern magazine aesthetic with clean Bento grid',
     tierBadge: 'Premium',
   },
   {
@@ -1580,6 +1597,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Floral',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'royal_navy',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
@@ -1590,20 +1608,21 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
       'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Bunga hydrangea biru royal berpadu kubah arsitektur elegan',
-    taglineEn: 'Royal blue hydrangea florals paired with elegant arch domes',
+    taglineId: 'Bunga hydrangea biru langit cerah berpadu kubah arsitektur elegan',
+    taglineEn: 'Bright sky blue hydrangea florals paired with elegant arch domes',
     tierBadge: 'Premium',
   },
   {
     id: 'wed-wayang',
-    name: 'Wayang',
+    name: 'Wayang Heritage',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Adat & Budaya',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
-    paletteColors: ['#C5A059', '#3D2B1F', '#FAF0CA'],
+    paletteColors: ['#C5A059', '#F8F1E6', '#8B5A2B'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1620,6 +1639,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'sage_botanical',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: true,
@@ -1636,22 +1656,23 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
   },
   {
     id: 'wed-midnight-elegance',
-    name: 'Midnight Elegance',
+    name: 'Pearl & Ivory Elegance',
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'royal_navy',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
-    paletteColors: ['#1B2A4A', '#D4AF37', '#F4F6FA'],
+    paletteColors: ['#3B669E', '#FFFDF9', '#D4AF37'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kemegahan malam bertabur bintang biru safir & aksen emas VVIP',
-    taglineEn: 'Starlit sapphire midnight grandeur with VVIP gold accents',
+    taglineId: 'Kemegahan mutiara gading & safir terang dengan aksen emas VVIP',
+    taglineEn: 'Luminous pearl ivory & sapphire grandeur with VVIP gold accents',
     tierBadge: 'Business / VIP',
   },
   {
@@ -1660,18 +1681,19 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: true,
-    paletteColors: ['#C87D55', '#FAF4EE', '#4A3222'],
+    paletteColors: ['#C87D55', '#F5EDE4', '#4A3222'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Sentuhan rustic terracotta & bunga kering yang hangat dan bersahaja',
-    taglineEn: 'Warm terracotta rustic charm with dried floral arrangements',
+    taglineId: 'Sentuhan rustic terracotta & linen krem yang hangat dan bersahaja',
+    taglineEn: 'Warm terracotta rustic charm with natural linen cream tones',
     tierBadge: 'Gratis / Premium',
   },
   {
@@ -1680,10 +1702,11 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'WEDDING',
     dummyClientId: 'client-demo-wedding',
     styleCategory: 'Adat & Budaya',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
-    paletteColors: ['#9A5B3E', '#D4AF37', '#2B1810'],
+    paletteColors: ['#9A5B3E', '#FDF8F0', '#D4AF37'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1704,6 +1727,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     styleCategory: 'Floral',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'blush_rose',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: true,
@@ -1724,18 +1748,19 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#FAF0CA', '#B68D40'],
+    paletteColors: ['#D4AF37', '#FFF9F0', '#B68D40'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Desain pesta ulang tahun meriah dengan kilau confetti emas',
-    taglineEn: 'Festive birthday celebration design with golden confetti sparkle',
+    taglineId: 'Desain pesta ulang tahun meriah dengan bingkai foto polaroid & confetti',
+    taglineEn: 'Festive birthday celebration design with polaroid frames & confetti',
     tierBadge: 'Gratis / Premium',
   },
   {
@@ -1743,18 +1768,19 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     name: 'Golden Jubilee 50th',
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
-    paletteColors: ['#C5A059', '#1C1613', '#FAF3E3'],
+    paletteColors: ['#C5A059', '#FAF3E3', '#8B6914'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tasyakuran usia emas & milestone keluarga yang penuh wibawa',
+    taglineId: 'Tasyakuran usia emas & milestone keluarga yang hangat dan berwibawa',
     taglineEn: 'Dignified golden milestone & family appreciation celebration',
     tierBadge: 'Premium',
   },
@@ -1764,6 +1790,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'BIRTHDAY',
     dummyClientId: 'client-demo-birthday',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'sage_botanical',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: true,
@@ -1787,11 +1814,12 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     name: 'Cum Laude Academic Gold',
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#1E2436', '#FAF3E3'],
+    paletteColors: ['#D4AF37', '#FAF3E3', '#8B6914'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1808,6 +1836,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'sage_botanical',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
@@ -1828,6 +1857,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'royal_navy',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: false,
@@ -1848,6 +1878,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'GRADUATION',
     dummyClientId: 'client-demo-graduation',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: false,
@@ -1872,10 +1903,11 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'royal_navy',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#0F1E36', '#E8F0F8'],
+    paletteColors: ['#3B669E', '#E8F0F8', '#162844'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1892,10 +1924,11 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
     styleCategory: 'Adat & Budaya',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#1C1813', '#FAF3E3'],
+    paletteColors: ['#D4AF37', '#FAF3E3', '#8B6914'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1912,6 +1945,7 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'BOTANICAL_AIRY',
     themePreset: 'sage_botanical',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
@@ -1928,14 +1962,15 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
   },
   {
     id: 'meet-tech-keynote',
-    name: 'Tech Keynote Cyber',
+    name: 'Tech Keynote Modern',
     eventType: 'MEETING',
     dummyClientId: 'client-demo-meeting',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'royal_navy',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: false,
-    paletteColors: ['#00F0FF', '#111528', '#6366F1'],
+    paletteColors: ['#3B669E', '#F1F5F9', '#0284C7'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1955,18 +1990,19 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     name: 'Royal Sapphire Gala',
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'MODERN_BENTO',
     themePreset: 'royal_navy',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#D4AF37', '#0B132B'],
+    paletteColors: ['#3B669E', '#F8FAFC', '#D4AF37'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
       'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
     coverBgUrl:
       'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Jamuan malam apresiasi mitra VVIP & filantropi bernuansa safir',
+    taglineId: 'Jamuan malam apresiasi mitra VVIP & filantropi bernuansa safir terang',
     taglineEn: 'VVIP partner appreciation & philanthropy gala in royal sapphire',
     tierBadge: 'Business / VIP',
   },
@@ -1975,11 +2011,12 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     name: 'Champagne Gold Orchestra',
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
-    styleCategory: 'Dark Luxury',
+    styleCategory: 'Light Luxury',
+    layoutArchetype: 'EDITORIAL_CLASSIC',
     themePreset: 'champagne_gold',
     profileFrameStyle: 'ARCH_DOME',
     showFloralOrnaments: true,
-    paletteColors: ['#D4AF37', '#FAF0CA', '#1C1613'],
+    paletteColors: ['#D4AF37', '#FFFDF9', '#8B6914'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -1996,10 +2033,11 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
     styleCategory: 'Editorial Foto',
+    layoutArchetype: 'POLAROID_MAGAZINE',
     themePreset: 'blush_rose',
     profileFrameStyle: 'EDITORIAL_RECT',
     showFloralOrnaments: false,
-    paletteColors: ['#D88290', '#2E1118', '#FAF0CA'],
+    paletteColors: ['#D88290', '#FFF5F7', '#8C3B4A'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -2016,10 +2054,11 @@ const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
     eventType: 'GALA_DINNER',
     dummyClientId: 'client-demo-gala',
     styleCategory: 'Minimalis',
+    layoutArchetype: 'NUSANTARA_HERITAGE',
     themePreset: 'terracotta_rust',
     profileFrameStyle: 'CIRCLE',
     showFloralOrnaments: false,
-    paletteColors: ['#CC704E', '#D4AF37', '#1E1512'],
+    paletteColors: ['#CC704E', '#FDF8F4', '#D4AF37'],
     thumbnailUrl:
       'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80',
     heroPrewedUrl:
@@ -2207,10 +2246,10 @@ const BLOG_ARTICLES: BlogArticleItem[] = [
 
 const FAQ_ITEMS = [
   {
-    qId: 'Mengapa harga paket MEPlanner bisa 25% lebih hemat (hanya 75% dari harga Wevitation) dengan fitur lebih lengkap?',
-    qEn: 'Why are MEPlanner packages 25% more affordable (exact 75% of competitor prices) with even more features?',
-    aId: 'Kami membangun infrastruktur cloud modern yang efisien di atas Supabase & Vercel serta menggabungkan 5 jenis acara (Pernikahan, Ulang Tahun, Wisuda, Rapat Resmi, Gala Dinner) + Full Event Planner dalam satu ekosistem. Hasilnya, Anda mendapatkan seluruh fitur premium Wevitation ditambah Readiness Tracker 8 Domain, Kalkulator Vendor, dan 21-Char Hash Token dengan harga tepat 75% (Hemat 25% di semua tier: Premium Rp 51.750, Business Rp 74.250, Enterprise Rp 180.000, Mitra Silver Rp 375.000, dan Mitra Gold Rp 750.000).',
-    aEn: 'Our modern cloud architecture combines 5 event categories plus a full 8-Domain Event Planner in one unified platform—delivering all premium digital invitation features at exactly 75% of competitor pricing (25% savings across every tier).',
+    qId: 'Mengapa harga paket resmi MEPlanner sangat terjangkau dengan fitur perencanaan acara terlengkap?',
+    qEn: 'Why are MEPlanner official packages so affordable while offering the most complete event planning suite?',
+    aId: 'Kami membangun infrastruktur cloud modern yang efisien di atas Supabase & Vercel serta menggabungkan 5 jenis acara (Pernikahan, Ulang Tahun, Wisuda, Rapat Resmi, Gala Dinner) + Full Event Planner dalam satu ekosistem terpadu. Hasilnya, Anda mendapatkan fitur undangan digital kelas atas ditambah Readiness Tracker 8 Domain, Kalkulator Vendor, dan 21-Char Hash Token dengan harga resmi terbaik: Gratis Rp 0, Premium Rp 51.750, Business Rp 74.250, Enterprise Rp 180.000, Mitra Silver Rp 375.000, dan Mitra Gold Rp 750.000.',
+    aEn: 'Our modern cloud architecture combines 5 event categories plus a full 8-Domain Event Planner in one unified platform—delivering all premium digital invitation features at official transparent pricing across every tier.',
   },
   {
     qId: 'Apakah undangan digital di MEPlanner benar-benar aktif selamanya (sekali bayar tanpa biaya bulanan)?',
@@ -2219,10 +2258,10 @@ const FAQ_ITEMS = [
     aEn: 'Yes! All paid tiers (from Premium Rp 51,750 to Mitra Gold Rp 750,000) are a one-time payment with lifetime active access. The Free tier (Rp 0) stays active for 14 days so you can test everything risk-free.',
   },
   {
-    qId: 'Apakah saya bisa mengganti tema desain setelah mengisi data acara dan daftar tamu?',
-    qEn: 'Can I switch themes anytime after entering my event details and guest list?',
-    aId: 'Tentu saja! Seluruh 31+ tema desain di MEPlanner terpisah dari data konten Anda. Anda bebas berganti tema (misalnya dari Serein ke Timeless Snapshot, Wayang, atau Midnight Elegance), mengubah palet warna, hingga mengganti bingkai foto (Arch Dome, Circle, Editorial) kapan saja dalam 1 klik tanpa kehilangan data tamu atau RSVP.',
-    aEn: 'Absolutely! All 31+ themes are decoupled from your event data. You can switch themes, color palettes, and profile frames anytime in 1 click without losing any guest or RSVP data.',
+    qId: 'Apakah saya bisa mengganti tema dan struktur tata letak (Layout Archetype) setelah mengisi data acara?',
+    qEn: 'Can I switch themes and layout structures anytime after entering my event details and guest list?',
+    aId: 'Tentu saja! Seluruh 31+ tema desain di MEPlanner dilengkapi 5 Arketipe Tata Letak berbeda (Editorial Classic, Polaroid Magazine, Botanical Airy, Nusantara Heritage, dan Modern Bento) yang terpisah dari data konten Anda. Anda bebas berganti tema, struktur layout, palet warna, hingga bingkai foto kapan saja dalam 1 klik tanpa kehilangan data tamu atau RSVP.',
+    aEn: 'Absolutely! All 31+ themes feature 5 distinct Layout Archetypes decoupled from your event data. You can switch themes, layout structures, color palettes, and profile frames anytime in 1 click without losing any guest or RSVP data.',
   },
   {
     qId: 'Apa keunggulan paket Business (Rp 74.250) dan Enterprise (Rp 180.000) dibanding Premium?',
@@ -2237,31 +2276,31 @@ const FAQ_ITEMS = [
     aEn: 'Mitra Silver (11 Premium Invitations • Rp 375,000) unlocks Custom Text Branding for your WO/EO agency name. Mitra Gold (23 Premium Invitations • Rp 750,000) unlocks full White-Label Text + Custom Agency Logo Branding on all client invitations.',
   },
   {
-    qId: 'Metode pembayaran apa saja yang didukung untuk aktivasi paket dan amplop digital tamu?',
-    qEn: 'Which payment methods are supported for package checkout and guest digital envelopes?',
-    aId: 'MEPlanner mendukung pembayaran terlengkap: QRIS Instan Nasional, Transfer Bank (BCA, Mandiri, BRI, BNI), E-Wallet, Kartu Kredit/Debit (Visa/Mastercard), PayPal International, serta Web3 Crypto Wallet (USDT TRC20 / ERC20) dengan proteksi transaksi Idempoten anti-duplikat.',
-    aEn: 'MEPlanner supports QRIS, National Bank Transfers, E-Wallets, Credit/Debit Cards, PayPal International, and Web3 Crypto Wallets (USDT TRC20 / ERC20) with strict idempotent transaction protection.',
+    qId: 'Bagaimana cara menghubungi tim resmi MEPlanner untuk bantuan teknis atau konfirmasi lisensi?',
+    qEn: 'How can I contact the official MEPlanner team for technical support or license confirmation?',
+    aId: 'Seluruh korespondensi resmi, konfirmasi bukti pembayaran lisensi, dan dukungan pelanggan MEPlanner dilayani melalui Email Resmi Gmail di e98.bisnis@gmail.com (Jam Operasional Setiap Hari 08.00 – 20.00 WIB).',
+    aEn: 'All official support, license payment confirmations, and inquiries are handled via our Official Business Gmail at e98.bisnis@gmail.com (Daily 08:00 – 20:00 WIB).',
   },
 ] as const;
 
 const AI_QUICK_PROMPTS = [
   {
     id: 'ai-price',
-    questionId: '💰 Bandingkan harga 75% MEPlanner vs Wevitation',
-    questionEn: '💰 Compare MEPlanner 75% pricing vs Wevitation',
+    questionId: '💰 Rincian harga resmi 6 paket MEPlanner',
+    questionEn: '💰 Official pricing for all 6 MEPlanner packages',
     answerId:
-      '🤖 MEPlanner AI: Di MEPlanner, seluruh paket berbayar dipatok tepat 75% dari harga Wevitation (Hemat 25%): Paket Premium hanya Rp 51.750 (vs Rp 69.000), Business 2 Undangan Rp 74.250 (vs Rp 99.000), Enterprise 5 Undangan Rp 180.000 (vs Rp 240.000), Mitra Silver 11 Undangan Rp 375.000 (vs Rp 500.000), dan Mitra Gold 23 Undangan Rp 750.000 (vs Rp 1.000.000). Anda juga bisa mulai dengan Paket Gratis Rp 0!',
+      '🤖 MEPlanner AI: Berikut daftar harga resmi MEPlanner (Sekali Bayar • Aktif Selamanya): Paket Gratis Rp 0 (Uji Coba 14 Hari), Paket Premium Rp 51.750 (1 Undangan Premium Unlimited), Business Rp 74.250 (2 Undangan Premium + Full Event Planner), Enterprise Rp 180.000 (5 Undangan Premium + Video HD & Global Gift), Mitra Silver Rp 375.000 (11 Undangan + Branding Teks WO/EO), dan Mitra Gold Rp 750.000 (23 Undangan + Branding Logo WO/EO)!',
     answerEn:
-      '🤖 MEPlanner AI: Every MEPlanner tier is priced at exactly 75% of competitor rates (25% savings): Premium Rp 51,750, Business (2 Invitations) Rp 74,250, Enterprise (5 Invitations) Rp 180,000, Mitra Silver (11 Invitations) Rp 375,000, and Mitra Gold (23 Invitations) Rp 750,000—plus a Rp 0 Free tier!',
+      '🤖 MEPlanner AI: Official MEPlanner one-time pricing: Free Rp 0 (14-Day Trial), Premium Rp 51,750 (1 Unlimited Invitation), Business Rp 74,250 (2 Invitations + Full Event Planner), Enterprise Rp 180,000 (5 Invitations + HD Video & Global Gift), Mitra Silver Rp 375,000 (11 Invitations + Text Branding), and Mitra Gold Rp 750,000 (23 Invitations + Logo Branding)!',
   },
   {
     id: 'ai-theme',
-    questionId: '🎨 Rekomendasi tema sesuai jenis acara saya',
-    questionEn: '🎨 Recommend a theme for my event type',
+    questionId: '🎨 Rekomendasi tema & layout sesuai jenis acara saya',
+    questionEn: '🎨 Recommend a theme & layout for my event type',
     answerId:
-      '🤖 MEPlanner AI: Untuk Pernikahan Adat & Keraton, gunakan tema "Wayang" atau "Culture: Javanese". Untuk Garden/Minimalis, pilih "Serein", "Mildness", atau "Simple Rustic #3". Untuk Resepsi Ballroom Mewah, pilih "Elegant Light", "Timeless Snapshot", atau "Midnight Elegance". Kami juga menyediakan tema khusus Sweet 17th, Sumpah Dokter/Wisuda, Rakornas Instansi/Polri, hingga Royal Sapphire Gala Dinner!',
+      '🤖 MEPlanner AI: Setiap tema di MEPlanner memiliki arketipe tata letak (Layout Archetype) yang unik! Untuk Pernikahan Adat & Keraton, gunakan "Wayang Heritage" atau "Culture: Javanese" (Nusantara Heritage Layout). Untuk gaya majalah & polaroid modern, pilih "Snap Photo", "Visual Journey", atau "Peppy" (Polaroid Magazine Layout). Untuk nuansa taman minimalis, pilih "Serein", "Mildness", atau "BluBloom" (Botanical Airy Layout). Untuk Ballroom & Eksekutif, pilih "Timeless Snapshot", "Elegant Light", atau "Pearl & Ivory Elegance"!',
     answerEn:
-      '🤖 MEPlanner AI: For Heritage Weddings, try "Wayang" or "Culture: Javanese". For Minimalist/Garden vibes, choose "Serein" or "Mildness". For Luxury Ballrooms, pick "Elegant Light" or "Midnight Elegance"—plus dedicated themes for Birthdays, Graduations, Corporate Summits, and Gala Dinners!',
+      '🤖 MEPlanner AI: Every MEPlanner theme features a distinct Layout Archetype! For Heritage Weddings, try "Wayang Heritage" or "Culture: Javanese". For Polaroid & Magazine vibes, pick "Snap Photo", "Visual Journey", or "Peppy". For Botanical Minimalist, choose "Serein", "Mildness", or "BluBloom"!',
   },
   {
     id: 'ai-planner',
@@ -2406,7 +2445,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  // Commercial Wevitation-inspired Modals & Interactive States
+  // Commercial Catalog Modals & Interactive States
   const [selectedCatalogThemeId, setSelectedCatalogThemeId] = useState<string>(
     'wed-timeless-snapshot'
   );
@@ -2701,6 +2740,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         themePreset: resolvedPreset,
         ...(activeCatalogTheme
           ? {
+              themeLayoutArchetype: activeCatalogTheme.layoutArchetype,
               profileFrameStyle: activeCatalogTheme.profileFrameStyle,
               showFloralOrnaments: activeCatalogTheme.showFloralOrnaments,
               coverBgUrl: activeCatalogTheme.coverBgUrl,
@@ -2710,7 +2750,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               heroBadgeText: `TEMA: ${activeCatalogTheme.name.toUpperCase()} (${activeCatalogTheme.styleCategory.toUpperCase()})`,
             }
           : {}),
-      },
+      } as WeddingSettings,
     };
   }, [
     activeDummyMeta.id,
@@ -3061,12 +3101,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     !rawDeveloperUrl || /github\.com\/omeko11/i.test(rawDeveloperUrl)
       ? 'https://github.com/omeko42'
       : rawDeveloperUrl;
-  const rawWa =
-    primarySettings.contactWhatsappNumber?.trim() || '089638616516';
-  const whatsappUrl = /^https?:\/\//i.test(rawWa)
-    ? rawWa
-    : `https://wa.me/${rawWa.replace(/\D/g, '').replace(/^0/, '62')}`;
-
   const rawPaypalConfig = primarySettings.commercialPaypalUrl?.trim() || '';
   const paypalHref =
     /^https?:\/\//i.test(rawPaypalConfig) &&
@@ -3074,9 +3108,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       ? rawPaypalConfig
       : 'https://www.paypal.com/ncp/payment/GJNLQTV45Y9NY';
 
-  // Official post-payment business email (only revealed once hasCompletedPayment === true)
+  // Official business email (e98.bisnis@gmail.com)
   const businessEmail =
     primarySettings.contactBusinessEmail?.trim() || 'e98.bisnis@gmail.com';
+  const mailtoGeneralSupportUrl = `mailto:${businessEmail}?subject=${encodeURIComponent(
+    lang === 'ID'
+      ? 'Konsultasi & Dukungan Resmi MEPlanner — My Event Planner'
+      : 'Official Inquiry & Support — MEPlanner'
+  )}`;
   const mailtoPostPaymentUrl = `mailto:${businessEmail}?subject=${encodeURIComponent(
     lang === 'ID'
       ? `[Konfirmasi Bukti Bayar ${activeTransaction?.orderId || currentOrderId}] Paket ${selectedCheckoutTier} - ${buyerCoupleName || buyerEmail}`
@@ -3103,7 +3142,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? 'Cocok untuk uji coba fitur dasar sebelum upgrade'
               : 'Ideal for testing core features before upgrading',
-          wevitationPriceLabel: 'Wevitation: Rp 0',
+          normalPriceLabel: lang === 'ID' ? 'Uji Coba Gratis' : 'Free Trial',
           discountBadge: 'PROMO AKTIF',
           priceMain: lang === 'ID' ? 'Rp 0' : '$0 USD',
           priceCryptoDisplay: '0 USDT',
@@ -3141,23 +3180,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           simTier: 'EXCLUSIVE' as const,
           badge:
             lang === 'ID'
-              ? '★ PALING FAVORIT • PREMIUM (75% HARGA)'
-              : '★ MOST FAVORITE • PREMIUM (75% PRICE)',
+              ? '★ PALING FAVORIT • PREMIUM'
+              : '★ MOST FAVORITE • PREMIUM',
           name: 'Premium',
           subtitle:
             lang === 'ID'
               ? 'Cocok untuk pasangan mempelai / individu (1 Acara)'
               : 'Best for couples or individuals (1 Event)',
-          wevitationPriceLabel: 'Wevitation: Rp 69.000',
-          discountBadge: '31% OFF • HEMAT 25% DARI KOMPETITOR!',
+          normalPriceLabel:
+            lang === 'ID' ? 'Harga Normal: Rp 75.000' : 'Regular: $7.50 USD',
+          discountBadge: 'PROMO 31% OFF • TERPOPULER',
           priceMain: lang === 'ID' ? 'Rp 51.750' : '$3.75 USD',
           priceCryptoDisplay: '3.75 USDT',
           amountNumeric: lang === 'ID' ? 51750 : 4,
           priceStrike: lang === 'ID' ? 'Rp 75.000' : '$7.50 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Harga 75% Wevitation (Rp 69.000 → Rp 51.750) • Sekali Bayar Aktif Selamanya'
-              : '75% of Competitor Price • One-Time Payment Active Forever',
+              ? '1 Undangan Premium Unlimited • Sekali Bayar Aktif Selamanya'
+              : '1 Unlimited Premium Invitation • One-Time Payment Active Forever',
           styleVariant: 'exclusive' as const,
           features:
             lang === 'ID'
@@ -3194,23 +3234,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           simTier: 'EXCLUSIVE' as const,
           badge:
             lang === 'ID'
-              ? '💼 UNTUK 2 ACARA • BUSINESS (75% HARGA)'
-              : '💼 FOR 2 EVENTS • BUSINESS (75% PRICE)',
+              ? '💼 UNTUK 2 ACARA • BUSINESS'
+              : '💼 FOR 2 EVENTS • BUSINESS',
           name: 'Business',
           subtitle:
             lang === 'ID'
               ? 'Cocok untuk pasangan (Resepsi + Ngunduh Mantu) / bisnis kecil'
               : 'Ideal for 2 events or couples + small businesses',
-          wevitationPriceLabel: 'Wevitation: Rp 99.000',
-          discountBadge: '50.5% OFF • HEMAT 25% DARI KOMPETITOR!',
+          normalPriceLabel:
+            lang === 'ID' ? 'Harga Normal: Rp 150.000' : 'Regular: $11 USD',
+          discountBadge: 'PROMO 50% OFF • 2 ACARA',
           priceMain: lang === 'ID' ? 'Rp 74.250' : '$5.25 USD',
           priceCryptoDisplay: '5.25 USDT',
           amountNumeric: lang === 'ID' ? 74250 : 5,
           priceStrike: lang === 'ID' ? 'Rp 150.000' : '$11 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Harga 75% Wevitation (Rp 99.000 → Rp 74.250) • 2 Undangan Premium'
-              : '75% of Competitor Price • 2 Premium Invitations in 1 Account',
+              ? '2 Undangan Premium + Full Event Planner • Aktif Selamanya'
+              : '2 Premium Invitations + Full Event Planner • Active Forever',
           styleVariant: 'exclusive' as const,
           features:
             lang === 'ID'
@@ -3251,23 +3292,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           simTier: 'ROYAL VIP' as const,
           badge:
             lang === 'ID'
-              ? '🏛️ 5 UNDANGAN • ENTERPRISE (75% HARGA)'
-              : '🏛️ 5 INVITATIONS • ENTERPRISE (75% PRICE)',
+              ? '🏛️ 5 UNDANGAN • ENTERPRISE'
+              : '🏛️ 5 INVITATIONS • ENTERPRISE',
           name: 'Enterprise',
           subtitle:
             lang === 'ID'
               ? 'Cocok untuk bisnis menengah / keluarga besar — 5 Undangan'
               : 'Ideal for medium businesses or large families — 5 Invitations',
-          wevitationPriceLabel: 'Wevitation: Rp 240.000',
-          discountBadge: '52% OFF • HEMAT 25% DARI KOMPETITOR!',
+          normalPriceLabel:
+            lang === 'ID' ? 'Harga Normal: Rp 375.000' : 'Regular: $25 USD',
+          discountBadge: 'PROMO 52% OFF • 5 ACARA',
           priceMain: lang === 'ID' ? 'Rp 180.000' : '$12 USD',
           priceCryptoDisplay: '12 USDT',
           amountNumeric: lang === 'ID' ? 180000 : 12,
           priceStrike: lang === 'ID' ? 'Rp 375.000' : '$25 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Harga 75% Wevitation (Rp 240.000 → Rp 180.000) • 5 Undangan Premium'
-              : '75% of Competitor Price • 5 Premium Invitations',
+              ? '5 Undangan Premium + Video HD & Global Gift • Aktif Selamanya'
+              : '5 Premium Invitations + HD Video & Global Gift • Active Forever',
           styleVariant: 'royal' as const,
           features:
             lang === 'ID'
@@ -3307,16 +3349,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? 'Cocok untuk bisnis besar / WO / EO — 11 Undangan'
               : 'Designed for Wedding & Event Organizers — 11 Invitations',
-          wevitationPriceLabel: 'Wevitation: Rp 500.000',
-          discountBadge: '54% OFF • HEMAT 25% DARI KOMPETITOR!',
+          normalPriceLabel:
+            lang === 'ID' ? 'Harga Normal: Rp 825.000' : 'Regular: $55 USD',
+          discountBadge: 'PROMO 54% OFF • PAKET WO/EO',
           priceMain: lang === 'ID' ? 'Rp 375.000' : '$25 USD',
           priceCryptoDisplay: '25 USDT',
           amountNumeric: lang === 'ID' ? 375000 : 25,
           priceStrike: lang === 'ID' ? 'Rp 825.000' : '$55 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Harga 75% Wevitation (Rp 500.000 → Rp 375.000) • 11 Undangan + Branding Teks'
-              : '75% of Competitor Price • 11 Invitations + White-Label Text',
+              ? '11 Undangan Premium + White-Label Branding Teks WO/EO'
+              : '11 Premium Invitations + White-Label Text Branding',
           styleVariant: 'royal' as const,
           features:
             lang === 'ID'
@@ -3358,16 +3401,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? 'Cocok untuk Agensi WO / EO Enterprise — 23 Undangan'
               : 'Flagship for Enterprise WO / EO Agencies — 23 Invitations',
-          wevitationPriceLabel: 'Wevitation: Rp 1.000.000',
-          discountBadge: '56% OFF • HEMAT 25% DARI KOMPETITOR!',
+          normalPriceLabel:
+            lang === 'ID' ? 'Harga Normal: Rp 1.725.000' : 'Regular: $110 USD',
+          discountBadge: 'PROMO 56% OFF • AGENSI VIP',
           priceMain: lang === 'ID' ? 'Rp 750.000' : '$49 USD',
           priceCryptoDisplay: '49 USDT',
           amountNumeric: lang === 'ID' ? 750000 : 49,
           priceStrike: lang === 'ID' ? 'Rp 1.725.000' : '$110 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Harga 75% Wevitation (Rp 1.000.000 → Rp 750.000) • 23 Undangan + Branding Logo'
-              : '75% of Competitor Price • 23 Invitations + Full White-Label Logo',
+              ? '23 Undangan Premium + White-Label Branding Logo WO/EO'
+              : '23 Premium Invitations + Full White-Label Logo Branding',
           styleVariant: 'royal' as const,
           features:
             lang === 'ID'
@@ -5413,9 +5457,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#090B14] text-slate-100 flex flex-col justify-between selection:bg-indigo-500/30">
-      {/* TOP FIXED NAVBAR — OFFICIAL MEPlanner BRAND IDENTITY (COMPACT & MOBILE-FRIENDLY) */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-[#090B14]/95 backdrop-blur-xl border-b border-indigo-500/30 shadow-[0_8px_32px_rgba(9,11,20,0.75)]">
+    <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#FCFBF8] text-stone-900 flex flex-col justify-between selection:bg-amber-500/20">
+      {/* TOP FIXED NAVBAR — OFFICIAL MEPlanner BRIGHT EDITORIAL LIGHT IDENTITY */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-stone-200/90 shadow-[0_4px_24px_rgba(28,25,23,0.06)]">
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
@@ -5436,23 +5480,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
                   title="MEPlanner — My Event Planner"
-                  className="font-sans font-extrabold text-sm sm:text-lg text-white truncate leading-tight text-left hover:text-[#00F0FF] transition-colors"
+                  className="font-sans font-extrabold text-sm sm:text-lg text-stone-900 truncate leading-tight text-left hover:text-[#8B6914] transition-colors"
                 >
-                  <span className="font-sans font-extrabold tracking-tight text-white">
+                  <span className="font-sans font-extrabold tracking-tight text-stone-900">
                     ME
-                    <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
                       Planner
                     </span>
                   </span>
                 </button>
               </div>
-              <p className="text-[9px] sm:text-[11px] font-bold text-indigo-300/90 leading-tight truncate">
+              <p className="text-[9px] sm:text-[11px] font-bold text-stone-500 leading-tight truncate">
                 by{' '}
                 <a
                   href={developerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#00F0FF] hover:underline"
+                  className="text-[#8B6914] hover:underline"
                   title="GitHub Profile @omeko42"
                 >
                   omeko42
@@ -5461,7 +5505,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </div>
 
-          {/* Center Navigation Links — Katalog | Tema | Fitur | Paket 75% | FAQ */}
+          {/* Center Navigation Links — Simulator | 31 Tema | Fitur | Paket | FAQ */}
           <nav className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <a
               href="#showcase"
@@ -5471,9 +5515,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Lihat Simulator Undangan & Demo Planner'
                   : 'Explore Live Invitation Simulator & Demo Planner'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
                 {lang === 'ID' ? 'Simulator' : 'Simulator'}
               </span>
@@ -5487,9 +5531,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Eksplorasi 31 Tema Desain Multi-Event'
                   : 'Explore 31 Multi-Event Design Themes'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EC4899] shrink-0" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
                 {lang === 'ID' ? '31 Tema' : '31 Themes'}
               </span>
@@ -5503,9 +5547,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Fitur 4 Pilar Ekosistem & 6 Modul Persiapan Acara'
                   : '4 Ecosystem Pillars & 6 Event Readiness Modules'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8B5CF6] shrink-0" />
+              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
                 {lang === 'ID' ? 'Fitur' : 'Features'}
               </span>
@@ -5516,14 +5560,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? '6 Pilihan Paket MEPlanner (Harga 75% Wevitation — Hemat 25%!)'
-                  : '6 MEPlanner Packages (75% of Competitor Pricing — Save 25%!)'
+                  ? '6 Pilihan Paket Resmi MEPlanner (Gratis s/d Mitra Gold)'
+                  : '6 Official MEPlanner Packages (Free to Mitra Gold)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-[#D4AF37]/45 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-[#D4AF37]/50 bg-[#FAF3E3]/70 hover:bg-[#FAF3E3] text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37] shrink-0" />
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Paket 75%' : 'Pricing'}
+                {lang === 'ID' ? 'Paket & Harga' : 'Pricing'}
               </span>
             </a>
 
@@ -5535,9 +5579,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Tanya Jawab (FAQ) & Bantuan MEPlanner AI'
                   : 'FAQ & MEPlanner AI Support'
               }
-              className="hidden lg:inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="hidden lg:inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
               <span>FAQ</span>
             </a>
           </nav>
@@ -5553,9 +5597,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Ganti Bahasa ke Bahasa Inggris (EN)'
                   : 'Switch Language to Indonesian (ID)'
               }
-              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#111528] hover:bg-indigo-950/80 border border-indigo-500/35 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200/90 text-stone-800 hover:text-[#8B6914] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
-              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B68D40] shrink-0" />
               <span>{lang}</span>
             </button>
 
@@ -5571,9 +5615,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? 'Akses Portal Planner (Login Akun atau Simulasi Demo)'
                     : 'Access Planner Portal (Account Login or Interactive Demo)'
                 }
-                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:from-[#4F46E5] hover:to-[#DB2777] text-white text-xs font-extrabold whitespace-nowrap shadow-[0_6px_20px_rgba(99,102,241,0.45)] transition-all"
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#9A742B] hover:from-[#B68D40] hover:to-[#8B6914] text-white text-xs font-extrabold whitespace-nowrap shadow-sm transition-all"
               >
-                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F3E5AB] shrink-0" />
+                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
                 <span>Planner</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -5585,15 +5629,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               {isPlannerMenuOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-2.5 w-64 sm:w-72 rounded-2xl bg-[#0D1021]/98 backdrop-blur-2xl border border-indigo-500/45 shadow-[0_24px_60px_rgba(0,0,0,0.75)] p-2.5 z-50 space-y-2"
+                  className="absolute right-0 top-full mt-2.5 w-64 sm:w-72 rounded-2xl bg-white/98 backdrop-blur-2xl border border-[#D4AF37]/45 shadow-[0_20px_50px_rgba(28,25,23,0.16)] p-2.5 z-50 space-y-2"
                 >
-                  <div className="px-2 py-1 flex items-center justify-between border-b border-indigo-500/20">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300/90">
+                  <div className="px-2 py-1 flex items-center justify-between border-b border-stone-200/80">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
                       {lang === 'ID'
                         ? 'Akses Portal Planner'
                         : 'Planner Portal Access'}
                     </span>
-                    <Lock className="w-3 h-3 text-[#F3E5AB]/80" />
+                    <Lock className="w-3 h-3 text-[#B68D40]" />
                   </div>
 
                   {/* Popup Option Card 1 — Login Planner */}
@@ -5604,13 +5648,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       setIsPlannerMenuOpen(false);
                       onOpenAdminPortal();
                     }}
-                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/90 via-[#151934] to-purple-950/80 hover:from-indigo-900/90 hover:to-purple-900/90 border border-indigo-500/40 hover:border-[#F3E5AB]/60 flex items-center gap-3 transition-all group shadow-sm"
+                    className="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-[#FFFDF9] to-[#FAF3E3] hover:from-[#FAF3E3] hover:to-[#F3E5C8] border border-[#D4AF37]/45 flex items-center gap-3 transition-all group shadow-2xs"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6366F1] via-[#8B5CF6] to-[#EC4899] flex items-center justify-center shrink-0 shadow-[0_4px_14px_rgba(99,102,241,0.4)] group-hover:scale-105 transition-transform">
-                      <Lock className="w-4 h-4 text-[#F3E5AB]" />
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C5A059] to-[#9A742B] flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                      <Lock className="w-4 h-4 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-white group-hover:text-[#F3E5AB] transition-colors truncate">
+                      <p className="text-xs font-extrabold text-stone-900 group-hover:text-[#8B6914] transition-colors truncate">
                         {isAdminLoggedIn
                           ? lang === 'ID'
                             ? 'Buka Planner Aktif'
@@ -5619,7 +5663,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             ? 'Login Planner'
                             : 'Planner Login'}
                       </p>
-                      <p className="text-[10px] font-semibold text-indigo-200/80 truncate">
+                      <p className="text-[10px] font-semibold text-stone-600 truncate">
                         {isAdminLoggedIn
                           ? adminUserName || 'Workspace Aktif'
                           : lang === 'ID'
@@ -5627,7 +5671,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : 'Sign in for Client, EO & Owner'}
                       </p>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-indigo-300 group-hover:text-[#F3E5AB] group-hover:translate-x-0.5 transition-all shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[#8B6914] group-hover:translate-x-0.5 transition-all shrink-0" />
                   </button>
 
                   {/* Popup Option Card 2 — Demo Planner */}
@@ -5640,22 +5684,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         onOpenDemoManager(activeDummyMeta.id, simPackageTier);
                       }
                     }}
-                    className="w-full text-left p-2.5 rounded-xl bg-[#111528] hover:bg-indigo-950/85 border border-[#00F0FF]/35 hover:border-[#00F0FF]/75 flex items-center gap-3 transition-all group shadow-sm"
+                    className="w-full text-left p-2.5 rounded-xl bg-[#FAF8F5] hover:bg-emerald-50/70 border border-stone-200/90 hover:border-emerald-400/70 flex items-center gap-3 transition-all group shadow-2xs"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/30 border border-[#00F0FF]/45 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <LayoutDashboard className="w-4 h-4 text-[#00F0FF]" />
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <LayoutDashboard className="w-4 h-4 text-emerald-700" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-[#00F0FF] group-hover:text-white transition-colors truncate">
+                      <p className="text-xs font-extrabold text-emerald-800 group-hover:text-emerald-950 transition-colors truncate">
                         {lang === 'ID' ? 'Demo Planner' : 'Planner Demo'}
                       </p>
-                      <p className="text-[10px] font-semibold text-slate-300/85 truncate">
+                      <p className="text-[10px] font-semibold text-stone-600 truncate">
                         {lang === 'ID'
                           ? `Simulasi interaktif (${activeDummyMeta.labelId})`
                           : `Interactive sandbox (${activeDummyMeta.labelEn})`}
                       </p>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#00F0FF]/80 group-hover:text-[#00F0FF] group-hover:translate-x-0.5 transition-all shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 text-emerald-700 group-hover:translate-x-0.5 transition-all shrink-0" />
                   </button>
                 </div>
               )}
@@ -5690,7 +5734,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   onClick={() => setCheckoutWizardStep(1)}
                   className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 1
-                      ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
+                      ? 'bg-[#8B6914] text-white border-[#8B6914] ring-2 ring-[#D4AF37]/40'
                       : 'bg-white text-[#8B6914] border-[#D4AF37]/40 hover:bg-[#FAF3E3]'
                   }`}
                 >
@@ -5714,7 +5758,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   }}
                   className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 2
-                      ? 'bg-stone-900 text-[#D4AF37] border-[#D4AF37] ring-2 ring-[#D4AF37]/40'
+                      ? 'bg-[#8B6914] text-white border-[#8B6914] ring-2 ring-[#D4AF37]/40'
                       : buyerCoupleName.trim() && buyerEmail.includes('@')
                         ? 'bg-white text-[#8B6914] border-[#D4AF37]/40 hover:bg-[#FAF3E3]'
                         : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
@@ -5740,9 +5784,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   }}
                   className={`min-w-0 px-2 sm:px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                     checkoutWizardStep === 3
-                      ? 'bg-emerald-800 text-[#E6C76B] border-[#D4AF37] ring-2 ring-[#D4AF37]'
+                      ? 'bg-emerald-700 text-white border-emerald-600 ring-2 ring-emerald-400/40'
                       : hasCompletedPayment
-                        ? 'bg-emerald-700 text-white border-emerald-600 hover:bg-emerald-800'
+                        ? 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700'
                         : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                   }`}
                 >
@@ -5763,13 +5807,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start min-w-0">
               {/* LEFT COLUMN (lg:col-span-5): INVOICE SUMMARY, 6-PACKAGE SWITCHER & IDEMPOTENCY PROTECTION */}
               <div className="lg:col-span-5 lg:sticky lg:top-24 min-w-0 space-y-5">
-                <div className="rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] p-5 sm:p-6 shadow-[0_20px_50px_rgba(182,141,64,0.22)] space-y-5 min-w-0 overflow-hidden">
+                <div className="rounded-3xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E5C8] text-stone-900 border-2 border-[#D4AF37] p-5 sm:p-6 shadow-[0_16px_40px_rgba(182,141,64,0.16)] space-y-5 min-w-0 overflow-hidden">
                   {/* Quick 6-Tier Switcher Tabs (Gratis, Premium, Business, Enterprise, Mitra Silver, Mitra Gold) */}
                   <div className="space-y-1.5 min-w-0">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                       {lang === 'ID'
-                        ? 'Pilih / Ganti Paket MEPlanner (Harga 75% Wevitation):'
-                        : 'Select / Switch MEPlanner Package (75% Competitor Price):'}
+                        ? 'Pilih / Ganti Paket Resmi MEPlanner:'
+                        : 'Select / Switch Official MEPlanner Package:'}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 min-w-0">
                       {commercialPackages.map((pkgItem) => {
@@ -5783,10 +5827,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               setSelectedWevPackageId(pkgItem.id);
                               setSelectedCheckoutTier(pkgItem.tier);
                             }}
-                            className={`min-w-0 truncate py-2 px-2 rounded-xl border border-[#D4AF37]/40 text-[10px] font-extrabold transition-all flex flex-col items-center justify-center ${
+                            className={`min-w-0 truncate py-2 px-2 rounded-xl border border-[#D4AF37]/45 text-[10px] font-extrabold transition-all flex flex-col items-center justify-center ${
                               isSelectedPkg
-                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-sm'
-                                : 'bg-white/5 text-[#FAF3E3]/80 hover:bg-white/10 hover:text-white'
+                                ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
+                                : 'bg-white/85 text-stone-800 hover:bg-white'
                             }`}
                           >
                             <span className="truncate max-w-full">
@@ -5794,9 +5838,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </span>
                             <span
                               className={`text-[9px] font-mono ${
-                                isSelectedPkg
-                                  ? 'text-stone-900'
-                                  : 'text-[#E6C76B]'
+                                isSelectedPkg ? 'text-amber-100' : 'text-[#8B6914]'
                               }`}
                             >
                               {pkgItem.priceMain}
@@ -5807,64 +5849,64 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Selected Package Details & Strictly Separated Market Price */}
-                  <div className="space-y-3 pt-2 border-t border-white/15 min-w-0">
+                  {/* Selected Package Details */}
+                  <div className="space-y-3 pt-2 border-t border-[#D4AF37]/30 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#E6C76B] text-[10px] font-extrabold uppercase tracking-wider">
+                      <span className="px-3 py-1 rounded-full bg-white/90 border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
                         {activeSelectedPackage.badge}
                       </span>
-                      <span className="text-[10px] font-mono text-stone-300">
+                      <span className="text-[10px] font-mono text-stone-600">
                         {activeTransaction?.orderId || currentOrderId}
                       </span>
                     </div>
 
                     <div className="space-y-0.5">
-                      <h2 className="font-serif text-2xl font-extrabold text-white">
+                      <h2 className="font-serif text-2xl font-extrabold text-stone-900">
                         Paket {activeSelectedPackage.name}
                       </h2>
-                      <p className="text-xs text-[#E8DFD1]/85">
+                      <p className="text-xs text-stone-700">
                         {activeSelectedPackage.subtitle}
                       </p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white/10 border border-[#D4AF37]/40 space-y-1.5">
+                    <div className="p-4 rounded-2xl bg-white/90 border border-[#D4AF37]/45 space-y-1.5 shadow-2xs">
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <p className="text-[10px] uppercase tracking-widest text-[#E6C76B] font-extrabold">
+                        <p className="text-[10px] uppercase tracking-widest text-[#8B6914] font-extrabold">
                           {lang === 'ID'
-                            ? 'Total Tagihan Resmi (75% Harga)'
-                            : 'Official License Amount (75% Price)'}
+                            ? 'Total Tagihan Resmi MEPlanner'
+                            : 'Official MEPlanner License Amount'}
                         </p>
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-extrabold">
                           {activeSelectedPackage.discountBadge}
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2.5 flex-wrap">
-                        <span className="text-3xl font-extrabold text-white">
+                        <span className="text-3xl font-extrabold text-stone-900">
                           {activeCheckoutAmountDisplay}
                         </span>
                         <span className="text-xs font-bold line-through text-stone-400">
                           {activeSelectedPackage.priceStrike}
                         </span>
                       </div>
-                      <p className="text-[10px] font-bold text-[#E6C76B]">
-                        {activeSelectedPackage.wevitationPriceLabel} &rarr;{' '}
+                      <p className="text-[10px] font-bold text-[#8B6914]">
+                        {activeSelectedPackage.normalPriceLabel} &rarr;{' '}
                         MEPlanner: {activeSelectedPackage.priceMain}
                       </p>
-                      <p className="text-[11px] text-[#E8DFD1]">
+                      <p className="text-[11px] text-stone-600">
                         {activeSelectedPackage.priceSubBadge}
                       </p>
                     </div>
 
                     <div className="space-y-2 pt-1">
-                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E6C76B]">
+                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
                         {lang === 'ID'
                           ? 'Fitur & Fasilitas Paket:'
                           : 'Included Plan Features:'}
                       </p>
-                      <ul className="space-y-2 text-xs text-[#E8DFD1]">
+                      <ul className="space-y-2 text-xs text-stone-800">
                         {activeSelectedPackage.features.map((feat) => (
                           <li key={feat} className="flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-4 h-4 text-[#B68D40] shrink-0 mt-0.5" />
                             <span>{feat}</span>
                           </li>
                         ))}
@@ -5873,38 +5915,38 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
 
                   {/* Strict Idempotency Database Protection Box */}
-                  <div className="p-4 rounded-2xl bg-stone-950/80 border border-[#D4AF37]/35 space-y-2 text-xs min-w-0">
+                  <div className="p-4 rounded-2xl bg-white/90 border border-[#D4AF37]/40 space-y-2 text-xs min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-extrabold text-[#E6C76B] flex items-center gap-1.5">
-                        <Shield className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                      <span className="font-extrabold text-[#8B6914] flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <span>
                           {lang === 'ID'
                             ? 'Proteksi Transaksi Idempoten'
                             : 'Strict Idempotency Protection'}
                         </span>
                       </span>
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                         ANTI-DUPLICATE
                       </span>
                     </div>
-                    <div className="font-mono text-[10px] text-stone-300 space-y-0.5 bg-black/40 p-2.5 rounded-xl border border-white/10 min-w-0 overflow-hidden">
+                    <div className="font-mono text-[10px] text-stone-700 space-y-0.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-stone-200/90 min-w-0 overflow-hidden">
                       <p className="truncate">
-                        <span className="text-stone-400">Order ID:</span>{' '}
-                        <strong className="text-white">
+                        <span className="text-stone-500">Order ID:</span>{' '}
+                        <strong className="text-stone-900">
                           {activeTransaction?.orderId || currentOrderId}
                         </strong>
                       </p>
                       <p className="truncate">
-                        <span className="text-stone-400">
+                        <span className="text-stone-500">
                           Idempotency Key:
                         </span>{' '}
-                        <strong className="text-[#E6C76B]">
+                        <strong className="text-[#8B6914]">
                           {activeTransaction?.idempotencyKey ||
                             currentIdempotencyKey}
                         </strong>
                       </p>
                     </div>
-                    <p className="text-[11px] text-stone-300 leading-relaxed">
+                    <p className="text-[11px] text-stone-600 leading-relaxed">
                       {lang === 'ID'
                         ? 'Dilindungi Sistem Idempotensi Ketat: Jika koneksi terputus atau timeout saat konfirmasi, klik Retry kapan saja tanpa khawatir data ganda atau tagihan berulang.'
                         : 'Protected by Strict Idempotency: If your connection drops or times out during confirmation, you can safely retry without duplicate orders or double charges.'}
@@ -6833,58 +6875,58 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </section>
         ) : (
-          /* MAIN LANDING PAGE VIEW (HERO + 1:1 SHOWCASE + 31 TEMA + 4 PILAR & 6 MODUL + ECO-IMPACT + 6 PAKET 75% + BLOG + FAQ & AI) */
+          /* MAIN LANDING PAGE VIEW (HERO + 1:1 SHOWCASE + 31 TEMA + 4 PILAR & 6 MODUL + ECO-IMPACT + 6 PAKET + BLOG + FAQ & AI) */
           <>
             {/* ================================================================= */}
-            {/* OFFICIAL MEPlanner HERO + MULTI-EVENT PILLS                       */}
+            {/* OFFICIAL MEPlanner HERO + MULTI-EVENT PILLS (BRIGHT LIGHT THEME)  */}
             {/* ================================================================= */}
-            <section className="relative overflow-hidden py-6 sm:py-10 border-b border-indigo-500/30 bg-gradient-to-b from-[#090B14] via-[#111528] to-[#090B14]">
+            <section className="relative overflow-hidden py-8 sm:py-12 border-b border-stone-200/90 bg-gradient-to-b from-[#FFFDF9] via-[#FAF6F0] to-[#FCFBF8]">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -top-24 left-1/4 w-80 h-80 rounded-full bg-[#6366F1]/20 blur-3xl"
+                className="pointer-events-none absolute -top-24 left-1/4 w-80 h-80 rounded-full bg-[#D4AF37]/15 blur-3xl"
               />
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -bottom-24 right-1/4 w-80 h-80 rounded-full bg-[#EC4899]/15 blur-3xl"
+                className="pointer-events-none absolute -bottom-24 right-1/4 w-80 h-80 rounded-full bg-rose-300/15 blur-3xl"
               />
 
-              <div className="relative z-10 max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 text-center space-y-4">
+              <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 text-center space-y-5">
                 <div
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111528]/95 border border-indigo-500/40 text-[#00F0FF] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full shadow-2xs"
                   title="MEPlanner — My Event Planner by omeko42"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                   <span className="whitespace-nowrap truncate">
-                    MEPlanner &bull; My Event Planner (Hemat 25% &bull; Harga 75% Kompetitor!)
+                    MEPlanner &bull; My Event Planner (Platform Persiapan Acara &amp; Undangan Digital)
                   </span>
                 </div>
 
-                <h2 className="font-sans text-xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-tight max-w-3xl mx-auto leading-[1.16]">
+                <h2 className="font-serif text-2xl sm:text-4xl lg:text-[44px] font-extrabold text-stone-900 tracking-tight max-w-3xl mx-auto leading-[1.16]">
                   {lang === 'ID' ? (
                     <>
-                      Platform Persiapan Acara &amp;{' '}
-                      <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
-                        Undangan Digital Eksklusif
+                      Sebar Kabar Bahagia &amp; Kelola Acara Lebih Mudah,{' '}
+                      <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
+                        Hangat &amp; Berkelas
                       </span>
                     </>
                   ) : (
                     <>
-                      All-in-One Event Planner &amp;{' '}
-                      <span className="bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#EC4899] bg-clip-text text-transparent">
-                        Luxury Digital Invitations
+                      Share Your Joyful News &amp; Plan Events With{' '}
+                      <span className="bg-gradient-to-r from-[#B68D40] via-[#D4AF37] to-[#8B6914] bg-clip-text text-transparent">
+                        Warmth &amp; Elegance
                       </span>
                     </>
                   )}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-indigo-200/85 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto leading-relaxed">
                   {lang === 'ID'
-                    ? 'Kelola kesiapan acara, anggaran vendor, tamu VIP, kado cashless, dan 31+ tema undangan digital dalam satu ekosistem terpadu — mulai Rp 0 (Gratis) hingga Paket Premium Rp 51.750.'
-                    : 'Manage event readiness, vendor budgets, VIP guests, cashless gifts, and 31+ digital invitation themes in one unified platform — starting at Rp 0 (Free) and Rp 51,750 Premium.'}
+                    ? 'Kelola kesiapan acara 8 domain, anggaran vendor, tamu VIP, kado cashless, dan 31+ tema undangan digital dengan 5 struktur tata letak unik — mulai dari Paket Gratis Rp 0 hingga Paket Premium Rp 51.750.'
+                    : 'Manage 8-domain event readiness, vendor budgets, VIP guests, cashless gifts, and 31+ digital invitation themes with 5 distinct layout archetypes — starting at Rp 0 (Free) and Rp 51,750 Premium.'}
                 </p>
 
                 {/* 5 Concise Event Category Pills */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
                   {SHOWCASE_DUMMY_CLIENT_METAS.map((meta) => {
                     const isCurrentSim =
                       showcaseViewMode === 'invitation_sim' &&
@@ -6899,10 +6941,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           scrollToShowcase();
                         }}
                         title={`${meta.coupleLabel} (${meta.badgeId}) • Tema: ${meta.themeLabel}`}
-                        className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all ${
+                        className={`inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 rounded-full border text-[11px] font-extrabold whitespace-nowrap transition-all shadow-2xs ${
                           isCurrentSim
-                            ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF] shadow-[0_0_16px_rgba(99,102,241,0.5)]'
-                            : 'bg-[#111528]/90 hover:bg-indigo-950/90 border-indigo-500/35 text-indigo-100 hover:text-[#00F0FF]'
+                            ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914] shadow-sm'
+                            : 'bg-white hover:bg-[#FAF3E3] border-stone-200/90 text-stone-700 hover:text-[#8B6914]'
                         }`}
                       >
                         <span>
@@ -6928,28 +6970,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 scroll-mt-20"
               >
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
-                  <h3 className="font-sans text-lg sm:text-2xl font-extrabold text-white truncate">
+                  <h3 className="font-serif text-lg sm:text-2xl font-extrabold text-stone-900 truncate">
                     {lang === 'ID'
                       ? 'Simulator Undangan & Planner Live'
                       : 'Live Invitation & Planner Simulator'}
                   </h3>
                   {activeCatalogTheme && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-[#00F0FF]/50 text-[#00F0FF] text-[10px] font-extrabold whitespace-nowrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold whitespace-nowrap">
                       🎨 Tema Aktif: {activeCatalogTheme.name} (
-                      {activeCatalogTheme.styleCategory})
+                      {activeCatalogTheme.styleCategory} •{' '}
+                      {activeCatalogTheme.layoutArchetype.replace('_', ' ')})
                     </span>
                   )}
                   <InfoTooltip
                     text={
                       lang === 'ID'
-                        ? 'Menampilkan komponen undangan asli dari 5 Dummy Client terpisah yang tersinkron langsung dengan 31 Tema Desain & pilihan paket MEPlanner.'
-                        : 'Displays the real invitation component from 5 separated Dummy Clients synced live with all 31 Themes & MEPlanner package tiers.'
+                        ? 'Menampilkan komponen undangan asli dari 5 Dummy Client terpisah yang tersinkron langsung dengan 31 Tema Desain (5 Arketipe Layout) & pilihan paket MEPlanner.'
+                        : 'Displays the real invitation component from 5 separated Dummy Clients synced live with all 31 Themes (5 Layout Archetypes) & MEPlanner package tiers.'
                     }
                   />
                 </div>
 
                 {/* Concise 2-Tab Switcher */}
-                <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[#111528] border border-indigo-500/40 shrink-0 self-start sm:self-auto">
+                <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-white border border-stone-200/90 shadow-2xs shrink-0 self-start sm:self-auto">
                   <button
                     type="button"
                     onClick={() => setShowcaseViewMode('invitation_sim')}
@@ -6960,8 +7003,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     }
                     className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       showcaseViewMode === 'invitation_sim'
-                        ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
-                        : 'text-indigo-200 hover:text-white'
+                        ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
                     <span>{lang === 'ID' ? '💌 Undangan' : '💌 Invitation'}</span>
@@ -6976,8 +7019,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     }
                     className={`px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       showcaseViewMode === 'dashboard_modules'
-                        ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border border-[#00F0FF]/50 shadow-sm'
-                        : 'text-indigo-200 hover:text-white'
+                        ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
                     <span>{lang === 'ID' ? '📊 Modul Planner' : '📊 Planner'}</span>
@@ -6986,7 +7029,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
 
               {/* Single Unified Compact Toolbar: 5 Dummy Clients + 3 Package Tiers + Quick Actions */}
-              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#111528] border border-indigo-500/40 shadow-md space-y-2.5">
+              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-sm space-y-2.5">
                 {/* Row 1: 5 Event Pills + 3 Tier Pills */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
                   {/* 5 Dummy Clients */}
@@ -7001,8 +7044,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           title={`${meta.coupleLabel} • Tema: ${meta.themeLabel}`}
                           className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-extrabold transition-all inline-flex items-center gap-1 whitespace-nowrap ${
                             isSelected
-                              ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
-                              : 'bg-[#090B14] hover:bg-indigo-950/80 text-indigo-200 border-indigo-500/30'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914]'
+                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200/90'
                           }`}
                         >
                           <span>
@@ -7014,7 +7057,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
 
                   {/* 3 Simulator Tier Pills */}
-                  <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[#090B14] border border-indigo-500/30 self-start lg:self-auto">
+                  <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[#FAF8F5] border border-stone-200/90 self-start lg:self-auto">
                     {(
                       [
                         {
@@ -7043,10 +7086,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           title={tItem.tip}
                           className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
                             isTierActive
-                              ? tItem.tier === 'ROYAL VIP'
-                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#F3D77D] text-stone-950'
-                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
-                              : 'text-indigo-200 hover:text-white'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-stone-900'
                           }`}
                         >
                           {tItem.label}
@@ -7057,21 +7098,21 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* Row 2: Active Client Info + Concise Action Buttons */}
-                <div className="pt-2 border-t border-indigo-500/25 flex flex-wrap items-center justify-between gap-2">
+                <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                     <span
                       title={`Klien Dummy: ${activeDummyMeta.coupleLabel}`}
-                      className="px-2 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/35 text-white font-bold truncate max-w-[180px] sm:max-w-none"
+                      className="px-2.5 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-bold truncate max-w-[180px] sm:max-w-none"
                     >
                       {activeDummyMeta.coupleLabel}
                     </span>
 
                     {/* Interactive 5-Palette Theme Switcher for Both Undangan & Planner */}
                     <div
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/35"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-stone-200/90"
                       title="Klik warna untuk menguji 5 Palet Tema pada Undangan & Planner secara langsung"
                     >
-                      <span className="text-[10px] font-bold text-indigo-300 hidden sm:inline">
+                      <span className="text-[10px] font-bold text-stone-600 hidden sm:inline">
                         Palet:
                       </span>
                       {(
@@ -7112,12 +7153,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             title={`Terapkan Palet Tema: ${pal.label}`}
                             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                               isPalActive
-                                ? 'bg-white/15 ring-1 ring-white text-white font-extrabold'
-                                : 'opacity-70 hover:opacity-100 text-indigo-200'
+                                ? 'bg-white ring-1 ring-[#B68D40] text-stone-900 font-extrabold shadow-2xs'
+                                : 'opacity-75 hover:opacity-100 text-stone-600'
                             }`}
                           >
                             <span
-                              className="w-2.5 h-2.5 rounded-full border border-white/80 shrink-0"
+                              className="w-2.5 h-2.5 rounded-full border border-stone-400 shrink-0"
                               style={{ backgroundColor: pal.color }}
                             />
                             {isPalActive && (
@@ -7133,15 +7174,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                   <div className="flex flex-wrap items-center gap-1.5">
                     {showcaseViewMode === 'invitation_sim' && (
-                      <div className="inline-flex items-center p-0.5 rounded-xl bg-[#090B14] border border-indigo-500/35">
+                      <div className="inline-flex items-center p-0.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90">
                         <button
                           type="button"
                           onClick={() => setSimIsOpened(false)}
                           title="Tampilkan Sampul Pembuka (Cover Gate)"
                           className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
                             !simIsOpened
-                              ? 'bg-[#6366F1] text-white'
-                              : 'text-indigo-300 hover:text-white'
+                              ? 'bg-[#8B6914] text-white'
+                              : 'text-stone-600 hover:text-stone-900'
                           }`}
                         >
                           {lang === 'ID' ? 'Sampul' : 'Cover'}
@@ -7152,8 +7193,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           title="Tampilkan Isi Undangan Terbuka"
                           className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap ${
                             simIsOpened
-                              ? 'bg-[#6366F1] text-white'
-                              : 'text-indigo-300 hover:text-white'
+                              ? 'bg-[#8B6914] text-white'
+                              : 'text-stone-600 hover:text-stone-900'
                           }`}
                         >
                           {lang === 'ID' ? 'Isi' : 'Inside'}
@@ -7175,7 +7216,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? `Buka Undangan ${activeDummyMeta.coupleLabel} di Layar Penuh`
                           : `Open ${activeDummyMeta.coupleLabel} Invitation Fullscreen`
                       }
-                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B68D40] text-stone-950 font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
                     >
                       <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                       <span>{lang === 'ID' ? 'Layar Penuh' : 'Fullscreen'}</span>
@@ -7195,7 +7236,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? `Buka Demo Planner Asli (Tema: ${activeDummyMeta.themeLabel})`
                           : `Open Real Demo Planner (Theme: ${activeDummyMeta.themeLabel})`
                       }
-                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all whitespace-nowrap"
                     >
                       <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
                       <span>Demo</span>
@@ -7208,7 +7249,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 /* ================================================================= */
                 /* TAB 1: FULL-WIDTH REAL <PublicInvitationView /> VIEWPORT          */
                 /* ================================================================= */
-                <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
+                <div className="relative rounded-3xl border-2 border-[#D4AF37]/45 shadow-[0_20px_60px_rgba(28,25,23,0.12)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
                   <div className="h-[680px] sm:h-[760px] overflow-y-auto overflow-x-hidden">
                     <PublicInvitationView
                       key={`${activeDummyMeta.id}-${simPackageTier}-${effectiveSimThemePreset}-${selectedCatalogThemeId}-${
@@ -7248,22 +7289,22 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       lang === 'ID' ? currentShot.descId : currentShot.descEn;
 
                     return (
-                      <div className="rounded-3xl bg-[#111528] border-2 border-indigo-500/45 shadow-[0_18px_48px_rgba(0,0,0,0.45)] overflow-hidden">
+                      <div className="rounded-3xl bg-white border-2 border-[#D4AF37]/45 shadow-[0_18px_48px_rgba(28,25,23,0.1)] overflow-hidden">
                         {/* Browser Window Top Bar */}
-                        <div className="px-3.5 sm:px-5 py-2.5 bg-[#090B14] text-white border-b border-indigo-500/35 flex flex-wrap items-center justify-between gap-2">
+                        <div className="px-3.5 sm:px-5 py-2.5 bg-[#FAF8F5] text-stone-900 border-b border-stone-200/90 flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
                               <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
                               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
                             </div>
-                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
+                            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[10px] font-extrabold whitespace-nowrap truncate">
                               {currentShot.badge}
                             </span>
-                            <span className="hidden md:inline-block font-mono text-[11px] text-indigo-300 truncate">
+                            <span className="hidden md:inline-block font-mono text-[11px] text-stone-500 truncate">
                               https://meplanner.vercel.app/planner/{currentShot.id}
                             </span>
-                            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
+                            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-extrabold whitespace-nowrap">
                               ● 1:1 PLANNER WORKSPACE ({simPackageTier})
                             </span>
                           </div>
@@ -7285,11 +7326,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Modul Sebelumnya'
                                   : 'Previous Module'
                               }
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
+                              className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
                             >
                               <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-[11px] font-mono font-bold text-[#00F0FF] px-1.5">
+                            <span className="text-[11px] font-mono font-bold text-[#8B6914] px-1.5">
                               {activeShowcaseIdx + 1} /{' '}
                               {OFFICIAL_PRODUCT_SCREENSHOTS.length}
                             </span>
@@ -7307,7 +7348,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Modul Berikutnya'
                                   : 'Next Module'
                               }
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
+                              className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
                             >
                               <ChevronRight className="w-4 h-4" />
                             </button>
@@ -7319,7 +7360,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Perbesar Layar Penuh'
                                   : 'Zoom Fullscreen'
                               }
-                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
+                              className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white text-[11px] font-extrabold whitespace-nowrap truncate shadow-2xs transition-all"
                             >
                               <Maximize2 className="w-3.5 h-3.5 shrink-0" />
                               <span className="whitespace-nowrap truncate">
@@ -7338,17 +7379,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Active Screenshot Description & Prev/Next Footer */}
-                        <div className="p-4 sm:p-5 bg-[#111528] border-t border-indigo-500/35 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="p-4 sm:p-5 bg-[#FAF8F5] border-t border-stone-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="space-y-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-md bg-[#090B14] border border-indigo-500/40 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                              <span className="px-2.5 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[10px] font-extrabold whitespace-nowrap">
                                 {currentShot.badge}
                               </span>
-                              <h4 className="font-sans text-base sm:text-lg font-extrabold text-white">
+                              <h4 className="font-sans text-base sm:text-lg font-extrabold text-stone-900">
                                 {currentTitle}
                               </h4>
                             </div>
-                            <p className="text-xs text-indigo-200/80 leading-relaxed max-w-3xl">
+                            <p className="text-xs text-stone-600 leading-relaxed max-w-3xl">
                               {currentDesc}
                             </p>
                           </div>
@@ -7370,9 +7411,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Lihat Modul Sebelumnya'
                                   : 'View Previous Module'
                               }
-                              className="px-3 py-2 rounded-xl bg-[#090B14] hover:bg-indigo-950 border border-indigo-500/40 text-indigo-200 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                              className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] border border-stone-200/90 text-stone-700 text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
-                              <ArrowLeft className="w-3.5 h-3.5 text-[#00F0FF]" />
+                              <ArrowLeft className="w-3.5 h-3.5 text-[#8B6914]" />
                               <span>
                                 {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
                               </span>
@@ -7391,7 +7432,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Lihat Modul Berikutnya'
                                   : 'View Next Module'
                               }
-                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
+                              className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap shadow-2xs transition-all"
                             >
                               <span>
                                 {lang === 'ID' ? 'Berikutnya' : 'Next'}
@@ -7416,16 +7457,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         <div
                           key={shot.id}
                           onClick={() => setActiveShowcaseIdx(idx)}
-                          className={`group cursor-pointer rounded-2xl bg-[#111528] border overflow-hidden flex flex-col justify-between transition-all ${
+                          className={`group cursor-pointer rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
                             isSelected
-                              ? 'border-2 border-[#00F0FF] ring-2 ring-[#6366F1]/45 shadow-md -translate-y-0.5'
-                              : 'border-indigo-500/35 hover:border-[#6366F1] shadow-2xs hover:-translate-y-0.5'
+                              ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/35 shadow-md -translate-y-0.5'
+                              : 'border-stone-200/90 hover:border-[#D4AF37] shadow-2xs hover:-translate-y-0.5'
                           }`}
                         >
                           <div>
-                            <div className="relative h-24 bg-gradient-to-br from-[#090B14] via-[#131836] to-[#1A1333] overflow-hidden border-b border-indigo-500/30 p-3 flex flex-col justify-between">
+                            <div className="relative h-24 bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E5C8] overflow-hidden border-b border-stone-200/80 p-3 flex flex-col justify-between">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[9px] font-extrabold whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-md bg-white/90 border border-[#D4AF37]/45 text-[#8B6914] font-mono text-[9px] font-extrabold whitespace-nowrap">
                                   {lang === 'ID' ? shot.tabId : shot.tabEn}
                                 </span>
                                 <button
@@ -7439,34 +7480,34 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                       ? `Perbesar ${shotTitle}`
                                       : `Zoom ${shotTitle}`
                                   }
-                                  className="p-1.5 rounded-lg bg-black/70 hover:bg-black text-white border border-white/20 transition-all"
+                                  className="p-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90 transition-all"
                                 >
-                                  <Maximize2 className="w-3 h-3 text-[#00F0FF]" />
+                                  <Maximize2 className="w-3 h-3 text-[#8B6914]" />
                                 </button>
                               </div>
-                              <div className="rounded-xl bg-white/5 border border-indigo-500/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-extrabold text-white truncate">
+                              <div className="rounded-xl bg-white/90 border border-[#D4AF37]/30 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-extrabold text-stone-900 truncate">
                                   {shot.kpiSummary}
                                 </span>
-                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[8px] font-extrabold shrink-0">
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[8px] font-extrabold shrink-0">
                                   1:1 UI
                                 </span>
                               </div>
                             </div>
                             <div className="p-3 space-y-1">
-                              <p className="text-[10px] font-extrabold text-[#00F0FF] truncate">
+                              <p className="text-[10px] font-extrabold text-[#8B6914] truncate">
                                 {shot.badge}
                               </p>
-                              <h5 className="text-xs font-extrabold text-white line-clamp-2 leading-snug">
+                              <h5 className="text-xs font-extrabold text-stone-900 line-clamp-2 leading-snug">
                                 {shotTitle}
                               </h5>
-                              <p className="text-[11px] text-indigo-200/75 line-clamp-2 leading-relaxed">
+                              <p className="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">
                                 {shotDesc}
                               </p>
                             </div>
                           </div>
-                          <div className="px-3 py-2 bg-[#090B14] border-t border-indigo-500/25 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-[#00F0FF] whitespace-nowrap truncate">
+                          <div className="px-3 py-2 bg-[#FAF8F5] border-t border-stone-200/80 flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold text-[#8B6914] whitespace-nowrap truncate">
                               {isSelected
                                 ? lang === 'ID'
                                   ? '● Sedang Aktif'
@@ -7486,7 +7527,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                   ? 'Buka Layar Penuh'
                                   : 'Open Fullscreen'
                               }
-                              className="text-[10px] font-extrabold text-indigo-200 hover:text-[#00F0FF] underline whitespace-nowrap"
+                              className="text-[10px] font-extrabold text-stone-700 hover:text-[#8B6914] underline whitespace-nowrap"
                             >
                               {lang === 'ID' ? 'Zoom' : 'Zoom'}
                             </button>
@@ -7503,30 +7544,30 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               {/* ================================================================= */}
               <div
                 id="tema"
-                className="pt-8 border-t border-indigo-500/30 space-y-5 scroll-mt-20"
+                className="pt-8 border-t border-stone-200/90 space-y-5 scroll-mt-20"
               >
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
                   <div className="space-y-1">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8B6914]">
                       {lang === 'ID'
-                        ? 'Katalog Desain Eksklusif Wevitation × MEPlanner'
-                        : 'Exclusive Wevitation × MEPlanner Theme Catalog'}
+                        ? 'Katalog Desain Eksklusif MEPlanner • 5 Arketipe Tata Letak'
+                        : 'Exclusive MEPlanner Theme Catalog • 5 Layout Archetypes'}
                     </span>
-                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-white">
+                    <h3 className="font-serif text-xl sm:text-3xl font-extrabold text-stone-900">
                       {lang === 'ID'
                         ? '31 Tema Detail Sesuai Event Terpilih'
                         : '31 Curated Themes Across All Event Categories'}
                     </h3>
-                    <p className="text-xs text-indigo-200/80 max-w-2xl">
+                    <p className="text-xs text-stone-600 max-w-2xl">
                       {lang === 'ID'
-                        ? 'Pilih tema favorit Anda lalu klik "Lihat Demo" untuk menerapkan palet warna, bingkai profil (Arch Dome / Circle / Editorial), dan ornamen langsung ke Simulator di atas!'
-                        : 'Pick any theme below and click "Live Demo" to apply its color palette, profile frame, and ornaments directly to the live simulator above!'}
+                        ? 'Pilih tema favorit Anda lalu klik "Lihat Demo" untuk menerapkan struktur tata letak (Polaroid Magazine, Botanical Airy, Nusantara Heritage, Modern Bento, Editorial Classic), palet warna, dan bingkai profil langsung ke Simulator di atas!'
+                        : 'Pick any theme below and click "Live Demo" to apply its layout structure, color palette, profile frame, and ornaments directly to the live simulator above!'}
                     </p>
                   </div>
 
                   {/* Search Input */}
                   <div className="relative w-full md:w-64 shrink-0">
-                    <Search className="w-4 h-4 text-indigo-300 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       value={catalogSearchQuery}
@@ -7536,15 +7577,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? 'Cari nama tema (Serein, Wayang...)'
                           : 'Search theme (Serein, Wayang...)'
                       }
-                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#111528] border border-indigo-500/40 text-xs font-bold text-white placeholder:text-indigo-300/60 focus:border-[#00F0FF] focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-stone-200/90 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:border-[#B68D40] focus:outline-none shadow-2xs"
                     />
                   </div>
                 </div>
 
                 {/* Filter Bar: Event Category + Style Category */}
-                <div className="p-3 rounded-2xl bg-[#111528] border border-indigo-500/35 space-y-2.5">
+                <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2.5">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mr-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 mr-1">
                       {lang === 'ID' ? 'Event:' : 'Event:'}
                     </span>
                     {(
@@ -7604,8 +7645,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }}
                           className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border transition-all ${
                             isAct
-                              ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
-                              : 'bg-[#090B14] hover:bg-indigo-950 text-indigo-200 border-indigo-500/30'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] text-white border-[#8B6914]'
+                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 border-stone-200/90'
                           }`}
                         >
                           {evBtn.label}
@@ -7614,9 +7655,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     })}
                   </div>
 
-                  <div className="pt-2 border-t border-indigo-500/20 flex flex-wrap items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mr-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 mr-1">
                         {lang === 'ID' ? 'Gaya:' : 'Style:'}
                       </span>
                       {(
@@ -7626,7 +7667,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           'Floral',
                           'Adat & Budaya',
                           'Editorial Foto',
-                          'Dark Luxury',
+                          'Light Luxury',
                         ] as const
                       ).map((st) => {
                         const isStAct = catalogStyleFilter === st;
@@ -7640,8 +7681,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             }}
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
                               isStAct
-                                ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/60'
-                                : 'bg-[#090B14] text-indigo-200/80 hover:text-white border border-indigo-500/25'
+                                ? 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]'
+                                : 'bg-[#FAF8F5] text-stone-600 hover:text-stone-900 border border-stone-200/90'
                             }`}
                           >
                             {st === 'ALL'
@@ -7654,7 +7695,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       })}
                     </div>
 
-                    <span className="text-[11px] font-bold text-[#00F0FF]">
+                    <span className="text-[11px] font-bold text-[#8B6914]">
                       {lang === 'ID'
                         ? `Menampilkan ${filteredCatalogThemes.length} tema siap pakai`
                         : `Showing ${filteredCatalogThemes.length} ready-to-use themes`}
@@ -7681,45 +7722,55 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             : theme.eventType === 'MEETING'
                               ? '🏛️ Rapat Resmi'
                               : '🥂 Gala Dinner';
+                    const archetypeLabel =
+                      theme.layoutArchetype === 'POLAROID_MAGAZINE'
+                        ? '📸 Polaroid Magazine'
+                        : theme.layoutArchetype === 'BOTANICAL_AIRY'
+                          ? '🌿 Botanical Airy'
+                          : theme.layoutArchetype === 'NUSANTARA_HERITAGE'
+                            ? '🏛️ Nusantara Heritage'
+                            : theme.layoutArchetype === 'MODERN_BENTO'
+                              ? '⊞ Modern Bento'
+                              : '✨ Editorial Classic';
 
                     return (
                       <div
                         key={theme.id}
-                        className={`group rounded-2xl bg-[#111528] border overflow-hidden flex flex-col justify-between transition-all ${
+                        className={`group rounded-2xl bg-white border overflow-hidden flex flex-col justify-between transition-all ${
                           isCurrentTheme
-                            ? 'border-2 border-[#00F0FF] ring-2 ring-[#6366F1]/50 shadow-[0_12px_32px_rgba(0,240,255,0.2)]'
-                            : 'border-indigo-500/35 hover:border-[#00F0FF]/60 shadow-md'
+                            ? 'border-2 border-[#B68D40] ring-2 ring-[#D4AF37]/40 shadow-lg -translate-y-0.5'
+                            : 'border-stone-200/90 hover:border-[#D4AF37] shadow-sm hover:-translate-y-0.5'
                         }`}
                       >
                         <div>
-                          <div className="relative h-40 overflow-hidden bg-[#090B14]">
+                          <div className="relative h-44 overflow-hidden bg-[#FAF8F5]">
                             <img
                               src={theme.thumbnailUrl}
                               alt={theme.name}
                               loading="lazy"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-black/25 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-stone-900/65 via-transparent to-transparent" />
                             <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                              <span className="px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[9px] font-extrabold">
+                              <span className="px-2 py-0.5 rounded-full bg-white/92 backdrop-blur-md border border-stone-200 text-stone-900 text-[9px] font-extrabold shadow-2xs">
                                 {evLabel}
                               </span>
-                              <span className="px-2 py-0.5 rounded-full bg-[#111528]/90 border border-[#D4AF37]/50 text-[#E6C76B] text-[9px] font-extrabold">
+                              <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3]/95 border border-[#D4AF37]/60 text-[#8B6914] text-[9px] font-extrabold shadow-2xs">
                                 {theme.tierBadge}
                               </span>
                             </div>
                             <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
-                              <span className="px-2 py-0.5 rounded-md bg-indigo-950/90 border border-indigo-400/40 text-[#00F0FF] text-[9px] font-extrabold">
-                                {theme.styleCategory}
+                              <span className="px-2 py-0.5 rounded-md bg-white/92 border border-stone-200 text-stone-800 text-[9px] font-extrabold shadow-2xs">
+                                {archetypeLabel}
                               </span>
                               <div
-                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/70 border border-white/15"
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/90 border border-stone-200 shadow-2xs"
                                 title="Palet Warna Tema"
                               >
                                 {theme.paletteColors.map((hex) => (
                                   <span
                                     key={hex}
-                                    className="w-2.5 h-2.5 rounded-full border border-white/70"
+                                    className="w-2.5 h-2.5 rounded-full border border-stone-300"
                                     style={{ backgroundColor: hex }}
                                   />
                                 ))}
@@ -7729,10 +7780,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                           <div className="p-3.5 space-y-1.5">
                             <div className="flex items-center justify-between gap-2">
-                              <h4 className="font-sans text-sm font-extrabold text-white truncate">
+                              <h4 className="font-serif text-sm font-extrabold text-stone-900 truncate">
                                 {theme.name}
                               </h4>
-                              <span className="text-[9px] font-mono text-indigo-300 bg-[#090B14] px-1.5 py-0.5 rounded border border-indigo-500/30 shrink-0">
+                              <span className="text-[9px] font-mono text-[#8B6914] bg-[#FAF3E3] px-1.5 py-0.5 rounded border border-[#D4AF37]/35 shrink-0">
                                 {theme.profileFrameStyle === 'ARCH_DOME'
                                   ? 'Arch Dome'
                                   : theme.profileFrameStyle === 'CIRCLE'
@@ -7740,7 +7791,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     : 'Editorial'}
                               </span>
                             </div>
-                            <p className="text-[11px] text-indigo-200/80 line-clamp-2 leading-relaxed">
+                            <p className="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">
                               {lang === 'ID' ? theme.taglineId : theme.taglineEn}
                             </p>
                           </div>
@@ -7750,10 +7801,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleApplyCatalogThemeDemo(theme)}
-                            className={`w-full py-2 px-3 rounded-xl text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition-all ${
+                            className={`w-full py-2 px-3 rounded-xl text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                               isCurrentTheme
-                                ? 'bg-emerald-500 text-stone-950 shadow-sm'
-                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white'
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'bg-gradient-to-r from-[#C5A059] to-[#9A742B] hover:opacity-95 text-white shadow-2xs'
                             }`}
                           >
                             <Eye className="w-3.5 h-3.5 shrink-0" />
@@ -7780,9 +7831,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       onClick={() =>
                         setShowAllCatalogThemes((prev) => !prev)
                       }
-                      className="px-5 py-2.5 rounded-2xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/50 text-[#00F0FF] text-xs font-extrabold inline-flex items-center gap-2 transition-all shadow-sm"
+                      className="px-5 py-2.5 rounded-2xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-xs font-extrabold inline-flex items-center gap-2 transition-all shadow-2xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#B68D40]" />
                       <span>
                         {showAllCatalogThemes
                           ? lang === 'ID'
@@ -7801,23 +7852,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* SECTION 2: 4 PILAR EKOSISTEM + 5 LANGKAH MUDAH + 6 MODUL UNGGULAN MEPLANNER */}
             <section
               id="fitur"
-              className="py-12 sm:py-16 bg-[#111528] border-y border-indigo-500/30 space-y-12"
+              className="py-12 sm:py-16 bg-[#F7F4ED] border-y border-stone-200/90 space-y-12"
             >
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
                 {/* 4 PILAR EKOSISTEM ("LEBIH DARI SEKADAR UNDANGAN DIGITAL") */}
                 <div className="space-y-6">
                   <div className="text-center max-w-3xl mx-auto">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
                       {lang === 'ID'
-                        ? 'Ekosistem Terlengkap Wevitation × MEPlanner'
+                        ? 'Ekosistem Terlengkap MEPlanner — My Event Planner'
                         : 'Complete All-in-One Event & Invitation Ecosystem'}
                     </span>
-                    <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
+                    <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-stone-900 mt-1">
                       {lang === 'ID'
                         ? 'Lebih dari Sekadar Undangan Digital'
                         : 'More Than Just a Digital Invitation'}
                     </h3>
-                    <p className="text-xs sm:text-sm text-indigo-200/80 mt-2">
+                    <p className="text-xs sm:text-sm text-stone-600 mt-2">
                       {lang === 'ID'
                         ? '4 Pilar Utama yang menyatukan undangan interaktif, manajemen kado modern, persiapan acara 8 domain, hingga kecerdasan buatan MEPlanner AI.'
                         : '4 Core Pillars uniting interactive invitations, modern gift registries, 8-domain event planning, and MEPlanner AI.'}
@@ -7830,9 +7881,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           {
                             badge: 'PILAR 1 • UNDANGAN',
                             title: '1. Undangan Digital Multi-Event',
-                            desc: '31+ tema desain eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat, Gala), musik latar NCS/Spotify/MP3, galeri HD, & hitung mundur multi-sesi.',
+                            desc: '31+ tema desain eksklusif dengan 5 karakter tata letak unik (Pernikahan, Ulang Tahun, Wisuda, Rapat, Gala), musik latar NCS/Spotify/MP3, galeri HD, & hitung mundur multi-sesi.',
                             highlights: [
-                              '31+ Tema Siap Pakai',
+                              '31+ Tema & 5 Arketipe Layout',
                               '3 Bingkai Foto & Ornamen',
                               'Aktif Selamanya (Sekali Bayar)',
                             ],
@@ -7872,9 +7923,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           {
                             badge: 'PILLAR 1 • INVITATIONS',
                             title: '1. Multi-Event Digital Invitations',
-                            desc: '31+ curated themes across Wedding, Birthday, Graduation, Corporate & Gala with custom music, HD gallery, and multi-session countdowns.',
+                            desc: '31+ curated themes with 5 distinct layout archetypes across Wedding, Birthday, Graduation, Corporate & Gala with custom music, HD gallery, and multi-session countdowns.',
                             highlights: [
-                              '31+ Curated Themes',
+                              '31+ Themes & 5 Layout Archetypes',
                               '3 Profile Frames & Ornaments',
                               'Lifetime Active Access',
                             ],
@@ -7913,23 +7964,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ).map((pil) => (
                       <div
                         key={pil.title}
-                        className="p-5 rounded-3xl bg-[#090B14] border border-indigo-500/40 hover:border-[#00F0FF]/60 transition-all flex flex-col justify-between gap-4 shadow-md"
+                        className="p-5 rounded-3xl bg-white border border-stone-200/90 hover:border-indigo-400 transition-all flex flex-col justify-between gap-4 shadow-sm"
                       >
                         <div className="space-y-2.5">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] font-mono text-[9px] font-extrabold">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[9px] font-extrabold">
                             {pil.badge}
                           </span>
-                          <h4 className="font-sans text-base font-extrabold text-white">
+                          <h4 className="font-sans text-base font-extrabold text-stone-900">
                             {pil.title}
                           </h4>
-                          <p className="text-xs text-indigo-200/80 leading-relaxed">
+                          <p className="text-xs text-stone-600 leading-relaxed">
                             {pil.desc}
                           </p>
                         </div>
-                        <ul className="space-y-1.5 pt-3 border-t border-indigo-500/25 text-[11px] text-emerald-300 font-bold">
+                        <ul className="space-y-1.5 pt-3 border-t border-stone-200 text-[11px] text-emerald-700 font-bold">
                           {pil.highlights.map((h) => (
                             <li key={h} className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                               <span>{h}</span>
                             </li>
                           ))}
@@ -7940,15 +7991,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* CARA KERJA DALAM 5 LANGKAH MUDAH */}
-                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-[#090B14] via-[#131836] to-[#090B14] border border-indigo-500/40 space-y-5">
+                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-white via-[#FAF6EE] to-white border border-stone-200/90 shadow-sm space-y-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700">
                         {lang === 'ID'
                           ? 'Alur Pembuatan Instan'
                           : 'Instant Setup Workflow'}
                       </span>
-                      <h4 className="font-sans text-lg sm:text-2xl font-extrabold text-white">
+                      <h4 className="font-sans text-lg sm:text-2xl font-extrabold text-stone-900">
                         {lang === 'ID'
                           ? 'Cara Kerja dalam 5 Langkah Mudah'
                           : 'How It Works in 5 Easy Steps'}
@@ -7956,7 +8007,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
                     <a
                       href="#paket"
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto shadow-xs"
                     >
                       <span>
                         {lang === 'ID'
@@ -7973,12 +8024,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           {
                             step: '01',
                             title: 'Daftar & Lengkapi Data',
-                            desc: 'Pilih jenis acara, isi profil tuan rumah/mempelai, jadwal 2 sesi, & koordinat Google Maps.',
+                            desc: 'Pilih jenis acara, isi profil tuan rumah/mempelai, jadwal multi-sesi, & koordinat Google Maps.',
                           },
                           {
                             step: '02',
                             title: 'Pilih Desain Tema',
-                            desc: 'Bebas pilih & ganti dari 31+ tema desain eksklusif beserta palet warna & bingkai foto.',
+                            desc: 'Bebas pilih & ganti dari 31+ tema desain eksklusif beserta 5 arketipe layout & bingkai foto.',
                           },
                           {
                             step: '03',
@@ -8000,12 +8051,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           {
                             step: '01',
                             title: 'Register & Fill Event Info',
-                            desc: 'Select your event type, host profiles, 2-session schedule, and Google Maps coordinates.',
+                            desc: 'Select your event type, host profiles, multi-session schedule, and Google Maps coordinates.',
                           },
                           {
                             step: '02',
                             title: 'Pick Your Theme',
-                            desc: 'Choose and switch anytime among 31+ curated themes, palettes, and photo frames.',
+                            desc: 'Choose and switch anytime among 31+ curated themes, 5 layout archetypes, and photo frames.',
                           },
                           {
                             step: '03',
@@ -8026,15 +8077,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ).map((stItem) => (
                       <div
                         key={stItem.step}
-                        className="p-4 rounded-2xl bg-[#111528]/90 border border-indigo-500/35 space-y-1.5"
+                        className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-1.5"
                       >
-                        <span className="px-2 py-0.5 rounded-md bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[10px] font-extrabold">
                           LANGKAH {stItem.step}
                         </span>
-                        <h5 className="text-xs sm:text-sm font-extrabold text-white pt-1">
+                        <h5 className="text-xs sm:text-sm font-extrabold text-stone-900 pt-1">
                           {stItem.title}
                         </h5>
-                        <p className="text-[11px] text-indigo-200/80 leading-relaxed">
+                        <p className="text-[11px] text-stone-600 leading-relaxed">
                           {stItem.desc}
                         </p>
                       </div>
@@ -8045,12 +8096,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* 6 MODUL TERINTEGRASI DALAM 1 EKOSISTEM */}
                 <div>
                   <div className="text-center max-w-3xl mx-auto mb-8">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
                       {lang === 'ID'
                         ? 'Arsitektur Cloud Enterprise MEPlanner SaaS'
                         : 'MEPlanner SaaS Enterprise Cloud Architecture'}
                     </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
                       {lang === 'ID'
                         ? '6 Modul Terintegrasi dalam 1 Ekosistem'
                         : '6 Integrated Modules in 1 Ecosystem'}
@@ -8128,15 +8179,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       return (
                         <div
                           key={feat.title}
-                          className="min-w-0 p-5 rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/50 transition-all space-y-2.5 shadow-md"
+                          className="min-w-0 p-5 rounded-2xl bg-white border border-stone-200/90 hover:border-indigo-400 transition-all space-y-2.5 shadow-sm"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1]/25 to-[#8B5CF6]/25 border border-indigo-400/45 text-[#00F0FF] flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center">
                             <Icon className="w-5 h-5" />
                           </div>
-                          <h4 className="font-extrabold text-white text-sm">
+                          <h4 className="font-extrabold text-stone-900 text-sm">
                             {feat.title}
                           </h4>
-                          <p className="text-xs text-indigo-200/80 leading-relaxed">
+                          <p className="text-xs text-stone-600 leading-relaxed">
                             {feat.desc}
                           </p>
                         </div>
@@ -8151,18 +8202,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* SECTION 2B: DAMPAK LINGKUNGAN HIJAU (ECO-IMPACT + MODAL)          */}
             {/* ================================================================= */}
             <section className="py-10 sm:py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="rounded-3xl bg-gradient-to-br from-emerald-950/90 via-[#0E1F1C] to-[#090B14] border-2 border-emerald-500/45 p-6 sm:p-8 shadow-[0_20px_50px_rgba(16,185,129,0.15)] space-y-6">
+              <div className="rounded-3xl bg-gradient-to-br from-emerald-50 via-[#F4FBF7] to-white border-2 border-emerald-300/80 p-6 sm:p-8 shadow-[0_14px_35px_rgba(16,185,129,0.1)] space-y-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="space-y-1.5 max-w-2xl">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider">
                       🌿 Gerakan Undangan Ramah Lingkungan • Sustainability Impact
                     </span>
-                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-white">
+                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-stone-900">
                       {lang === 'ID'
                         ? 'Setiap Undangan Digital Ikut Menjaga Bumi'
                         : 'Every Digital Invitation Helps Protect Our Planet'}
                     </h3>
-                    <p className="text-xs sm:text-sm text-emerald-100/85 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                       {lang === 'ID'
                         ? 'Dengan beralih dari undangan cetak fisik (kertas art carton, amplop, plastik & pengiriman kurir) ke undangan digital MEPlanner, jutaan lembar kertas dan emisi karbon berhasil dihindari.'
                         : 'By switching from printed paper invitations and physical courier shipping to MEPlanner digital invitations, tons of paper and carbon emissions are avoided.'}
@@ -8172,7 +8223,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEcoModalOpen(true)}
-                    className="px-4 py-2.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-extrabold text-xs inline-flex items-center gap-2 self-start lg:self-auto shrink-0 shadow-md transition-all"
+                    className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs inline-flex items-center gap-2 self-start lg:self-auto shrink-0 shadow-sm transition-all"
                   >
                     <Sparkles className="w-4 h-4 shrink-0" />
                     <span>
@@ -8184,48 +8235,48 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-emerald-300">
+                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-emerald-700">
                       46.8 Ton
                     </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                       {lang === 'ID'
                         ? 'Kertas berhasil dihindari'
                         : 'Paper waste avoided'}
                     </p>
-                    <p className="text-[11px] text-emerald-200/75">
+                    <p className="text-[11px] text-stone-600">
                       {lang === 'ID'
                         ? 'Setara penghematan ribuan batang pohon dewasa dari kertas A5 & amplop tebal.'
                         : 'Equivalent to saving thousands of mature trees from A5 cards & envelopes.'}
                     </p>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-[#00F0FF]">
+                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-indigo-700">
                       288 tCO2e
                     </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                       {lang === 'ID'
                         ? 'Emisi karbon berhasil dikurangi'
                         : 'Carbon emissions reduced'}
                     </p>
-                    <p className="text-[11px] text-emerald-200/75">
+                    <p className="text-[11px] text-stone-600">
                       {lang === 'ID'
                         ? 'Mengurangi jejak karbon produksi pabrik kertas, tinta cetak, dan transportasi distribusi.'
                         : 'Eliminates carbon footprint from paper mills, chemical inks, and courier transport.'}
                     </p>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
-                    <p className="text-2xl sm:text-4xl font-extrabold text-[#E6C76B]">
+                  <div className="p-5 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-[#9A742B]">
                       2.5 M+
                     </p>
-                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                    <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                       {lang === 'ID'
                         ? 'Undangan digital dibagikan'
                         : 'Digital invitations shared'}
                     </p>
-                    <p className="text-[11px] text-emerald-200/75">
+                    <p className="text-[11px] text-stone-600">
                       {lang === 'ID'
                         ? 'Terkirim instan dalam hitungan detik ke seluruh Indonesia & mancanegara via WhatsApp.'
                         : 'Delivered instantaneously across Indonesia & worldwide via WhatsApp.'}
@@ -8236,25 +8287,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 3: 6 PAKET KOMERSIAL (HARGA 75% DARI WEVITATION!)         */}
+            {/* SECTION 3: 6 PAKET KOMERSIAL RESMI MEPLANNER                      */}
             {/* ================================================================= */}
             <section
               id="paket"
               className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-16"
             >
               <div className="text-center max-w-3xl mx-auto space-y-3">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/50 text-[#E6C76B] text-[11px] font-extrabold uppercase tracking-widest">
-                  🔥 Jaminan Harga Terbaik: Tepat 75% dari Harga Wevitation (Hemat 25%!)
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 border border-[#D4AF37]/60 text-[#8B6914] text-[11px] font-extrabold uppercase tracking-widest">
+                  ✨ Penawaran Spesial Peluncuran Resmi • Sekali Bayar Aktif Selamanya
                 </span>
-                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white">
+                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-stone-900">
                   {lang === 'ID'
                     ? '6 Pilihan Paket MEPlanner (Gratis s/d Mitra WO/EO)'
                     : '6 MEPlanner Packages (Free Trial to Agency White-Label)'}
                 </h3>
-                <p className="text-xs sm:text-sm text-indigo-200/85">
+                <p className="text-xs sm:text-sm text-stone-600">
                   {lang === 'ID'
-                    ? 'Seluruh fitur kelas atas Wevitation + Full Event Planner 8 Domain dengan harga 25% lebih murah. Sekali bayar, undangan aktif selamanya!'
-                    : 'All premium digital invitation features + 8-Domain Event Planner at 75% of competitor pricing. One-time payment, active forever!'}
+                    ? 'Nikmati seluruh fitur undangan digital interaktif 5 arketipe desain + Full Event Planner 8 Domain. Sekali bayar, undangan aktif selamanya!'
+                    : 'Unlock all interactive digital invitation features with 5 layout archetypes + 8-Domain Event Planner. One-time payment, active forever!'}
                 </p>
               </div>
 
@@ -8268,10 +8319,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       key={pkg.id}
                       className={`min-w-0 overflow-hidden rounded-3xl p-6 flex flex-col justify-between transition-all ${
                         isRoyal
-                          ? 'bg-gradient-to-b from-[#1A1423] via-[#111528] to-[#1E1712] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(212,175,55,0.22)] relative'
+                          ? 'bg-gradient-to-b from-[#FFFDF9] via-[#FAF3E3] to-[#F7ECDA] text-stone-900 border-2 border-[#D4AF37] shadow-[0_18px_45px_rgba(212,175,55,0.2)] relative'
                           : isExclusive
-                            ? 'bg-gradient-to-b from-[#161B36] to-[#111528] text-white border-2 border-[#6366F1] shadow-[0_18px_40px_rgba(99,102,241,0.22)]'
-                            : 'bg-[#111528] text-slate-100 border border-indigo-500/40 shadow-md'
+                            ? 'bg-gradient-to-b from-white to-indigo-50/60 text-stone-900 border-2 border-[#6366F1] shadow-[0_16px_38px_rgba(99,102,241,0.14)]'
+                            : 'bg-white text-stone-900 border border-stone-200/90 shadow-sm'
                       }`}
                     >
                       <div className="space-y-4 min-w-0">
@@ -8283,44 +8334,44 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-2xs'
                                 : isExclusive
                                   ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
-                                  : 'bg-[#090B14] text-[#00F0FF] border border-indigo-500/40'
+                                  : 'bg-stone-100 text-stone-700 border border-stone-200'
                             }`}
                           >
                             {pkg.badge}
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-extrabold">
                             {pkg.discountBadge}
                           </span>
                         </div>
 
-                        {/* Title, Subtitle & Strictly Separated 75% Pricing Block */}
+                        {/* Title, Subtitle & Official Pricing Block */}
                         <div className="min-w-0">
                           <div className="flex items-baseline justify-between gap-2">
-                            <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-white">
+                            <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-stone-900">
                               {pkg.name}
                             </h4>
-                            <span className="text-[10px] font-mono font-bold text-indigo-300">
-                              {pkg.wevitationPriceLabel}
+                            <span className="text-[10px] font-mono font-bold text-stone-500">
+                              {pkg.normalPriceLabel}
                             </span>
                           </div>
-                          <p className="text-xs text-indigo-200/80 mt-0.5">
+                          <p className="text-xs text-stone-600 mt-0.5">
                             {pkg.subtitle}
                           </p>
 
-                          <div className="mt-3 pt-3 border-t border-indigo-500/25">
+                          <div className="mt-3 pt-3 border-t border-stone-200/80">
                             <div className="flex items-baseline gap-2.5 flex-wrap">
                               <span
                                 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
                                   isRoyal
-                                    ? 'text-[#D4AF37]'
+                                    ? 'text-[#8B6914]'
                                     : isExclusive
-                                      ? 'text-[#00F0FF]'
-                                      : 'text-emerald-300'
+                                      ? 'text-indigo-700'
+                                      : 'text-emerald-700'
                                 }`}
                               >
                                 {pkg.priceMain}
                               </span>
-                              <span className="text-xs font-bold line-through text-indigo-300/50">
+                              <span className="text-xs font-bold line-through text-stone-400">
                                 {pkg.priceStrike}
                               </span>
                             </div>
@@ -8328,8 +8379,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <span
                                 className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-lg ${
                                   isRoyal
-                                    ? 'bg-[#D4AF37]/15 text-[#FAF3E3] border border-[#D4AF37]/40'
-                                    : 'bg-[#090B14] text-indigo-200 border border-indigo-500/35'
+                                    ? 'bg-amber-100/80 text-[#7A5911] border border-[#D4AF37]/50'
+                                    : 'bg-stone-100 text-stone-700 border border-stone-200'
                                 }`}
                               >
                                 {pkg.priceSubBadge}
@@ -8345,17 +8396,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <CheckCircle2
                                 className={`w-4 h-4 shrink-0 mt-0.5 ${
                                   isRoyal
-                                    ? 'text-[#D4AF37]'
+                                    ? 'text-[#9A742B]'
                                     : isExclusive
-                                      ? 'text-[#00F0FF]'
-                                      : 'text-emerald-400'
+                                      ? 'text-indigo-600'
+                                      : 'text-emerald-600'
                                 }`}
                               />
                               <span
                                 className={
                                   isRoyal
-                                    ? 'text-[#E8DFD1] font-medium'
-                                    : 'text-indigo-100/90'
+                                    ? 'text-stone-800 font-medium'
+                                    : 'text-stone-700'
                                 }
                               >
                                 {f}
@@ -8366,7 +8417,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </div>
 
                       {/* CTA Buttons: Preview Tier in Live Simulator OR Open Dedicated Checkout Page */}
-                      <div className="pt-5 mt-5 border-t border-indigo-500/25 space-y-2 min-w-0">
+                      <div className="pt-5 mt-5 border-t border-stone-200/80 space-y-2 min-w-0">
                         <button
                           type="button"
                           onClick={() => {
@@ -8381,8 +8432,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }
                           className={`w-full max-w-full py-2.5 px-3 rounded-xl font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all border ${
                             isRoyal
-                              ? 'bg-white/10 hover:bg-white/20 text-[#E6C76B] border-[#D4AF37]/45'
-                              : 'bg-[#090B14] hover:bg-indigo-950 text-[#00F0FF] border-indigo-500/45'
+                              ? 'bg-white hover:bg-amber-50 text-[#8B6914] border-[#D4AF37]/60'
+                              : 'bg-stone-50 hover:bg-indigo-50 text-indigo-700 border-stone-200'
                           }`}
                         >
                           <Eye className="w-3.5 h-3.5 shrink-0" />
@@ -8401,7 +8452,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               ? 'bg-gradient-to-r from-[#D4AF37] via-[#E6C76B] to-[#B68D40] text-stone-950 hover:from-[#C5A059] hover:to-[#9A742B] shadow-md'
                               : isExclusive
                                 ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white shadow-md'
-                                : 'bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-sm'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
                           }`}
                         >
                           <Wallet className="w-4 h-4 shrink-0" />
@@ -8423,23 +8474,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* ================================================================= */}
             <section
               id="blog"
-              className="py-12 sm:py-16 bg-[#111528] border-t border-indigo-500/30"
+              className="py-12 sm:py-16 bg-[#F7F4ED] border-t border-stone-200/90"
             >
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                   <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
                       {lang === 'ID'
                         ? 'Wawasan & Panduan Persiapan Acara'
                         : 'Event Planning Guides & Inspiration'}
                     </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
                       {lang === 'ID'
                         ? 'Artikel & Inspirasi Terbaru'
                         : 'Latest Articles & Inspiration'}
                     </h3>
                   </div>
-                  <span className="text-xs text-indigo-200/80">
+                  <span className="text-xs text-stone-600">
                     {lang === 'ID'
                       ? 'Klik artikel untuk membaca tips lengkap & checklist praktis'
                       : 'Click any article to read the full guide & checklist'}
@@ -8451,7 +8502,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <div
                       key={art.id}
                       onClick={() => setActiveBlogArticle(art)}
-                      className="group cursor-pointer rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/60 overflow-hidden flex flex-col justify-between transition-all shadow-md"
+                      className="group cursor-pointer rounded-2xl bg-white border border-stone-200/90 hover:border-indigo-400 overflow-hidden flex flex-col justify-between transition-all shadow-sm"
                     >
                       <div>
                         <div className="relative h-36 overflow-hidden">
@@ -8461,24 +8512,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-transparent to-transparent" />
-                          <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-[#00F0FF] text-[9px] font-extrabold">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                          <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-indigo-700 text-[9px] font-extrabold shadow-2xs">
                             {art.category}
                           </span>
                         </div>
                         <div className="p-4 space-y-2">
-                          <span className="text-[10px] font-mono text-indigo-300">
+                          <span className="text-[10px] font-mono text-stone-500">
                             ⏱️ {art.readTime}
                           </span>
-                          <h4 className="font-sans text-xs sm:text-sm font-extrabold text-white line-clamp-3 group-hover:text-[#00F0FF] transition-colors leading-snug">
+                          <h4 className="font-sans text-xs sm:text-sm font-extrabold text-stone-900 line-clamp-3 group-hover:text-indigo-700 transition-colors leading-snug">
                             {lang === 'ID' ? art.titleId : art.titleEn}
                           </h4>
-                          <p className="text-[11px] text-indigo-200/75 line-clamp-3 leading-relaxed">
+                          <p className="text-[11px] text-stone-600 line-clamp-3 leading-relaxed">
                             {lang === 'ID' ? art.excerptId : art.excerptEn}
                           </p>
                         </div>
                       </div>
-                      <div className="px-4 py-2.5 border-t border-indigo-500/20 flex items-center justify-between text-[11px] font-extrabold text-[#00F0FF]">
+                      <div className="px-4 py-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-extrabold text-indigo-700">
                         <span>
                           {lang === 'ID'
                             ? 'Baca Selengkapnya'
@@ -8503,15 +8554,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {/* Left 7 Cols: Interactive FAQ Accordion */}
                 <div className="lg:col-span-7 space-y-4">
                   <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-indigo-700">
                       {lang === 'ID'
                         ? 'Pertanyaan yang Sering Diajukan (FAQ)'
                         : 'Frequently Asked Questions (FAQ)'}
                     </span>
-                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-stone-900 mt-1">
                       {lang === 'ID'
-                        ? 'Semua Hal Tentang MEPlanner & Harga 75%'
-                        : 'Everything About MEPlanner & 75% Pricing'}
+                        ? 'Semua Hal Tentang MEPlanner & Fitur Lengkapnya'
+                        : 'Everything About MEPlanner & Complete Features'}
                     </h3>
                   </div>
 
@@ -8523,8 +8574,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           key={item.qId}
                           className={`rounded-2xl border transition-all overflow-hidden ${
                             isOpen
-                              ? 'bg-[#111528] border-[#00F0FF]/60 shadow-md'
-                              : 'bg-[#111528]/70 border-indigo-500/35 hover:border-indigo-400/60'
+                              ? 'bg-white border-indigo-400 shadow-sm'
+                              : 'bg-white border-stone-200/90 hover:border-indigo-300'
                           }`}
                         >
                           <button
@@ -8534,17 +8585,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             }
                             className="w-full p-4 text-left flex items-center justify-between gap-3"
                           >
-                            <span className="text-xs sm:text-sm font-extrabold text-white leading-snug">
+                            <span className="text-xs sm:text-sm font-extrabold text-stone-900 leading-snug">
                               {lang === 'ID' ? item.qId : item.qEn}
                             </span>
                             <ChevronDown
-                              className={`w-4 h-4 text-[#00F0FF] shrink-0 transition-transform ${
+                              className={`w-4 h-4 text-indigo-600 shrink-0 transition-transform ${
                                 isOpen ? 'rotate-180' : ''
                               }`}
                             />
                           </button>
                           {isOpen && (
-                            <div className="px-4 pb-4 pt-1 border-t border-indigo-500/20 text-xs text-indigo-100/90 leading-relaxed">
+                            <div className="px-4 pb-4 pt-2 border-t border-stone-100 text-xs text-stone-600 leading-relaxed bg-[#FAF8F5]/70">
                               {lang === 'ID' ? item.aId : item.aEn}
                             </div>
                           )}
@@ -8555,28 +8606,28 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 </div>
 
                 {/* Right 5 Cols: Customer Service & MEPlanner AI Assistant */}
-                <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-[#161B36] via-[#111528] to-[#1A1333] border-2 border-[#00F0FF]/50 p-5 sm:p-6 shadow-[0_20px_50px_rgba(99,102,241,0.22)] space-y-5">
+                <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-white via-[#FAF6EE] to-indigo-50/40 border-2 border-indigo-200 p-5 sm:p-6 shadow-[0_14px_35px_rgba(99,102,241,0.1)] space-y-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-extrabold">
-                        ● Online • Setiap Hari 08.00 - 20.00 WIB
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold">
+                        ● Online • Layanan Resmi via Gmail
                       </span>
-                      <h4 className="font-sans text-lg sm:text-xl font-extrabold text-white mt-2">
+                      <h4 className="font-sans text-lg sm:text-xl font-extrabold text-stone-900 mt-2">
                         {lang === 'ID'
                           ? 'Masih Ada Pertanyaan? Tanya MEPlanner AI atau CS Kami!'
                           : 'Still Have Questions? Ask MEPlanner AI or Our CS!'}
                       </h4>
-                      <p className="text-xs text-indigo-200/85 mt-1">
+                      <p className="text-xs text-stone-600 mt-1">
                         {lang === 'ID'
-                          ? 'Pilih topik instan di bawah untuk mendapatkan jawaban langsung dari MEPlanner AI, atau hubungi tim Customer Service kami via WhatsApp.'
-                          : 'Select a quick topic below for an instant answer from MEPlanner AI, or chat with our Customer Service on WhatsApp.'}
+                          ? 'Pilih topik instan di bawah untuk mendapatkan jawaban langsung dari MEPlanner AI, atau hubungi tim Customer Service kami melalui Email Resmi.'
+                          : 'Select a quick topic below for an instant answer from MEPlanner AI, or contact our Customer Service via Official Email.'}
                       </p>
                     </div>
                   </div>
 
                   {/* Interactive AI Quick Prompts */}
                   <div className="space-y-2">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#00F0FF]">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">
                       {lang === 'ID'
                         ? 'Tanya Cepat MEPlanner AI (Klik Pertanyaan):'
                         : 'Quick Ask MEPlanner AI (Click a Prompt):'}
@@ -8591,8 +8642,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             onClick={() => setSelectedAiPromptIdx(pIdx)}
                             className={`text-left px-3 py-2 rounded-xl text-xs font-extrabold border transition-all ${
                               isSelected
-                                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
-                                : 'bg-[#090B14] hover:bg-indigo-950 text-indigo-200 border-indigo-500/35'
+                                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-indigo-600 shadow-xs'
+                                : 'bg-white hover:bg-indigo-50 text-stone-700 border-stone-200'
                             }`}
                           >
                             {lang === 'ID' ? prm.questionId : prm.questionEn}
@@ -8601,33 +8652,31 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       })}
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-[#090B14] border border-[#00F0FF]/40 text-xs text-emerald-100 leading-relaxed">
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-xs text-stone-800 leading-relaxed font-medium">
                       {lang === 'ID'
                         ? AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerId
                         : AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerEn}
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-indigo-500/30 flex flex-col sm:flex-row gap-2.5">
+                  <div className="pt-2 border-t border-stone-200 flex flex-col sm:flex-row gap-2.5">
                     <a
-                      href={whatsappUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-3 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                      href={mailtoGeneralSupportUrl}
+                      className="flex-1 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
                     >
-                      <Send className="w-4 h-4 shrink-0" />
+                      <Mail className="w-4 h-4 shrink-0" />
                       <span>
                         {lang === 'ID'
-                          ? 'Chat CS WhatsApp (08.00 - 20.00 WIB)'
-                          : 'Chat WhatsApp Support'}
+                          ? `Hubungi Email CS (${businessEmail})`
+                          : `Email Support (${businessEmail})`}
                       </span>
                     </a>
                     <button
                       type="button"
                       onClick={() => handleSelectPackageForCheckout('GRATIS')}
-                      className="py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                      className="py-3 px-4 rounded-2xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-800 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#8B6914]" />
                       <span>
                         {lang === 'ID' ? 'Coba Gratis Rp 0' : 'Try Free Rp 0'}
                       </span>
@@ -8645,19 +8694,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* ================================================================= */}
       {isEcoModalOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setIsEcoModalOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl bg-[#090B14] border-2 border-emerald-400/60 shadow-2xl overflow-hidden"
+            className="w-full max-w-2xl rounded-3xl bg-white border-2 border-emerald-300 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 bg-emerald-950/90 border-b border-emerald-500/40 flex items-center justify-between gap-3">
+            <div className="px-5 py-4 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-extrabold">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold">
                   🌿 METODOLOGI ECO-IMPACT
                 </span>
-                <h4 className="font-sans text-sm sm:text-base font-extrabold text-white">
+                <h4 className="font-sans text-sm sm:text-base font-extrabold text-stone-900">
                   {lang === 'ID'
                     ? 'Bagaimana Kami Menghitung Dampak Ini?'
                     : 'How Do We Calculate This Environmental Impact?'}
@@ -8666,54 +8715,54 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEcoModalOpen(false)}
-                className="p-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white"
+                className="p-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 sm:p-6 space-y-4 text-xs text-indigo-100 leading-relaxed max-h-[78vh] overflow-y-auto">
+            <div className="p-5 sm:p-6 space-y-4 text-xs text-stone-700 leading-relaxed max-h-[78vh] overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
-                  <p className="font-extrabold text-emerald-300 text-sm">
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
+                  <p className="font-extrabold text-emerald-800 text-sm">
                     1. Kertas (Undangan A5 &amp; Amplop)
                   </p>
-                  <p className="text-indigo-200/85">
+                  <p className="text-stone-600">
                     Satu set undangan cetak fisik rata-rata membutuhkan kartu A5
                     art carton tebal (210–260 gsm), amplop berlapis, serta plastik
                     kemasan (~18–20 gram per undangan). Mengalikan jutaan
                     undangan digital yang dibagikan menghasilkan penghematan{' '}
-                    <strong className="text-white">46.8 Ton kertas</strong>.
+                    <strong className="text-stone-900">46.8 Ton kertas</strong>.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
-                  <p className="font-extrabold text-[#00F0FF] text-sm">
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
+                  <p className="font-extrabold text-indigo-800 text-sm">
                     2. Tinta Cetak &amp; Laminasi Kimia
                   </p>
-                  <p className="text-indigo-200/85">
+                  <p className="text-stone-600">
                     Meniadakan penggunaan tinta offset berbasis minyak, foil emas
                     panas (hotprint), dan laminasi plastik doff/glossy yang sulit
                     terurai di tanah dalam puluhan tahun.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
-                  <p className="font-extrabold text-[#E6C76B] text-sm">
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
+                  <p className="font-extrabold text-[#8B6914] text-sm">
                     3. Distribusi &amp; Emisi Transportasi
                   </p>
-                  <p className="text-indigo-200/85">
+                  <p className="text-stone-600">
                     Undangan fisik memerlukan pengiriman kurir motor/mobil/pesawat
                     ke tiap alamat tamu. Distribusi digital via WhatsApp menekan
-                    emisi hingga <strong className="text-white">288 tCO2e</strong>.
+                    emisi hingga <strong className="text-stone-900">288 tCO2e</strong>.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
-                  <p className="font-extrabold text-emerald-300 text-sm">
+                <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-emerald-200 space-y-1.5">
+                  <p className="font-extrabold text-emerald-800 text-sm">
                     4. Prinsip Perhitungan Konservatif
                   </p>
-                  <p className="text-indigo-200/85">
+                  <p className="text-stone-600">
                     Kami menggunakan faktor konversi siklus hidup kertas &amp;
                     logistik konservatif setelah dikurangi estimasi konsumsi
                     energi server cloud modern yang efisien.
@@ -8725,7 +8774,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEcoModalOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-extrabold text-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs"
                 >
                   {lang === 'ID' ? 'Mengerti & Tutup' : 'Got It & Close'}
                 </button>
@@ -8740,11 +8789,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* ================================================================= */}
       {activeBlogArticle && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setActiveBlogArticle(null)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl bg-[#090B14] border-2 border-[#00F0FF]/50 shadow-2xl overflow-hidden"
+            className="w-full max-w-2xl rounded-3xl bg-white border-2 border-indigo-200 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-48 overflow-hidden">
@@ -8757,16 +8806,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 }
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-black/45 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
               <button
                 type="button"
                 onClick={() => setActiveBlogArticle(null)}
-                className="absolute top-3 right-3 p-2 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white"
+                className="absolute top-3 right-3 p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
               >
                 <X className="w-4 h-4" />
               </button>
               <div className="absolute bottom-3 left-5 right-5 space-y-1">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#111528]/90 border border-[#00F0FF]/50 text-[#00F0FF] text-[10px] font-extrabold">
+                <span className="px-2.5 py-0.5 rounded-full bg-white/95 border border-indigo-200 text-indigo-700 text-[10px] font-extrabold">
                   {activeBlogArticle.category} • {activeBlogArticle.readTime}
                 </span>
                 <h4 className="font-sans text-base sm:text-xl font-extrabold text-white">
@@ -8777,15 +8826,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               </div>
             </div>
 
-            <div className="p-5 sm:p-6 space-y-4 text-xs text-indigo-100 leading-relaxed max-h-[65vh] overflow-y-auto">
-              <p className="text-indigo-200/90 text-xs sm:text-sm">
+            <div className="p-5 sm:p-6 space-y-4 text-xs text-stone-700 leading-relaxed max-h-[65vh] overflow-y-auto">
+              <p className="text-stone-600 text-xs sm:text-sm">
                 {lang === 'ID'
                   ? activeBlogArticle.excerptId
                   : activeBlogArticle.excerptEn}
               </p>
 
-              <div className="p-4 rounded-2xl bg-[#111528] border border-indigo-500/40 space-y-2.5">
-                <p className="font-extrabold text-[#00F0FF] uppercase tracking-wider text-[10px]">
+              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-stone-200 space-y-2.5">
+                <p className="font-extrabold text-indigo-700 uppercase tracking-wider text-[10px]">
                   {lang === 'ID'
                     ? 'Poin Utama & Checklist Praktis:'
                     : 'Key Takeaways & Practical Checklist:'}
@@ -8796,14 +8845,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     : activeBlogArticle.highlightsEn
                   ).map((pt) => (
                     <li key={pt} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <span>{pt}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <p className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 font-semibold">
+              <p className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold">
                 {lang === 'ID'
                   ? activeBlogArticle.conclusionId
                   : activeBlogArticle.conclusionEn}
@@ -8825,7 +8874,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveBlogArticle(null)}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs"
                 >
                   {lang === 'ID' ? 'Tutup Artikel' : 'Close Article'}
                 </button>
@@ -8838,23 +8887,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* FULLSCREEN LIVE VECTOR-SHARP UI LIGHTBOX MODAL */}
       {lightboxScreenshot && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
           onClick={() => setLightboxScreenshot(null)}
         >
           <div
-            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-[#090B14] border border-indigo-500/50 shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-3.5 bg-[#111528] border-b border-indigo-500/35 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 sm:px-6 py-3.5 bg-[#FAF8F5] border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/45 text-[#00F0FF] font-mono text-[10px] font-extrabold whitespace-nowrap">
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-[10px] font-extrabold whitespace-nowrap">
                   {lightboxScreenshot.badge}
                 </span>
-                <h4 className="font-sans text-sm sm:text-base font-extrabold text-white truncate">
+                <h4 className="font-sans text-sm sm:text-base font-extrabold text-stone-900 truncate">
                   {lightboxScreenshot.title}
                 </h4>
-                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[9px] font-extrabold whitespace-nowrap">
+                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-[9px] font-extrabold whitespace-nowrap">
                   ● 100% VECTOR-SHARP LIVE UI
                 </span>
               </div>
@@ -8870,14 +8919,14 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           ? 'Modul Sebelumnya'
                           : 'Previous Module'
                       }
-                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {lang === 'ID' ? 'Sebelumnya' : 'Prev'}
                       </span>
                     </button>
-                    <span className="text-xs font-mono font-bold text-[#00F0FF] px-1">
+                    <span className="text-xs font-mono font-bold text-indigo-700 px-1">
                       {activeShowcaseIdx + 1} /{' '}
                       {OFFICIAL_PRODUCT_SCREENSHOTS.length}
                     </span>
@@ -8887,7 +8936,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       title={
                         lang === 'ID' ? 'Modul Berikutnya' : 'Next Module'
                       }
-                      className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                     >
                       <span className="hidden sm:inline">
                         {lang === 'ID' ? 'Berikutnya' : 'Next'}
@@ -8902,7 +8951,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   title={
                     lang === 'ID' ? 'Tutup Layar Penuh' : 'Close Fullscreen'
                   }
-                  className="ml-1 px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap transition-all"
+                  className="ml-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold inline-flex items-center gap-1 whitespace-nowrap transition-all"
                 >
                   <X className="w-4 h-4" />
                   <span>{lang === 'ID' ? 'Tutup' : 'Close'}</span>
@@ -8942,8 +8991,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
 
             {/* Modal Footer Caption */}
-            <div className="px-4 sm:px-6 py-3 bg-[#111528] border-t border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <p className="text-xs text-indigo-200 leading-relaxed">
+            <div className="px-4 sm:px-6 py-3 bg-[#FAF8F5] border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <p className="text-xs text-stone-600 leading-relaxed">
                 {lightboxScreenshot.desc}
               </p>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -8957,7 +9006,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       activeShowcaseIdx === idx &&
                       lightboxScreenshot.mode !== 'invitation_sim'
                         ? 'bg-[#6366F1] text-white'
-                        : 'bg-white/10 text-indigo-200 hover:bg-white/20'
+                        : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
                     }`}
                   >
                     {idx + 1}
@@ -8969,8 +9018,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       )}
 
-      {/* OFFICIAL FOOTER CREDIT & CONTACT US (MEPlanner SaaS Midnight Navy & Indigo Branding) */}
-      <footer className="bg-[#090B14] border-t border-indigo-500/35 py-6 px-4 sm:px-6 lg:px-8">
+      {/* OFFICIAL FOOTER CREDIT & CONTACT US (Bright Editorial Light Theme) */}
+      <footer className="bg-white border-t border-stone-200/90 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
             <div className="flex items-center justify-center shrink-0">
@@ -8981,26 +9030,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <p className="text-xs sm:text-sm font-extrabold text-white">
+                <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                   MEPlanner — My Event Planner by{' '}
                   <a
                     href={developerUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#00F0FF] hover:text-indigo-300 underline decoration-[#00F0FF]/60 underline-offset-2"
+                    className="text-indigo-700 hover:text-indigo-900 underline decoration-indigo-400 underline-offset-2"
                   >
                     omeko42
                   </a>{' '}
                   &copy; 2026
                 </p>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111528] border border-indigo-500/40 text-[#00F0FF] text-[10px] font-bold">
-                  <Sparkles className="w-2.5 h-2.5 text-[#00F0FF]" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-bold">
+                  <Sparkles className="w-2.5 h-2.5 text-[#8B6914]" />
                   <span>
                     Official MEPlanner SaaS &amp; Multi-Event Planner Cloud Suite
                   </span>
                 </span>
               </div>
-              <p className="text-[11px] text-indigo-200/75 mt-0.5">
+              <p className="text-[11px] text-stone-600 mt-0.5">
                 {lang === 'ID'
                   ? 'Platform Multi-Event Readiness Tracker & Undangan Digital Interaktif (Wedding, Birthday, Graduation, Rapat & Gala Dinner)'
                   : 'Multi-Event Readiness Tracker & Interactive Digital Invitation Platform (Wedding, Birthday, Graduation, Corporate & Gala Dinner)'}
@@ -9009,47 +9058,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#00F0FF]">
+            <span className="text-[10px] uppercase tracking-widest font-extrabold text-stone-500">
               {lang === 'ID' ? 'Hubungi Kami:' : 'Contact Us:'}
             </span>
             <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Hubungi Kontak WA MEPlanner (${rawWa})`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111528] hover:bg-indigo-950 border border-indigo-500/45 text-white text-xs font-bold transition-all"
+              href={mailtoGeneralSupportUrl}
+              title={`Hubungi Email Resmi MEPlanner (${businessEmail})`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 text-xs font-bold transition-all"
             >
-              <svg
-                className="w-3.5 h-3.5 text-[#00F0FF]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-              <span>{lang === 'ID' ? 'Kontak WA' : 'WhatsApp'}</span>
+              <Mail className="w-3.5 h-3.5 text-indigo-700" />
+              <span>{businessEmail}</span>
             </a>
 
-            {hasCompletedPayment && (
-              <a
-                href={mailtoPostPaymentUrl}
-                title={
-                  lang === 'ID'
-                    ? `Email Prioritas Pasca-Pembayaran (${businessEmail})`
-                    : `Post-Payment Priority Email (${businessEmail})`
-                }
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111528] hover:bg-indigo-950 text-[#00F0FF] border border-[#00F0FF]/45 text-xs font-bold transition-all shadow-2xs"
-              >
-                <Mail className="w-3.5 h-3.5 text-[#00F0FF]" />
-                <span>{businessEmail}</span>
-              </a>
-            )}
-
             <a
-              href="https://www.linkedin.com/in/eko-agung-krisdianto-408955130"
+              href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition-all shadow-2xs"

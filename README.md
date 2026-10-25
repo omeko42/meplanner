@@ -80,19 +80,19 @@ flowchart LR
 
 | Surface | Identitas Visual | Fungsi Utama |
 | :--- | :--- | :--- |
-| **1. Website Katalog (`CommercialLandingView`)** | **MEPlanner SaaS Midnight Navy & Indigo** | Menampilkan simulasi interaktif 1:1 (`<PublicInvitationView />` & `<AdminDashboardView />` asli dengan 25 preset tema & 5 klien *dummy* terpisah), perbandingan paket lisensi, dan *checkout* multi-valuta (`IDR`, `USD`, `USDT`). |
+| **1. Website Katalog (`CommercialLandingView`)** | **MEPlanner SaaS Pearl Light & Indigo** | Menampilkan simulasi interaktif 1:1 (`<PublicInvitationView />` & `<AdminDashboardView />` asli dengan 25 preset tema & 5 klien *dummy* terpisah), perbandingan paket lisensi, dan *checkout* multi-valuta (`IDR`, `USD`, `USDT`). |
 | **2. Workspace Planner (`AdminDashboardView`)** | **Dinamis Mengikuti Palet Tema Undangan** | Ruang kerja kolaboratif untuk memantau kesiapan acara, *checklist* tugas, kontrak vendor & anggaran, manajemen tamu VIP, hingga kustomisasi penuh isi & visual undangan. |
-| **3. Undangan Publik (`PublicInvitationView`)** | **Editorial Luxury & 5 Palet Tema Klien** | Halaman undangan tamu dengan animasi *curtain-lift*, *feathered hero banner*, hitung mundur sesi utama, galeri HD, musik NCS/Spotify/YouTube, form RSVP, dan amplop digital. |
+| **3. Undangan Publik (`PublicInvitationView`)** | **Editorial Luxury, 5 Palet & 5 Layout Archetype** | Halaman undangan tamu bertema terang (*light luxury*) dengan 5 bentuk arsitektur tata letak (`EDITORIAL_CLASSIC`, `POLAROID_MAGAZINE`, `BOTANICAL_AIRY`, `NUSANTARA_HERITAGE`, `MODERN_BENTO`), *feathered hero banner*, hitung mundur sesi utama, galeri HD, musik NCS/Spotify/YouTube, form RSVP, dan amplop digital. |
 
 ---
 
 ## 🎨 5 Kategori Acara, 25 Tema Kurasi & 5 Palet Warna Tersinkronisasi
 
-Setiap perubahan **Palet Tema Warna** di dalam **Planner (`Pengaturan -> Tema & Latar`)** secara otomatis mengubah suasana warna di **Workspace Planner** sekaligus seluruh ornamen bunga sudut, partikel kelopak melayang, *veil overlay*, bingkai foto (`ARCH_DOME`, `CIRCLE`, `EDITORIAL_RECT`), kartu acara, dan tombol di **Undangan Publik**:
+Setiap perubahan **Palet Tema Warna** di dalam **Planner (`Pengaturan -> Tema & Latar`)** secara otomatis mengubah suasana warna di **Workspace Planner** sekaligus seluruh ornamen bunga sudut, partikel kelopak melayang, *veil overlay*, bingkai foto (`ARCH_DOME`, `CIRCLE`, `EDITORIAL_RECT`), tata letak (`layoutArchetype`), kartu acara, dan tombol di **Undangan Publik**:
 
 | Kategori Acara | Palet Tema Unggulan | Koleksi 25 Tema Eksklusif (`MEPLANNER_THEME_PRESETS`) | Aksentuasi Warna Utama |
 | :--- | :--- | :--- | :--- |
-| 💍 **Pernikahan (*Wedding*)** | **Champagne Gold** | `Timeless Snapshot`, `Serein`, `Mildness`, `Culture: Javanese Kraton`, `Wayang Heritage Gold`, `BluBloom`, `Midnight Elegance`, `Espresso & Simple Rustic`, `Photovit: Black & Green`, `Peppy & Visual Journey` | `#D4AF37` &bull; `#C5A059` &bull; `#8B6914` &bull; `#FAF3E3` |
+| 💍 **Pernikahan (*Wedding*)** | **Champagne Gold** | `Timeless Snapshot`, `Serein`, `Mildness`, `Culture: Javanese Kraton`, `Wayang Heritage Gold`, `BluBloom`, `Pearl & Ivory Elegance`, `Espresso & Simple Rustic`, `Photovit: Black & Green`, `Peppy & Visual Journey` | `#D4AF37` &bull; `#C5A059` &bull; `#8B6914` &bull; `#FAF3E3` |
 | 🎂 **Ulang Tahun (*Birthday*)** | **Blush Rose** | `Sweet 17th Rose Soirée`, `Peppy Confetti Milestone`, `Golden Jubilee 50th`, `Botanical Garden Soirée` | `#D88290` &bull; `#C86D7C` &bull; `#8E3546` &bull; `#FCECEF` |
 | 🎓 **Wisuda (*Graduation*)** | **Royal Navy** | `Cum Laude Academic Gold`, `Sumpah Dokter & Profesi`, `Royal Alma Mater Navy`, `Modern Scholar Terracotta` | `#3B669E` &bull; `#284B7A` &bull; `#162F50` &bull; `#EBF1F8` |
 | 🏛️ **Rapat Resmi (*Meeting*)** | **Sage Botanical** | `Executive Summit & Rakornas`, `State & Ministry Protocol`, `Green ESG & Sustainability Forum`, `Digital Transformation Keynote` | `#5E8C6A` &bull; `#4A6B53` &bull; `#23422C` &bull; `#EBF3ED` |
@@ -140,16 +140,16 @@ Setiap perubahan **Palet Tema Warna** di dalam **Planner (`Pengaturan -> Tema & 
 
 ---
 
-## 💎 Paket Lisensi Komersial (75% dari Harga Kompetitor • Sekali Bayar, Aktif Selamanya)
+## 💎 Paket Lisensi Resmi MEPlanner (Sekali Bayar • Aktif Selamanya)
 
-| Paket Lisensi | Harga MEPlanner (75%) | Harga Kompetitor / Normal | Harga Global (USD / USDT) | Kapasitas & Fasilitas Utama |
+| Paket Lisensi | Harga Promo MEPlanner | Harga Normal | Harga Global (USD / USDT) | Kapasitas & Fasilitas Utama |
 | :--- | :---: | :---: | :---: | :--- |
-| **🌱 Coba Dulu Gratis** | **Rp 0** | **Gratis** | **$0 USD** | &bull; **1 Undangan Standar** + Event Planner Dasar &bull; **Aktif 14 Hari**<br>&bull; Kuota Tamu Terbatas, Galeri & Musik Latar NCS, Ucapan & Doa, Gift Registry Free |
-| **🥉 Premium**<br>*(Paling Favorit)* | **Rp 51.750** | ~~Rp 69.000~~ / ~~Rp 75.000~~ | **$4 USD / 4 USDT** | &bull; **Upgrade 1 Undangan Premium** &bull; **Undangan Aktif Selamanya (Sekali Bayar)**<br>&bull; **Unlimited Kuota Tamu**, Foto & Video Gallery, Tema Premium (25+ Tema Event)<br>&bull; Link Streaming, Kado Cashless / Donasi, **Layar Penerima Tamu**, Story IG & Gift Registry |
-| **🥈 Business**<br>*(Untuk 2 Acara)* | **Rp 74.250** | ~~Rp 99.000~~ / ~~Rp 150.000~~ | **$6 USD / 6 USDT** | &bull; **Upgrade Premium +1 Undangan (2 Undangan Premium dalam 1 Akun)** &bull; **Aktif Selamanya**<br>&bull; **Unlimited Kuota Tamu & Blast WA**, Foto & Video Gallery + Smooth Slideshow<br>&bull; Layar Penerima Tamu, Premium RSVP, Open Registration, **Full Event Planner** & Mitra Bronze |
-| **👑 Enterprise**<br>*(Untuk 5 Acara)* | **Rp 180.000** | ~~Rp 240.000~~ / ~~Rp 375.000~~ | **$12 USD / 12 USDT** | &bull; **Upgrade Premium +4 Undangan (Total 5 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Video Background Sinematik s/d 25 MB, AI Wishes Insight<br>&bull; Kado Cashless Global (Bank, QRIS, PayPal & Crypto USDT) + Layar Penerima Tamu |
-| **🤝 Mitra - Silver**<br>*(Bisnis Besar / WO)* | **Rp 375.000** | ~~Rp 500.000~~ / ~~Rp 825.000~~ | **$25 USD / 25 USDT** | &bull; **Upgrade Premium +10 Undangan (Total 11 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Semua Tema Premium, Layar Penerima Tamu & **✨ Branding Teks WO/EO** |
-| **🏆 Mitra - Gold**<br>*(Agensi WO / EO VIP)* | **Rp 750.000** | ~~Rp 1.000.000~~ / ~~Rp 1.725.000~~ | **$49 USD / 49 USDT** | &bull; **Upgrade Premium +22 Undangan (Total 23 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Semua Tema Premium, Layar Penerima Tamu, **✨ Branding Teks & 👑 Branding Logo WO/EO** |
+| **🌱 Coba Dulu Gratis**<br>*(Uji Coba Gratis • 14 Hari)* | **Rp 0** | **Gratis** | **$0 USD** | &bull; **1 Undangan Standar** + Event Planner Dasar &bull; **Aktif 14 Hari**<br>&bull; Kuota Tamu Terbatas, Galeri & Musik Latar NCS, Ucapan & Doa, Gift Registry Free |
+| **🥉 Premium**<br>*(Promo 31% OFF • Paling Favorit)* | **Rp 51.750** | ~~Rp 75.000~~ | **$4 USD / 4 USDT** | &bull; **Upgrade 1 Undangan Premium** &bull; **Undangan Aktif Selamanya (Sekali Bayar)**<br>&bull; **Unlimited Kuota Tamu**, Foto & Video Gallery, Tema Premium (25+ Tema Event)<br>&bull; Link Streaming, Kado Cashless / Donasi, **Layar Penerima Tamu**, Story IG & Gift Registry |
+| **🥈 Business**<br>*(Promo 50% OFF • Untuk 2 Acara)* | **Rp 74.250** | ~~Rp 150.000~~ | **$6 USD / 6 USDT** | &bull; **Upgrade Premium +1 Undangan (2 Undangan Premium dalam 1 Akun)** &bull; **Aktif Selamanya**<br>&bull; **Unlimited Kuota Tamu & Blast WA**, Foto & Video Gallery + Smooth Slideshow<br>&bull; Layar Penerima Tamu, Premium RSVP, Open Registration, **Full Event Planner** & Mitra Bronze |
+| **👑 Enterprise**<br>*(Promo 52% OFF • Untuk 5 Acara)* | **Rp 180.000** | ~~Rp 375.000~~ | **$12 USD / 12 USDT** | &bull; **Upgrade Premium +4 Undangan (Total 5 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Video Background Sinematik s/d 25 MB, AI Wishes Insight<br>&bull; Kado Cashless Global (Bank, QRIS, PayPal & Crypto USDT) + Layar Penerima Tamu |
+| **🤝 Mitra - Silver**<br>*(Promo 54% OFF • Paket WO / EO 11 Undangan)* | **Rp 375.000** | ~~Rp 825.000~~ | **$25 USD / 25 USDT** | &bull; **Upgrade Premium +10 Undangan (Total 11 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Semua Tema Premium, Layar Penerima Tamu & **✨ Branding Teks WO/EO** |
+| **🏆 Mitra - Gold**<br>*(Promo 56% OFF • Paket Agensi VIP 23 Undangan)* | **Rp 750.000** | ~~Rp 1.725.000~~ | **$49 USD / 49 USDT** | &bull; **Upgrade Premium +22 Undangan (Total 23 Undangan Premium)** &bull; **Aktif Selamanya**<br>&bull; Unlimited Kuota Tamu, Semua Tema Premium, Layar Penerima Tamu, **✨ Branding Teks & 👑 Branding Logo WO/EO** |
 
 ---
 
@@ -166,8 +166,9 @@ Setiap perubahan **Palet Tema Warna** di dalam **Planner (`Pengaturan -> Tema & 
 Dirancang, dikembangkan, dan dikelola secara penuh oleh:
 
 - 👤 **Nama Lengkap:** **Eko Agung Krisdianto**
+- ✉️ **Email Resmi Bisnis:** [**e98.bisnis@gmail.com**](mailto:e98.bisnis@gmail.com)
 - 🐙 **GitHub:** [**@omeko42**](https://github.com/omeko42)
-- 💼 **LinkedIn:** [**Eko Agung Krisdianto**](https://www.linkedin.com/in/eko-agung-krisdianto-408955130)
+- 💼 **LinkedIn:** [**Eko Agung Krisdianto (@omeko42)**](https://www.linkedin.com/in/omeko42)
 - 🌐 **Official Repository:** [**github.com/omeko42/meplanner**](https://github.com/omeko42/meplanner)
 
 ---

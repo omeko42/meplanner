@@ -216,6 +216,34 @@ function normalizeParsedState(
     );
   }
 
+  if (
+    mergedSettings.developerCreditUrl &&
+    mergedSettings.developerCreditUrl.includes('eko-agung-krisdianto-408955130')
+  ) {
+    mergedSettings.developerCreditUrl = mergedSettings.developerCreditUrl.replace(
+      /eko-agung-krisdianto-408955130/g,
+      'omeko42'
+    );
+  }
+  if (
+    mergedSettings.contactWhatsappNumber &&
+    (/895[\s-]*3399[\s-]*69492/.test(mergedSettings.contactWhatsappNumber) ||
+      mergedSettings.contactWhatsappNumber === '089638616516')
+  ) {
+    mergedSettings.contactWhatsappNumber = '';
+  }
+  if (!mergedSettings.contactBusinessEmail) {
+    mergedSettings.contactBusinessEmail = 'e98.bisnis@gmail.com';
+  }
+  if (
+    mergedSettings.commercialBankTransferInfo &&
+    (/895[\s-]*3399[\s-]*69492/.test(mergedSettings.commercialBankTransferInfo) ||
+      /Konfirmasi via WA/i.test(mergedSettings.commercialBankTransferInfo))
+  ) {
+    mergedSettings.commercialBankTransferInfo =
+      'BCA / Mandiri / BRI / BNI (Konfirmasi via Email Resmi Gmail: e98.bisnis@gmail.com)';
+  }
+
   return {
     settings: mergedSettings,
     tasks: cleanTasks,
