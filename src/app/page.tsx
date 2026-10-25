@@ -1017,6 +1017,7 @@ function WeddingAppContent() {
         | 'MODERN_BENTO';
       coverImageUrl?: string;
       heroImageUrl?: string;
+      isOAuthVerified?: boolean;
     }) => {
       weddingMusicPlayer.stop();
       const rawEmail = payload.email.trim().toLowerCase();
@@ -1034,6 +1035,31 @@ function WeddingAppContent() {
         localPart === 'e98.bisnis';
 
       if (isOwnerAccount) {
+        if (payload.isOAuthVerified) {
+          const ownerUser: AdminUser = {
+            id: 'superadmin-owner',
+            username: 'superadmin',
+            nama: 'Eko Agung Krisdianto (Superadmin)',
+            role: 'SUPERADMIN',
+            jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
+            email:
+              email === 'e98.bisnis@gmail.com'
+                ? 'e98.bisnis@gmail.com'
+                : 'agungkrisdianto98@gmail.com',
+            isDefaultUser: true,
+            clientId: 'client-utama',
+            clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
+              state.settings.brideNickname || 'Selo'
+            }`,
+          };
+          handleLoginSuccess(
+            ownerUser,
+            loginLang === 'EN'
+              ? 'Welcome back, Eko (Superadmin)! Verified via Google OAuth.'
+              : 'Selamat datang kembali, Eko (Superadmin)! Terverifikasi via Google OAuth.'
+          );
+          return;
+        }
         setIsLoginModalOpen(true);
         setAuthModalMode('SIGN_IN');
         setLoginIdentifier(email);
@@ -3302,6 +3328,7 @@ function WeddingAppContent() {
                           displayName: response.profileObj.name,
                           packageId: 'GRATIS',
                           catalogThemeId: demoSelectedThemeId,
+                          isOAuthVerified: response.isOAuthVerified,
                         });
                       }}
                       onFailure={(err) => {

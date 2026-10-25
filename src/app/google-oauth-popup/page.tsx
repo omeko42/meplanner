@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import type { GoogleLoginResponse } from '@/components/ReactGoogleLoginButton';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabaseCloud';
 
 const BROWSER_GOOGLE_ACCOUNTS_KEY = 'meplanner_browser_google_accounts_v1';
 const ADMIN_AUTH_KEY = 'my_wedding_manager_admin_auth_v2';
@@ -119,6 +120,90 @@ export default function GoogleOAuthPopupPage() {
     const params = new URLSearchParams(window.location.search);
     const qLang = params.get('lang');
     if (qLang === 'EN') setLang('EN');
+
+    // 1. Check if returning from real Supabase Google OAuth (#access_token=...)
+    if (window.location.hash && window.location.hash.includes('access_token=')) {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const accessToken = hashParams.get('access_token');
+      if (accessToken) {
+        setIsSubmitting(true);
+        void (async () => {
+          try {
+            const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+              headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+            if (userRes.ok) {
+              const supaUser = await userRes.json();
+              const email = String(supaUser.email || '').trim().toLowerCase();
+              const metaName =
+                supaUser.user_metadata?.full_name ||
+                supaUser.user_metadata?.name ||
+                formatDisplayNameFromEmail(email).fullName;
+              const picture =
+                supaUser.user_metadata?.avatar_url ||
+                supaUser.user_metadata?.picture ||
+                '';
+              const { givenName, familyName } = formatDisplayNameFromEmail(email);
+              saveBrowserGoogleAccount(email, metaName);
+              const now = Date.now();
+              const payload: GoogleLoginResponse = {
+                googleId: supaUser.id || `google_${now}`,
+                tokenId: accessToken,
+                accessToken,
+                profileObj: {
+                  googleId: supaUser.id || `google_${now}`,
+                  imageUrl: picture,
+                  email,
+                  name: metaName,
+                  givenName,
+                  familyName,
+                },
+                isOAuthVerified: true,
+              };
+              if (window.opener) {
+                window.opener.postMessage(
+                  { type: 'REACT_GOOGLE_LOGIN_SUCCESS', payload },
+                  window.location.origin
+                );
+                window.close();
+                return;
+              }
+            }
+          } catch {
+            // Fall through to normal popup UI
+          } finally {
+            setIsSubmitting(false);
+          }
+        })();
+        return;
+      }
+    }
+
+    // 2. Check if Google OAuth Provider is enabled in Supabase Auth settings
+    void (async () => {
+      try {
+        const settingsRes = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+          headers: { apikey: SUPABASE_ANON_KEY },
+        });
+        if (settingsRes.ok) {
+          const settingsJson = await settingsRes.json();
+          if (settingsJson?.external?.google === true) {
+            const redirectBackUrl = `${window.location.origin}/google-oauth-popup?lang=${qLang || 'ID'}`;
+            window.location.replace(
+              `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(
+                redirectBackUrl
+              )}`
+            );
+            return;
+          }
+        }
+      } catch {
+        // Ignore and use built-in Google popup UI
+      }
+    })();
 
     const browserAccounts = loadBrowserSavedAccounts();
     setSavedAccounts(browserAccounts);

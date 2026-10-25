@@ -30,6 +30,7 @@ export interface GoogleLoginResponse {
     expires_at: number;
   };
   verifiedAdminUser?: unknown;
+  isOAuthVerified?: boolean;
 }
 
 export interface ReactGoogleLoginProps {
@@ -176,6 +177,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                   expires_at:
                     now + (Number(tokenResponse.expires_in) || 3599) * 1000,
                 },
+                isOAuthVerified: true,
               };
               setIsLoading(false);
               onSuccess(response);
