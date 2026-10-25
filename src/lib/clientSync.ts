@@ -37,6 +37,10 @@ const IDB_NAME = 'my_wedding_manager_idb_v6';
 const IDB_STORE = 'wedding_state_store';
 const IDB_KEY = 'current_wedding_db';
 
+export const MEPLANNER_BRAND_NAME = 'MEPlanner';
+export const MEPLANNER_BRAND_TITLE = 'MEPlanner — My Event Planner';
+export const MEPLANNER_DEFAULT_SITE_URL = 'https://meplanner.vercel.app';
+
 function normalizeParsedState(
   parsed: Partial<WeddingDatabaseSchema>
 ): WeddingDatabaseSchema {
@@ -52,6 +56,14 @@ function normalizeParsedState(
   const mergedSettings = parsed.settings
     ? { ...INITIAL_SETTINGS, ...parsed.settings }
     : { ...INITIAL_SETTINGS };
+  if (!mergedSettings.siteTitle) {
+    mergedSettings.siteTitle = MEPLANNER_BRAND_TITLE;
+  } else if (/\bMEPlan\b/.test(mergedSettings.siteTitle)) {
+    mergedSettings.siteTitle = mergedSettings.siteTitle.replace(
+      /\bMEPlan\b/g,
+      MEPLANNER_BRAND_NAME
+    );
+  }
   if (
     !mergedSettings.groomFullName ||
     mergedSettings.groomFullName === 'Eko' ||
@@ -451,7 +463,7 @@ export function buildGuestInvitationUrl(
     originUrl ||
     (typeof window !== 'undefined'
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || 'https://meplanner.vercel.app');
+      : process.env.NEXT_PUBLIC_SITE_URL || MEPLANNER_DEFAULT_SITE_URL);
   const hashToken = computeGuestInvitationHash(
     clientSlug || 'client-utama',
     guest

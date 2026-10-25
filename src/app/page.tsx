@@ -2012,7 +2012,7 @@ function WeddingAppContent() {
       nama: `Demo Manager • ${meta.coupleLabel}`,
       role: 'MEMPELAI_PRIA',
       jabatan: `${meta.badgeId} (${demoPackageTier})`,
-      email: `${meta.slug}@meplan.demo`,
+      email: `${meta.slug}@meplanner.demo`,
       clientId: meta.id,
       clientName: `${meta.coupleLabel} (${meta.badgeId})`,
     };
@@ -2024,7 +2024,7 @@ function WeddingAppContent() {
         type="button"
         onClick={handleOpenLandingPage}
         className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-stone-800 hover:bg-stone-700 text-[#FAF3E3] border border-stone-700 text-[10px] sm:text-[11px] font-extrabold transition-all whitespace-nowrap"
-        title="Kembali ke Katalog MEPlan"
+        title="Kembali ke Katalog MEPlanner"
       >
         <span>&larr; Katalog</span>
       </button>
@@ -2381,10 +2381,10 @@ function WeddingAppContent() {
                 type="button"
                 onClick={handleOpenLandingPage}
                 className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-full bg-stone-900/90 hover:bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-extrabold shadow-lg backdrop-blur-md transition-all"
-                title="Kembali ke Halaman Depan My Event Planner (MEP)"
+                title="Kembali ke Halaman Depan My Event Planner (MEPlanner)"
               >
-                <span className="sm:hidden">&larr; MEPlan</span>
-                <span className="hidden sm:inline">&larr; Katalog MEPlan</span>
+                <span className="sm:hidden">&larr; MEPlanner</span>
+                <span className="hidden sm:inline">&larr; Katalog MEPlanner</span>
               </button>
             )
           )}

@@ -1843,7 +1843,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={onOpenLandingPage}
-              title="Buka Halaman Katalog Komersial MEPlan — My Event Planner"
+              title="Buka Halaman Katalog Komersial MEPlanner — My Event Planner"
               className="inline-flex items-center gap-1.5 hover:text-[#8B6914] transition-colors cursor-pointer"
             >
               <WeddingRingsIcon
@@ -1851,7 +1851,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 logoUrl={brandLogoUrl}
               />
               <span className="underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold">
-                MEPlan &bull; My Event Planner
+                MEPlanner &bull; My Event Planner
               </span>
             </button>
           ) : (
@@ -1860,7 +1860,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 className="w-4 h-4 shrink-0"
                 logoUrl={brandLogoUrl}
               />
-              <span>MEPlan &bull; My Event Planner</span>
+              <span>MEPlanner &bull; My Event Planner</span>
             </span>
           )}
           <span>
@@ -1882,11 +1882,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={onOpenLandingPage}
-              title="Buka Halaman Katalog Komersial MEPlan — My Event Planner"
+              title="Buka Halaman Katalog Komersial MEPlanner — My Event Planner"
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-900 hover:bg-stone-800 text-[#FAF3E3] border border-[#D4AF37]/50 text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
             >
               <Sparkles className="w-3 h-3 text-[#D4AF37] shrink-0" />
-              <span>{lang === 'ID' ? 'Katalog MEPlan' : 'MEPlan Catalog'}</span>
+              <span>{lang === 'ID' ? 'Katalog MEPlanner' : 'MEPlanner Catalog'}</span>
             </button>
           )}
           <button

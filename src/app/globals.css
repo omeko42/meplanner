@@ -5,6 +5,11 @@
 :root {
   --background: #FAF8F5;
   --foreground: #0f172a;
+  --ease-organic: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-ambient-sm: 0 4px 14px -2px rgba(120, 95, 60, 0.06), 0 2px 6px -1px rgba(40, 30, 20, 0.03);
+  --shadow-ambient-md: 0 12px 36px -8px rgba(120, 95, 60, 0.08), 0 4px 12px -2px rgba(40, 30, 20, 0.04);
+  --shadow-ambient-lg: 0 22px 54px -12px rgba(120, 95, 60, 0.13), 0 8px 24px -4px rgba(40, 30, 20, 0.05);
 }
 
 html {
@@ -12,13 +17,98 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   overflow-x: clip;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.62;
+  letter-spacing: -0.006em;
   overflow-x: clip;
+}
+
+/* ============================================================================
+ * Human-Centered Editorial Surfaces, Micro-Interactions & Breathing Typography
+ * ============================================================================ */
+
+p {
+  line-height: 1.68;
+  letter-spacing: -0.004em;
+}
+
+h1, h2, h3, h4, .font-editorial {
+  font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
+  letter-spacing: -0.015em;
+  line-height: 1.24;
+}
+
+/* Tactile, Organic Transitions for Interactive Controls */
+button,
+a,
+select,
+[role="button"] {
+  transition-timing-function: var(--ease-organic);
+  transition-duration: 280ms;
+}
+
+button:not(:disabled),
+a,
+select {
+  will-change: transform, box-shadow;
+}
+
+button:not(:disabled):hover,
+select:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active,
+[role="button"]:not(:disabled):active {
+  transform: translateY(0.5px) scale(0.99);
+  transition-duration: 120ms;
+}
+
+input,
+textarea,
+select {
+  transition: border-color 0.28s var(--ease-organic),
+              box-shadow 0.28s var(--ease-organic),
+              background-color 0.28s var(--ease-organic),
+              transform 0.28s var(--ease-organic);
+}
+
+/* Layered Warm Ambient Cards & Organic Surfaces */
+.human-card,
+.organic-surface {
+  box-shadow: 0 12px 36px -8px rgba(120, 95, 60, 0.08), 0 4px 12px -2px rgba(40, 30, 20, 0.04);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.human-card:hover,
+.organic-surface-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px -10px rgba(120, 95, 60, 0.12), 0 6px 16px -3px rgba(40, 30, 20, 0.05);
+}
+
+.organic-pill {
+  box-shadow: 0 4px 14px -2px rgba(120, 95, 60, 0.07), 0 1px 4px rgba(40, 30, 20, 0.03);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.organic-pill:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 22px -4px rgba(120, 95, 60, 0.12), 0 2px 6px rgba(40, 30, 20, 0.04);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -180,11 +270,13 @@ body {
 }
 
 /* ============================================================================
- * 5-Theme Palette Engine for Public Invitation & Planner ([data-inv-theme])
+ * 10-Theme Atmospheric Palette Engine for Public Invitation & Planner
+ * Supports both [data-inv-theme] and [data-invitation-theme]
  * ============================================================================ */
 
 :root,
-[data-inv-theme="champagne_gold"] {
+[data-inv-theme="champagne_gold"],
+[data-invitation-theme="champagne_gold"] {
   --inv-primary: #D4AF37;
   --inv-primary-rgb: 212, 175, 55;
   --inv-mid: #C5A059;
@@ -205,9 +297,13 @@ body {
   --inv-page-bg-rgb: 250, 248, 245;
   --inv-leaf-fill: #E6C994;
   --inv-glow-light: #F3D77D;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFDF9 0%, #FAF3E3 55%, #F3E5C8 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 253, 249, 0.96) 0%, rgba(250, 243, 227, 0.72) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(154, 116, 43, 0.10), 0 4px 12px -2px rgba(139, 105, 20, 0.05);
 }
 
-[data-inv-theme="sage_botanical"] {
+[data-inv-theme="sage_botanical"],
+[data-invitation-theme="sage_botanical"] {
   --inv-primary: #5E8C6A;
   --inv-primary-rgb: 94, 140, 106;
   --inv-mid: #4A6B53;
@@ -228,9 +324,13 @@ body {
   --inv-page-bg-rgb: 242, 247, 243;
   --inv-leaf-fill: #9BBAA3;
   --inv-glow-light: #A8C9B0;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FAFDFB 0%, #EBF3ED 55%, #DCE9DF 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(250, 253, 251, 0.96) 0%, rgba(235, 243, 237, 0.72) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(57, 95, 68, 0.10), 0 4px 12px -2px rgba(35, 66, 44, 0.05);
 }
 
-[data-inv-theme="blush_rose"] {
+[data-inv-theme="blush_rose"],
+[data-invitation-theme="blush_rose"] {
   --inv-primary: #D88290;
   --inv-primary-rgb: 216, 130, 144;
   --inv-mid: #C86D7C;
@@ -251,9 +351,13 @@ body {
   --inv-page-bg-rgb: 253, 245, 246;
   --inv-leaf-fill: #E8A5B0;
   --inv-glow-light: #F2B8C2;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFAFB 0%, #FCECEF 55%, #F8DCE2 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 250, 251, 0.96) 0%, rgba(252, 236, 239, 0.72) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(168, 68, 86, 0.09), 0 4px 12px -2px rgba(142, 53, 70, 0.04);
 }
 
-[data-inv-theme="royal_navy"] {
+[data-inv-theme="royal_navy"],
+[data-invitation-theme="royal_navy"] {
   --inv-primary: #3B669E;
   --inv-primary-rgb: 59, 102, 158;
   --inv-mid: #284B7A;
@@ -274,9 +378,13 @@ body {
   --inv-page-bg-rgb: 242, 245, 250;
   --inv-leaf-fill: #8CA8C8;
   --inv-glow-light: #A5C0DF;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FAFCFF 0%, #EBF1F8 55%, #DCE7F3 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(250, 252, 255, 0.96) 0%, rgba(235, 241, 248, 0.72) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(37, 70, 112, 0.10), 0 4px 12px -2px rgba(22, 47, 80, 0.05);
 }
 
-[data-inv-theme="terracotta_rust"] {
+[data-inv-theme="terracotta_rust"],
+[data-invitation-theme="terracotta_rust"] {
   --inv-primary: #CC704E;
   --inv-primary-rgb: 204, 112, 78;
   --inv-mid: #B85D3B;
@@ -297,6 +405,144 @@ body {
   --inv-page-bg-rgb: 251, 244, 240;
   --inv-leaf-fill: #DFA085;
   --inv-glow-light: #EAB39C;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFBF9 0%, #F9EBE4 55%, #F3DDD2 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 251, 249, 0.96) 0%, rgba(249, 235, 228, 0.72) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(150, 66, 37, 0.10), 0 4px 12px -2px rgba(125, 52, 26, 0.05);
+}
+
+[data-inv-theme="javanese_kraton"],
+[data-invitation-theme="javanese_kraton"] {
+  --inv-primary: #B8862D;
+  --inv-primary-rgb: 184, 134, 45;
+  --inv-mid: #96681E;
+  --inv-mid-rgb: 150, 104, 30;
+  --inv-dark: #754E12;
+  --inv-text-strong: #4A2E07;
+  --inv-text-muted: #6E4711;
+  --inv-text-muted-rgb: 110, 71, 17;
+  --inv-soft-bg: #F7EFE0;
+  --inv-soft-bg-rgb: 247, 239, 224;
+  --inv-soft-hover: #EFE1C8;
+  --inv-soft-hover-rgb: 239, 225, 200;
+  --inv-soft-alt: #E5D1AF;
+  --inv-soft-alt-rgb: 229, 209, 175;
+  --inv-card-tint: #FFFDF8;
+  --inv-card-tint-rgb: 255, 253, 248;
+  --inv-page-bg: #F9F4EB;
+  --inv-page-bg-rgb: 249, 244, 235;
+  --inv-leaf-fill: #D2AD68;
+  --inv-glow-light: #E8C77B;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFDF8 0%, #F7EFE0 55%, #EFE1C8 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 253, 248, 0.96) 0%, rgba(247, 239, 224, 0.74) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(110, 71, 17, 0.11), 0 4px 12px -2px rgba(74, 46, 7, 0.05);
+}
+
+[data-inv-theme="wayang_gold"],
+[data-invitation-theme="wayang_gold"] {
+  --inv-primary: #C89B3C;
+  --inv-primary-rgb: 200, 155, 60;
+  --inv-mid: #A87C28;
+  --inv-mid-rgb: 168, 124, 40;
+  --inv-dark: #876018;
+  --inv-text-strong: #5C3D09;
+  --inv-text-muted: #7A5414;
+  --inv-text-muted-rgb: 122, 84, 20;
+  --inv-soft-bg: #F8F1E1;
+  --inv-soft-bg-rgb: 248, 241, 225;
+  --inv-soft-hover: #F0E3C7;
+  --inv-soft-hover-rgb: 240, 227, 199;
+  --inv-soft-alt: #E6D4B1;
+  --inv-soft-alt-rgb: 230, 212, 177;
+  --inv-card-tint: #FFFEFA;
+  --inv-card-tint-rgb: 255, 254, 250;
+  --inv-page-bg: #FAF6ED;
+  --inv-page-bg-rgb: 250, 246, 237;
+  --inv-leaf-fill: #DCBA73;
+  --inv-glow-light: #EED08A;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFEFA 0%, #F8F1E1 55%, #F0E3C7 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 254, 250, 0.96) 0%, rgba(248, 241, 225, 0.74) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(122, 84, 20, 0.11), 0 4px 12px -2px rgba(92, 61, 9, 0.05);
+}
+
+[data-inv-theme="midnight_elegance"],
+[data-invitation-theme="midnight_elegance"] {
+  --inv-primary: #4A6984;
+  --inv-primary-rgb: 74, 105, 132;
+  --inv-mid: #365169;
+  --inv-mid-rgb: 54, 81, 105;
+  --inv-dark: #253B4E;
+  --inv-text-strong: #172836;
+  --inv-text-muted: #2C4459;
+  --inv-text-muted-rgb: 44, 68, 89;
+  --inv-soft-bg: #ECF1F5;
+  --inv-soft-bg-rgb: 236, 241, 245;
+  --inv-soft-hover: #DEE7EE;
+  --inv-soft-hover-rgb: 222, 231, 238;
+  --inv-soft-alt: #CDD9E3;
+  --inv-soft-alt-rgb: 205, 217, 227;
+  --inv-card-tint: #FBFDFF;
+  --inv-card-tint-rgb: 251, 253, 255;
+  --inv-page-bg: #F4F7FA;
+  --inv-page-bg-rgb: 244, 247, 250;
+  --inv-leaf-fill: #8EA6BC;
+  --inv-glow-light: #ABC0D4;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FBFDFF 0%, #ECF1F5 55%, #DEE7EE 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(251, 253, 255, 0.96) 0%, rgba(236, 241, 245, 0.74) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(44, 68, 89, 0.10), 0 4px 12px -2px rgba(23, 40, 54, 0.05);
+}
+
+[data-inv-theme="espresso_rustic"],
+[data-invitation-theme="espresso_rustic"] {
+  --inv-primary: #8C6245;
+  --inv-primary-rgb: 140, 98, 69;
+  --inv-mid: #734E34;
+  --inv-mid-rgb: 115, 78, 52;
+  --inv-dark: #5A3B25;
+  --inv-text-strong: #3E2616;
+  --inv-text-muted: #593A24;
+  --inv-text-muted-rgb: 89, 58, 36;
+  --inv-soft-bg: #F5EDE6;
+  --inv-soft-bg-rgb: 245, 237, 230;
+  --inv-soft-hover: #EBDED3;
+  --inv-soft-hover-rgb: 235, 222, 211;
+  --inv-soft-alt: #DFCDBE;
+  --inv-soft-alt-rgb: 223, 205, 190;
+  --inv-card-tint: #FFFCFA;
+  --inv-card-tint-rgb: 255, 252, 250;
+  --inv-page-bg: #FAF5F1;
+  --inv-page-bg-rgb: 250, 245, 241;
+  --inv-leaf-fill: #BC9980;
+  --inv-glow-light: #D1B29C;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FFFCFA 0%, #F5EDE6 55%, #EBDED3 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(255, 252, 250, 0.96) 0%, rgba(245, 237, 230, 0.74) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(89, 58, 36, 0.11), 0 4px 12px -2px rgba(62, 38, 22, 0.05);
+}
+
+[data-inv-theme="blubloom_azure"],
+[data-invitation-theme="blubloom_azure"] {
+  --inv-primary: #5A8BB0;
+  --inv-primary-rgb: 90, 139, 176;
+  --inv-mid: #437194;
+  --inv-mid-rgb: 67, 113, 148;
+  --inv-dark: #305878;
+  --inv-text-strong: #1D3E57;
+  --inv-text-muted: #2E5675;
+  --inv-text-muted-rgb: 46, 86, 117;
+  --inv-soft-bg: #EDF4F9;
+  --inv-soft-bg-rgb: 237, 244, 249;
+  --inv-soft-hover: #DFECF5;
+  --inv-soft-hover-rgb: 223, 236, 245;
+  --inv-soft-alt: #CCE0EE;
+  --inv-soft-alt-rgb: 204, 224, 238;
+  --inv-card-tint: #FAFDFF;
+  --inv-card-tint-rgb: 250, 253, 255;
+  --inv-page-bg: #F3F8FC;
+  --inv-page-bg-rgb: 243, 248, 252;
+  --inv-leaf-fill: #98BDD8;
+  --inv-glow-light: #B2D2EA;
+  --inv-organic-gradient: radial-gradient(120% 90% at 50% 0%, #FAFDFF 0%, #EDF4F9 55%, #DFECF5 100%);
+  --inv-surface-gradient: linear-gradient(155deg, rgba(250, 253, 255, 0.96) 0%, rgba(237, 244, 249, 0.74) 100%);
+  --inv-ambient-shadow: 0 14px 38px -8px rgba(46, 86, 117, 0.10), 0 4px 12px -2px rgba(29, 62, 87, 0.05);
 }
 
 /* Text Color Overrides */
@@ -646,5 +892,34 @@ body {
 [data-inv-theme]:not([data-inv-theme="champagne_gold"]) .to-\[\#FAF3E3\]\/90 {
   --tw-gradient-to: rgba(var(--inv-soft-bg-rgb), 0.9) var(--tw-gradient-to-position) !important;
 }
+
+/* ============================================================================
+ * Organic Atmospheric Surfaces & Editorial Utility Classes
+ * ============================================================================ */
+
+.inv-organic-bg {
+  background-color: var(--inv-page-bg);
+  background-image: var(--inv-organic-gradient);
+}
+
+.inv-surface-card {
+  background-color: var(--inv-card-tint);
+  background-image: var(--inv-surface-gradient);
+  box-shadow: var(--inv-ambient-shadow);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.inv-surface-card:hover {
+  transform: translateY(-2px);
+}
+
+.editorial-breathing-text {
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  line-height: 1.78;
+  letter-spacing: 0.004em;
+}
+
 
 

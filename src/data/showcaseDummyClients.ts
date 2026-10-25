@@ -11,7 +11,805 @@ import {
 import { INITIAL_SETTINGS, INITIAL_ADMIN_USERS } from '@/data/seedData';
 import { computeGuestInvitationHash } from '@/lib/guestTokenHash';
 
-export type ShowcasePackageTier = 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
+export type ShowcasePackageTier =
+  | 'STARTER'
+  | 'EXCLUSIVE'
+  | 'ROYAL VIP'
+  | 'GRATIS'
+  | 'PREMIUM'
+  | 'BUSINESS'
+  | 'ENTERPRISE'
+  | 'MITRA_SILVER'
+  | 'MITRA_GOLD';
+
+export interface MeplannerPackageTierItem {
+  id: ShowcasePackageTier;
+  legacyTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
+  category: 'PERSONAL' | 'MITRA_EO_WO';
+  nameId: string;
+  nameEn: string;
+  badgeId: string;
+  badgeEn: string;
+  wevitationRefPriceIdr: number;
+  priceIdr: number;
+  normalPriceIdr: number;
+  priceUsd: number;
+  priceUsdt: number;
+  activePeriodId: string;
+  activePeriodEn: string;
+  guestQuotaLabelId: string;
+  guestQuotaLabelEn: string;
+  featuresId: string[];
+  featuresEn: string[];
+  isBestSeller?: boolean;
+  isFlagship?: boolean;
+}
+
+export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
+  {
+    id: 'GRATIS',
+    legacyTier: 'STARTER',
+    category: 'PERSONAL',
+    nameId: 'Coba Dulu Gratis',
+    nameEn: 'Free Trial',
+    badgeId: 'Uji Coba Gratis • 14 Hari',
+    badgeEn: 'Free Trial • 14 Days',
+    wevitationRefPriceIdr: 0,
+    priceIdr: 0,
+    normalPriceIdr: 0,
+    priceUsd: 0,
+    priceUsdt: 0,
+    activePeriodId: 'Masa Aktif 14 Hari',
+    activePeriodEn: '14 Days Active',
+    guestQuotaLabelId: 'Kuota Tamu Terbatas (s/d 30 Tamu)',
+    guestQuotaLabelEn: 'Limited Guests (Up to 30)',
+    featuresId: [
+      '1 Undangan Standar + Event Planner Dasar',
+      'Aktif 14 Hari (Upgrade Kapan Saja)',
+      'Kuota Tamu Terbatas (s/d 30 Tamu)',
+      'Galeri Foto & Video Terbatas',
+      'Musik Latar NCS Bebas Royalti',
+      'Ucapan & Doa + Konfirmasi RSVP',
+      'Pilihan Tema Terbatas',
+      'Gift Registry Free',
+    ],
+    featuresEn: [
+      '1 Standard Invitation + Basic Event Planner',
+      'Active 14 Days (Upgrade Anytime)',
+      'Limited Guest Quota (Up to 30 Guests)',
+      'Limited Photo & Video Gallery',
+      'Royalty-Free NCS Background Music',
+      'Guestbook Wishes & RSVP Confirmation',
+      'Standard Theme Selection',
+      'Free Gift Registry',
+    ],
+  },
+  {
+    id: 'PREMIUM',
+    legacyTier: 'STARTER',
+    category: 'PERSONAL',
+    nameId: 'Premium',
+    nameEn: 'Premium',
+    badgeId: 'Paling Favorit • 31% OFF (75% Harga Pasar)',
+    badgeEn: 'Most Popular • 31% OFF (75% Market Price)',
+    wevitationRefPriceIdr: 69000,
+    priceIdr: 51750,
+    normalPriceIdr: 75000,
+    priceUsd: 4,
+    priceUsdt: 4,
+    activePeriodId: 'Undangan Aktif Selamanya (Sekali Bayar)',
+    activePeriodEn: 'Lifetime Active (One-Time Payment)',
+    guestQuotaLabelId: 'Unlimited Kuota Tamu',
+    guestQuotaLabelEn: 'Unlimited Guests',
+    isBestSeller: true,
+    featuresId: [
+      'Upgrade Undangan Premium (1 Undangan)',
+      'Undangan Aktif Selamanya (Sekali Bayar)',
+      'Unlimited Kuota Tamu & Key Hash Unik',
+      'Unlimited Foto & Video Gallery',
+      'Musik Latar (NCS / Spotify / YouTube / MP3)',
+      'Ucapan & Doa + Premium RSVP',
+      'Bebas Pilih Semua Tema Premium (25+ Tema Event)',
+      'Link Live Streaming (YouTube / Zoom / IG)',
+      'Kado Cashless / Donasi & Gift Registry',
+      'Layar Penerima Tamu (Guest Reception Check-In)',
+      'Story Instagram',
+    ],
+    featuresEn: [
+      'Upgrade 1 Premium Invitation',
+      'Lifetime Active Invitation (One-Time Payment)',
+      'Unlimited Guest Quota & Unique Key Hash',
+      'Unlimited Photo & Video Gallery',
+      'Background Music (NCS / Spotify / YouTube / MP3)',
+      'Guestbook Wishes & Premium RSVP',
+      'All 25+ Multi-Event Premium Themes',
+      'Live Streaming Link (YouTube / Zoom / IG)',
+      'Cashless Gift / Donation & Gift Registry',
+      'Guest Reception Check-In Screen',
+      'Instagram Story Template',
+    ],
+  },
+  {
+    id: 'BUSINESS',
+    legacyTier: 'EXCLUSIVE',
+    category: 'PERSONAL',
+    nameId: 'Business',
+    nameEn: 'Business',
+    badgeId: 'Untuk 2 Acara • 50% OFF (75% Harga Pasar)',
+    badgeEn: 'For 2 Events • 50% OFF (75% Market Price)',
+    wevitationRefPriceIdr: 99000,
+    priceIdr: 74250,
+    normalPriceIdr: 150000,
+    priceUsd: 6,
+    priceUsdt: 6,
+    activePeriodId: 'Undangan Aktif Selamanya (2 Undangan)',
+    activePeriodEn: 'Lifetime Active (2 Invitations)',
+    guestQuotaLabelId: '2 Undangan Premium • Unlimited Tamu',
+    guestQuotaLabelEn: '2 Premium Invitations • Unlimited Guests',
+    featuresId: [
+      'Upgrade Premium +1 Undangan (2 Undangan Premium dalam 1 Akun)',
+      'Undangan Aktif Selamanya',
+      'Unlimited Kuota Tamu & Blast WhatsApp 1-Klik',
+      'Unlimited Foto & Video Gallery + Smooth Slideshow',
+      'Musik Latar & Ucapan Doa',
+      'Bebas Pilih Semua Tema Premium',
+      'Link Streaming & Story Instagram',
+      'Kado Cashless / Donasi & Gift Registry',
+      'Layar Penerima Tamu (Guest Reception)',
+      'Premium RSVP & Open Registration',
+      'Full Event Planner (Budget Moneter, Vendor & Checklist)',
+      'Mitra Bronze',
+    ],
+    featuresEn: [
+      'Upgrade Premium +1 Invitation (2 Premium Invitations in 1 Account)',
+      'Lifetime Active Invitations',
+      'Unlimited Guest Quota & 1-Click WhatsApp Blast',
+      'Unlimited Photo & Video Gallery + Smooth Slideshow',
+      'Background Music & Guestbook Wishes',
+      'All Premium Multi-Event Themes',
+      'Live Streaming Link & Instagram Story',
+      'Cashless Gift / Donation & Gift Registry',
+      'Guest Reception Check-In Screen',
+      'Premium RSVP & Open Registration',
+      'Full Event Planner (Monetary Budget, Vendors & Checklist)',
+      'Bronze Partner Access',
+    ],
+  },
+  {
+    id: 'ENTERPRISE',
+    legacyTier: 'ROYAL VIP',
+    category: 'PERSONAL',
+    nameId: 'Enterprise',
+    nameEn: 'Enterprise',
+    badgeId: 'Cocok untuk Bisnis Menengah • 52% OFF',
+    badgeEn: 'For Medium Business • 52% OFF',
+    wevitationRefPriceIdr: 240000,
+    priceIdr: 180000,
+    normalPriceIdr: 375000,
+    priceUsd: 12,
+    priceUsdt: 12,
+    activePeriodId: 'Undangan Aktif Selamanya (5 Undangan)',
+    activePeriodEn: 'Lifetime Active (5 Invitations)',
+    guestQuotaLabelId: 'Upgrade Premium +4 Undangan (Total 5 Undangan)',
+    guestQuotaLabelEn: 'Upgrade Premium +4 Invitations (5 Total)',
+    isFlagship: true,
+    featuresId: [
+      'Upgrade Premium +4 Undangan (Total 5 Undangan Premium)',
+      'Undangan Aktif Selamanya',
+      'Unlimited Kuota Tamu & Multi-Akses Panitia/Keluarga',
+      'Foto & Video Gallery + Video Background Sinematik 25 MB',
+      'Ucapan & Doa + AI Wishes Insight',
+      'Semua Tema Premium Multi-Event (25+ Tema)',
+      'Link Streaming',
+      'Kado Cashless / Donasi Global (Bank, QRIS, PayPal & Crypto USDT)',
+      'Layar Penerima Tamu & Check-In Management',
+    ],
+    featuresEn: [
+      'Upgrade Premium +4 Invitations (5 Total Premium Invitations)',
+      'Lifetime Active Invitations',
+      'Unlimited Guest Quota & Multi-User Committee RBAC',
+      'Photo & Video Gallery + 25 MB Cinematic Video Background',
+      'Guestbook Wishes & AI Wishes Insight',
+      'All 25+ Multi-Event Premium Themes',
+      'Live Streaming Link',
+      'Global Cashless Gift (Bank, QRIS, PayPal & Crypto USDT)',
+      'Guest Reception Screen & Check-In Management',
+    ],
+  },
+  {
+    id: 'MITRA_SILVER',
+    legacyTier: 'EXCLUSIVE',
+    category: 'MITRA_EO_WO',
+    nameId: 'Mitra - Silver',
+    nameEn: 'Partner - Silver',
+    badgeId: 'Cocok untuk Bisnis Besar / WO • 54% OFF',
+    badgeEn: 'For Large Business / WO • 54% OFF',
+    wevitationRefPriceIdr: 500000,
+    priceIdr: 375000,
+    normalPriceIdr: 825000,
+    priceUsd: 25,
+    priceUsdt: 25,
+    activePeriodId: 'Undangan Aktif Selamanya (+10 Undangan)',
+    activePeriodEn: 'Lifetime Active (+10 Invitations)',
+    guestQuotaLabelId: 'Upgrade Premium +10 Undangan (11 Undangan)',
+    guestQuotaLabelEn: 'Upgrade Premium +10 Invitations (11 Total)',
+    featuresId: [
+      'Upgrade Premium +10 Undangan (Total 11 Undangan Premium)',
+      'Undangan Aktif Selamanya',
+      'Unlimited Kuota Tamu',
+      'Foto & Video Gallery',
+      'Ucapan & Doa',
+      'Tema Premium (25+ Tema Multi-Event)',
+      'Link Streaming',
+      'Kado Cashless / Donasi',
+      'Layar Penerima Tamu (Guest Reception)',
+      '✨ Branding Teks (White-Label Nama WO/EO Anda)',
+    ],
+    featuresEn: [
+      'Upgrade Premium +10 Invitations (11 Total Premium Invitations)',
+      'Lifetime Active Invitations',
+      'Unlimited Guest Quota',
+      'Photo & Video Gallery',
+      'Guestbook Wishes & RSVP',
+      'All 25+ Multi-Event Premium Themes',
+      'Live Streaming Link',
+      'Cashless Gift / Donation',
+      'Guest Reception Check-In Screen',
+      '✨ Custom Text Branding (White-Label Your WO/EO Name)',
+    ],
+  },
+  {
+    id: 'MITRA_GOLD',
+    legacyTier: 'ROYAL VIP',
+    category: 'MITRA_EO_WO',
+    nameId: 'Mitra - Gold',
+    nameEn: 'Partner - Gold',
+    badgeId: 'Flagship Agensi WO/EO • 56% OFF',
+    badgeEn: 'Flagship WO/EO Agency • 56% OFF',
+    wevitationRefPriceIdr: 1000000,
+    priceIdr: 750000,
+    normalPriceIdr: 1725000,
+    priceUsd: 49,
+    priceUsdt: 49,
+    activePeriodId: 'Undangan Aktif Selamanya (+22 Undangan)',
+    activePeriodEn: 'Lifetime Active (+22 Invitations)',
+    guestQuotaLabelId: 'Upgrade Premium +22 Undangan (23 Undangan)',
+    guestQuotaLabelEn: 'Upgrade Premium +22 Invitations (23 Total)',
+    featuresId: [
+      'Upgrade Premium +22 Undangan (Total 23 Undangan Premium)',
+      'Undangan Aktif Selamanya',
+      'Unlimited Kuota Tamu',
+      'Foto & Video Gallery',
+      'Ucapan & Doa',
+      'Tema Premium (25+ Tema Multi-Event)',
+      'Link Streaming',
+      'Kado Cashless / Donasi',
+      'Layar Penerima Tamu (Guest Reception)',
+      '✨ Branding Teks (White-Label Nama WO/EO Anda)',
+      '👑 Branding Logo (White-Label Logo Eksklusif WO/EO Anda)',
+    ],
+    featuresEn: [
+      'Upgrade Premium +22 Invitations (23 Total Premium Invitations)',
+      'Lifetime Active Invitations',
+      'Unlimited Guest Quota',
+      'Photo & Video Gallery',
+      'Guestbook Wishes & RSVP',
+      'All 25+ Multi-Event Premium Themes',
+      'Live Streaming Link',
+      'Cashless Gift / Donation',
+      'Guest Reception Check-In Screen',
+      '✨ Custom Text Branding (White-Label Your WO/EO Name)',
+      '👑 Custom Logo Branding (White-Label Your Exclusive WO/EO Logo)',
+    ],
+  },
+];
+
+export interface MeplannerThemeCatalogItem {
+  id: string;
+  name: string;
+  styleBadge: string;
+  eventType: EventCategoryType;
+  dummyClientId: string;
+  themePreset:
+    | 'champagne_gold'
+    | 'sage_botanical'
+    | 'blush_rose'
+    | 'royal_navy'
+    | 'terracotta_rust';
+  frameStyle: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT';
+  heroImageUrl: string;
+  coverImageUrl: string;
+  accentHex: string;
+  previewSubtitle: string;
+  description: string;
+  showFloralCorners?: boolean;
+}
+
+export const MEPLANNER_THEME_PRESETS: MeplannerThemeCatalogItem[] = [
+  // ============================================================================
+  // 10 WEDDING THEMES (WEDDING -> client-demo-wedding)
+  // ============================================================================
+  {
+    id: 'timeless-snapshot',
+    name: 'Timeless Snapshot',
+    styleBadge: 'Editorial Foto',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: 'Editorial Portrait • Grand Ballroom Hotel Mulia Senayan',
+    description:
+      'Tema pernikahan bergaya majalah editorial klasik dengan fokus potret mempelai berbingkai lengkung kubah emas (Arch Dome) dan tipografi serif mewah.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'serein-botanical',
+    name: 'Serein',
+    styleBadge: 'Floral & Botanical',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'sage_botanical',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#5E8C6A',
+    previewSubtitle: 'Garden Sanctuary • Kebun Raya & Glasshouse Sanctuary',
+    description:
+      'Nuansa embun pagi dan dedaunan eucalyptus hijau sage yang menenangkan, ideal untuk pernikahan outdoor garden, chapel kaca, maupun intimate sanctuary.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'mildness-blush',
+    name: 'Mildness',
+    styleBadge: 'Minimalis Pastel',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'blush_rose',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D88290',
+    previewSubtitle: 'Soft Romance • Intimate Rose Quartz Celebration',
+    description:
+      'Sentuhan pastel mawar lembut dengan tata letak minimalis bersih dan bingkai lingkaran klasik yang memancarkan kehangatan cinta kasih.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'culture-javanese',
+    name: 'Culture: Javanese Kraton',
+    styleBadge: 'Adat Nusantara',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#CC704E',
+    previewSubtitle: 'Panggih & Royal Kraton • Pendopo Agung Heritage',
+    description:
+      'Perpaduan warna soga terracotta dan emas keraton untuk prosesi pernikahan adat Jawa, Sunda, Bali, maupun Nusantara yang sakral dan agung.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'wayang-heritage',
+    name: 'Wayang Heritage Gold',
+    styleBadge: 'Adat Nusantara',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#C5A059',
+    previewSubtitle: 'Mahakarya Budaya • Gunungan & Kemilau Emas Klasik',
+    description:
+      'Inspirasi filosofi Rama & Shinta dengan aksentuasi kemilau champagne gold serta bingkai kubah megah untuk resepsi adat berkelas VVIP.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'blubloom-azure',
+    name: 'BluBloom',
+    styleBadge: 'Floral & Royal',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'royal_navy',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#3B669E',
+    previewSubtitle: 'Azure Hydrangea • Royal Blue Ballroom Reception',
+    description:
+      'Harmoni bunga hydrangea biru langit dan palet Royal Navy yang anggun, menghadirkan suasana bangsawan Eropa yang segar dan romantis.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'midnight-elegance',
+    name: 'Midnight Elegance',
+    styleBadge: 'Dark Luxury',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'royal_navy',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#284B7A',
+    previewSubtitle: 'Starlight Black-Tie • Malam Resepsi Kehormatan',
+    description:
+      'Kemewahan malam bertabur bintang dengan kontras biru malam (Midnight Navy) dan bingkai potret editorial tegas untuk resepsi malam di hotel bintang lima.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'espresso-rustic',
+    name: 'Espresso & Simple Rustic',
+    styleBadge: 'Rustic Warm',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#B85D3B',
+    previewSubtitle: 'Warm Barn & Pine • Intimate Sunset Gathering',
+    description:
+      'Sentuhan hangat kopi espresso, kayu senja, dan bunga kering (dried florals) yang menciptakan keakraban tak terlupakan bersama sahabat dan keluarga.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'photovit-editorial',
+    name: 'Photovit: Black & Green',
+    styleBadge: 'Modern Magazine',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'sage_botanical',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#4A6B53',
+    previewSubtitle: 'Vogue Prewedding • High-Fashion Editorial Layout',
+    description:
+      'Gaya majalah fotografi kontemporer dengan bingkai persegi panjang presisi dan aksen zamrud-botanikal untuk menonjolkan galeri prewedding resolusi tinggi.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'peppy-modern',
+    name: 'Peppy & Visual Journey',
+    styleBadge: 'Trendy Colorful',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    themePreset: 'blush_rose',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#C86D7C',
+    previewSubtitle: 'Joyful Storyteller • Modern Couple Celebration',
+    description:
+      'Desain penuh energi muda dan ekspresif yang menonjolkan kisah perjalanan cinta (Visual Love Story) dengan warna-warna ceria dan dinamis.',
+    showFloralCorners: true,
+  },
+
+  // ============================================================================
+  // 4 BIRTHDAY THEMES (BIRTHDAY -> client-demo-birthday)
+  // ============================================================================
+  {
+    id: 'bday-sweet-17',
+    name: 'Sweet 17th Rose Soirée',
+    styleBadge: 'Glamour Teen',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    themePreset: 'blush_rose',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D88290',
+    previewSubtitle: 'Sweet 17th Candle Ceremony • The Glasshouse Ritz-Carlton',
+    description:
+      'Tema glamor remaja untuk perayaan Sweet Seventeen lengkap dengan seksi prosesi 17 lilin, dresscode pastel, dan galeri potret bintang utama.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'bday-peppy-pop',
+    name: 'Peppy Confetti Milestone',
+    styleBadge: 'Fun & Vibrant',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    themePreset: 'champagne_gold',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: 'Sparkling Birthday Bash • Music, Games & After Party',
+    description:
+      'Suasana pesta ulang tahun yang meriah dengan sentuhan kilau emas confetti, cocok untuk ulang tahun ke-1, ke-17, ke-21, maupun kejutan sahabat.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'bday-golden-50',
+    name: 'Golden Jubilee 50th',
+    styleBadge: 'Luxury Family',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#C5A059',
+    previewSubtitle: 'Golden Age Tribute • Syukuran Keluarga Besar & Kolega',
+    description:
+      'Tampilan klasik penuh wibawa dalam balutan Champagne Gold untuk syukuran ulang tahun ke-50, ke-60, atau penghormatan orang tua tercinta.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'bday-garden-party',
+    name: 'Botanical Garden Soirée',
+    styleBadge: 'Outdoor Floral',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    themePreset: 'sage_botanical',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#5E8C6A',
+    previewSubtitle: 'Afternoon Tea & Garden Brunch • Private Patio Venue',
+    description:
+      'Nuansa pesta kebun sore hari yang segar dengan ornamen daun botanikal untuk perayaan ulang tahun intimate brunch dan kumpul keluarga.',
+    showFloralCorners: true,
+  },
+
+  // ============================================================================
+  // 4 GRADUATION THEMES (GRADUATION -> client-demo-graduation)
+  // ============================================================================
+  {
+    id: 'grad-cum-laude',
+    name: 'Cum Laude Academic Gold',
+    styleBadge: 'Toga & Scroll',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: 'Sidang Terbuka & Tasyakuran Wisuda Cum Laude',
+    description:
+      'Desain kehormatan akademik berpadu aksen medali emas untuk undangan tasyakuran kelulusan Sarjana, Magister, hingga pengukuhan Doktor & Guru Besar.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'grad-sumpah-dokter',
+    name: 'Sumpah Dokter & Profesi',
+    styleBadge: 'Medical Emerald',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    themePreset: 'sage_botanical',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#4A6B53',
+    previewSubtitle: 'Pelantikan & Sumpah Profesi • Fakultas Kedokteran',
+    description:
+      'Palet hijau zamrud-sage yang bersih dan berwibawa untuk acara Angkat Sumpah Dokter, Spesialis, Apoteker, maupun Pelantikan Profesi.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'grad-alma-mater',
+    name: 'Royal Alma Mater Navy',
+    styleBadge: 'University Pride',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    themePreset: 'royal_navy',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#3B669E',
+    previewSubtitle: 'Aula Barat ITB & Jamuan Syukuran Keluarga',
+    description:
+      'Tampilan formal biru tua bergaya universitas ternama dengan bingkai potret toga editorial dan linimasa perjalanan studi akademik.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'grad-terracotta-scholar',
+    name: 'Modern Scholar Terracotta',
+    styleBadge: 'Editorial Warm',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#CC704E',
+    previewSubtitle: 'Graduation Dinner & Appreciation Night',
+    description:
+      'Gaya hangat dan modern dengan sentuhan warna terracotta untuk ramah tamah kelulusan bersama keluarga, sahabat kampus, dan dosen pembimbing.',
+    showFloralCorners: true,
+  },
+
+  // ============================================================================
+  // 4 CORPORATE / OFFICIAL MEETING THEMES (MEETING -> client-demo-meeting)
+  // ============================================================================
+  {
+    id: 'corp-rakornas-navy',
+    name: 'Executive Summit & Rakornas',
+    styleBadge: 'Protokoler Resmi',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    themePreset: 'royal_navy',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#284B7A',
+    previewSubtitle: 'Rapat Koordinasi Nasional • Raffles Grand Ballroom',
+    description:
+      'Format undangan korporat bebas ornamen bunga (Clean Protocol) untuk RUPS, Rakornas, Townhall Direksi, dan Forum Eksekutif Nasional.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'corp-state-gold',
+    name: 'State & Ministry Protocol',
+    styleBadge: 'Instansi / Polri / BUMN',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    themePreset: 'champagne_gold',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: 'Undangan Kedinasan & Sertijab Pejabat Tinggi',
+    description:
+      'Tata letak protokoler kenegaraan berlapis aksen emas resmi untuk kegiatan Kementerian, Lembaga Negara, TNI/Polri, dan BUMN.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'corp-green-esg',
+    name: 'Green ESG & Sustainability Forum',
+    styleBadge: 'Eco Corporate',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    themePreset: 'sage_botanical',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#5E8C6A',
+    previewSubtitle: 'Net-Zero & Sustainable Investment Summit 2026',
+    description:
+      'Identitas visual hijau berkelanjutan untuk konferensi ESG, energi terbarukan, forum agribisnis, dan kolaborasi berdampak lingkungan.',
+    showFloralCorners: false,
+  },
+  {
+    id: 'corp-tech-keynote',
+    name: 'Digital Transformation Keynote',
+    styleBadge: 'Modern Tech',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    themePreset: 'royal_navy',
+    frameStyle: 'CIRCLE',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#3B669E',
+    previewSubtitle: 'Product Launch, AI Keynote & Investor Day',
+    description:
+      'Desain modern dan tajam untuk peluncuran produk teknologi, seminar inovasi digital, dan konferensi pers berskala global.',
+    showFloralCorners: false,
+  },
+
+  // ============================================================================
+  // 3 VIP GALA DINNER THEMES (GALA_DINNER -> client-demo-gala)
+  // ============================================================================
+  {
+    id: 'gala-royal-sapphire',
+    name: 'Royal Sapphire Award Night',
+    styleBadge: 'Black Tie VIP',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    themePreset: 'royal_navy',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#3B669E',
+    previewSubtitle: 'Black-Tie Awarding Night • Astor Ballroom St. Regis',
+    description:
+      'Kemegahan malam penganugerahan berbalut biru safir untuk jamuan makan malam VVIP, malam apresiasi mitra, dan diplomatik gala.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'gala-champagne-symphony',
+    name: 'Champagne Gold Orchestra Gala',
+    styleBadge: 'Fine Dining',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    themePreset: 'champagne_gold',
+    frameStyle: 'ARCH_DOME',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#D4AF37',
+    previewSubtitle: '25th Silver Jubilee & 6-Course Symphony Banquet',
+    description:
+      'Kilau keemasan ruang konser dan perjamuan fine dining 6-course untuk perayaan hari jadi perusahaan (Anniversary Jubilee) dan konser amal.',
+    showFloralCorners: true,
+  },
+  {
+    id: 'gala-velvet-rose',
+    name: 'Velvet Charity & Appreciation Night',
+    styleBadge: 'Red Carpet',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    themePreset: 'terracotta_rust',
+    frameStyle: 'EDITORIAL_RECT',
+    coverImageUrl:
+      'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=85',
+    heroImageUrl:
+      'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1600&q=85',
+    accentHex: '#CC704E',
+    previewSubtitle: 'Red Carpet Philanthropy & High-Society Soirée',
+    description:
+      'Nuansa hangat beludru merah-terracotta yang glamor untuk malam penggalangan dana yayasan (Charity Gala), fashion gala, dan red carpet soirée.',
+    showFloralCorners: true,
+  },
+];
+
+export function getMeplannerThemeById(
+  themeId?: string | null
+): MeplannerThemeCatalogItem | undefined {
+  if (!themeId) return undefined;
+  const clean = themeId.trim().toLowerCase();
+  const cleanNormalized = clean.replace(/-/g, '_');
+  return MEPLANNER_THEME_PRESETS.find(
+    (t) =>
+      t.id.toLowerCase() === clean ||
+      t.id.toLowerCase().replace(/-/g, '_') === cleanNormalized ||
+      `client_${t.id.toLowerCase().replace(/-/g, '_')}` === cleanNormalized
+  );
+}
 
 export const USER_REAL_QRIS_URL =
   'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/qrisImageUrl_7_H3fEFgYXwW2R5G.webp';
@@ -121,9 +919,14 @@ export function isShowcaseDummyClientId(
 ): boolean {
   if (!clientId) return false;
   const clean = clientId.trim().toLowerCase();
-  return SHOWCASE_DUMMY_CLIENT_METAS.some(
-    (m) => m.id === clean || m.slug === clean || `client-${m.slug}` === clean
-  );
+  if (
+    SHOWCASE_DUMMY_CLIENT_METAS.some(
+      (m) => m.id === clean || m.slug === clean || `client-${m.slug}` === clean
+    )
+  ) {
+    return true;
+  }
+  return Boolean(getMeplannerThemeById(clean));
 }
 
 export function resolveShowcaseDummyClientId(
@@ -137,7 +940,9 @@ export function resolveShowcaseDummyClientId(
       m.slug === clean ||
       `client_${m.slug}` === clean
   );
-  return found ? found.id : null;
+  if (found) return found.id;
+  const foundTheme = getMeplannerThemeById(rawParam);
+  return foundTheme ? foundTheme.id : null;
 }
 
 function buildDummyGuestsForClient(
@@ -1202,18 +2007,31 @@ function buildDummyWishesForClient(
 }
 
 export function getShowcaseDummyClientState(
-  clientIdOrSlug: string,
-  tier: ShowcasePackageTier = 'ROYAL VIP'
+  clientIdOrThemeId: string,
+  packageTier: ShowcasePackageTier = 'ROYAL VIP',
+  customThemeId?: string
 ): WeddingDatabaseSchema {
-  const resolvedId =
-    resolveShowcaseDummyClientId(clientIdOrSlug) || 'client-demo-wedding';
+  const matchedTheme =
+    getMeplannerThemeById(customThemeId) ||
+    getMeplannerThemeById(clientIdOrThemeId);
+  const resolvedId = matchedTheme
+    ? matchedTheme.dummyClientId
+    : resolveShowcaseDummyClientId(clientIdOrThemeId) || 'client-demo-wedding';
   const meta =
     SHOWCASE_DUMMY_CLIENT_METAS.find((m) => m.id === resolvedId) ||
     SHOWCASE_DUMMY_CLIENT_METAS[0];
 
+  const tier = packageTier || 'ROYAL VIP';
+  const isStarterTier = tier === 'STARTER' || tier === 'GRATIS';
+  const isMidTier =
+    tier === 'EXCLUSIVE' ||
+    tier === 'PREMIUM' ||
+    tier === 'BUSINESS' ||
+    tier === 'MITRA_SILVER';
+
   const isWedding = meta.eventType === 'WEDDING';
 
-  const imgCover1 =
+  const defaultCover1 =
     meta.eventType === 'WEDDING'
       ? 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85'
       : meta.eventType === 'BIRTHDAY'
@@ -1224,7 +2042,7 @@ export function getShowcaseDummyClientState(
             ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85'
             : 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85';
 
-  const imgHero1 =
+  const defaultHero1 =
     meta.eventType === 'WEDDING'
       ? 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85'
       : meta.eventType === 'BIRTHDAY'
@@ -1234,6 +2052,9 @@ export function getShowcaseDummyClientState(
           : meta.eventType === 'MEETING'
             ? 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85'
             : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=85';
+
+  const imgCover1 = matchedTheme?.coverImageUrl || defaultCover1;
+  const imgHero1 = matchedTheme?.heroImageUrl || defaultHero1;
 
   const imgPage1 =
     meta.eventType === 'BIRTHDAY'
@@ -1268,16 +2089,24 @@ export function getShowcaseDummyClientState(
             ? 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1400&q=85'
             : 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85';
 
-  const slideLimit = tier === 'STARTER' ? 1 : tier === 'EXCLUSIVE' ? 2 : 3;
+  const slideLimit = isStarterTier ? 1 : isMidTier ? 2 : 3;
 
   const fullCoverSlides = [
-    { id: 'cs_1', imageUrl: imgCover1, title: 'Cover Utama' },
+    {
+      id: 'cs_1',
+      imageUrl: imgCover1,
+      title: matchedTheme ? `${matchedTheme.name} Cover` : 'Cover Utama',
+    },
     { id: 'cs_2', imageUrl: imgAlt2, title: 'Cover Slide 2' },
     { id: 'cs_3', imageUrl: imgAlt3, title: 'Cover Slide 3' },
   ].slice(0, slideLimit);
 
   const fullHeroSlides = [
-    { id: 'hs_1', imageUrl: imgHero1, title: 'Hero Utama' },
+    {
+      id: 'hs_1',
+      imageUrl: imgHero1,
+      title: matchedTheme ? `${matchedTheme.name} Hero` : 'Hero Utama',
+    },
     { id: 'hs_2', imageUrl: imgCover1, title: 'Hero Slide 2' },
     { id: 'hs_3', imageUrl: imgAlt2, title: 'Hero Slide 3' },
   ].slice(0, slideLimit);
@@ -2003,26 +2832,39 @@ export function getShowcaseDummyClientState(
   const primaryEvent = scheduleEventsForType[0];
   const secondaryEvent = scheduleEventsForType[scheduleEventsForType.length - 1];
 
-  const settings: WeddingSettings = {
+  const showFlorals =
+    matchedTheme?.showFloralCorners !== undefined
+      ? matchedTheme.showFloralCorners
+      : meta.eventType !== 'MEETING';
+
+  const settings: WeddingSettings & { showFloralCorners?: boolean } = {
     ...INITIAL_SETTINGS,
-    siteTitle: `MEPlan • ${meta.coupleLabel}`,
-    subtitle: `${meta.badgeId} • ${meta.dateSummary} • ${meta.venueSummary}`,
-    activeClientId: meta.id,
-    eventType: meta.eventType,
-    themePreset: meta.themePreset,
-    showFloralOrnaments: meta.eventType !== 'MEETING',
-    showFloatingPetals: meta.eventType !== 'MEETING',
+    siteTitle: matchedTheme
+      ? `MEPlanner • ${meta.coupleLabel} — ${matchedTheme.name}`
+      : `MEPlanner • ${meta.coupleLabel}`,
+    subtitle: matchedTheme
+      ? `${matchedTheme.name} (${matchedTheme.styleBadge}) • ${matchedTheme.previewSubtitle} • ${meta.dateSummary}`
+      : `${meta.badgeId} • ${meta.dateSummary} • ${meta.venueSummary}`,
+    activeClientId: matchedTheme ? matchedTheme.id : meta.id,
+    eventType: matchedTheme ? matchedTheme.eventType : meta.eventType,
+    themePreset: matchedTheme ? matchedTheme.themePreset : meta.themePreset,
+    showFloralOrnaments: showFlorals,
+    showFloralCorners: showFlorals,
+    showFloatingPetals: showFlorals,
     showSaveToCalendarButton: true,
     showSecondProfile: profileConfig.showSecondProfile,
     profileSectionTitle: profileConfig.profileSectionTitle,
     eventHostRoleLabel: profileConfig.eventHostRoleLabel,
-    profileFrameStyle:
-      meta.eventType === 'WEDDING'
+    profileFrameStyle: matchedTheme
+      ? matchedTheme.frameStyle
+      : meta.eventType === 'WEDDING'
         ? 'ARCH_DOME'
         : meta.eventType === 'BIRTHDAY'
           ? 'CIRCLE'
           : 'EDITORIAL_RECT',
-    coverBadgeText: meta.badgeId,
+    coverBadgeText: matchedTheme
+      ? `${meta.badgeId} • ${matchedTheme.name}`
+      : meta.badgeId,
     groomFullName: profileConfig.groomFullName,
     groomNickname: profileConfig.groomNickname,
     groomRankAndTitle: profileConfig.groomRankAndTitle,
@@ -2059,8 +2901,8 @@ export function getShowcaseDummyClientState(
     event2Venue: secondaryEvent.venue,
     event2Address: secondaryEvent.address,
     scheduleEvents: scheduleEventsForType,
-    showLoveStorySection: tier !== 'STARTER',
-    showGallerySection: tier !== 'STARTER',
+    showLoveStorySection: !isStarterTier,
+    showGallerySection: !isStarterTier,
     musicSourceType: 'NCS_BUILTIN',
     musicTitle: 'NCS — Eternal Promise (NoCopyrightSounds)',
     musicArtist: 'NCS • Royalty-Free Instrumental',
@@ -2088,8 +2930,8 @@ export function getShowcaseDummyClientState(
         isDefault: true,
       },
     ],
-    musicAutoplay: tier !== 'STARTER',
-    showPhysicalGiftAddress: tier !== 'STARTER',
+    musicAutoplay: !isStarterTier,
+    showPhysicalGiftAddress: !isStarterTier,
     showQrisButton: true,
     qrisImageUrl: USER_REAL_QRIS_URL,
     bankAccounts: bankAccountsForEvent,
@@ -2113,9 +2955,9 @@ export function getShowcaseDummyClientState(
   return {
     settings,
     tasks: allTasks,
-    guests: tier === 'STARTER' ? allGuests.slice(0, 4) : allGuests,
+    guests: isStarterTier ? allGuests.slice(0, 4) : allGuests,
     wishes: allWishes,
-    budgetItems: tier === 'STARTER' ? [] : allBudget,
+    budgetItems: isStarterTier ? [] : allBudget,
     adminUsers: INITIAL_ADMIN_USERS,
     lastSyncedAt: '2026-10-24T12:00:00.000Z',
   };

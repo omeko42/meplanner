@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title:
-    'MEPlan — My Event Planner & Digital Invitation Suite',
+    'MEPlanner — My Event Planner & Digital Invitation Suite',
   description:
     'Platform Persiapan Acara & Undangan Digital Eksklusif (Wedding, Birthday, Graduation, Rapat & Gala Dinner).',
   icons: {
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
   },
   openGraph: {
-    title: 'Undangan Pernikahan Agung & Selo • MEPlan Digital Invitation',
+    title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
     description:
       'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
     type: 'website',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Undangan Pernikahan Agung & Selo • MEPlan Digital Invitation',
+    title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
     description:
       'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
     images: [

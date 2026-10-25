@@ -516,7 +516,7 @@ const DUMMY_ENVELOPE_CHANNELS = [
     id: 'paypal',
     label: 'PayPal Global',
     provider: 'PayPal International Express',
-    accountNumber: 'paypal.me/meplan-vip-2026',
+    accountNumber: 'paypal.me/meplanner-vip-2026',
     badge: 'USD / Multi-Currency',
   },
 ] as const;
@@ -1352,6 +1352,928 @@ const OFFICIAL_PRODUCT_SCREENSHOTS = [
   },
 ] as const;
 
+type WevPackageId =
+  | 'GRATIS'
+  | 'PREMIUM'
+  | 'BUSINESS'
+  | 'ENTERPRISE'
+  | 'MITRA_SILVER'
+  | 'MITRA_GOLD';
+
+type CatalogThemeStyle =
+  | 'Minimalis'
+  | 'Floral'
+  | 'Adat & Budaya'
+  | 'Editorial Foto'
+  | 'Dark Luxury';
+
+interface CatalogThemeItem {
+  id: string;
+  name: string;
+  eventType: EventCategoryType;
+  dummyClientId: string;
+  styleCategory: CatalogThemeStyle;
+  themePreset:
+    | 'champagne_gold'
+    | 'sage_botanical'
+    | 'blush_rose'
+    | 'royal_navy'
+    | 'terracotta_rust';
+  profileFrameStyle: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT';
+  showFloralOrnaments: boolean;
+  paletteColors: [string, string, string];
+  thumbnailUrl: string;
+  heroPrewedUrl: string;
+  coverBgUrl: string;
+  taglineId: string;
+  taglineEn: string;
+  tierBadge: string;
+}
+
+const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
+  // =========================================================================
+  // 💍 PERNIKAHAN (15 TEMA EKSKLUSIF — WEVITATION + MEPLANNER SIGNATURE)
+  // =========================================================================
+  {
+    id: 'wed-timeless-snapshot',
+    name: 'Timeless Snapshot',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: true,
+    paletteColors: ['#D4AF37', '#FAF3E3', '#2A2118'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Potret editorial klasik dengan bingkai foto jurnalistik abadi',
+    taglineEn: 'Classic editorial portrait with timeless photojournalism frame',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-serein',
+    name: 'Serein',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Minimalis',
+    themePreset: 'sage_botanical',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#5E8C6A', '#F4F7F4', '#2C3E35'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Nuansa embun senja yang tenang dengan aksen dedaunan sage lembut',
+    taglineEn: 'Serene evening mist aesthetic with soft sage botanical accents',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'wed-mildness',
+    name: 'Mildness',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Minimalis',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: false,
+    paletteColors: ['#E6C994', '#FFFDF9', '#5C4D3C'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Tipografi bersih nan hangat dengan estetika krem gading minimalis',
+    taglineEn: 'Warm clean typography with minimalist ivory cream aesthetic',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'wed-snap-photo',
+    name: 'Snap Photo',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'blush_rose',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#D88290', '#FDF6F7', '#3D2328'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Kolase polaroid romantis untuk menonjolkan galeri prewedding HD',
+    taglineEn: 'Romantic polaroid collage showcasing HD prewedding photography',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-visual-journey',
+    name: 'Visual Journey',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#CC704E', '#FBF5F2', '#3B231A'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Alur cerita cinta sinematik dengan transisi slideshow layar penuh',
+    taglineEn: 'Cinematic love story flow with full-bleed slideshow transitions',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-elegant-light',
+    name: 'Elegant Light',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Floral',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#D4AF37', '#FFFDF9', '#8B6914'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Kemewahan ballroom terang dengan ornamen sudut bunga emas berkilau',
+    taglineEn: 'Luminous ballroom luxury with shimmering gold floral corners',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-espresso',
+    name: 'Espresso',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#8C523A', '#CC704E', '#1E1410'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Palet hangat kopi espresso & perunggu untuk resepsi malam intim',
+    taglineEn: 'Warm espresso & bronze palette for intimate evening receptions',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-peppy',
+    name: 'Peppy',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Floral',
+    themePreset: 'blush_rose',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: true,
+    paletteColors: ['#E06D85', '#FFEBF0', '#592531'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Nuansa ceria penuh bunga pastel merah muda yang segar dan modern',
+    taglineEn: 'Cheerful pastel blush blossoms with a fresh modern vibe',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'wed-photovit-black',
+    name: 'Photovit: Black',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#111528', '#D4AF37', '#3B669E'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Kontras monokrom hitam-emas bergaya majalah mode kelas atas',
+    taglineEn: 'High-fashion black and gold monochrome magazine aesthetic',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-blubloom',
+    name: 'BluBloom',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Floral',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#3B669E', '#EBF3FA', '#1B355A'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Bunga hydrangea biru royal berpadu kubah arsitektur elegan',
+    taglineEn: 'Royal blue hydrangea florals paired with elegant arch domes',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-wayang',
+    name: 'Wayang',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Adat & Budaya',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#C5A059', '#3D2B1F', '#FAF0CA'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Filosofi gunungan wayang & ukiran emas keraton yang agung',
+    taglineEn: 'Sacred Javanese Wayang Gunungan & royal gold heritage motifs',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-photovit-green',
+    name: 'Photovit: Green',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'sage_botanical',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: true,
+    paletteColors: ['#4A7856', '#EAF2EC', '#1E3323'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1509927083803-4bd519298ac4?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1509927083803-4bd519298ac4?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Editorial outdoor garden wedding dengan bingkai zamrud tropis',
+    taglineEn: 'Outdoor garden wedding editorial with emerald botanical frames',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'wed-midnight-elegance',
+    name: 'Midnight Elegance',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#1B2A4A', '#D4AF37', '#F4F6FA'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Kemegahan malam bertabur bintang biru safir & aksen emas VVIP',
+    taglineEn: 'Starlit sapphire midnight grandeur with VVIP gold accents',
+    tierBadge: 'Business / VIP',
+  },
+  {
+    id: 'wed-simple-rustic-3',
+    name: 'Simple Rustic #3',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Minimalis',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: true,
+    paletteColors: ['#C87D55', '#FAF4EE', '#4A3222'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Sentuhan rustic terracotta & bunga kering yang hangat dan bersahaja',
+    taglineEn: 'Warm terracotta rustic charm with dried floral arrangements',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'wed-culture-javanese',
+    name: 'Culture: Javanese',
+    eventType: 'WEDDING',
+    dummyClientId: 'client-demo-wedding',
+    styleCategory: 'Adat & Budaya',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#9A5B3E', '#D4AF37', '#2B1810'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Keagungan adat Jawa klasik dengan motif batik sogan & gebyok emas',
+    taglineEn: 'Noble Javanese heritage with classic sogan batik & gold gebyok',
+    tierBadge: 'Premium',
+  },
+
+  // =========================================================================
+  // 🎂 ULANG TAHUN (4 TEMA SPESIAL)
+  // =========================================================================
+  {
+    id: 'bday-sweet-17-rose',
+    name: 'Sweet 17th Rose Soirée',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    styleCategory: 'Floral',
+    themePreset: 'blush_rose',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: true,
+    paletteColors: ['#D88290', '#FFF0F3', '#8C3B4A'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Perayaan Sweet Seventeen glamor dengan nuansa mawar merah muda',
+    taglineEn: 'Glamorous Sweet Seventeen soirée in blush rose & crystal',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'bday-peppy-confetti',
+    name: 'Peppy Confetti Pop',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#D4AF37', '#FAF0CA', '#B68D40'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Desain pesta ulang tahun meriah dengan kilau confetti emas',
+    taglineEn: 'Festive birthday celebration design with golden confetti sparkle',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'bday-golden-jubilee',
+    name: 'Golden Jubilee 50th',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#C5A059', '#1C1613', '#FAF3E3'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Tasyakuran usia emas & milestone keluarga yang penuh wibawa',
+    taglineEn: 'Dignified golden milestone & family appreciation celebration',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'bday-botanical-garden',
+    name: 'Botanical Garden Party',
+    eventType: 'BIRTHDAY',
+    dummyClientId: 'client-demo-birthday',
+    styleCategory: 'Minimalis',
+    themePreset: 'sage_botanical',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: true,
+    paletteColors: ['#5E8C6A', '#F3F8F4', '#2D4734'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Perjamuan ulang tahun outdoor asri di taman kaca tropis',
+    taglineEn: 'Lush outdoor glasshouse garden birthday brunch & dinner',
+    tierBadge: 'Gratis / Premium',
+  },
+
+  // =========================================================================
+  // 🎓 WISUDA (4 TEMA AKADEMIK & PELANTIKAN)
+  // =========================================================================
+  {
+    id: 'grad-cum-laude-gold',
+    name: 'Cum Laude Academic Gold',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: false,
+    paletteColors: ['#D4AF37', '#1E2436', '#FAF3E3'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Tasyakuran kelulusan Cum Laude & Doktor dengan medali emas kehormatan',
+    taglineEn: 'Cum Laude & Doctoral convocation tribute with academic gold',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'grad-sumpah-dokter-emerald',
+    name: 'Sumpah Dokter Emerald',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    styleCategory: 'Minimalis',
+    themePreset: 'sage_botanical',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#5E8C6A', '#F2F7F4', '#1F3A28'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Khusus pelantikan Sumpah Dokter & Spesialis bernuansa hijau medis',
+    taglineEn: 'Tailored for Medical Oath & Specialist inauguration in emerald',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'grad-royal-alma-mater',
+    name: 'Royal Alma Mater Navy',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: false,
+    paletteColors: ['#3B669E', '#EBF2FA', '#162844'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Kebanggaan almamater biru navy untuk sidang terbuka & ramah tamah',
+    taglineEn: 'Classic alma mater royal navy for convocation & family banquet',
+    tierBadge: 'Gratis / Premium',
+  },
+  {
+    id: 'grad-modern-scholar',
+    name: 'Modern Scholar Terracotta',
+    eventType: 'GRADUATION',
+    dummyClientId: 'client-demo-graduation',
+    styleCategory: 'Minimalis',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: false,
+    paletteColors: ['#CC704E', '#FDF6F3', '#422217'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Gaya editorial hangat bagi wisudawan sarjana, magister & kreatif',
+    taglineEn: 'Warm modern editorial style for graduates & young scholars',
+    tierBadge: 'Gratis / Premium',
+  },
+
+  // =========================================================================
+  // 🏛️ RAPAT & KORPORAT (4 TEMA RESMI & EKSEKUTIF)
+  // =========================================================================
+  {
+    id: 'meet-executive-summit',
+    name: 'Executive Summit Navy',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    styleCategory: 'Minimalis',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#3B669E', '#0F1E36', '#E8F0F8'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Undangan Rakornas, RUPS & Forum Direksi berstandar korporasi global',
+    taglineEn: 'Corporate summit, AGM & board meeting invitation suite',
+    tierBadge: 'Business / VIP',
+  },
+  {
+    id: 'meet-protokol-instansi',
+    name: 'Protokol Instansi & Polri',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    styleCategory: 'Adat & Budaya',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: false,
+    paletteColors: ['#D4AF37', '#1C1813', '#FAF3E3'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Tata protokol resmi Kementerian, Polri/TNI & pelantikan jabatan',
+    taglineEn: 'Official state protocol, Ministry, Police/Military & inauguration',
+    tierBadge: 'Business / VIP',
+  },
+  {
+    id: 'meet-green-esg-forum',
+    name: 'Green ESG Forum',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    styleCategory: 'Minimalis',
+    themePreset: 'sage_botanical',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#5E8C6A', '#F0F7F2', '#1C3624'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Konferensi keberlanjutan ESG, seminar nasional & ramah lingkungan',
+    taglineEn: 'Sustainable ESG conference, green energy forum & symposium',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'meet-tech-keynote',
+    name: 'Tech Keynote Cyber',
+    eventType: 'MEETING',
+    dummyClientId: 'client-demo-meeting',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: false,
+    paletteColors: ['#00F0FF', '#111528', '#6366F1'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Peluncuran produk teknologi, startup townhall & konferensi inovasi',
+    taglineEn: 'Tech product launch, startup townhall & digital innovation keynote',
+    tierBadge: 'Premium',
+  },
+
+  // =========================================================================
+  // 🥂 GALA DINNER (4 TEMA VVIP & PENGHARGAAN)
+  // =========================================================================
+  {
+    id: 'gala-royal-sapphire',
+    name: 'Royal Sapphire Gala',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'royal_navy',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#3B669E', '#D4AF37', '#0B132B'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Jamuan malam apresiasi mitra VVIP & filantropi bernuansa safir',
+    taglineEn: 'VVIP partner appreciation & philanthropy gala in royal sapphire',
+    tierBadge: 'Business / VIP',
+  },
+  {
+    id: 'gala-champagne-orchestra',
+    name: 'Champagne Gold Orchestra',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    styleCategory: 'Dark Luxury',
+    themePreset: 'champagne_gold',
+    profileFrameStyle: 'ARCH_DOME',
+    showFloralOrnaments: true,
+    paletteColors: ['#D4AF37', '#FAF0CA', '#1C1613'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Konser simfoni & fine dining dengan kemewahan emas champagne',
+    taglineEn: 'Symphony orchestra & 6-course fine dining in champagne gold',
+    tierBadge: 'Business / VIP',
+  },
+  {
+    id: 'gala-velvet-red-carpet',
+    name: 'Velvet Red Carpet',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    styleCategory: 'Editorial Foto',
+    themePreset: 'blush_rose',
+    profileFrameStyle: 'EDITORIAL_RECT',
+    showFloralOrnaments: false,
+    paletteColors: ['#D88290', '#2E1118', '#FAF0CA'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Malam karpet merah eksklusif, fashion gala & perayaan silver jubilee',
+    taglineEn: 'Exclusive red carpet arrival, fashion gala & silver jubilee night',
+    tierBadge: 'Premium',
+  },
+  {
+    id: 'gala-starlight-award',
+    name: 'Starlight Award Night',
+    eventType: 'GALA_DINNER',
+    dummyClientId: 'client-demo-gala',
+    styleCategory: 'Minimalis',
+    themePreset: 'terracotta_rust',
+    profileFrameStyle: 'CIRCLE',
+    showFloralOrnaments: false,
+    paletteColors: ['#CC704E', '#D4AF37', '#1E1512'],
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80',
+    heroPrewedUrl:
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1400&q=85',
+    coverBgUrl:
+      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
+    taglineId: 'Malam penganugerahan prestasi tahunan & apresiasi korporasi',
+    taglineEn: 'Annual achievement award night & corporate appreciation dinner',
+    tierBadge: 'Premium',
+  },
+];
+
+interface BlogArticleItem {
+  id: string;
+  category: string;
+  readTime: string;
+  titleId: string;
+  titleEn: string;
+  excerptId: string;
+  excerptEn: string;
+  imageUrl: string;
+  highlightsId: string[];
+  highlightsEn: string[];
+  conclusionId: string;
+  conclusionEn: string;
+}
+
+const BLOG_ARTICLES: BlogArticleItem[] = [
+  {
+    id: 'blog-ai-wishes',
+    category: 'MEPlanner AI & Inovasi',
+    readTime: '4 Menit Baca',
+    titleId:
+      'Analisis Ucapan & Doa Berbasis AI: Cara MEPlanner AI Merangkum Ratusan Doa Tamu',
+    titleEn:
+      'AI-Powered Wishes Insight: How MEPlanner AI Summarizes Hundreds of Guest Wishes',
+    excerptId:
+      'Tak perlu lagi membaca ratusan pesan satu per satu secara manual. Fitur MEPlanner AI merangkum sentimen, doa terpopuler, dan daftar tamu VIP yang perlu dibalas prioritas.',
+    excerptEn:
+      'No need to manually sift through hundreds of guestbook messages. MEPlanner AI summarizes sentiment, top blessings, and VIP guests needing priority replies.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
+    highlightsId: [
+      'Ringkasan Sentimen Otomatis: Mengelompokkan ucapan doa berdasarkan kategori (Keluarga, Rekan Kerja/Polri, Sahabat, Kolega VIP).',
+      'Rekomendasi Balasan Cerdas: Menghasilkan draf balasan sopan dan personal untuk tiap tamu hanya dalam 1 klik.',
+      'Audit Moderasi Real-Time: Menyaring komentar spam atau kata tidak pantas secara otomatis sebelum tampil di layar publik.',
+      'Sinkronisasi Layar Penerima Tamu: Menampilkan ucapan terpilih secara elegan di layar proyektor ballroom saat Hari-H.',
+    ],
+    highlightsEn: [
+      'Automated Sentiment Summary: Groups wishes by guest relationship (Family, VIP Officials, Colleagues, Friends).',
+      'Smart Reply Suggestions: Generates polite, personalized host replies in 1 click.',
+      'Real-Time Moderation Audit: Automatically filters spam or inappropriate words before public display.',
+      'Live Reception Screen Sync: Displays curated wishes on the ballroom projector during the event.',
+    ],
+    conclusionId:
+      'Fitur AI Wishes Insight & Moderasi tersedia langsung di ekosistem MEPlanner untuk memastikan setiap doa tulus dari tamu Anda mendapatkan apresiasi terbaik.',
+    conclusionEn:
+      'AI Wishes Insight & Moderation is built right into the MEPlanner ecosystem so every heartfelt blessing is cherished.',
+  },
+  {
+    id: 'blog-85-questions',
+    category: 'Persiapan Pernikahan',
+    readTime: '6 Menit Baca',
+    titleId:
+      '85 Pertanyaan Penting Sebelum Menikah untuk Menyatukan Visi Finansial & Keluarga',
+    titleEn:
+      '85 Essential Questions Before Marriage to Align Financial & Family Visions',
+    excerptId:
+      'Persiapan pernikahan bukan hanya soal gedung dan katering, tetapi juga menyelaraskan nilai hidup, pengelolaan anggaran rumah tangga, hingga batas peran keluarga besar.',
+    excerptEn:
+      'Wedding preparation goes beyond venues and catering—it is about aligning life values, household budgets, and extended family boundaries.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
+    highlightsId: [
+      'Visi Finansial & Transparansi: Bagaimana pembagian rekening tabungan, dana darurat, dan batas pagu biaya resepsi agar bebas utang?',
+      'Komunikasi & Resolusi Konflik: Bagaimana cara menyepakati keputusan besar saat ada perbedaan pendapat antara pasangan atau orang tua?',
+      'Karier, Domisili & Rencana Masa Depan: Kesepakatan mengenai mobilitas dinas/pekerjaan, tempat tinggal pasca-nikah, dan perencanaan anak.',
+      'Pembagian Peran Persiapan Acara: Gunakan Modul Checklist H-6 Bulan di MEPlanner untuk membagi PIC antara Mempelai, Keluarga, dan WO secara adil.',
+    ],
+    highlightsEn: [
+      'Financial Transparency: How will you manage joint savings, emergency funds, and a debt-free wedding budget cap?',
+      'Conflict Resolution: How will you navigate major decisions when opinions differ between partners or parents?',
+      'Career & Relocation: Aligning on job transfers, post-wedding residence, and family planning.',
+      'Fair Task Delegation: Use MEPlanner’s 6-Month Checklist to assign clear PIC roles across Couple, Family, and WO.',
+    ],
+    conclusionId:
+      'Mulai langkah awal yang harmonis dengan mengelola anggaran dan daftar tugas bersama pasangan di Workspace Planner MEPlanner.',
+    conclusionEn:
+      'Start your journey harmoniously by managing budgets and checklists together inside MEPlanner Workspace.',
+  },
+  {
+    id: 'blog-7-qr-checkin',
+    category: 'Manajemen Tamu Hari-H',
+    readTime: '5 Menit Baca',
+    titleId:
+      '7 Tanda Acara Anda Perlu Sistem QR Code & 21-Char Hash Check-In di Meja Penerima Tamu',
+    titleEn:
+      '7 Signs Your Event Needs QR Code & 21-Char Hash Check-In at Guest Reception',
+    excerptId:
+      'Antrean panjang di buku tamu fisik sering membuat tamu VVIP menunggu lama. Ketahui mengapa sistem Layar Penerima Tamu digital kini menjadi standar baru.',
+    excerptEn:
+      'Long queues at physical guestbooks frustrate VVIP guests. Discover why digital Guest Reception check-in is the new gold standard.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
+    highlightsId: [
+      'Jumlah Tamu di Atas 100 Orang: Buku tamu manual memicu penumpukan di pintu masuk ballroom pada jam puncak acara.',
+      'Kehadiran Pejabat / Tamu VVIP: Deteksi instan lencana P1-VIP di Layar Penerima Tamu agar tim protokol langsung mengarahkan ke meja kehormatan.',
+      'Kontrol Kuota Pax Katering Akurat: Mencegah tamu tak diundang masuk sekaligus memantau jumlah pax real-time yang hadir di lokasi.',
+      'Keamanan Token 21 Karakter: Setiap undangan di MEPlanner dilengkapi kode unik 21-Char Base62 Hash yang mustahil ditebak.',
+    ],
+    highlightsEn: [
+      'Over 100 Invited Guests: Physical guestbooks create bottlenecks at the ballroom entrance during peak arrival.',
+      'VVIP & Official Protocol: Instant P1-VIP badge detection alerts ushers to escort honored guests to their reserved tables.',
+      'Accurate Catering Pax Control: Tracks real-time headcount on site against confirmed RSVP pax.',
+      '21-Char Hash Security: Every MEPlanner invitation includes an unguessable 21-Char Base62 token.',
+    ],
+    conclusionId:
+      'Fitur Layar Penerima Tamu (Guest Reception) sudah termasuk di semua paket berbayar MEPlanner mulai dari Rp 51.750!',
+    conclusionEn:
+      'The Guest Reception screen is included in all paid MEPlanner tiers starting from just Rp 51,750!',
+  },
+  {
+    id: 'blog-11-vendor-dp',
+    category: 'Tips Anggaran & Vendor',
+    readTime: '5 Menit Baca',
+    titleId:
+      'Jangan Transfer DP Vendor Sebelum 11 Hal Penting Ini Tertulis Jelas di Kontrak!',
+    titleEn:
+      'Never Transfer Vendor Deposits Before These 11 Clauses Are Written in the Contract!',
+    excerptId:
+      'Hindari biaya siluman (hidden charge) menjelang Hari-H. Pastikan 11 poin krusial ini tercatat di kontrak dan terpantau di Modul Moneter Anda.',
+    excerptEn:
+      'Avoid surprise hidden charges right before your event day. Make sure these 11 critical points are locked into your vendor contracts.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80',
+    highlightsId: [
+      'Rincian Spesifikasi Item & Jam Kerja: Pastikan durasi sewa ballroom, jam loading dekorasi, dan jumlah kru dokumentasi tertulis rinci.',
+      'Kebijakan Perubahan Tanggal (Force Majeure) & Pembatalan: Ketahui syarat refund atau reschedule sejak awal.',
+      'Jadwal Termin Pembayaran (DP, Cicilan, Pelunasan): Catat jatuh tempo H-30 atau H-14 di Modul Moneter MEPlanner agar tidak terkena denda keterlambatan.',
+      'Biaya Overtime & Charge Venue: Tanyakan apakah harga sudah termasuk pajak PB1, listrik genset, dan biaya kebersihan gedung.',
+    ],
+    highlightsEn: [
+      'Detailed Deliverables & Hours: Lock in ballroom rental hours, decoration loading times, and documentation crew size.',
+      'Force Majeure & Reschedule Policy: Clarify refund and date-change terms upfront.',
+      'Payment Milestone Schedule: Track DP, installments, and H-14 final settlement inside MEPlanner Budget Module.',
+      'Overtime & Venue Corkage Fees: Confirm whether taxes, generator power, and security fees are included.',
+    ],
+    conclusionId:
+      'Gunakan Kalkulator Pagu Moneter & Pelacakan Kontrak Vendor di MEPlanner untuk menghemat rata-rata 10–15% dari plafon anggaran Anda.',
+    conclusionEn:
+      'Use MEPlanner’s Budget Cap Calculator & Vendor Contract Tracker to save 10–15% on your event budget.',
+  },
+  {
+    id: 'blog-10-wa-templates',
+    category: 'Etika & Template WA',
+    readTime: '4 Menit Baca',
+    titleId:
+      '10 Contoh Kata-Kata Pengantar Undangan Digital WhatsApp yang Sopan untuk Tamu VIP & Sahabat',
+    titleEn:
+      '10 Polite WhatsApp Digital Invitation Wording Templates for VIPs & Friends',
+    excerptId:
+      'Mengirim tautan undangan tidak boleh terkesan asal tempel. Berikut panduan etika dan template kalimat otomatis yang langsung menyertakan nama & gelar tamu.',
+    excerptEn:
+      'Sending digital invitations requires warm etiquette. Explore auto-personalized WhatsApp templates tailored for VIP officials, family, and friends.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=900&q=80',
+    highlightsId: [
+      'Template Pejabat / Pimpinan / Perwira Tinggi: Menggunakan sapaan kehormatan formal, permohonan maaf bila berbagi via tautan digital, serta rincian waktu & dresscode.',
+      'Template Keluarga Besar & Sesepuh: Menekankan permohonan doa restu dengan bahasa yang hangat dan penuh hormat.',
+      'Template Rekan Kerja & Sahabat: Ringkas, hangat, dan langsung mengarahkan ke pengisian form RSVP agar kuota meja segera terkunci.',
+      'Auto-Generator 1-Klik di MEPlanner: Variabel {nama_tamu} dan {link_hash} terisi otomatis tanpa perlu ketik manual satu per satu!',
+    ],
+    highlightsEn: [
+      'VIP & Executive Protocol Template: Formal salutation, respectful digital note, and clear session & dresscode details.',
+      'Extended Family & Elders Template: Warm, respectful wording emphasizing family blessings.',
+      'Colleagues & Friends Template: Friendly, concise, and encourages immediate RSVP confirmation.',
+      '1-Click Auto-Generator in MEPlanner: Automatically injects {guest_name} and {hash_link} with zero manual typing!',
+    ],
+    conclusionId:
+      'Coba langsung fitur Generator Blast WhatsApp 1-Klik di Modul Tamu MEPlanner sekarang juga.',
+    conclusionEn:
+      'Test the 1-Click WhatsApp Blast Generator inside MEPlanner’s Guest CRM Module today.',
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    qId: 'Mengapa harga paket MEPlanner bisa 25% lebih hemat (hanya 75% dari harga Wevitation) dengan fitur lebih lengkap?',
+    qEn: 'Why are MEPlanner packages 25% more affordable (exact 75% of competitor prices) with even more features?',
+    aId: 'Kami membangun infrastruktur cloud modern yang efisien di atas Supabase & Vercel serta menggabungkan 5 jenis acara (Pernikahan, Ulang Tahun, Wisuda, Rapat Resmi, Gala Dinner) + Full Event Planner dalam satu ekosistem. Hasilnya, Anda mendapatkan seluruh fitur premium Wevitation ditambah Readiness Tracker 8 Domain, Kalkulator Vendor, dan 21-Char Hash Token dengan harga tepat 75% (Hemat 25% di semua tier: Premium Rp 51.750, Business Rp 74.250, Enterprise Rp 180.000, Mitra Silver Rp 375.000, dan Mitra Gold Rp 750.000).',
+    aEn: 'Our modern cloud architecture combines 5 event categories plus a full 8-Domain Event Planner in one unified platform—delivering all premium digital invitation features at exactly 75% of competitor pricing (25% savings across every tier).',
+  },
+  {
+    qId: 'Apakah undangan digital di MEPlanner benar-benar aktif selamanya (sekali bayar tanpa biaya bulanan)?',
+    qEn: 'Are MEPlanner digital invitations truly active forever (one-time payment with no monthly fees)?',
+    aId: 'Ya! Untuk seluruh paket berbayar (Premium Rp 51.750 hingga Mitra Gold Rp 750.000), pembayaran hanya dilakukan sekali di awal (One-Time License) dan undangan digital beserta kenangan galeri foto serta ucapan doa tamu tetap aktif selamanya. Paket Gratis (Rp 0) aktif selama 14 hari untuk uji coba penuh.',
+    aEn: 'Yes! All paid tiers (from Premium Rp 51,750 to Mitra Gold Rp 750,000) are a one-time payment with lifetime active access. The Free tier (Rp 0) stays active for 14 days so you can test everything risk-free.',
+  },
+  {
+    qId: 'Apakah saya bisa mengganti tema desain setelah mengisi data acara dan daftar tamu?',
+    qEn: 'Can I switch themes anytime after entering my event details and guest list?',
+    aId: 'Tentu saja! Seluruh 31+ tema desain di MEPlanner terpisah dari data konten Anda. Anda bebas berganti tema (misalnya dari Serein ke Timeless Snapshot, Wayang, atau Midnight Elegance), mengubah palet warna, hingga mengganti bingkai foto (Arch Dome, Circle, Editorial) kapan saja dalam 1 klik tanpa kehilangan data tamu atau RSVP.',
+    aEn: 'Absolutely! All 31+ themes are decoupled from your event data. You can switch themes, color palettes, and profile frames anytime in 1 click without losing any guest or RSVP data.',
+  },
+  {
+    qId: 'Apa keunggulan paket Business (Rp 74.250) dan Enterprise (Rp 180.000) dibanding Premium?',
+    qEn: 'What is the difference between Premium (Rp 51,750), Business (Rp 74,250), and Enterprise (Rp 180,000)?',
+    aId: 'Paket Premium (Rp 51.750) mencakup 1 Undangan Premium aktif selamanya dengan kuota tamu unlimited. Paket Business (Rp 74.250) memberikan 2 Undangan Premium sekaligus (cocok untuk acara Ngunduh Mantu / 2 lokasi berbeda atau pasangan + bisnis) lengkap dengan Full Event Planner & status Mitra Bronze. Paket Enterprise (Rp 180.000) memberikan 5 Undangan Premium lengkap dengan Video Background HD 25MB, AI Wishes Insight, serta Amplop Digital Global (Bank, QRIS, PayPal & Crypto USDT).',
+    aEn: 'Premium (Rp 51,750) includes 1 lifetime Premium Invitation. Business (Rp 74,250) gives you 2 Premium Invitations plus Full Event Planner & Mitra Bronze. Enterprise (Rp 180,000) unlocks 5 Premium Invitations, 25MB HD Video Backgrounds, AI Wishes Insight, and Global Multi-Currency Envelopes.',
+  },
+  {
+    qId: 'Bagaimana cara kerja fitur White-Label pada paket Mitra Silver (Rp 375.000) & Mitra Gold (Rp 750.000) untuk WO/EO?',
+    qEn: 'How does White-Label branding work on Mitra Silver (Rp 375,000) & Mitra Gold (Rp 750,000) for Wedding/Event Organizers?',
+    aId: 'Paket Mitra dirancang khusus untuk Wedding Organizer (WO), Event Organizer (EO), dan vendor percetakan. Mitra Silver (11 Undangan Premium • Rp 375.000) membuka fitur Branding Teks (mencantumkan nama WO/EO Anda di footer undangan klien). Mitra Gold (23 Undangan Premium • Rp 750.000) membuka Branding Teks + Branding Logo kustom milik agensi WO/EO Anda sendiri!',
+    aEn: 'Mitra Silver (11 Premium Invitations • Rp 375,000) unlocks Custom Text Branding for your WO/EO agency name. Mitra Gold (23 Premium Invitations • Rp 750,000) unlocks full White-Label Text + Custom Agency Logo Branding on all client invitations.',
+  },
+  {
+    qId: 'Metode pembayaran apa saja yang didukung untuk aktivasi paket dan amplop digital tamu?',
+    qEn: 'Which payment methods are supported for package checkout and guest digital envelopes?',
+    aId: 'MEPlanner mendukung pembayaran terlengkap: QRIS Instan Nasional, Transfer Bank (BCA, Mandiri, BRI, BNI), E-Wallet, Kartu Kredit/Debit (Visa/Mastercard), PayPal International, serta Web3 Crypto Wallet (USDT TRC20 / ERC20) dengan proteksi transaksi Idempoten anti-duplikat.',
+    aEn: 'MEPlanner supports QRIS, National Bank Transfers, E-Wallets, Credit/Debit Cards, PayPal International, and Web3 Crypto Wallets (USDT TRC20 / ERC20) with strict idempotent transaction protection.',
+  },
+] as const;
+
+const AI_QUICK_PROMPTS = [
+  {
+    id: 'ai-price',
+    questionId: '💰 Bandingkan harga 75% MEPlanner vs Wevitation',
+    questionEn: '💰 Compare MEPlanner 75% pricing vs Wevitation',
+    answerId:
+      '🤖 MEPlanner AI: Di MEPlanner, seluruh paket berbayar dipatok tepat 75% dari harga Wevitation (Hemat 25%): Paket Premium hanya Rp 51.750 (vs Rp 69.000), Business 2 Undangan Rp 74.250 (vs Rp 99.000), Enterprise 5 Undangan Rp 180.000 (vs Rp 240.000), Mitra Silver 11 Undangan Rp 375.000 (vs Rp 500.000), dan Mitra Gold 23 Undangan Rp 750.000 (vs Rp 1.000.000). Anda juga bisa mulai dengan Paket Gratis Rp 0!',
+    answerEn:
+      '🤖 MEPlanner AI: Every MEPlanner tier is priced at exactly 75% of competitor rates (25% savings): Premium Rp 51,750, Business (2 Invitations) Rp 74,250, Enterprise (5 Invitations) Rp 180,000, Mitra Silver (11 Invitations) Rp 375,000, and Mitra Gold (23 Invitations) Rp 750,000—plus a Rp 0 Free tier!',
+  },
+  {
+    id: 'ai-theme',
+    questionId: '🎨 Rekomendasi tema sesuai jenis acara saya',
+    questionEn: '🎨 Recommend a theme for my event type',
+    answerId:
+      '🤖 MEPlanner AI: Untuk Pernikahan Adat & Keraton, gunakan tema "Wayang" atau "Culture: Javanese". Untuk Garden/Minimalis, pilih "Serein", "Mildness", atau "Simple Rustic #3". Untuk Resepsi Ballroom Mewah, pilih "Elegant Light", "Timeless Snapshot", atau "Midnight Elegance". Kami juga menyediakan tema khusus Sweet 17th, Sumpah Dokter/Wisuda, Rakornas Instansi/Polri, hingga Royal Sapphire Gala Dinner!',
+    answerEn:
+      '🤖 MEPlanner AI: For Heritage Weddings, try "Wayang" or "Culture: Javanese". For Minimalist/Garden vibes, choose "Serein" or "Mildness". For Luxury Ballrooms, pick "Elegant Light" or "Midnight Elegance"—plus dedicated themes for Birthdays, Graduations, Corporate Summits, and Gala Dinners!',
+  },
+  {
+    id: 'ai-planner',
+    questionId: '📊 Apa saja fitur Event Planner & Layar Tamu Hari-H?',
+    questionEn: '📊 What is included in Event Planner & Guest Reception?',
+    answerId:
+      '🤖 MEPlanner AI: Selain undangan digital, Anda mendapatkan: (1) Readiness Tracker 8 Domain, (2) Checklist H-6 Bulan s/d Hari-H dengan pembagian PIC, (3) Kalkulator Pagu Anggaran & Pelunasan Vendor, (4) CRM Tamu VIP dengan Blast WA 1-Klik & 21-Char Hash Token, serta (5) Layar Penerima Tamu (Guest Reception) untuk check-in tamu saat Hari-H.',
+    answerEn:
+      '🤖 MEPlanner AI: Beyond digital invitations, you get an 8-Domain Readiness Tracker, Phased Checklist with PIC roles, Vendor Budget Calculator, 1-Click WhatsApp Guest CRM with 21-Char Hash Tokens, and a Live Guest Reception Check-In Screen.',
+  },
+] as const;
+
 type ExtendedPaymentTransaction = CommercialPaymentTransaction & {
   onChainVerified?: boolean;
   blockchainExplorerUrl?: string;
@@ -1468,6 +2390,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   >(null);
 
   // Selected package tier & idempotent checkout state
+  const [selectedWevPackageId, setSelectedWevPackageId] =
+    useState<WevPackageId>('PREMIUM');
   const [selectedCheckoutTier, setSelectedCheckoutTier] = useState<
     'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
   >('EXCLUSIVE');
@@ -1481,6 +2405,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     useState<ExtendedPaymentTransaction | null>(null);
   const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Commercial Wevitation-inspired Modals & Interactive States
+  const [selectedCatalogThemeId, setSelectedCatalogThemeId] = useState<string>(
+    'wed-timeless-snapshot'
+  );
+  const [catalogEventFilter, setCatalogEventFilter] = useState<
+    'ALL' | EventCategoryType
+  >('ALL');
+  const [catalogStyleFilter, setCatalogStyleFilter] = useState<
+    'ALL' | CatalogThemeStyle
+  >('ALL');
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState<string>('');
+  const [showAllCatalogThemes, setShowAllCatalogThemes] =
+    useState<boolean>(false);
+  const [isEcoModalOpen, setIsEcoModalOpen] = useState<boolean>(false);
+  const [activeBlogArticle, setActiveBlogArticle] =
+    useState<BlogArticleItem | null>(null);
+  const [openFaqIdx, setOpenFaqIdx] = useState<number>(0);
+  const [selectedAiPromptIdx, setSelectedAiPromptIdx] = useState<number>(0);
 
   // 24-hour price lock countdown timer during Step 2
   useEffect(() => {
@@ -1544,15 +2487,15 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '')
         .slice(0, 14) || 'guest';
-    const tierCode = selectedCheckoutTier.replace(/\s+/g, '');
+    const tierCode = selectedWevPackageId.replace(/[^A-Z0-9]/g, '');
     const hashSuffix = computeDeterministicHash(
       `${buyerEmail.trim().toLowerCase() || 'guest'}|${tierCode}|${lang}`
     );
     return {
       currentIdempotencyKey: `IDEMP-MEP-${lang}-${tierCode}-${cleanEmail}-${hashSuffix}`,
-      currentOrderId: `ORD-MEP-${tierCode.slice(0, 3)}-${hashSuffix}`,
+      currentOrderId: `ORD-MEP-${tierCode.slice(0, 4)}-${hashSuffix}`,
     };
-  }, [buyerEmail, selectedCheckoutTier, lang]);
+  }, [buyerEmail, selectedWevPackageId, lang]);
 
   // Recover active idempotent transaction from localStorage on mount
   useEffect(() => {
@@ -1679,7 +2622,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     if (matched && matched.id !== selectedDemoClientId) {
       setSelectedDemoClientId(matched.id);
     }
-    setSimThemeOverride(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simEventType]);
 
@@ -1689,8 +2631,33 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     const matched = SHOWCASE_DUMMY_CLIENT_METAS.find(
       (m) => m.id === dummyClientId
     );
-    if (matched && matched.eventType !== simEventType) {
-      setSimEventType(matched.eventType);
+    if (matched) {
+      if (matched.eventType !== simEventType) {
+        setSimEventType(matched.eventType);
+      }
+      const firstThemeForEvent = MULTI_EVENT_THEME_CATALOG.find(
+        (t) => t.eventType === matched.eventType
+      );
+      if (firstThemeForEvent) {
+        setSelectedCatalogThemeId(firstThemeForEvent.id);
+      }
+    }
+  };
+
+  const handleApplyCatalogThemeDemo = (theme: CatalogThemeItem) => {
+    setSelectedCatalogThemeId(theme.id);
+    setSelectedDemoClientId(theme.dummyClientId);
+    setSimEventType(theme.eventType);
+    setSimThemeOverride(theme.themePreset);
+    setShowcaseViewMode('invitation_sim');
+    setSimIsOpened(true);
+    setIsCheckoutPageOpen(false);
+    if (typeof document !== 'undefined') {
+      window.setTimeout(() => {
+        document
+          .getElementById('live-simulator-stage')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
     }
   };
 
@@ -1702,20 +2669,77 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     [selectedDemoClientId, simEventType]
   );
 
+  const activeCatalogTheme = useMemo<CatalogThemeItem | null>(() => {
+    const byId = MULTI_EVENT_THEME_CATALOG.find(
+      (t) => t.id === selectedCatalogThemeId
+    );
+    if (byId && byId.eventType === activeDummyMeta.eventType) {
+      return byId;
+    }
+    return (
+      MULTI_EVENT_THEME_CATALOG.find(
+        (t) => t.eventType === activeDummyMeta.eventType
+      ) || null
+    );
+  }, [selectedCatalogThemeId, activeDummyMeta.eventType]);
+
   const effectiveSimThemePreset =
-    simThemeOverride || activeDummyMeta.themePreset;
+    simThemeOverride ||
+    activeCatalogTheme?.themePreset ||
+    activeDummyMeta.themePreset;
 
   const activeDummyState = useMemo(() => {
     const base = getShowcaseDummyClientState(activeDummyMeta.id, simPackageTier);
-    if (!simThemeOverride) return base;
+    const resolvedPreset =
+      simThemeOverride ||
+      activeCatalogTheme?.themePreset ||
+      base.settings.themePreset;
     return {
       ...base,
       settings: {
         ...base.settings,
-        themePreset: simThemeOverride,
+        themePreset: resolvedPreset,
+        ...(activeCatalogTheme
+          ? {
+              profileFrameStyle: activeCatalogTheme.profileFrameStyle,
+              showFloralOrnaments: activeCatalogTheme.showFloralOrnaments,
+              coverBgUrl: activeCatalogTheme.coverBgUrl,
+              heroPrewedUrl: activeCatalogTheme.heroPrewedUrl,
+              coverBadgeText: `${activeDummyMeta.badgeId} • ${activeCatalogTheme.name}`,
+              showHeroBadge: true,
+              heroBadgeText: `TEMA: ${activeCatalogTheme.name.toUpperCase()} (${activeCatalogTheme.styleCategory.toUpperCase()})`,
+            }
+          : {}),
       },
     };
-  }, [activeDummyMeta.id, simPackageTier, simThemeOverride]);
+  }, [
+    activeDummyMeta.id,
+    activeDummyMeta.badgeId,
+    simPackageTier,
+    simThemeOverride,
+    activeCatalogTheme,
+  ]);
+
+  const filteredCatalogThemes = useMemo<CatalogThemeItem[]>(() => {
+    const q = catalogSearchQuery.trim().toLowerCase();
+    return MULTI_EVENT_THEME_CATALOG.filter((item) => {
+      if (catalogEventFilter !== 'ALL' && item.eventType !== catalogEventFilter) {
+        return false;
+      }
+      if (
+        catalogStyleFilter !== 'ALL' &&
+        item.styleCategory !== catalogStyleFilter
+      ) {
+        return false;
+      }
+      if (q.length > 0) {
+        const hay =
+          `${item.name} ${item.styleCategory} ${item.taglineId} ${item.taglineEn} ${item.eventType}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [catalogEventFilter, catalogStyleFilter, catalogSearchQuery]);
 
   const effectiveDummyWishes = useMemo(
     () => [
@@ -2067,105 +3091,311 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     () =>
       [
         {
+          id: 'GRATIS' as WevPackageId,
           tier: 'STARTER' as const,
-          badge: lang === 'ID' ? 'STARTER • HEMAT' : 'STARTER • ENTRY',
-          name: 'Starter Digital Invitation & Basic Tracker',
-          priceMain: lang === 'ID' ? 'Rp 50.000' : '$10 USD',
-          priceCryptoDisplay: '10 USDT',
-          amountNumeric: lang === 'ID' ? 50000 : 10,
-          priceStrike: lang === 'ID' ? 'Rp 150.000' : '$25 USD',
+          simTier: 'STARTER' as const,
+          badge:
+            lang === 'ID'
+              ? '🌱 COBA DULU GRATIS • AKTIF 14 HARI'
+              : '🌱 FREE TRIAL • 14 DAYS ACTIVE',
+          name: 'Gratis',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk uji coba fitur dasar sebelum upgrade'
+              : 'Ideal for testing core features before upgrading',
+          wevitationPriceLabel: 'Wevitation: Rp 0',
+          discountBadge: 'PROMO AKTIF',
+          priceMain: lang === 'ID' ? 'Rp 0' : '$0 USD',
+          priceCryptoDisplay: '0 USDT',
+          amountNumeric: 0,
+          priceStrike: lang === 'ID' ? 'Rp 25.000' : '$2 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Promo Spesial • Sekali Bayar Aktif Selamanya'
-              : 'One-Time License • Or 10 USDT (Crypto)',
+              ? 'Promo Aktif • 1 Undangan Standar (Aktif 14 Hari)'
+              : 'Active Promo • 1 Standard Invitation (14 Days)',
           styleVariant: 'starter' as const,
           features:
             lang === 'ID'
               ? [
-                  'Maks. 100 Tamu Undangan & Link Undangan Personal Mandiri',
-                  '3 Slot Foto Latar Statis (Sampul, Hero Feathered & Wallpaper) + 1/2 Profil',
-                  'Hitung Mundur, Jadwal Acara Multi-Sesi, Google Maps & Simpan Kalender',
-                  'Form Konfirmasi RSVP Real-Time & Buku Tamu Doa Restu',
-                  'Amplop Digital Domestik (Transfer Bank Nasional & QRIS)',
-                  'Workspace Planner Dasar: Modul Tracker, Checklist H-6 Bulan & Tabel Tamu',
+                  '1 Undangan Standar (Masa Aktif 14 Hari)',
+                  'Kuota Tamu s/d 30 Tamu Undangan',
+                  'Foto & Video Gallery Terbatas',
+                  'Musik Latar NCS (Built-In Royalty Free)',
+                  'Ucapan & Doa + Konfirmasi RSVP Dasar',
+                  'Pilihan Tema Dasar Multi-Event',
+                  'Gift Registry & Amplop Digital Dasar',
                 ]
               : [
-                  'Max 100 Invited Guests & Dedicated Personal Invitation Links',
-                  '3 Static Media Slots (Cover, Feathered Hero & Wallpaper) + 1/2 Profiles',
-                  'Live Countdown, Multi-Session Schedule, Google Maps & Save Calendar',
-                  'Real-Time RSVP Form & Guestbook Wishes',
-                  'Domestic Digital Envelope (Bank Transfer & QRIS)',
-                  'Basic Workspace Planner: Tracker, 6-Month Checklist & Guest Table',
+                  '1 Standard Invitation (Active for 14 Days)',
+                  'Guest Quota up to 30 Invited Guests',
+                  'Limited Photo & Video Gallery',
+                  'NCS Background Music (Royalty-Free)',
+                  'Guestbook Wishes & Basic RSVP',
+                  'Basic Multi-Event Theme Selection',
+                  'Basic Gift Registry & Digital Envelope',
                 ],
         },
         {
-          tier: 'EXCLUSIVE' as const,
+          id: 'PREMIUM' as WevPackageId,
+          tier: 'STARTER' as const,
+          simTier: 'EXCLUSIVE' as const,
           badge:
             lang === 'ID'
-              ? '★ PALING POPULER • EXCLUSIVE'
-              : '★ MOST POPULAR • EXCLUSIVE',
-          name: 'Exclusive Planner, Slideshow & Vendor Suite',
-          priceMain: lang === 'ID' ? 'Rp 299.000' : '$25 USD',
-          priceCryptoDisplay: '25 USDT',
-          amountNumeric: lang === 'ID' ? 299000 : 25,
-          priceStrike: lang === 'ID' ? 'Rp 600.000' : '$59 USD',
+              ? '★ PALING FAVORIT • PREMIUM (75% HARGA)'
+              : '★ MOST FAVORITE • PREMIUM (75% PRICE)',
+          name: 'Premium',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk pasangan mempelai / individu (1 Acara)'
+              : 'Best for couples or individuals (1 Event)',
+          wevitationPriceLabel: 'Wevitation: Rp 69.000',
+          discountBadge: '31% OFF • HEMAT 25% DARI KOMPETITOR!',
+          priceMain: lang === 'ID' ? 'Rp 51.750' : '$3.75 USD',
+          priceCryptoDisplay: '3.75 USDT',
+          amountNumeric: lang === 'ID' ? 51750 : 4,
+          priceStrike: lang === 'ID' ? 'Rp 75.000' : '$7.50 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Paket Paling Populer • Sekali Bayar'
-              : 'Most Popular • Or 25 USDT (Crypto)',
+              ? 'Harga 75% Wevitation (Rp 69.000 → Rp 51.750) • Sekali Bayar Aktif Selamanya'
+              : '75% of Competitor Price • One-Time Payment Active Forever',
           styleVariant: 'exclusive' as const,
           features:
             lang === 'ID'
               ? [
-                  'Semua Fitur STARTER + Kuota s/d 500 Tamu VIP & Generator Blast WA 1-Klik',
-                  'Multi-Foto Smooth Slideshow (Crossfade, Zoom & Blur, Geser Halus) + Studio Crop',
-                  'Seksi Kisah Perjalanan / Milestone & Galeri Foto HD (s/d 10 Foto) + Musik Latar',
-                  'Amplop Digital Lengkap Domestik (Bank, E-Wallet, QRIS & Alamat Kado Fisik)',
-                  'Workspace Planner Lengkap: Buka Modul Moneter, Pagu Anggaran & Kontrak Vendor',
-                  'Multi-Akses 2 Akun Pengelola Inti & Sinkronisasi Cloud Otomatis',
+                  'Upgrade 1 Undangan Premium',
+                  'Undangan Aktif Selamanya (Sekali Bayar)',
+                  'Unlimited Kuota Tamu',
+                  'Unlimited Foto & Video Gallery',
+                  'Musik Latar (NCS / Spotify / YouTube / MP3)',
+                  'Ucapan & Doa + Premium RSVP',
+                  'Bebas Pilih Semua Tema Premium (31+ Tema)',
+                  'Link Live Streaming',
+                  'Kado Cashless / Donasi & Gift Registry',
+                  'Layar Penerima Tamu (Guest Reception)',
+                  'Story Instagram',
                 ]
               : [
-                  'All STARTER Features + Up to 500 VIP Guests & 1-Click WA Blast Generator',
-                  'Multi-Photo Smooth Slideshow (Crossfade, Zoom & Blur, Slide) + Studio Crop',
-                  'Milestone Love Story & HD Photo Gallery (up to 10 Photos) + Background Music',
-                  'Full Domestic Digital Envelope (Bank, E-Wallet, QRIS & Physical Gift Address)',
-                  'Full Workspace Planner: Unlocks Budget Cap & Vendor Settlement Module',
-                  '2 Core Family Planner Accounts & Automatic Cloud Sync',
+                  'Upgrade 1 Premium Invitation',
+                  'Active Forever (One-Time Payment)',
+                  'Unlimited Guest Quota',
+                  'Unlimited Photo & Video Gallery',
+                  'Background Music (NCS / Spotify / YouTube / MP3)',
+                  'Guestbook Wishes + Premium RSVP',
+                  'Unlock All 31+ Premium Multi-Event Themes',
+                  'Live Streaming Link Integration',
+                  'Cashless Gift / Donation & Gift Registry',
+                  'Guest Reception Check-In Screen',
+                  'Instagram Story Template',
                 ],
         },
         {
-          tier: 'ROYAL VIP' as const,
+          id: 'BUSINESS' as WevPackageId,
+          tier: 'EXCLUSIVE' as const,
+          simTier: 'EXCLUSIVE' as const,
           badge:
             lang === 'ID'
-              ? '👑 PAKET TERLENGKAP • ROYAL VIP'
-              : '👑 ALL-INCLUSIVE FLAGSHIP • ROYAL VIP',
-          name: 'Royal VIP Flagship All-Inclusive Suite',
-          priceMain: lang === 'ID' ? 'Rp 599.000' : '$49 USD',
-          priceCryptoDisplay: '49 USDT',
-          amountNumeric: lang === 'ID' ? 599000 : 49,
-          priceStrike: lang === 'ID' ? 'Rp 1.200.000' : '$99 USD',
+              ? '💼 UNTUK 2 ACARA • BUSINESS (75% HARGA)'
+              : '💼 FOR 2 EVENTS • BUSINESS (75% PRICE)',
+          name: 'Business',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk pasangan (Resepsi + Ngunduh Mantu) / bisnis kecil'
+              : 'Ideal for 2 events or couples + small businesses',
+          wevitationPriceLabel: 'Wevitation: Rp 99.000',
+          discountBadge: '50.5% OFF • HEMAT 25% DARI KOMPETITOR!',
+          priceMain: lang === 'ID' ? 'Rp 74.250' : '$5.25 USD',
+          priceCryptoDisplay: '5.25 USDT',
+          amountNumeric: lang === 'ID' ? 74250 : 5,
+          priceStrike: lang === 'ID' ? 'Rp 150.000' : '$11 USD',
           priceSubBadge:
             lang === 'ID'
-              ? 'Paket Terlengkap Tanpa Batas • Sekali Bayar'
-              : 'All-Inclusive Flagship • Or 49 USDT (Crypto)',
+              ? 'Harga 75% Wevitation (Rp 99.000 → Rp 74.250) • 2 Undangan Premium'
+              : '75% of Competitor Price • 2 Premium Invitations in 1 Account',
+          styleVariant: 'exclusive' as const,
+          features:
+            lang === 'ID'
+              ? [
+                  'Upgrade Premium +1 Undangan (2 Undangan Premium dalam 1 Akun)',
+                  'Undangan Aktif Selamanya',
+                  'Unlimited Kuota Tamu & Blast WA',
+                  'Unlimited Foto & Video Gallery',
+                  'Ucapan & Doa',
+                  'Bebas Pilih Tema Premium',
+                  'Link Streaming',
+                  'Kado Cashless / Donasi & Gift Registry',
+                  'Layar Penerima Tamu',
+                  'Story Instagram',
+                  'Premium RSVP & Open Registration',
+                  'Full Event Planner (Budget, Vendor & Checklist)',
+                  'Mitra Bronze',
+                ]
+              : [
+                  'Upgrade Premium +1 Invitation (2 Premium Invitations in 1 Account)',
+                  'Invitations Active Forever',
+                  'Unlimited Guest Quota & 1-Click WA Blast',
+                  'Unlimited Photo & Video Gallery',
+                  'Guestbook Wishes & Moderation',
+                  'Unlock All Premium Themes',
+                  'Live Streaming Link',
+                  'Cashless Gift / Donation & Gift Registry',
+                  'Guest Reception Screen',
+                  'Instagram Story Template',
+                  'Premium RSVP & Open Registration',
+                  'Full Event Planner (Budget, Vendor & Checklist)',
+                  'Mitra Bronze Partner Status',
+                ],
+        },
+        {
+          id: 'ENTERPRISE' as WevPackageId,
+          tier: 'ROYAL VIP' as const,
+          simTier: 'ROYAL VIP' as const,
+          badge:
+            lang === 'ID'
+              ? '🏛️ 5 UNDANGAN • ENTERPRISE (75% HARGA)'
+              : '🏛️ 5 INVITATIONS • ENTERPRISE (75% PRICE)',
+          name: 'Enterprise',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk bisnis menengah / keluarga besar — 5 Undangan'
+              : 'Ideal for medium businesses or large families — 5 Invitations',
+          wevitationPriceLabel: 'Wevitation: Rp 240.000',
+          discountBadge: '52% OFF • HEMAT 25% DARI KOMPETITOR!',
+          priceMain: lang === 'ID' ? 'Rp 180.000' : '$12 USD',
+          priceCryptoDisplay: '12 USDT',
+          amountNumeric: lang === 'ID' ? 180000 : 12,
+          priceStrike: lang === 'ID' ? 'Rp 375.000' : '$25 USD',
+          priceSubBadge:
+            lang === 'ID'
+              ? 'Harga 75% Wevitation (Rp 240.000 → Rp 180.000) • 5 Undangan Premium'
+              : '75% of Competitor Price • 5 Premium Invitations',
           styleVariant: 'royal' as const,
           features:
             lang === 'ID'
               ? [
-                  'Semua Fitur EXCLUSIVE + Unlimited Tamu & Pax Tanpa Batas + Link Hash Personal',
-                  'Video Background Sinematik s/d 25 MB (Auto-Stretch HP 9:16 ↔ Layar PC 16:9)',
-                  'Unlimited Galeri Foto HD, Bebas Upload Musik MP3 Kustom & Bilingual ID/EN',
-                  'Amplop Digital Global Multi-Valuta (Bank, QRIS, PayPal & Crypto USDT TRC20/ERC20)',
-                  'Multi-Akses 4 Akun Inti Keluarga + Unlimited Akun Panitia / EO / WO',
-                  'Audit Forensik Komentar, Sinkronisasi Supabase Cloud, Google Sheets & Backup JSON',
+                  'Upgrade Premium +4 Undangan (5 Undangan Premium)',
+                  'Undangan Aktif Selamanya',
+                  'Unlimited Kuota Tamu',
+                  'Foto & Video Gallery + Video Background HD',
+                  'Ucapan & Doa + AI Wishes Insight',
+                  'Tema Premium Multi-Event',
+                  'Link Streaming',
+                  'Kado Cashless Global (Bank, QRIS, PayPal, Crypto USDT)',
+                  'Layar Penerima Tamu & Check-In Management',
                 ]
               : [
-                  'All EXCLUSIVE Features + Unlimited Guests & Pax + Personal Hash Links',
-                  'Up to 25 MB Cinematic Video Background (Auto-Stretch 9:16 Mobile ↔ 16:9 PC)',
-                  'Unlimited HD Gallery, Custom MP3 Audio Upload & Bilingual ID/EN Switcher',
-                  'Global Multi-Currency Digital Envelope (Bank, QRIS, PayPal & Crypto USDT)',
-                  '4 Core Family Accounts + Unlimited Event Organizer / Committee Logins',
-                  'Forensic Comment Audit, Supabase Cloud Sync, Google Sheets & JSON Backup',
+                  'Upgrade Premium +4 Invitations (5 Premium Invitations)',
+                  'Invitations Active Forever',
+                  'Unlimited Guest Quota',
+                  'Photo & Video Gallery + 25MB HD Video Background',
+                  'Guestbook Wishes + AI Wishes Insight',
+                  'All Multi-Event Premium Themes',
+                  'Live Streaming Link',
+                  'Global Cashless Gift (Bank, QRIS, PayPal, Crypto USDT)',
+                  'Guest Reception & Check-In Management',
+                ],
+        },
+        {
+          id: 'MITRA_SILVER' as WevPackageId,
+          tier: 'ROYAL VIP' as const,
+          simTier: 'ROYAL VIP' as const,
+          badge:
+            lang === 'ID'
+              ? '✨ 11 UNDANGAN WO/EO • MITRA - SILVER'
+              : '✨ 11 INVITATIONS WO/EO • MITRA - SILVER',
+          name: 'Mitra - Silver',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk bisnis besar / WO / EO — 11 Undangan'
+              : 'Designed for Wedding & Event Organizers — 11 Invitations',
+          wevitationPriceLabel: 'Wevitation: Rp 500.000',
+          discountBadge: '54% OFF • HEMAT 25% DARI KOMPETITOR!',
+          priceMain: lang === 'ID' ? 'Rp 375.000' : '$25 USD',
+          priceCryptoDisplay: '25 USDT',
+          amountNumeric: lang === 'ID' ? 375000 : 25,
+          priceStrike: lang === 'ID' ? 'Rp 825.000' : '$55 USD',
+          priceSubBadge:
+            lang === 'ID'
+              ? 'Harga 75% Wevitation (Rp 500.000 → Rp 375.000) • 11 Undangan + Branding Teks'
+              : '75% of Competitor Price • 11 Invitations + White-Label Text',
+          styleVariant: 'royal' as const,
+          features:
+            lang === 'ID'
+              ? [
+                  'Upgrade Premium +10 Undangan (11 Undangan Premium)',
+                  'Undangan Aktif Selamanya',
+                  'Unlimited Kuota Tamu',
+                  'Foto & Video Gallery',
+                  'Ucapan & Doa',
+                  'Tema Premium',
+                  'Link Streaming',
+                  'Kado Cashless / Donasi',
+                  'Layar Penerima Tamu',
+                  '✨ Branding Teks (White-Label Nama WO/EO)',
+                ]
+              : [
+                  'Upgrade Premium +10 Invitations (11 Premium Invitations)',
+                  'Invitations Active Forever',
+                  'Unlimited Guest Quota',
+                  'Photo & Video Gallery',
+                  'Guestbook Wishes',
+                  'All Premium Themes',
+                  'Live Streaming Link',
+                  'Cashless Gift / Donation',
+                  'Guest Reception Screen',
+                  '✨ Custom Text Branding (White-Label WO/EO Name)',
+                ],
+        },
+        {
+          id: 'MITRA_GOLD' as WevPackageId,
+          tier: 'ROYAL VIP' as const,
+          simTier: 'ROYAL VIP' as const,
+          badge:
+            lang === 'ID'
+              ? '👑 23 UNDANGAN AGENSI • MITRA - GOLD'
+              : '👑 23 INVITATIONS AGENCY • MITRA - GOLD',
+          name: 'Mitra - Gold',
+          subtitle:
+            lang === 'ID'
+              ? 'Cocok untuk Agensi WO / EO Enterprise — 23 Undangan'
+              : 'Flagship for Enterprise WO / EO Agencies — 23 Invitations',
+          wevitationPriceLabel: 'Wevitation: Rp 1.000.000',
+          discountBadge: '56% OFF • HEMAT 25% DARI KOMPETITOR!',
+          priceMain: lang === 'ID' ? 'Rp 750.000' : '$49 USD',
+          priceCryptoDisplay: '49 USDT',
+          amountNumeric: lang === 'ID' ? 750000 : 49,
+          priceStrike: lang === 'ID' ? 'Rp 1.725.000' : '$110 USD',
+          priceSubBadge:
+            lang === 'ID'
+              ? 'Harga 75% Wevitation (Rp 1.000.000 → Rp 750.000) • 23 Undangan + Branding Logo'
+              : '75% of Competitor Price • 23 Invitations + Full White-Label Logo',
+          styleVariant: 'royal' as const,
+          features:
+            lang === 'ID'
+              ? [
+                  'Upgrade Premium +22 Undangan (23 Undangan Premium)',
+                  'Undangan Aktif Selamanya',
+                  'Unlimited Kuota Tamu',
+                  'Foto & Video Gallery',
+                  'Ucapan & Doa',
+                  'Tema Premium',
+                  'Link Streaming',
+                  'Kado Cashless / Donasi',
+                  'Layar Penerima Tamu',
+                  '✨ Branding Teks (White-Label Nama WO/EO)',
+                  '👑 Branding Logo (White-Label Logo WO/EO Sendiri)',
+                ]
+              : [
+                  'Upgrade Premium +22 Invitations (23 Premium Invitations)',
+                  'Invitations Active Forever',
+                  'Unlimited Guest Quota',
+                  'Photo & Video Gallery',
+                  'Guestbook Wishes',
+                  'All Premium Themes',
+                  'Live Streaming Link',
+                  'Cashless Gift / Donation',
+                  'Guest Reception Screen',
+                  '✨ Custom Text Branding (White-Label WO/EO Name)',
+                  '👑 Custom Logo Branding (Your Own WO/EO Agency Logo)',
                 ],
         },
       ] as const,
@@ -2174,9 +3404,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   const activeSelectedPackage = useMemo(
     () =>
+      commercialPackages.find((p) => p.id === selectedWevPackageId) ||
       commercialPackages.find((p) => p.tier === selectedCheckoutTier) ||
       commercialPackages[1],
-    [commercialPackages, selectedCheckoutTier]
+    [commercialPackages, selectedWevPackageId, selectedCheckoutTier]
   );
 
   const activeCheckoutAmountDisplay = useMemo(() => {
@@ -2187,9 +3418,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   }, [lang, selectedChannel, activeSelectedPackage]);
 
   const handleSelectPackageForCheckout = (
-    tier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
+    pkgIdOrTier: WevPackageId | 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
   ) => {
-    setSelectedCheckoutTier(tier);
+    const matchedById = commercialPackages.find((p) => p.id === pkgIdOrTier);
+    const matchedByTier = commercialPackages.find(
+      (p) => p.tier === pkgIdOrTier
+    );
+    const chosen = matchedById || matchedByTier || commercialPackages[1];
+    setSelectedWevPackageId(chosen.id);
+    setSelectedCheckoutTier(chosen.tier);
+    if (chosen.id === 'GRATIS' && !paymentReference.trim()) {
+      setPaymentReference(`FREE-TRIAL-14D`);
+    }
     setIsCheckoutPageOpen(true);
     setCheckoutError(null);
     setVerificationFeedback(null);
@@ -2755,7 +3995,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     const clientSlug = activePreset.titleShort
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-');
-    const waPreviewLink = `https://meplan.app/?u=${selectedWaGuest.code}`;
+    const waPreviewLink = `https://meplanner.vercel.app/?u=${selectedWaGuest.code}`;
 
     const isStarterTier = simPackageTier === 'STARTER';
     const isRoyalTier = simPackageTier === 'ROYAL VIP';
@@ -2786,7 +4026,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h4 className="font-serif text-xs sm:text-sm font-bold text-stone-800 tracking-wide truncate">
-                      MEPlan
+                      MEPlanner
                     </h4>
                     <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold uppercase tracking-wider">
                       {simPackageTier}
@@ -3429,7 +4669,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="lg:col-span-7 rounded-2xl bg-white border border-[#D4AF37]/40 divide-y divide-stone-200/80 overflow-hidden">
                   {DUMMY_DASHBOARD_GUESTS.map((g) => {
                     const isSelected = selectedWaGuest.code === g.code;
-                    const guestLink = `https://meplan.app/?u=${g.code}`;
+                    const guestLink = `https://meplanner.vercel.app/?u=${g.code}`;
                     return (
                       <div
                         key={g.code}
@@ -4174,7 +5414,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   return (
     <div className="min-h-screen pt-16 sm:pt-20 overflow-x-clip bg-[#090B14] text-slate-100 flex flex-col justify-between selection:bg-indigo-500/30">
-      {/* TOP FIXED NAVBAR — OFFICIAL MEPlan BRAND IDENTITY (COMPACT & MOBILE-FRIENDLY) */}
+      {/* TOP FIXED NAVBAR — OFFICIAL MEPlanner BRAND IDENTITY (COMPACT & MOBILE-FRIENDLY) */}
       <header className="fixed top-0 inset-x-0 z-50 bg-[#090B14]/95 backdrop-blur-xl border-b border-indigo-500/30 shadow-[0_8px_32px_rgba(9,11,20,0.75)]">
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
           {/* Brand Logo & Title */}
@@ -4183,7 +5423,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
               className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
-              title="MEPlan — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
+              title="MEPlanner — My Event Planner (Wedding, Birthday, Graduation, Rapat & Gala Dinner)"
             >
               <WeddingRingsIcon
                 className="w-7 h-7 sm:w-9 sm:h-9"
@@ -4195,13 +5435,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCheckoutPageOpen(false)}
-                  title="MEPlan — My Event Planner"
+                  title="MEPlanner — My Event Planner"
                   className="font-sans font-extrabold text-sm sm:text-lg text-white truncate leading-tight text-left hover:text-[#00F0FF] transition-colors"
                 >
                   <span className="font-sans font-extrabold tracking-tight text-white">
                     ME
                     <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#00F0FF] bg-clip-text text-transparent">
-                      Plan
+                      Planner
                     </span>
                   </span>
                 </button>
@@ -4221,21 +5461,37 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </div>
 
-          {/* Center Navigation Links — Katalog | Fitur | Paket */}
-          <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Center Navigation Links — Katalog | Tema | Fitur | Paket 75% | FAQ */}
+          <nav className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <a
               href="#showcase"
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Lihat Katalog Undangan & Demo Planner'
-                  : 'Explore Invitation Catalog & Demo Planner'
+                  ? 'Lihat Simulator Undangan & Demo Planner'
+                  : 'Explore Live Invitation Simulator & Demo Planner'
               }
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Katalog' : 'Catalog'}
+                {lang === 'ID' ? 'Simulator' : 'Simulator'}
+              </span>
+            </a>
+
+            <a
+              href="#tema"
+              onClick={() => setIsCheckoutPageOpen(false)}
+              title={
+                lang === 'ID'
+                  ? 'Eksplorasi 31 Tema Desain Multi-Event'
+                  : 'Explore 31 Multi-Event Design Themes'
+              }
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EC4899] shrink-0" />
+              <span className="hidden md:inline whitespace-nowrap truncate">
+                {lang === 'ID' ? '31 Tema' : '31 Themes'}
               </span>
             </a>
 
@@ -4244,8 +5500,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Fitur & 6 Modul Persiapan Acara'
-                  : 'Features & 6 Event Readiness Modules'
+                  ? 'Fitur 4 Pilar Ekosistem & 6 Modul Persiapan Acara'
+                  : '4 Ecosystem Pillars & 6 Event Readiness Modules'
               }
               className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
@@ -4260,15 +5516,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               onClick={() => setIsCheckoutPageOpen(false)}
               title={
                 lang === 'ID'
-                  ? 'Pilihan Paket (STARTER, EXCLUSIVE & ROYAL VIP)'
-                  : 'Packages (STARTER, EXCLUSIVE & ROYAL VIP)'
+                  ? '6 Pilihan Paket MEPlanner (Harga 75% Wevitation — Hemat 25%!)'
+                  : '6 MEPlanner Packages (75% of Competitor Pricing — Save 25%!)'
               }
-              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-[#D4AF37]/45 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#D4AF37] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
             >
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37] shrink-0" />
               <span className="hidden md:inline whitespace-nowrap truncate">
-                {lang === 'ID' ? 'Paket' : 'Pricing'}
+                {lang === 'ID' ? 'Paket 75%' : 'Pricing'}
               </span>
+            </a>
+
+            <a
+              href="#faq"
+              onClick={() => setIsCheckoutPageOpen(false)}
+              title={
+                lang === 'ID'
+                  ? 'Tanya Jawab (FAQ) & Bantuan MEPlanner AI'
+                  : 'FAQ & MEPlanner AI Support'
+              }
+              className="hidden lg:inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-xl border border-indigo-500/35 bg-[#111528] hover:bg-indigo-950/80 text-slate-100 hover:text-[#00F0FF] text-xs font-extrabold whitespace-nowrap shadow-2xs transition-all"
+            >
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00F0FF] shrink-0" />
+              <span>FAQ</span>
             </a>
           </nav>
 
@@ -4430,8 +5700,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   <span className="hidden sm:inline truncate">
                     1.{' '}
                     {lang === 'ID'
-                      ? `Identitas & Metode (${selectedCheckoutTier})`
-                      : `Identity & Method (${selectedCheckoutTier})`}
+                      ? `Identitas & Metode (${activeSelectedPackage.name})`
+                      : `Identity & Method (${activeSelectedPackage.name})`}
                   </span>
                 </button>
 
@@ -4491,33 +5761,49 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
             {/* 2-COLUMN EXECUTIVE PAYMENT GATEWAY GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start min-w-0">
-              {/* LEFT COLUMN (lg:col-span-5): INVOICE SUMMARY, PACKAGE SWITCHER & IDEMPOTENCY PROTECTION */}
+              {/* LEFT COLUMN (lg:col-span-5): INVOICE SUMMARY, 6-PACKAGE SWITCHER & IDEMPOTENCY PROTECTION */}
               <div className="lg:col-span-5 lg:sticky lg:top-24 min-w-0 space-y-5">
                 <div className="rounded-3xl bg-gradient-to-br from-[#1C1613] via-[#221A15] to-[#2A2019] text-[#FAF3E3] border-2 border-[#D4AF37] p-5 sm:p-6 shadow-[0_20px_50px_rgba(182,141,64,0.22)] space-y-5 min-w-0 overflow-hidden">
-                  {/* Quick Tier Switcher Tabs (Separate Individual Cards) */}
+                  {/* Quick 6-Tier Switcher Tabs (Gratis, Premium, Business, Enterprise, Mitra Silver, Mitra Gold) */}
                   <div className="space-y-1.5 min-w-0">
                     <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#E6C76B]">
                       {lang === 'ID'
-                        ? 'Pilih / Ganti Paket Lisensi:'
-                        : 'Select / Switch License Plan:'}
+                        ? 'Pilih / Ganti Paket MEPlanner (Harga 75% Wevitation):'
+                        : 'Select / Switch MEPlanner Package (75% Competitor Price):'}
                     </p>
-                    <div className="grid grid-cols-3 gap-2 min-w-0">
-                      {(['STARTER', 'EXCLUSIVE', 'ROYAL VIP'] as const).map(
-                        (t) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 min-w-0">
+                      {commercialPackages.map((pkgItem) => {
+                        const isSelectedPkg =
+                          activeSelectedPackage.id === pkgItem.id;
+                        return (
                           <button
-                            key={t}
+                            key={pkgItem.id}
                             type="button"
-                            onClick={() => setSelectedCheckoutTier(t)}
-                            className={`min-w-0 truncate py-2 px-1.5 sm:px-2 rounded-xl border border-[#D4AF37]/40 text-[10px] sm:text-[11px] font-extrabold transition-all ${
-                              selectedCheckoutTier === t
+                            onClick={() => {
+                              setSelectedWevPackageId(pkgItem.id);
+                              setSelectedCheckoutTier(pkgItem.tier);
+                            }}
+                            className={`min-w-0 truncate py-2 px-2 rounded-xl border border-[#D4AF37]/40 text-[10px] font-extrabold transition-all flex flex-col items-center justify-center ${
+                              isSelectedPkg
                                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#E6C76B] text-stone-950 shadow-sm'
                                 : 'bg-white/5 text-[#FAF3E3]/80 hover:bg-white/10 hover:text-white'
                             }`}
                           >
-                            {t}
+                            <span className="truncate max-w-full">
+                              {pkgItem.name}
+                            </span>
+                            <span
+                              className={`text-[9px] font-mono ${
+                                isSelectedPkg
+                                  ? 'text-stone-900'
+                                  : 'text-[#E6C76B]'
+                              }`}
+                            >
+                              {pkgItem.priceMain}
+                            </span>
                           </button>
-                        )
-                      )}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -4532,16 +5818,26 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       </span>
                     </div>
 
-                    <h2 className="font-serif text-2xl font-extrabold text-white">
-                      {activeSelectedPackage.name}
-                    </h2>
-
-                    <div className="p-4 rounded-2xl bg-white/10 border border-[#D4AF37]/40 space-y-1">
-                      <p className="text-[10px] uppercase tracking-widest text-[#E6C76B] font-extrabold">
-                        {lang === 'ID'
-                          ? 'Total Tagihan Resmi (IDR)'
-                          : 'Official License Amount (Global)'}
+                    <div className="space-y-0.5">
+                      <h2 className="font-serif text-2xl font-extrabold text-white">
+                        Paket {activeSelectedPackage.name}
+                      </h2>
+                      <p className="text-xs text-[#E8DFD1]/85">
+                        {activeSelectedPackage.subtitle}
                       </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/10 border border-[#D4AF37]/40 space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <p className="text-[10px] uppercase tracking-widest text-[#E6C76B] font-extrabold">
+                          {lang === 'ID'
+                            ? 'Total Tagihan Resmi (75% Harga)'
+                            : 'Official License Amount (75% Price)'}
+                        </p>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold">
+                          {activeSelectedPackage.discountBadge}
+                        </span>
+                      </div>
                       <div className="flex items-baseline gap-2.5 flex-wrap">
                         <span className="text-3xl font-extrabold text-white">
                           {activeCheckoutAmountDisplay}
@@ -4550,6 +5846,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           {activeSelectedPackage.priceStrike}
                         </span>
                       </div>
+                      <p className="text-[10px] font-bold text-[#E6C76B]">
+                        {activeSelectedPackage.wevitationPriceLabel} &rarr;{' '}
+                        MEPlanner: {activeSelectedPackage.priceMain}
+                      </p>
                       <p className="text-[11px] text-[#E8DFD1]">
                         {activeSelectedPackage.priceSubBadge}
                       </p>
@@ -5533,10 +6833,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
           </section>
         ) : (
-          /* MAIN LANDING PAGE VIEW (COMPACT HERO + 1:1 SHOWCASE + FITUR + 3 PRICING CARDS) */
+          /* MAIN LANDING PAGE VIEW (HERO + 1:1 SHOWCASE + 31 TEMA + 4 PILAR & 6 MODUL + ECO-IMPACT + 6 PAKET 75% + BLOG + FAQ & AI) */
           <>
             {/* ================================================================= */}
-            {/* OFFICIAL MEPlan HERO + MULTI-CLIENT HASH TOKEN GATE               */}
+            {/* OFFICIAL MEPlanner HERO + MULTI-EVENT PILLS                       */}
             {/* ================================================================= */}
             <section className="relative overflow-hidden py-6 sm:py-10 border-b border-indigo-500/30 bg-gradient-to-b from-[#090B14] via-[#111528] to-[#090B14]">
               <div
@@ -5551,11 +6851,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="relative z-10 max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 text-center space-y-4">
                 <div
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111528]/95 border border-indigo-500/40 text-[#00F0FF] text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest max-w-full"
-                  title="MEPlan — My Event Planner by omeko42"
+                  title="MEPlanner — My Event Planner by omeko42"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                   <span className="whitespace-nowrap truncate">
-                    MEPlan &bull; My Event Planner
+                    MEPlanner &bull; My Event Planner (Hemat 25% &bull; Harga 75% Kompetitor!)
                   </span>
                 </div>
 
@@ -5579,8 +6879,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
                 <p className="text-xs sm:text-sm text-indigo-200/85 max-w-2xl mx-auto leading-relaxed">
                   {lang === 'ID'
-                    ? 'Kelola kesiapan acara, anggaran vendor, tamu VIP, dan undangan digital dalam satu platform terpadu.'
-                    : 'Manage event readiness, vendor budgets, VIP guests, and digital invitations in one unified platform.'}
+                    ? 'Kelola kesiapan acara, anggaran vendor, tamu VIP, kado cashless, dan 31+ tema undangan digital dalam satu ekosistem terpadu — mulai Rp 0 (Gratis) hingga Paket Premium Rp 51.750.'
+                    : 'Manage event readiness, vendor budgets, VIP guests, cashless gifts, and 31+ digital invitation themes in one unified platform — starting at Rp 0 (Free) and Rp 51,750 Premium.'}
                 </p>
 
                 {/* 5 Concise Event Category Pills */}
@@ -5620,19 +6920,30 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* ================================================================= */}
             <section
               id="showcase"
-              className="py-8 sm:py-12 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-4"
+              className="py-8 sm:py-12 max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-6"
             >
               {/* Compact Header + 2-Tab Mode Switcher */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
+              <div
+                id="live-simulator-stage"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 scroll-mt-20"
+              >
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <h3 className="font-sans text-lg sm:text-2xl font-extrabold text-white truncate">
-                    {lang === 'ID' ? 'Katalog Interaktif' : 'Interactive Catalog'}
+                    {lang === 'ID'
+                      ? 'Simulator Undangan & Planner Live'
+                      : 'Live Invitation & Planner Simulator'}
                   </h3>
+                  {activeCatalogTheme && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-[#00F0FF]/50 text-[#00F0FF] text-[10px] font-extrabold whitespace-nowrap">
+                      🎨 Tema Aktif: {activeCatalogTheme.name} (
+                      {activeCatalogTheme.styleCategory})
+                    </span>
+                  )}
                   <InfoTooltip
                     text={
                       lang === 'ID'
-                        ? 'Menampilkan komponen undangan asli dari 5 Dummy Client terpisah yang tersinkron langsung dengan pilihan paket STARTER, EXCLUSIVE, dan ROYAL VIP.'
-                        : 'Displays the real invitation component from 5 separated Dummy Clients synced live with STARTER, EXCLUSIVE, and ROYAL VIP tiers.'
+                        ? 'Menampilkan komponen undangan asli dari 5 Dummy Client terpisah yang tersinkron langsung dengan 31 Tema Desain & pilihan paket MEPlanner.'
+                        : 'Displays the real invitation component from 5 separated Dummy Clients synced live with all 31 Themes & MEPlanner package tiers.'
                     }
                   />
                 </div>
@@ -5702,24 +7013,24 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     })}
                   </div>
 
-                  {/* 3 Package Tier Pills */}
+                  {/* 3 Simulator Tier Pills */}
                   <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[#090B14] border border-indigo-500/30 self-start lg:self-auto">
                     {(
                       [
                         {
                           tier: 'STARTER' as const,
-                          label: 'STARTER',
-                          tip: 'Rp 50rb • 1 Slide Statis • Domestik',
+                          label: 'GRATIS / STARTER',
+                          tip: 'Rp 0 • 1 Slide Statis • 14 Hari',
                         },
                         {
                           tier: 'EXCLUSIVE' as const,
-                          label: 'EXCLUSIVE',
-                          tip: 'Rp 299rb • Slideshow • Galeri & Musik',
+                          label: 'PREMIUM / BUSINESS',
+                          tip: 'Rp 51.750 - Rp 74.250 • Slideshow • Galeri & Musik',
                         },
                         {
                           tier: 'ROYAL VIP' as const,
-                          label: 'ROYAL VIP',
-                          tip: 'Rp 599rb • Unlimited • PayPal & Crypto',
+                          label: 'ENTERPRISE / MITRA',
+                          tip: 'Rp 180.000 - Rp 750.000 • Video HD • White-Label & Crypto',
                         },
                       ] as const
                     ).map((tItem) => {
@@ -5900,7 +7211,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <div className="relative rounded-3xl border-2 border-indigo-500/40 shadow-[0_24px_70px_rgba(0,0,0,0.65)] overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)]">
                   <div className="h-[680px] sm:h-[760px] overflow-y-auto overflow-x-hidden">
                     <PublicInvitationView
-                      key={`${activeDummyMeta.id}-${simPackageTier}-${effectiveSimThemePreset}-${
+                      key={`${activeDummyMeta.id}-${simPackageTier}-${effectiveSimThemePreset}-${selectedCatalogThemeId}-${
                         simIsOpened ? 'open' : 'cover'
                       }`}
                       settings={activeDummyState.settings}
@@ -5926,7 +7237,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 /* TAB 2: 1:1 PLANNER REPLICA + 5 INTERACTIVE MODULES                */
                 /* ================================================================= */
                 <>
-
                   {/* Featured Interactive Browser Frame Preview (1:1 AdminDashboardView Replica) */}
                   {(() => {
                     const currentShot =
@@ -5951,7 +7261,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               {currentShot.badge}
                             </span>
                             <span className="hidden md:inline-block font-mono text-[11px] text-indigo-300 truncate">
-                              https://meplan.app/planner/{currentShot.id}
+                              https://meplanner.vercel.app/planner/{currentShot.id}
                             </span>
                             <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold whitespace-nowrap">
                               ● 1:1 PLANNER WORKSPACE ({simPackageTier})
@@ -6187,188 +7497,786 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
                 </>
               )}
-            </section>
 
-            {/* SECTION 2: 6 MODUL UNGGULAN MY EVENT PLANNER */}
-            <section
-              id="fitur"
-              className="py-12 sm:py-16 bg-[#111528] border-y border-indigo-500/30"
-            >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-3xl mx-auto mb-10">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
-                    {lang === 'ID'
-                      ? 'Arsitektur Cloud Enterprise MEPlan SaaS'
-                      : 'MEPlan SaaS Enterprise Cloud Architecture'}
-                  </span>
-                  <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
-                    {lang === 'ID'
-                      ? '6 Modul Terintegrasi dalam 1 Ekosistem'
-                      : '6 Integrated Modules in 1 Ecosystem'}
-                  </h3>
-                  <div
-                    aria-hidden="true"
-                    className="flex items-center justify-center gap-2.5 my-2.5 text-[#00F0FF]"
-                  >
-                    <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#6366F1] to-[#00F0FF]" />
-                    <span className="w-2 h-2 rotate-45 bg-[#00F0FF]" />
-                    <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#6366F1] to-[#00F0FF]" />
+              {/* ================================================================= */}
+              {/* KATALOG 31 TEMA DESAIN EKSKLUSIF MULTI-EVENT (#tema)               */}
+              {/* ================================================================= */}
+              <div
+                id="tema"
+                className="pt-8 border-t border-indigo-500/30 space-y-5 scroll-mt-20"
+              >
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Katalog Desain Eksklusif Wevitation × MEPlanner'
+                        : 'Exclusive Wevitation × MEPlanner Theme Catalog'}
+                    </span>
+                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-white">
+                      {lang === 'ID'
+                        ? '31 Tema Detail Sesuai Event Terpilih'
+                        : '31 Curated Themes Across All Event Categories'}
+                    </h3>
+                    <p className="text-xs text-indigo-200/80 max-w-2xl">
+                      {lang === 'ID'
+                        ? 'Pilih tema favorit Anda lalu klik "Lihat Demo" untuk menerapkan palet warna, bingkai profil (Arch Dome / Circle / Editorial), dan ornamen langsung ke Simulator di atas!'
+                        : 'Pick any theme below and click "Live Demo" to apply its color palette, profile frame, and ornaments directly to the live simulator above!'}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 mt-1">
-                    {lang === 'ID' ? (
-                      <>
-                        Dirancang khusus agar penyelenggara acara, keluarga, dan
-                        tim Event/Wedding Organizer dapat berkolaborasi secara{' '}
-                        <em>real-time</em>.
-                      </>
-                    ) : (
-                      <>
-                        Purpose-built so hosts, families, and Event/Wedding
-                        Organizer teams can collaborate in <em>real-time</em>.
-                      </>
-                    )}
-                  </p>
+
+                  {/* Search Input */}
+                  <div className="relative w-full md:w-64 shrink-0">
+                    <Search className="w-4 h-4 text-indigo-300 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={catalogSearchQuery}
+                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                      placeholder={
+                        lang === 'ID'
+                          ? 'Cari nama tema (Serein, Wayang...)'
+                          : 'Search theme (Serein, Wayang...)'
+                      }
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#111528] border border-indigo-500/40 text-xs font-bold text-white placeholder:text-indigo-300/60 focus:border-[#00F0FF] focus:outline-none"
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 min-w-0">
-                  {(lang === 'ID'
-                    ? [
+                {/* Filter Bar: Event Category + Style Category */}
+                <div className="p-3 rounded-2xl bg-[#111528] border border-indigo-500/35 space-y-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mr-1">
+                      {lang === 'ID' ? 'Event:' : 'Event:'}
+                    </span>
+                    {(
+                      [
                         {
-                          icon: LayoutDashboard,
-                          title: '1. Readiness Tracker 8 Domain',
-                          desc: 'Pantau persentase kesiapan administrasi Polri/TNI, Gereja/KUA, Kependudukan, Kesehatan, Vendor, hingga Hari-H secara eksekutif.',
+                          id: 'ALL' as const,
+                          label:
+                            lang === 'ID'
+                              ? `Semua Event (${MULTI_EVENT_THEME_CATALOG.length})`
+                              : `All Events (${MULTI_EVENT_THEME_CATALOG.length})`,
                         },
                         {
-                          icon: Calendar,
-                          title: '2. Checklist Bertahap & PIC',
-                          desc: 'Manajemen tugas dari H-6 Bulan hingga Setelah Menikah dengan pembagian PIC (Mempelai, Keluarga, atau Panitia/WO).',
+                          id: 'WEDDING' as const,
+                          label:
+                            lang === 'ID'
+                              ? '💍 Pernikahan (15)'
+                              : '💍 Wedding (15)',
                         },
                         {
-                          icon: Wallet,
-                          title: '3. Moneter, Vendor & Amplop Digital',
-                          desc: 'Kontrol anggaran vs realisasi kontrak vendor, pelacakan DP/Lunas, serta amplop digital Bank, QRIS, PayPal & Crypto USDT.',
+                          id: 'BIRTHDAY' as const,
+                          label:
+                            lang === 'ID'
+                              ? '🎂 Ulang Tahun (4)'
+                              : '🎂 Birthday (4)',
                         },
                         {
-                          icon: Send,
-                          title: '4. Tamu VIP & Hash Token 21-Char',
-                          desc: 'Mendukung kode hash unik 21 karakter per tamu, deteksi otomatis lencana Tamu VIP, dan pengiriman undangan WhatsApp personal.',
+                          id: 'GRADUATION' as const,
+                          label:
+                            lang === 'ID'
+                              ? '🎓 Wisuda (4)'
+                              : '🎓 Graduation (4)',
                         },
                         {
-                          icon: ImageIcon,
-                          title: '5. Studio Foto 10 MB & Smart Audio',
-                          desc: 'Unggah foto Ultra-HD hingga 10 MB per foto dengan Interactive Cropper & pemutar musik latar dari Supabase Storage CDN.',
+                          id: 'MEETING' as const,
+                          label:
+                            lang === 'ID'
+                              ? '🏛️ Rapat Resmi (4)'
+                              : '🏛️ Corporate (4)',
                         },
                         {
-                          icon: Shield,
-                          title: '6. Multi-Client SaaS & Superadmin',
-                          desc: 'Setiap klien memiliki 4 Akun Default Inti + akun Panitia dengan workspace data yang terisolasi penuh & dimonitor oleh Superadmin.',
+                          id: 'GALA_DINNER' as const,
+                          label:
+                            lang === 'ID'
+                              ? '🥂 Gala Dinner (4)'
+                              : '🥂 Gala Dinner (4)',
                         },
-                      ]
-                    : [
-                        {
-                          icon: LayoutDashboard,
-                          title: '1. 8-Domain Readiness Tracker',
-                          desc: 'Monitor executive readiness across Civil/Military permits, Church/KUA, Legal documents, Health, Vendors, and Wedding Day operations.',
-                        },
-                        {
-                          icon: Calendar,
-                          title: '2. Phased Timeline & PIC Assignment',
-                          desc: 'Manage tasks from 6 Months Prior to Post-Wedding with clear PIC ownership (Groom, Bride, Family, or WO Committee).',
-                        },
-                        {
-                          icon: Wallet,
-                          title: '3. Vendor Budget & Digital Envelope',
-                          desc: 'Track estimated vs actual vendor contracts, DP/paid status, plus Digital Envelopes via Bank, PayPal & Crypto USDT.',
-                        },
-                        {
-                          icon: Send,
-                          title: '4. VIP Guest CRM & 21-Char Hash Token',
-                          desc: 'Supports unique 21-character VIP guest hash tokens, automatic VIP badge detection, and personalized 1-click WhatsApp invitations.',
-                        },
-                        {
-                          icon: ImageIcon,
-                          title: '5. 10 MB Photo Studio & Smart Audio',
-                          desc: 'Upload Ultra-HD photos up to 10 MB with non-destructive Studio Cropper & custom MP3 background music powered by Supabase CDN.',
-                        },
-                        {
-                          icon: Shield,
-                          title: '6. Multi-Client SaaS & Forensic Audit',
-                          desc: 'Each couple gets 4 Core Family Logins + WO Committee accounts in an isolated workspace with negative comment forensic audit.',
-                        },
-                      ]
-                  ).map((feat) => {
-                    const Icon = feat.icon;
+                      ] as const
+                    ).map((evBtn) => {
+                      const isAct = catalogEventFilter === evBtn.id;
+                      return (
+                        <button
+                          key={evBtn.id}
+                          type="button"
+                          onClick={() => {
+                            setCatalogEventFilter(evBtn.id);
+                            setShowAllCatalogThemes(true);
+                          }}
+                          className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border transition-all ${
+                            isAct
+                              ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
+                              : 'bg-[#090B14] hover:bg-indigo-950 text-indigo-200 border-indigo-500/30'
+                          }`}
+                        >
+                          {evBtn.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-2 border-t border-indigo-500/20 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-300 mr-1">
+                        {lang === 'ID' ? 'Gaya:' : 'Style:'}
+                      </span>
+                      {(
+                        [
+                          'ALL',
+                          'Minimalis',
+                          'Floral',
+                          'Adat & Budaya',
+                          'Editorial Foto',
+                          'Dark Luxury',
+                        ] as const
+                      ).map((st) => {
+                        const isStAct = catalogStyleFilter === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              setCatalogStyleFilter(st);
+                              setShowAllCatalogThemes(true);
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
+                              isStAct
+                                ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/60'
+                                : 'bg-[#090B14] text-indigo-200/80 hover:text-white border border-indigo-500/25'
+                            }`}
+                          >
+                            {st === 'ALL'
+                              ? lang === 'ID'
+                                ? 'Semua Gaya'
+                                : 'All Styles'
+                              : st}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <span className="text-[11px] font-bold text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? `Menampilkan ${filteredCatalogThemes.length} tema siap pakai`
+                        : `Showing ${filteredCatalogThemes.length} ready-to-use themes`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Theme Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(showAllCatalogThemes
+                    ? filteredCatalogThemes
+                    : filteredCatalogThemes.slice(0, 12)
+                  ).map((theme) => {
+                    const isCurrentTheme =
+                      activeCatalogTheme?.id === theme.id &&
+                      showcaseViewMode === 'invitation_sim';
+                    const evLabel =
+                      theme.eventType === 'WEDDING'
+                        ? '💍 Pernikahan'
+                        : theme.eventType === 'BIRTHDAY'
+                          ? '🎂 Ulang Tahun'
+                          : theme.eventType === 'GRADUATION'
+                            ? '🎓 Wisuda'
+                            : theme.eventType === 'MEETING'
+                              ? '🏛️ Rapat Resmi'
+                              : '🥂 Gala Dinner';
+
                     return (
                       <div
-                        key={feat.title}
-                        className="min-w-0 p-5 rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/50 transition-all space-y-2.5 shadow-md"
+                        key={theme.id}
+                        className={`group rounded-2xl bg-[#111528] border overflow-hidden flex flex-col justify-between transition-all ${
+                          isCurrentTheme
+                            ? 'border-2 border-[#00F0FF] ring-2 ring-[#6366F1]/50 shadow-[0_12px_32px_rgba(0,240,255,0.2)]'
+                            : 'border-indigo-500/35 hover:border-[#00F0FF]/60 shadow-md'
+                        }`}
                       >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1]/25 to-[#8B5CF6]/25 border border-indigo-400/45 text-[#00F0FF] flex items-center justify-center">
-                          <Icon className="w-5 h-5" />
+                        <div>
+                          <div className="relative h-40 overflow-hidden bg-[#090B14]">
+                            <img
+                              src={theme.thumbnailUrl}
+                              alt={theme.name}
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-black/25 to-transparent" />
+                            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
+                              <span className="px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[9px] font-extrabold">
+                                {evLabel}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full bg-[#111528]/90 border border-[#D4AF37]/50 text-[#E6C76B] text-[9px] font-extrabold">
+                                {theme.tierBadge}
+                              </span>
+                            </div>
+                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-950/90 border border-indigo-400/40 text-[#00F0FF] text-[9px] font-extrabold">
+                                {theme.styleCategory}
+                              </span>
+                              <div
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/70 border border-white/15"
+                                title="Palet Warna Tema"
+                              >
+                                {theme.paletteColors.map((hex) => (
+                                  <span
+                                    key={hex}
+                                    className="w-2.5 h-2.5 rounded-full border border-white/70"
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-3.5 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="font-sans text-sm font-extrabold text-white truncate">
+                                {theme.name}
+                              </h4>
+                              <span className="text-[9px] font-mono text-indigo-300 bg-[#090B14] px-1.5 py-0.5 rounded border border-indigo-500/30 shrink-0">
+                                {theme.profileFrameStyle === 'ARCH_DOME'
+                                  ? 'Arch Dome'
+                                  : theme.profileFrameStyle === 'CIRCLE'
+                                    ? 'Circle'
+                                    : 'Editorial'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-indigo-200/80 line-clamp-2 leading-relaxed">
+                              {lang === 'ID' ? theme.taglineId : theme.taglineEn}
+                            </p>
+                          </div>
                         </div>
-                        <h4 className="font-extrabold text-white text-sm">
-                          {feat.title}
-                        </h4>
-                        <p className="text-xs text-indigo-200/80 leading-relaxed">
-                          {feat.desc}
-                        </p>
+
+                        <div className="p-3 pt-0 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleApplyCatalogThemeDemo(theme)}
+                            className={`w-full py-2 px-3 rounded-xl text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition-all ${
+                              isCurrentTheme
+                                ? 'bg-emerald-500 text-stone-950 shadow-sm'
+                                : 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-95 text-white'
+                            }`}
+                          >
+                            <Eye className="w-3.5 h-3.5 shrink-0" />
+                            <span>
+                              {isCurrentTheme
+                                ? lang === 'ID'
+                                  ? '✓ Sedang Tampil di Simulator'
+                                  : '✓ Active in Simulator'
+                                : lang === 'ID'
+                                  ? 'Lihat Demo'
+                                  : 'Live Demo'}
+                            </span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {filteredCatalogThemes.length > 12 && (
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAllCatalogThemes((prev) => !prev)
+                      }
+                      className="px-5 py-2.5 rounded-2xl bg-[#111528] hover:bg-indigo-950 border border-[#00F0FF]/50 text-[#00F0FF] text-xs font-extrabold inline-flex items-center gap-2 transition-all shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>
+                        {showAllCatalogThemes
+                          ? lang === 'ID'
+                            ? 'Ringkas Tampilan Tema (12 Tema Utama)'
+                            : 'Show Compact Theme Grid (12 Themes)'
+                          : lang === 'ID'
+                            ? `Tampilkan Semua ${filteredCatalogThemes.length} Tema Desain Multi-Event`
+                            : `View All ${filteredCatalogThemes.length} Multi-Event Themes`}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 
-            {/* SECTION 3: PAKET KOMERSIAL (STARTER -> EXCLUSIVE -> ROYAL VIP) — CLICKING OPENS DEDICATED CHECKOUT PAGE */}
+            {/* SECTION 2: 4 PILAR EKOSISTEM + 5 LANGKAH MUDAH + 6 MODUL UNGGULAN MEPLANNER */}
+            <section
+              id="fitur"
+              className="py-12 sm:py-16 bg-[#111528] border-y border-indigo-500/30 space-y-12"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                {/* 4 PILAR EKOSISTEM ("LEBIH DARI SEKADAR UNDANGAN DIGITAL") */}
+                <div className="space-y-6">
+                  <div className="text-center max-w-3xl mx-auto">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Ekosistem Terlengkap Wevitation × MEPlanner'
+                        : 'Complete All-in-One Event & Invitation Ecosystem'}
+                    </span>
+                    <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
+                      {lang === 'ID'
+                        ? 'Lebih dari Sekadar Undangan Digital'
+                        : 'More Than Just a Digital Invitation'}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-indigo-200/80 mt-2">
+                      {lang === 'ID'
+                        ? '4 Pilar Utama yang menyatukan undangan interaktif, manajemen kado modern, persiapan acara 8 domain, hingga kecerdasan buatan MEPlanner AI.'
+                        : '4 Core Pillars uniting interactive invitations, modern gift registries, 8-domain event planning, and MEPlanner AI.'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(lang === 'ID'
+                      ? [
+                          {
+                            badge: 'PILAR 1 • UNDANGAN',
+                            title: '1. Undangan Digital Multi-Event',
+                            desc: '31+ tema desain eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat, Gala), musik latar NCS/Spotify/MP3, galeri HD, & hitung mundur multi-sesi.',
+                            highlights: [
+                              '31+ Tema Siap Pakai',
+                              '3 Bingkai Foto & Ornamen',
+                              'Aktif Selamanya (Sekali Bayar)',
+                            ],
+                          },
+                          {
+                            badge: 'PILAR 2 • KADO & HADIAH',
+                            title: '2. Kado Cashless & Gift Registry',
+                            desc: 'Terima tanda kasih via Transfer Bank, QRIS Nasional, PayPal, & Crypto USDT, lengkap dengan fitur Kirim Kado Fisik ke Alamat & Wishlist.',
+                            highlights: [
+                              'Amplop Digital Multi-Currency',
+                              'Kirim Kado ke Alamat Rumah',
+                              'Wishlist / Gift Registry Tamu',
+                            ],
+                          },
+                          {
+                            badge: 'PILAR 3 • EVENT PLANNER',
+                            title: '3. Event Planner Terpadu',
+                            desc: 'Kelola Budget vs Realisasi kontrak vendor, To-Do List H-6 Bulan s/d Hari-H, pembagian PIC keluarga/WO, dan timeline acara dalam 1 workspace.',
+                            highlights: [
+                              'Kalkulator Pagu & DP Vendor',
+                              'Checklist Bertahap & PIC',
+                              '4 Akun Inti + Tim WO/EO',
+                            ],
+                          },
+                          {
+                            badge: 'PILAR 4 • AI & HARI-H',
+                            title: '4. MEPlanner AI & Layar Tamu',
+                            desc: 'Analisis sentimen ucapan & doa berbasis AI (AI Wishes Insight), moderasi otomatis, serta Layar Penerima Tamu (Guest Reception) saat Hari-H.',
+                            highlights: [
+                              'MEPlanner AI Wishes Insight',
+                              'Layar Penerima Tamu Hari-H',
+                              '21-Char Hash & QR Check-In',
+                            ],
+                          },
+                        ]
+                      : [
+                          {
+                            badge: 'PILLAR 1 • INVITATIONS',
+                            title: '1. Multi-Event Digital Invitations',
+                            desc: '31+ curated themes across Wedding, Birthday, Graduation, Corporate & Gala with custom music, HD gallery, and multi-session countdowns.',
+                            highlights: [
+                              '31+ Curated Themes',
+                              '3 Profile Frames & Ornaments',
+                              'Lifetime Active Access',
+                            ],
+                          },
+                          {
+                            badge: 'PILLAR 2 • GIFTS & REGISTRY',
+                            title: '2. Cashless Gift & Wishlist Registry',
+                            desc: 'Receive digital envelopes via Bank Transfer, QRIS, PayPal & Crypto USDT, plus physical gift shipping address & wishlist registry.',
+                            highlights: [
+                              'Multi-Currency Digital Envelope',
+                              'Direct Gift Shipping Address',
+                              'Interactive Wishlist Registry',
+                            ],
+                          },
+                          {
+                            badge: 'PILLAR 3 • EVENT PLANNER',
+                            title: '3. Integrated Event Planner',
+                            desc: 'Track vendor budgets vs actual contracts, 6-Month phased To-Do Lists, family/WO PIC ownership, and run-of-show timelines.',
+                            highlights: [
+                              'Vendor Budget & DP Tracker',
+                              'Phased Checklist & PIC Roles',
+                              '4 Core Logins + WO Team',
+                            ],
+                          },
+                          {
+                            badge: 'PILLAR 4 • AI & RECEPTION',
+                            title: '4. MEPlanner AI & Guest Reception',
+                            desc: 'AI-powered guestbook sentiment summary (AI Wishes Insight), auto-moderation, and live Guest Reception check-in screen on Event Day.',
+                            highlights: [
+                              'MEPlanner AI Wishes Insight',
+                              'Live Guest Reception Screen',
+                              '21-Char Hash & QR Check-In',
+                            ],
+                          },
+                        ]
+                    ).map((pil) => (
+                      <div
+                        key={pil.title}
+                        className="p-5 rounded-3xl bg-[#090B14] border border-indigo-500/40 hover:border-[#00F0FF]/60 transition-all flex flex-col justify-between gap-4 shadow-md"
+                      >
+                        <div className="space-y-2.5">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[#00F0FF] font-mono text-[9px] font-extrabold">
+                            {pil.badge}
+                          </span>
+                          <h4 className="font-sans text-base font-extrabold text-white">
+                            {pil.title}
+                          </h4>
+                          <p className="text-xs text-indigo-200/80 leading-relaxed">
+                            {pil.desc}
+                          </p>
+                        </div>
+                        <ul className="space-y-1.5 pt-3 border-t border-indigo-500/25 text-[11px] text-emerald-300 font-bold">
+                          {pil.highlights.map((h) => (
+                            <li key={h} className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                              <span>{h}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CARA KERJA DALAM 5 LANGKAH MUDAH */}
+                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-[#090B14] via-[#131836] to-[#090B14] border border-indigo-500/40 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                        {lang === 'ID'
+                          ? 'Alur Pembuatan Instan'
+                          : 'Instant Setup Workflow'}
+                      </span>
+                      <h4 className="font-sans text-lg sm:text-2xl font-extrabold text-white">
+                        {lang === 'ID'
+                          ? 'Cara Kerja dalam 5 Langkah Mudah'
+                          : 'How It Works in 5 Easy Steps'}
+                      </h4>
+                    </div>
+                    <a
+                      href="#paket"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-xs font-extrabold inline-flex items-center gap-1.5 self-start sm:self-auto"
+                    >
+                      <span>
+                        {lang === 'ID'
+                          ? 'Mulai dari Paket Gratis Rp 0'
+                          : 'Start with Rp 0 Free Plan'}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {(lang === 'ID'
+                      ? [
+                          {
+                            step: '01',
+                            title: 'Daftar & Lengkapi Data',
+                            desc: 'Pilih jenis acara, isi profil tuan rumah/mempelai, jadwal 2 sesi, & koordinat Google Maps.',
+                          },
+                          {
+                            step: '02',
+                            title: 'Pilih Desain Tema',
+                            desc: 'Bebas pilih & ganti dari 31+ tema desain eksklusif beserta palet warna & bingkai foto.',
+                          },
+                          {
+                            step: '03',
+                            title: 'Tambah Daftar Tamu',
+                            desc: 'Input atau impor daftar tamu VIP lengkap dengan alokasi kuota Pax & kategori prioritas.',
+                          },
+                          {
+                            step: '04',
+                            title: 'Bagikan Link & Hash/QR',
+                            desc: 'Kirim undangan WhatsApp personal 1-klik dengan 21-Char Hash Token unik tiap tamu.',
+                          },
+                          {
+                            step: '05',
+                            title: 'Pantau RSVP & Layar Tamu',
+                            desc: 'Pantau konfirmasi kehadiran, kado cashless, AI Wishes, & Layar Penerima Tamu Hari-H.',
+                          },
+                        ]
+                      : [
+                          {
+                            step: '01',
+                            title: 'Register & Fill Event Info',
+                            desc: 'Select your event type, host profiles, 2-session schedule, and Google Maps coordinates.',
+                          },
+                          {
+                            step: '02',
+                            title: 'Pick Your Theme',
+                            desc: 'Choose and switch anytime among 31+ curated themes, palettes, and photo frames.',
+                          },
+                          {
+                            step: '03',
+                            title: 'Add Guest List',
+                            desc: 'Add or import VIP guests with custom Pax quotas and priority badges.',
+                          },
+                          {
+                            step: '04',
+                            title: 'Share Link & Hash/QR',
+                            desc: 'Send 1-click personalized WhatsApp links secured with 21-Char Hash Tokens.',
+                          },
+                          {
+                            step: '05',
+                            title: 'Track RSVP & Reception',
+                            desc: 'Monitor live RSVPs, cashless gifts, AI Wishes, and Event Day Guest Reception.',
+                          },
+                        ]
+                    ).map((stItem) => (
+                      <div
+                        key={stItem.step}
+                        className="p-4 rounded-2xl bg-[#111528]/90 border border-indigo-500/35 space-y-1.5"
+                      >
+                        <span className="px-2 py-0.5 rounded-md bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] font-mono text-[10px] font-extrabold">
+                          LANGKAH {stItem.step}
+                        </span>
+                        <h5 className="text-xs sm:text-sm font-extrabold text-white pt-1">
+                          {stItem.title}
+                        </h5>
+                        <p className="text-[11px] text-indigo-200/80 leading-relaxed">
+                          {stItem.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 6 MODUL TERINTEGRASI DALAM 1 EKOSISTEM */}
+                <div>
+                  <div className="text-center max-w-3xl mx-auto mb-8">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Arsitektur Cloud Enterprise MEPlanner SaaS'
+                        : 'MEPlanner SaaS Enterprise Cloud Architecture'}
+                    </span>
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                      {lang === 'ID'
+                        ? '6 Modul Terintegrasi dalam 1 Ekosistem'
+                        : '6 Integrated Modules in 1 Ecosystem'}
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 min-w-0">
+                    {(lang === 'ID'
+                      ? [
+                          {
+                            icon: LayoutDashboard,
+                            title: '1. Readiness Tracker 8 Domain',
+                            desc: 'Pantau persentase kesiapan administrasi Polri/TNI, Gereja/KUA, Kependudukan, Kesehatan, Vendor, hingga Hari-H secara eksekutif.',
+                          },
+                          {
+                            icon: Calendar,
+                            title: '2. Checklist Bertahap & PIC',
+                            desc: 'Manajemen tugas dari H-6 Bulan hingga Setelah Acara dengan pembagian PIC (Mempelai, Keluarga, atau Panitia/WO).',
+                          },
+                          {
+                            icon: Wallet,
+                            title: '3. Moneter, Vendor & Amplop Digital',
+                            desc: 'Kontrol anggaran vs realisasi kontrak vendor, pelacakan DP/Lunas, serta amplop digital Bank, QRIS, PayPal & Crypto USDT.',
+                          },
+                          {
+                            icon: Send,
+                            title: '4. Tamu VIP & Hash Token 21-Char',
+                            desc: 'Mendukung kode hash unik 21 karakter per tamu, deteksi otomatis lencana Tamu VIP, dan pengiriman undangan WhatsApp personal.',
+                          },
+                          {
+                            icon: ImageIcon,
+                            title: '5. Studio Foto 10 MB & Smart Audio',
+                            desc: 'Unggah foto Ultra-HD hingga 10 MB per foto dengan Interactive Cropper & pemutar musik latar dari Supabase Storage CDN.',
+                          },
+                          {
+                            icon: Shield,
+                            title: '6. Multi-Client SaaS & White-Label WO',
+                            desc: 'Setiap klien memiliki 4 Akun Default Inti + akun Panitia, ditambah fitur Branding Teks & Logo khusus paket Mitra WO/EO.',
+                          },
+                        ]
+                      : [
+                          {
+                            icon: LayoutDashboard,
+                            title: '1. 8-Domain Readiness Tracker',
+                            desc: 'Monitor executive readiness across Civil/Military permits, Church/KUA, Legal documents, Health, Vendors, and Event Day operations.',
+                          },
+                          {
+                            icon: Calendar,
+                            title: '2. Phased Timeline & PIC Assignment',
+                            desc: 'Manage tasks from 6 Months Prior to Post-Event with clear PIC ownership (Host, Family, or WO Committee).',
+                          },
+                          {
+                            icon: Wallet,
+                            title: '3. Vendor Budget & Digital Envelope',
+                            desc: 'Track estimated vs actual vendor contracts, DP/paid status, plus Digital Envelopes via Bank, PayPal & Crypto USDT.',
+                          },
+                          {
+                            icon: Send,
+                            title: '4. VIP Guest CRM & 21-Char Hash Token',
+                            desc: 'Supports unique 21-character VIP guest hash tokens, automatic VIP badge detection, and personalized 1-click WhatsApp invitations.',
+                          },
+                          {
+                            icon: ImageIcon,
+                            title: '5. 10 MB Photo Studio & Smart Audio',
+                            desc: 'Upload Ultra-HD photos up to 10 MB with non-destructive Studio Cropper & custom MP3 background music powered by Supabase CDN.',
+                          },
+                          {
+                            icon: Shield,
+                            title: '6. Multi-Client SaaS & WO White-Label',
+                            desc: 'Each client gets 4 Core Logins + WO Committee accounts, plus Custom Text & Logo White-Labeling on Mitra tiers.',
+                          },
+                        ]
+                    ).map((feat) => {
+                      const Icon = feat.icon;
+                      return (
+                        <div
+                          key={feat.title}
+                          className="min-w-0 p-5 rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/50 transition-all space-y-2.5 shadow-md"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1]/25 to-[#8B5CF6]/25 border border-indigo-400/45 text-[#00F0FF] flex items-center justify-center">
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <h4 className="font-extrabold text-white text-sm">
+                            {feat.title}
+                          </h4>
+                          <p className="text-xs text-indigo-200/80 leading-relaxed">
+                            {feat.desc}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 2B: DAMPAK LINGKUNGAN HIJAU (ECO-IMPACT + MODAL)          */}
+            {/* ================================================================= */}
+            <section className="py-10 sm:py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="rounded-3xl bg-gradient-to-br from-emerald-950/90 via-[#0E1F1C] to-[#090B14] border-2 border-emerald-500/45 p-6 sm:p-8 shadow-[0_20px_50px_rgba(16,185,129,0.15)] space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-1.5 max-w-2xl">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                      🌿 Gerakan Undangan Ramah Lingkungan • Sustainability Impact
+                    </span>
+                    <h3 className="font-sans text-xl sm:text-3xl font-extrabold text-white">
+                      {lang === 'ID'
+                        ? 'Setiap Undangan Digital Ikut Menjaga Bumi'
+                        : 'Every Digital Invitation Helps Protect Our Planet'}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-emerald-100/85 leading-relaxed">
+                      {lang === 'ID'
+                        ? 'Dengan beralih dari undangan cetak fisik (kertas art carton, amplop, plastik & pengiriman kurir) ke undangan digital MEPlanner, jutaan lembar kertas dan emisi karbon berhasil dihindari.'
+                        : 'By switching from printed paper invitations and physical courier shipping to MEPlanner digital invitations, tons of paper and carbon emissions are avoided.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEcoModalOpen(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-extrabold text-xs inline-flex items-center gap-2 self-start lg:self-auto shrink-0 shadow-md transition-all"
+                  >
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Bagaimana kami menghitung dampak ini?'
+                        : 'How do we calculate this impact?'}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-emerald-300">
+                      46.8 Ton
+                    </p>
+                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                      {lang === 'ID'
+                        ? 'Kertas berhasil dihindari'
+                        : 'Paper waste avoided'}
+                    </p>
+                    <p className="text-[11px] text-emerald-200/75">
+                      {lang === 'ID'
+                        ? 'Setara penghematan ribuan batang pohon dewasa dari kertas A5 & amplop tebal.'
+                        : 'Equivalent to saving thousands of mature trees from A5 cards & envelopes.'}
+                    </p>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-[#00F0FF]">
+                      288 tCO2e
+                    </p>
+                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                      {lang === 'ID'
+                        ? 'Emisi karbon berhasil dikurangi'
+                        : 'Carbon emissions reduced'}
+                    </p>
+                    <p className="text-[11px] text-emerald-200/75">
+                      {lang === 'ID'
+                        ? 'Mengurangi jejak karbon produksi pabrik kertas, tinta cetak, dan transportasi distribusi.'
+                        : 'Eliminates carbon footprint from paper mills, chemical inks, and courier transport.'}
+                    </p>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-black/35 border border-emerald-400/35 space-y-1">
+                    <p className="text-2xl sm:text-4xl font-extrabold text-[#E6C76B]">
+                      2.5 M+
+                    </p>
+                    <p className="text-xs sm:text-sm font-extrabold text-white">
+                      {lang === 'ID'
+                        ? 'Undangan digital dibagikan'
+                        : 'Digital invitations shared'}
+                    </p>
+                    <p className="text-[11px] text-emerald-200/75">
+                      {lang === 'ID'
+                        ? 'Terkirim instan dalam hitungan detik ke seluruh Indonesia & mancanegara via WhatsApp.'
+                        : 'Delivered instantaneously across Indonesia & worldwide via WhatsApp.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 3: 6 PAKET KOMERSIAL (HARGA 75% DARI WEVITATION!)         */}
+            {/* ================================================================= */}
             <section
               id="paket"
-              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-16"
             >
-              <div className="text-center max-w-3xl mx-auto mb-10">
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
-                  {lang === 'ID'
-                    ? 'Lisensi & Layanan Komersial MEPlan SaaS (QRIS • Transfer Bank • Kartu Kredit • PayPal • Crypto)'
-                    : 'MEPlan SaaS Commercial Plans & Licensing (Credit Card • PayPal • Crypto USDT)'}
+              <div className="text-center max-w-3xl mx-auto space-y-3">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/50 text-[#E6C76B] text-[11px] font-extrabold uppercase tracking-widest">
+                  🔥 Jaminan Harga Terbaik: Tepat 75% dari Harga Wevitation (Hemat 25%!)
                 </span>
-                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white mt-1">
+                <h3 className="font-sans text-2xl sm:text-4xl font-extrabold text-white">
                   {lang === 'ID'
-                    ? 'Pilihan Paket My Event Planner'
-                    : 'My Event Planner Packages'}
+                    ? '6 Pilihan Paket MEPlanner (Gratis s/d Mitra WO/EO)'
+                    : '6 MEPlanner Packages (Free Trial to Agency White-Label)'}
                 </h3>
-                <div
-                  aria-hidden="true"
-                  className="flex items-center justify-center gap-2.5 my-2.5 text-[#00F0FF]"
-                >
-                  <span className="w-12 sm:w-20 h-px bg-gradient-to-r from-transparent via-[#6366F1] to-[#00F0FF]" />
-                  <span className="w-2 h-2 rotate-45 bg-[#00F0FF]" />
-                  <span className="w-12 sm:w-20 h-px bg-gradient-to-l from-transparent via-[#6366F1] to-[#00F0FF]" />
-                </div>
-                <p className="text-xs sm:text-sm text-indigo-200/80 mt-1">
+                <p className="text-xs sm:text-sm text-indigo-200/85">
                   {lang === 'ID'
-                    ? 'Klik tombol Pilih Paket di bawah untuk membuka halaman pembayaran multi-wallet & verifikasi lisensi idempoten.'
-                    : 'Click Select & Checkout on any plan below to open the dedicated multi-wallet payment & idempotent activation page.'}
+                    ? 'Seluruh fitur kelas atas Wevitation + Full Event Planner 8 Domain dengan harga 25% lebih murah. Sekali bayar, undangan aktif selamanya!'
+                    : 'All premium digital invitation features + 8-Domain Event Planner at 75% of competitor pricing. One-time payment, active forever!'}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch min-w-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch min-w-0">
                 {commercialPackages.map((pkg) => {
                   const isRoyal = pkg.styleVariant === 'royal';
                   const isExclusive = pkg.styleVariant === 'exclusive';
 
                   return (
                     <div
-                      key={pkg.tier}
+                      key={pkg.id}
                       className={`min-w-0 overflow-hidden rounded-3xl p-6 flex flex-col justify-between transition-all ${
                         isRoyal
-                          ? 'bg-gradient-to-b from-[#1A1423] via-[#111528] to-[#1E1712] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(212,175,55,0.25)] relative'
+                          ? 'bg-gradient-to-b from-[#1A1423] via-[#111528] to-[#1E1712] text-[#FAF3E3] border-2 border-[#D4AF37] shadow-[0_20px_50px_rgba(212,175,55,0.22)] relative'
                           : isExclusive
-                            ? 'bg-gradient-to-b from-[#161B36] to-[#111528] text-white border-2 border-[#6366F1] shadow-[0_18px_40px_rgba(99,102,241,0.25)]'
-                            : 'bg-[#111528] text-slate-100 border border-indigo-500/35 shadow-md'
+                            ? 'bg-gradient-to-b from-[#161B36] to-[#111528] text-white border-2 border-[#6366F1] shadow-[0_18px_40px_rgba(99,102,241,0.22)]'
+                            : 'bg-[#111528] text-slate-100 border border-indigo-500/40 shadow-md'
                       }`}
                     >
                       <div className="space-y-4 min-w-0">
-                        {/* Package Badge */}
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        {/* Package Badge & Discount Pill */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5">
                           <span
                             className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                               isRoyal
@@ -6380,23 +8288,34 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           >
                             {pkg.badge}
                           </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold">
+                            {pkg.discountBadge}
+                          </span>
                         </div>
 
-                        {/* Title & Strictly Separated Pricing Block */}
+                        {/* Title, Subtitle & Strictly Separated 75% Pricing Block */}
                         <div className="min-w-0">
-                          <h4 className="font-sans text-xl font-extrabold text-white">
-                            {pkg.name}
-                          </h4>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <h4 className="font-sans text-xl sm:text-2xl font-extrabold text-white">
+                              {pkg.name}
+                            </h4>
+                            <span className="text-[10px] font-mono font-bold text-indigo-300">
+                              {pkg.wevitationPriceLabel}
+                            </span>
+                          </div>
+                          <p className="text-xs text-indigo-200/80 mt-0.5">
+                            {pkg.subtitle}
+                          </p>
 
                           <div className="mt-3 pt-3 border-t border-indigo-500/25">
-                            <div className="flex items-baseline gap-2 flex-wrap">
+                            <div className="flex items-baseline gap-2.5 flex-wrap">
                               <span
                                 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
                                   isRoyal
                                     ? 'text-[#D4AF37]'
                                     : isExclusive
                                       ? 'text-[#00F0FF]'
-                                      : 'text-white'
+                                      : 'text-emerald-300'
                                 }`}
                               >
                                 {pkg.priceMain}
@@ -6420,7 +8339,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </div>
 
                         {/* Features List */}
-                        <ul className="space-y-2.5 text-xs pt-1">
+                        <ul className="space-y-2 text-xs pt-1">
                           {pkg.features.map((f) => (
                             <li key={f} className="flex items-start gap-2">
                               <CheckCircle2
@@ -6429,7 +8348,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                     ? 'text-[#D4AF37]'
                                     : isExclusive
                                       ? 'text-[#00F0FF]'
-                                      : 'text-[#6366F1]'
+                                      : 'text-emerald-400'
                                 }`}
                               />
                               <span
@@ -6446,21 +8365,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         </ul>
                       </div>
 
-                      {/* CTA Buttons: Preview Tier in Live Tour OR Open Dedicated Checkout Page */}
+                      {/* CTA Buttons: Preview Tier in Live Simulator OR Open Dedicated Checkout Page */}
                       <div className="pt-5 mt-5 border-t border-indigo-500/25 space-y-2 min-w-0">
                         <button
                           type="button"
                           onClick={() => {
-                            setSimPackageTier(
-                              pkg.tier as 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP'
-                            );
+                            setSimPackageTier(pkg.simTier);
                             setShowcaseViewMode('invitation_sim');
                             scrollToShowcase();
                           }}
                           title={
                             lang === 'ID'
-                              ? `Uji Coba Simulasi Fitur Paket ${pkg.tier} di Katalog Interaktif`
-                              : `Test ${pkg.tier} Plan Features in the Interactive Showcase`
+                              ? `Uji Coba Simulasi Fitur Paket ${pkg.name} di Simulator Interaktif`
+                              : `Test ${pkg.name} Plan Features in the Interactive Simulator`
                           }
                           className={`w-full max-w-full py-2.5 px-3 rounded-xl font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all border ${
                             isRoyal
@@ -6471,29 +8388,27 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           <Eye className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">
                             {lang === 'ID'
-                              ? `Lihat Simulasi Paket ${pkg.tier} di Katalog`
-                              : `Preview ${pkg.tier} Plan in Showcase`}
+                              ? `Simulasi Paket ${pkg.name}`
+                              : `Preview ${pkg.name} Plan`}
                           </span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={() =>
-                            handleSelectPackageForCheckout(pkg.tier)
-                          }
+                          onClick={() => handleSelectPackageForCheckout(pkg.id)}
                           className={`w-full max-w-full py-3.5 px-4 rounded-2xl font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all ${
                             isRoyal
                               ? 'bg-gradient-to-r from-[#D4AF37] via-[#E6C76B] to-[#B68D40] text-stone-950 hover:from-[#C5A059] hover:to-[#9A742B] shadow-md'
                               : isExclusive
                                 ? 'bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#EC4899] hover:opacity-95 text-white shadow-md'
-                                : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
+                                : 'bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-sm'
                           }`}
                         >
                           <Wallet className="w-4 h-4 shrink-0" />
                           <span className="truncate">
                             {lang === 'ID'
-                              ? `Pilih Paket ${pkg.tier} & Bayar`
-                              : `Select ${pkg.tier} & Checkout`}
+                              ? `Pilih Paket ${pkg.name} (${pkg.priceMain})`
+                              : `Select ${pkg.name} (${pkg.priceMain})`}
                           </span>
                         </button>
                       </div>
@@ -6502,9 +8417,423 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 })}
               </div>
             </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 4: ARTIKEL & INSPIRASI TERBARU (#blog)                    */}
+            {/* ================================================================= */}
+            <section
+              id="blog"
+              className="py-12 sm:py-16 bg-[#111528] border-t border-indigo-500/30"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Wawasan & Panduan Persiapan Acara'
+                        : 'Event Planning Guides & Inspiration'}
+                    </span>
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                      {lang === 'ID'
+                        ? 'Artikel & Inspirasi Terbaru'
+                        : 'Latest Articles & Inspiration'}
+                    </h3>
+                  </div>
+                  <span className="text-xs text-indigo-200/80">
+                    {lang === 'ID'
+                      ? 'Klik artikel untuk membaca tips lengkap & checklist praktis'
+                      : 'Click any article to read the full guide & checklist'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {BLOG_ARTICLES.map((art) => (
+                    <div
+                      key={art.id}
+                      onClick={() => setActiveBlogArticle(art)}
+                      className="group cursor-pointer rounded-2xl bg-[#090B14] border border-indigo-500/35 hover:border-[#00F0FF]/60 overflow-hidden flex flex-col justify-between transition-all shadow-md"
+                    >
+                      <div>
+                        <div className="relative h-36 overflow-hidden">
+                          <img
+                            src={art.imageUrl}
+                            alt={lang === 'ID' ? art.titleId : art.titleEn}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-transparent to-transparent" />
+                          <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-[#00F0FF] text-[9px] font-extrabold">
+                            {art.category}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <span className="text-[10px] font-mono text-indigo-300">
+                            ⏱️ {art.readTime}
+                          </span>
+                          <h4 className="font-sans text-xs sm:text-sm font-extrabold text-white line-clamp-3 group-hover:text-[#00F0FF] transition-colors leading-snug">
+                            {lang === 'ID' ? art.titleId : art.titleEn}
+                          </h4>
+                          <p className="text-[11px] text-indigo-200/75 line-clamp-3 leading-relaxed">
+                            {lang === 'ID' ? art.excerptId : art.excerptEn}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-4 py-2.5 border-t border-indigo-500/20 flex items-center justify-between text-[11px] font-extrabold text-[#00F0FF]">
+                        <span>
+                          {lang === 'ID'
+                            ? 'Baca Selengkapnya'
+                            : 'Read Full Article'}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* SECTION 5: FAQ INTERAKTIF & CUSTOMER SERVICE + MEPLANNER AI (#faq)*/}
+            {/* ================================================================= */}
+            <section
+              id="faq"
+              className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-16"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left 7 Cols: Interactive FAQ Accordion */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Pertanyaan yang Sering Diajukan (FAQ)'
+                        : 'Frequently Asked Questions (FAQ)'}
+                    </span>
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                      {lang === 'ID'
+                        ? 'Semua Hal Tentang MEPlanner & Harga 75%'
+                        : 'Everything About MEPlanner & 75% Pricing'}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {FAQ_ITEMS.map((item, idx) => {
+                      const isOpen = openFaqIdx === idx;
+                      return (
+                        <div
+                          key={item.qId}
+                          className={`rounded-2xl border transition-all overflow-hidden ${
+                            isOpen
+                              ? 'bg-[#111528] border-[#00F0FF]/60 shadow-md'
+                              : 'bg-[#111528]/70 border-indigo-500/35 hover:border-indigo-400/60'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenFaqIdx(isOpen ? -1 : idx)
+                            }
+                            className="w-full p-4 text-left flex items-center justify-between gap-3"
+                          >
+                            <span className="text-xs sm:text-sm font-extrabold text-white leading-snug">
+                              {lang === 'ID' ? item.qId : item.qEn}
+                            </span>
+                            <ChevronDown
+                              className={`w-4 h-4 text-[#00F0FF] shrink-0 transition-transform ${
+                                isOpen ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
+                          {isOpen && (
+                            <div className="px-4 pb-4 pt-1 border-t border-indigo-500/20 text-xs text-indigo-100/90 leading-relaxed">
+                              {lang === 'ID' ? item.aId : item.aEn}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right 5 Cols: Customer Service & MEPlanner AI Assistant */}
+                <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-[#161B36] via-[#111528] to-[#1A1333] border-2 border-[#00F0FF]/50 p-5 sm:p-6 shadow-[0_20px_50px_rgba(99,102,241,0.22)] space-y-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-extrabold">
+                        ● Online • Setiap Hari 08.00 - 20.00 WIB
+                      </span>
+                      <h4 className="font-sans text-lg sm:text-xl font-extrabold text-white mt-2">
+                        {lang === 'ID'
+                          ? 'Masih Ada Pertanyaan? Tanya MEPlanner AI atau CS Kami!'
+                          : 'Still Have Questions? Ask MEPlanner AI or Our CS!'}
+                      </h4>
+                      <p className="text-xs text-indigo-200/85 mt-1">
+                        {lang === 'ID'
+                          ? 'Pilih topik instan di bawah untuk mendapatkan jawaban langsung dari MEPlanner AI, atau hubungi tim Customer Service kami via WhatsApp.'
+                          : 'Select a quick topic below for an instant answer from MEPlanner AI, or chat with our Customer Service on WhatsApp.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Interactive AI Quick Prompts */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#00F0FF]">
+                      {lang === 'ID'
+                        ? 'Tanya Cepat MEPlanner AI (Klik Pertanyaan):'
+                        : 'Quick Ask MEPlanner AI (Click a Prompt):'}
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {AI_QUICK_PROMPTS.map((prm, pIdx) => {
+                        const isSelected = selectedAiPromptIdx === pIdx;
+                        return (
+                          <button
+                            key={prm.id}
+                            type="button"
+                            onClick={() => setSelectedAiPromptIdx(pIdx)}
+                            className={`text-left px-3 py-2 rounded-xl text-xs font-extrabold border transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white border-[#00F0FF]'
+                                : 'bg-[#090B14] hover:bg-indigo-950 text-indigo-200 border-indigo-500/35'
+                            }`}
+                          >
+                            {lang === 'ID' ? prm.questionId : prm.questionEn}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#090B14] border border-[#00F0FF]/40 text-xs text-emerald-100 leading-relaxed">
+                      {lang === 'ID'
+                        ? AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerId
+                        : AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerEn}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-indigo-500/30 flex flex-col sm:flex-row gap-2.5">
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-3 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-extrabold text-xs inline-flex items-center justify-center gap-2 shadow-md transition-all"
+                    >
+                      <Send className="w-4 h-4 shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Chat CS WhatsApp (08.00 - 20.00 WIB)'
+                          : 'Chat WhatsApp Support'}
+                      </span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPackageForCheckout('GRATIS')}
+                      className="py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+                      <span>
+                        {lang === 'ID' ? 'Coba Gratis Rp 0' : 'Try Free Rp 0'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
           </>
         )}
       </main>
+
+      {/* ================================================================= */}
+      {/* MODAL 1: BAGAIMANA KAMI MENGHITUNG DAMPAK LINGKUNGAN (ECO-MODAL)   */}
+      {/* ================================================================= */}
+      {isEcoModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsEcoModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-3xl bg-[#090B14] border-2 border-emerald-400/60 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 bg-emerald-950/90 border-b border-emerald-500/40 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-extrabold">
+                  🌿 METODOLOGI ECO-IMPACT
+                </span>
+                <h4 className="font-sans text-sm sm:text-base font-extrabold text-white">
+                  {lang === 'ID'
+                    ? 'Bagaimana Kami Menghitung Dampak Ini?'
+                    : 'How Do We Calculate This Environmental Impact?'}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEcoModalOpen(false)}
+                className="p-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 sm:p-6 space-y-4 text-xs text-indigo-100 leading-relaxed max-h-[78vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
+                  <p className="font-extrabold text-emerald-300 text-sm">
+                    1. Kertas (Undangan A5 &amp; Amplop)
+                  </p>
+                  <p className="text-indigo-200/85">
+                    Satu set undangan cetak fisik rata-rata membutuhkan kartu A5
+                    art carton tebal (210–260 gsm), amplop berlapis, serta plastik
+                    kemasan (~18–20 gram per undangan). Mengalikan jutaan
+                    undangan digital yang dibagikan menghasilkan penghematan{' '}
+                    <strong className="text-white">46.8 Ton kertas</strong>.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
+                  <p className="font-extrabold text-[#00F0FF] text-sm">
+                    2. Tinta Cetak &amp; Laminasi Kimia
+                  </p>
+                  <p className="text-indigo-200/85">
+                    Meniadakan penggunaan tinta offset berbasis minyak, foil emas
+                    panas (hotprint), dan laminasi plastik doff/glossy yang sulit
+                    terurai di tanah dalam puluhan tahun.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
+                  <p className="font-extrabold text-[#E6C76B] text-sm">
+                    3. Distribusi &amp; Emisi Transportasi
+                  </p>
+                  <p className="text-indigo-200/85">
+                    Undangan fisik memerlukan pengiriman kurir motor/mobil/pesawat
+                    ke tiap alamat tamu. Distribusi digital via WhatsApp menekan
+                    emisi hingga <strong className="text-white">288 tCO2e</strong>.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#111528] border border-emerald-500/35 space-y-1.5">
+                  <p className="font-extrabold text-emerald-300 text-sm">
+                    4. Prinsip Perhitungan Konservatif
+                  </p>
+                  <p className="text-indigo-200/85">
+                    Kami menggunakan faktor konversi siklus hidup kertas &amp;
+                    logistik konservatif setelah dikurangi estimasi konsumsi
+                    energi server cloud modern yang efisien.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEcoModalOpen(false)}
+                  className="px-5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-stone-950 font-extrabold text-xs"
+                >
+                  {lang === 'ID' ? 'Mengerti & Tutup' : 'Got It & Close'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL 2: PEMBACA ARTIKEL & INSPIRASI BLOG (activeBlogArticle)      */}
+      {/* ================================================================= */}
+      {activeBlogArticle && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setActiveBlogArticle(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-3xl bg-[#090B14] border-2 border-[#00F0FF]/50 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative h-48 overflow-hidden">
+              <img
+                src={activeBlogArticle.imageUrl}
+                alt={
+                  lang === 'ID'
+                    ? activeBlogArticle.titleId
+                    : activeBlogArticle.titleEn
+                }
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090B14] via-black/45 to-transparent" />
+              <button
+                type="button"
+                onClick={() => setActiveBlogArticle(null)}
+                className="absolute top-3 right-3 p-2 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-3 left-5 right-5 space-y-1">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#111528]/90 border border-[#00F0FF]/50 text-[#00F0FF] text-[10px] font-extrabold">
+                  {activeBlogArticle.category} • {activeBlogArticle.readTime}
+                </span>
+                <h4 className="font-sans text-base sm:text-xl font-extrabold text-white">
+                  {lang === 'ID'
+                    ? activeBlogArticle.titleId
+                    : activeBlogArticle.titleEn}
+                </h4>
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-6 space-y-4 text-xs text-indigo-100 leading-relaxed max-h-[65vh] overflow-y-auto">
+              <p className="text-indigo-200/90 text-xs sm:text-sm">
+                {lang === 'ID'
+                  ? activeBlogArticle.excerptId
+                  : activeBlogArticle.excerptEn}
+              </p>
+
+              <div className="p-4 rounded-2xl bg-[#111528] border border-indigo-500/40 space-y-2.5">
+                <p className="font-extrabold text-[#00F0FF] uppercase tracking-wider text-[10px]">
+                  {lang === 'ID'
+                    ? 'Poin Utama & Checklist Praktis:'
+                    : 'Key Takeaways & Practical Checklist:'}
+                </p>
+                <ul className="space-y-2">
+                  {(lang === 'ID'
+                    ? activeBlogArticle.highlightsId
+                    : activeBlogArticle.highlightsEn
+                  ).map((pt) => (
+                    <li key={pt} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 font-semibold">
+                {lang === 'ID'
+                  ? activeBlogArticle.conclusionId
+                  : activeBlogArticle.conclusionEn}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveBlogArticle(null);
+                    handleSelectPackageForCheckout('PREMIUM');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-extrabold text-xs"
+                >
+                  {lang === 'ID'
+                    ? 'Coba Fitur Ini di Paket Premium (Rp 51.750)'
+                    : 'Unlock in Premium Plan (Rp 51,750)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveBlogArticle(null)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
+                >
+                  {lang === 'ID' ? 'Tutup Artikel' : 'Close Article'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULLSCREEN LIVE VECTOR-SHARP UI LIGHTBOX MODAL */}
       {lightboxScreenshot && (
@@ -6640,7 +8969,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       )}
 
-      {/* OFFICIAL FOOTER CREDIT & CONTACT US (MEPlan SaaS Midnight Navy & Indigo Branding) */}
+      {/* OFFICIAL FOOTER CREDIT & CONTACT US (MEPlanner SaaS Midnight Navy & Indigo Branding) */}
       <footer className="bg-[#090B14] border-t border-indigo-500/35 py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
@@ -6653,7 +8982,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <p className="text-xs sm:text-sm font-extrabold text-white">
-                  MEPlan — My Event Planner by{' '}
+                  MEPlanner — My Event Planner by{' '}
                   <a
                     href={developerUrl}
                     target="_blank"
@@ -6667,7 +8996,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111528] border border-indigo-500/40 text-[#00F0FF] text-[10px] font-bold">
                   <Sparkles className="w-2.5 h-2.5 text-[#00F0FF]" />
                   <span>
-                    Official MEPlan SaaS &amp; Multi-Event Planner Cloud Suite
+                    Official MEPlanner SaaS &amp; Multi-Event Planner Cloud Suite
                   </span>
                 </span>
               </div>
@@ -6687,7 +9016,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              title={`Hubungi Kontak WA My Event Planner (${rawWa})`}
+              title={`Hubungi Kontak WA MEPlanner (${rawWa})`}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111528] hover:bg-indigo-950 border border-indigo-500/45 text-white text-xs font-bold transition-all"
             >
               <svg
