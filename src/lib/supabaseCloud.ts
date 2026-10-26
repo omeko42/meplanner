@@ -21,17 +21,10 @@ import {
 } from './clientSync';
 
 export const SUPABASE_PROJECT_REF = 'wkjnwkgpolpmzdfrfjso';
-const envSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-export const SUPABASE_URL =
-  envSupabaseUrl && !envSupabaseUrl.includes('gwoyalvivfemaeacbyvi')
-    ? envSupabaseUrl
-    : `https://${SUPABASE_PROJECT_REF}.supabase.co`;
+export const SUPABASE_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co`;
 
-const envSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const SUPABASE_ANON_KEY =
-  envSupabaseAnonKey && !envSupabaseUrl.includes('gwoyalvivfemaeacbyvi') && envSupabaseAnonKey.includes('d2tqbnd')
-    ? envSupabaseAnonKey
-    : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indram53a2dwb2xwbXpkZnJmanNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTIyNDYsImV4cCI6MjEwODU4ODI0Nn0.xb6vHcEWrnLwQe_W0TxRVXXUTPVfcDrPNL6assS_YQQ';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indram53a2dwb2xwbXpkZnJmanNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTIyNDYsImV4cCI6MjEwODU4ODI0Nn0.xb6vHcEWrnLwQe_W0TxRVXXUTPVfcDrPNL6assS_YQQ';
 
 export const SUPABASE_PUBLISHABLE_KEY =
   'sb_publishable_hvCxUhQndVrsMB2obo9CfQ_p8Otlmp-';
@@ -1433,27 +1426,55 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       const urlLower = (m.url || '').toLowerCase();
       if (
         titleLower.includes('pernikahan kita') ||
-        urlLower.includes('pernikahan-kita')
+        urlLower.includes('pernikahan-kita') ||
+        urlLower.includes('pernikahan_kita')
       ) {
         return { ...m, url: '/musik/pernikahan-kita.mp3' };
       }
       if (
         titleLower.includes('jalaraning tresna') ||
-        urlLower.includes('jalaraning-tresna')
+        urlLower.includes('jalaraning-tresna') ||
+        urlLower.includes('jalaraning_tresna')
       ) {
         return { ...m, url: '/musik/jalaraning-tresna.mp3' };
       }
       if (
         titleLower.includes('cundamani') ||
+        urlLower.includes('cundamani') ||
         urlLower.includes('music_mvgp1wrn')
       ) {
         return { ...m, url: '/musik/cundamani.mp3' };
       }
       if (
         titleLower.includes('marry your daughter') ||
+        urlLower.includes('marry-your-daughter') ||
+        urlLower.includes('marry_your_daughter') ||
         urlLower.includes('music_mvgp2o8h')
       ) {
         return { ...m, url: '/musik/marry-your-daughter.mp3' };
+      }
+      if (
+        titleLower.includes('beautiful in white') ||
+        urlLower.includes('beautiful-in-white') ||
+        urlLower.includes('beautiful_in_white')
+      ) {
+        return { ...m, url: '/musik/beautiful-in-white.mp3' };
+      }
+      if (
+        titleLower.includes('paint my love') ||
+        urlLower.includes('paint-my-love') ||
+        urlLower.includes('paint_my_love')
+      ) {
+        return { ...m, url: '/musik/paint-my-love.mp3' };
+      }
+      if (m.url && m.url.includes('gwoyalvivfemaeacbyvi.supabase.co')) {
+        return {
+          ...m,
+          url: m.url.replace(
+            'gwoyalvivfemaeacbyvi.supabase.co',
+            `${SUPABASE_PROJECT_REF}.supabase.co`
+          ),
+        };
       }
       return m;
     });
@@ -1564,39 +1585,66 @@ export async function uploadAudioToSupabaseStorage(
       if (!fileOrDataUrl.startsWith('data:')) return fileOrDataUrl;
       const mimeMatch = fileOrDataUrl.match(/^data:([^;]+);base64,/i);
       if (mimeMatch && mimeMatch[1]) {
-        contentType = mimeMatch[1];
-        if (contentType.includes('wav')) ext = 'wav';
-        else if (contentType.includes('ogg')) ext = 'ogg';
-        else if (contentType.includes('mp4') || contentType.includes('m4a')) ext = 'm4a';
+        const rawMime = mimeMatch[1].toLowerCase();
+        if (rawMime.includes('wav')) {
+          ext = 'wav';
+          contentType = 'audio/wav';
+        } else if (rawMime.includes('ogg')) {
+          ext = 'ogg';
+          contentType = 'audio/ogg';
+        } else if (rawMime.includes('mp4') || rawMime.includes('m4a')) {
+          ext = 'm4a';
+          contentType = 'audio/mp4';
+        } else if (rawMime.includes('aac')) {
+          ext = 'aac';
+          contentType = 'audio/aac';
+        } else {
+          ext = 'mp3';
+          contentType = 'audio/mpeg';
+        }
       }
       const res = await fetch(fileOrDataUrl);
       bodyBlob = await res.blob();
     } else {
       bodyBlob = fileOrDataUrl;
-      contentType = fileOrDataUrl.type || 'audio/mpeg';
       const nameExt = fileOrDataUrl.name.split('.').pop()?.toLowerCase();
       if (nameExt && ['mp3', 'm4a', 'wav', 'ogg', 'aac'].includes(nameExt)) {
         ext = nameExt;
       }
+      if (ext === 'wav') contentType = 'audio/wav';
+      else if (ext === 'ogg') contentType = 'audio/ogg';
+      else if (ext === 'm4a') contentType = 'audio/mp4';
+      else if (ext === 'aac') contentType = 'audio/aac';
+      else contentType = 'audio/mpeg';
     }
 
     const safeId = trackId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const objectPath = `music/${safeId}.${ext}`;
-    const upRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
-      {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': contentType,
-          'x-upsert': 'true',
-        },
-        body: bodyBlob,
+    const targetUrl = `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`;
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const upRes = await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': contentType,
+            'cache-control': 'max-age=31536000, immutable',
+            'x-upsert': 'true',
+          },
+          body: bodyBlob,
+        });
+        if (upRes.ok) {
+          return `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+        }
+      } catch {
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
-    );
-    if (!upRes.ok) return null;
-    return `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
+    }
+    return null;
   } catch {
     return null;
   }

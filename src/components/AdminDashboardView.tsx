@@ -1308,10 +1308,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
     const cleanFileName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
     const trackId = `music_${Date.now().toString(36)}`;
-    showToast(`Meng-upload lagu "${cleanFileName}" ke Supabase Cloud Storage...`);
-
-    // 1. Upload directly to Supabase Storage bucket wedding-media/music/
-    const cloudAudioUrl = await uploadAudioToSupabaseStorage(file, trackId);
+    const lowerCheck = `${newMusicTitle} ${cleanFileName}`.toLowerCase();
 
     const finishAddTrack = async (finalUrl: string) => {
       const newTrack: MusicTrackItem = {
@@ -1354,16 +1351,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         summary: `Upload lagu "${newTrack.title}" ke Supabase Cloud`,
       });
       showToast(
-        `✓ Musik "${newTrack.title}" tersimpan di Supabase & sedang diputar!`
+        `✓ Musik "${newTrack.title}" tersimpan & sedang diputar!`
       );
     };
+
+    // Fast-path: if matching static CDN track in /musik/*.mp3, serve with 0 Supabase Egress
+    if (lowerCheck.includes('pernikahan kita')) {
+      await finishAddTrack('/musik/pernikahan-kita.mp3');
+      return;
+    }
+    if (lowerCheck.includes('jalaraning tresna')) {
+      await finishAddTrack('/musik/jalaraning-tresna.mp3');
+      return;
+    }
+    if (lowerCheck.includes('cundamani')) {
+      await finishAddTrack('/musik/cundamani.mp3');
+      return;
+    }
+    if (lowerCheck.includes('marry your daughter')) {
+      await finishAddTrack('/musik/marry-your-daughter.mp3');
+      return;
+    }
+    if (lowerCheck.includes('beautiful in white')) {
+      await finishAddTrack('/musik/beautiful-in-white.mp3');
+      return;
+    }
+    if (lowerCheck.includes('paint my love')) {
+      await finishAddTrack('/musik/paint-my-love.mp3');
+      return;
+    }
+
+    showToast(`Meng-upload lagu "${cleanFileName}" ke Supabase Cloud Storage...`);
+
+    // 1. Upload directly to Supabase Storage bucket wedding-media/music/
+    const cloudAudioUrl = await uploadAudioToSupabaseStorage(file, trackId);
 
     if (cloudAudioUrl) {
       await finishAddTrack(cloudAudioUrl);
       return;
     }
 
-    // Fallback to Data URL if offline
+    if (file.size > 3_500_000) {
+      showToast(
+        `Gagal meng-upload "${cleanFileName}" ke Cloud Storage. Pastikan koneksi stabil & ukuran di bawah 50 MB.`
+      );
+      return;
+    }
+
+    // Fallback to Data URL only for small audio files if offline
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = String(reader.result || '');

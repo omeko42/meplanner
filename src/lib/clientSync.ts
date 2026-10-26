@@ -169,27 +169,55 @@ function normalizeParsedState(
       const urlLower = (m.url || '').toLowerCase();
       if (
         titleLower.includes('pernikahan kita') ||
-        urlLower.includes('pernikahan-kita')
+        urlLower.includes('pernikahan-kita') ||
+        urlLower.includes('pernikahan_kita')
       ) {
         return { ...m, url: '/musik/pernikahan-kita.mp3' };
       }
       if (
         titleLower.includes('jalaraning tresna') ||
-        urlLower.includes('jalaraning-tresna')
+        urlLower.includes('jalaraning-tresna') ||
+        urlLower.includes('jalaraning_tresna')
       ) {
         return { ...m, url: '/musik/jalaraning-tresna.mp3' };
       }
       if (
         titleLower.includes('cundamani') ||
+        urlLower.includes('cundamani') ||
         urlLower.includes('music_mvgp1wrn')
       ) {
         return { ...m, url: '/musik/cundamani.mp3' };
       }
       if (
         titleLower.includes('marry your daughter') ||
+        urlLower.includes('marry-your-daughter') ||
+        urlLower.includes('marry_your_daughter') ||
         urlLower.includes('music_mvgp2o8h')
       ) {
         return { ...m, url: '/musik/marry-your-daughter.mp3' };
+      }
+      if (
+        titleLower.includes('beautiful in white') ||
+        urlLower.includes('beautiful-in-white') ||
+        urlLower.includes('beautiful_in_white')
+      ) {
+        return { ...m, url: '/musik/beautiful-in-white.mp3' };
+      }
+      if (
+        titleLower.includes('paint my love') ||
+        urlLower.includes('paint-my-love') ||
+        urlLower.includes('paint_my_love')
+      ) {
+        return { ...m, url: '/musik/paint-my-love.mp3' };
+      }
+      if (m.url && m.url.includes('gwoyalvivfemaeacbyvi.supabase.co')) {
+        return {
+          ...m,
+          url: m.url.replace(
+            'gwoyalvivfemaeacbyvi.supabase.co',
+            'wkjnwkgpolpmzdfrfjso.supabase.co'
+          ),
+        };
       }
       return m;
     });

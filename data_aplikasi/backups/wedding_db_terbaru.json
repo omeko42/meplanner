@@ -1377,30 +1377,30 @@
     "musicPlaylist": [
       {
         "id": "music_mvdp2f7y",
-        "url": "https://wkjnwkgpolpmzdfrfjso.supabase.co/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3",
+        "url": "/musik/pernikahan-kita.mp3",
         "title": "Pernikahan Kita - Tiara Andini feat Arsy Widianto",
         "artist": "Tiara Andini ft. Arsy Widianto",
         "isDefault": false
       },
       {
         "id": "music_mvdp2mst",
-        "url": "https://wkjnwkgpolpmzdfrfjso.supabase.co/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3",
+        "url": "/musik/jalaraning-tresna.mp3",
         "title": "Jalaraning Tresna - Woro Endah ft. Ilham Pradana",
         "artist": "Woro Endah ft. Ilham Pradana",
         "isDefault": false
       },
       {
         "id": "music_mvgp1wrn",
-        "url": "https://wkjnwkgpolpmzdfrfjso.supabase.co/storage/v1/object/public/wedding-media/music/music_mvgp1wrn.mp3",
-        "title": "Denny Caknan   Cundamani (Lirik Lagu)",
-        "artist": "Koleksi Pribadi",
+        "url": "/musik/cundamani.mp3",
+        "title": "Denny Caknan - Cundamani",
+        "artist": "Denny Caknan",
         "isDefault": false
       },
       {
         "id": "music_mvgp2o8h",
-        "url": "https://wkjnwkgpolpmzdfrfjso.supabase.co/storage/v1/object/public/wedding-media/music/music_mvgp2o8h.mp3",
-        "title": "Brian McKnight   Marry your daughter lyrics",
-        "artist": "Koleksi Pribadi",
+        "url": "/musik/marry-your-daughter.mp3",
+        "title": "Brian McKnight - Marry Your Daughter",
+        "artist": "Brian McKnight",
         "isDefault": false
       }
     ],
