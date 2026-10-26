@@ -1514,7 +1514,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [showAllBudget, setShowAllBudget] = useState(false);
   const [showAllGuests, setShowAllGuests] = useState(false);
   const [guestCurrentPage, setGuestCurrentPage] = useState<number>(1);
-  const [guestPageSize, setGuestPageSize] = useState<number>(10);
+  const [guestPageSize, setGuestPageSize] = useState<number>(12);
   const [showAllBanks, setShowAllBanks] = useState(false);
   const [showAllPanitia, setShowAllPanitia] = useState(false);
   const [showAllSectionsToggle, setShowAllSectionsToggle] = useState(false);
@@ -8115,9 +8115,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className="px-2 py-1 rounded-lg border border-stone-200 bg-white text-stone-800 text-[11px] font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
                           >
                             <option value={6}>6</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
+                            <option value={12}>12</option>
+                            <option value={24}>24</option>
+                            <option value={36}>36</option>
+                            <option value={48}>48</option>
                             <option value={0}>Semua ({filteredGuests.length})</option>
                           </select>
                         </div>
