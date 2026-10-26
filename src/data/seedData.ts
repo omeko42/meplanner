@@ -152,8 +152,7 @@ export const INITIAL_SETTINGS: WeddingSettings = {
     'Putra pertama dari Bapak Kopka (Purn) Sanyoto & Ibu Christien Prihatiningsih, S.E.',
   groomOrigin: 'Semarang',
   groomInstagram: '',
-  groomPhotoUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/groomPhotoUrl_dvaoiEHATEAA.webp',
+  groomPhotoUrl: '/media/utama/groom.webp',
 
   brideFullName: 'Selo Nelci Agustina',
   brideNickname: 'Selo',
@@ -161,15 +160,11 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   brideParents: 'Putri kedua dari mendiang Bapak Simon Huwae & Ibu Suwarti',
   brideOrigin: 'Jakarta',
   brideInstagram: '',
-  bridePhotoUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/bridePhotoUrl_8powMHC94Aql.webp',
+  bridePhotoUrl: '/media/utama/bride.webp',
 
-  coverBgUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/cover_slide_cover_2_3_FlWCY4lLxJp77h.webp',
-  heroPrewedUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
-  pageBgUrl:
-    'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/pageBgUrl_9_wIjjmzLppiJL5K.webp',
+  coverBgUrl: '/media/utama/cover.webp',
+  heroPrewedUrl: '/media/utama/hero.webp',
+  pageBgUrl: '/media/utama/page-1.webp',
   bgOverlayOpacity: 45,
   bgBlurIntensity: 'sm',
   themePreset: 'pearl-champagne',
@@ -351,32 +346,28 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       id: 'gal-default-1',
       title: 'Golden Sunset Silhouette',
       caption: 'The Beginning',
-      imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-1_hd.webp',
+      imageUrl: '/media/utama/gallery-1.webp',
       category: 'Prewedding',
     },
     {
       id: 'gal-default-2',
       title: 'Sacred Promises',
       caption: 'Momen Bersama',
-      imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-2_hd.webp',
+      imageUrl: '/media/utama/gallery-2.webp',
       category: 'Momen Bersama',
     },
     {
       id: 'gal-default-3',
       title: 'Timeless Elegance',
       caption: 'Momen bersama',
-      imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-3_hd.webp',
+      imageUrl: '/media/utama/gallery-3.webp',
       category: 'Prewedding',
     },
     {
       id: 'gal-default-4',
       title: 'Forever Begins Here',
       caption: 'Prewedding',
-      imageUrl:
-        'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/gallery_gal-default-4_hd.webp',
+      imageUrl: '/media/utama/gallery-4.webp',
       category: 'Momen Bersama',
     },
   ],
@@ -390,14 +381,14 @@ export const INITIAL_SETTINGS: WeddingSettings = {
       id: 'music_mvdp2f7y',
       title: 'Pernikahan Kita - Tiara Andini feat Arsy Widianto',
       artist: 'Tiara Andini ft. Arsy Widianto',
-      url: 'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3',
+      url: '/musik/pernikahan-kita.mp3',
       isDefault: true,
     },
     {
       id: 'music_mvdp2mst',
       title: 'Jalaraning Tresna - Woro Endah ft. Ilham Pradana',
       artist: 'Woro Endah ft. Ilham Pradana',
-      url: 'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3',
+      url: '/musik/jalaraning-tresna.mp3',
       isDefault: false,
     },
     {

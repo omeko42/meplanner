@@ -1317,14 +1317,82 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       : [];
   }
 
-  next.coverBgUrl = next.coverSlides?.[0]?.imageUrl || '';
-  next.heroPrewedUrl = next.heroSlides?.[0]?.imageUrl || '';
-  next.pageBgUrl = next.pageSlides?.[0]?.imageUrl || '';
+  const rewriteToStaticCdnIfMigrated = (u?: string): string => {
+    if (!u || typeof u !== 'string') return '';
+    const map: Record<string, string> = {
+      'groomPhotoUrl_1_13kNIKQ8cB774B.webp': '/media/utama/groom.webp',
+      'groomPhotoUrl_dvaoiEHATEAA.webp': '/media/utama/groom.webp',
+      'bridePhotoUrl_5_QRIA58sjV48jVz.webp': '/media/utama/bride.webp',
+      'bridePhotoUrl_8powMHC94Aql.webp': '/media/utama/bride.webp',
+      'cover_slide_cover_2_3_FlWCY4lLxJp77h.webp': '/media/utama/cover.webp',
+      'hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp':
+        '/media/utama/hero.webp',
+      'page_slide_page_slide_1792846456257_1_zlgo_3_7LcMhXIUFIxBMJ.webp':
+        '/media/utama/page-1.webp',
+      'pageBgUrl_9_wIjjmzLppiJL5K.webp': '/media/utama/page-1.webp',
+      'page_slide_page_slide_1792900065299_1_0tck_5_eofRrtqF8YjfAc.webp':
+        '/media/utama/page-2.webp',
+      'qrisImageUrl_7_H3fEFgYXwW2R5G.webp': '/media/utama/qris.webp',
+      'gallery_gal-default-1_3_YfAqp1GY5wxGu4.webp':
+        '/media/utama/gallery-1.webp',
+      'gallery_gal-default-1_hd.webp': '/media/utama/gallery-1.webp',
+      'gallery_gal-default-2_5_TpivGl6rXLo89E.webp':
+        '/media/utama/gallery-2.webp',
+      'gallery_gal-default-2_hd.webp': '/media/utama/gallery-2.webp',
+      'gallery_gal-default-3_5_v7oYDi5dVZzbr3.webp':
+        '/media/utama/gallery-3.webp',
+      'gallery_gal-default-3_hd.webp': '/media/utama/gallery-3.webp',
+      'gallery_gal-default-4_1_2dlFZJo1vR2zyK.webp':
+        '/media/utama/gallery-4.webp',
+      'gallery_gal-default-4_hd.webp': '/media/utama/gallery-4.webp',
+    };
+    for (const [k, v] of Object.entries(map)) {
+      if (u.includes(k)) return v;
+    }
+    return u;
+  };
+
+  next.groomPhotoUrl =
+    rewriteToStaticCdnIfMigrated(next.groomPhotoUrl) ||
+    INITIAL_SETTINGS.groomPhotoUrl;
+  next.bridePhotoUrl =
+    rewriteToStaticCdnIfMigrated(next.bridePhotoUrl) ||
+    INITIAL_SETTINGS.bridePhotoUrl;
+  if (next.qrisImageUrl) {
+    next.qrisImageUrl = rewriteToStaticCdnIfMigrated(next.qrisImageUrl);
+  }
+  for (const slideKey of [
+    'coverSlides',
+    'heroSlides',
+    'pageSlides',
+    'backgroundSlides',
+  ] as const) {
+    const arr = next[slideKey];
+    if (Array.isArray(arr)) {
+      next[slideKey] = arr.map((bs) => ({
+        ...bs,
+        imageUrl: rewriteToStaticCdnIfMigrated(bs.imageUrl),
+      }));
+    }
+  }
+
+  next.coverBgUrl =
+    rewriteToStaticCdnIfMigrated(next.coverSlides?.[0]?.imageUrl) ||
+    rewriteToStaticCdnIfMigrated(next.coverBgUrl) ||
+    '';
+  next.heroPrewedUrl =
+    rewriteToStaticCdnIfMigrated(next.heroSlides?.[0]?.imageUrl) ||
+    rewriteToStaticCdnIfMigrated(next.heroPrewedUrl) ||
+    '';
+  next.pageBgUrl =
+    rewriteToStaticCdnIfMigrated(next.pageSlides?.[0]?.imageUrl) ||
+    rewriteToStaticCdnIfMigrated(next.pageBgUrl) ||
+    '';
   if (!Array.isArray(next.galleryPhotos) || next.galleryPhotos.length === 0) {
     next.galleryPhotos = INITIAL_SETTINGS.galleryPhotos;
   } else {
     next.galleryPhotos = next.galleryPhotos.map((gp, idx) => {
-      const url = gp.imageUrl || '';
+      const url = rewriteToStaticCdnIfMigrated(gp.imageUrl || '');
       const isBrokenOrStale =
         !url ||
         url.includes('images.unsplash.com') ||
@@ -1342,7 +1410,7 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
           };
         }
       }
-      return gp;
+      return { ...gp, imageUrl: url };
     });
   }
   if (!Array.isArray(next.loveStory) || next.loveStory.length === 0) {
