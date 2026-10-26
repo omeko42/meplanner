@@ -108,6 +108,7 @@ import {
   formatRupiah,
   generateWhatsAppMessage,
   buildWaHref,
+  sanitizeWhatsAppText,
   DEFAULT_WA_TEMPLATE_VIP,
   DEFAULT_WA_TEMPLATE_REGULAR,
   exportTasksToCsv,
@@ -671,7 +672,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   ) => {
     const raw = generateWhatsAppMessage(guest, settingsObj);
     const { guestHashToken, cleanUrl } = getGuestPersonalUrl(guest, settingsObj);
-    let messageText = raw.messageText;
+    let messageText = sanitizeWhatsAppText(raw.messageText);
     if (raw.inviteUrl && raw.inviteUrl !== cleanUrl) {
       messageText = messageText.split(raw.inviteUrl).join(cleanUrl);
     }
@@ -695,12 +696,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
     setWaTemplateVipDraft(
       state.settings.waTemplateVip?.trim()
-        ? state.settings.waTemplateVip
+        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
         : DEFAULT_WA_TEMPLATE_VIP
     );
     setWaTemplateRegularDraft(
       state.settings.waTemplateRegular?.trim()
-        ? state.settings.waTemplateRegular
+        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
         : DEFAULT_WA_TEMPLATE_REGULAR
     );
     setWaModalMode('preview');
@@ -711,12 +712,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setWaPreviewGuest(state.guests[0] || null);
     setWaTemplateVipDraft(
       state.settings.waTemplateVip?.trim()
-        ? state.settings.waTemplateVip
+        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
         : DEFAULT_WA_TEMPLATE_VIP
     );
     setWaTemplateRegularDraft(
       state.settings.waTemplateRegular?.trim()
-        ? state.settings.waTemplateRegular
+        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
         : DEFAULT_WA_TEMPLATE_REGULAR
     );
     setWaModalMode('global');
@@ -727,9 +728,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
-      waTemplateVip: waTemplateVipDraft.trim() || DEFAULT_WA_TEMPLATE_VIP,
+      waTemplateVip:
+        sanitizeWhatsAppText(waTemplateVipDraft).trim() ||
+        DEFAULT_WA_TEMPLATE_VIP,
       waTemplateRegular:
-        waTemplateRegularDraft.trim() || DEFAULT_WA_TEMPLATE_REGULAR,
+        sanitizeWhatsAppText(waTemplateRegularDraft).trim() ||
+        DEFAULT_WA_TEMPLATE_REGULAR,
       updatedBy: adminUser.username,
     };
     await commitImmediateSettings(nextSettings);
@@ -20896,13 +20900,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           href={effectiveWaHref}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() =>
+                          onClick={() => {
+                            try {
+                              navigator.clipboard.writeText(
+                                sanitizeWhatsAppText(effectiveMessage)
+                              );
+                            } catch {
+                              // ignore clipboard error
+                            }
                             recordAdminAnalyticsEvent(
                               'SHARE_WA',
                               targetGuest,
                               `Mengirim pesan & link undangan WA ke ${targetGuest.guestName}`
-                            )
-                          }
+                            );
+                          }}
                           className="px-5 sm:px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
                         >
                           <Send className="w-3.5 h-3.5" />

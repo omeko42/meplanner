@@ -555,6 +555,31 @@ export function buildGuestInvitationUrl(
   return `${base}/?${params.toString()}`;
 }
 
+export function sanitizeWhatsAppText(raw: string): string {
+  if (!raw) return '';
+  return raw
+    // 1. Bersihkan mojibake UTF-8 umum & karakter replacement rusak ()
+    .replace(/\uFFFD+/g, '•')
+    .replace(/â€¢/g, '•')
+    .replace(/â€”/g, '—')
+    .replace(/â€“/g, '–')
+    .replace(/âœ¨/g, '✨')
+    // 2. Pastikan link undangan berada di baris bersih tanpa simbol di depannya agar OG Link Preview WhatsApp selalu terpicu
+    .replace(/(?:👉|▸|\uFFFD)\s*(\{link_undangan\}|https?:\/\/)/g, '$1')
+    // 3. Ganti emoji 4-byte surrogate pairs (U+10000+) yang sering rusak jadi '' di protokol URI WhatsApp Desktop Windows dengan simbol Unicode BMP 16-bit aman
+    .replace(/💍/g, '✨')
+    .replace(/📅|🗓️|🗓/g, '•')
+    .replace(/📍/g, '❖')
+    .replace(/🔑/g, '❖')
+    .replace(/👉/g, '▸')
+    .replace(/🙏🏻|🙏🏼|🙏🏽|🙏🏾|🙏🏿|🙏/g, '✨')
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '✨')
+    // 4. Hapus surrogate yatim (unpaired surrogate) yang memicu karakter ''
+    .replace(/[\uD800-\uDFFF]/g, '')
+    // 5. Hapus variation selector yatim jika ada
+    .replace(/\uFE0F/g, '');
+}
+
 export const DEFAULT_WA_TEMPLATE_VIP = [
   'Selamat Pagi/Siang/Sore Jenderal / Komandan,',
   'Kepada Yth.',
@@ -563,16 +588,16 @@ export const DEFAULT_WA_TEMPLATE_VIP = [
   '',
   'Mohon izin Jenderal / Komandan, dengan penuh rasa hormat dan kerendahan hati, kami bermaksud menyampaikan undangan digital rangkaian acara pernikahan kami:',
   '',
-  '💍 *{mempelai_pria}*',
+  '✨ *{mempelai_pria}*',
   '&',
-  '💍 *{mempelai_wanita}*',
+  '✨ *{mempelai_wanita}*',
   '',
   '{jadwal_acara}',
-  '📍 *Lokasi:* {lokasi_utama}',
+  '❖ *Lokasi:* {lokasi_utama}',
   '',
   'Tautan Undangan Resmi & Konfirmasi Kehadiran:',
   '{link_undangan}',
-  '🔑 *Kode Akses Undangan:* `{kode_undangan}`',
+  '❖ *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.',
   '',
@@ -592,11 +617,11 @@ export const DEFAULT_WA_TEMPLATE_REGULAR = [
   '✨ *{mempelai_wanita}*',
   '',
   '{jadwal_acara}',
-  '📍 *Tempat:* {lokasi_utama}',
+  '❖ *Tempat:* {lokasi_utama}',
   '',
   'Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:',
-  '👉 {link_undangan}',
-  '🔑 *Kode Akses Undangan:* `{kode_undangan}`',
+  '{link_undangan}',
+  '❖ *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.',
   '',
@@ -615,9 +640,10 @@ export function buildWaHref(phone: string | undefined, messageText: string): str
     normalizedPhone = digits;
   }
 
-  const encodedText = encodeURIComponent(messageText);
+  const safeText = sanitizeWhatsAppText(messageText).replace(/\r\n/g, '\n');
+  const encodedText = encodeURIComponent(safeText);
   return normalizedPhone
-    ? `https://wa.me/${normalizedPhone}?text=${encodedText}`
+    ? `https://api.whatsapp.com/send?phone=${normalizedPhone}&text=${encodedText}`
     : `https://api.whatsapp.com/send?text=${encodedText}`;
 }
 
@@ -642,12 +668,12 @@ export function generateWhatsAppMessage(
   const jadwalAcaraText =
     activeEvents.length > 0
       ? activeEvents
-          .map((ev) => `📅 *${ev.title}:* ${ev.dateLabel} (${ev.timeLabel})`)
+          .map((ev) => `• *${ev.title}:* ${ev.dateLabel} (${ev.timeLabel})`)
           .join('\n')
       : [
-          `📅 *${settings.event1Title}:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
-          `📅 *${settings.event2Title}:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
-          `📅 *${settings.event3Title}:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
+          `• *${settings.event1Title}:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
+          `• *${settings.event2Title}:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
+          `• *${settings.event3Title}:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
         ].join('\n');
 
   const lastEvent = activeEvents[activeEvents.length - 1];
@@ -657,10 +683,10 @@ export function generateWhatsAppMessage(
 
   const rawTemplate = isVipPolri
     ? settings.waTemplateVip && settings.waTemplateVip.trim()
-      ? settings.waTemplateVip
+      ? sanitizeWhatsAppText(settings.waTemplateVip)
       : DEFAULT_WA_TEMPLATE_VIP
     : settings.waTemplateRegular && settings.waTemplateRegular.trim()
-    ? settings.waTemplateRegular
+    ? sanitizeWhatsAppText(settings.waTemplateRegular)
     : DEFAULT_WA_TEMPLATE_REGULAR;
 
   const rawInstansi = (guest.institution || '').trim();
@@ -674,19 +700,21 @@ export function generateWhatsAppMessage(
     guest
   );
 
-  const messageText = rawTemplate
-    .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
-    .replace(/\{instansi\}/g, instansiFormatted)
-    .replace(/\{link_undangan\}/g, inviteUrl)
-    .replace(/\{mempelai_pria\}/g, settings.groomFullName || 'Mempelai Pria')
-    .replace(/\{mempelai_wanita\}/g, settings.brideFullName || 'Mempelai Wanita')
-    .replace(/\{panggilan_pria\}/g, settings.groomNickname || 'Mempelai Pria')
-    .replace(/\{panggilan_wanita\}/g, settings.brideNickname || 'Mempelai Wanita')
-    .replace(/\{jadwal_acara\}/g, jadwalAcaraText)
-    .replace(/\{lokasi_utama\}/g, lokasiUtamaText)
-    .replace(/\{kode_undangan\}/g, guestHashToken)
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  const messageText = sanitizeWhatsAppText(
+    rawTemplate
+      .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
+      .replace(/\{instansi\}/g, instansiFormatted)
+      .replace(/\{link_undangan\}/g, inviteUrl)
+      .replace(/\{mempelai_pria\}/g, settings.groomFullName || 'Mempelai Pria')
+      .replace(/\{mempelai_wanita\}/g, settings.brideFullName || 'Mempelai Wanita')
+      .replace(/\{panggilan_pria\}/g, settings.groomNickname || 'Mempelai Pria')
+      .replace(/\{panggilan_wanita\}/g, settings.brideNickname || 'Mempelai Wanita')
+      .replace(/\{jadwal_acara\}/g, jadwalAcaraText)
+      .replace(/\{lokasi_utama\}/g, lokasiUtamaText)
+      .replace(/\{kode_undangan\}/g, guestHashToken)
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  );
 
   const waHref = buildWaHref(guest.phone, messageText);
 
