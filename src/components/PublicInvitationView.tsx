@@ -33,6 +33,7 @@ import {
   Shield,
   Search,
   Globe,
+  Download,
 } from 'lucide-react';
 import {
   WeddingSettings,
@@ -58,6 +59,10 @@ import {
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import {
+  QrCodeCanvas,
+  renderQRCodeToDataUrl,
+} from '@/components/QrCodeCanvas';
 import { findCatalogThemePreset } from '@/data/showcaseDummyClients';
 import {
   computeGuestInvitationHash,
@@ -70,6 +75,7 @@ interface PublicInvitationViewProps {
   wishes: GuestWish[];
   guestParamName: string;
   guestParamCode: string;
+  autoCheckInParam?: string;
   isAdminLoggedIn: boolean;
   defaultOpened?: boolean;
   externalLang?: 'ID' | 'EN';
@@ -98,6 +104,13 @@ interface PublicInvitationViewProps {
     userAgent?: string;
     devicePlatform?: string;
   }) => Promise<void>;
+  onCheckInGuest?: (payload: {
+    guestId?: string;
+    invitationCode?: string;
+    hashToken?: string;
+    guestName?: string;
+    pax?: number;
+  }) => Promise<WeddingGuest | void>;
 }
 
 type InvitationThemeKey =
@@ -1157,6 +1170,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   wishes,
   guestParamName,
   guestParamCode,
+  autoCheckInParam,
   isAdminLoggedIn,
   defaultOpened = false,
   externalLang,
@@ -1164,8 +1178,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   onOpenLandingPage,
   onTrackAnalytics,
   onSubmitRsvp,
+  onCheckInGuest,
 }) => {
-  const [isOpened, setIsOpened] = useState(Boolean(defaultOpened));
+  const [isOpened, setIsOpened] = useState(
+    Boolean(defaultOpened || autoCheckInParam)
+  );
   const [isOpeningTransition, setIsOpeningTransition] = useState(false);
   const [lang, setLang] = useState<'ID' | 'EN'>(
     externalLang || settings.defaultLanguage || 'ID'
@@ -1735,6 +1752,52 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [verifiedGuestByCode, setVerifiedGuestByCode] = useState<WeddingGuest | null>(
     null
   );
+  const [showCheckInQrModal, setShowCheckInQrModal] = useState(
+    Boolean(autoCheckInParam)
+  );
+  const [isCheckingInGuest, setIsCheckingInGuest] = useState(false);
+  const [checkInSuccessGuest, setCheckInSuccessGuest] =
+    useState<WeddingGuest | null>(null);
+  const [checkInSearchQuery, setCheckInSearchQuery] = useState('');
+  const hasAutoCheckedInRef = useRef(false);
+
+  // Restore saved guest pass from localStorage if guest scans general venue QR (?checkin=venue)
+  useEffect(() => {
+    if (matchedGuest || selectedGuestFromSearch || verifiedGuestByCode) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const rawPass = localStorage.getItem(
+        `meplanner_guest_pass_${activeClientId}`
+      );
+      if (!rawPass) return;
+      const parsed = JSON.parse(rawPass) as {
+        guestId?: string;
+        invitationCode?: string;
+        guestName?: string;
+      };
+      const found = guests.find(
+        (g) =>
+          (parsed.guestId && g.id === parsed.guestId) ||
+          (parsed.invitationCode &&
+            g.invitationCode.trim().toLowerCase() ===
+              parsed.invitationCode.trim().toLowerCase()) ||
+          (parsed.guestName &&
+            g.guestName.trim().toLowerCase() ===
+              parsed.guestName.trim().toLowerCase())
+      );
+      if (found) {
+        setVerifiedGuestByCode(found);
+      }
+    } catch {
+      // Ignore storage parse error
+    }
+  }, [
+    activeClientId,
+    guests,
+    matchedGuest,
+    selectedGuestFromSearch,
+    verifiedGuestByCode,
+  ]);
 
   // Reset selected/verified guest if client database changes and guest is no longer in list
   useEffect(() => {
@@ -1753,7 +1816,109 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   }, [guests, selectedGuestFromSearch, verifiedGuestByCode]);
 
   const effectiveMatchedGuest =
-    selectedGuestFromSearch || verifiedGuestByCode || matchedGuest;
+    checkInSuccessGuest ||
+    selectedGuestFromSearch ||
+    verifiedGuestByCode ||
+    matchedGuest;
+
+  // Save matched guest pass in localStorage for seamless 1-scan venue check-in
+  useEffect(() => {
+    if (!effectiveMatchedGuest || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(
+        `meplanner_guest_pass_${activeClientId}`,
+        JSON.stringify({
+          guestId: effectiveMatchedGuest.id,
+          invitationCode: effectiveMatchedGuest.invitationCode,
+          guestName: effectiveMatchedGuest.guestName,
+        })
+      );
+    } catch {
+      // Ignore storage quota
+    }
+  }, [activeClientId, effectiveMatchedGuest]);
+
+  // RSVP Form State
+  const [rsvpName, setRsvpName] = useState('');
+  const [rsvpInstitution, setRsvpInstitution] = useState('');
+  const [rsvpPhone, setRsvpPhone] = useState('');
+  const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('Hadir');
+  const [rsvpPax, setRsvpPax] = useState<number>(2);
+  const [rsvpSession, setRsvpSession] =
+    useState<WeddingGuest['sessionChoice']>('Pemberkatan & Resepsi');
+  const [rsvpMessage, setRsvpMessage] = useState('');
+  const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
+  const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
+
+  const guestCheckInHash = useMemo(() => {
+    if (effectiveMatchedGuest) {
+      return (
+        effectiveMatchedGuest.invitationToken ||
+        computeGuestInvitationHash(activeClientId, effectiveMatchedGuest)
+      );
+    }
+    if (guestParamCode?.trim()) return guestParamCode.trim();
+    return '';
+  }, [effectiveMatchedGuest, activeClientId, guestParamCode]);
+
+  const guestCheckInUrl = useMemo(() => {
+    const origin =
+      typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'https://meplanner.vercel.app';
+    if (guestCheckInHash) {
+      return `${origin}/${encodeURIComponent(guestCheckInHash)}?checkin=1`;
+    }
+    const cleanName = (guestParamName || rsvpName || '').trim();
+    if (cleanName) {
+      return `${origin}/?to=${encodeURIComponent(cleanName)}&checkin=1`;
+    }
+    return `${origin}/?checkin=venue`;
+  }, [guestCheckInHash, guestParamName, rsvpName]);
+
+  const handleTriggerGuestCheckIn = async (targetGuest?: WeddingGuest) => {
+    if (!onCheckInGuest || isCheckingInGuest) return;
+    const g = targetGuest || effectiveMatchedGuest;
+    const nameToUse = (
+      g?.guestName ||
+      guestParamName ||
+      rsvpName ||
+      checkInSearchQuery
+    ).trim();
+    if (!g && !nameToUse) return;
+
+    setIsCheckingInGuest(true);
+    try {
+      const res = await onCheckInGuest({
+        guestId: g?.id,
+        invitationCode: g?.invitationCode || guestParamCode || undefined,
+        hashToken: guestCheckInHash || undefined,
+        guestName: nameToUse || 'Tamu Kehormatan',
+        pax: g?.confirmedPax || g?.pax || rsvpPax || 2,
+      });
+      if (res) {
+        setCheckInSuccessGuest(res);
+        setSelectedGuestFromSearch(res);
+      }
+      setShowCheckInQrModal(true);
+    } finally {
+      setIsCheckingInGuest(false);
+    }
+  };
+
+  // Automatically execute check-in when opened via ?checkin=1 or ?checkin=venue
+  useEffect(() => {
+    if (!autoCheckInParam || hasAutoCheckedInRef.current) return;
+    setIsOpened(true);
+    setShowCheckInQrModal(true);
+    if (effectiveMatchedGuest || guestParamName?.trim()) {
+      hasAutoCheckedInRef.current = true;
+      if (effectiveMatchedGuest?.attendanceStatus !== 'Hadir di Lokasi') {
+        void handleTriggerGuestCheckIn(effectiveMatchedGuest || undefined);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheckInParam, effectiveMatchedGuest, guestParamName]);
 
   const resolvedGuestDisplayName =
     effectiveMatchedGuest?.guestName ||
@@ -1830,18 +1995,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [activeCountdownEvent, settings.weddingDatetime]);
-
-  // RSVP Form State
-  const [rsvpName, setRsvpName] = useState('');
-  const [rsvpInstitution, setRsvpInstitution] = useState('');
-  const [rsvpPhone, setRsvpPhone] = useState('');
-  const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('Hadir');
-  const [rsvpPax, setRsvpPax] = useState<number>(2);
-  const [rsvpSession, setRsvpSession] =
-    useState<WeddingGuest['sessionChoice']>('Pemberkatan & Resepsi');
-  const [rsvpMessage, setRsvpMessage] = useState('');
-  const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
-  const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
 
   useEffect(() => {
     if (effectiveMatchedGuest) {
@@ -5165,6 +5318,116 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               </div>
             </div>
           </div>
+
+          {/* KARTU E-TICKET & QR CODE CHECK-IN KEHADIRAN (DAVIDSHIMJS/QRCODEJS ENGINE) */}
+          <div
+            className={`inv-reveal inv-reveal-up mt-5 sm:mt-6 rounded-3xl bg-white/90 backdrop-blur-xl p-4 sm:p-6 shadow-[0_18px_50px_rgba(175,145,95,0.12)] flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 ${
+              layoutArchetype === 'NUSANTARA_HERITAGE'
+                ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
+                : 'border border-white/95'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => setShowCheckInQrModal(true)}
+                className="p-2.5 rounded-2xl bg-white border-2 border-[#D4AF37]/60 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer shrink-0"
+                title="Klik untuk memperbesar QR Code Check-In"
+              >
+                <QrCodeCanvas
+                  text={guestCheckInUrl}
+                  size={104}
+                  colorDark="#1c1917"
+                  colorLight="#ffffff"
+                  correctLevel="M"
+                  centerBadgeText="VIP"
+                />
+              </button>
+
+              <div className="space-y-1.5 min-w-0">
+                <div className="inline-flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
+                  {effectiveMatchedGuest?.attendanceStatus ===
+                  'Hadir di Lokasi' ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>
+                        {lang === 'ID'
+                          ? '✓ Sudah Check-In (Hadir di Lokasi)'
+                          : '✓ Checked-In at Venue'}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                      <QrCode className="w-3 h-3" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'E-Ticket & QR Check-In Lokasi'
+                          : 'Venue Check-In QR Pass'}
+                      </span>
+                    </span>
+                  )}
+                  {effectiveMatchedGuest?.invitationCode && (
+                    <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-mono text-[10px] font-bold">
+                      {effectiveMatchedGuest.invitationCode}
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
+                  {resolvedGuestDisplayName}
+                </h4>
+                <p className="text-xs text-stone-600 leading-relaxed max-w-xl">
+                  {lang === 'ID'
+                    ? 'Scan QR Code ini di Meja Penerima Tamu saat tiba di lokasi acara, atau klik tombol Check-In di samping agar kehadiran Anda langsung tercatat otomatis.'
+                    : 'Scan this QR Code at the Reception Desk upon arrival, or click the Check-In button to record your attendance automatically.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap sm:flex-col items-center justify-center gap-2 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setShowCheckInQrModal(true)}
+                className="flex-1 sm:w-44 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <QrCode className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {effectiveMatchedGuest?.attendanceStatus === 'Hadir di Lokasi'
+                    ? lang === 'ID'
+                      ? 'Lihat Bukti Check-In'
+                      : 'View Check-In Pass'
+                    : lang === 'ID'
+                    ? 'Buka QR & Check-In'
+                    : 'Open QR & Check-In'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const dataUrl = renderQRCodeToDataUrl({
+                    text: guestCheckInUrl,
+                    size: 512,
+                    colorDark: '#1c1917',
+                    colorLight: '#ffffff',
+                    correctLevel: 'M',
+                  });
+                  const a = document.createElement('a');
+                  a.href = dataUrl;
+                  a.download = `QR-CheckIn-${(
+                    effectiveMatchedGuest?.invitationCode ||
+                    resolvedGuestDisplayName ||
+                    'Tamu'
+                  ).replace(/[^a-zA-Z0-9_-]+/g, '-')}.png`;
+                  a.click();
+                }}
+                className="flex-1 sm:w-44 py-2 px-3.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 shrink-0" />
+                <span>{lang === 'ID' ? 'Simpan QR (PNG)' : 'Save QR (PNG)'}</span>
+              </button>
+            </div>
+          </div>
         </section>
       )}
 
@@ -5830,6 +6093,212 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         })}
       </nav>
 
+      {/* MODAL: E-TICKET & QR CODE CHECK-IN KEHADIRAN (AUTO CHECK-IN ON SCAN) */}
+      {showCheckInQrModal && (
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowCheckInQrModal(false)}
+        >
+          <div
+            className="bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3] rounded-3xl max-w-md w-full p-5 sm:p-6 text-center text-stone-900 relative shadow-2xl border-2 border-[#D4AF37]/60 space-y-4 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCheckInQrModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 cursor-pointer"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                <QrCode className="w-3.5 h-3.5" />
+                <span>
+                  {lang === 'ID'
+                    ? 'E-Ticket & Check-In Kehadiran'
+                    : 'Guest Check-In QR Pass'}
+                </span>
+              </span>
+              <h3 className="font-serif text-lg sm:text-xl font-extrabold text-stone-900">
+                {displayTitleShort}
+              </h3>
+            </div>
+
+            {/* Live Attendance Status Banner */}
+            {effectiveMatchedGuest?.attendanceStatus === 'Hadir di Lokasi' ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-900 space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-emerald-800 font-extrabold text-xs sm:text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    {lang === 'ID'
+                      ? '✓ CHECK-IN BERHASIL • HADIR DI LOKASI'
+                      : '✓ CHECKED-IN AT VENUE'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-700 font-medium">
+                  {lang === 'ID'
+                    ? `Selamat datang, ${effectiveMatchedGuest.guestName}! Kehadiran Anda (${
+                        effectiveMatchedGuest.confirmedPax ||
+                        effectiveMatchedGuest.pax ||
+                        2
+                      } Pax) telah tercatat di Buku Tamu.`
+                    : `Welcome, ${effectiveMatchedGuest.guestName}! Your attendance has been recorded.`}
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 text-stone-700 text-xs">
+                {lang === 'ID'
+                  ? 'Tunjukkan QR Code ini di Meja Penerima Tamu atau klik tombol Konfirmasi Check-In di bawah saat Anda tiba di lokasi.'
+                  : 'Show this QR Code at the Reception Desk or tap Confirm Check-In below upon arrival.'}
+              </div>
+            )}
+
+            {/* Generated QR Code (davidshimjs/qrcodejs engine) */}
+            <div className="w-56 h-56 mx-auto rounded-2xl border-2 border-[#D4AF37]/60 bg-white flex items-center justify-center p-3 shadow-inner">
+              <QrCodeCanvas
+                text={guestCheckInUrl}
+                size={200}
+                colorDark="#1c1917"
+                colorLight="#ffffff"
+                correctLevel="M"
+                centerBadgeText="VIP"
+              />
+            </div>
+
+            {/* Guest Info or Quick Self-Check-In Selector (if scanning general venue QR) */}
+            {effectiveMatchedGuest || guestParamName?.trim() ? (
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                  {lang === 'ID' ? 'Tamu Undangan' : 'Invited Guest'}
+                </p>
+                <p className="font-serif text-base font-extrabold text-stone-900">
+                  {resolvedGuestDisplayName}
+                </p>
+                <p className="text-[11px] text-[#8B6914] font-semibold">
+                  {effectiveMatchedGuest?.institution || 'Tamu Kehormatan'}{' '}
+                  &bull; {effectiveMatchedGuest?.priority || 'VIP'} &bull;{' '}
+                  {effectiveMatchedGuest?.confirmedPax ||
+                    effectiveMatchedGuest?.pax ||
+                    rsvpPax ||
+                    2}{' '}
+                  Pax
+                </p>
+                {guestCheckInHash && (
+                  <p className="font-mono text-[10px] text-stone-400 truncate">
+                    ID: {effectiveMatchedGuest?.invitationCode || 'INV'} &bull;{' '}
+                    {guestCheckInHash}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/45 text-left space-y-2">
+                <label className="block text-xs font-extrabold text-stone-800">
+                  {lang === 'ID'
+                    ? 'Ketik Nama Anda untuk Check-In Instan:'
+                    : 'Enter Your Name for Instant Check-In:'}
+                </label>
+                <input
+                  type="text"
+                  value={checkInSearchQuery}
+                  onChange={(e) => setCheckInSearchQuery(e.target.value)}
+                  placeholder={
+                    lang === 'ID'
+                      ? 'Cari / ketik nama lengkap Anda...'
+                      : 'Search or type your full name...'
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] border border-stone-300 text-xs text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                />
+                {checkInSearchQuery.trim().length >= 2 && (
+                  <div className="max-h-32 overflow-y-auto space-y-1 pt-1">
+                    {guests
+                      .filter((g) => {
+                        const q = checkInSearchQuery.trim().toLowerCase();
+                        return (
+                          g.guestName.toLowerCase().includes(q) ||
+                          (g.invitationCode || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .slice(0, 5)
+                      .map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedGuestFromSearch(g);
+                            void handleTriggerGuestCheckIn(g);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-[#FAF3E3]/70 hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-left flex items-center justify-between gap-2 text-xs font-bold text-stone-900 cursor-pointer"
+                        >
+                          <span className="truncate">{g.guestName}</span>
+                          <span className="text-[10px] text-[#8B6914] shrink-0">
+                            Check-In &rarr;
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+              {effectiveMatchedGuest?.attendanceStatus !== 'Hadir di Lokasi' &&
+                onCheckInGuest && (
+                  <button
+                    type="button"
+                    disabled={
+                      isCheckingInGuest ||
+                      (!effectiveMatchedGuest &&
+                        !guestParamName?.trim() &&
+                        !checkInSearchQuery.trim())
+                    }
+                    onClick={() => void handleTriggerGuestCheckIn()}
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>
+                      {isCheckingInGuest
+                        ? lang === 'ID'
+                          ? 'Mencatat Kehadiran...'
+                          : 'Checking In...'
+                        : lang === 'ID'
+                        ? '✓ Konfirmasi Check-In Hadir'
+                        : '✓ Confirm Check-In Now'}
+                    </span>
+                  </button>
+                )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const dataUrl = renderQRCodeToDataUrl({
+                    text: guestCheckInUrl,
+                    size: 512,
+                    colorDark: '#1c1917',
+                    colorLight: '#ffffff',
+                    correctLevel: 'M',
+                  });
+                  const a = document.createElement('a');
+                  a.href = dataUrl;
+                  a.download = `QR-CheckIn-${(
+                    effectiveMatchedGuest?.invitationCode ||
+                    resolvedGuestDisplayName ||
+                    'Tamu'
+                  ).replace(/[^a-zA-Z0-9_-]+/g, '-')}.png`;
+                  a.click();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 shrink-0" />
+                <span>{lang === 'ID' ? 'Unduh QR (PNG)' : 'Download QR'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* QRIS MODAL */}
       {showQrisModal && (
         <div
@@ -5864,8 +6333,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 />
               </div>
             ) : (
-              <div className="w-56 h-56 mx-auto rounded-2xl border-2 border-dashed border-[#D4AF37] bg-[#FAF8F5] flex flex-col items-center justify-center p-4 mb-4">
-                <QrCode className="w-32 h-32 text-stone-800" />
+              <div className="w-56 h-56 mx-auto rounded-2xl border-2 border-dashed border-[#D4AF37] bg-white flex flex-col items-center justify-center p-4 mb-4">
+                <QrCodeCanvas
+                  text={`QRIS:${displayTitleFull}:${settings.bankAccounts?.[0]?.accountNumber || 'MEPLANNER'}`}
+                  size={168}
+                  colorDark="#1c1917"
+                  colorLight="#ffffff"
+                  correctLevel="M"
+                  centerBadgeText="QRIS"
+                />
                 <span className="text-[10px] font-mono text-stone-500 mt-2">
                   SCAN QRIS BANK / E-WALLET
                 </span>

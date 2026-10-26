@@ -60,10 +60,12 @@ import {
   SkipBack,
   SkipForward,
   ListMusic,
+  QrCode,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
+import { QrCodeCanvas, renderQRCodeToDataUrl } from '@/components/QrCodeCanvas';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -1583,6 +1585,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [isGuestReceptionModalOpen, setIsGuestReceptionModalOpen] = useState<boolean>(false);
   const [receptionSearchInput, setReceptionSearchInput] = useState<string>('');
   const [checkedInGuest, setCheckedInGuest] = useState<WeddingGuest | null>(null);
+  const [qrModalGuest, setQrModalGuest] = useState<WeddingGuest | null>(null);
+  const [showVenueQrStandee, setShowVenueQrStandee] = useState<boolean>(false);
   const [aiAssistantQuestion, setAiAssistantQuestion] = useState<string>('');
   const [aiAssistantChat, setAiAssistantChat] = useState<
     Array<{ role: 'user' | 'assistant'; text: string }>
@@ -7573,6 +7577,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               </button>
                               <button
                                 type="button"
+                                onClick={() => setQrModalGuest(guest)}
+                                className="px-2.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                                title="QR Code Check-In Kehadiran Tamu"
+                              >
+                                <QrCode className="w-3.5 h-3.5 shrink-0" /> QR
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => onSwitchToPublicPreview(guest)}
                                 className="w-8 h-8 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 hover:text-[#8B6914]"
                                 title="Preview Undangan"
@@ -8016,6 +8028,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               className="px-2.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 whitespace-nowrap"
                             >
                               Teks WA
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQrModalGuest(guest)}
+                              className="px-2.5 py-1.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                              title="QR Code Check-In Kehadiran Tamu"
+                            >
+                              <QrCode className="w-3 h-3 shrink-0" /> QR
                             </button>
                             <button
                               type="button"
@@ -24860,15 +24880,106 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsGuestReceptionModalOpen(false)}
-                className="p-2 rounded-full bg-white hover:bg-[#FAF3E3] text-stone-600 border border-stone-200/90 transition-colors shrink-0 cursor-pointer shadow-2xs"
-                title="Tutup Layar Penerima Tamu"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowVenueQrStandee((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-extrabold border inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                    showVenueQrStandee
+                      ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                      : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/60'
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>{showVenueQrStandee ? 'Tutup QR Meja Tamu' : 'QR Meja Tamu'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsGuestReceptionModalOpen(false)}
+                  className="p-2 rounded-full bg-white hover:bg-[#FAF3E3] text-stone-600 border border-stone-200/90 transition-colors shrink-0 cursor-pointer shadow-2xs"
+                  title="Tutup Layar Penerima Tamu"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {/* Panel QR Code Standee Meja Tamu (Self-Check-In Saat Tamu Scan) */}
+            {showVenueQrStandee && (() => {
+              const baseOrigin =
+                typeof window !== 'undefined' && window.location.origin
+                  ? window.location.origin
+                  : 'https://meplanner.vercel.app';
+              const activeClientObj = effectiveClientGroups.find(
+                (c: ClientGroupItem) => c.id === state.settings.activeClientId
+              );
+              const clientSlugParam =
+                (activeClientObj as any)?.slug ||
+                activeClientObj?.id ||
+                state.settings.activeClientId ||
+                'client-utama';
+              const venueSelfCheckInUrl = `${baseOrigin}/?client=${encodeURIComponent(clientSlugParam)}&checkin=venue`;
+              return (
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-[#D4AF37]/60 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+                  <QrCodeCanvas
+                    text={venueSelfCheckInUrl}
+                    size={168}
+                    colorDark="#1c1917"
+                    colorLight="#ffffff"
+                    correctLevel="H"
+                    centerBadgeText="CHECK-IN"
+                  />
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                      📱 Self-Check-In Meja Penerima Tamu
+                    </div>
+                    <h4 className="font-serif text-base sm:text-lg font-extrabold text-stone-900">
+                      Scan QR Ini untuk Otomatis Check-In Hadir
+                    </h4>
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      Cetak atau tampilkan QR Code ini di meja penerima tamu. Saat tamu scan menggunakan kamera HP, status kehadiran mereka otomatis tercatat <strong>Hadir di Lokasi</strong> secara real-time.
+                    </p>
+                    <div className="pt-1 flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const dataUrl = renderQRCodeToDataUrl({
+                            text: venueSelfCheckInUrl,
+                            size: 640,
+                            colorDark: '#1c1917',
+                            colorLight: '#ffffff',
+                            correctLevel: 'H',
+                          });
+                          if (!dataUrl) return;
+                          const link = document.createElement('a');
+                          link.href = dataUrl;
+                          link.download = `QR-Meja-Tamu-${clientSlugParam}.png`;
+                          link.click();
+                          showToast('✓ Gambar QR Meja Tamu (PNG) berhasil diunduh!');
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Unduh QR Meja Tamu (PNG)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            void navigator.clipboard.writeText(venueSelfCheckInUrl);
+                            showToast('✓ Link Self-Check-In Meja Tamu berhasil disalin!');
+                          }
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Salin Link Check-In</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Grand VIP Welcome Screen Banner (When a Guest is Checked-In) */}
             {checkedInGuest && (
@@ -24936,18 +25047,62 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Search / Scan Input */}
+            {/* Search / Scan Input (Auto Check-In saat Barcode/QR Scanner menembak URL/Hash) */}
             <div className="space-y-2">
               <label className="block text-xs font-extrabold text-[#8B6914]">
-                🔍 Ketik / Scan Key Hash Unik, Kode Undangan (INV-0001), atau Nama Tamu:
+                🔍 Scan QR E-Ticket Tamu / Ketik Key Hash, Kode Undangan (INV-0001), atau Nama Tamu:
               </label>
               <div className="relative">
                 <Search className="w-4 h-4 text-[#B68D40] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={receptionSearchInput}
-                  onChange={(e) => setReceptionSearchInput(e.target.value)}
-                  placeholder="Contoh: DvVsH3CprCb3URDzq8Tmz atau INV-0001 atau Nama Tamu..."
+                  onChange={async (e) => {
+                    const rawVal = e.target.value;
+                    setReceptionSearchInput(rawVal);
+                    const trimmed = rawVal.trim();
+                    if (!trimmed) return;
+
+                    // Ekstrak token jika scanner menembak URL penuh seperti https://meplanner.vercel.app/DvVsH3CprCb3URDzq8Tmz?checkin=1
+                    let tokenCandidate = trimmed;
+                    if (trimmed.includes('/')) {
+                      try {
+                        const parsed = new URL(trimmed);
+                        const seg = parsed.pathname.replace(/^\/+|\/+$/g, '');
+                        if (seg) tokenCandidate = decodeURIComponent(seg);
+                      } catch {
+                        const parts = trimmed.split('/');
+                        const lastPart = parts[parts.length - 1] || '';
+                        tokenCandidate = lastPart.split('?')[0] || trimmed;
+                      }
+                    } else if (trimmed.includes('?')) {
+                      tokenCandidate = trimmed.split('?')[0] || trimmed;
+                    }
+
+                    const activeCid = state.settings.activeClientId || 'client-utama';
+                    const exactMatch = state.guests.find((g) => {
+                      const gHash = computeGuestInvitationHash(activeCid, g);
+                      return (
+                        gHash.toLowerCase() === tokenCandidate.toLowerCase() ||
+                        (g.invitationCode || '').toLowerCase() === tokenCandidate.toLowerCase()
+                      );
+                    });
+
+                    if (exactMatch) {
+                      const updatedGuest: WeddingGuest = {
+                        ...exactMatch,
+                        rsvpStatus: 'Hadir',
+                        attendanceStatus: 'Hadir di Lokasi',
+                        confirmedPax: exactMatch.confirmedPax || exactMatch.pax || 2,
+                      };
+                      await onUpsertGuest(updatedGuest);
+                      setCheckedInGuest(updatedGuest);
+                      showToast(
+                        `✓ Scan QR Berhasil! ${exactMatch.guestName} otomatis Check-In Hadir.`
+                      );
+                    }
+                  }}
+                  placeholder="Arahkan scanner QR ke sini atau ketik Nama Tamu / INV-0001..."
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border-2 border-[#D4AF37]/50 focus:border-[#B68D40] text-stone-900 placeholder:text-stone-400 text-xs sm:text-sm font-medium focus:outline-none shadow-2xs"
                 />
               </div>
@@ -25010,34 +25165,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const updatedGuest: WeddingGuest = {
-                            ...guest,
-                            rsvpStatus: 'Hadir',
-                            attendanceStatus: 'Hadir di Lokasi',
-                            confirmedPax: guest.confirmedPax || guest.pax || 2,
-                          };
-                          await onUpsertGuest(updatedGuest);
-                          setCheckedInGuest(updatedGuest);
-                          showToast(
-                            `✓ Selamat Datang! ${guest.guestName} berhasil Check-In Hadir.`
-                          );
-                        }}
-                        className={`px-3.5 py-2 rounded-xl font-extrabold text-xs shrink-0 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isAlreadyPresent
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200/70'
-                            : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-sm hover:opacity-95'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>
-                          {isAlreadyPresent
-                            ? 'Tampilkan Layar Sapaan'
-                            : '✓ Check-In Tamu Hadir'}
-                        </span>
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setQrModalGuest(guest)}
+                          className="px-2.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 font-extrabold text-xs inline-flex items-center gap-1 cursor-pointer"
+                          title="Tampilkan QR E-Ticket Tamu"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>QR</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const updatedGuest: WeddingGuest = {
+                              ...guest,
+                              rsvpStatus: 'Hadir',
+                              attendanceStatus: 'Hadir di Lokasi',
+                              confirmedPax: guest.confirmedPax || guest.pax || 2,
+                            };
+                            await onUpsertGuest(updatedGuest);
+                            setCheckedInGuest(updatedGuest);
+                            showToast(
+                              `✓ Selamat Datang! ${guest.guestName} berhasil Check-In Hadir.`
+                            );
+                          }}
+                          className={`px-3.5 py-2 rounded-xl font-extrabold text-xs shrink-0 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                            isAlreadyPresent
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200/70'
+                              : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-sm hover:opacity-95'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>
+                            {isAlreadyPresent
+                              ? 'Tampilkan Layar Sapaan'
+                              : '✓ Check-In Tamu Hadir'}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -25045,6 +25211,157 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* =======================================================================
+          MODAL: QR CODE E-TICKET PERSONAL TAMU (GENERATOR & AUTO CHECK-IN)
+         ======================================================================= */}
+      {qrModalGuest && (() => {
+        const liveGuest =
+          state.guests.find((g) => g.id === qrModalGuest.id) || qrModalGuest;
+        const activeCid = state.settings.activeClientId || 'client-utama';
+        const guestHash = computeGuestInvitationHash(activeCid, liveGuest);
+        const baseOrigin =
+          typeof window !== 'undefined' && window.location.origin
+            ? window.location.origin
+            : 'https://meplanner.vercel.app';
+        const checkInQrUrl = `${baseOrigin}/${guestHash}?checkin=1`;
+        const isPresent = liveGuest.attendanceStatus === 'Hadir di Lokasi';
+
+        return (
+          <div
+            className="fixed inset-0 z-[80] bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setQrModalGuest(null)}
+          >
+            <div
+              className="max-w-md w-full bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3] border-2 border-[#D4AF37]/60 text-stone-900 rounded-3xl shadow-2xl p-5 sm:p-6 space-y-4 my-auto text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-[#D4AF37]/30 pb-3">
+                <div className="text-left">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B6914]">
+                    🎫 E-Ticket & QR Check-In Tamu
+                  </span>
+                  <h3 className="font-serif text-lg font-extrabold text-stone-900 truncate">
+                    {liveGuest.guestName}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQrModalGuest(null)}
+                  className="p-2 rounded-full bg-white hover:bg-[#FAF3E3] text-stone-600 border border-stone-200 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex justify-center">
+                <QrCodeCanvas
+                  text={checkInQrUrl}
+                  size={210}
+                  colorDark="#1c1917"
+                  colorLight="#ffffff"
+                  correctLevel="H"
+                  centerBadgeText="VIP PASS"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-stone-700">
+                  {liveGuest.institution || 'Tamu Undangan'} &bull;{' '}
+                  <span className="text-[#8B6914]">{liveGuest.priority}</span> &bull;{' '}
+                  {liveGuest.confirmedPax || liveGuest.pax || 2} Pax
+                </p>
+                <p className="text-[11px] font-mono text-stone-500">
+                  {liveGuest.invitationCode} &bull; Key: {guestHash}
+                </p>
+                <div className="pt-1">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
+                      isPresent
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>
+                      Status: {isPresent ? 'Sudah Check-In (Hadir di Lokasi)' : 'Belum Check-In'}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-600 leading-relaxed bg-white/80 p-2.5 rounded-xl border border-[#D4AF37]/30">
+                Saat QR Code ini di-scan dengan kamera HP atau scanner meja tamu, status kehadiran <strong>{liveGuest.guestName}</strong> otomatis menjadi <strong>Hadir di Lokasi</strong>.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dataUrl = renderQRCodeToDataUrl({
+                      text: checkInQrUrl,
+                      size: 640,
+                      colorDark: '#1c1917',
+                      colorLight: '#ffffff',
+                      correctLevel: 'H',
+                    });
+                    if (!dataUrl) return;
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    const safeName = liveGuest.guestName
+                      .replace(/[^a-zA-Z0-9_-]/g, '-')
+                      .replace(/-+/g, '-');
+                    link.download = `QR-CheckIn-${safeName}.png`;
+                    link.click();
+                    showToast(`✓ QR E-Ticket ${liveGuest.guestName} berhasil diunduh!`);
+                  }}
+                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/60 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh QR (PNG)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      void navigator.clipboard.writeText(checkInQrUrl);
+                      showToast(`✓ Link QR Check-In ${liveGuest.guestName} disalin!`);
+                    }
+                  }}
+                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200 font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Salin Link QR</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const updatedGuest: WeddingGuest = {
+                    ...liveGuest,
+                    rsvpStatus: 'Hadir',
+                    attendanceStatus: 'Hadir di Lokasi',
+                    confirmedPax: liveGuest.confirmedPax || liveGuest.pax || 2,
+                  };
+                  await onUpsertGuest(updatedGuest);
+                  setQrModalGuest(updatedGuest);
+                  setCheckedInGuest(updatedGuest);
+                  showToast(
+                    `✓ ${liveGuest.guestName} berhasil ditandai Hadir di Lokasi!`
+                  );
+                }}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-sm hover:opacity-95 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  {isPresent ? '✓ Sudah Tercatat Hadir di Lokasi' : 'Tandai Check-In Hadir Sekarang'}
+                </span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* =======================================================================
           MOBILE FIXED BOTTOM NAVIGATION BAR (< sm)

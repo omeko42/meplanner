@@ -399,8 +399,9 @@ function WeddingAppContent() {
     searchParams.get('token') ||
     '';
   const urlMode = searchParams.get('mode') || '';
+  const urlCheckinParam = searchParams.get('checkin') || '';
   const hasInitialGuestOrClientUrl = Boolean(
-    rawUrlGuestCode || urlClientParam || rawUrlGuestTo
+    rawUrlGuestCode || urlClientParam || rawUrlGuestTo || urlCheckinParam
   );
 
   const [isUrlGuestSessionCleared, setIsUrlGuestSessionCleared] =
@@ -582,7 +583,7 @@ function WeddingAppContent() {
         return resolvedKey.clientId;
       }
     }
-    if (urlClientParam || urlGuestTo || urlGuestCode) {
+    if (urlClientParam || urlGuestTo || urlGuestCode || urlCheckinParam) {
       return urlClientParam
         ? resolveClientIdFromParam(urlClientParam, [])
         : 'client-utama';
@@ -621,7 +622,7 @@ function WeddingAppContent() {
         return;
       }
     }
-    if (urlClientParam || urlGuestTo || urlGuestCode) {
+    if (urlClientParam || urlGuestTo || urlGuestCode || urlCheckinParam) {
       const resolved = urlClientParam
         ? resolveClientIdFromParam(urlClientParam, clientGroups)
         : 'client-utama';
@@ -631,6 +632,7 @@ function WeddingAppContent() {
     urlClientParam,
     urlGuestTo,
     urlGuestCode,
+    urlCheckinParam,
     clientGroups,
     resolveExactKeyAcrossWorkspaces,
   ]);
@@ -2208,6 +2210,146 @@ function WeddingAppContent() {
     }
   };
 
+  const handlePublicGuestCheckIn = async (payload: {
+    guestId?: string;
+    invitationCode?: string;
+    hashToken?: string;
+    guestName?: string;
+    pax?: number;
+  }): Promise<WeddingGuest> => {
+    const cleanName = (payload.guestName || '').trim() || 'Tamu Kehormatan';
+    const cleanCode = (payload.invitationCode || '').trim().toLowerCase();
+    const cleanHash = (payload.hashToken || '').trim().toLowerCase();
+    const nowDate = new Date().toISOString().slice(0, 10);
+
+    let resolvedGuest: WeddingGuest | null = null;
+
+    const applyCheckInUpdate = (
+      prev: WeddingDatabaseSchema
+    ): WeddingDatabaseSchema => {
+      const nextGuests = [...prev.guests];
+      let targetIdx = -1;
+
+      if (payload.guestId) {
+        targetIdx = nextGuests.findIndex((g) => g.id === payload.guestId);
+      }
+      if (targetIdx < 0 && cleanHash) {
+        targetIdx = nextGuests.findIndex(
+          (g) =>
+            (g.invitationToken || '').trim().toLowerCase() === cleanHash ||
+            computeGuestInvitationHash(activePublicClientId, g).toLowerCase() ===
+              cleanHash ||
+            g.invitationCode.trim().toLowerCase() === cleanHash
+        );
+      }
+      if (targetIdx < 0 && cleanCode) {
+        targetIdx = nextGuests.findIndex(
+          (g) =>
+            g.invitationCode.trim().toLowerCase() === cleanCode ||
+            computeGuestInvitationHash(activePublicClientId, g).toLowerCase() ===
+              cleanCode
+        );
+      }
+      if (targetIdx < 0 && cleanName) {
+        targetIdx = nextGuests.findIndex(
+          (g) => g.guestName.trim().toLowerCase() === cleanName.toLowerCase()
+        );
+      }
+
+      if (targetIdx >= 0) {
+        const existing = nextGuests[targetIdx];
+        const nextPax =
+          Number(payload.pax) || existing.confirmedPax || existing.pax || 2;
+        const updated: WeddingGuest = {
+          ...existing,
+          rsvpStatus: 'Hadir',
+          attendanceStatus: 'Hadir di Lokasi',
+          confirmedPax: nextPax,
+          updatedAt: nowDate,
+          updatedBy: 'QR Scan Check-In',
+        };
+        nextGuests[targetIdx] = updated;
+        resolvedGuest = updated;
+      } else {
+        const created: WeddingGuest = {
+          id: `guest_qr_${Date.now().toString(36)}`,
+          invitationCode:
+            payload.invitationCode ||
+            `INV-${String(nextGuests.length + 1).padStart(4, '0')}`,
+          guestName: cleanName,
+          guestType: 'Teman/Sahabat',
+          side: 'Bersama',
+          institution: 'Tamu Check-In QR',
+          invitationFormat: 'Online',
+          priority: 'P2 - Utama',
+          cardQty: 0,
+          pax: Number(payload.pax) || 2,
+          confirmedPax: Number(payload.pax) || 2,
+          phone: '',
+          address: '',
+          deliveryStatus: 'Sudah Diterima',
+          rsvpStatus: 'Hadir',
+          attendanceStatus: 'Hadir di Lokasi',
+          notes: 'Check-In otomatis melalui Scan QR Code Lokasi',
+          createdAt: nowDate,
+          updatedAt: nowDate,
+          updatedBy: 'QR Scan Check-In',
+        };
+        nextGuests.push(created);
+        resolvedGuest = created;
+      }
+
+      return {
+        ...prev,
+        guests: nextGuests,
+      };
+    };
+
+    if (isShowcaseDummyClientId(activePublicClientId)) {
+      updateDemoClientState(activePublicClientId, applyCheckInUpdate);
+    } else {
+      updateClientScopedState(activePublicClientId, applyCheckInUpdate);
+    }
+
+    const finalGuest: WeddingGuest = resolvedGuest || {
+      id: `guest_qr_${Date.now().toString(36)}`,
+      invitationCode: payload.invitationCode || 'INV-QR',
+      guestName: cleanName,
+      guestType: 'Teman/Sahabat',
+      side: 'Bersama',
+      institution: 'Tamu Check-In QR',
+      invitationFormat: 'Online',
+      priority: 'P2 - Utama',
+      cardQty: 0,
+      pax: Number(payload.pax) || 2,
+      confirmedPax: Number(payload.pax) || 2,
+      phone: '',
+      address: '',
+      deliveryStatus: 'Sudah Diterima',
+      rsvpStatus: 'Hadir',
+      attendanceStatus: 'Hadir di Lokasi',
+      notes: 'Check-In otomatis melalui Scan QR Code Lokasi',
+      createdAt: nowDate,
+      updatedAt: nowDate,
+      updatedBy: 'QR Scan Check-In',
+    };
+
+    appendAuditLog({
+      actor: finalGuest.guestName,
+      module: 'TAMU',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `✓ CHECK-IN QR: "${finalGuest.guestName}" (${finalGuest.invitationCode}) tercatat Hadir di Lokasi`,
+      detail: `Kuota: ${finalGuest.confirmedPax || finalGuest.pax || 2} Pax • Prioritas: ${finalGuest.priority}`,
+    });
+
+    if (activePublicClientId === 'client-utama') {
+      await mutateServer('UPSERT_GUEST', finalGuest);
+    }
+
+    return finalGuest;
+  };
+
   const handleTogglePinWish = async (id: string) => {
     const target = activeAdminState.wishes.find((w) => w.id === id);
     updateClientScopedState(activeWorkspaceClientId, (prev) => ({
@@ -3393,11 +3535,13 @@ function WeddingAppContent() {
             wishes={activePublicState.wishes}
             guestParamName={effectiveGuestName}
             guestParamCode={effectiveGuestCode}
+            autoCheckInParam={urlCheckinParam}
             isAdminLoggedIn={Boolean(adminUser)}
             onOpenAdminPortal={handleOpenAdminPortal}
             onOpenLandingPage={handleOpenLandingPage}
             onTrackAnalytics={handleTrackPublicAnalytics}
             onSubmitRsvp={handleSubmitPublicRsvp}
+            onCheckInGuest={handlePublicGuestCheckIn}
           />
         </div>
       )}
