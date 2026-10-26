@@ -99,7 +99,14 @@ import {
   CommercialPaymentCategory,
   CommercialPaymentTransaction,
   CommercialPaymentStatus,
+  EventCategoryType,
+  InvitationThemePresetId,
 } from '@/types';
+import {
+  MEPLANNER_THEME_PRESETS,
+  ShowcasePackageTier,
+  getShowcaseDummyClientState,
+} from '@/data/showcaseDummyClients';
 
 type BackgroundSectionKey = 'cover' | 'hero' | 'page';
 import { DEFAULT_COMMERCIAL_PAYMENT_CHANNELS } from '@/data/seedData';
@@ -276,7 +283,12 @@ type ManagerThemePresetKey =
   | 'sage_botanical'
   | 'blush_rose'
   | 'royal_navy'
-  | 'terracotta_rust';
+  | 'terracotta_rust'
+  | 'javanese_kraton'
+  | 'wayang_gold'
+  | 'midnight_elegance'
+  | 'espresso_rustic'
+  | 'blubloom_azure';
 
 const MANAGER_THEME_PALETTES: Record<
   ManagerThemePresetKey,
@@ -370,6 +382,81 @@ const MANAGER_THEME_PALETTES: Record<
     inactiveTabHover: 'hover:bg-[#F9EBE4] hover:text-[#8C3D20]',
     badgeIdle: 'bg-[#F9EBE4] text-[#8C3D20] border-[#B85D3B]/35',
   },
+  javanese_kraton: {
+    id: 'javanese_kraton',
+    name: 'Adat Jawa & Keraton',
+    subtitle: 'Sogan Keraton & Emas Tradisional',
+    swatches: ['#B8862D', '#4A2E07', '#F7EFE0'],
+    pageBg: 'bg-[#FBF6EC]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FDF9F1]/95 to-[#F7EFE0]/90 border-[#B8862D]/35',
+    accentPillBg: 'bg-[#F7EFE0] hover:bg-[#EFE1C8] border-[#B8862D]/45',
+    accentPillText: 'text-[#4A2E07]',
+    accentDot: 'bg-[#B8862D]',
+    bannerGrad: 'bg-gradient-to-r from-[#96681E] via-[#B8862D] to-[#754E12]',
+    inactiveTabHover: 'hover:bg-[#F7EFE0] hover:text-[#4A2E07]',
+    badgeIdle: 'bg-[#F7EFE0] text-[#4A2E07] border-[#B8862D]/35',
+  },
+  wayang_gold: {
+    id: 'wayang_gold',
+    name: 'Wayang & Gunungan Emas',
+    subtitle: 'Warisan Budaya & Emas Klasik',
+    swatches: ['#C89B3C', '#5C3D09', '#F8F1E1'],
+    pageBg: 'bg-[#FCF8EF]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FEFAF2]/95 to-[#F8F1E1]/90 border-[#C89B3C]/35',
+    accentPillBg: 'bg-[#F8F1E1] hover:bg-[#F0E3C7] border-[#C89B3C]/45',
+    accentPillText: 'text-[#5C3D09]',
+    accentDot: 'bg-[#C89B3C]',
+    bannerGrad: 'bg-gradient-to-r from-[#A87C28] via-[#C89B3C] to-[#876018]',
+    inactiveTabHover: 'hover:bg-[#F8F1E1] hover:text-[#5C3D09]',
+    badgeIdle: 'bg-[#F8F1E1] text-[#5C3D09] border-[#C89B3C]/35',
+  },
+  midnight_elegance: {
+    id: 'midnight_elegance',
+    name: 'Biru Malam & Bintang',
+    subtitle: 'Malam Elegan & Perak Keemasan',
+    swatches: ['#4A6984', '#172836', '#ECF1F5'],
+    pageBg: 'bg-[#F2F6FA]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FAFBFD]/95 to-[#ECF1F5]/90 border-[#4A6984]/35',
+    accentPillBg: 'bg-[#ECF1F5] hover:bg-[#DEE7EE] border-[#4A6984]/45',
+    accentPillText: 'text-[#172836]',
+    accentDot: 'bg-[#4A6984]',
+    bannerGrad: 'bg-gradient-to-r from-[#365169] via-[#4A6984] to-[#253B4E]',
+    inactiveTabHover: 'hover:bg-[#ECF1F5] hover:text-[#172836]',
+    badgeIdle: 'bg-[#ECF1F5] text-[#172836] border-[#4A6984]/35',
+  },
+  espresso_rustic: {
+    id: 'espresso_rustic',
+    name: 'Rustik Kayu & Kopi',
+    subtitle: 'Cokelat Kopi & Linen Hangat',
+    swatches: ['#8C6245', '#3E2616', '#F5EDE6'],
+    pageBg: 'bg-[#FAF4EF]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#FCF8F4]/95 to-[#F5EDE6]/90 border-[#8C6245]/35',
+    accentPillBg: 'bg-[#F5EDE6] hover:bg-[#EBDED3] border-[#8C6245]/45',
+    accentPillText: 'text-[#3E2616]',
+    accentDot: 'bg-[#8C6245]',
+    bannerGrad: 'bg-gradient-to-r from-[#734E34] via-[#8C6245] to-[#5A3B25]',
+    inactiveTabHover: 'hover:bg-[#F5EDE6] hover:text-[#3E2616]',
+    badgeIdle: 'bg-[#F5EDE6] text-[#3E2616] border-[#8C6245]/35',
+  },
+  blubloom_azure: {
+    id: 'blubloom_azure',
+    name: 'Biru Langit Hydrangea',
+    subtitle: 'Bunga Biru & Sejuk Romantis',
+    swatches: ['#5A8BB0', '#1D3E57', '#EDF4F9'],
+    pageBg: 'bg-[#F3F8FC]',
+    headerGrad:
+      'bg-gradient-to-r from-white/95 via-[#F9FCFE]/95 to-[#EDF4F9]/90 border-[#5A8BB0]/35',
+    accentPillBg: 'bg-[#EDF4F9] hover:bg-[#DFECF5] border-[#5A8BB0]/45',
+    accentPillText: 'text-[#1D3E57]',
+    accentDot: 'bg-[#5A8BB0]',
+    bannerGrad: 'bg-gradient-to-r from-[#437194] via-[#5A8BB0] to-[#305878]',
+    inactiveTabHover: 'hover:bg-[#EDF4F9] hover:text-[#1D3E57]',
+    badgeIdle: 'bg-[#EDF4F9] text-[#1D3E57] border-[#5A8BB0]/35',
+  },
 };
 
 function resolveManagerThemePresetKey(raw?: string): ManagerThemePresetKey {
@@ -385,6 +472,21 @@ function resolveManagerThemePresetKey(raw?: string): ManagerThemePresetKey {
   }
   if (clean === 'terracotta_rust' || clean === 'terracotta-rust') {
     return 'terracotta_rust';
+  }
+  if (clean === 'javanese_kraton' || clean === 'javanese-kraton') {
+    return 'javanese_kraton';
+  }
+  if (clean === 'wayang_gold' || clean === 'wayang-gold') {
+    return 'wayang_gold';
+  }
+  if (clean === 'midnight_elegance' || clean === 'midnight-elegance') {
+    return 'midnight_elegance';
+  }
+  if (clean === 'espresso_rustic' || clean === 'espresso-rustic') {
+    return 'espresso_rustic';
+  }
+  if (clean === 'blubloom_azure' || clean === 'blubloom-azure') {
+    return 'blubloom_azure';
   }
   return 'champagne_gold';
 }
@@ -409,7 +511,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onImportBackup,
   onResetDefault,
   onSyncStateAndUser,
-  activeWorkspaceClientId = 'client-utama',
+  activeWorkspaceClientId = 'client-demo',
   onSwitchWorkspaceClient,
   onOpenLandingPage,
 }) => {
@@ -428,7 +530,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     lowerAdminUsername === 'e98.bisnis@gmail.com' ||
     lowerAdminEmail === 'agungkrisdianto98@gmail.com' ||
     lowerAdminEmail === 'e98.bisnis@gmail.com';
-  const userClientId = adminUser.clientId || 'client-utama';
+  const userClientId =
+    adminUser.clientId || (isSuperadmin ? 'client-demo' : 'client-utama');
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem('my_wedding_admin_active_tab_v2');
@@ -1710,11 +1813,71 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     cryptoNetwork: '',
   });
 
-  // Default Users & Panitia Users from state.adminUsers
-  const defaultSystemUsers = useMemo(
-    () => (state.adminUsers || []).filter((u) => u.isDefaultUser),
-    [state.adminUsers]
-  );
+  // Default Users & Panitia Users from state.adminUsers (including 4 fallback accounts for client-demo)
+  const defaultSystemUsers = useMemo(() => {
+    const base = (state.adminUsers || []).filter((u) => u.isDefaultUser);
+    const demoFallbacks: AdminUser[] = [
+      {
+        id: 'adm-demo-pria',
+        username: 'demo_pria',
+        nama: 'Rayhan (Demo Mempelai Pria)',
+        role: 'MEMPELAI_PRIA',
+        jabatan: 'Mempelai Pria • Klien Demo',
+        email: 'demo.pria@meplanner.id',
+        password: 'demo12345',
+        isDefaultUser: true,
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+      },
+      {
+        id: 'adm-demo-wanita',
+        username: 'demo_wanita',
+        nama: 'Clarissa (Demo Mempelai Wanita)',
+        role: 'MEMPELAI_WANITA',
+        jabatan: 'Mempelai Wanita • Klien Demo',
+        email: 'demo.wanita@meplanner.id',
+        password: 'demo12345',
+        isDefaultUser: true,
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+      },
+      {
+        id: 'adm-demo-kel-pria',
+        username: 'demo_kel_pria',
+        nama: 'Keluarga Rayhan (Demo Kel. Pria)',
+        role: 'KELUARGA_PRIA',
+        jabatan: 'Keluarga Pria • Klien Demo',
+        email: 'demo.kel.pria@meplanner.id',
+        password: 'demo12345',
+        isDefaultUser: true,
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+      },
+      {
+        id: 'adm-demo-kel-wanita',
+        username: 'demo_kel_wanita',
+        nama: 'Keluarga Clarissa (Demo Kel. Wanita)',
+        role: 'KELUARGA_WANITA',
+        jabatan: 'Keluarga Wanita • Klien Demo',
+        email: 'demo.kel.wanita@meplanner.id',
+        password: 'demo12345',
+        isDefaultUser: true,
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+      },
+    ];
+    const merged = [...base];
+    for (const df of demoFallbacks) {
+      if (
+        !merged.some(
+          (u) => u.username.toLowerCase() === df.username.toLowerCase()
+        )
+      ) {
+        merged.push(df);
+      }
+    }
+    return merged;
+  }, [state.adminUsers]);
   const panitiaUsers = useMemo(
     () => (state.adminUsers || []).filter((u) => !u.isDefaultUser || u.role === 'PANITIA'),
     [state.adminUsers]
@@ -1722,15 +1885,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   // Multi-Client Commercial Groups (for grouping Default Users & Panitia per Client)
   const effectiveClientGroups = useMemo<ClientGroupItem[]>(() => {
+    const demoGroup: ClientGroupItem = {
+      id: 'client-demo',
+      clientCode: 'DEMO',
+      clientName: 'Klien Demo • Rayhan & Clarissa',
+      coupleLabel: 'Rayhan & Clarissa',
+      packageTier: 'ROYAL_VIP',
+      status: 'ACTIVE',
+      eventDate: '2026-10-24',
+      notes: 'Ruang Kerja Demo Bawaan Superadmin',
+      createdAt: '2026-10-18T00:00:00.000Z',
+    };
+    const utamaGroom =
+      activeWorkspaceClientId === 'client-utama'
+        ? state.settings.groomNickname || 'Agung'
+        : 'Agung';
+    const utamaBride =
+      activeWorkspaceClientId === 'client-utama'
+        ? state.settings.brideNickname || 'Selo'
+        : 'Selo';
     const baseGroup: ClientGroupItem = {
       id: 'client-utama',
       clientCode: 'UTAMA',
-      clientName: `Client Utama • ${state.settings.groomNickname || 'Eko'} & ${
-        state.settings.brideNickname || 'Selo'
-      }`,
-      coupleLabel: `${state.settings.groomNickname || 'Eko'} & ${
-        state.settings.brideNickname || 'Selo'
-      }`,
+      clientName: `Klien Utama • ${utamaGroom} & ${utamaBride}`,
+      coupleLabel: `${utamaGroom} & ${utamaBride}`,
       packageTier: 'ROYAL_VIP',
       status: 'ACTIVE',
       eventDate: '2026-12-19',
@@ -1743,10 +1921,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       ? state.settings.clientGroups
       : [];
     const map = new Map<string, ClientGroupItem>();
+    map.set(demoGroup.id, demoGroup);
     map.set(baseGroup.id, baseGroup);
     for (const g of configured) {
       if (g && g.id) {
-        map.set(g.id, g.id === 'client-utama' ? { ...baseGroup, ...g } : g);
+        map.set(
+          g.id,
+          g.id === 'client-demo'
+            ? { ...demoGroup, ...g }
+            : g.id === 'client-utama'
+              ? { ...baseGroup, ...g }
+              : g
+        );
       }
     }
     for (const u of state.adminUsers || []) {
@@ -1755,7 +1941,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         map.set(cid, {
           id: cid,
           clientCode: cid.replace(/^client-/i, '').toUpperCase(),
-          clientName: u.clientName || `Client ${cid}`,
+          clientName: u.clientName || `Klien ${cid}`,
           coupleLabel: u.clientName || cid,
           packageTier: 'EXCLUSIVE',
           status: 'ACTIVE',
@@ -1765,12 +1951,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
     return Array.from(map.values());
   }, [
+    activeWorkspaceClientId,
     settingsForm.clientGroups,
     state.settings.clientGroups,
     state.settings.groomNickname,
     state.settings.brideNickname,
     state.adminUsers,
   ]);
+
+  const effectivePayments = useMemo<CommercialPaymentTransaction[]>(() => {
+    const raw =
+      settingsForm.commercialPayments ?? state.settings.commercialPayments;
+    return Array.isArray(raw) ? raw : [];
+  }, [settingsForm.commercialPayments, state.settings.commercialPayments]);
+
+  const unhandledOrders = useMemo<CommercialPaymentTransaction[]>(() => {
+    return effectivePayments.filter(
+      (p) =>
+        p.status === 'PENDING_VERIFICATION' ||
+        p.status === 'INITIATED' ||
+        (p.status === 'PAID_VERIFIED' && !p.provisionedClientId)
+    );
+  }, [effectivePayments]);
+
+  const [themeCategoryFilter, setThemeCategoryFilter] = useState<
+    'ALL' | EventCategoryType
+  >('ALL');
 
   const [selectedClientGroupFilter, setSelectedClientGroupFilter] =
     useState<string>('ALL');
@@ -4072,9 +4278,267 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   };
 
+  const handleApproveAndProvisionOrder = async (
+    tx: CommercialPaymentTransaction
+  ) => {
+    const cleanCouple = (
+      tx.buyerCoupleName ||
+      tx.buyerEmail?.split('@')[0] ||
+      'Klien Baru'
+    ).trim();
+    const baseCode =
+      cleanCouple
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase()
+        .slice(0, 14) || `klien_${Date.now().toString(36).slice(-4)}`;
+
+    const existingGrp = effectiveClientGroups.find(
+      (g) =>
+        (tx.provisionedClientId && g.id === tx.provisionedClientId) ||
+        (tx.orderId && g.notes?.includes(tx.orderId)) ||
+        (tx.idempotencyKey && g.notes?.includes(tx.idempotencyKey))
+    );
+    const clientId =
+      existingGrp?.id ||
+      tx.provisionedClientId ||
+      `client-${baseCode}-${Date.now().toString(36).slice(-3)}`;
+    const clientCode = (
+      existingGrp?.clientCode ||
+      tx.provisionedClientCode ||
+      baseCode
+    ).toUpperCase();
+    const lowerCode = clientCode.toLowerCase();
+    const initialPassword =
+      tx.provisionedInitialPassword || `${lowerCode}12345`;
+    const clientName = existingGrp?.clientName || `Klien • ${cleanCouple}`;
+    const nowIso = new Date().toISOString();
+
+    let serverData: WeddingDatabaseSchema | null = null;
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE_CLIENT_GROUP_USERS',
+          clientId,
+          clientCode: lowerCode,
+          clientName,
+          coupleLabel: cleanCouple,
+          initialPassword,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.data) {
+        serverData = json.data;
+      }
+    } catch {
+      // Fallback to local state provisioning if server route is unreachable
+    }
+
+    const parts = cleanCouple.split('&').map((p) => p.trim());
+    const groomPart = parts[0] || cleanCouple;
+    const bridePart = parts[1] || 'Partner';
+
+    const defaultFourUsers: AdminUser[] = [
+      {
+        id: `adm-${lowerCode}-pria`,
+        username: `${lowerCode}_pria`,
+        nama: `${groomPart} (Mempelai Pria)`,
+        role: 'MEMPELAI_PRIA',
+        jabatan: `Mempelai Pria • ${cleanCouple}`,
+        email: `${lowerCode}.pria@meplanner.id`,
+        password: initialPassword,
+        isDefaultUser: true,
+        clientId,
+        clientName,
+      },
+      {
+        id: `adm-${lowerCode}-wanita`,
+        username: `${lowerCode}_wanita`,
+        nama: `${bridePart} (Mempelai Wanita)`,
+        role: 'MEMPELAI_WANITA',
+        jabatan: `Mempelai Wanita • ${cleanCouple}`,
+        email: `${lowerCode}.wanita@meplanner.id`,
+        password: initialPassword,
+        isDefaultUser: true,
+        clientId,
+        clientName,
+      },
+      {
+        id: `adm-${lowerCode}-kel-pria`,
+        username: `${lowerCode}_kel_pria`,
+        nama: `Keluarga ${groomPart} (Pria)`,
+        role: 'KELUARGA_PRIA',
+        jabatan: `Keluarga Pria • ${cleanCouple}`,
+        email: `${lowerCode}.kel.pria@meplanner.id`,
+        password: initialPassword,
+        isDefaultUser: true,
+        clientId,
+        clientName,
+      },
+      {
+        id: `adm-${lowerCode}-kel-wanita`,
+        username: `${lowerCode}_kel_wanita`,
+        nama: `Keluarga ${bridePart} (Wanita)`,
+        role: 'KELUARGA_WANITA',
+        jabatan: `Keluarga Wanita • ${cleanCouple}`,
+        email: `${lowerCode}.kel.wanita@meplanner.id`,
+        password: initialPassword,
+        isDefaultUser: true,
+        clientId,
+        clientName,
+      },
+    ];
+
+    const baseUsers = serverData?.adminUsers?.length
+      ? [...serverData.adminUsers]
+      : [...(state.adminUsers || [])];
+    for (const u of defaultFourUsers) {
+      if (
+        !baseUsers.some(
+          (ex) => ex.username.toLowerCase() === u.username.toLowerCase()
+        )
+      ) {
+        baseUsers.push(u);
+      }
+    }
+
+    const newGroupItem: ClientGroupItem = {
+      id: clientId,
+      clientCode,
+      clientName,
+      coupleLabel: cleanCouple,
+      packageTier:
+        tx.packageTier === 'ROYAL VIP' ? 'ROYAL_VIP' : tx.packageTier,
+      status: 'ACTIVE',
+      eventDate: existingGrp?.eventDate || '2026-12-19',
+      notes:
+        existingGrp?.notes ||
+        `Order ${tx.orderId} • ${tx.selectedThemeName || tx.packageName}`,
+      createdAt: existingGrp?.createdAt || nowIso,
+    };
+
+    const mergedGroups = [
+      ...effectiveClientGroups.filter((g) => g.id !== clientId),
+      newGroupItem,
+    ];
+
+    const existingWorkspaces = {
+      ...(state.settings.clientWorkspaces || {}),
+      ...(settingsForm.clientWorkspaces || {}),
+    };
+
+    if (!existingWorkspaces[clientId]) {
+      const effectiveEventType: EventCategoryType = tx.eventType || 'WEDDING';
+      const dummyIdForEvent =
+        effectiveEventType === 'BIRTHDAY'
+          ? 'client-demo-birthday'
+          : effectiveEventType === 'GRADUATION'
+            ? 'client-demo-graduation'
+            : effectiveEventType === 'MEETING'
+              ? 'client-demo-meeting'
+              : effectiveEventType === 'GALA_DINNER'
+                ? 'client-demo-gala'
+                : 'client-demo-wedding';
+      const mappedTier: ShowcasePackageTier =
+        tx.packageTier === 'STARTER'
+          ? 'STARTER'
+          : tx.packageTier === 'EXCLUSIVE'
+            ? 'EXCLUSIVE'
+            : 'ROYAL VIP';
+      const baseTemplate = getShowcaseDummyClientState(
+        dummyIdForEvent,
+        mappedTier,
+        tx.selectedThemeId
+      );
+
+      existingWorkspaces[clientId] = {
+        clientId,
+        settings: {
+          ...baseTemplate.settings,
+          activeClientId: clientId,
+          eventType: effectiveEventType,
+          groomFullName: groomPart,
+          groomNickname: groomPart.split(' ')[0] || groomPart,
+          brideFullName: bridePart,
+          brideNickname: bridePart.split(' ')[0] || bridePart,
+          subtitle: `${cleanCouple} • ${
+            tx.selectedThemeName || baseTemplate.settings.subtitle
+          }`,
+          updatedAt: nowIso,
+          updatedBy: adminUser.username,
+        },
+        tasks: baseTemplate.tasks.map((t, idx) => ({
+          ...t,
+          id: `tsk_${lowerCode}_${idx + 1}`,
+          done: false,
+          status: 'BELUM',
+          doneAt: '',
+        })),
+        guests: [],
+        wishes: [],
+        budgetItems: [],
+        updatedAt: nowIso,
+      };
+    }
+
+    const updatedTx: CommercialPaymentTransaction = {
+      ...tx,
+      status: 'PAID_VERIFIED',
+      verifiedBy: adminUser.username,
+      verifiedAt: nowIso,
+      provisionedClientId: clientId,
+      provisionedClientCode: clientCode,
+      provisionedInitialPassword: initialPassword,
+      updatedAt: nowIso,
+    };
+
+    const nextPayments = effectivePayments.some((p) => p.id === tx.id)
+      ? effectivePayments.map((p) => (p.id === tx.id ? updatedTx : p))
+      : [updatedTx, ...effectivePayments];
+
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      clientGroups: mergedGroups,
+      clientWorkspaces: existingWorkspaces,
+      commercialPayments: nextPayments,
+      updatedBy: adminUser.username,
+    };
+
+    setSettingsForm((prev) => ({
+      ...prev,
+      clientGroups: mergedGroups,
+      clientWorkspaces: existingWorkspaces,
+      commercialPayments: nextPayments,
+    }));
+
+    if (onSyncStateAndUser) {
+      onSyncStateAndUser({
+        ...(serverData || state),
+        adminUsers: baseUsers,
+        settings: nextSettings,
+      });
+    }
+    await commitImmediateSettings(nextSettings);
+    void upsertCommercialPaymentToSupabase(updatedTx);
+
+    appendAuditLog({
+      actor: adminUser.username,
+      module: 'SUPERADMIN_PAYMENT',
+      action: 'EDIT',
+      status: 'SUCCESS',
+      summary: `Menerima & mengaktifkan klien "${cleanCouple}" (${clientCode}) dari Order ${tx.orderId} beserta 4 akun login`,
+    });
+    showToast(
+      `✓ Klien "${cleanCouple}" aktif! 4 akun (${lowerCode}_pria s/d kel_wanita • Sandi: ${initialPassword}) siap dikirim.`
+    );
+  };
+
   const handleDeleteClientGroup = (group: ClientGroupItem) => {
-    if (group.id === 'client-utama') {
-      showToast('Grup Client Utama tidak dapat dihapus.');
+    if (group.id === 'client-utama' || group.id === 'client-demo') {
+      showToast('Ruang kerja sistem (Klien Demo / Klien Utama) tidak dapat dihapus.');
       return;
     }
     requestConfirm({
@@ -5395,7 +5859,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       label: 'Superadmin',
                       title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                       icon: Shield,
-                      badge: `${effectiveClientGroups.length} Klien`,
+                      statusDot:
+                        unhandledOrders.length > 0
+                          ? ('warning' as const)
+                          : undefined,
+                      badge:
+                        unhandledOrders.length > 0
+                          ? `🔔 ${unhandledOrders.length} Order`
+                          : `${effectiveClientGroups.length} Klien`,
                     },
                   ]
                 : []),
@@ -12568,7 +13039,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
                         >
                           <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
-                            Palet Tema Warna Undangan &amp; Planner (5 Karakter)
+                            Palet Tema Warna Undangan &amp; Planner (10 Karakter)
                           </p>
                           <ChevronDown
                             className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
@@ -12662,7 +13133,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       )}
                     </div>
 
-                    {/* 1B. Katalog Preset Tema Sesuai Kategori Acara (16 Tema Eksklusif Sinkron Katalog) */}
+                    {/* 1B. Katalog Preset Tema Sesuai Kategori Acara (Sinkron Katalog MEPlanner) */}
                     <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/50 border border-[#D4AF37]/40 space-y-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <button
@@ -12677,7 +13148,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           className="flex items-center gap-1.5 min-w-0 text-left flex-1 group cursor-pointer"
                         >
                           <p className="font-bold text-xs sm:text-sm text-stone-800 group-hover:text-[#8B6914] truncate transition-colors">
-                            Katalog Preset Tema Sesuai Kategori Acara (16 Desain Eksklusif Sinkron Katalog)
+                            Katalog Tema MEPlanner ({MEPLANNER_THEME_PRESETS.length} Desain Sinkron Katalog)
                           </p>
                           <ChevronDown
                             className={`w-4 h-4 text-stone-400 group-hover:text-[#8B6914] shrink-0 transition-transform duration-200 ${
@@ -12702,302 +13173,184 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/45'
                           }`}
                         >
-                          {expandedBgCardKey === 'catalog_themes' ? 'Tutup' : 'Buka 16 Tema'}
+                          {expandedBgCardKey === 'catalog_themes'
+                            ? 'Tutup'
+                            : `Buka ${MEPLANNER_THEME_PRESETS.length} Tema`}
                         </button>
                       </div>
 
                       {expandedBgCardKey === 'catalog_themes' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-[#D4AF37]/25">
-                          {[
-                            {
-                              id: 'timeless-snapshot',
-                              name: 'Timeless Snapshot',
-                              categoryLabel: '💍 Wedding Polaroid',
-                              palette: 'champagne_gold' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#D4AF37', '#8B6914', '#FAF3E3'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'serein-botanical',
-                              name: 'Serein',
-                              categoryLabel: '🌿 Minimalist Botanical',
-                              palette: 'sage_botanical' as const,
-                              frameStyle: 'ARCH_DOME' as const,
-                              layoutArchetype: 'BOTANICAL_AIRY' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#4A6B53', '#7A9A82', '#EBF3ED'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'mildness-ivory',
-                              name: 'Mildness',
-                              categoryLabel: '🌸 Romantic Ivory Blush',
-                              palette: 'blush_rose' as const,
-                              frameStyle: 'CIRCLE' as const,
-                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#C86D7C', '#E8A5B0', '#FDF0F2'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'culture-javanese',
-                              name: 'Culture: Javanese Kraton',
-                              categoryLabel: '🏛️ Royal Kraton Heritage',
-                              palette: 'champagne_gold' as const,
-                              frameStyle: 'ARCH_DOME' as const,
-                              layoutArchetype: 'NUSANTARA_HERITAGE' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#B68D40', '#5C4018', '#FAF0CA'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'wayang-heritage',
-                              name: 'Wayang Heritage Gold',
-                              categoryLabel: '🎭 Nusantara Gold & Rust',
-                              palette: 'terracotta_rust' as const,
-                              frameStyle: 'ARCH_DOME' as const,
-                              layoutArchetype: 'NUSANTARA_HERITAGE' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#B85D3B', '#D4AF37', '#FBF0EB'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'blubloom-floral',
-                              name: 'BluBloom',
-                              categoryLabel: '💠 Twilight Floral',
-                              palette: 'royal_navy' as const,
-                              frameStyle: 'CIRCLE' as const,
-                              layoutArchetype: 'BOTANICAL_AIRY' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#1E3A5F', '#6B9AC4', '#EDF2F8'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'light-luxury',
-                              name: 'Light Luxury',
-                              categoryLabel: '✨ White Pearl & Gold',
-                              palette: 'champagne_gold' as const,
-                              frameStyle: 'ARCH_DOME' as const,
-                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
-                              floral: false,
-                              petals: true,
-                              swatches: ['#D4AF37', '#FFFDF9', '#F3E9D2'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'espresso-editorial',
-                              name: 'Espresso',
-                              categoryLabel: '🍂 Warm Earthy Editorial',
-                              palette: 'terracotta_rust' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
-                              floral: true,
-                              petals: false,
-                              swatches: ['#8C3D20', '#D98A6C', '#F9EBE4'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'photovit-magazine',
-                              name: 'Photovit',
-                              categoryLabel: '📸 Magazine Bento Grid',
-                              palette: 'royal_navy' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'MODERN_BENTO' as const,
-                              floral: false,
-                              petals: false,
-                              swatches: ['#1E3A5F', '#94A3B8', '#F8FAFC'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'peppy-pastel',
-                              name: 'Peppy',
-                              categoryLabel: '🎀 Playful Blush Bento',
-                              palette: 'blush_rose' as const,
-                              frameStyle: 'CIRCLE' as const,
-                              layoutArchetype: 'MODERN_BENTO' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#E11D48', '#FBBF24', '#FFF1F2'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'visual-journey',
-                              name: 'Visual Journey',
-                              categoryLabel: '🎞️ Cinematic Polaroid',
-                              palette: 'champagne_gold' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
-                              floral: false,
-                              petals: true,
-                              swatches: ['#C5A059', '#292524', '#FAF8F5'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'snap-photo',
-                              name: 'Snap Photo',
-                              categoryLabel: '📷 Retro Instant Frame',
-                              palette: 'terracotta_rust' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'POLAROID_MAGAZINE' as const,
-                              floral: true,
-                              petals: false,
-                              swatches: ['#B85D3B', '#78350F', '#FEF3C7'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'sweet-17-rose',
-                              name: 'Sweet 17th Rose',
-                              categoryLabel: '🎂 Birthday Celebration',
-                              palette: 'blush_rose' as const,
-                              frameStyle: 'CIRCLE' as const,
-                              layoutArchetype: 'MODERN_BENTO' as const,
-                              floral: true,
-                              petals: true,
-                              swatches: ['#D88290', '#F3D77D', '#FCECEF'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'cum-laude-gold',
-                              name: 'Cum Laude Gold',
-                              categoryLabel: '🎓 Graduation Prestige',
-                              palette: 'champagne_gold' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'EDITORIAL_CLASSIC' as const,
-                              floral: false,
-                              petals: true,
-                              swatches: ['#C5A059', '#8B6914', '#FAF3E3'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'executive-summit',
-                              name: 'Executive Summit',
-                              categoryLabel: '🏛️ Corporate & Instansi',
-                              palette: 'royal_navy' as const,
-                              frameStyle: 'EDITORIAL_RECT' as const,
-                              layoutArchetype: 'MODERN_BENTO' as const,
-                              floral: false,
-                              petals: false,
-                              swatches: ['#1E3A5F', '#475569', '#F1F5F9'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
-                            },
-                            {
-                              id: 'royal-sapphire-gala',
-                              name: 'Royal Sapphire Gala',
-                              categoryLabel: '🥂 VIP Gala Dinner',
-                              palette: 'royal_navy' as const,
-                              frameStyle: 'ARCH_DOME' as const,
-                              layoutArchetype: 'MODERN_BENTO' as const,
-                              floral: false,
-                              petals: true,
-                              swatches: ['#1E3A5F', '#D4AF37', '#EDF2F8'],
-                              coverBgUrl: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
-                            },
-                          ].map((presetItem) => {
-                            const currentLayoutArchetype =
-                              (settingsForm as any).themeLayoutArchetype ||
-                              (state.settings as any).themeLayoutArchetype ||
-                              'EDITORIAL_CLASSIC';
-                            const currentCatalogName =
-                              (settingsForm as any).selectedCatalogThemeName ||
-                              (state.settings as any).selectedCatalogThemeName ||
-                              '';
-                            const isCurrent =
-                              currentCatalogName === presetItem.name ||
-                              (!currentCatalogName &&
-                                activeThemePresetId === presetItem.palette &&
-                                (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
-                                  presetItem.frameStyle &&
-                                currentLayoutArchetype === presetItem.layoutArchetype);
-                            return (
+                        <div className="space-y-3 pt-2 border-t border-[#D4AF37]/25">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {(
+                              [
+                                { id: 'ALL', label: `Semua (${MEPLANNER_THEME_PRESETS.length})` },
+                                { id: 'WEDDING', label: '💍 Pernikahan' },
+                                { id: 'BIRTHDAY', label: '🎂 Ulang Tahun' },
+                                { id: 'GRADUATION', label: '🎓 Wisuda' },
+                                { id: 'MEETING', label: '🏛️ Rapat' },
+                                { id: 'GALA_DINNER', label: '🥂 Gala Dinner' },
+                              ] as const
+                            ).map((cat) => (
                               <button
-                                key={presetItem.id}
+                                key={cat.id}
                                 type="button"
-                                onClick={async () => {
-                                  const nextSettings: WeddingSettings = {
-                                    ...state.settings,
-                                    ...settingsForm,
-                                    themePreset: presetItem.palette,
-                                    profileFrameStyle: presetItem.frameStyle,
-                                    showFloralOrnaments: presetItem.floral,
-                                    showFloatingPetals: presetItem.petals,
-                                    coverBgUrl: presetItem.coverBgUrl,
-                                    heroPrewedUrl: presetItem.coverBgUrl,
-                                    updatedBy: adminUser.username,
-                                  };
-                                  (nextSettings as any).themeLayoutArchetype =
-                                    presetItem.layoutArchetype;
-                                  (nextSettings as any).selectedCatalogThemeId = presetItem.id;
-                                  (nextSettings as any).selectedCatalogThemeName =
-                                    presetItem.name;
-                                  setSettingsFormInternal(nextSettings);
-                                  await commitImmediateSettings(nextSettings);
-                                  showToast(
-                                    `✓ Tema Katalog "${presetItem.name}" (${presetItem.categoryLabel} • ${presetItem.layoutArchetype}) berhasil diterapkan ke undangan!`
-                                  );
-                                }}
-                                className={`rounded-xl border text-left transition-all flex flex-col justify-between overflow-hidden cursor-pointer ${
-                                  isCurrent
-                                    ? 'bg-white ring-2 ring-[#B68D40] border-[#B68D40] shadow-xs'
-                                    : 'bg-white hover:bg-[#FAF3E3]/60 border-stone-200/90 hover:border-[#D4AF37]'
+                                onClick={() => setThemeCategoryFilter(cat.id)}
+                                className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                                  themeCategoryFilter === cat.id
+                                    ? 'bg-stone-900 text-[#FAF3E3] border-stone-900'
+                                    : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
                                 }`}
                               >
-                                <div className="h-24 w-full overflow-hidden bg-stone-100 border-b border-stone-100">
-                                  <img
-                                    src={presetItem.coverBgUrl}
-                                    alt={presetItem.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.currentTarget;
-                                      if (target.src !== THEME_PREVIEW_FALLBACK_DATA_URI) {
-                                        target.src = THEME_PREVIEW_FALLBACK_DATA_URI;
-                                      }
-                                    }}
-                                  />
-                                </div>
-                                <div className="p-2.5 space-y-1.5 bg-white">
-                                  <div className="flex items-center justify-between gap-1.5">
-                                    <span className="text-[10px] font-bold text-[#8B6914] truncate">
-                                      {presetItem.categoryLabel}
-                                    </span>
-                                    <div className="flex items-center -space-x-1 shrink-0">
-                                      {presetItem.swatches.map((hex, idx) => (
-                                        <span
-                                          key={hex + idx}
-                                          className="w-3 h-3 rounded-full border border-white shadow-2xs"
-                                          style={{ backgroundColor: hex }}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center justify-between gap-1">
-                                      <p className="font-extrabold text-xs text-stone-900 truncate">
-                                        {presetItem.name}
-                                      </p>
-                                      {isCurrent && (
-                                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold shrink-0">
-                                          Aktif
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                                      {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
-                                      {presetItem.frameStyle}
-                                    </p>
-                                  </div>
-                                </div>
+                                {cat.label}
                               </button>
-                            );
-                          })}
+                            ))}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                            {MEPLANNER_THEME_PRESETS.filter(
+                              (t) =>
+                                themeCategoryFilter === 'ALL' ||
+                                t.eventType === themeCategoryFilter
+                            ).map((presetItem) => {
+                              const currentLayoutArchetype =
+                                (settingsForm as any).themeLayoutArchetype ||
+                                (state.settings as any).themeLayoutArchetype ||
+                                'EDITORIAL_CLASSIC';
+                              const currentCatalogId =
+                                (settingsForm as any).selectedCatalogThemeId ||
+                                (state.settings as any).selectedCatalogThemeId ||
+                                '';
+                              const currentCatalogName =
+                                (settingsForm as any).selectedCatalogThemeName ||
+                                (state.settings as any).selectedCatalogThemeName ||
+                                '';
+                              const isCurrent =
+                                currentCatalogId === presetItem.id ||
+                                (presetItem.aliases || []).includes(currentCatalogId) ||
+                                currentCatalogName === presetItem.name ||
+                                (!currentCatalogName &&
+                                  !currentCatalogId &&
+                                  activeThemePresetId === presetItem.themePreset &&
+                                  (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
+                                    presetItem.frameStyle &&
+                                  currentLayoutArchetype === presetItem.layoutArchetype);
+                              const categoryIcon =
+                                presetItem.eventType === 'BIRTHDAY'
+                                  ? '🎂'
+                                  : presetItem.eventType === 'GRADUATION'
+                                    ? '🎓'
+                                    : presetItem.eventType === 'MEETING'
+                                      ? '🏛️'
+                                      : presetItem.eventType === 'GALA_DINNER'
+                                        ? '🥂'
+                                        : '💍';
+                              return (
+                                <button
+                                  key={presetItem.id}
+                                  type="button"
+                                  onClick={async () => {
+                                    const currentCover = (
+                                      settingsForm.coverBgUrl ??
+                                      state.settings.coverBgUrl ??
+                                      ''
+                                    ).trim();
+                                    const currentHero = (
+                                      settingsForm.heroPrewedUrl ??
+                                      state.settings.heroPrewedUrl ??
+                                      ''
+                                    ).trim();
+                                    const shouldUpdateCover =
+                                      activeWorkspaceClientId !== 'client-utama' &&
+                                      (!currentCover ||
+                                        currentCover.includes('images.unsplash.com'));
+                                    const shouldUpdateHero =
+                                      activeWorkspaceClientId !== 'client-utama' &&
+                                      (!currentHero ||
+                                        currentHero.includes('images.unsplash.com'));
+
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      themePreset: presetItem.themePreset,
+                                      profileFrameStyle: presetItem.frameStyle,
+                                      showFloralOrnaments:
+                                        presetItem.showFloralCorners !== false,
+                                      showFloatingPetals: true,
+                                      ...(shouldUpdateCover
+                                        ? { coverBgUrl: presetItem.coverImageUrl }
+                                        : {}),
+                                      ...(shouldUpdateHero
+                                        ? { heroPrewedUrl: presetItem.heroImageUrl }
+                                        : {}),
+                                      updatedBy: adminUser.username,
+                                    };
+                                    (nextSettings as any).themeLayoutArchetype =
+                                      presetItem.layoutArchetype;
+                                    (nextSettings as any).selectedCatalogThemeId =
+                                      presetItem.id;
+                                    (nextSettings as any).selectedCatalogThemeName =
+                                      presetItem.name;
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      `✓ Tema "${presetItem.name}" (${presetItem.styleBadge}) berhasil diterapkan!`
+                                    );
+                                  }}
+                                  className={`rounded-xl border text-left transition-all flex flex-col justify-between overflow-hidden cursor-pointer ${
+                                    isCurrent
+                                      ? 'bg-white ring-2 ring-[#B68D40] border-[#B68D40] shadow-xs'
+                                      : 'bg-white hover:bg-[#FAF3E3]/60 border-stone-200/90 hover:border-[#D4AF37]'
+                                  }`}
+                                >
+                                  <div className="h-24 w-full overflow-hidden bg-stone-100 border-b border-stone-100">
+                                    <img
+                                      src={presetItem.coverImageUrl}
+                                      alt={presetItem.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.currentTarget;
+                                        if (
+                                          target.src !== THEME_PREVIEW_FALLBACK_DATA_URI
+                                        ) {
+                                          target.src = THEME_PREVIEW_FALLBACK_DATA_URI;
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="p-2.5 space-y-1.5 bg-white">
+                                    <div className="flex items-center justify-between gap-1.5">
+                                      <span className="text-[10px] font-bold text-[#8B6914] truncate">
+                                        {categoryIcon} {presetItem.styleBadge}
+                                      </span>
+                                      <span
+                                        className="w-3 h-3 rounded-full border border-stone-200 shadow-2xs shrink-0"
+                                        style={{
+                                          backgroundColor: presetItem.accentHex,
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center justify-between gap-1">
+                                        <p className="font-extrabold text-xs text-stone-900 truncate">
+                                          {presetItem.name}
+                                        </p>
+                                        {isCurrent && (
+                                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold shrink-0">
+                                            Aktif
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[10px] text-stone-500 truncate mt-0.5">
+                                        {presetItem.layoutArchetype.replace('_', ' ')} &bull;{' '}
+                                        {presetItem.frameStyle}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -14485,12 +14838,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   return (
                     <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                           <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Akun Inti Keluarga &amp; Panitia
+                            Akun Keluarga &amp; Panitia
                           </h3>
-                          <InfoTooltip text="Kelola kata sandi 4 akun inti keluarga (Mempelai & Orang Tua) serta akun Panitia / WO untuk workspace acara yang sedang aktif. Untuk manajemen multi-klien & tambah grup klien baru, gunakan tab Superadmin di navigasi atas." />
+                          <InfoTooltip text="Kelola kata sandi 4 akun inti keluarga (Mempelai & Orang Tua) serta akun Panitia / WO untuk acara ini." />
                         </div>
                         {isSuperadmin && (
                           <button
@@ -14500,10 +14853,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setSuperadminMenuTab('clients');
                             }}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px] transition-colors cursor-pointer"
-                            title="Kelola seluruh Grup Client & tambah Grup Client Baru di Panel Superadmin"
+                            title="Kelola daftar klien di Panel Superadmin"
                           >
                             <Shield className="w-3.5 h-3.5" />
-                            <span>Kelola Multi-Klien di Superadmin &rarr;</span>
+                            <span>Semua Klien &rarr;</span>
                           </button>
                         )}
                       </div>
@@ -14557,14 +14910,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </span>
                               </div>
                               <p className="text-[11px] text-stone-500 mt-0.5">
-                                {activeWorkspaceDefaultUsers.length} Akun Default Inti (Mempelai &amp; Orang Tua) pada Workspace Aktif
+                                {activeWorkspaceDefaultUsers.length} Akun Inti (Mempelai &amp; Orang Tua)
                               </p>
                             </div>
                           </div>
 
                           {activeWorkspaceDefaultUsers.length === 0 ? (
                             <div className="p-4 text-center text-xs text-stone-500">
-                              Belum ada User Default pada workspace ini.
+                              Belum ada akun inti pada klien ini.
                             </div>
                           ) : (
                             <div className="divide-y divide-stone-200/60 bg-white px-4">
@@ -14599,14 +14952,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                                   <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
                                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                      User Default
+                                      Akun Inti
                                     </span>
                                     <button
                                       type="button"
                                       onClick={() => handleSelectDefaultUserForEdit(u)}
                                       className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
                                     >
-                                      Kelola / Password
+                                      Ubah Sandi
                                     </button>
                                   </div>
                                 </div>
@@ -14620,8 +14973,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       {keamananSubTab === 'panitia' && (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-stone-100">
-                            <span className="text-xs text-stone-500">
-                              Akses Non-Moneter untuk Workspace:{' '}
+                            <span className="text-xs text-stone-500 inline-flex items-center gap-1">
+                              <span>Panitia / WO:</span>
                               <strong className="text-[#8B6914]">
                                 {(
                                   activeWorkspaceGroup?.coupleLabel ||
@@ -14629,6 +14982,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   ''
                                 ).replace(/â€¢/g, '•')}
                               </strong>
+                              <InfoTooltip text="Panitia memiliki akses penuh ke daftar tamu, jadwal, dan layar penerima tamu, tanpa melihat rincian anggaran biaya." />
                             </span>
                             <button
                               type="button"
@@ -14644,14 +14998,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              Tambah Panitia
+                              Panitia Baru
                             </button>
                           </div>
 
                           {activeWorkspacePanitiaUsers.length === 0 ? (
                             <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
-                              Belum ada akun Panitia / WO pada workspace ini. Klik{' '}
-                              <strong>+ Tambah Panitia</strong> untuk membuat akun.
+                              Belum ada akun Panitia / WO. Klik <strong>+ Panitia Baru</strong> untuk menambahkan.
                             </div>
                           ) : (
                             <div className="divide-y divide-stone-100">
@@ -14738,7 +15091,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2 min-w-0">
                         <FileSpreadsheet className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Data, Cloud Supabase &amp; Backup Terpadu
+                          Data &amp; Cloud
                         </h3>
                         <InfoTooltip text="Pusat kendali status sinkronisasi Supabase Cloud, Log Audit & Error, Backup/Restore file .JSON, serta ekspor laporan spreadsheet (.CSV)." />
                       </div>
@@ -14767,10 +15120,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         />
                         <span>
                           {cloudSyncStatus === 'SYNCED'
-                            ? 'Supabase OK'
+                            ? 'Cloud OK'
                             : cloudSyncStatus === 'SYNCING'
-                            ? 'Sinkronisasi...'
-                            : 'Auto-Save Aktif'}{' '}
+                            ? 'Sinkron...'
+                            : 'Auto-Save'}{' '}
                           &bull; Log ({auditLogs.length})
                         </span>
                       </button>
@@ -14783,13 +15136,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <FileJson className="w-4 h-4" />
                           </div>
-                          <div>
+                          <div className="flex items-center gap-1.5">
                             <p className="font-bold text-stone-900">
-                              Backup &amp; Restore Database (.JSON)
+                              Cadangan Data (.JSON)
                             </p>
-                            <p className="text-[11px] text-stone-500">
-                              Unduh cadangan penuh (.JSON) atau pulihkan data dari file backup
-                            </p>
+                            <InfoTooltip text="Unduh cadangan penuh (.JSON) atau pulihkan data dari file backup." />
                           </div>
                         </div>
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
@@ -14820,7 +15171,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
                           >
                             <Download className="w-3.5 h-3.5 text-[#B68D40]" />
-                            <span>Backup (.JSON)</span>
+                            <span>Unduh</span>
                           </button>
                           <button
                             type="button"
@@ -14828,7 +15179,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs"
                           >
                             <Upload className="w-3.5 h-3.5" />
-                            <span>Restore (.JSON)</span>
+                            <span>Pulihkan</span>
                           </button>
                         </div>
                       </div>
@@ -14839,13 +15190,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
                             <FileSpreadsheet className="w-4 h-4" />
                           </div>
-                          <div>
+                          <div className="flex items-center gap-1.5">
                             <p className="font-bold text-stone-900">
-                              Ekspor Spreadsheet (.CSV)
+                              Ekspor Excel (.CSV)
                             </p>
-                            <p className="text-[11px] text-stone-500">
-                              Format tabel untuk Microsoft Excel
-                            </p>
+                            <InfoTooltip text="Unduh tabel Checklist, Tamu, atau Moneter dalam format .CSV untuk Microsoft Excel." />
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap self-end sm:self-center justify-end">
@@ -14904,13 +15253,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               className={`w-4 h-4 ${isSyncingSheets ? 'animate-spin' : ''}`}
                             />
                           </div>
-                          <div>
+                          <div className="flex items-center gap-1.5">
                             <p className="font-bold text-stone-900">
-                              Sinkronisasi Google Sheets
+                              Google Sheets
                             </p>
-                            <p className="text-[11px] text-stone-500">
-                              Tarik data dari spreadsheet ke lokal &amp; Supabase
-                            </p>
+                            <InfoTooltip text="Tarik data dari spreadsheet ke penyimpanan lokal dan Supabase Cloud." />
                           </div>
                         </div>
                         <button
@@ -14929,21 +15276,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <div className="w-9 h-9 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                             <Shield className="w-4 h-4" />
                           </div>
-                          <div>
-                            <p className="font-bold text-stone-900 flex items-center gap-1.5">
-                              <span>Log Audit &amp; Error Sistem</span>
-                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
-                                {auditLogs.length} Catatan
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-bold text-stone-900">
+                              Log Aktivitas
+                            </p>
+                            <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
+                              {auditLogs.length}
+                            </span>
+                            {auditLogs.some((l) => l.status === 'ERROR') && (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">
+                                {auditLogs.filter((l) => l.status === 'ERROR').length} Error
                               </span>
-                              {auditLogs.some((l) => l.status === 'ERROR') && (
-                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">
-                                  {auditLogs.filter((l) => l.status === 'ERROR').length} Error
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-[11px] text-stone-500">
-                              Pantau riwayat tambah, edit, hapus, simpan &amp; lacak penyebab error
-                            </p>
+                            )}
+                            <InfoTooltip text="Pantau riwayat tambah, edit, hapus, simpan & lacak penyebab error." />
                           </div>
                         </div>
                         <button
@@ -14954,7 +15299,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           }}
                           className="self-end sm:self-center px-3.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs shrink-0"
                         >
-                          Buka Log Audit
+                          Lihat Log
                         </button>
                       </div>
 
@@ -14965,13 +15310,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <div className="w-9 h-9 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
                               <RotateCcw className="w-4 h-4" />
                             </div>
-                            <div>
+                            <div className="flex items-center gap-1.5">
                               <p className="font-bold text-stone-900">
                                 Reset Data Awal
                               </p>
-                              <p className="text-[11px] text-stone-500">
-                                Kembalikan seluruh database ke kondisi default
-                              </p>
+                              <InfoTooltip text="Kembalikan seluruh database ruang kerja aktif ke kondisi default awal." />
                             </div>
                           </div>
                           <button
@@ -15456,11 +15799,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
-                    Panel Superadmin Multi-Klien
-                  </h2>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
+                      Panel Superadmin
+                    </h2>
+                    <InfoTooltip text="Manajemen lisensi, gateway pembayaran, dan seluruh ruang kerja klien aktif." />
+                  </div>
                   <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
-                    Manajemen Lisensi, Gateway Pembayaran &amp; {effectiveClientGroups.length} Klien Komersial Aktif
+                    {effectiveClientGroups.length} Klien Aktif &bull; Ruang Kerja:{' '}
+                    <strong className="text-[#8B6914]">
+                      {effectiveClientGroups.find(
+                        (g) => g.id === activeWorkspaceClientId
+                      )?.coupleLabel || 'Klien Demo'}
+                    </strong>
                   </p>
                 </div>
               </div>
@@ -15468,25 +15819,66 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsAddClientModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs transition-all"
-                  title="Tambah Grup Client Baru"
-                >
-                  <Plus className="w-3.5 h-3.5 shrink-0" />
-                  <span className="hidden sm:inline">Klien Baru</span>
-                  <span className="sm:hidden">Klien</span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => onSwitchToPublicPreview()}
                   className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors"
                   title="Buka tampilan undangan publik"
                 >
                   <Eye className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                  <span className="hidden sm:inline">Pratinjau Undangan</span>
+                  <span>Lihat Undangan</span>
                 </button>
               </div>
             </div>
+
+            {/* INCOMING ORDER NOTIFICATION ALERT BAR */}
+            {unhandledOrders.length > 0 &&
+              (() => {
+                const latestOrder = unhandledOrders[0];
+                return (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-[#FAF3E3] to-amber-50 border-2 border-[#D4AF37] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-xs sm:text-sm font-extrabold text-stone-900 flex items-center gap-1.5">
+                        <span>
+                          🔔 {unhandledOrders.length} Pesanan Klien Baru Menunggu Aktivasi
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-stone-700 truncate">
+                        <strong>{latestOrder.buyerCoupleName}</strong> &bull; Paket{' '}
+                        <strong>
+                          {latestOrder.packageName || latestOrder.packageTier}
+                        </strong>
+                        {latestOrder.selectedThemeName
+                          ? ` • Tema ${latestOrder.selectedThemeName}`
+                          : ''}{' '}
+                        &bull;{' '}
+                        <span className="font-bold text-[#8B6914]">
+                          {latestOrder.amountDisplay}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void handleApproveAndProvisionOrder(latestOrder)
+                        }
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs cursor-pointer"
+                      >
+                        ✓ Terima &amp; Aktifkan Klien
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSuperadminMenuTab('payments');
+                          setPaymentLedgerFilter('ALL');
+                        }}
+                        className="px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-xs cursor-pointer"
+                      >
+                        Lihat Detail &rarr;
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
             {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
@@ -15496,43 +15888,47 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   [
                     {
                       id: 'clients' as const,
-                      label: 'Manajemen Klien',
+                      label: 'Daftar Klien',
                       icon: Users,
-                      badge: `${effectiveClientGroups.length} Klien`,
+                      badge: `${effectiveClientGroups.length}`,
                     },
                     {
                       id: 'payments' as const,
-                      label: 'Wallet & Pembayaran',
+                      label: 'Pembayaran',
                       icon: Wallet,
-                      badge: `${
-                        (settingsForm.commercialPaymentChannels &&
-                        settingsForm.commercialPaymentChannels.length > 0
-                          ? settingsForm.commercialPaymentChannels
-                          : state.settings.commercialPaymentChannels &&
-                            state.settings.commercialPaymentChannels.length > 0
-                          ? state.settings.commercialPaymentChannels
-                          : DEFAULT_COMMERCIAL_PAYMENT_CHANNELS
-                        ).filter((c) => c.isActive).length
-                      } Wallet`,
+                      badge:
+                        unhandledOrders.length > 0
+                          ? `🔔 ${unhandledOrders.length} Baru`
+                          : `${
+                              (settingsForm.commercialPaymentChannels &&
+                              settingsForm.commercialPaymentChannels.length > 0
+                                ? settingsForm.commercialPaymentChannels
+                                : state.settings.commercialPaymentChannels &&
+                                    state.settings.commercialPaymentChannels
+                                      .length > 0
+                                  ? state.settings.commercialPaymentChannels
+                                  : DEFAULT_COMMERCIAL_PAYMENT_CHANNELS
+                              ).filter((c) => c.isActive).length
+                            } Aktif`,
                     },
                     {
                       id: 'moderation' as const,
-                      label: 'Moderasi & Audit',
+                      label: 'Moderasi Ucapan',
                       icon: Shield,
                     },
                     {
                       id: 'insights' as const,
-                      label: 'Insight & Trafik',
+                      label: 'Statistik Tamu',
                       icon: Eye,
                     },
                     {
                       id: 'storage' as const,
-                      label: 'Kapasitas DB',
+                      label: 'Penyimpanan',
                       icon: FileSpreadsheet,
                     },
                     {
                       id: 'branding' as const,
-                      label: 'Branding & Global',
+                      label: 'Identitas Brand',
                       icon: Sparkles,
                     },
                   ] as const
@@ -15580,32 +15976,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {/* RIGHT CONTENT PANEL */}
               <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===========================================================
-                    1. MANAJEMEN KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
+                    1. DAFTAR KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
                    =========================================================== */}
                 {superadminMenuTab === 'clients' && (
                   <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                           <Users className="w-4 h-4" />
                         </div>
-                        <div>
+                        <div className="flex items-center gap-1.5">
                           <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Akun &amp; Grouping Multi-Client ({effectiveClientGroups.length} Klien)
+                            Daftar Klien ({effectiveClientGroups.length})
                           </h3>
-                          <p className="text-[11px] text-stone-500">
-                            Kelola seluruh Grup Client, tambah Grup Client Baru, serta atur <strong>4 Akun Default Inti</strong> &amp; Panitia per klien.
-                          </p>
+                          <InfoTooltip text="Kelola seluruh ruang kerja klien, tambah klien baru, serta atur 4 akun inti (Mempelai Pria, Mempelai Wanita, Keluarga Pria, Keluarga Wanita) dan akun Panitia/WO." />
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsAddClientModalOpen(true)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0 cursor-pointer"
-                        title="Tambah Grup Client Baru"
+                        title="Tambah Klien Baru"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Grup Client Baru</span>
+                        <span>+ Klien Baru</span>
                       </button>
                     </div>
 
@@ -15613,10 +16007,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
-                          Filter Grouping Client ({effectiveClientGroups.length} Klien)
+                          Filter Klien
                         </span>
                         <span className="text-[10px] text-stone-500">
-                          Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
+                          {defaultSystemUsers.length} Akun Inti &bull; {panitiaUsers.length} Panitia
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
@@ -15629,7 +16023,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
                           }`}
                         >
-                          Semua Grup ({effectiveClientGroups.length})
+                          Semua ({effectiveClientGroups.length})
                         </button>
                         {effectiveClientGroups.map((cg) => {
                           const countDefault = defaultSystemUsers.filter(
@@ -15655,7 +16049,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     : 'bg-[#FAF3E3] text-[#8B6914]'
                                 }`}
                               >
-                                {countDefault} Inti
+                                {countDefault} Akun
                               </span>
                             </button>
                           );
@@ -15697,26 +16091,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     </span>
                                   </div>
                                   <p className="text-[11px] text-stone-500 mt-0.5">
-                                    {cg.notes || 'Paket Komersial My Event Planner'} &bull;{' '}
+                                    {cg.notes || 'Paket Komersial MEPlanner'} &bull;{' '}
                                     {cg.eventDate || '2026-12-19'}
                                   </p>
                                 </div>
-                                {cg.id !== 'client-utama' && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteClientGroup(cg)}
-                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
-                                    title="Hapus Grup Client"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
+                                {cg.id !== 'client-utama' &&
+                                  cg.id !== 'client-demo' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteClientGroup(cg)}
+                                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
+                                      title="Hapus Klien"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                               </div>
 
                               <div className="p-4 space-y-2.5">
                                 <div className="flex items-center justify-between text-[11px] font-bold text-stone-600">
                                   <span>
-                                    4 User Default ({groupDefaultUsers.length} Akun Inti):
+                                    Akun Inti ({groupDefaultUsers.length}):
                                   </span>
                                   <span className="text-[#8B6914]">
                                     {groupPanitiaUsers.length} Panitia/WO
@@ -15760,7 +16155,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     onClick={() => {
                                       onSwitchWorkspaceClient(cg.id);
                                       showToast(
-                                        `✓ Beralih ke Workspace Klien: ${
+                                        `✓ Beralih ke Ruang Kerja: ${
                                           cg.coupleLabel || cg.clientName
                                         }`
                                       );
@@ -15772,8 +16167,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     }`}
                                   >
                                     {activeWorkspaceClientId === cg.id
-                                      ? '✓ Workspace Sedang Aktif'
-                                      : 'Buka Workspace Klien Ini'}
+                                      ? '✓ Sedang Dibuka'
+                                      : 'Buka Klien'}
                                   </button>
                                 )}
                                 <button
@@ -15786,7 +16181,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   }}
                                   className="text-[11px] font-bold text-[#8B6914] hover:underline cursor-pointer"
                                 >
-                                  Kelola Akun Workspace &rarr;
+                                  Atur Akun &rarr;
                                 </button>
                               </div>
                               <button
@@ -15807,7 +16202,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/40 text-[11px] font-bold"
                               >
                                 <Plus className="w-3 h-3" />
-                                <span>Panitia Klien</span>
+                                <span>Panitia</span>
                               </button>
                             </div>
                           </div>
@@ -15987,22 +16382,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     return (
                       <div className="space-y-6">
                         {/* =======================================================
-                            SECTION 0: PLUGIN & VERIFIKASI OTOMATIS KELAS DUNIA
+                            SECTION 0: VERIFIKASI PEMBAYARAN OTOMATIS
                            ======================================================= */}
                         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF3E3]/90 via-[#FFFDF9] to-white border-2 border-[#D4AF37]/55 shadow-2xs space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D4AF37]/30 pb-3">
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] text-[10px] font-extrabold uppercase tracking-wider">
-                                  Zero-Cost Payment Engine
-                                </span>
-                                <h3 className="text-xs sm:text-sm font-extrabold text-stone-900">
-                                  Plugin &amp; Verifikasi Otomatis Kelas Dunia (Web3 On-Chain, PayPal SDK &amp; Midtrans Snap — 100% Gratis)
-                                </h3>
-                              </div>
-                              <p className="text-[11px] text-stone-600 mt-0.5">
-                                Aktifkan koneksi dompet Web3 sekali klik, verifikasi mutasi blockchain publik otomatis (0% fee), serta integrasi opsional PayPal Smart Buttons &amp; Midtrans Snap.
-                              </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] text-[10px] font-extrabold uppercase tracking-wider">
+                                Auto-Verify
+                              </span>
+                              <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 flex items-center gap-1.5">
+                                <span>Verifikasi Pembayaran Otomatis</span>
+                                <InfoTooltip text="Aktifkan koneksi dompet Web3 sekali klik, verifikasi mutasi blockchain publik otomatis (0% fee), serta integrasi opsional PayPal Smart Buttons & Midtrans Snap." />
+                              </h3>
                             </div>
                           </div>
 
@@ -16012,7 +16403,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 key: 'enableWeb3AutoConnect' as const,
                                 title:
-                                  '🦊 Web3 One-Click Wallet Connect (MetaMask / TrustWallet / TronLink)',
+                                  '🦊 Dompet Kripto Instan (Web3)',
                                 desc: 'Memungkinkan klien membayar USDT (TRC20 / BEP20 / ERC20) secara instan dari dompet ekstensi/mobile dan otomatis menangkap TXID transaksi.',
                                 checked:
                                   gatewayCfg.enableWeb3AutoConnect !== false,
@@ -16020,7 +16411,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 key: 'enableOnChainAutoVerify' as const,
                                 title:
-                                  '⛓️ On-Chain Blockchain RPC Auto-Verifier (TronGrid TRC20 / BSC BEP20 / ETH ERC20 — Gratis 0% Fee)',
+                                  '⛓️ Cek Mutasi Blockchain Otomatis',
                                 desc: 'Memverifikasi validitas hash transaksi (TXID) langsung ke node publik blockchain tanpa biaya perantara dan otomatis mengubah status menjadi PAID_VERIFIED.',
                                 checked:
                                   gatewayCfg.enableOnChainAutoVerify !== false,
@@ -16028,8 +16419,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               {
                                 key: 'autoProvisionClientOnPaid' as const,
                                 title:
-                                  '🚀 Auto-Provisioning Grup Klien Otomatis Saat Status PAID_VERIFIED',
-                                desc: 'Otomatis membuat & mengaktifkan Grup Klien baru saat pembayaran terverifikasi lunas secara idempoten (tanpa duplikasi).',
+                                  '🚀 Aktifkan Klien Otomatis Saat Lunas',
+                                desc: 'Otomatis membuat & mengaktifkan ruang kerja Klien beserta 4 akun login saat pembayaran terverifikasi lunas secara idempoten (tanpa duplikasi).',
                                 checked:
                                   gatewayCfg.autoProvisionClientOnPaid !==
                                   false,
@@ -16037,15 +16428,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             ].map((toggle) => (
                               <label
                                 key={toggle.key}
-                                className="p-3 rounded-xl bg-white border border-stone-200/90 hover:border-[#D4AF37]/60 flex items-start justify-between gap-3 cursor-pointer transition-all"
+                                className="p-3 rounded-xl bg-white border border-stone-200/90 hover:border-[#D4AF37]/60 flex items-center justify-between gap-3 cursor-pointer transition-all"
                               >
-                                <div className="space-y-0.5">
-                                  <p className="text-xs font-extrabold text-stone-900">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-extrabold text-stone-900">
                                     {toggle.title}
-                                  </p>
-                                  <p className="text-[11px] text-stone-500 leading-relaxed">
-                                    {toggle.desc}
-                                  </p>
+                                  </span>
+                                  <InfoTooltip text={toggle.desc} />
                                 </div>
                                 <input
                                   type="checkbox"
@@ -16062,7 +16451,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       },
                                     }))
                                   }
-                                  className="w-4 h-4 mt-0.5 accent-[#B68D40] rounded cursor-pointer shrink-0"
+                                  className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer shrink-0"
                                 />
                               </label>
                             ))}
@@ -16072,7 +16461,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                             <div>
                               <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                                🌐 PayPal Client ID (Opsional — untuk Smart Payment Buttons Auto-Capture):
+                                🌐 PayPal Client ID (Opsional):
                               </label>
                               <input
                                 type="text"
@@ -16096,7 +16485,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                             <div>
                               <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                                🇮🇩 Midtrans Snap Client Key (Opsional — untuk Popup QRIS &amp; Virtual Account Otomatis):
+                                🇮🇩 Midtrans Client Key (Opsional):
                               </label>
                               <input
                                 type="text"
@@ -16113,7 +16502,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     },
                                   }))
                                 }
-                                placeholder="Contoh: SB-Mid-client-xxxx / Mid-client-xxxx"
+                                placeholder="Contoh: SB-Mid-client-xxxx"
                                 className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                               />
                             </div>
@@ -16143,10 +16532,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-800"
                               >
                                 <option value="sandbox">
-                                  🧪 Sandbox Gratis (Testing)
+                                  🧪 Sandbox (Testing)
                                 </option>
                                 <option value="production">
-                                  🟢 Production Live (Transaksi Nyata)
+                                  🟢 Production (Live)
                                 </option>
                               </select>
                             </div>
@@ -16189,21 +16578,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   action: 'SIMPAN',
                                   status: 'SUCCESS',
                                   summary:
-                                    'Menyimpan Konfigurasi Plugin Payment Gateway Otomatis (Web3, On-Chain RPC, PayPal SDK & Midtrans Snap)',
+                                    'Menyimpan Konfigurasi Plugin Payment Gateway Otomatis',
                                 });
                                 showToast(
-                                  '✓ Konfigurasi Plugin Payment Gateway berhasil disimpan!'
+                                  '✓ Pengaturan verifikasi pembayaran otomatis disimpan!'
                                 );
                               }}
                               className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs transition-all"
                             >
-                              Simpan Konfigurasi Plugin Gateway
+                              Simpan Pengaturan
                             </button>
                           </div>
                         </div>
 
                         {/* =======================================================
-                            SECTION A: MANAJEMEN WALLET & CHANNEL PEMBAYARAN SUPERADMIN
+                            SECTION A: REKENING & DOMPET TUJUAN
                            ======================================================= */}
                         <div className="space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
@@ -16212,12 +16601,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 <Wallet className="w-4 h-4" />
                               </div>
                               <div>
-                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                                  Manajemen Wallet &amp; Channel Pembayaran Superadmin
+                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                                  <span>Rekening &amp; Dompet Tujuan</span>
+                                  <InfoTooltip text="Tambah, edit, aktifkan/nonaktifkan, atau hapus metode pembayaran komersial (Crypto USDT, PayPal, Kartu Kredit, QRIS, Bank & E-Wallet) untuk halaman order klien." />
                                 </h3>
-                                <p className="text-[11px] text-stone-500">
-                                  Tambah, edit, aktifkan/nonaktifkan, atau hapus wallet pembayaran komersial (Crypto USDT, PayPal, Kartu Kredit, QRIS, Bank &amp; E-Wallet) untuk halaman order klien.
-                                </p>
                               </div>
                             </div>
 
@@ -16243,10 +16630,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setIsChannelEditorOpen(true);
                               }}
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
-                              title="Tambah Wallet atau Channel Pembayaran Baru"
+                              title="Tambah Metode Pembayaran Baru"
                             >
                               <Plus className="w-4 h-4" />
-                              <span>Tambah Channel</span>
+                              <span>Tambah Metode</span>
                             </button>
                           </div>
 
@@ -16881,12 +17268,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     setIsChannelEditorOpen(false);
                                     setEditingChannelId(null);
                                     showToast(
-                                      `✓ Wallet "${cleanChannel.providerName}" berhasil disimpan ke Database!`
+                                      `✓ Metode "${cleanChannel.providerName}" berhasil disimpan!`
                                     );
                                   }}
                                   className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-sm"
                                 >
-                                  Simpan Wallet ke Database
+                                  Simpan
                                 </button>
                               </div>
                             </div>
@@ -16927,7 +17314,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           }`}
                                         >
                                           {ch.isActive
-                                            ? '● Aktif di Checkout'
+                                            ? '● Aktif'
                                             : '○ Nonaktif'}
                                         </span>
                                         {ch.minAmountNote && (
@@ -17034,8 +17421,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       }`}
                                     >
                                       {ch.isActive
-                                        ? 'Nonaktifkan Wallet'
-                                        : '✓ Aktifkan Wallet'}
+                                        ? 'Nonaktifkan'
+                                        : '✓ Aktifkan'}
                                     </button>
 
                                     <div className="flex items-center gap-1.5">
@@ -17065,16 +17452,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/45 text-[11px] font-bold"
                                       >
                                         <Edit3 className="w-3 h-3" />
-                                        <span>Edit Wallet</span>
+                                        <span>Edit</span>
                                       </button>
 
                                       <button
                                         type="button"
                                         onClick={() =>
                                           requestConfirm({
-                                            title: `Hapus Wallet "${ch.providerName}"?`,
-                                            message: `Apakah Anda yakin ingin menghapus metode pembayaran "${ch.providerName}" (${ch.accountOrWalletAddress}) dari daftar channel pembayaran Superadmin?`,
-                                            confirmLabel: 'Ya, Hapus Wallet',
+                                            title: `Hapus Metode "${ch.providerName}"?`,
+                                            message: `Apakah Anda yakin ingin menghapus metode pembayaran "${ch.providerName}" (${ch.accountOrWalletAddress})?`,
+                                            confirmLabel: 'Ya, Hapus',
                                             variant: 'danger',
                                             onConfirm: async () => {
                                               const nextChannels =
@@ -17086,7 +17473,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 `Menghapus wallet pembayaran Superadmin: ${ch.providerName}`
                                               );
                                               showToast(
-                                                `✓ Wallet "${ch.providerName}" berhasil dihapus.`
+                                                `✓ Metode "${ch.providerName}" dihapus.`
                                               );
                                             },
                                           })
@@ -17094,7 +17481,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold"
                                       >
                                         <Trash2 className="w-3 h-3" />
-                                        <span>Hapus Wallet</span>
+                                        <span>Hapus</span>
                                       </button>
                                     </div>
                                   </div>
@@ -17105,27 +17492,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
 
                         {/* =======================================================
-                            SECTION B: DATABASE PEMBAYARAN & LEDGER TRANSAKSI IDEMPOTEN
+                            SECTION B: RIWAYAT PEMBAYARAN & ORDER KLIEN
                            ======================================================= */}
                         <div className="pt-5 border-t-2 border-[#D4AF37]/30 space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                                  Database Pembayaran &amp; Ledger Transaksi Idempoten
-                                </h3>
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold">
-                                  Idempotency Guard Active
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-stone-500 mt-0.5">
-                                Setiap order menggunakan <code className="font-mono text-[#8B6914]">idempotency_key</code> unik (<code className="font-mono">on_conflict=idempotency_key</code>) untuk mencegah duplikasi tagihan saat koneksi database mengalami timeout/retry.
-                              </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                                <span>Riwayat Pembayaran &amp; Order Klien</span>
+                                <InfoTooltip text="Setiap order dilindungi idempotency_key unik untuk mencegah duplikasi tagihan saat koneksi timeout/retry. Klik 'Terima & Aktifkan Klien' untuk otomatis membuat ruang kerja klien beserta 4 akun login." />
+                              </h3>
                             </div>
 
                             <button
                               type="button"
-                              title="Catat order atau pembayaran klien secara manual (Idempotent Upsert)"
+                              title="Catat order atau pembayaran klien secara manual"
                               onClick={() =>
                                 setIsManualPaymentModalOpen((prev) => !prev)
                               }
@@ -17148,7 +17528,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }`}
                             >
                               <p className="text-[10px] font-bold uppercase text-stone-500">
-                                Semua Transaksi
+                                Semua
                               </p>
                               <p className="text-sm font-extrabold text-stone-900 mt-0.5">
                                 {effectivePayments.length} Order
@@ -17167,7 +17547,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }`}
                             >
                               <p className="text-[10px] font-bold uppercase text-amber-800">
-                                ⏳ Menunggu Verifikasi
+                                ⏳ Menunggu
                               </p>
                               <p className="text-sm font-extrabold text-amber-900 mt-0.5">
                                 {pendingCount} Order
@@ -17186,7 +17566,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }`}
                             >
                               <p className="text-[10px] font-bold uppercase text-emerald-700">
-                                ✅ Lunas Terverifikasi
+                                ✅ Lunas
                               </p>
                               <p className="text-sm font-extrabold text-emerald-800 mt-0.5">
                                 {verifiedCount} Order
@@ -17205,7 +17585,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               }`}
                             >
                               <p className="text-[10px] font-bold uppercase text-rose-700">
-                                ⚠️ Timeout / Retry Idempoten
+                                ⚠️ Perlu Cek
                               </p>
                               <p className="text-sm font-extrabold text-rose-800 mt-0.5">
                                 {timeoutRetryCount} Order
@@ -17213,12 +17593,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </button>
                           </div>
 
-                          {/* Inline Form: Catat Order / Pembayaran Manual (Idempoten) */}
+                          {/* Inline Form: Catat Order Manual */}
                           {isManualPaymentModalOpen && (
                             <div className="p-4 rounded-2xl bg-[#FAF8F5] border-2 border-[#D4AF37]/60 space-y-3">
                               <div className="flex items-center justify-between">
                                 <h4 className="text-xs font-extrabold text-stone-900">
-                                  📝 Catat Order / Pembayaran Klien Manual (Idempotent Upsert)
+                                  📝 Catat Order Klien Manual
                                 </h4>
                                 <button
                                   type="button"
@@ -17496,12 +17876,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       paymentReference: '',
                                     }));
                                     showToast(
-                                      `✓ Transaksi ${newTx.orderId} berhasil dicatat dengan Idempotency Key!`
+                                      `✓ Transaksi ${newTx.orderId} berhasil dicatat!`
                                     );
                                   }}
                                   className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs shadow-xs"
                                 >
-                                  Simpan Transaksi Idempoten
+                                  Simpan Order
                                 </button>
                               </div>
                             </div>
@@ -17517,7 +17897,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 onChange={(e) =>
                                   setPaymentLedgerSearch(e.target.value)
                                 }
-                                placeholder="Cari Order ID, Idempotency Key, Email Klien, Nama Pasangan, atau TXID / Referensi..."
+                                placeholder="Cari Order ID, Email Klien, Nama Pasangan, atau TXID / Referensi..."
                                 className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-300 text-xs bg-white"
                               />
                             </div>
@@ -17533,14 +17913,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </div>
 
                           {/* Daftar Transaksi Pembayaran (Ledger Cards) */}
-                          <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                          <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
                             {filteredPayments.length === 0 ? (
                               <div className="p-6 rounded-2xl border border-dashed border-stone-300 bg-[#FAF8F5] text-center space-y-1">
                                 <p className="text-xs font-bold text-stone-700">
                                   Belum ada transaksi pembayaran pada filter ini.
-                                </p>
-                                <p className="text-[11px] text-stone-500">
-                                  Setiap pembayaran yang dilakukan klien melalui Landing Page (IDR / USD / USDT) otomatis tercatat secara idempoten di sini.
                                 </p>
                               </div>
                             ) : (
@@ -17548,48 +17925,69 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 const statusConfig =
                                   tx.status === 'PAID_VERIFIED'
                                     ? {
-                                        label: '✅ PAID_VERIFIED (Lunas)',
+                                        label: '✅ Lunas',
                                         cls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
                                       }
                                     : tx.status === 'FAILED_TIMEOUT'
                                     ? {
-                                        label:
-                                          '⚠️ FAILED_TIMEOUT (Perlu Retry Sync)',
+                                        label: '⚠️ Perlu Cek',
                                         cls: 'bg-rose-100 text-rose-900 border-rose-300',
                                       }
                                     : tx.status === 'EXPIRED'
                                     ? {
-                                        label: '⌛ EXPIRED',
+                                        label: '⌛ Kedaluwarsa',
                                         cls: 'bg-stone-200 text-stone-700 border-stone-300',
                                       }
                                     : {
-                                        label:
-                                          '⏳ PENDING_VERIFICATION (Menunggu Verifikasi)',
+                                        label: '⏳ Menunggu Verifikasi',
                                         cls: 'bg-amber-100 text-amber-900 border-amber-300',
                                       };
 
                                 const verifBadge =
                                   tx.verificationMethod === 'ONCHAIN_RPC'
                                     ? {
-                                        label: '⛓️ On-Chain RPC Verified',
+                                        label: '⛓️ On-Chain',
                                         cls: 'bg-amber-100 text-amber-900 border-amber-300',
                                       }
                                     : tx.verificationMethod === 'WEB3_WALLET'
                                     ? {
-                                        label: '🦊 Web3 Wallet',
+                                        label: '🦊 Web3',
                                         cls: 'bg-orange-100 text-orange-900 border-orange-300',
                                       }
                                     : tx.verificationMethod === 'PAYPAL_SDK'
                                     ? {
-                                        label: '🌐 PayPal SDK',
+                                        label: '🌐 PayPal',
                                         cls: 'bg-indigo-100 text-indigo-900 border-indigo-300',
                                       }
                                     : tx.verificationMethod === 'MIDTRANS_SNAP'
                                     ? {
-                                        label: '🇮🇩 Midtrans Snap',
+                                        label: '🇮🇩 Midtrans',
                                         cls: 'bg-sky-100 text-sky-900 border-sky-300',
                                       }
                                     : null;
+
+                                const provisionedGroup = tx.provisionedClientId
+                                  ? effectiveClientGroups.find(
+                                      (cg) => cg.id === tx.provisionedClientId
+                                    )
+                                  : undefined;
+                                const credCode = (
+                                  tx.provisionedClientCode ||
+                                  provisionedGroup?.clientCode ||
+                                  tx.buyerCoupleName
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9]/g, '')
+                                    .slice(0, 8) ||
+                                  'klien'
+                                ).toLowerCase();
+                                const credPass =
+                                  tx.provisionedInitialPassword ||
+                                  `${credCode}12345`;
+                                const credOrigin =
+                                  typeof window !== 'undefined'
+                                    ? window.location.origin
+                                    : 'https://myeventplanner.com';
+                                const credMessageText = `Halo *${tx.buyerCoupleName}*, pembayaran Paket *${tx.packageTier}* (${tx.orderId}) telah kami terima & verifikasi! ✓\n\nBerikut *4 Akun Login Dasbor Klien MEPlanner* Anda:\n• Mempelai Pria: *${credCode}_pria*\n• Mempelai Wanita: *${credCode}_wanita*\n• Keluarga Pria: *${credCode}_kel_pria*\n• Keluarga Wanita: *${credCode}_kel_wanita*\n★ Sandi Awal: *${credPass}*\n\n→ Link Undangan Publik: ${credOrigin}/?client=${credCode}\n→ Login Dasbor Klien: ${credOrigin}/login`;
 
                                 return (
                                   <div
@@ -17616,24 +18014,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           )}
                                           {tx.provisionedClientId && (
                                             <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold">
-                                              🚀 Klien Aktif:{' '}
-                                              {tx.provisionedClientId}
+                                              🚀 Aktif: {credCode.toUpperCase()}
                                             </span>
                                           )}
-                                          <span className="px-2 py-0.5 rounded-md bg-white border border-stone-200 font-mono text-[10px] text-stone-600">
-                                            Idempotency Key: {tx.idempotencyKey}
-                                          </span>
-                                          <span className="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 font-mono text-[10px] font-bold text-amber-900">
-                                            Retry: {tx.retryCount}x
-                                          </span>
+                                          <InfoTooltip
+                                            text={`Idempotency Key: ${tx.idempotencyKey} • Retry: ${tx.retryCount}x`}
+                                          />
                                         </div>
                                         <p className="text-xs font-extrabold text-stone-900">
                                           Paket {tx.packageTier} &bull;{' '}
                                           <span className="text-[#8B6914]">
                                             {tx.amountDisplay}
                                           </span>{' '}
-                                          ({tx.currency} &bull; Pasar{' '}
-                                          {tx.marketLang})
+                                          ({tx.currency})
+                                          {tx.eventType
+                                            ? ` • ${tx.eventType}`
+                                            : ''}
+                                          {tx.selectedThemeName
+                                            ? ` • Tema: ${tx.selectedThemeName}`
+                                            : ''}
                                         </p>
                                       </div>
 
@@ -17649,13 +18048,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 rounded-xl bg-white border border-stone-200/80 text-[11px]">
-                                      <div>
+                                      <div className="space-y-0.5">
                                         <p className="text-stone-500">
-                                          Pembeli / Pasangan:
+                                          Pembeli / Klien:
                                         </p>
                                         <p className="font-bold text-stone-900">
                                           {tx.buyerCoupleName} ({tx.buyerEmail})
                                         </p>
+                                        {tx.buyerWhatsapp && (
+                                          <p className="font-mono text-[10px] text-emerald-700">
+                                            WA: {tx.buyerWhatsapp}
+                                          </p>
+                                        )}
                                         <p className="font-mono text-[10px] text-[#8B6914]">
                                           Ref/TXID:{' '}
                                           {tx.paymentReference || '-'}
@@ -17665,17 +18069,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             href={tx.blockchainExplorerUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="inline-flex items-center gap-1 mt-1 text-[10px] font-extrabold text-amber-800 hover:text-amber-950 underline"
+                                            className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-extrabold text-amber-800 hover:text-amber-950 underline"
                                           >
                                             <span>
-                                              Lihat Bukti di Blockchain Explorer ↗
+                                              Bukti Blockchain Explorer ↗
                                             </span>
                                           </a>
                                         )}
                                       </div>
-                                      <div>
+                                      <div className="space-y-0.5">
                                         <p className="text-stone-500">
-                                          Channel / Wallet Tujuan:
+                                          Metode Tujuan:
                                         </p>
                                         <p className="font-bold text-stone-900">
                                           {tx.channelProviderName}
@@ -17687,147 +18091,116 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     </div>
 
                                     {tx.lastErrorOrTimeoutReason && (
-                                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-800 flex items-center justify-between gap-2">
-                                        <span>
-                                          <strong>Log Timeout/Retry:</strong>{' '}
-                                          {tx.lastErrorOrTimeoutReason}
-                                        </span>
+                                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-800">
+                                        <strong>Log Timeout/Retry:</strong>{' '}
+                                        {tx.lastErrorOrTimeoutReason}
+                                      </div>
+                                    )}
+
+                                    {/* Kotak Kredensial 4 Akun Klien Saat Sudah Diaktifkan */}
+                                    {tx.provisionedClientId && (
+                                      <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                            <span className="font-extrabold text-emerald-950">
+                                              🔑 Kredensial Klien:
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded bg-white border border-emerald-200 font-mono font-bold text-emerald-900">
+                                              Kode: {credCode.toUpperCase()}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded bg-white border border-emerald-200 font-mono font-bold text-amber-900">
+                                              Sandi Awal: {credPass}
+                                            </span>
+                                          </div>
+                                          <span className="font-mono text-[10px] text-emerald-800">
+                                            4 Akun: {credCode}_pria •{' '}
+                                            {credCode}_wanita •{' '}
+                                            {credCode}_kel_pria •{' '}
+                                            {credCode}_kel_wanita
+                                          </span>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                          <a
+                                            href={`https://api.whatsapp.com/send?phone=${(
+                                              tx.buyerWhatsapp || ''
+                                            )
+                                              .replace(/[^0-9]/g, '')
+                                              .replace(
+                                                /^0/,
+                                                '62'
+                                              )}&text=${encodeURIComponent(
+                                              credMessageText
+                                            )}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold transition-all"
+                                          >
+                                            📲 Kirim Akun ke WA
+                                          </a>
+                                          <a
+                                            href={`mailto:${
+                                              tx.buyerEmail
+                                            }?subject=${encodeURIComponent(
+                                              `Akun Klien MEPlanner Anda Aktif (${tx.buyerCoupleName})`
+                                            )}&body=${encodeURIComponent(
+                                              credMessageText
+                                            )}`}
+                                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-bold transition-all"
+                                          >
+                                            ✉️ Kirim Email
+                                          </a>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (
+                                                typeof navigator !==
+                                                  'undefined' &&
+                                                navigator.clipboard
+                                              ) {
+                                                void navigator.clipboard.writeText(
+                                                  credMessageText
+                                                );
+                                                showToast(
+                                                  '✓ Info 4 akun & sandi awal berhasil disalin!'
+                                                );
+                                              }
+                                            }}
+                                            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 text-[11px] font-bold transition-all"
+                                          >
+                                            📋 Salin Akun
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (tx.provisionedClientId) {
+                                                onSwitchWorkspaceClient?.(
+                                                  tx.provisionedClientId
+                                                );
+                                                setActiveTab('readiness');
+                                              }
+                                            }}
+                                            className="px-2.5 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-[#D4AF37] text-[11px] font-extrabold transition-all"
+                                          >
+                                            Buka Klien &rarr;
+                                          </button>
+                                        </div>
                                       </div>
                                     )}
 
                                     <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
                                       <div className="flex flex-wrap items-center gap-1.5">
-                                        {tx.status !== 'PAID_VERIFIED' && (
+                                        {!tx.provisionedClientId && (
                                           <button
                                             type="button"
-                                            onClick={async () => {
-                                              const nowIso =
-                                                new Date().toISOString();
-                                              const currentClientGroups: ClientGroupItem[] =
-                                                settingsForm.clientGroups &&
-                                                settingsForm.clientGroups
-                                                  .length > 0
-                                                  ? settingsForm.clientGroups
-                                                  : state.settings
-                                                      .clientGroups &&
-                                                    state.settings.clientGroups
-                                                      .length > 0
-                                                  ? state.settings.clientGroups
-                                                  : effectiveClientGroups;
-
-                                              let provisionedId =
-                                                tx.provisionedClientId;
-                                              let nextClientGroups = [
-                                                ...currentClientGroups,
-                                              ];
-
-                                              if (
-                                                !provisionedId &&
-                                                tx.buyerCoupleName?.trim()
-                                              ) {
-                                                // Idempotently check if a ClientGroupItem already exists for this idempotencyKey or orderId
-                                                const existingGroup =
-                                                  currentClientGroups.find(
-                                                    (cg) =>
-                                                      cg.notes?.includes(
-                                                        tx.idempotencyKey
-                                                      ) ||
-                                                      cg.notes?.includes(
-                                                        tx.orderId
-                                                      )
-                                                  );
-                                                if (existingGroup) {
-                                                  provisionedId =
-                                                    existingGroup.id;
-                                                } else {
-                                                  const safeCode =
-                                                    tx.buyerCoupleName
-                                                      .toUpperCase()
-                                                      .replace(
-                                                        /[^A-Z0-9]/g,
-                                                        ''
-                                                      )
-                                                      .slice(0, 8) || 'CLIENT';
-                                                  const newClient: ClientGroupItem =
-                                                    {
-                                                      id: `client-${safeCode.toLowerCase()}-${Date.now()
-                                                        .toString(36)
-                                                        .slice(-4)}`,
-                                                      clientCode: safeCode,
-                                                      clientName: `Client • ${tx.buyerCoupleName.trim()}`,
-                                                      coupleLabel:
-                                                        tx.buyerCoupleName.trim(),
-                                                      packageTier:
-                                                        tx.packageTier ===
-                                                        'ROYAL VIP'
-                                                          ? 'ROYAL_VIP'
-                                                          : tx.packageTier,
-                                                      status: 'ACTIVE',
-                                                      eventDate: '2026-12-19',
-                                                      notes: `Auto-Provisioned • Order ${tx.orderId} (${tx.idempotencyKey}) • ${tx.buyerEmail}`,
-                                                      createdAt: nowIso,
-                                                    };
-                                                  provisionedId = newClient.id;
-                                                  nextClientGroups = [
-                                                    ...currentClientGroups,
-                                                    newClient,
-                                                  ];
-                                                }
-                                              }
-
-                                              const updatedTx: CommercialPaymentTransaction =
-                                                {
-                                                  ...tx,
-                                                  status: 'PAID_VERIFIED',
-                                                  verifiedAt: nowIso,
-                                                  verifiedBy:
-                                                    adminUser.username,
-                                                  provisionedClientId:
-                                                    provisionedId,
-                                                  lastErrorOrTimeoutReason:
-                                                    undefined,
-                                                  updatedAt: nowIso,
-                                                };
-                                              const nextList =
-                                                effectivePayments.map((item) =>
-                                                  item.id === tx.id
-                                                    ? updatedTx
-                                                    : item
-                                                );
-
-                                              const nextSettings: WeddingSettings =
-                                                {
-                                                  ...state.settings,
-                                                  ...settingsForm,
-                                                  commercialPayments: nextList,
-                                                  clientGroups:
-                                                    nextClientGroups,
-                                                  updatedBy: adminUser.username,
-                                                };
-                                              setSettingsFormInternal(
-                                                nextSettings
-                                              );
-                                              await commitImmediateSettings(
-                                                nextSettings
-                                              );
-                                              await upsertCommercialPaymentToSupabase(
-                                                updatedTx
-                                              );
-                                              appendAuditLog({
-                                                actor: adminUser.username,
-                                                module:
-                                                  'SUPERADMIN_PAYMENT_LEDGER',
-                                                action: 'SIMPAN',
-                                                status: 'SUCCESS',
-                                                summary: `Memverifikasi lunas transaksi ${tx.orderId} & auto-provisioning grup klien (${tx.buyerCoupleName})`,
-                                              });
-                                              showToast(
-                                                '✓ Pembayaran diverifikasi LUNAS & Grup Klien otomatis diaktifkan!'
-                                              );
-                                            }}
-                                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
+                                            onClick={() =>
+                                              void handleApproveAndProvisionOrder(
+                                                tx
+                                              )
+                                            }
+                                            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold shadow-2xs transition-all"
                                           >
-                                            ✓ Verifikasi Lunas (PAID_VERIFIED)
+                                            ✓ Terima &amp; Aktifkan Klien
                                           </button>
                                         )}
 
@@ -17868,43 +18241,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                             await savePaymentsToDatabase(
                                               nextList,
                                               retriedTx,
-                                              `Retry sinkronisasi idempoten transaksi ${tx.orderId} (Retry ke-${retriedTx.retryCount})`
+                                              `Sinkronisasi ulang transaksi ${tx.orderId}`
                                             );
                                             showToast(
                                               syncRes.ok
-                                                ? `✓ Retry Sync Idempoten ${tx.orderId} berhasil tanpa duplikasi data!`
+                                                ? `✓ Sinkronisasi ${tx.orderId} berhasil!`
                                                 : `⚠️ Timeout saat sync: ${syncRes.error}`
                                             );
                                           }}
                                           className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold"
                                         >
-                                          ↻ Pulihkan Timeout / Retry Sync
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const safeCode =
-                                              tx.buyerCoupleName
-                                                .toUpperCase()
-                                                .replace(/[^A-Z0-9]/g, '')
-                                                .slice(0, 8) || 'CLIENT';
-                                            setNewClientForm({
-                                              clientCode: safeCode,
-                                              coupleLabel: tx.buyerCoupleName,
-                                              packageTier:
-                                                tx.packageTier === 'ROYAL VIP'
-                                                  ? 'ROYAL_VIP'
-                                                  : tx.packageTier,
-                                              eventDate: '2026-12-19',
-                                              notes: `Order ${tx.orderId} (${tx.buyerEmail}) • ${tx.amountDisplay}`,
-                                              initialPassword: '',
-                                            });
-                                            setIsAddClientModalOpen(true);
-                                          }}
-                                          className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 text-[11px] font-bold"
-                                        >
-                                          ⚡ Buat Grup Klien dari Order Ini
+                                          ↻ Sinkron Ulang
                                         </button>
                                       </div>
 
@@ -17912,9 +18259,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         type="button"
                                         onClick={() =>
                                           requestConfirm({
-                                            title: `Hapus Record Transaksi ${tx.orderId}?`,
-                                            message: `Apakah Anda yakin ingin menghapus record transaksi "${tx.orderId}" (${tx.buyerCoupleName}) dari ledger pembayaran?`,
-                                            confirmLabel: 'Ya, Hapus Record',
+                                            title: `Hapus Transaksi ${tx.orderId}?`,
+                                            message: `Apakah Anda yakin ingin menghapus transaksi "${tx.orderId}" (${tx.buyerCoupleName})?`,
+                                            confirmLabel: 'Ya, Hapus',
                                             variant: 'danger',
                                             onConfirm: async () => {
                                               const nextList =
@@ -17935,14 +18282,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 nextSettings
                                               );
                                               showToast(
-                                                `✓ Record transaksi ${tx.orderId} dihapus.`
+                                                `✓ Transaksi ${tx.orderId} dihapus.`
                                               );
                                             },
                                           })
                                         }
                                         className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold"
                                       >
-                                        Hapus Record
+                                        Hapus
                                       </button>
                                     </div>
                                   </div>
@@ -17956,7 +18303,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   })()}
 
                 {/* ===========================================================
-                    2. MODERASI KOMENTAR NEGATIF & AUDIT FORENSIK PELAKU
+                    3. MODERASI UCAPAN & KEAMANAN
                    =========================================================== */}
                 {superadminMenuTab === 'moderation' && (
                   <div className="space-y-4">
@@ -17965,17 +18312,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0">
                           <AlertTriangle className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Moderasi Komentar Negatif &amp; Audit Forensik Pelaku
-                          </h3>
-                          <p className="text-[11px] text-stone-500">
-                            Deteksi kata kasar/negatif, lacak identitas asli pemilik link undangan, IP, No. WA &amp; perangkat pengirim
-                          </p>
-                        </div>
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                          <span>Moderasi Ucapan &amp; Keamanan</span>
+                          <InfoTooltip text="Deteksi kata kasar/negatif otomatis, lacak identitas asli pemilik link undangan (?to=), IP, No. WA, dan perangkat pengirim." />
+                        </h3>
                       </div>
                       <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px] shrink-0">
-                        Forensic Guard
+                        Filter Otomatis
                       </span>
                     </div>
 
@@ -18328,7 +18671,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               title="Tampilkan kembali di buku tamu publik"
                                             >
                                               <Eye className="w-3 h-3" />
-                                              <span>Tampilkan Aman</span>
+                                              <span>Tampilkan</span>
                                             </button>
                                           ) : (
                                             <button
@@ -18375,7 +18718,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               }}
                                               className="px-2 py-1 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-[10px] font-bold"
                                             >
-                                              Tandai Negatif
+                                              Tandai
                                             </button>
                                           )}
 
@@ -18458,7 +18801,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           </span>{' '}
                                           {actorPhone ? (
                                             <a
-                                              href={`https://wa.me/${actorPhone
+                                              href={`https://api.whatsapp.com/send?phone=${actorPhone
                                                 .replace(/[^0-9]/g, '')
                                                 .replace(/^0/, '62')}`}
                                               target="_blank"
@@ -18519,18 +18862,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   }}
                                   className="w-4 h-4 accent-[#B68D40] rounded cursor-pointer"
                                 />
-                                <span className="text-xs font-extrabold text-stone-900">
-                                  Otomatis Sembunyikan Komentar Negatif dari Halaman Undangan Publik
+                                <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1.5">
+                                  <span>Otomatis Sembunyikan Komentar Negatif dari Publik</span>
+                                  <InfoTooltip text="Komentar yang terdeteksi kasar/negatif otomatis disembunyikan dari halaman undangan publik, namun bukti forensik tetap tersimpan di panel Superadmin ini." />
                                 </span>
                               </label>
-                              <span className="text-[10px] font-semibold text-stone-500">
-                                Bukti forensik tetap tersimpan di panel Superadmin ini
-                              </span>
                             </div>
 
                             <div>
                               <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                                Kata Kunci Negatif / Blacklist Tambahan (pisahkan dengan koma):
+                                Kata Kunci Negatif Tambahan (pisahkan dengan koma):
                               </label>
                               <div className="flex gap-2">
                                 <input
@@ -18542,7 +18883,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       moderationBlockedKeywords: e.target.value,
                                     }))
                                   }
-                                  placeholder="Contoh: mantan, hutang, scam, judi, kasar... (kamus kata kasar bawaan sudah aktif)"
+                                  placeholder="Contoh: mantan, hutang, scam, judi..."
                                   className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
                                 />
                                 <button
@@ -18569,13 +18910,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                           {/* Kunci Pengiriman Form RSVP & Komentar Baru */}
                           <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50">
-                            <div>
-                              <p className="text-xs font-extrabold text-stone-900">
-                                Kunci Pengiriman Form RSVP &amp; Komentar Baru
-                              </p>
-                              <p className="text-[11px] text-stone-500">
-                                Matikan sementara formulir kirim ucapan/RSVP di halaman undangan publik bila diperlukan.
-                              </p>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-extrabold text-stone-900">
+                                Kunci Form RSVP &amp; Komentar Baru
+                              </span>
+                              <InfoTooltip text="Matikan sementara formulir kirim ucapan/RSVP di halaman undangan publik bila diperlukan." />
                             </div>
                             <input
                               type="checkbox"
@@ -18722,14 +19061,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                               <Eye className="w-4 h-4" />
                             </div>
-                            <div>
-                              <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                                Insight &amp; Analitik Trafik Undangan (Share, Views, Clicks &amp; Funnel Konversi)
-                              </h3>
-                              <p className="text-[11px] text-stone-500">
-                                Pantau real-time berapa kali link undangan dibagikan (share), dilihat (views), tombol diklik, hingga konversi RSVP tamu
-                              </p>
-                            </div>
+                            <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                              <span>Statistik Kunjungan Undangan</span>
+                              <InfoTooltip text="Pantau real-time berapa kali link undangan dibagikan (share), dilihat (views), tombol diklik, hingga konversi RSVP tamu." />
+                            </h3>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2">
@@ -18740,7 +19075,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   typeof window !== 'undefined'
                                     ? window.location.origin
                                     : '';
-                                const shareUrl = `${origin}/?client=agung_selo`;
+                                const activeCode =
+                                  effectiveClientGroups
+                                    .find((cg) => cg.id === activeWorkspaceClientId)
+                                    ?.clientCode?.toLowerCase() ||
+                                  (activeWorkspaceClientId === 'client-demo'
+                                    ? 'demo'
+                                    : 'agung_selo');
+                                const shareUrl = `${origin}/?client=${activeCode}`;
                                 if (
                                   typeof navigator !== 'undefined' &&
                                   navigator.clipboard
@@ -18753,23 +19095,59 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   `Menyalin link utama undangan (${shareUrl}) dari panel Insight`
                                 );
                                 showToast(
-                                  '🔗 Link undangan disalin & tercatat (+1 Share) di Insight!'
+                                  '🔗 Link undangan disalin & tercatat (+1 Share)!'
                                 );
                               }}
                               className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
                             >
                               <Copy className="w-3.5 h-3.5" />
-                              <span>Salin &amp; Share Link (+1)</span>
+                              <span>Salin Link</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const origin =
+                                  typeof window !== 'undefined'
+                                    ? window.location.origin
+                                    : '';
+                                const activeCode =
+                                  effectiveClientGroups
+                                    .find((cg) => cg.id === activeWorkspaceClientId)
+                                    ?.clientCode?.toLowerCase() ||
+                                  (activeWorkspaceClientId === 'client-demo'
+                                    ? 'demo'
+                                    : 'agung_selo');
+                                const shareUrl = `${origin}/?client=${activeCode}`;
+                                recordAdminAnalyticsEvent(
+                                  'SHARE_WA',
+                                  undefined,
+                                  `Membagikan link undangan (${shareUrl}) via WhatsApp`
+                                );
+                                if (typeof window !== 'undefined') {
+                                  window.open(
+                                    `https://api.whatsapp.com/send?text=${encodeURIComponent(
+                                      `Undangan Digital: ${shareUrl}`
+                                    )}`,
+                                    '_blank',
+                                    'noopener,noreferrer'
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Kirim WA</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => {
                                 setConfirmDialog({
-                                  title: 'Reset Statistik Insight Undangan?',
+                                  title: 'Reset Statistik Kunjungan?',
                                   message:
                                     'Seluruh penghitung Share, Views, Clicks, dan riwayat interaksi pada workspace ini akan direset ke kondisi dasar.',
-                                  confirmLabel: 'Ya, Reset Insight',
+                                  confirmLabel: 'Ya, Reset',
                                   variant: 'danger',
                                   onConfirm: async () => {
                                     const emptyAnalytics = {
@@ -18796,14 +19174,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     };
                                     setSettingsFormInternal(nextSettings);
                                     await commitImmediateSettings(nextSettings);
-                                    showToast('✓ Statistik Insight Undangan berhasil direset!');
+                                    showToast('✓ Statistik kunjungan direset!');
                                   },
                                 });
                               }}
                               className="px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 font-bold text-xs flex items-center gap-1"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              <span>Reset Insight</span>
+                              <span>Reset</span>
                             </button>
                           </div>
                         </div>
@@ -18988,7 +19366,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   })()}
 
                 {/* ===========================================================
-                    4. KAPASITAS PENYIMPANAN SUPABASE (500 MB) & ZERO-TRACE STORAGE
+                    4. KAPASITAS PENYIMPANAN
                    =========================================================== */}
                 {superadminMenuTab === 'storage' && (
                   <div className="space-y-4">
@@ -18997,15 +19375,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                           <FileSpreadsheet className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Kapasitas Penyimpanan Supabase (500 MB) &amp; Zero-Trace Storage
-                          </h3>
-                          <p className="text-[11px] text-stone-500">
-                            Monitoring real-time 8 Tabel PostgreSQL &amp; Bucket CDN{' '}
-                            <code className="font-mono text-[#8B6914]">wedding-media</code>
-                          </p>
-                        </div>
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                          <span>Kapasitas Penyimpanan</span>
+                          <InfoTooltip text="Monitoring real-time 8 Tabel PostgreSQL & Bucket CDN wedding-media. Mendukung unggah foto mentah berukuran besar (28 MB, 50 MB+, Kamera RAW) yang otomatis dikompres ke .SVG Ultra-HD serta penghapusan Zero-Trace Hard Delete." />
+                        </h3>
                       </div>
                       <button
                         type="button"
@@ -19019,7 +19392,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           }`}
                         />
                         <span>
-                          {isLoadingCapacity ? 'Memindai...' : 'Cek Kapasitas DB'}
+                          {isLoadingCapacity ? 'Memindai...' : 'Cek Kapasitas'}
                         </span>
                       </button>
                     </div>
@@ -19070,9 +19443,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               style={{ width: `${Math.max(pct, 1.5)}%` }}
                             />
                           </div>
-                          <p className="text-[11px] text-stone-500 leading-relaxed">
-                            Mendukung unggah foto <strong>tanpa batas ukuran mentah (28 MB, 50 MB+, &amp; Kamera RAW)</strong> yang otomatis dikompres &amp; dikonversi ke format <strong>.SVG Ultra-HD ringan</strong>. Setiap penghapusan/pergantian foto &amp; musik otomatis menjalankan <em>Zero-Trace Hard Delete</em>.
-                          </p>
                         </div>
                       );
                     })()}
@@ -19139,22 +19509,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="space-y-0.5">
                         <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>
-                            Zero-Trace Storage Cleaner (Pembersih File Tanpa Jejak)
-                          </span>
+                          <span>Pembersih File Sampah</span>
+                          <InfoTooltip text="Menghapus file foto/musik di Supabase Storage yang sudah tidak dipakai lagi oleh undangan aktif (Zero-Trace Cleanup)." />
                         </p>
                         <p className="text-[11px] text-emerald-800">
                           {storageCapacityReport &&
                           storageCapacityReport.orphanCount > 0
                             ? `Ditemukan ${
                                 storageCapacityReport.orphanCount
-                              } file yatim (${(
+                              } file sampah (${(
                                 storageCapacityReport.orphanBytes /
                                 (1024 * 1024)
-                              ).toFixed(
-                                2
-                              )} MB) yang sudah tidak dipakai di undangan.`
-                            : 'Seluruh file di Supabase Storage sinkron dengan database aktif (0 file sampah).'}
+                              ).toFixed(2)} MB).`
+                            : '0 file sampah ditemukan.'}
                         </p>
                       </div>
                       <button
@@ -19165,19 +19532,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       >
                         {isCleaningOrphans
                           ? 'Membersihkan...'
-                          : 'Bersihkan File Yatim Sekarang'}
+                          : 'Bersihkan File Sampah'}
                       </button>
                     </div>
 
                     {/* Batas Kuota Penyimpanan (MB) */}
                     <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-extrabold text-stone-900">
-                          Batas Kuota Penyimpanan Supabase (MB)
-                        </p>
-                        <p className="text-[11px] text-stone-500">
-                          Sesuaikan batas kuota indikator penyimpanan (Default Free/Pro Tier: 500 MB)
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold text-stone-900">
+                          Batas Kuota Penyimpanan (MB)
+                        </span>
+                        <InfoTooltip text="Sesuaikan batas kuota indikator penyimpanan (Default: 500 MB)." />
                       </div>
                       <div className="flex items-center gap-2">
                         <input
@@ -19214,11 +19579,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             };
                             setSettingsFormInternal(nextSettings);
                             await commitImmediateSettings(nextSettings);
-                            showToast('✓ Batas kuota penyimpanan berhasil disimpan!');
+                            showToast('✓ Batas kuota penyimpanan disimpan!');
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
                         >
-                          Simpan Kuota
+                          Simpan
                         </button>
                       </div>
                     </div>
@@ -19226,7 +19591,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===========================================================
-                    5. BRANDING OMEKO42, EMAIL RESMI, BAHASA & PEMBAYARAN KOMERSIAL
+                    5. IDENTITAS BRAND & PENGATURAN GLOBAL
                    =========================================================== */}
                 {superadminMenuTab === 'branding' && (
                   <div className="space-y-4">
@@ -19235,34 +19600,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
                           <Sparkles className="w-4 h-4" />
                         </div>
-                        <div>
-                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Pengaturan Branding <span className="text-[#8B6914]">omeko42</span>, Kontak Email Resmi &amp; Pembayaran Komersial
-                          </h3>
-                          <p className="text-[11px] text-stone-500">
-                            Kelola link GitHub omeko42, Email Bisnis Resmi (<code className="font-mono">e98.bisnis@gmail.com</code>), Bahasa Default, serta metode pembayaran order paket di Landing Page
-                          </p>
-                        </div>
+                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                          <span>Identitas Brand &amp; Pengaturan Global</span>
+                          <InfoTooltip text="Kelola logo MEPlanner, tautan credit GitHub omeko42, Email Bisnis Resmi (e98.bisnis@gmail.com), dan Bahasa Default aplikasi." />
+                        </h3>
                       </div>
                     </div>
 
                     {/* Bagian 1: Branding, Email Bisnis & Bahasa Default */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3.5">
                       <p className="text-xs font-extrabold text-stone-900 uppercase tracking-wider text-[#8B6914]">
-                        1. Identitas Developer, Kontak Resmi &amp; Bahasa Default
+                        1. Identitas Brand, Kontak Resmi &amp; Bahasa Default
                       </p>
 
                       {/* Logo Merk Aplikasi (MEPlanner - My Event Planner) */}
                       <div className="p-3.5 rounded-xl bg-white border border-[#D4AF37]/35 space-y-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <div>
-                            <label className="block text-[11px] font-extrabold text-stone-800">
-                              Logo Merk Aplikasi (MEPlanner — My Event Planner)
-                            </label>
-                            <p className="text-[10px] text-stone-500">
-                              Logo resmi Konsep 1 (3D Ribbon M + Sparkle) tampil di Katalog Komersial, Halaman Login Admin, Header Dasbor, dan Footer.
-                            </p>
-                          </div>
+                          <label className="text-[11px] font-extrabold text-stone-800 flex items-center gap-1.5">
+                            <span>Logo Aplikasi (MEPlanner)</span>
+                            <InfoTooltip text="Logo resmi Konsep 1 (3D Ribbon M + Sparkle) tampil di Katalog Komersial, Halaman Login Admin, Header Dasbor, dan Footer." />
+                          </label>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -19280,7 +19637,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <div className="flex flex-wrap items-center gap-2">
                               <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs cursor-pointer shadow-xs transition-all">
                                 <Upload className="w-3.5 h-3.5" />
-                                <span>Upload Logo Merk</span>
+                                <span>Ganti Logo</span>
                                 <input
                                   type="file"
                                   accept="image/*,.svg,.png,.webp,.jpg,.jpeg"
@@ -19291,7 +19648,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     if (!file) return;
                                     try {
                                       showToast(
-                                        'Mengompresi & menyimpan Logo Merk Aplikasi (MEPlanner — My Event Planner)...'
+                                        'Mengompresi & menyimpan Logo Merk Aplikasi (MEPlanner)...'
                                       );
                                       const dataUrl =
                                         await compressImageFileToDataUrl(
@@ -19318,7 +19675,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           'Meng-upload Logo Merk Aplikasi (MEPlanner — My Event Planner)',
                                       });
                                       showToast(
-                                        '✓ Logo Merk Aplikasi (MEPlanner — My Event Planner) berhasil diperbarui!'
+                                        '✓ Logo aplikasi berhasil diperbarui!'
                                       );
                                     } catch (err) {
                                       showToast(
@@ -19345,12 +19702,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     setSettingsFormInternal(nextSettings);
                                     await commitImmediateSettings(nextSettings);
                                     showToast(
-                                      '✓ Logo aplikasi dikembalikan ke Logo Resmi MEPlanner (Konsep 1: 3D Ribbon M + Sparkle).'
+                                      '✓ Logo aplikasi dikembalikan ke Logo Resmi MEPlanner.'
                                     );
                                   }}
                                   className="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs transition-all"
                                 >
-                                  Reset ke Logo Default MEPlanner
+                                  Reset Logo
                                 </button>
                               )}
                             </div>
@@ -19383,8 +19740,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   (state.settings as any).brandLogoUrl ??
                                   ''
                                 ).startsWith('data:')
-                                  ? '✓ File logo kustom aktif (atau tempel URL logo merk aplikasi di sini)'
-                                  : 'Kosongkan untuk memakai Logo Resmi MEPlanner (Konsep 1) atau tempel URL logo kustom...'
+                                  ? '✓ File logo kustom aktif (atau tempel URL logo di sini)'
+                                  : 'Kosongkan untuk memakai Logo Resmi MEPlanner atau tempel URL logo kustom...'
                               }
                               className="w-full px-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
                             />
@@ -19482,7 +19839,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Email Resmi MEPlanner (Gmail Utama):
+                            Email Resmi MEPlanner:
                           </label>
                           <input
                             type="email"
@@ -19504,7 +19861,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div>
                           <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                            Bahasa Default Aplikasi &amp; Undangan:
+                            Bahasa Default Aplikasi:
                           </label>
                           <select
                             value={
@@ -19527,36 +19884,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Bagian 2: Ringkasan & Pintasan ke Menu Wallet & Pembayaran Superadmin */}
+                    {/* Bagian 2: Pintasan ke Pembayaran */}
                     <div className="p-4 rounded-xl bg-gradient-to-br from-[#FAF3E3]/80 via-[#FAF8F5] to-white border border-[#D4AF37]/45 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-xs font-extrabold uppercase tracking-wider text-[#8B6914]">
-                          2. Manajemen Wallet &amp; Metode Pembayaran Komersial
-                        </p>
-                        <p className="text-[11px] text-stone-600 leading-relaxed">
-                          Kelola seluruh daftar wallet pembayaran Superadmin (Crypto USDT TRC20/BEP20/ERC20, PayPal, Kartu Kredit, QRIS, Bank &amp; E-Wallet) serta verifikasi ledger pembayaran idempoten pada tab khusus{' '}
-                          <strong>Wallet &amp; Pembayaran</strong>.
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-[#8B6914]">
+                          2. Rekening, Dompet &amp; Riwayat Order
+                        </span>
+                        <InfoTooltip text="Kelola seluruh rekening/dompet tujuan pembayaran (Crypto USDT, PayPal, Kartu Kredit, QRIS, Bank & E-Wallet) serta terima pesanan klien pada tab Pembayaran." />
                       </div>
                       <button
                         type="button"
                         onClick={() => setSuperadminMenuTab('payments')}
-                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs shrink-0 transition-all"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-xs shrink-0 transition-all"
                       >
                         <Wallet className="w-4 h-4" />
-                        <span>Buka Menu Wallet &amp; Pembayaran Superadmin &rarr;</span>
+                        <span>Buka Pembayaran &rarr;</span>
                       </button>
                     </div>
 
                     {/* Toggle Tampilkan Credit & Kontak Email di Footer */}
                     <label className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 cursor-pointer hover:border-[#D4AF37]/50">
-                      <div>
-                        <p className="text-xs font-extrabold text-stone-900">
-                          Tampilkan Credit &amp; Kontak Email Resmi di Footer
-                        </p>
-                        <p className="text-[11px] text-stone-500">
-                          Menampilkan tautan credit by omeko42, Email Bisnis Resmi (e98.bisnis@gmail.com), dan LinkedIn pada bagian bawah halaman.
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold text-stone-900">
+                          Tampilkan Credit &amp; Kontak Email di Footer
+                        </span>
+                        <InfoTooltip text="Menampilkan tautan credit by omeko42, Email Bisnis Resmi (e98.bisnis@gmail.com), dan LinkedIn pada bagian bawah halaman." />
                       </div>
                       <input
                         type="checkbox"
@@ -19626,15 +19978,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             action: 'SIMPAN',
                             status: 'SUCCESS',
                             summary:
-                              'Menyimpan Pengaturan Branding omeko42, Kontak Global & Pembayaran Komersial',
+                              'Menyimpan Pengaturan Identitas Brand & Kontak Global',
                           });
                           showToast(
-                            '✓ Pengaturan Branding, Kontak Global & Pembayaran Komersial berhasil disimpan!'
+                            '✓ Pengaturan Identitas Brand berhasil disimpan!'
                           );
                         }}
                         className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs shadow-sm transition-all"
                       >
-                        Simpan Pengaturan Branding &amp; Pembayaran Global
+                        Simpan Pengaturan
                       </button>
                     </div>
                   </div>
@@ -19645,7 +19997,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         )}
 
         {/* ===================================================================
-            MODAL TAMBAH GRUP CLIENT KOMERSIAL BARU (OTOMATIS 4 USER DEFAULT)
+            MODAL TAMBAH KLIEN BARU (OTOMATIS 4 AKUN LOGIN)
            =================================================================== */}
         {isAddClientModalOpen && (
           <div className="fixed inset-0 z-50 bg-stone-950/55 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -19653,8 +20005,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-[#B68D40]" />
-                  <h3 className="text-base font-extrabold text-stone-900">
-                    Buat Grup Client Komersial Baru
+                  <h3 className="text-base font-extrabold text-stone-900 flex items-center gap-1.5">
+                    <span>Tambah Klien Baru</span>
+                    <InfoTooltip text="Sistem otomatis membuat 4 akun login untuk klien ini: <kode>_pria, <kode>_wanita, <kode>_kel_pria, dan <kode>_kel_wanita." />
                   </h3>
                 </div>
                 <button
@@ -19667,17 +20020,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               <form onSubmit={handleCreateNewClientGroup} className="p-6 space-y-4">
-                <div className="p-3.5 rounded-xl bg-[#FAF3E3]/70 border border-[#D4AF37]/40 text-[11px] text-[#8B6914] leading-relaxed">
-                  Sistem akan otomatis men-generate <strong>4 User Default</strong> untuk klien ini:
-                  <span className="font-mono font-bold block mt-1">
-                    &bull; {'<kode>_pria'} &bull; {'<kode>_wanita'} &bull; {'<kode>_kel_pria'} &bull; {'<kode>_kel_wanita'}
-                  </span>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">
-                      Kode Unik Client*
+                      Kode Klien*
                     </label>
                     <input
                       type="text"
@@ -19697,7 +20043,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">
-                      Nama Pasangan Klien*
+                      Nama Klien / Pasangan*
                     </label>
                     <input
                       type="text"
@@ -19718,7 +20064,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">
-                      Tier Paket Komersial
+                      Paket Lisensi
                     </label>
                     <select
                       value={newClientForm.packageTier}
@@ -19740,7 +20086,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">
-                      Password Awal 4 Akun*
+                      Sandi Awal 4 Akun*
                     </label>
                     <input
                       type="text"
@@ -19807,8 +20153,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     className="px-5 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs shadow-xs disabled:opacity-50"
                   >
                     {isCreatingClientGroup
-                      ? 'Membuat 4 Akun...'
-                      : 'Buat Grup & 4 User Default'}
+                      ? 'Membuat...'
+                      : 'Buat Klien & 4 Akun'}
                   </button>
                 </div>
               </form>

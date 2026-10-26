@@ -152,7 +152,33 @@ function stripLargeAudioForServerPayload(payload: unknown): unknown {
   }
 }
 
+function isSuperadminUser(u?: AdminUser | null): boolean {
+  if (!u) return false;
+  const lowerUser = (u.username || '').trim().toLowerCase();
+  const lowerEmail = (u.email || '').trim().toLowerCase();
+  return (
+    u.role === 'SUPERADMIN' ||
+    lowerUser === 'superadmin' ||
+    lowerUser === 'omeko42' ||
+    lowerUser === 'agungkrisdianto98@gmail.com' ||
+    lowerUser === 'e98.bisnis@gmail.com' ||
+    lowerEmail === 'agungkrisdianto98@gmail.com' ||
+    lowerEmail === 'e98.bisnis@gmail.com'
+  );
+}
+
 function buildEffectiveClientGroups(state: WeddingDatabaseSchema): ClientGroupItem[] {
+  const demoGroup: ClientGroupItem = {
+    id: 'client-demo',
+    clientCode: 'DEMO',
+    clientName: 'Klien Demo • Rayhan & Clarissa',
+    coupleLabel: 'Rayhan & Clarissa',
+    packageTier: 'ROYAL_VIP',
+    status: 'ACTIVE',
+    eventDate: '2026-10-24',
+    notes: 'Ruang Kerja Demo Bawaan Superadmin',
+    createdAt: '2026-10-18T00:00:00.000Z',
+  };
   const baseGroup: ClientGroupItem = {
     id: 'client-utama',
     clientCode: 'UTAMA',
@@ -172,10 +198,18 @@ function buildEffectiveClientGroups(state: WeddingDatabaseSchema): ClientGroupIt
     ? state.settings.clientGroups
     : [];
   const map = new Map<string, ClientGroupItem>();
+  map.set(demoGroup.id, demoGroup);
   map.set(baseGroup.id, baseGroup);
   for (const g of configured) {
     if (g && g.id) {
-      map.set(g.id, g.id === 'client-utama' ? { ...baseGroup, ...g } : g);
+      map.set(
+        g.id,
+        g.id === 'client-demo'
+          ? { ...demoGroup, ...g }
+          : g.id === 'client-utama'
+            ? { ...baseGroup, ...g }
+            : g
+      );
     }
   }
   for (const u of state.adminUsers || []) {
@@ -199,10 +233,13 @@ function resolveClientIdFromParam(
   rawParam: string,
   groups: ClientGroupItem[]
 ): string {
+  const clean = rawParam.trim().toLowerCase();
+  if (clean === 'demo' || clean === 'client-demo') {
+    return 'client-demo';
+  }
   const dummyResolved = resolveShowcaseDummyClientId(rawParam);
   if (dummyResolved) return dummyResolved;
 
-  const clean = rawParam.trim().toLowerCase();
   if (
     !clean ||
     clean === 'utama' ||
@@ -230,6 +267,21 @@ function getOrCreateWorkspaceForClient(
   const existing = rootState.settings.clientWorkspaces?.[clientId];
   if (existing) {
     return existing;
+  }
+  if (clientId === 'client-demo') {
+    const demoState = getShowcaseDummyClientState('client-demo-wedding', 'ROYAL VIP');
+    return {
+      clientId: 'client-demo',
+      settings: {
+        ...demoState.settings,
+        activeClientId: 'client-demo',
+      },
+      tasks: demoState.tasks,
+      guests: demoState.guests,
+      wishes: demoState.wishes,
+      budgetItems: demoState.budgetItems,
+      updatedAt: demoState.lastSyncedAt || new Date().toISOString(),
+    };
   }
   const grp = groups.find((g) => g.id === clientId);
   const coupleLabel = grp?.coupleLabel || clientId.replace(/^client-/i, '');
@@ -349,9 +401,22 @@ function WeddingAppContent() {
   const [state, setState] = useState<WeddingDatabaseSchema>(() =>
     getInitialClientState()
   );
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() =>
-    getStoredAdminUser()
-  );
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
+    const stored = getStoredAdminUser();
+    if (!stored) return null;
+    if (
+      isSuperadminUser(stored) &&
+      (!stored.clientId || stored.clientId === 'client-utama')
+    ) {
+      return {
+        ...stored,
+        role: 'SUPERADMIN',
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+      };
+    }
+    return stored;
+  });
   const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>(() => {
     if (hasInitialGuestOrClientUrl && urlMode !== 'admin') return 'PUBLIC';
     const storedMode = getStoredViewMode();
@@ -441,26 +506,23 @@ function WeddingAppContent() {
   const [selectedAdminWorkspaceId, setSelectedAdminWorkspaceId] =
     useState<string>(() => {
       const storedUser = getStoredAdminUser();
+      if (isSuperadminUser(storedUser)) {
+        return storedUser?.clientId &&
+          storedUser.clientId !== 'client-utama' &&
+          storedUser.clientId !== 'client-gmail-agungkrisdiant'
+          ? storedUser.clientId
+          : 'client-demo';
+      }
       return storedUser?.clientId || 'client-utama';
     });
 
   const activeWorkspaceClientId = useMemo(() => {
-    const lowerUser = (adminUser?.username || '').trim().toLowerCase();
-    const lowerEmail = (adminUser?.email || '').trim().toLowerCase();
-    const isSuper =
-      adminUser?.role === 'SUPERADMIN' ||
-      lowerUser === 'superadmin' ||
-      lowerUser === 'omeko42' ||
-      lowerUser === 'agungkrisdianto98@gmail.com' ||
-      lowerUser === 'e98.bisnis@gmail.com' ||
-      lowerEmail === 'agungkrisdianto98@gmail.com' ||
-      lowerEmail === 'e98.bisnis@gmail.com';
-    if (!isSuper) {
+    if (!isSuperadminUser(adminUser)) {
       return adminUser?.clientId || 'client-utama';
     }
     return selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant'
-      ? 'client-utama'
-      : selectedAdminWorkspaceId || 'client-utama';
+      ? 'client-demo'
+      : selectedAdminWorkspaceId || 'client-demo';
   }, [adminUser, selectedAdminWorkspaceId]);
 
   const resolveExactKeyAcrossWorkspaces = useCallback(
@@ -599,21 +661,37 @@ function WeddingAppContent() {
           } else {
             setAdminUser(cachedUser);
             if (
-              cachedUser.role === 'SUPERADMIN' &&
-              selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant'
+              isSuperadminUser(cachedUser) &&
+              (selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant' ||
+                selectedAdminWorkspaceId === 'client-utama')
             ) {
-              setSelectedAdminWorkspaceId('client-utama');
+              setSelectedAdminWorkspaceId('client-demo');
             }
           }
           return;
         }
         const authData = await res.json();
         if (authData.authenticated && authData.user) {
-          setAdminUser(authData.user);
-          saveStoredAdminUser(authData.user);
-          if (authData.user.clientId) {
-            setSelectedAdminWorkspaceId(authData.user.clientId);
-          }
+          const isSuper = isSuperadminUser(authData.user);
+          const resolvedDefaultWs = isSuper
+            ? authData.user.clientId && authData.user.clientId !== 'client-utama'
+              ? authData.user.clientId
+              : 'client-demo'
+            : authData.user.clientId || 'client-utama';
+          const normalizedUser: AdminUser = isSuper
+            ? {
+                ...authData.user,
+                role: 'SUPERADMIN',
+                clientId: resolvedDefaultWs,
+                clientName:
+                  resolvedDefaultWs === 'client-demo'
+                    ? 'Klien Demo • Rayhan & Clarissa'
+                    : authData.user.clientName,
+              }
+            : authData.user;
+          setAdminUser(normalizedUser);
+          saveStoredAdminUser(normalizedUser);
+          setSelectedAdminWorkspaceId(resolvedDefaultWs);
           if (
             urlMode === 'admin' ||
             (!hasInitialGuestOrClientUrl && getStoredViewMode() === 'ADMIN')
@@ -981,9 +1059,24 @@ function WeddingAppContent() {
   }, [loginWelcomeToast]);
 
   const handleLoginSuccess = (user: AdminUser, welcomeToastText?: string) => {
-    setAdminUser(user);
-    saveStoredAdminUser(user);
-    setSelectedAdminWorkspaceId(user.clientId || 'client-utama');
+    const resolvedWs = isSuperadminUser(user)
+      ? user.clientId && user.clientId !== 'client-utama'
+        ? user.clientId
+        : 'client-demo'
+      : user.clientId || 'client-utama';
+    const normalizedUser: AdminUser = isSuperadminUser(user)
+      ? {
+          ...user,
+          clientId: resolvedWs,
+          clientName:
+            user.clientName && user.clientId !== 'client-utama'
+              ? user.clientName
+              : 'Klien Demo • Rayhan & Clarissa',
+        }
+      : user;
+    setAdminUser(normalizedUser);
+    saveStoredAdminUser(normalizedUser);
+    setSelectedAdminWorkspaceId(resolvedWs);
     setIsUrlGuestSessionCleared(true);
     setPreviewOverrideGuest(null);
     setManualGuestLookup({});
@@ -1066,10 +1159,8 @@ function WeddingAppContent() {
                 ? 'e98.bisnis@gmail.com'
                 : 'agungkrisdianto98@gmail.com',
             isDefaultUser: true,
-            clientId: 'client-utama',
-            clientName: `Client Utama • ${state.settings.groomNickname || 'Agung'} & ${
-              state.settings.brideNickname || 'Selo'
-            }`,
+            clientId: 'client-demo',
+            clientName: 'Klien Demo • Rayhan & Clarissa',
           };
           handleLoginSuccess(
             ownerUser,
@@ -2508,6 +2599,12 @@ function WeddingAppContent() {
         let nextClientGroups = Array.isArray(prev.settings.clientGroups)
           ? [...prev.settings.clientGroups]
           : [];
+        let nextClientWorkspaces = {
+          ...(prev.settings.clientWorkspaces || {}),
+        };
+        let nextAdminUsers = Array.isArray(prev.adminUsers)
+          ? [...prev.adminUsers]
+          : [];
 
         if (
           (mergedTx.status === 'PAID_VERIFIED' ||
@@ -2526,6 +2623,11 @@ function WeddingAppContent() {
             mergedTx = {
               ...mergedTx,
               provisionedClientId: existingGroup.id,
+              provisionedClientCode:
+                mergedTx.provisionedClientCode || existingGroup.clientCode,
+              provisionedInitialPassword:
+                mergedTx.provisionedInitialPassword ||
+                `${existingGroup.clientCode.toLowerCase()}12345`,
             };
             nextList = nextList.map((item) =>
               item.idempotencyKey === mergedTx.idempotencyKey ||
@@ -2542,10 +2644,12 @@ function WeddingAppContent() {
                 .toUpperCase()
                 .slice(0, 18) ||
               `VIP_${Date.now().toString(36).slice(-4).toUpperCase()}`;
+            const lowerCode = rawCode.toLowerCase();
+            const initialPassword = `${lowerCode}12345`;
             const newGroup: ClientGroupItem = {
               id: `client-${Date.now().toString(36)}`,
               clientCode: rawCode,
-              clientName: `Client • ${cleanCouple}`,
+              clientName: `Klien • ${cleanCouple}`,
               coupleLabel: cleanCouple,
               packageTier:
                 mergedTx.packageTier === 'ROYAL VIP'
@@ -2556,9 +2660,141 @@ function WeddingAppContent() {
               createdAt: nowIso,
             };
             nextClientGroups = [...nextClientGroups, newGroup];
+
+            const effectiveEventType: EventCategoryType =
+              mergedTx.eventType || 'WEDDING';
+            const dummyIdForEvent =
+              effectiveEventType === 'BIRTHDAY'
+                ? 'client-demo-birthday'
+                : effectiveEventType === 'GRADUATION'
+                  ? 'client-demo-graduation'
+                  : effectiveEventType === 'MEETING'
+                    ? 'client-demo-meeting'
+                    : effectiveEventType === 'GALA_DINNER'
+                      ? 'client-demo-gala'
+                      : 'client-demo-wedding';
+            const mappedTier: ShowcasePackageTier =
+              mergedTx.packageTier === 'STARTER'
+                ? 'STARTER'
+                : mergedTx.packageTier === 'EXCLUSIVE'
+                  ? 'EXCLUSIVE'
+                  : 'ROYAL VIP';
+            const baseTemplate = getShowcaseDummyClientState(
+              dummyIdForEvent,
+              mappedTier,
+              mergedTx.selectedThemeId
+            );
+            const parts = cleanCouple.split('&').map((p) => p.trim());
+            const groomPart = parts[0] || cleanCouple;
+            const bridePart = parts[1] || 'Partner';
+
+            nextClientWorkspaces[newGroup.id] = {
+              clientId: newGroup.id,
+              settings: {
+                ...baseTemplate.settings,
+                activeClientId: newGroup.id,
+                eventType: effectiveEventType,
+                groomFullName: groomPart,
+                groomNickname: groomPart.split(' ')[0] || groomPart,
+                brideFullName: bridePart,
+                brideNickname: bridePart.split(' ')[0] || bridePart,
+                subtitle: `${cleanCouple} • ${
+                  mergedTx.selectedThemeName || baseTemplate.settings.subtitle
+                }`,
+                updatedAt: nowIso,
+                updatedBy: 'auto-provision',
+              },
+              tasks: baseTemplate.tasks.map((t, idx) => ({
+                ...t,
+                id: `tsk_${lowerCode}_${idx + 1}`,
+                done: false,
+                status: 'BELUM',
+                doneAt: '',
+              })),
+              guests: [],
+              wishes: [],
+              budgetItems: [],
+              updatedAt: nowIso,
+            };
+
+            const defaultFourUsers: AdminUser[] = [
+              {
+                id: `adm-${lowerCode}-pria`,
+                username: `${lowerCode}_pria`,
+                nama: `${groomPart} (Mempelai Pria)`,
+                role: 'MEMPELAI_PRIA',
+                jabatan: `Mempelai Pria • ${cleanCouple}`,
+                email: `${lowerCode}.pria@meplanner.id`,
+                password: initialPassword,
+                isDefaultUser: true,
+                clientId: newGroup.id,
+                clientName: newGroup.clientName,
+              },
+              {
+                id: `adm-${lowerCode}-wanita`,
+                username: `${lowerCode}_wanita`,
+                nama: `${bridePart} (Mempelai Wanita)`,
+                role: 'MEMPELAI_WANITA',
+                jabatan: `Mempelai Wanita • ${cleanCouple}`,
+                email: `${lowerCode}.wanita@meplanner.id`,
+                password: initialPassword,
+                isDefaultUser: true,
+                clientId: newGroup.id,
+                clientName: newGroup.clientName,
+              },
+              {
+                id: `adm-${lowerCode}-kel-pria`,
+                username: `${lowerCode}_kel_pria`,
+                nama: `Keluarga ${groomPart} (Pria)`,
+                role: 'KELUARGA_PRIA',
+                jabatan: `Keluarga Pria • ${cleanCouple}`,
+                email: `${lowerCode}.kel.pria@meplanner.id`,
+                password: initialPassword,
+                isDefaultUser: true,
+                clientId: newGroup.id,
+                clientName: newGroup.clientName,
+              },
+              {
+                id: `adm-${lowerCode}-kel-wanita`,
+                username: `${lowerCode}_kel_wanita`,
+                nama: `Keluarga ${bridePart} (Wanita)`,
+                role: 'KELUARGA_WANITA',
+                jabatan: `Keluarga Wanita • ${cleanCouple}`,
+                email: `${lowerCode}.kel.wanita@meplanner.id`,
+                password: initialPassword,
+                isDefaultUser: true,
+                clientId: newGroup.id,
+                clientName: newGroup.clientName,
+              },
+            ];
+            for (const u of defaultFourUsers) {
+              if (
+                !nextAdminUsers.some(
+                  (ex) => ex.username.toLowerCase() === u.username.toLowerCase()
+                )
+              ) {
+                nextAdminUsers.push(u);
+              }
+            }
+
+            void fetch('/api/auth', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'CREATE_CLIENT_GROUP_USERS',
+                clientId: newGroup.id,
+                clientCode: rawCode,
+                clientName: newGroup.clientName,
+                coupleLabel: cleanCouple,
+                initialPassword,
+              }),
+            }).catch(() => {});
+
             mergedTx = {
               ...mergedTx,
               provisionedClientId: newGroup.id,
+              provisionedClientCode: rawCode,
+              provisionedInitialPassword: initialPassword,
             };
             nextList = nextList.map((item) =>
               item.idempotencyKey === mergedTx.idempotencyKey ||
@@ -2571,10 +2807,12 @@ function WeddingAppContent() {
 
         const nextState: WeddingDatabaseSchema = {
           ...prev,
+          adminUsers: nextAdminUsers,
           settings: {
             ...prev.settings,
             commercialPayments: nextList,
             clientGroups: nextClientGroups,
+            clientWorkspaces: nextClientWorkspaces,
             updatedAt: nowIso,
           },
           lastSyncedAt: nowIso,
@@ -2599,6 +2837,8 @@ function WeddingAppContent() {
               ? {
                   clientGroups: (capturedNextState as WeddingDatabaseSchema)
                     .settings.clientGroups,
+                  clientWorkspaces: (capturedNextState as WeddingDatabaseSchema)
+                    .settings.clientWorkspaces,
                 }
               : {}),
           }),

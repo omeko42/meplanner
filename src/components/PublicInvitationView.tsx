@@ -58,6 +58,7 @@ import {
 } from '@/lib/clientSync';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { findCatalogThemePreset } from '@/data/showcaseDummyClients';
 import {
   computeGuestInvitationHash,
   matchGuestWithinSingleClient,
@@ -118,9 +119,11 @@ export type ThemeLayoutArchetype =
   | 'MODERN_BENTO'
   | 'EDITORIAL_CLASSIC';
 
-function resolveInvitationThemePreset(raw?: string): InvitationThemeKey {
-  if (!raw) return 'champagne_gold';
-  const normalized = raw.trim().toLowerCase();
+function resolveInvitationThemePreset(
+  raw?: string,
+  selectedCatalogThemeId?: string | null
+): InvitationThemeKey {
+  const normalized = (raw || '').trim().toLowerCase();
   if (normalized === 'sage_botanical' || normalized === 'sage-garden') {
     return 'sage_botanical';
   }
@@ -148,6 +151,19 @@ function resolveInvitationThemePreset(raw?: string): InvitationThemeKey {
   if (normalized === 'blubloom_azure' || normalized === 'blubloom-azure') {
     return 'blubloom_azure';
   }
+
+  const catalogByRaw = raw ? findCatalogThemePreset(raw) : undefined;
+  if (catalogByRaw?.themePreset) {
+    return catalogByRaw.themePreset as InvitationThemeKey;
+  }
+
+  const catalogBySelected = selectedCatalogThemeId
+    ? findCatalogThemePreset(selectedCatalogThemeId)
+    : undefined;
+  if (catalogBySelected?.themePreset && (!raw || normalized === 'champagne_gold')) {
+    return catalogBySelected.themePreset as InvitationThemeKey;
+  }
+
   return 'champagne_gold';
 }
 
@@ -156,8 +172,15 @@ function resolveThemeLayoutArchetype(
   themeKey: InvitationThemeKey
 ): ThemeLayoutArchetype {
   const explicit = String(
-    (settings as WeddingSettings & { themeLayoutArchetype?: string })
-      .themeLayoutArchetype || ''
+    (
+      settings as WeddingSettings & {
+        themeLayoutArchetype?: string;
+        layoutArchetype?: string;
+      }
+    ).themeLayoutArchetype ||
+      (settings as WeddingSettings & { layoutArchetype?: string })
+        .layoutArchetype ||
+      ''
   )
     .trim()
     .toUpperCase();
@@ -169,6 +192,16 @@ function resolveThemeLayoutArchetype(
     explicit === 'EDITORIAL_CLASSIC'
   ) {
     return explicit as ThemeLayoutArchetype;
+  }
+
+  const catalogMatch = findCatalogThemePreset(
+    (settings as WeddingSettings & { selectedCatalogThemeId?: string })
+      .selectedCatalogThemeId ||
+      settings.activeClientId ||
+      settings.themePreset
+  );
+  if (catalogMatch?.layoutArchetype) {
+    return catalogMatch.layoutArchetype as ThemeLayoutArchetype;
   }
 
   const rawEventCategory = String(
@@ -225,11 +258,11 @@ const INVITATION_THEME_VEIL_RGB: Record<InvitationThemeKey, string> = {
   blush_rose: '255, 247, 249',
   royal_navy: '245, 248, 252',
   terracotta_rust: '253, 248, 245',
-  javanese_kraton: '255, 253, 249',
-  wayang_gold: '255, 253, 249',
-  midnight_elegance: '245, 248, 252',
-  espresso_rustic: '253, 248, 245',
-  blubloom_azure: '245, 248, 252',
+  javanese_kraton: '251, 246, 236',
+  wayang_gold: '252, 248, 239',
+  midnight_elegance: '242, 246, 250',
+  espresso_rustic: '250, 244, 239',
+  blubloom_azure: '243, 248, 252',
 };
 
 interface FloralCornerOrnamentProps {
@@ -1367,11 +1400,33 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const eventType = settings.eventType || 'WEDDING';
   const isWeddingEvent = eventType === 'WEDDING';
-  const activeThemeKey = resolveInvitationThemePreset(settings.themePreset);
+  const catalogThemeMatch = useMemo(
+    () =>
+      findCatalogThemePreset(
+        (settings as WeddingSettings & { selectedCatalogThemeId?: string })
+          .selectedCatalogThemeId ||
+          settings.activeClientId ||
+          settings.themePreset
+      ),
+    [settings]
+  );
+  const activeThemeKey = resolveInvitationThemePreset(
+    settings.themePreset,
+    (settings as WeddingSettings & { selectedCatalogThemeId?: string })
+      .selectedCatalogThemeId || settings.activeClientId
+  );
   const activeVeilRgb = INVITATION_THEME_VEIL_RGB[activeThemeKey];
   const layoutArchetype = resolveThemeLayoutArchetype(settings, activeThemeKey);
+  const effectiveFrameStyle =
+    settings.profileFrameStyle || catalogThemeMatch?.frameStyle || 'ARCH_DOME';
   const showFloral =
-    settings.showFloralOrnaments !== false && layoutArchetype === 'BOTANICAL_AIRY';
+    settings.showFloralOrnaments !== false &&
+    (layoutArchetype === 'BOTANICAL_AIRY' ||
+      Boolean(
+        (settings as WeddingSettings & { showFloralCorners?: boolean })
+          .showFloralCorners
+      ) ||
+      Boolean(catalogThemeMatch?.showFloralCorners));
   const showPetals = settings.showFloatingPetals !== false;
   const hasSecondProfile =
     typeof settings.showSecondProfile === 'boolean'
@@ -3927,9 +3982,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             className={`${
                               layoutArchetype === 'NUSANTARA_HERITAGE'
                                 ? 'w-36 h-48 sm:w-48 sm:h-64 rounded-2xl border-2 border-[#8b5a2b]/65 outline outline-1 outline-offset-4 outline-[#C89D54] shadow-xl'
-                                : settings.profileFrameStyle === 'CIRCLE'
+                                : effectiveFrameStyle === 'CIRCLE'
                                 ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                                : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                                : effectiveFrameStyle === 'EDITORIAL_RECT'
                                 ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
                                 : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
                             } overflow-hidden bg-stone-100 relative`}
@@ -4127,9 +4182,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                               className={`${
                                 layoutArchetype === 'NUSANTARA_HERITAGE'
                                   ? 'w-36 h-48 sm:w-48 sm:h-64 rounded-2xl border-2 border-[#8b5a2b]/65 outline outline-1 outline-offset-4 outline-[#C89D54] shadow-xl'
-                                  : settings.profileFrameStyle === 'CIRCLE'
+                                  : effectiveFrameStyle === 'CIRCLE'
                                   ? 'w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
-                                  : settings.profileFrameStyle === 'EDITORIAL_RECT'
+                                  : effectiveFrameStyle === 'EDITORIAL_RECT'
                                   ? 'w-40 h-52 sm:w-52 sm:h-64 rounded-[2rem] border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
                                   : 'w-36 h-48 sm:w-48 sm:h-64 rounded-t-full rounded-b-3xl border-4 border-[#D4AF37] ring-4 ring-[#FAF3E3] shadow-lg'
                               } overflow-hidden bg-stone-100 relative`}

@@ -244,6 +244,11 @@ export type InvitationThemePresetId =
   | 'blush_rose'
   | 'royal_navy'
   | 'terracotta_rust'
+  | 'javanese_kraton'
+  | 'wayang_gold'
+  | 'midnight_elegance'
+  | 'espresso_rustic'
+  | 'blubloom_azure'
   | 'pearl-champagne'
   | 'ivory-rose'
   | 'sage-garden'
@@ -546,6 +551,10 @@ export interface CommercialPaymentTransaction {
   orderId: string;
   idempotencyKey: string;
   packageTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP';
+  packageName?: string;
+  eventType?: EventCategoryType;
+  selectedThemeId?: string;
+  selectedThemeName?: string;
   marketLang: 'ID' | 'EN';
   currency: 'IDR' | 'USD' | 'USDT';
   amountNumeric: number;
@@ -565,6 +574,8 @@ export interface CommercialPaymentTransaction {
   verifiedAt?: string;
   verifiedBy?: string;
   provisionedClientId?: string;
+  provisionedClientCode?: string;
+  provisionedInitialPassword?: string;
   verificationMethod?:
     | 'ONCHAIN_RPC'
     | 'WEB3_WALLET'

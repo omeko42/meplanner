@@ -21,6 +21,8 @@ interface SessionPayload {
   role: AdminUser['role'];
   jabatan: string;
   isDefaultUser?: boolean;
+  clientId?: string;
+  clientName?: string;
   exp: number;
 }
 
@@ -180,6 +182,8 @@ export function createSessionToken(user: AdminUser): string {
     role: user.role,
     jabatan: user.jabatan,
     isDefaultUser: user.isDefaultUser,
+    clientId: user.clientId,
+    clientName: user.clientName,
     exp: Date.now() + SESSION_TTL_MS,
   };
   const payloadBase64 = Buffer.from(JSON.stringify(payload), 'utf-8').toString('base64url');
@@ -215,14 +219,33 @@ export function verifySessionToken(token?: string): AdminUser | null {
       return null;
     }
 
+    const isSuperadminSession =
+      parsed.role === 'SUPERADMIN' ||
+      verifySuperadminIdentity(parsed.username || '') ||
+      verifySuperadminIdentity(parsed.email || '');
+    const normalizedClientId = isSuperadminSession
+      ? !parsed.clientId || parsed.clientId === 'client-utama'
+        ? 'client-demo'
+        : parsed.clientId
+      : parsed.clientId;
+    const normalizedClientName = isSuperadminSession
+      ? !parsed.clientName ||
+        parsed.clientId === 'client-utama' ||
+        parsed.clientName.includes('Klien Utama')
+        ? 'Klien Demo • Rayhan & Clarissa'
+        : parsed.clientName
+      : parsed.clientName;
+
     return {
       id: parsed.sub,
       username: parsed.username,
       email: parsed.email,
       nama: parsed.nama,
-      role: parsed.role,
+      role: isSuperadminSession ? 'SUPERADMIN' : parsed.role,
       jabatan: parsed.jabatan,
       isDefaultUser: parsed.isDefaultUser,
+      clientId: normalizedClientId,
+      clientName: normalizedClientName,
     };
   } catch {
     return null;
@@ -244,6 +267,57 @@ export function verifyAdminRequest(request: NextRequest): AdminUser | null {
 
   return null;
 }
+
+const DEMO_FALLBACK_USERS: AdminUser[] = [
+  {
+    id: 'adm-demo-pria',
+    username: 'demo_pria',
+    nama: 'Rayhan (Demo Mempelai Pria)',
+    role: 'MEMPELAI_PRIA',
+    jabatan: 'Mempelai Pria • Klien Demo',
+    email: 'demo.pria@meplanner.id',
+    password: 'demo12345',
+    isDefaultUser: true,
+    clientId: 'client-demo',
+    clientName: 'Klien Demo • Rayhan & Clarissa',
+  },
+  {
+    id: 'adm-demo-wanita',
+    username: 'demo_wanita',
+    nama: 'Clarissa (Demo Mempelai Wanita)',
+    role: 'MEMPELAI_WANITA',
+    jabatan: 'Mempelai Wanita • Klien Demo',
+    email: 'demo.wanita@meplanner.id',
+    password: 'demo12345',
+    isDefaultUser: true,
+    clientId: 'client-demo',
+    clientName: 'Klien Demo • Rayhan & Clarissa',
+  },
+  {
+    id: 'adm-demo-kel-pria',
+    username: 'demo_kel_pria',
+    nama: 'Keluarga Rayhan (Demo Kel. Pria)',
+    role: 'KELUARGA_PRIA',
+    jabatan: 'Keluarga Pria • Klien Demo',
+    email: 'demo.kel.pria@meplanner.id',
+    password: 'demo12345',
+    isDefaultUser: true,
+    clientId: 'client-demo',
+    clientName: 'Klien Demo • Rayhan & Clarissa',
+  },
+  {
+    id: 'adm-demo-kel-wanita',
+    username: 'demo_kel_wanita',
+    nama: 'Keluarga Clarissa (Demo Kel. Wanita)',
+    role: 'KELUARGA_WANITA',
+    jabatan: 'Keluarga Wanita • Klien Demo',
+    email: 'demo.kel.wanita@meplanner.id',
+    password: 'demo12345',
+    isDefaultUser: true,
+    clientId: 'client-demo',
+    clientName: 'Klien Demo • Rayhan & Clarissa',
+  },
+];
 
 export function authenticateAdminCredentials(
   identifier: string,
@@ -270,6 +344,28 @@ export function authenticateAdminCredentials(
         jabatan: user.jabatan,
         email: user.email,
         isDefaultUser: user.isDefaultUser,
+        clientId: user.clientId || 'client-utama',
+        clientName: user.clientName || 'Klien Utama • Agung & Selo',
+      };
+    }
+  }
+
+  // 1b. Check 4 Default Demo Workspace Users (client-demo)
+  for (const demoUser of DEMO_FALLBACK_USERS) {
+    const matchId =
+      demoUser.username.toLowerCase() === cleanId ||
+      (demoUser.email && demoUser.email.toLowerCase() === cleanId);
+    if (matchId && verifyPasswordTimingSafe(cleanPw, demoUser.password)) {
+      return {
+        id: demoUser.id,
+        username: demoUser.username,
+        nama: demoUser.nama,
+        role: demoUser.role,
+        jabatan: demoUser.jabatan,
+        email: demoUser.email,
+        isDefaultUser: true,
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
       };
     }
   }
@@ -284,6 +380,8 @@ export function authenticateAdminCredentials(
       jabatan: 'Superadmin • Pemilik Sistem',
       email: 'owner@system.local',
       isDefaultUser: true,
+      clientId: 'client-demo',
+      clientName: 'Klien Demo • Rayhan & Clarissa',
     };
   }
 

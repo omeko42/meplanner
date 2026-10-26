@@ -68,6 +68,9 @@ import {
   SHOWCASE_DUMMY_CLIENT_METAS,
   getShowcaseDummyClientState,
   ShowcasePackageTier,
+  MEPLANNER_THEME_PRESETS,
+  findCatalogThemePreset,
+  applyCatalogThemeToSettings,
 } from '@/data/showcaseDummyClients';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 
@@ -1365,12 +1368,7 @@ type WevPackageId =
   | 'MITRA_SILVER'
   | 'MITRA_GOLD';
 
-type CatalogThemeStyle =
-  | 'Minimalis'
-  | 'Floral'
-  | 'Adat & Budaya'
-  | 'Editorial Foto'
-  | 'Light Luxury';
+type CatalogThemeStyle = string;
 
 type ThemeLayoutArchetype =
   | 'EDITORIAL_CLASSIC'
@@ -1386,12 +1384,7 @@ interface CatalogThemeItem {
   dummyClientId: string;
   styleCategory: CatalogThemeStyle;
   layoutArchetype: ThemeLayoutArchetype;
-  themePreset:
-    | 'champagne_gold'
-    | 'sage_botanical'
-    | 'blush_rose'
-    | 'royal_navy'
-    | 'terracotta_rust';
+  themePreset: InvitationThemePresetId;
   profileFrameStyle: 'ARCH_DOME' | 'CIRCLE' | 'EDITORIAL_RECT';
   showFloralOrnaments: boolean;
   paletteColors: [string, string, string];
@@ -1403,678 +1396,28 @@ interface CatalogThemeItem {
   tierBadge: string;
 }
 
-const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] = [
-  // =========================================================================
-  // 💍 PERNIKAHAN (15 TEMA EKSKLUSIF — KOLEKSI KURASI MEPLANNER)
-  // =========================================================================
-  {
-    id: 'wed-timeless-snapshot',
-    name: 'Timeless Snapshot',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: true,
-    paletteColors: ['#D4AF37', '#FAF3E3', '#2A2118'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Potret editorial klasik dengan bingkai foto jurnalistik abadi',
-    taglineEn: 'Classic editorial portrait with timeless photojournalism frame',
+const MULTI_EVENT_THEME_CATALOG: CatalogThemeItem[] =
+  MEPLANNER_THEME_PRESETS.map((item) => ({
+    id: item.id,
+    name: item.name,
+    eventType: item.eventType,
+    dummyClientId: item.dummyClientId,
+    styleCategory: item.styleBadge,
+    layoutArchetype: item.layoutArchetype,
+    themePreset: item.themePreset,
+    profileFrameStyle: item.frameStyle,
+    showFloralOrnaments:
+      item.showFloralCorners !== undefined
+        ? item.showFloralCorners
+        : item.layoutArchetype === 'BOTANICAL_AIRY',
+    paletteColors: item.swatches,
+    thumbnailUrl: item.coverImageUrl,
+    heroPrewedUrl: item.heroImageUrl,
+    coverBgUrl: item.coverImageUrl,
+    taglineId: item.description,
+    taglineEn: item.description,
     tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-serein',
-    name: 'Serein',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'sage_botanical',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#5E8C6A', '#F4F7F4', '#2C3E35'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Nuansa embun senja yang tenang dengan aksen dedaunan sage lembut',
-    taglineEn: 'Serene evening mist aesthetic with soft sage botanical accents',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'wed-mildness',
-    name: 'Mildness',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: false,
-    paletteColors: ['#E6C994', '#FFFDF9', '#5C4D3C'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tipografi bersih nan hangat dengan estetika krem gading minimalis',
-    taglineEn: 'Warm clean typography with minimalist ivory cream aesthetic',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'wed-snap-photo',
-    name: 'Snap Photo',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'blush_rose',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#D88290', '#FDF6F7', '#3D2328'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kolase polaroid romantis untuk menonjolkan galeri prewedding HD',
-    taglineEn: 'Romantic polaroid collage showcasing HD prewedding photography',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-visual-journey',
-    name: 'Visual Journey',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#CC704E', '#FBF5F2', '#3B231A'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Alur cerita cinta sinematik dengan transisi slideshow layar penuh',
-    taglineEn: 'Cinematic love story flow with full-bleed slideshow transitions',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-elegant-light',
-    name: 'Elegant Light',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Floral',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#D4AF37', '#FFFDF9', '#8B6914'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kemewahan ballroom terang dengan ornamen sudut bunga emas berkilau',
-    taglineEn: 'Luminous ballroom luxury with shimmering gold floral corners',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-espresso',
-    name: 'Espresso & Warm Linen',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#8C523A', '#F5EDE4', '#CC704E'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Palet hangat linen krem & perunggu espresso untuk resepsi intim',
-    taglineEn: 'Warm linen cream & bronze espresso palette for intimate receptions',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-peppy',
-    name: 'Peppy',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Floral',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'blush_rose',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: true,
-    paletteColors: ['#E06D85', '#FFEBF0', '#592531'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Nuansa ceria penuh bunga pastel merah muda yang segar dan modern',
-    taglineEn: 'Cheerful pastel blush blossoms with a fresh modern vibe',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'wed-photovit-black',
-    name: 'Photovit: Editorial',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#F8FAFC', '#D4AF37'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1507504031003-b417219a0fde?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tata letak majalah mode modern dengan grid Bento bersih & elegan',
-    taglineEn: 'High-fashion modern magazine aesthetic with clean Bento grid',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-blubloom',
-    name: 'BluBloom',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Floral',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#3B669E', '#EBF3FA', '#1B355A'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Bunga hydrangea biru langit cerah berpadu kubah arsitektur elegan',
-    taglineEn: 'Bright sky blue hydrangea florals paired with elegant arch domes',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-wayang',
-    name: 'Wayang Heritage',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Adat & Budaya',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#C5A059', '#F8F1E6', '#8B5A2B'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Filosofi gunungan wayang & ukiran emas keraton yang agung',
-    taglineEn: 'Sacred Javanese Wayang Gunungan & royal gold heritage motifs',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-photovit-green',
-    name: 'Photovit: Green',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'sage_botanical',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: true,
-    paletteColors: ['#4A7856', '#EAF2EC', '#1E3323'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1509927083803-4bd519298ac4?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1509927083803-4bd519298ac4?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Editorial outdoor garden wedding dengan bingkai zamrud tropis',
-    taglineEn: 'Outdoor garden wedding editorial with emerald botanical frames',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'wed-midnight-elegance',
-    name: 'Pearl & Ivory Elegance',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#3B669E', '#FFFDF9', '#D4AF37'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kemegahan mutiara gading & safir terang dengan aksen emas VVIP',
-    taglineEn: 'Luminous pearl ivory & sapphire grandeur with VVIP gold accents',
-    tierBadge: 'Business / VIP',
-  },
-  {
-    id: 'wed-simple-rustic-3',
-    name: 'Simple Rustic #3',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: true,
-    paletteColors: ['#C87D55', '#F5EDE4', '#4A3222'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Sentuhan rustic terracotta & linen krem yang hangat dan bersahaja',
-    taglineEn: 'Warm terracotta rustic charm with natural linen cream tones',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'wed-culture-javanese',
-    name: 'Culture: Javanese',
-    eventType: 'WEDDING',
-    dummyClientId: 'client-demo-wedding',
-    styleCategory: 'Adat & Budaya',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#9A5B3E', '#FDF8F0', '#D4AF37'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Keagungan adat Jawa klasik dengan motif batik sogan & gebyok emas',
-    taglineEn: 'Noble Javanese heritage with classic sogan batik & gold gebyok',
-    tierBadge: 'Premium',
-  },
-
-  // =========================================================================
-  // 🎂 ULANG TAHUN (4 TEMA SPESIAL)
-  // =========================================================================
-  {
-    id: 'bday-sweet-17-rose',
-    name: 'Sweet 17th Rose Soirée',
-    eventType: 'BIRTHDAY',
-    dummyClientId: 'client-demo-birthday',
-    styleCategory: 'Floral',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'blush_rose',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: true,
-    paletteColors: ['#D88290', '#FFF0F3', '#8C3B4A'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Perayaan Sweet Seventeen glamor dengan nuansa mawar merah muda',
-    taglineEn: 'Glamorous Sweet Seventeen soirée in blush rose & crystal',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'bday-peppy-confetti',
-    name: 'Peppy Confetti Pop',
-    eventType: 'BIRTHDAY',
-    dummyClientId: 'client-demo-birthday',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#FFF9F0', '#B68D40'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Desain pesta ulang tahun meriah dengan bingkai foto polaroid & confetti',
-    taglineEn: 'Festive birthday celebration design with polaroid frames & confetti',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'bday-golden-jubilee',
-    name: 'Golden Jubilee 50th',
-    eventType: 'BIRTHDAY',
-    dummyClientId: 'client-demo-birthday',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#C5A059', '#FAF3E3', '#8B6914'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tasyakuran usia emas & milestone keluarga yang hangat dan berwibawa',
-    taglineEn: 'Dignified golden milestone & family appreciation celebration',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'bday-botanical-garden',
-    name: 'Botanical Garden Party',
-    eventType: 'BIRTHDAY',
-    dummyClientId: 'client-demo-birthday',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'sage_botanical',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: true,
-    paletteColors: ['#5E8C6A', '#F3F8F4', '#2D4734'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Perjamuan ulang tahun outdoor asri di taman kaca tropis',
-    taglineEn: 'Lush outdoor glasshouse garden birthday brunch & dinner',
-    tierBadge: 'Gratis / Premium',
-  },
-
-  // =========================================================================
-  // 🎓 WISUDA (4 TEMA AKADEMIK & PELANTIKAN)
-  // =========================================================================
-  {
-    id: 'grad-cum-laude-gold',
-    name: 'Cum Laude Academic Gold',
-    eventType: 'GRADUATION',
-    dummyClientId: 'client-demo-graduation',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#FAF3E3', '#8B6914'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tasyakuran kelulusan Cum Laude & Doktor dengan medali emas kehormatan',
-    taglineEn: 'Cum Laude & Doctoral convocation tribute with academic gold',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'grad-sumpah-dokter-emerald',
-    name: 'Sumpah Dokter Emerald',
-    eventType: 'GRADUATION',
-    dummyClientId: 'client-demo-graduation',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'sage_botanical',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#5E8C6A', '#F2F7F4', '#1F3A28'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Khusus pelantikan Sumpah Dokter & Spesialis bernuansa hijau medis',
-    taglineEn: 'Tailored for Medical Oath & Specialist inauguration in emerald',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'grad-royal-alma-mater',
-    name: 'Royal Alma Mater Navy',
-    eventType: 'GRADUATION',
-    dummyClientId: 'client-demo-graduation',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#EBF2FA', '#162844'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Kebanggaan almamater biru navy untuk sidang terbuka & ramah tamah',
-    taglineEn: 'Classic alma mater royal navy for convocation & family banquet',
-    tierBadge: 'Gratis / Premium',
-  },
-  {
-    id: 'grad-modern-scholar',
-    name: 'Modern Scholar Terracotta',
-    eventType: 'GRADUATION',
-    dummyClientId: 'client-demo-graduation',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: false,
-    paletteColors: ['#CC704E', '#FDF6F3', '#422217'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Gaya editorial hangat bagi wisudawan sarjana, magister & kreatif',
-    taglineEn: 'Warm modern editorial style for graduates & young scholars',
-    tierBadge: 'Gratis / Premium',
-  },
-
-  // =========================================================================
-  // 🏛️ RAPAT & KORPORAT (4 TEMA RESMI & EKSEKUTIF)
-  // =========================================================================
-  {
-    id: 'meet-executive-summit',
-    name: 'Executive Summit Navy',
-    eventType: 'MEETING',
-    dummyClientId: 'client-demo-meeting',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#E8F0F8', '#162844'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Undangan Rakornas, RUPS & Forum Direksi berstandar korporasi global',
-    taglineEn: 'Corporate summit, AGM & board meeting invitation suite',
-    tierBadge: 'Business / VIP',
-  },
-  {
-    id: 'meet-protokol-instansi',
-    name: 'Protokol Instansi & Polri',
-    eventType: 'MEETING',
-    dummyClientId: 'client-demo-meeting',
-    styleCategory: 'Adat & Budaya',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: false,
-    paletteColors: ['#D4AF37', '#FAF3E3', '#8B6914'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Tata protokol resmi Kementerian, Polri/TNI & pelantikan jabatan',
-    taglineEn: 'Official state protocol, Ministry, Police/Military & inauguration',
-    tierBadge: 'Business / VIP',
-  },
-  {
-    id: 'meet-green-esg-forum',
-    name: 'Green ESG Forum',
-    eventType: 'MEETING',
-    dummyClientId: 'client-demo-meeting',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'BOTANICAL_AIRY',
-    themePreset: 'sage_botanical',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#5E8C6A', '#F0F7F2', '#1C3624'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Konferensi keberlanjutan ESG, seminar nasional & ramah lingkungan',
-    taglineEn: 'Sustainable ESG conference, green energy forum & symposium',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'meet-tech-keynote',
-    name: 'Tech Keynote Modern',
-    eventType: 'MEETING',
-    dummyClientId: 'client-demo-meeting',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#F1F5F9', '#0284C7'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Peluncuran produk teknologi, startup townhall & konferensi inovasi',
-    taglineEn: 'Tech product launch, startup townhall & digital innovation keynote',
-    tierBadge: 'Premium',
-  },
-
-  // =========================================================================
-  // 🥂 GALA DINNER (4 TEMA VVIP & PENGHARGAAN)
-  // =========================================================================
-  {
-    id: 'gala-royal-sapphire',
-    name: 'Royal Sapphire Gala',
-    eventType: 'GALA_DINNER',
-    dummyClientId: 'client-demo-gala',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'MODERN_BENTO',
-    themePreset: 'royal_navy',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#3B669E', '#F8FAFC', '#D4AF37'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Jamuan malam apresiasi mitra VVIP & filantropi bernuansa safir terang',
-    taglineEn: 'VVIP partner appreciation & philanthropy gala in royal sapphire',
-    tierBadge: 'Business / VIP',
-  },
-  {
-    id: 'gala-champagne-orchestra',
-    name: 'Champagne Gold Orchestra',
-    eventType: 'GALA_DINNER',
-    dummyClientId: 'client-demo-gala',
-    styleCategory: 'Light Luxury',
-    layoutArchetype: 'EDITORIAL_CLASSIC',
-    themePreset: 'champagne_gold',
-    profileFrameStyle: 'ARCH_DOME',
-    showFloralOrnaments: true,
-    paletteColors: ['#D4AF37', '#FFFDF9', '#8B6914'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Konser simfoni & fine dining dengan kemewahan emas champagne',
-    taglineEn: 'Symphony orchestra & 6-course fine dining in champagne gold',
-    tierBadge: 'Business / VIP',
-  },
-  {
-    id: 'gala-velvet-red-carpet',
-    name: 'Velvet Red Carpet',
-    eventType: 'GALA_DINNER',
-    dummyClientId: 'client-demo-gala',
-    styleCategory: 'Editorial Foto',
-    layoutArchetype: 'POLAROID_MAGAZINE',
-    themePreset: 'blush_rose',
-    profileFrameStyle: 'EDITORIAL_RECT',
-    showFloralOrnaments: false,
-    paletteColors: ['#D88290', '#FFF5F7', '#8C3B4A'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Malam karpet merah eksklusif, fashion gala & perayaan silver jubilee',
-    taglineEn: 'Exclusive red carpet arrival, fashion gala & silver jubilee night',
-    tierBadge: 'Premium',
-  },
-  {
-    id: 'gala-starlight-award',
-    name: 'Starlight Award Night',
-    eventType: 'GALA_DINNER',
-    dummyClientId: 'client-demo-gala',
-    styleCategory: 'Minimalis',
-    layoutArchetype: 'NUSANTARA_HERITAGE',
-    themePreset: 'terracotta_rust',
-    profileFrameStyle: 'CIRCLE',
-    showFloralOrnaments: false,
-    paletteColors: ['#CC704E', '#FDF8F4', '#D4AF37'],
-    thumbnailUrl:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80',
-    heroPrewedUrl:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1400&q=85',
-    coverBgUrl:
-      'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=85',
-    taglineId: 'Malam penganugerahan prestasi tahunan & apresiasi korporasi',
-    taglineEn: 'Annual achievement award night & corporate appreciation dinner',
-    tierBadge: 'Premium',
-  },
-];
+  }));
 
 interface BlogArticleItem {
   id: string;
@@ -2303,9 +1646,9 @@ const AI_QUICK_PROMPTS = [
     questionId: '🎨 Rekomendasi tema & layout sesuai jenis acara saya',
     questionEn: '🎨 Recommend a theme & layout for my event type',
     answerId:
-      '🤖 MEPlanner AI: Setiap tema di MEPlanner memiliki arketipe tata letak (Layout Archetype) yang unik! Untuk Pernikahan Adat & Keraton, gunakan "Wayang Heritage" atau "Culture: Javanese" (Nusantara Heritage Layout). Untuk gaya majalah & polaroid modern, pilih "Snap Photo", "Visual Journey", atau "Peppy" (Polaroid Magazine Layout). Untuk nuansa taman minimalis, pilih "Serein", "Mildness", atau "BluBloom" (Botanical Airy Layout). Untuk Ballroom & Eksekutif, pilih "Timeless Snapshot", "Elegant Light", atau "Pearl & Ivory Elegance"!',
+      '🤖 MEPlanner AI: Setiap tema di MEPlanner memiliki arketipe tata letak yang unik! Untuk Pernikahan Adat & Keraton, gunakan "Wayang Keraton" atau "Adat Jawa Klasik" (Nusantara Heritage Layout). Untuk gaya majalah & polaroid modern, pilih "Polaroid Klasik", "Kolase Polaroid", atau "Pastel Ceria" (Polaroid Magazine Layout). Untuk nuansa taman minimalis, pilih "Embun Pagi", "Gading Minimalis", atau "Bunga Langit Biru" (Botanical Airy Layout). Untuk Ballroom & Eksekutif, pilih "Kilau Cahaya", "Malam Elegan", atau "Redaksi Modern"!',
     answerEn:
-      '🤖 MEPlanner AI: Every MEPlanner theme features a distinct Layout Archetype! For Heritage Weddings, try "Wayang Heritage" or "Culture: Javanese". For Polaroid & Magazine vibes, pick "Snap Photo", "Visual Journey", or "Peppy". For Botanical Minimalist, choose "Serein", "Mildness", or "BluBloom"!',
+      '🤖 MEPlanner AI: Every MEPlanner theme features a distinct Layout Archetype! For Heritage Weddings, try "Wayang Keraton" or "Adat Jawa Klasik". For Polaroid & Magazine vibes, pick "Polaroid Klasik", "Kolase Polaroid", or "Pastel Ceria". For Botanical Minimalist, choose "Embun Pagi", "Gading Minimalis", or "Bunga Langit Biru"!',
   },
   {
     id: 'ai-planner',
@@ -2321,6 +1664,11 @@ const AI_QUICK_PROMPTS = [
 type ExtendedPaymentTransaction = CommercialPaymentTransaction & {
   onChainVerified?: boolean;
   blockchainExplorerUrl?: string;
+  selectedThemeId?: string;
+  selectedThemeName?: string;
+  eventType?: EventCategoryType;
+  packageName?: string;
+  packageLabel?: string;
 };
 
 interface Web3Window {
@@ -2477,7 +1825,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   // Commercial Catalog Modals & Interactive States
   const [selectedCatalogThemeId, setSelectedCatalogThemeId] = useState<string>(
-    'wed-timeless-snapshot'
+    'timeless-snapshot'
   );
   const [catalogEventFilter, setCatalogEventFilter] = useState<
     'ALL' | EventCategoryType
@@ -2513,7 +1861,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [googleOnboardingEventType, setGoogleOnboardingEventType] =
     useState<EventCategoryType>('WEDDING');
   const [googleOnboardingThemeId, setGoogleOnboardingThemeId] =
-    useState<string>('wed-timeless-snapshot');
+    useState<string>('timeless-snapshot');
 
   // 24-hour price lock countdown timer during Step 2
   useEffect(() => {
@@ -2695,14 +2043,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
   >('WEDDING');
   const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
-  const [simThemeOverride, setSimThemeOverride] = useState<
-    | 'champagne_gold'
-    | 'sage_botanical'
-    | 'blush_rose'
-    | 'royal_navy'
-    | 'terracotta_rust'
-    | null
-  >(null);
+  const [simThemeOverride, setSimThemeOverride] =
+    useState<InvitationThemePresetId | null>(null);
 
   // Sync selectedDemoClientId whenever simEventType changes
   useEffect(() => {
@@ -2763,9 +2105,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   );
 
   const activeCatalogTheme = useMemo<CatalogThemeItem | null>(() => {
-    const byId = MULTI_EVENT_THEME_CATALOG.find(
-      (t) => t.id === selectedCatalogThemeId
-    );
+    const resolvedPreset = findCatalogThemePreset(selectedCatalogThemeId);
+    const targetId = resolvedPreset?.id || selectedCatalogThemeId;
+    const byId = MULTI_EVENT_THEME_CATALOG.find((t) => t.id === targetId);
     if (byId && byId.eventType === activeDummyMeta.eventType) {
       return byId;
     }
@@ -2782,25 +2124,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     activeDummyMeta.themePreset;
 
   const activeDummyState = useMemo(() => {
-    const base = getShowcaseDummyClientState(activeDummyMeta.id, simPackageTier);
+    const base = getShowcaseDummyClientState(
+      activeDummyMeta.id,
+      simPackageTier,
+      activeCatalogTheme?.id
+    );
+    const themedSettings = activeCatalogTheme
+      ? applyCatalogThemeToSettings(base.settings, activeCatalogTheme.id, {
+          preserveCustomPhotos: false,
+        })
+      : base.settings;
     const resolvedPreset =
       simThemeOverride ||
       activeCatalogTheme?.themePreset ||
-      base.settings.themePreset;
+      themedSettings.themePreset;
     return {
       ...base,
       settings: {
-        ...base.settings,
+        ...themedSettings,
         themePreset: resolvedPreset,
-        ...(activeCatalogTheme
-          ? {
-              themeLayoutArchetype: activeCatalogTheme.layoutArchetype,
-              profileFrameStyle: activeCatalogTheme.profileFrameStyle,
-              showFloralOrnaments: activeCatalogTheme.showFloralOrnaments,
-              coverBgUrl: activeCatalogTheme.coverBgUrl,
-              heroPrewedUrl: activeCatalogTheme.heroPrewedUrl,
-            }
-          : {}),
       } as WeddingSettings,
     };
   }, [
@@ -3532,7 +2874,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
     setGoogleOnboardingPackageId(pkgId);
     setGoogleOnboardingEventType(initialEvType);
-    setGoogleOnboardingThemeId(matchingTheme?.id || 'wed-timeless-snapshot');
+    setGoogleOnboardingThemeId(matchingTheme?.id || 'timeless-snapshot');
     setIsGoogleOnboardingModalOpen(true);
   };
 
@@ -3686,6 +3028,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       orderId: currentOrderId,
       idempotencyKey: currentIdempotencyKey,
       packageTier: selectedCheckoutTier,
+      packageName: activeSelectedPackage.name,
+      packageLabel: activeSelectedPackage.name,
+      eventType: activeCatalogTheme?.eventType || simEventType || 'WEDDING',
+      selectedThemeId: activeCatalogTheme?.id,
+      selectedThemeName: activeCatalogTheme?.name,
       marketLang: lang,
       currency,
       amountNumeric: activeSelectedPackage.amountNumeric,
@@ -3889,6 +3236,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     let isOnChainConfirmed = false;
     let explorerUrl: string | undefined;
     let verifiedByActor: string | undefined;
+    let verifiedMethodText: CommercialPaymentTransaction['verificationMethod'];
 
     try {
       if (simulateNetworkTimeout) {
@@ -3901,6 +3249,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           orderId: currentOrderId,
           idempotencyKey: currentIdempotencyKey,
           packageTier: selectedCheckoutTier,
+          packageName: activeSelectedPackage.name,
+          eventType: activeCatalogTheme?.eventType || simEventType || 'WEDDING',
+          selectedThemeId: activeCatalogTheme?.id,
+          selectedThemeName: activeCatalogTheme?.name,
           marketLang: lang,
           currency,
           amountNumeric: activeSelectedPackage.amountNumeric,
@@ -3917,8 +3269,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           retryCount: nextRetryCount,
           lastErrorOrTimeoutReason:
             lang === 'ID'
-              ? 'Waktu tunggu koneksi habis (Request Timeout). Jangan khawatir, Idempotency Key Anda telah dikunci—silakan klik Retry tanpa risiko duplikat.'
-              : 'Network request timed out. Your Idempotency Key is locked—safely click Retry without risking duplicate orders.',
+              ? 'Koneksi sempat terputus. Pesanan Anda sudah diamankan—silakan klik Ulangi Konfirmasi tanpa khawatir pesanan ganda.'
+              : 'Network connection timed out. Your order is safely locked—click Retry without worrying about duplicate orders.',
           expiresAt:
             isSameIdempotencyKey && activeTransaction?.expiresAt
               ? activeTransaction.expiresAt
@@ -3955,22 +3307,44 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           const verifyJson = (await verifyRes.json()) as {
             ok?: boolean;
             status?: CommercialPaymentStatus;
+            verificationStatus?: CommercialPaymentStatus;
             onChainVerified?: boolean;
+            verifiedOnChain?: boolean;
             blockchainExplorerUrl?: string;
+            explorerUrl?: string;
             verifiedBy?: string;
+            verificationMethod?: string;
           };
-          if (verifyJson.status) {
-            verifiedStatus = verifyJson.status;
+          const resolvedStatus =
+            verifyJson.verificationStatus || verifyJson.status;
+          if (resolvedStatus) {
+            verifiedStatus = resolvedStatus;
           }
-          if (verifyJson.onChainVerified) {
+          if (verifyJson.verifiedOnChain || verifyJson.onChainVerified) {
             isOnChainConfirmed = true;
             verifiedStatus = 'PAID_VERIFIED';
           }
-          if (verifyJson.blockchainExplorerUrl) {
-            explorerUrl = verifyJson.blockchainExplorerUrl;
+          const resolvedExplorer =
+            verifyJson.explorerUrl || verifyJson.blockchainExplorerUrl;
+          if (resolvedExplorer) {
+            explorerUrl = resolvedExplorer;
           }
           if (verifyJson.verifiedBy) {
             verifiedByActor = verifyJson.verifiedBy;
+          } else if (verifiedStatus === 'PAID_VERIFIED') {
+            verifiedByActor = isOnChainConfirmed
+              ? 'AUTO_BLOCKCHAIN_RPC'
+              : 'AUTO_FORMAT_VERIFIER';
+          }
+          if (verifyJson.verificationMethod) {
+            const rawMethod = verifyJson.verificationMethod.toUpperCase();
+            if (isOnChainConfirmed || rawMethod.includes('RPC')) {
+              verifiedMethodText = 'ONCHAIN_RPC';
+            } else if (rawMethod.includes('GATEWAY') || verifiedStatus === 'PAID_VERIFIED') {
+              verifiedMethodText = 'GATEWAY_AUTO';
+            } else {
+              verifiedMethodText = 'MANUAL_RECEIPT';
+            }
           }
         }
       } catch {
@@ -3988,6 +3362,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             : currentOrderId,
         idempotencyKey: currentIdempotencyKey,
         packageTier: selectedCheckoutTier,
+        packageName: activeSelectedPackage.name,
+        eventType: activeCatalogTheme?.eventType || simEventType || 'WEDDING',
+        selectedThemeId: activeCatalogTheme?.id,
+        selectedThemeName: activeCatalogTheme?.name,
         marketLang: lang,
         currency,
         amountNumeric: activeSelectedPackage.amountNumeric,
@@ -4006,6 +3384,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         verifiedBy: verifiedByActor,
         onChainVerified: isOnChainConfirmed,
         blockchainExplorerUrl: explorerUrl,
+        verificationMethod: verifiedMethodText,
         expiresAt:
           isSameIdempotencyKey && activeTransaction?.expiresAt
             ? activeTransaction.expiresAt
@@ -4028,8 +3407,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lastErrorOrTimeoutReason:
               result.error ||
               (lang === 'ID'
-                ? 'Koneksi ke server pembayaran timeout. Silakan klik Retry (Idempoten).'
-                : 'Connection to payment gateway timed out. Please click Retry (Idempotent).'),
+                ? 'Koneksi ke server pembayaran terputus. Silakan klik Ulangi Konfirmasi.'
+                : 'Connection to payment gateway timed out. Please click Retry.'),
             updatedAt: new Date().toISOString(),
           };
           persistLocalTransaction(failedTx);
@@ -4038,6 +3417,20 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         }
         const mergedTx: ExtendedPaymentTransaction = {
           ...result.transaction,
+          packageName:
+            (result.transaction as ExtendedPaymentTransaction).packageName ||
+            activeSelectedPackage.name,
+          eventType:
+            (result.transaction as ExtendedPaymentTransaction).eventType ||
+            activeCatalogTheme?.eventType ||
+            simEventType ||
+            'WEDDING',
+          selectedThemeId:
+            (result.transaction as ExtendedPaymentTransaction)
+              .selectedThemeId || activeCatalogTheme?.id,
+          selectedThemeName:
+            (result.transaction as ExtendedPaymentTransaction)
+              .selectedThemeName || activeCatalogTheme?.name,
           onChainVerified:
             isOnChainConfirmed ||
             (result.transaction as ExtendedPaymentTransaction).onChainVerified,
@@ -4060,6 +3453,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         orderId: currentOrderId,
         idempotencyKey: currentIdempotencyKey,
         packageTier: selectedCheckoutTier,
+        packageName: activeSelectedPackage.name,
+        eventType: activeCatalogTheme?.eventType || simEventType || 'WEDDING',
+        selectedThemeId: activeCatalogTheme?.id,
+        selectedThemeName: activeCatalogTheme?.name,
         marketLang: lang,
         currency,
         amountNumeric: activeSelectedPackage.amountNumeric,
@@ -6588,18 +5985,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           <>
                             <CheckCircle2 className="w-4 h-4 shrink-0" />
                             <span className="min-w-0 break-words">
-                              {selectedChannel.category === 'CRYPTO'
-                                ? lang === 'ID'
-                                  ? 'Verifikasi Blockchain →'
-                                  : 'Verify on Blockchain →'
-                                : selectedChannel.category === 'PAYPAL' ||
-                                    selectedChannel.category === 'CREDIT_CARD'
-                                  ? lang === 'ID'
-                                    ? 'Verifikasi Pembayaran →'
-                                    : 'Verify Payment →'
-                                  : lang === 'ID'
-                                    ? 'Verifikasi & Aktifkan →'
-                                    : 'Verify & Activate →'}
+                              {lang === 'ID'
+                                ? 'Konfirmasi Pembayaran →'
+                                : 'Confirm Payment →'}
                             </span>
                           </>
                         )}
@@ -7357,18 +6745,30 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Centered High-Contrast Theme Title & Subtle Category Text on White Card */}
-                        <div className="text-center mt-3.5 mb-3">
+                        {/* Centered High-Contrast Theme Title, Swatches & 1-Sentence Human Description on White Card */}
+                        <div className="text-center mt-3.5 mb-3 px-1">
+                          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                            {theme.paletteColors.map((hex, sIdx) => (
+                              <span
+                                key={`${theme.id}-sw-${sIdx}`}
+                                className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs"
+                                style={{ backgroundColor: hex }}
+                              />
+                            ))}
+                          </div>
                           <h3 className="text-sm font-bold text-stone-900">
                             {theme.name}
                           </h3>
-                          <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                          <p className="text-[11px] font-semibold text-[#8B6914] mt-0.5">
                             {cleanCategoryText} &bull; {theme.styleCategory}
+                          </p>
+                          <p className="text-[11px] text-stone-600 mt-1 line-clamp-2 leading-relaxed">
+                            {lang === 'ID' ? theme.taglineId : theme.taglineEn}
                           </p>
                         </div>
 
                         {/* Two Clean Action Buttons Side by Side */}
-                        <div className="grid grid-cols-2 gap-2 w-full">
+                        <div className="grid grid-cols-2 gap-2 w-full mt-auto">
                           <button
                             type="button"
                             onClick={() => handleApplyCatalogThemeDemo(theme)}
@@ -7376,7 +6776,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           >
                             <Eye className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
                             <span>
-                              {lang === 'ID' ? 'Demo Live' : 'Live Demo'}
+                              {lang === 'ID' ? 'Lihat Contoh' : 'Live Demo'}
                             </span>
                           </button>
 
@@ -7395,7 +6795,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             className="py-2.5 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
                           >
                             <span>
-                              {lang === 'ID' ? 'Pakai Tema' : 'Use Theme'}
+                              {lang === 'ID' ? 'Pakai Tema Ini' : 'Use Theme'}
                             </span>
                           </button>
                         </div>
