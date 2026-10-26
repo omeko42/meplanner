@@ -14461,312 +14461,197 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 )}
 
                 {/* ===============================================================
-                    MENU 4: KEAMANAN & AKUN (EXACT WIRA SATYA 96 SCREENSHOT 2 LAYOUT)
+                    MENU 4: KEAMANAN & AKUN (WORKSPACE-SCOPED: AKUN INTI & PANITIA)
                    =============================================================== */}
-                {settingsMenuTab === 'keamanan' && !isPanitia && (
-                  <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
-                        <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                          {isSuperadmin
-                            ? 'Akun & Grouping Multi-Client'
-                            : 'Akun Inti Keluarga & Panitia'}
-                        </h3>
-                        <InfoTooltip
-                          text={
-                            isSuperadmin
-                              ? 'User Default dikelompokkan berdasarkan Grup Client agar 1 Dashboard dapat mengelola banyak klien komersial oleh Superadmin.'
-                              : 'Kelola kata sandi akun inti keluarga serta akun Panitia / WO untuk acara pernikahan Anda.'
-                          }
-                        />
-                      </div>
-                      {isSuperadmin && (
-                        <div className="flex items-center gap-1.5 flex-wrap max-w-full">
-                          <button
-                            type="button"
-                            onClick={() => setIsAddClientModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-[11px] shadow-xs"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Grup Client Baru</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActiveTab('superadmin')}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px]"
-                          >
-                            <Shield className="w-3 h-3" />
-                            <span>Modul Superadmin</span>
-                          </button>
+                {settingsMenuTab === 'keamanan' && !isPanitia && (() => {
+                  const activeClientScopeId = isSuperadmin
+                    ? activeWorkspaceClientId || userClientId
+                    : userClientId;
+                  const activeWorkspaceDefaultUsers = defaultSystemUsers.filter(
+                    (u) => (u.clientId || 'client-utama') === activeClientScopeId
+                  );
+                  const activeWorkspacePanitiaUsers = panitiaUsers.filter(
+                    (pu) => (pu.clientId || 'client-utama') === activeClientScopeId
+                  );
+                  const activeWorkspaceGroup =
+                    effectiveClientGroups.find(
+                      (cg) => cg.id === activeClientScopeId
+                    ) || effectiveClientGroups[0];
+
+                  return (
+                    <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
+                          <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
+                            Akun Inti Keluarga &amp; Panitia
+                          </h3>
+                          <InfoTooltip text="Kelola kata sandi 4 akun inti keluarga (Mempelai & Orang Tua) serta akun Panitia / WO untuk workspace acara yang sedang aktif. Untuk manajemen multi-klien & tambah grup klien baru, gunakan tab Superadmin di navigasi atas." />
                         </div>
-                      )}
-                    </div>
-
-                    {/* Client Group Filter Pills */}
-                    {isSuperadmin && (
-                      <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
-                            Filter Grouping Client ({effectiveClientGroups.length} Klien)
-                          </span>
-                          <span className="text-[10px] text-stone-500">
-                            Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedClientGroupFilter('ALL')}
-                            className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                              selectedClientGroupFilter === 'ALL'
-                                ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
-                                : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
-                            }`}
-                          >
-                            Semua Grup ({effectiveClientGroups.length})
-                          </button>
-                          {effectiveClientGroups.map((cg) => {
-                            const countDefault = defaultSystemUsers.filter(
-                              (u) => (u.clientId || 'client-utama') === cg.id
-                            ).length;
-                            const isSelected = selectedClientGroupFilter === cg.id;
-                            return (
-                              <button
-                                key={cg.id}
-                                type="button"
-                                onClick={() => setSelectedClientGroupFilter(cg.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                                  isSelected
-                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
-                                    : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
-                                }`}
-                              >
-                                <span>{cg.coupleLabel || cg.clientName}</span>
-                                <span
-                                  className={`px-1.5 py-0.2 rounded-full text-[9px] ${
-                                    isSelected
-                                      ? 'bg-white/25 text-white'
-                                      : 'bg-[#FAF3E3] text-[#8B6914]'
-                                  }`}
-                                >
-                                  {countDefault} Inti
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Champagne Gold Pill Sub-Tabs */}
-                    <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setKeamananSubTab('utama')}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
-                          keamananSubTab === 'utama'
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                            : 'text-stone-600 hover:text-[#8B6914]'
-                        }`}
-                      >
-                        <KeyRound className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">
-                          Grup User Default (
-                          {
-                            (isSuperadmin
-                              ? defaultSystemUsers
-                              : defaultSystemUsers.filter(
-                                  (u) => (u.clientId || 'client-utama') === userClientId
-                                )
-                            ).length
-                          }
-                          )
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setKeamananSubTab('panitia')}
-                        className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
-                          keamananSubTab === 'panitia'
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                            : 'text-stone-600 hover:text-[#8B6914]'
-                        }`}
-                      >
-                        <Users className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">
-                          Panitia (
-                          {
-                            (isSuperadmin
-                              ? panitiaUsers
-                              : panitiaUsers.filter(
-                                  (pu) => (pu.clientId || 'client-utama') === userClientId
-                                )
-                            ).length
-                          }
-                          )
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* SUB-TAB 1: GROUPED AKUN UTAMA (USER DEFAULT PER CLIENT) */}
-                    {keamananSubTab === 'utama' && (
-                      <div className="space-y-4">
-                        {effectiveClientGroups
-                          .filter((cg) =>
-                            isSuperadmin
-                              ? selectedClientGroupFilter === 'ALL' ||
-                                cg.id === selectedClientGroupFilter
-                              : cg.id === userClientId
-                          )
-                          .map((cg) => {
-                            const groupUsers = defaultSystemUsers.filter(
-                              (u) => (u.clientId || 'client-utama') === cg.id
-                            );
-                            return (
-                              <div
-                                key={cg.id}
-                                className="rounded-2xl border border-[#D4AF37]/35 bg-[#FAF8F5]/70 overflow-hidden"
-                              >
-                                <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2">
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
-                                        {cg.clientCode}
-                                      </span>
-                                      <p className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
-                                        {cg.clientName}
-                                      </p>
-                                      <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
-                                        {cg.packageTier}
-                                      </span>
-                                    </div>
-                                    <p className="text-[11px] text-stone-500 mt-0.5">
-                                      {isSuperadmin
-                                        ? `${groupUsers.length} Akun Default Inti (Mempelai & Orang Tua) • Dikelola Superadmin`
-                                        : `${groupUsers.length} Akun Default Inti (Mempelai & Orang Tua)`}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {isSuperadmin && cg.id !== 'client-utama' && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteClientGroup(cg)}
-                                        className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold"
-                                      >
-                                        Hapus Grup
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {groupUsers.length === 0 ? (
-                                  <div className="p-4 text-center text-xs text-stone-500">
-                                    Belum ada User Default pada grup ini.
-                                  </div>
-                                ) : (
-                                  <div className="divide-y divide-stone-200/60 bg-white px-4">
-                                    {groupUsers.map((u) => (
-                                      <div
-                                        key={u.id}
-                                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
-                                      >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                          <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
-                                            <KeyRound className="w-4 h-4" />
-                                          </div>
-                                          <div className="min-w-0">
-                                            <p className="font-bold text-stone-900">
-                                              {u.nama}{' '}
-                                              <span className="font-mono text-xs text-stone-500 font-normal">
-                                                (@{u.username})
-                                              </span>
-                                            </p>
-                                            <p className="text-[11px] text-stone-500 truncate">
-                                              {u.jabatan} &bull;{' '}
-                                              <span className="text-[#8B6914] font-semibold">
-                                                {cg.coupleLabel || cg.clientName}
-                                              </span>
-                                            </p>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
-                                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                            User Default
-                                          </span>
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              handleSelectDefaultUserForEdit(u)
-                                            }
-                                            className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
-                                          >
-                                            Kelola / Password
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                    )}
-
-                    {/* SUB-TAB 2: AKUN PANITIA / WO */}
-                    {keamananSubTab === 'panitia' && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-stone-100">
-                          <span className="text-xs text-stone-500">
-                            Akses Non-Moneter (Dikelompokkan per Klien)
-                          </span>
+                        {isSuperadmin && (
                           <button
                             type="button"
                             onClick={() => {
-                              setPanitiaEditId(undefined);
-                              setPanitiaUsername('');
-                              setPanitiaNama('');
-                              setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
-                              setPanitiaClientId(
-                                !isSuperadmin
-                                  ? userClientId
-                                  : selectedClientGroupFilter !== 'ALL'
-                                    ? selectedClientGroupFilter
-                                    : 'client-utama'
-                              );
-                              setPanitiaPassword('');
-                              setActiveSettingsModal('panitia_user');
+                              setActiveTab('superadmin');
+                              setSuperadminMenuTab('clients');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0 whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-[11px] transition-colors cursor-pointer"
+                            title="Kelola seluruh Grup Client & tambah Grup Client Baru di Panel Superadmin"
                           >
-                            <Plus className="w-3.5 h-3.5" />
-                            Tambah Panitia
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>Kelola Multi-Klien di Superadmin &rarr;</span>
                           </button>
-                        </div>
+                        )}
+                      </div>
 
-                        {panitiaUsers.filter((pu) =>
-                          isSuperadmin
-                            ? selectedClientGroupFilter === 'ALL' ||
-                              (pu.clientId || 'client-utama') ===
-                                selectedClientGroupFilter
-                            : (pu.clientId || 'client-utama') === userClientId
-                        ).length === 0 ? (
-                          <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
-                            Belum ada akun Panitia / WO pada grup klien ini. Klik <strong>+ Tambah Panitia</strong> untuk membuat akun.
+                      {/* Champagne Gold Pill Sub-Tabs (Scoped to Active Workspace) */}
+                      <div className="p-1.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/25 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setKeamananSubTab('utama')}
+                          className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                            keamananSubTab === 'utama'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            Akun Inti Keluarga ({activeWorkspaceDefaultUsers.length})
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setKeamananSubTab('panitia')}
+                          className={`py-2.5 px-2.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                            keamananSubTab === 'panitia'
+                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                              : 'text-stone-600 hover:text-[#8B6914]'
+                          }`}
+                        >
+                          <Users className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            Panitia / WO ({activeWorkspacePanitiaUsers.length})
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* SUB-TAB 1: AKUN INTI KELUARGA (ACTIVE WORKSPACE ONLY) */}
+                      {keamananSubTab === 'utama' && activeWorkspaceGroup && (
+                        <div className="rounded-2xl border border-[#D4AF37]/35 bg-[#FAF8F5]/70 overflow-hidden">
+                          <div className="px-4 py-3 bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#FAF3E3] border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-md bg-stone-900 text-[#D4AF37] font-mono text-[10px] font-extrabold">
+                                  {activeWorkspaceGroup.clientCode}
+                                </span>
+                                <p className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
+                                  {(activeWorkspaceGroup.clientName || '').replace(/â€¢/g, '•')}
+                                </p>
+                                <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
+                                  {activeWorkspaceGroup.packageTier}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-stone-500 mt-0.5">
+                                {activeWorkspaceDefaultUsers.length} Akun Default Inti (Mempelai &amp; Orang Tua) pada Workspace Aktif
+                              </p>
+                            </div>
                           </div>
-                        ) : (
-                          <div className="divide-y divide-stone-100">
-                            {panitiaUsers
-                              .filter((pu) =>
-                                isSuperadmin
-                                  ? selectedClientGroupFilter === 'ALL' ||
-                                    (pu.clientId || 'client-utama') ===
-                                      selectedClientGroupFilter
-                                  : (pu.clientId || 'client-utama') === userClientId
-                              )
-                              .map((pu) => (
+
+                          {activeWorkspaceDefaultUsers.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-stone-500">
+                              Belum ada User Default pada workspace ini.
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-stone-200/60 bg-white px-4">
+                              {activeWorkspaceDefaultUsers.map((u) => (
+                                <div
+                                  key={u.id}
+                                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                                      <KeyRound className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-stone-900">
+                                        {u.nama}{' '}
+                                        <span className="font-mono text-xs text-stone-500 font-normal">
+                                          (@{u.username})
+                                        </span>
+                                      </p>
+                                      <p className="text-[11px] text-stone-500 truncate">
+                                        {(u.jabatan || '').replace(/â€¢/g, '•')} &bull;{' '}
+                                        <span className="text-[#8B6914] font-semibold">
+                                          {(
+                                            activeWorkspaceGroup.coupleLabel ||
+                                            activeWorkspaceGroup.clientName ||
+                                            ''
+                                          ).replace(/â€¢/g, '•')}
+                                        </span>
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                      User Default
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectDefaultUserForEdit(u)}
+                                      className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
+                                    >
+                                      Kelola / Password
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* SUB-TAB 2: AKUN PANITIA / WO (ACTIVE WORKSPACE ONLY) */}
+                      {keamananSubTab === 'panitia' && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-stone-100">
+                            <span className="text-xs text-stone-500">
+                              Akses Non-Moneter untuk Workspace:{' '}
+                              <strong className="text-[#8B6914]">
+                                {(
+                                  activeWorkspaceGroup?.coupleLabel ||
+                                  activeWorkspaceGroup?.clientName ||
+                                  ''
+                                ).replace(/â€¢/g, '•')}
+                              </strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPanitiaEditId(undefined);
+                                setPanitiaUsername('');
+                                setPanitiaNama('');
+                                setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
+                                setPanitiaClientId(activeClientScopeId);
+                                setPanitiaPassword('');
+                                setActiveSettingsModal('panitia_user');
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Tambah Panitia
+                            </button>
+                          </div>
+
+                          {activeWorkspacePanitiaUsers.length === 0 ? (
+                            <div className="p-6 rounded-xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center text-xs text-stone-500">
+                              Belum ada akun Panitia / WO pada workspace ini. Klik{' '}
+                              <strong>+ Tambah Panitia</strong> untuk membuat akun.
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-stone-100">
+                              {activeWorkspacePanitiaUsers.map((pu) => (
                                 <div
                                   key={pu.id}
                                   className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 overflow-hidden"
@@ -14783,9 +14668,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         </span>
                                       </p>
                                       <p className="text-[11px] text-stone-500">
-                                        {pu.jabatan} &bull;{' '}
+                                        {(pu.jabatan || '').replace(/â€¢/g, '•')} &bull;{' '}
                                         <span className="text-[#8B6914] font-semibold">
-                                          {pu.clientName || 'Client Utama • Eko & Selo'}
+                                          {(
+                                            pu.clientName ||
+                                            activeWorkspaceGroup?.clientName ||
+                                            'Client Utama • Eko & Selo'
+                                          ).replace(/â€¢/g, '•')}
                                         </span>{' '}
                                         &bull;{' '}
                                         <span className="text-rose-600 font-semibold">
@@ -14807,12 +14696,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         setPanitiaNama(pu.nama);
                                         setPanitiaJabatan(pu.jabatan);
                                         setPanitiaClientId(
-                                          pu.clientId || 'client-utama'
+                                          pu.clientId || activeClientScopeId
                                         );
                                         setPanitiaPassword('');
                                         setActiveSettingsModal('panitia_user');
                                       }}
-                                      className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs"
+                                      className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
                                     >
                                       Edit
                                     </button>
@@ -14821,19 +14710,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       onClick={() =>
                                         handleDeletePanitiaAccount(pu.id, pu.username)
                                       }
-                                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+                                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer"
                                     >
                                       Hapus
                                     </button>
                                   </div>
                                 </div>
                               ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ===============================================================
                     MENU 5: DATABASE LOKAL, BACKUP & EXPORT
@@ -15697,26 +15587,86 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                         <div>
                           <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                            Grouping User Default &amp; Manajemen Multi-Client (SaaS)
+                            Akun &amp; Grouping Multi-Client ({effectiveClientGroups.length} Klien)
                           </h3>
                           <p className="text-[11px] text-stone-500">
-                            Setiap Grup Client memiliki <strong>4 Akun Default Inti</strong> (Mempelai Pria, Mempelai Wanita, Orang Tua Pria, Orang Tua Wanita) + Akun Panitia masing-masing.
+                            Kelola seluruh Grup Client, tambah Grup Client Baru, serta atur <strong>4 Akun Default Inti</strong> &amp; Panitia per klien.
                           </p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsAddClientModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs shadow-xs shrink-0 cursor-pointer"
                         title="Tambah Grup Client Baru"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Klien Baru</span>
+                        <span>Grup Client Baru</span>
                       </button>
                     </div>
 
+                    {/* Client Group Filter Pills in Superadmin */}
+                    <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-[#8B6914] uppercase tracking-wider">
+                          Filter Grouping Client ({effectiveClientGroups.length} Klien)
+                        </span>
+                        <span className="text-[10px] text-stone-500">
+                          Total {defaultSystemUsers.length} User Default &bull; {panitiaUsers.length} Panitia
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClientGroupFilter('ALL')}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            selectedClientGroupFilter === 'ALL'
+                              ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
+                              : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
+                          }`}
+                        >
+                          Semua Grup ({effectiveClientGroups.length})
+                        </button>
+                        {effectiveClientGroups.map((cg) => {
+                          const countDefault = defaultSystemUsers.filter(
+                            (u) => (u.clientId || 'client-utama') === cg.id
+                          ).length;
+                          const isSelected = selectedClientGroupFilter === cg.id;
+                          return (
+                            <button
+                              key={cg.id}
+                              type="button"
+                              onClick={() => setSelectedClientGroupFilter(cg.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
+                                  : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
+                              }`}
+                            >
+                              <span>{(cg.coupleLabel || cg.clientName || '').replace(/â€¢/g, '•')}</span>
+                              <span
+                                className={`px-1.5 py-0.2 rounded-full text-[9px] ${
+                                  isSelected
+                                    ? 'bg-white/25 text-white'
+                                    : 'bg-[#FAF3E3] text-[#8B6914]'
+                                }`}
+                              >
+                                {countDefault} Inti
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 gap-4">
-                      {effectiveClientGroups.map((cg) => {
+                      {effectiveClientGroups
+                        .filter(
+                          (cg) =>
+                            selectedClientGroupFilter === 'ALL' ||
+                            cg.id === selectedClientGroupFilter
+                        )
+                        .map((cg) => {
                         const groupDefaultUsers = defaultSystemUsers.filter(
                           (u) => (u.clientId || 'client-utama') === cg.id
                         );
@@ -15825,13 +15775,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    onSwitchWorkspaceClient?.(cg.id);
                                     setSelectedClientGroupFilter(cg.id);
                                     setActiveTab('settings');
                                     setSettingsMenuTab('keamanan');
                                   }}
-                                  className="text-[11px] font-bold text-[#8B6914] hover:underline"
+                                  className="text-[11px] font-bold text-[#8B6914] hover:underline cursor-pointer"
                                 >
-                                  Kelola Akun &rarr;
+                                  Kelola Akun Workspace &rarr;
                                 </button>
                               </div>
                               <button
