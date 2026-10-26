@@ -1123,8 +1123,8 @@ export function applyCatalogThemeToSettings(
       ? settings.coverBgUrl || matched.coverImageUrl
       : matched.coverImageUrl,
     heroPrewedUrl: shouldPreservePhotos
-      ? settings.heroPrewedUrl || matched.heroImageUrl
-      : matched.heroImageUrl,
+      ? settings.heroPrewedUrl || matched.coverImageUrl
+      : matched.coverImageUrl,
     coverSlides:
       shouldPreservePhotos &&
       Array.isArray(settings.coverSlides) &&
@@ -1148,8 +1148,8 @@ export function applyCatalogThemeToSettings(
         : [
             {
               id: 'cat-hero-1',
-              imageUrl: matched.heroImageUrl,
-              url: matched.heroImageUrl,
+              imageUrl: matched.coverImageUrl,
+              url: matched.coverImageUrl,
               title: matched.name,
               caption: matched.name,
             } as any,

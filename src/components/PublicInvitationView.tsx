@@ -1928,6 +1928,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ? 'Bapak/Ibu/Saudara/i Tamu Kehormatan'
       : 'Honored Guest');
 
+  const heroGuestDisplayName =
+    effectiveMatchedGuest?.guestName ||
+    (guestParamName
+      ? guestParamName.trim()
+      : lang === 'ID'
+      ? 'Tamu Kehormatan'
+      : 'Honored Guest');
+
+  const editorialTopHeaderLabel =
+    eventType === 'BIRTHDAY'
+      ? 'BIRTHDAY CELEBRATION'
+      : eventType === 'GRADUATION'
+      ? 'GRADUATION CELEBRATION'
+      : eventType === 'MEETING'
+      ? 'EXECUTIVE SUMMIT'
+      : eventType === 'GALA_DINNER'
+      ? 'ROYAL GALA DINNER'
+      : 'THE WEDDING OF';
+
   const allScheduleEvents = useMemo(
     () => getEffectiveScheduleEvents(settings),
     [settings]
@@ -2722,66 +2741,199 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
         {/* Center Cover Invitation Gate Card — Distinct per Layout Archetype */}
         <div className="relative z-10 max-w-xl mx-auto px-3.5 sm:px-5 py-4 sm:py-6 text-center flex flex-col items-center my-auto w-full">
-          <div
-            className={`w-full backdrop-blur-2xl p-5 sm:p-10 relative overflow-hidden ${
-              layoutArchetype === 'POLAROID_MAGAZINE'
-                ? 'rounded-3xl bg-[#FFFDF9]/95 border border-stone-200/90 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
-                : layoutArchetype === 'BOTANICAL_AIRY'
-                ? 'rounded-t-[10rem] sm:rounded-t-[13rem] rounded-b-[2.5rem] bg-white/90 border-4 border-white shadow-[0_25px_70px_rgba(94,140,106,0.16)] pt-10 sm:pt-14'
-                : layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'rounded-3xl bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] border-y-4 border-double border-[#C89D54] border-x-2 border-x-[#C89D54]/80 shadow-[0_25px_70px_rgba(139,90,43,0.20)]'
-                : layoutArchetype === 'MODERN_BENTO'
-                ? 'rounded-3xl bg-white/92 border border-stone-200/90 shadow-[0_25px_70px_rgba(40,75,122,0.14)] p-5 sm:p-8'
-                : 'rounded-3xl sm:rounded-[2.25rem] bg-white/85 border border-white/95 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
-            }`}
-          >
-            <FloralCornerOrnament position="top-left" enabled={showFloral} />
-            <FloralCornerOrnament position="top-right" enabled={showFloral} />
-            <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
-            <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
-            <NusantaraGoldCornerBracket
-              position="top-left"
-              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
-            />
-            <NusantaraGoldCornerBracket
-              position="top-right"
-              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
-            />
-            <NusantaraGoldCornerBracket
-              position="bottom-left"
-              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
-            />
-            <NusantaraGoldCornerBracket
-              position="bottom-right"
-              enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
-            />
+          {layoutArchetype === 'EDITORIAL_CLASSIC' ? (
+            /* ARCHETYPE 5 (EDITORIAL_CLASSIC): FULL-BLEED DARK-OVERLAY EDITORIAL CINEMA COVER (1:1 WITH LANDING MOCKUP) */
+            <div className="w-full relative overflow-hidden rounded-[2.25rem] sm:rounded-[2.75rem] min-h-[520px] sm:min-h-[600px] bg-stone-950 border border-[#D4AF37]/40 shadow-[0_25px_70px_rgba(0,0,0,0.32)] flex flex-col justify-between p-6 sm:p-10 text-center text-white">
+              <div className="absolute inset-0 w-full h-full">
+                {settings.coverVideoUrl?.trim() ? (
+                  <AdaptiveVideoLayer
+                    videoUrl={settings.coverVideoUrl}
+                    posterUrl={coverFeatureImageUrl}
+                    focusY={videoFocusY}
+                    desktopMode={videoDesktopMode}
+                  />
+                ) : coverSlidesList.length > 0 ? (
+                  <BackgroundSlideshowLayer
+                    slides={coverSlidesList}
+                    transitionStyle={galleryTransitionStyle}
+                    transitionDurationMs={galleryTransitionMs}
+                    slideIntervalSeconds={gallerySlideSeconds}
+                    fallbackAdjust={coverAdj}
+                    altLabel="Editorial Classic Cover"
+                  />
+                ) : (
+                  coverFeatureImageUrl && (
+                    <img
+                      src={coverFeatureImageUrl}
+                      alt={displayTitleShort}
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                      style={getPhotoAdjustStyle(coverAdj || heroAdj)}
+                    />
+                  )
+                )}
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/38 to-stone-950/88 z-10 pointer-events-none" />
 
-            <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
+              {/* Top Uppercase Editorial Label */}
+              <div className="relative z-20 pt-1">
+                <p className="text-[11px] sm:text-xs uppercase tracking-[0.28em] text-[#FAF3E3] font-semibold">
+                  {editorialTopHeaderLabel}
+                </p>
+              </div>
 
-            {layoutArchetype === 'POLAROID_MAGAZINE' ? (
-              /* ARCHETYPE 1: EDITORIAL MAGAZINE COVER WITH POLAROID FRAME & STAMP BADGE */
-              <div className="relative z-10">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/90">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.24em] text-[#8B6914]">
-                    <EventCrestIcon eventType={eventType} className="w-4 h-4 text-[#B68D40]" />
-                    <span>{coverBadgeLabel}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border-2 border-dashed border-[#D4AF37]/80 bg-[#FAF3E3] text-[#8B6914] text-[10px] sm:text-xs font-extrabold uppercase tracking-widest rotate-2 shadow-2xs">
-                    <Calendar className="w-3 h-3 text-[#B68D40]" />
-                    <span>{coverPrimaryDate}</span>
-                  </span>
-                </div>
-
-                {/* Editorial Magazine Title Masthead */}
-                <h1 className="font-editorial text-3xl sm:text-5xl font-bold tracking-tight text-stone-900 uppercase leading-tight mb-4 break-words">
+              {/* Center Editorial Content */}
+              <div className="relative z-20 my-auto space-y-4 sm:space-y-5 max-w-lg mx-auto py-4">
+                <h1 className="font-editorial italic text-4xl sm:text-6xl font-bold tracking-wide text-white drop-shadow-md leading-tight break-words">
                   {displayTitleShort}
                 </h1>
 
-                {/* Thick White Polaroid Photo Frame in Center of Cover */}
-                {coverFeatureImageUrl && (
-                  <div className="p-3 sm:p-4 pb-6 sm:pb-7 bg-white rounded-2xl shadow-xl border border-stone-200/90 max-w-[270px] sm:max-w-[310px] mx-auto mb-5 -rotate-1 hover:rotate-0 transition-transform duration-500">
-                    <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-[#FAF8F5]">
+                <p className="text-xs sm:text-base text-white/90 font-medium tracking-wide">
+                  {catalogThemeMatch?.name ||
+                    settings.subtitle ||
+                    (coverPrimaryDate
+                      ? `${coverPrimaryDate}${coverPrimaryVenue ? ` • ${coverPrimaryVenue}` : ''}`
+                      : '')}
+                </p>
+
+                {/* 4 Frosted-Glass Countdown Boxes */}
+                <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 pt-2 max-w-[280px] sm:max-w-[360px] mx-auto">
+                  {[
+                    { val: countdown.days, label: 'Days' },
+                    { val: countdown.hours, label: 'Hrs' },
+                    { val: countdown.minutes, label: 'Min' },
+                    { val: countdown.seconds, label: 'Sec' },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 py-2.5 sm:py-3.5 px-1.5 text-center shadow-lg"
+                    >
+                      <div className="text-base sm:text-2xl font-extrabold text-white leading-none">
+                        {String(item.val).padStart(2, '0')}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-[#FAF3E3] font-medium mt-1">
+                        {item.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Frosted-Glass Guest Box (To: Tamu Kehormatan) */}
+                <div className="pt-2">
+                  <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
+                      To:
+                    </p>
+                    <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
+                      {heroGuestDisplayName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Open Invitation Button */}
+              <div className="relative z-20 pt-3 flex flex-col items-center gap-2.5">
+                {coverPrimaryDate && (
+                  <p className="text-[11px] sm:text-xs text-white/80 font-medium">
+                    {coverPrimaryDate}
+                    {coverPrimaryVenue ? ` • ${coverPrimaryVenue}` : ''}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleOpenInvitation}
+                  className="w-full sm:w-auto group relative z-10 inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.42)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.6)] hover:scale-[1.02] active:scale-[0.99] transition-all"
+                >
+                  <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
+                  <span>{coverButtonLabel}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className={`w-full backdrop-blur-2xl p-5 sm:p-10 relative overflow-hidden ${
+                layoutArchetype === 'POLAROID_MAGAZINE'
+                  ? 'rounded-3xl bg-[#FFFDF9]/95 border border-stone-200/90 shadow-[0_25px_70px_rgba(160,130,85,0.18)]'
+                  : layoutArchetype === 'BOTANICAL_AIRY'
+                  ? 'rounded-t-[10rem] sm:rounded-t-[13rem] rounded-b-[2.5rem] bg-white/90 border-4 border-white shadow-[0_25px_70px_rgba(94,140,106,0.16)] pt-10 sm:pt-14'
+                  : layoutArchetype === 'NUSANTARA_HERITAGE'
+                  ? 'rounded-3xl bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] border-y-4 border-double border-[#C89D54] border-x-2 border-x-[#C89D54]/80 shadow-[0_25px_70px_rgba(139,90,43,0.20)]'
+                  : 'rounded-3xl bg-white/92 border border-stone-200/90 shadow-[0_25px_70px_rgba(40,75,122,0.14)] p-5 sm:p-8'
+              }`}
+            >
+              <FloralCornerOrnament position="top-left" enabled={showFloral} />
+              <FloralCornerOrnament position="top-right" enabled={showFloral} />
+              <FloralCornerOrnament position="bottom-left" enabled={showFloral} />
+              <FloralCornerOrnament position="bottom-right" enabled={showFloral} />
+              <NusantaraGoldCornerBracket
+                position="top-left"
+                enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+              />
+              <NusantaraGoldCornerBracket
+                position="top-right"
+                enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+              />
+              <NusantaraGoldCornerBracket
+                position="bottom-left"
+                enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+              />
+              <NusantaraGoldCornerBracket
+                position="bottom-right"
+                enabled={layoutArchetype === 'NUSANTARA_HERITAGE'}
+              />
+
+              <div className="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-20 -right-20 w-44 h-44 rounded-full bg-[#D4AF37]/15 blur-2xl pointer-events-none" />
+
+              {layoutArchetype === 'POLAROID_MAGAZINE' ? (
+                /* ARCHETYPE 1: EDITORIAL MAGAZINE COVER WITH POLAROID FRAME & STAMP BADGE */
+                <div className="relative z-10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/90">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.24em] text-[#8B6914]">
+                      <EventCrestIcon eventType={eventType} className="w-4 h-4 text-[#B68D40]" />
+                      <span>{coverBadgeLabel}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border-2 border-dashed border-[#D4AF37]/80 bg-[#FAF3E3] text-[#8B6914] text-[10px] sm:text-xs font-extrabold uppercase tracking-widest rotate-2 shadow-2xs">
+                      <Calendar className="w-3 h-3 text-[#B68D40]" />
+                      <span>{coverPrimaryDate}</span>
+                    </span>
+                  </div>
+
+                  {/* Editorial Magazine Title Masthead */}
+                  <h1 className="font-editorial text-3xl sm:text-5xl font-bold tracking-tight text-stone-900 uppercase leading-tight mb-4 break-words">
+                    {displayTitleShort}
+                  </h1>
+
+                  {/* Thick White Polaroid Photo Frame in Center of Cover */}
+                  {coverFeatureImageUrl && (
+                    <div className="p-3 sm:p-4 pb-6 sm:pb-7 bg-white rounded-2xl shadow-xl border border-stone-200/90 max-w-[270px] sm:max-w-[310px] mx-auto mb-5 -rotate-1 hover:rotate-0 transition-transform duration-500">
+                      <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-[#FAF8F5]">
+                        <img
+                          src={coverFeatureImageUrl}
+                          alt={displayTitleShort}
+                          className="w-full h-full object-cover object-center"
+                          style={getPhotoAdjustStyle(coverAdj || heroAdj)}
+                        />
+                      </div>
+                      <p className="font-script text-xl sm:text-2xl text-[#8B6914] mt-3 -rotate-1 leading-none">
+                        {displayTitleShort}
+                      </p>
+                      {coverPrimaryVenue && (
+                        <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-stone-700 font-bold mt-1.5 truncate">
+                          {coverPrimaryVenue}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ARCHETYPES 2–4 HEADER & TITLE */
+                <div className="relative z-10">
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                    <NusantaraCarvingOrnament position="top" className="mb-4" />
+                  )}
+
+                  {layoutArchetype === 'BOTANICAL_AIRY' && coverFeatureImageUrl ? (
+                    <div className="w-28 h-36 sm:w-36 sm:h-44 mx-auto rounded-t-[6rem] rounded-b-2xl border-4 border-white ring-2 ring-[#D4AF37]/40 shadow-lg overflow-hidden mb-5 bg-[#FAF8F5]">
                       <img
                         src={coverFeatureImageUrl}
                         alt={displayTitleShort}
@@ -2789,138 +2941,112 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         style={getPhotoAdjustStyle(coverAdj || heroAdj)}
                       />
                     </div>
-                    <p className="font-script text-xl sm:text-2xl text-[#8B6914] mt-3 -rotate-1 leading-none">
-                      {displayTitleShort}
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-5 sm:mb-6">
+                      <EventCrestIcon
+                        eventType={eventType}
+                        className="w-8 h-8 sm:w-10 sm:h-10 text-[#B68D40]"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mb-3.5 sm:mb-4">
+                    <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#8B6914] font-bold">
+                      {coverBadgeLabel}
+                    </span>
+                  </div>
+
+                  <h1
+                    className={`${
+                      layoutArchetype === 'MODERN_BENTO'
+                        ? 'font-editorial text-3xl sm:text-5xl font-bold tracking-tight'
+                        : 'font-script text-4xl sm:text-6xl font-normal tracking-normal'
+                    } text-stone-900 leading-normal mb-3 sm:mb-4 break-words py-2`}
+                  >
+                    {displayTitleShort}
+                  </h1>
+
+                  {layoutArchetype === 'NUSANTARA_HERITAGE' && (
+                    <NusantaraCarvingOrnament position="bottom" className="mb-4" />
+                  )}
+
+                  {layoutArchetype === 'MODERN_BENTO' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left mb-5">
+                      <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 flex items-center gap-2.5 shadow-2xs">
+                        <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
+                            {lang === 'ID' ? 'Tanggal Acara' : 'Event Date'}
+                          </p>
+                          <p className="text-xs font-bold text-stone-900 truncate">
+                            {coverPrimaryDate}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 flex items-center gap-2.5 shadow-2xs">
+                        <MapPin className="w-4 h-4 text-[#B68D40] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
+                            {lang === 'ID' ? 'Lokasi Utama' : 'Primary Venue'}
+                          </p>
+                          <p className="text-xs font-bold text-stone-900 truncate">
+                            {coverPrimaryVenue || (lang === 'ID' ? 'Lokasi Acara' : 'Venue')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-stone-700 font-medium tracking-wide mb-6 sm:mb-8">
+                      {coverPrimaryDate}
+                      {coverPrimaryVenue ? ` • ${coverPrimaryVenue}` : ''}
                     </p>
-                    {coverPrimaryVenue && (
-                      <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-stone-700 font-bold mt-1.5 truncate">
-                        {coverPrimaryVenue}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* ARCHETYPES 2–5 HEADER & TITLE */
-              <div className="relative z-10">
-                {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-                  <NusantaraCarvingOrnament position="top" className="mb-4" />
-                )}
-
-                {layoutArchetype === 'BOTANICAL_AIRY' && coverFeatureImageUrl ? (
-                  <div className="w-28 h-36 sm:w-36 sm:h-44 mx-auto rounded-t-[6rem] rounded-b-2xl border-4 border-white ring-2 ring-[#D4AF37]/40 shadow-lg overflow-hidden mb-5 bg-[#FAF8F5]">
-                    <img
-                      src={coverFeatureImageUrl}
-                      alt={displayTitleShort}
-                      className="w-full h-full object-cover object-center"
-                      style={getPhotoAdjustStyle(coverAdj || heroAdj)}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-gradient-to-br from-white/95 via-[#FAF6EE] to-[#F3E7D3] border-2 border-[#D4AF37]/45 flex items-center justify-center shadow-[0_10px_30px_rgba(197,160,89,0.22)] mb-5 sm:mb-6">
-                    <EventCrestIcon
-                      eventType={eventType}
-                      className="w-8 h-8 sm:w-10 sm:h-10 text-[#B68D40]"
-                    />
-                  </div>
-                )}
-
-                <div className="mb-3.5 sm:mb-4">
-                  <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#8B6914] font-bold">
-                    {coverBadgeLabel}
-                  </span>
+                  )}
                 </div>
+              )}
 
-                <h1
-                  className={`${
-                    layoutArchetype === 'MODERN_BENTO'
-                      ? 'font-editorial text-3xl sm:text-5xl font-bold tracking-tight'
-                      : 'font-script text-4xl sm:text-6xl font-normal tracking-normal'
-                  } text-stone-900 leading-normal mb-3 sm:mb-4 break-words py-2`}
-                >
-                  {displayTitleShort}
-                </h1>
+              {/* Personalized Guest Card (Bright Crystal White Card) */}
+              <div className="w-full rounded-2xl bg-white/90 backdrop-blur-xl border border-[#D4AF37]/40 p-5 sm:p-7 shadow-xl mb-6 sm:mb-8 relative z-10">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-700 font-semibold mb-2.5 sm:mb-3">
+                  {coverGreetingLabel}
+                </p>
 
-                {layoutArchetype === 'NUSANTARA_HERITAGE' && (
-                  <NusantaraCarvingOrnament position="bottom" className="mb-4" />
-                )}
+                <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
+                  {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
+                </h2>
 
-                {layoutArchetype === 'MODERN_BENTO' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left mb-5">
-                    <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 flex items-center gap-2.5 shadow-2xs">
-                      <Calendar className="w-4 h-4 text-[#B68D40] shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
-                          {lang === 'ID' ? 'Tanggal Acara' : 'Event Date'}
-                        </p>
-                        <p className="text-xs font-bold text-stone-900 truncate">
-                          {coverPrimaryDate}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 flex items-center gap-2.5 shadow-2xs">
-                      <MapPin className="w-4 h-4 text-[#B68D40] shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#9A742B]">
-                          {lang === 'ID' ? 'Lokasi Utama' : 'Primary Venue'}
-                        </p>
-                        <p className="text-xs font-bold text-stone-900 truncate">
-                          {coverPrimaryVenue || (lang === 'ID' ? 'Lokasi Acara' : 'Venue')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs sm:text-sm text-stone-700 font-medium tracking-wide mb-6 sm:mb-8">
-                    {coverPrimaryDate}
-                    {coverPrimaryVenue ? ` • ${coverPrimaryVenue}` : ''}
+                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-2.5 sm:mt-3 break-words">
+                  {(() => {
+                    const rawInst = (
+                      effectiveMatchedGuest?.institution ||
+                      matchedGuest?.institution ||
+                      ''
+                    ).trim();
+                    return rawInst && rawInst !== '-'
+                      ? rawInst
+                      : lang === 'ID'
+                        ? 'di Tempat'
+                        : 'In Place';
+                  })()}
+                </p>
+
+                {coverApology && coverApology !== '-' && (
+                  <p className="text-[10px] sm:text-[11px] text-stone-600 mt-3.5 sm:mt-4 italic">
+                    {coverApology}
                   </p>
                 )}
               </div>
-            )}
 
-            {/* Personalized Guest Card (Bright Crystal White Card) */}
-            <div className="w-full rounded-2xl bg-white/90 backdrop-blur-xl border border-[#D4AF37]/40 p-5 sm:p-7 shadow-xl mb-6 sm:mb-8 relative z-10">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-700 font-semibold mb-2.5 sm:mb-3">
-                {coverGreetingLabel}
-              </p>
-
-              <h2 className="font-serif text-base sm:text-2xl font-bold text-stone-900 break-words leading-snug">
-                {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
-              </h2>
-
-              <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-2.5 sm:mt-3 break-words">
-                {(() => {
-                  const rawInst = (
-                    effectiveMatchedGuest?.institution ||
-                    matchedGuest?.institution ||
-                    ''
-                  ).trim();
-                  return rawInst && rawInst !== '-'
-                    ? rawInst
-                    : lang === 'ID'
-                      ? 'di Tempat'
-                      : 'In Place';
-                })()}
-              </p>
-
-              {coverApology && coverApology !== '-' && (
-                <p className="text-[10px] sm:text-[11px] text-stone-600 mt-3.5 sm:mt-4 italic">
-                  {coverApology}
-                </p>
-              )}
+              {/* Open Invitation Button */}
+              <button
+                type="button"
+                onClick={handleOpenInvitation}
+                className="w-full sm:w-auto group relative z-10 inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
+              >
+                <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
+                <span>{coverButtonLabel}</span>
+              </button>
             </div>
-
-            {/* Open Invitation Button */}
-            <button
-              type="button"
-              onClick={handleOpenInvitation}
-              className="w-full sm:w-auto group relative z-10 inline-flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] text-white font-bold text-sm sm:text-base shadow-[0_12px_30px_rgba(197,160,89,0.38)] hover:shadow-[0_15px_35px_rgba(197,160,89,0.55)] hover:scale-[1.02] active:scale-[0.99] transition-all"
-            >
-              <BookOpen className="w-4 h-4 transition-transform group-hover:rotate-6" />
-              <span>{coverButtonLabel}</span>
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Bottom Footer Note + Developer Credit */}
@@ -3308,31 +3434,27 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     : sanitizedHeroBadge}
                 </p>
 
-                {/* 3. Couple / Host Names in Grand Javanese Royal Gold Serif at the Top */}
-                {hasSecondProfile ? (
-                  <h1 className="max-w-3xl mx-auto mb-4 flex flex-col items-center justify-center">
-                    <span className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug break-words">
-                      {settings.groomFullName}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="flex items-center justify-center gap-3 my-2 sm:my-3"
-                    >
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-[#C89D54]" />
-                      <span className="font-serif text-lg sm:text-2xl text-[#8b5a2b] font-bold px-2">
-                        ꧁༺ &amp; ༻꧂
-                      </span>
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent to-[#C89D54]" />
-                    </span>
-                    <span className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug break-words">
-                      {settings.brideFullName}
-                    </span>
-                  </h1>
-                ) : (
-                  <h1 className="text-3xl sm:text-5xl font-editorial font-bold text-[#6b4226] tracking-tight leading-snug mb-4 break-words">
+                {/* 3. Couple / Host Short Names in Grand Javanese Royal Gold Serif at the Top */}
+                <h1 className="text-4xl sm:text-6xl font-editorial italic font-bold text-[#6b4226] tracking-wide leading-tight mb-2 break-words">
+                  {displayTitleShort}
+                </h1>
+                {displayTitleFull !== displayTitleShort && (
+                  <p className="text-xs sm:text-sm font-semibold text-[#8b5a2b]/90 mb-3 break-words">
                     {displayTitleFull}
-                  </h1>
+                  </p>
                 )}
+
+                {/* Personalized Kraton Guest Badge */}
+                <div className="mb-4">
+                  <div className="inline-block px-5 py-2 rounded-2xl bg-[#fdf8f0]/90 border border-[#C89D54] shadow-2xs">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-[#8b5a2b] font-semibold">
+                      To:
+                    </p>
+                    <p className="text-xs sm:text-sm font-bold text-[#6b4226] mt-0.5">
+                      {heroGuestDisplayName}
+                    </p>
+                  </div>
+                </div>
 
                 <NusantaraCarvingOrnament position="bottom" className="mb-6" />
 
@@ -3482,27 +3604,30 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <span>{sanitizedHeroBadge}</span>
                   </span>
 
-                  {hasSecondProfile ? (
-                    <h1 className="font-editorial text-2xl sm:text-4xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
-                      {settings.groomFullName}{' '}
-                      <span className="font-script text-3xl sm:text-4xl text-[#F3D77D] font-normal px-1">
-                        &amp;
-                      </span>{' '}
-                      {settings.brideFullName}
-                    </h1>
-                  ) : (
-                    <h1 className="font-editorial text-2xl sm:text-4xl font-bold text-white drop-shadow-md tracking-tight leading-tight mb-3">
+                  <h1 className="font-editorial italic text-3xl sm:text-5xl font-bold text-white drop-shadow-md tracking-wide leading-tight mb-1.5 break-words">
+                    {displayTitleShort}
+                  </h1>
+                  {displayTitleFull !== displayTitleShort && (
+                    <p className="text-xs sm:text-sm font-medium text-white/85 mb-3 break-words">
                       {displayTitleFull}
-                    </h1>
+                    </p>
                   )}
 
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs font-semibold">
-                    <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
-                    <span>
-                      {mainScheduleEvent?.dateLabel ||
-                        activeCountdownEvent?.dateLabel ||
-                        settings.event2DateLabel}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs font-semibold">
+                      <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
+                      <span>
+                        {mainScheduleEvent?.dateLabel ||
+                          activeCountdownEvent?.dateLabel ||
+                          settings.event2DateLabel}
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#FAF3E3]">
+                        To:
+                      </span>
+                      <span>{heroGuestDisplayName}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3630,19 +3755,24 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.35em] text-[#8B6914] mb-2">
                 {lang === 'ID' ? 'EDISI SPESIAL PERAYAAN' : 'THE CELEBRATION OF'}
               </p>
-              {hasSecondProfile ? (
-                <h1 className="max-w-3xl mx-auto font-editorial text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight uppercase leading-tight mb-6 break-words">
-                  {settings.groomFullName}{' '}
-                  <span className="font-script text-3xl sm:text-5xl text-[#B68D40] lowercase font-normal px-1">
-                    &amp;
-                  </span>{' '}
-                  {settings.brideFullName}
-                </h1>
-              ) : (
-                <h1 className="max-w-3xl mx-auto font-editorial text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight uppercase leading-tight mb-6 break-words">
+              <h1 className="max-w-3xl mx-auto font-editorial text-4xl sm:text-6xl font-bold text-stone-900 tracking-tight uppercase leading-tight mb-2 break-words">
+                {displayTitleShort}
+              </h1>
+              {displayTitleFull !== displayTitleShort && (
+                <p className="text-xs sm:text-sm font-semibold text-stone-600 mb-3 break-words">
                   {displayTitleFull}
-                </h1>
+                </p>
               )}
+              <div className="mb-4">
+                <div className="inline-block px-5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#8B6914] font-bold">
+                    To:
+                  </p>
+                  <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
+                    {heroGuestDisplayName}
+                  </p>
+                </div>
+              </div>
 
               {/* Centerpiece Tilted Polaroid Photo Frame */}
               {(Boolean(heroFeatureImageUrl) ||
@@ -3760,24 +3890,25 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <span>{sanitizedHeroBadge}</span>
                 </div>
 
-                {/* Couple Names in Romantic Script / Serif ABOVE Cathedral Arch */}
-                {hasSecondProfile ? (
-                  <h1 className="max-w-3xl mx-auto mb-4 flex flex-col items-center justify-center">
-                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
-                      {settings.groomFullName}
-                    </span>
-                    <span className="font-script text-3xl sm:text-5xl text-[#B68D40] my-1.5 leading-none">
-                      &amp;
-                    </span>
-                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
-                      {settings.brideFullName}
-                    </span>
-                  </h1>
-                ) : (
-                  <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-4">
+                {/* Couple Short Names in Romantic Script / Serif ABOVE Cathedral Arch */}
+                <h1 className="max-w-3xl mx-auto font-editorial italic text-4xl sm:text-6xl font-bold text-stone-900 tracking-wide leading-tight mb-2 break-words">
+                  {displayTitleShort}
+                </h1>
+                {displayTitleFull !== displayTitleShort && (
+                  <p className="text-xs sm:text-sm font-semibold text-stone-600 mb-3 break-words">
                     {displayTitleFull}
-                  </h1>
+                  </p>
                 )}
+                <div className="mb-4">
+                  <div className="inline-block px-5 py-2 rounded-2xl bg-white/95 border border-emerald-300/70 shadow-2xs">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-[#8B6914] font-semibold">
+                      To:
+                    </p>
+                    <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
+                      {heroGuestDisplayName}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Tall Cathedral Arch Photo */}
                 {(Boolean(heroFeatureImageUrl) ||
@@ -3872,124 +4003,156 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           ) : (
             /* ============================================================================
                E. EDITORIAL_CLASSIC (LIGHT LUXURY / CHAMPAGNE SYMPHONY / GOLDEN JUBILEE)
-               Classic Ivory Luxury Card with Fine Gold Hairlines & Balanced Symmetry
+               Full-Bleed Dark-Overlay Editorial Cinema Hero (1:1 Match with Landing iPhone Mockup)
+               + Clean Ivory Opening & Quote Card Below
                ============================================================================ */
-            <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#FFFDF9] border border-[#D4AF37]/45 outline outline-1 -outline-offset-8 outline-[#D4AF37]/25 p-6 sm:p-12 text-center shadow-[0_25px_70px_rgba(160,130,85,0.16)]">
-              <div className="relative z-20 max-w-3xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase mb-5">
-                  <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#B68D40]" />
-                  <span>{sanitizedHeroBadge}</span>
+            <div className="space-y-6">
+              {/* 1. Flagship Full-Bleed Editorial Hero Card */}
+              <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-[2.25rem] sm:rounded-[2.75rem] min-h-[540px] sm:min-h-[640px] bg-stone-950 border border-[#D4AF37]/40 shadow-[0_25px_70px_rgba(0,0,0,0.28)] flex flex-col justify-between p-6 sm:p-12 text-center text-white">
+                <div className="absolute inset-0 w-full h-full">
+                  {settings.heroVideoUrl?.trim() ? (
+                    <AdaptiveVideoLayer
+                      videoUrl={settings.heroVideoUrl}
+                      posterUrl={heroFeatureImageUrl}
+                      focusY={videoFocusY}
+                      desktopMode={videoDesktopMode}
+                    />
+                  ) : heroSlidesList.length > 0 ? (
+                    <BackgroundSlideshowLayer
+                      slides={heroSlidesList}
+                      transitionStyle={galleryTransitionStyle}
+                      transitionDurationMs={galleryTransitionMs}
+                      slideIntervalSeconds={gallerySlideSeconds}
+                      fallbackAdjust={heroAdj}
+                      altLabel="Editorial Classic Hero"
+                    />
+                  ) : (
+                    heroFeatureImageUrl && (
+                      <img
+                        src={heroFeatureImageUrl}
+                        alt={displayTitleShort}
+                        className="absolute inset-0 w-full h-full object-cover object-center"
+                        style={getPhotoAdjustStyle(heroAdj || coverAdj)}
+                      />
+                    )
+                  )}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/38 to-stone-950/88 z-10 pointer-events-none" />
+
+                {/* Top Uppercase Editorial Label */}
+                <div className="relative z-20 pt-2">
+                  <p className="text-[11px] sm:text-xs uppercase tracking-[0.28em] text-[#FAF3E3] font-semibold">
+                    {editorialTopHeaderLabel}
+                  </p>
                 </div>
 
-                {hasSecondProfile ? (
-                  <h1 className="max-w-3xl mx-auto mb-5 flex flex-col items-center justify-center">
-                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
-                      {settings.groomFullName}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="flex items-center justify-center gap-3 my-2 sm:my-3"
-                    >
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-[#D4AF37]" />
-                      <span className="font-script text-3xl sm:text-4xl text-[#B68D40] leading-none px-1">
-                        &amp;
-                      </span>
-                      <span className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent to-[#D4AF37]" />
-                    </span>
-                    <span className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-snug">
-                      {settings.brideFullName}
-                    </span>
+                {/* Center Editorial Content */}
+                <div className="relative z-20 my-auto space-y-4 sm:space-y-5 max-w-2xl mx-auto py-6">
+                  <h1 className="font-editorial italic text-4xl sm:text-6xl font-bold tracking-wide text-white drop-shadow-md leading-tight break-words">
+                    {displayTitleShort}
                   </h1>
-                ) : (
-                  <h1 className="max-w-3xl mx-auto font-editorial text-2xl sm:text-4xl md:text-5xl font-bold text-stone-900 tracking-tight leading-snug mb-5">
-                    {displayTitleFull}
-                  </h1>
-                )}
 
-                {(Boolean(heroFeatureImageUrl) ||
-                  heroSlidesList.length > 0 ||
-                  Boolean(settings.heroVideoUrl?.trim())) && (
-                  <div className="relative max-w-2xl mx-auto my-6 aspect-[16/10] rounded-t-[3.5rem] rounded-b-2xl overflow-hidden border-2 border-[#D4AF37]/50 shadow-xl bg-[#FAF8F5]">
-                    {settings.heroVideoUrl?.trim() ? (
-                      <AdaptiveVideoLayer
-                        videoUrl={settings.heroVideoUrl}
-                        posterUrl={heroFeatureImageUrl}
-                        focusY={videoFocusY}
-                        desktopMode={videoDesktopMode}
-                      />
-                    ) : (
-                      <BackgroundSlideshowLayer
-                        slides={heroSlidesList}
-                        transitionStyle={galleryTransitionStyle}
-                        transitionDurationMs={galleryTransitionMs}
-                        slideIntervalSeconds={gallerySlideSeconds}
-                        fallbackAdjust={heroAdj}
-                        altLabel="Editorial Classic Banner"
-                      />
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 h-20 z-10 bg-gradient-to-t from-[#FFFDF9]/80 to-transparent pointer-events-none" />
-                  </div>
-                )}
+                  <p className="text-xs sm:text-base text-white/90 font-medium tracking-wide">
+                    {catalogThemeMatch?.name ||
+                      settings.subtitle ||
+                      (mainScheduleEvent?.dateLabel
+                        ? `${mainScheduleEvent.dateLabel} • ${mainScheduleEvent.venue}`
+                        : '')}
+                  </p>
 
-                <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8">
-                  {settings.invitationOpeningText}
-                </p>
-
-                {activeCountdownEvent && (
-                  <div className="max-w-xl mx-auto mb-8 space-y-4">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] sm:text-xs font-bold">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{countdownLabel}</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
+                  {/* 4 Frosted-Glass Live Countdown Boxes (Days / Hrs / Min / Sec) */}
+                  {activeCountdownEvent && (
+                    <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 pt-2 max-w-[280px] sm:max-w-[360px] mx-auto">
                       {[
-                        { label: lang === 'ID' ? 'Hari' : 'Days', value: countdown.days },
-                        { label: lang === 'ID' ? 'Jam' : 'Hours', value: countdown.hours },
-                        { label: lang === 'ID' ? 'Menit' : 'Minutes', value: countdown.minutes },
-                        { label: lang === 'ID' ? 'Detik' : 'Seconds', value: countdown.seconds },
+                        { val: countdown.days, label: 'Days' },
+                        { val: countdown.hours, label: 'Hrs' },
+                        { val: countdown.minutes, label: 'Min' },
+                        { val: countdown.seconds, label: 'Sec' },
                       ].map((item) => (
                         <div
                           key={item.label}
-                          className="rounded-2xl bg-white/95 border border-[#D4AF37]/40 p-2.5 sm:p-4 shadow-[0_8px_25px_rgba(180,150,100,0.10)]"
+                          className="rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 py-2.5 sm:py-3.5 px-1.5 text-center shadow-lg"
                         >
-                          <div className="font-editorial text-xl sm:text-4xl font-bold text-[#9A742B]">
-                            {String(item.value).padStart(2, '0')}
+                          <div className="text-base sm:text-2xl font-extrabold text-white leading-none">
+                            {String(item.val).padStart(2, '0')}
                           </div>
-                          <div className="text-[10px] sm:text-xs uppercase tracking-widest text-stone-500 font-semibold mt-0.5">
+                          <div className="text-[10px] sm:text-xs text-[#FAF3E3] font-medium mt-1">
                             {item.label}
                           </div>
                         </div>
                       ))}
                     </div>
-                    {settings.showSaveToCalendarButton !== false && (
-                      <div className="pt-2 flex justify-center">
-                        <a
-                          href={googleCalendarUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FAF3E3] via-white to-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] text-xs font-bold shadow-sm transition-all"
-                        >
-                          <Calendar className="w-3.5 h-3.5 text-[#B68D40]" />
-                          <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
-                          <ExternalLink className="w-3 h-3 text-[#B68D40]" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
 
-                {settings.showQuoteSection !== false && settings.quoteVerse && (
-                  <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-5 sm:p-7 shadow-2xs">
-                    <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
-                      &ldquo;{settings.quoteVerse}&rdquo;
-                    </p>
-                    {settings.quoteSource && (
-                      <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
-                        — {settings.quoteSource} —
+                  {/* Frosted-Glass Guest Box (To: Tamu Kehormatan) */}
+                  <div className="pt-2">
+                    <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
+                        To:
                       </p>
-                    )}
+                      <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
+                        {heroGuestDisplayName}
+                      </p>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* Bottom Date & Save to Calendar Pill */}
+                <div className="relative z-20 pt-4 flex flex-col items-center gap-3">
+                  <p className="text-[11px] sm:text-xs text-white/80 font-medium">
+                    {mainScheduleEvent?.dateLabel ||
+                      activeCountdownEvent?.dateLabel ||
+                      settings.event2DateLabel}
+                    {mainScheduleEvent?.venue || activeCountdownEvent?.venue
+                      ? ` • ${mainScheduleEvent?.venue || activeCountdownEvent?.venue}`
+                      : ''}
+                  </p>
+                  {settings.showSaveToCalendarButton !== false && (
+                    <a
+                      href={googleCalendarUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-2 transition-all"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-[#F3D77D]" />
+                      <span>{lang === 'ID' ? 'Simpan ke Kalender' : 'Save to Calendar'}</span>
+                      <ExternalLink className="w-3 h-3 text-[#F3D77D]" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Clean Ivory Editorial Opening & Quote Card */}
+              <div className="inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl sm:rounded-[2.25rem] bg-[#FFFDF9] border border-[#D4AF37]/45 outline outline-1 -outline-offset-8 outline-[#D4AF37]/25 p-6 sm:p-10 text-center shadow-[0_18px_50px_rgba(160,130,85,0.14)]">
+                <div className="relative z-20 max-w-3xl mx-auto">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase mb-3">
+                    <EventCrestIcon eventType={eventType} className="w-3.5 h-3.5 text-[#B68D40]" />
+                    <span>{sanitizedHeroBadge}</span>
+                  </div>
+
+                  {displayTitleFull !== displayTitleShort && (
+                    <p className="font-editorial text-sm sm:text-lg font-bold text-stone-900 mb-3 break-words">
+                      {displayTitleFull}
+                    </p>
+                  )}
+
+                  <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-5">
+                    {settings.invitationOpeningText}
+                  </p>
+
+                  {settings.showQuoteSection !== false && settings.quoteVerse && (
+                    <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-5 sm:p-6 shadow-2xs">
+                      <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
+                        &ldquo;{settings.quoteVerse}&rdquo;
+                      </p>
+                      {settings.quoteSource && (
+                        <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
+                          — {settings.quoteSource} —
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -6027,20 +6190,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       {/* BOTTOM FLOATING NAVIGATION BAR (MOBILE DOCK WITH VISIBLE ICON + LABEL) */}
       <nav className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md sm:w-auto sm:max-w-none bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/45 rounded-2xl sm:rounded-full px-1.5 sm:px-3.5 py-1.5 sm:py-2 shadow-[0_12px_35px_rgba(160,130,85,0.24)] flex items-center justify-around sm:justify-center gap-0.5 sm:gap-2">
         {[
-          ...(settings.showCoupleSection !== false
-            ? [
-                {
-                  href: '#mempelai',
-                  label: lang === 'ID' ? 'Mempelai' : 'Couple',
-                  icon: Heart,
-                },
-              ]
-            : []),
+          {
+            href: '#pembuka',
+            label: 'Home',
+            icon: Sparkles,
+          },
           ...(visibleEvents.length > 0
             ? [
                 {
                   href: '#acara',
-                  label: lang === 'ID' ? 'Acara' : 'Schedule',
+                  label: lang === 'ID' ? 'Acara' : 'Events',
                   icon: Calendar,
                 },
               ]
@@ -6049,23 +6208,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             ? [
                 {
                   href: '#galeri',
-                  label: showGallery
-                    ? lang === 'ID'
-                      ? 'Galeri'
-                      : 'Gallery'
-                    : lang === 'ID'
-                    ? 'Kisah'
-                    : 'Story',
-                  icon: showGallery ? Camera : Heart,
-                },
-              ]
-            : []),
-          ...(settings.showRsvpSection !== false
-            ? [
-                {
-                  href: '#rsvp',
-                  label: lang === 'ID' ? 'RSVP & Doa' : 'RSVP & Wishes',
-                  icon: MessageSquareHeart,
+                  label: lang === 'ID' ? 'Galeri' : 'Gallery',
+                  icon: Camera,
                 },
               ]
             : []),
@@ -6073,8 +6217,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             ? [
                 {
                   href: '#gift',
-                  label: lang === 'ID' ? 'Amplop' : 'Gift',
+                  label: lang === 'ID' ? 'Kado' : 'Gift',
                   icon: Gift,
+                },
+              ]
+            : []),
+          ...(settings.showRsvpSection !== false
+            ? [
+                {
+                  href: '#rsvp',
+                  label: 'RSVP',
+                  icon: MessageSquareHeart,
                 },
               ]
             : []),

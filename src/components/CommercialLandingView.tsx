@@ -2043,6 +2043,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     'WEDDING' | 'BIRTHDAY' | 'GRADUATION' | 'MEETING' | 'GALA_DINNER'
   >('WEDDING');
   const [simIsOpened, setSimIsOpened] = useState<boolean>(true);
+  const [previewDeviceMode, setPreviewDeviceMode] = useState<
+    'mobile' | 'desktop'
+  >('mobile');
   const [simThemeOverride, setSimThemeOverride] =
     useState<InvitationThemePresetId | null>(null);
 
@@ -2083,6 +2086,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     setSimThemeOverride(theme.themePreset);
     setShowcaseViewMode('invitation_sim');
     setSimIsOpened(true);
+    setPreviewDeviceMode('mobile');
     setIsCheckoutPageOpen(false);
     setLightboxScreenshot({
       title: `${theme.name} — ${theme.styleCategory}`,
@@ -3521,6 +3525,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     const activePreset =
       SIMULATION_EVENT_PRESETS[simEventType] ||
       SIMULATION_EVENT_PRESETS.WEDDING;
+    setPreviewDeviceMode('mobile');
     setLightboxScreenshot({
       title: `${activePreset.titleShort} — ${
         lang === 'ID' ? activePreset.badgeId : activePreset.badgeEn
@@ -4956,6 +4961,691 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       lang === 'ID'
         ? 'Key undangan tidak valid atau tidak ditemukan. Pastikan Anda memasukkan Key unik yang dikirimkan kepada Anda.'
         : 'Invalid or unknown Invitation Key. Please enter the exact unique Key sent to you.'
+    );
+  };
+
+  const [phoneLiveCountdown, setPhoneLiveCountdown] = useState({
+    days: 151,
+    hours: 22,
+    minutes: 12,
+    seconds: 36,
+  });
+
+  useEffect(() => {
+    const mainEv =
+      activeDummyState.settings.scheduleEvents?.find((e) => e.isMainEvent) ||
+      activeDummyState.settings.scheduleEvents?.[0];
+    const targetIso =
+      mainEv?.datetime ||
+      activeDummyState.settings.weddingDatetime ||
+      '2026-12-19T09:00:00+07:00';
+    const updatePhoneTimer = () => {
+      const target = new Date(targetIso).getTime();
+      const diff = Math.max(0, target - Date.now());
+      setPhoneLiveCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    updatePhoneTimer();
+    const id = window.setInterval(updatePhoneTimer, 1000);
+    return () => window.clearInterval(id);
+  }, [activeDummyState.settings]);
+
+  const renderPhoneScreenPreview = (
+    theme: CatalogThemeItem | null | undefined,
+    coupleLabel: string,
+    isHeroSize: boolean
+  ) => {
+    const archetype: ThemeLayoutArchetype =
+      theme?.layoutArchetype || 'EDITORIAL_CLASSIC';
+    const imgUrl =
+      theme?.coverBgUrl ||
+      theme?.thumbnailUrl ||
+      activeDummyState.settings.coverBgUrl ||
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+    const fallbackImg =
+      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
+
+    const eventTopBadge =
+      theme?.eventType === 'BIRTHDAY'
+        ? 'BIRTHDAY CELEBRATION'
+        : theme?.eventType === 'GRADUATION'
+          ? 'GRADUATION CELEBRATION'
+          : theme?.eventType === 'MEETING'
+            ? 'EXECUTIVE SUMMIT'
+            : theme?.eventType === 'GALA_DINNER'
+              ? 'ROYAL GALA DINNER'
+              : 'THE WEDDING OF';
+
+    const honoredGuestLabel =
+      lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest';
+
+    const countdownBoxes = [
+      { val: String(phoneLiveCountdown.days).padStart(2, '0'), label: 'Days' },
+      { val: String(phoneLiveCountdown.hours).padStart(2, '0'), label: 'Hrs' },
+      {
+        val: String(phoneLiveCountdown.minutes).padStart(2, '0'),
+        label: 'Min',
+      },
+      {
+        val: String(phoneLiveCountdown.seconds).padStart(2, '0'),
+        label: 'Sec',
+      },
+    ];
+
+    if (archetype === 'POLAROID_MAGAZINE') {
+      return (
+        <div
+          className={`${
+            isHeroSize ? 'h-[500px]' : 'h-full'
+          } overflow-hidden relative bg-[#F7F3EE] text-stone-900 flex flex-col justify-between select-none`}
+        >
+          {/* Dynamic Island */}
+          <div className="relative z-10 pt-1.5">
+            <div
+              className={`${
+                isHeroSize ? 'w-24 h-4' : 'w-14 h-3'
+              } bg-stone-950 rounded-full mx-auto shadow-inner`}
+            />
+          </div>
+
+          {/* Center Magazine Editorial Content */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-4 space-y-2' : 'px-2.5 space-y-1'
+            } text-center my-auto`}
+          >
+            <div className="flex items-center justify-between border-b border-stone-300/90 pb-1 text-[7px] sm:text-[8px] font-mono font-extrabold uppercase tracking-wider text-[#8B6914]">
+              <span>ISSUE NO. 01</span>
+              <span>{eventTopBadge.split(' ')[0]}</span>
+            </div>
+
+            <h3
+              className={`font-editorial font-bold uppercase tracking-tight text-stone-900 leading-tight truncate ${
+                isHeroSize ? 'text-lg sm:text-xl' : 'text-xs'
+              }`}
+            >
+              {coupleLabel}
+            </h3>
+
+            {/* Tilted White Polaroid Photo Card */}
+            <div
+              className={`bg-white p-1.5 pb-3 rounded-xl shadow-md -rotate-2 border border-stone-200 mx-auto transition-transform duration-500 group-hover:rotate-0 ${
+                isHeroSize ? 'w-[175px]' : 'w-[122px]'
+              }`}
+            >
+              <div
+                className={`${
+                  isHeroSize ? 'h-[105px]' : 'h-[70px]'
+                } w-full rounded-lg overflow-hidden bg-stone-200`}
+              >
+                <img
+                  src={imgUrl}
+                  alt={theme?.name || coupleLabel}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackImg;
+                  }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <p
+                className={`font-editorial italic text-[#8B6914] font-bold truncate mt-1 ${
+                  isHeroSize ? 'text-[10px]' : 'text-[8px]'
+                }`}
+              >
+                {theme?.name || coupleLabel}
+              </p>
+            </div>
+
+            {/* 4 White Capsule Countdown Pills */}
+            <div
+              className={`grid grid-cols-4 gap-1 mx-auto ${
+                isHeroSize ? 'max-w-[215px] pt-1' : 'max-w-[156px]'
+              }`}
+            >
+              {countdownBoxes.map((cd) => (
+                <div
+                  key={cd.label}
+                  className="rounded-full bg-white border border-stone-300 py-1 px-0.5 text-center shadow-2xs"
+                >
+                  <p
+                    className={`${
+                      isHeroSize ? 'text-[10px]' : 'text-[8px]'
+                    } font-extrabold text-stone-900 leading-none`}
+                  >
+                    {cd.val}
+                  </p>
+                  <p className="text-[7px] text-stone-500">{cd.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Stamp Guest Badge */}
+            <div>
+              <div
+                className={`inline-block rounded-lg bg-white border border-dashed border-[#8B6914]/70 ${
+                  isHeroSize ? 'px-3 py-1' : 'px-2 py-0.5'
+                }`}
+              >
+                <p
+                  className={`${
+                    isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
+                  } font-bold text-stone-800`}
+                >
+                  To: <span className="text-[#8B6914]">{honoredGuestLabel}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Floating Pill Dock */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-3.5 pb-3.5' : 'px-2 pb-2'
+            }`}
+          >
+            <div
+              className={`rounded-2xl bg-white border border-stone-200/90 ${
+                isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
+              } flex items-center justify-around font-bold text-stone-800 shadow-md`}
+            >
+              <span className="text-[#8B6914]">Home</span>
+              <span>Acara</span>
+              <span>Galeri</span>
+              <span>Kado</span>
+              <span>RSVP</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (archetype === 'BOTANICAL_AIRY') {
+      return (
+        <div
+          className={`${
+            isHeroSize ? 'h-[500px]' : 'h-full'
+          } overflow-hidden relative bg-gradient-to-b from-white via-[#F6FAF7] to-[#EEF5F0] text-stone-900 flex flex-col justify-between select-none`}
+        >
+          <CatalogFloralCorner position="top-left" size="sm" enabled={true} />
+          <CatalogFloralCorner position="top-right" size="sm" enabled={true} />
+
+          {/* Dynamic Island */}
+          <div className="relative z-10 pt-1.5">
+            <div
+              className={`${
+                isHeroSize ? 'w-24 h-4' : 'w-14 h-3'
+              } bg-stone-950 rounded-full mx-auto shadow-inner`}
+            />
+          </div>
+
+          {/* Center Botanical Cathedral Arch Content */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-4 space-y-2' : 'px-2.5 space-y-1'
+            } text-center my-auto`}
+          >
+            <div>
+              <span
+                className={`inline-block rounded-full bg-white/95 border border-emerald-300/80 text-[#8B6914] font-bold uppercase tracking-widest ${
+                  isHeroSize
+                    ? 'px-2.5 py-0.5 text-[8px]'
+                    : 'px-2 py-0.5 text-[6.5px]'
+                }`}
+              >
+                {eventTopBadge}
+              </span>
+            </div>
+
+            <h3
+              className={`font-editorial italic font-bold text-stone-900 leading-tight truncate ${
+                isHeroSize ? 'text-xl sm:text-2xl' : 'text-sm'
+              }`}
+            >
+              {coupleLabel}
+            </h3>
+
+            {/* Tall Cathedral Arch Photo Frame */}
+            <div
+              className={`rounded-t-full rounded-b-xl border-2 border-white shadow-md overflow-hidden mx-auto bg-stone-100 ${
+                isHeroSize ? 'w-[124px] h-[138px]' : 'w-[84px] h-[94px]'
+              }`}
+            >
+              <img
+                src={imgUrl}
+                alt={theme?.name || coupleLabel}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = fallbackImg;
+                }}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+
+            {/* 4 Airy Pill Countdown Boxes */}
+            <div
+              className={`grid grid-cols-4 gap-1 mx-auto ${
+                isHeroSize ? 'max-w-[215px]' : 'max-w-[156px]'
+              }`}
+            >
+              {countdownBoxes.map((cd) => (
+                <div
+                  key={cd.label}
+                  className="rounded-full bg-white/95 border border-emerald-200/90 py-1 px-0.5 text-center shadow-2xs"
+                >
+                  <p
+                    className={`${
+                      isHeroSize ? 'text-[10px]' : 'text-[8px]'
+                    } font-extrabold text-[#8B6914] leading-none`}
+                  >
+                    {cd.val}
+                  </p>
+                  <p className="text-[7px] text-stone-500">{cd.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Guest Pill */}
+            <div>
+              <div
+                className={`inline-block rounded-full bg-white/90 border border-emerald-200/90 ${
+                  isHeroSize ? 'px-3 py-1' : 'px-2 py-0.5'
+                }`}
+              >
+                <p
+                  className={`${
+                    isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
+                  } font-bold text-stone-800`}
+                >
+                  To: <span className="text-[#8B6914]">{honoredGuestLabel}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Floating Dock */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-3.5 pb-3.5' : 'px-2 pb-2'
+            }`}
+          >
+            <div
+              className={`rounded-2xl bg-white/95 border border-emerald-200/80 ${
+                isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
+              } flex items-center justify-around font-bold text-stone-800 shadow-md`}
+            >
+              <span className="text-[#8B6914]">Home</span>
+              <span>Acara</span>
+              <span>Galeri</span>
+              <span>Kado</span>
+              <span>RSVP</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (archetype === 'NUSANTARA_HERITAGE') {
+      return (
+        <div
+          className={`${
+            isHeroSize ? 'h-[500px]' : 'h-full'
+          } overflow-hidden relative bg-[radial-gradient(ellipse_at_top,_#f0d8b8,_#fdf8f0_70%)] text-[#6b4226] border-y-2 border-[#C89D54] flex flex-col justify-between select-none`}
+        >
+          {/* Dynamic Island */}
+          <div className="relative z-10 pt-1.5">
+            <div
+              className={`${
+                isHeroSize ? 'w-24 h-4' : 'w-14 h-3'
+              } bg-stone-950 rounded-full mx-auto shadow-inner`}
+            />
+          </div>
+
+          {/* Center Kraton Royal Content */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-4 space-y-2' : 'px-2.5 space-y-1'
+            } text-center my-auto`}
+          >
+            <p
+              className={`${
+                isHeroSize ? 'text-[8.5px]' : 'text-[6.5px]'
+              } font-serif font-extrabold tracking-widest text-[#8b5a2b] truncate`}
+            >
+              ꧁༺ {eventTopBadge} ༻꧂
+            </p>
+
+            <h3
+              className={`font-editorial font-bold text-[#6b4226] leading-tight truncate ${
+                isHeroSize ? 'text-xl sm:text-2xl' : 'text-sm'
+              }`}
+            >
+              {coupleLabel}
+            </h3>
+
+            {/* Gunungan Arch Portrait */}
+            <div
+              className={`rounded-t-full rounded-b-lg border-2 border-[#C89D54] shadow-md overflow-hidden mx-auto bg-[#f5e9d6] ${
+                isHeroSize ? 'w-[120px] h-[135px]' : 'w-[82px] h-[92px]'
+              }`}
+            >
+              <img
+                src={imgUrl}
+                alt={theme?.name || coupleLabel}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = fallbackImg;
+                }}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+
+            {/* 4 Gold-Bordered Countdown Boxes */}
+            <div
+              className={`grid grid-cols-4 gap-1 mx-auto ${
+                isHeroSize ? 'max-w-[215px]' : 'max-w-[156px]'
+              }`}
+            >
+              {countdownBoxes.map((cd) => (
+                <div
+                  key={cd.label}
+                  className="rounded-xl bg-[#fdf8f0] border border-[#C89D54] py-1 px-0.5 text-center shadow-2xs"
+                >
+                  <p
+                    className={`${
+                      isHeroSize ? 'text-[10px]' : 'text-[8px]'
+                    } font-extrabold text-[#6b4226] leading-none`}
+                  >
+                    {cd.val}
+                  </p>
+                  <p className="text-[7px] text-[#8b5a2b]">{cd.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Guest Plaque */}
+            <div>
+              <div
+                className={`inline-block rounded-xl bg-[#f5e9d6] border border-[#C89D54] ${
+                  isHeroSize ? 'px-3 py-1' : 'px-2 py-0.5'
+                }`}
+              >
+                <p
+                  className={`${
+                    isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
+                  } font-bold text-[#6b4226]`}
+                >
+                  To: <span className="text-[#8b5a2b]">{honoredGuestLabel}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Floating Dock */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-3.5 pb-3.5' : 'px-2 pb-2'
+            }`}
+          >
+            <div
+              className={`rounded-2xl bg-[#fdf8f0] border border-[#C89D54] ${
+                isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
+              } flex items-center justify-around font-bold text-[#6b4226] shadow-md`}
+            >
+              <span className="text-[#8B6914]">Home</span>
+              <span>Acara</span>
+              <span>Galeri</span>
+              <span>Kado</span>
+              <span>RSVP</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (archetype === 'MODERN_BENTO') {
+      return (
+        <div
+          className={`${
+            isHeroSize ? 'h-[500px]' : 'h-full'
+          } overflow-hidden relative bg-stone-950 text-white flex flex-col justify-between select-none`}
+        >
+          {/* Dynamic Island */}
+          <div className="relative z-10 pt-1.5">
+            <div
+              className={`${
+                isHeroSize ? 'w-24 h-4' : 'w-14 h-3'
+              } bg-black rounded-full mx-auto border border-white/10`}
+            />
+          </div>
+
+          {/* Center Modern Bento Layout */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-3.5 space-y-2' : 'px-2.5 space-y-1.5'
+            } my-auto`}
+          >
+            {/* Top Cinema Photo Card */}
+            <div
+              className={`rounded-2xl overflow-hidden relative border border-white/15 ${
+                isHeroSize ? 'h-[210px]' : 'h-[145px]'
+              }`}
+            >
+              <img
+                src={imgUrl}
+                alt={theme?.name || coupleLabel}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = fallbackImg;
+                }}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/30 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-2.5 text-left">
+                <span className="inline-block px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[7px] font-bold uppercase tracking-wider text-[#F3D77D] mb-0.5">
+                  {eventTopBadge}
+                </span>
+                <h3
+                  className={`font-editorial font-bold text-white leading-tight truncate ${
+                    isHeroSize ? 'text-lg' : 'text-xs'
+                  }`}
+                >
+                  {coupleLabel}
+                </h3>
+                <p className="text-[8px] text-white/80 truncate">
+                  {theme?.name || activeDummyMeta.themeLabel}
+                </p>
+              </div>
+            </div>
+
+            {/* Structured 4-Box Dark Bento Countdown Grid */}
+            <div className="grid grid-cols-4 gap-1.5">
+              {countdownBoxes.map((cd) => (
+                <div
+                  key={cd.label}
+                  className="rounded-xl bg-white/10 border border-white/20 py-1.5 px-0.5 text-center"
+                >
+                  <p
+                    className={`${
+                      isHeroSize ? 'text-xs' : 'text-[9px]'
+                    } font-extrabold text-[#F3D77D] leading-none`}
+                  >
+                    {cd.val}
+                  </p>
+                  <p className="text-[7px] text-white/75 mt-0.5">{cd.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Guest Bento Pill */}
+            <div className="rounded-xl bg-white/10 border border-white/15 px-3 py-1.5 flex items-center justify-between">
+              <span className="text-[8px] uppercase tracking-wider text-white/70">
+                To:
+              </span>
+              <span
+                className={`${
+                  isHeroSize ? 'text-[10px]' : 'text-[8px]'
+                } font-bold text-white truncate`}
+              >
+                {honoredGuestLabel}
+              </span>
+            </div>
+          </div>
+
+          {/* Bottom Floating Dock */}
+          <div
+            className={`relative z-10 ${
+              isHeroSize ? 'px-3.5 pb-3.5' : 'px-2 pb-2'
+            }`}
+          >
+            <div
+              className={`rounded-2xl bg-white/95 backdrop-blur-md ${
+                isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
+              } flex items-center justify-around font-bold text-stone-800 shadow-lg`}
+            >
+              <span className="text-[#8B6914]">Home</span>
+              <span>Acara</span>
+              <span>Galeri</span>
+              <span>Kado</span>
+              <span>RSVP</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default: EDITORIAL_CLASSIC
+    return (
+      <div
+        className={`${
+          isHeroSize ? 'h-[500px]' : 'h-full'
+        } overflow-hidden relative bg-stone-950 flex flex-col justify-between select-none`}
+      >
+        <img
+          src={imgUrl}
+          alt={theme?.name || 'Invitation Preview'}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = fallbackImg;
+          }}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/38 to-stone-950/88" />
+
+        {/* Top Dynamic Island Pill */}
+        <div className="relative z-10 pt-2">
+          <div
+            className={`${
+              isHeroSize ? 'w-24 h-5' : 'w-14 h-3'
+            } bg-stone-950 rounded-full mx-auto shadow-inner`}
+          />
+        </div>
+
+        {/* Center Couple Names & Countdown Boxes */}
+        <div
+          className={`relative z-10 ${
+            isHeroSize ? 'px-5 space-y-2.5' : 'px-3 space-y-1.5'
+          } text-center text-white my-auto`}
+        >
+          <p
+            className={`${
+              isHeroSize ? 'text-[10px]' : 'text-[7.5px]'
+            } uppercase tracking-[0.24em] text-[#FAF3E3] font-semibold`}
+          >
+            {eventTopBadge}
+          </p>
+          <h3
+            className={`font-editorial italic font-bold tracking-wide text-white drop-shadow-sm leading-tight ${
+              isHeroSize ? 'text-2xl sm:text-3xl' : 'text-base'
+            }`}
+          >
+            {coupleLabel}
+          </h3>
+          <p
+            className={`${
+              isHeroSize ? 'text-[11px]' : 'text-[8.5px]'
+            } text-white/90 font-medium truncate`}
+          >
+            {theme?.name || activeDummyMeta.themeLabel}
+          </p>
+
+          {/* 4 Frosted-Glass Countdown Boxes */}
+          <div
+            className={`grid grid-cols-4 gap-1.5 mx-auto ${
+              isHeroSize ? 'pt-1 max-w-[220px]' : 'pt-0.5 max-w-[160px]'
+            }`}
+          >
+            {countdownBoxes.map((cd) => (
+              <div
+                key={cd.label}
+                className="rounded-xl bg-white/20 backdrop-blur-md border border-white/30 py-1.5 px-0.5 text-center"
+              >
+                <p
+                  className={`${
+                    isHeroSize ? 'text-xs' : 'text-[8.5px]'
+                  } font-extrabold text-white leading-none`}
+                >
+                  {cd.val}
+                </p>
+                <p
+                  className={`${
+                    isHeroSize ? 'text-[9px]' : 'text-[7px]'
+                  } text-[#FAF3E3] mt-0.5`}
+                >
+                  {cd.label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Guest Name Box */}
+          <div className="pt-1">
+            <div
+              className={`inline-block rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 ${
+                isHeroSize ? 'px-4 py-1.5' : 'px-2.5 py-1'
+              }`}
+            >
+              <p
+                className={`${
+                  isHeroSize ? 'text-[9px]' : 'text-[7px]'
+                } uppercase tracking-widest text-[#FAF3E3]`}
+              >
+                To:
+              </p>
+              <p
+                className={`${
+                  isHeroSize ? 'text-xs' : 'text-[8.5px]'
+                } font-bold text-white mt-0.5`}
+              >
+                {honoredGuestLabel}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Floating Navigation Dock */}
+        <div
+          className={`relative z-10 ${
+            isHeroSize ? 'px-4 pb-4' : 'px-2.5 pb-2.5'
+          }`}
+        >
+          <div
+            className={`rounded-2xl bg-white/95 backdrop-blur-md ${
+              isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
+            } flex items-center justify-around font-bold text-stone-800 shadow-lg`}
+          >
+            <span className="text-[#8B6914]">Home</span>
+            <span>Acara</span>
+            <span>Galeri</span>
+            <span>Kado</span>
+            <span>RSVP</span>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -6442,10 +7132,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         : MULTI_EVENT_THEME_CATALOG.slice(0, 8);
                     const currentPhoneTheme =
                       activeCatalogTheme || heroThemes[0];
-                    const phoneCoverImg =
-                      currentPhoneTheme?.coverBgUrl ||
-                      currentPhoneTheme?.thumbnailUrl ||
-                      activeDummyState.settings.coverBgUrl;
 
                     return (
                       <>
@@ -6464,98 +7150,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }
                           className="w-[270px] sm:w-[295px] mx-auto rounded-[46px] border-[10px] border-stone-900 bg-white shadow-[0_25px_60px_rgba(0,0,0,0.18)] overflow-hidden relative cursor-pointer group"
                         >
-                          {/* Inside Phone Screen */}
-                          <div className="h-[500px] overflow-hidden relative bg-stone-950 flex flex-col justify-between">
-                            {/* Background Cover Photo */}
-                            <img
-                              src={phoneCoverImg}
-                              alt={
-                                currentPhoneTheme?.name || 'Invitation Preview'
-                              }
-                              onError={(e) => {
-                                e.currentTarget.src =
-                                  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
-                              }}
-                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/85" />
-
-                            {/* Top Dynamic Island Pill */}
-                            <div className="relative z-10 pt-2">
-                              <div className="w-24 h-5 bg-stone-950 rounded-full mx-auto shadow-inner" />
-                            </div>
-
-                            {/* Center Couple Names & Countdown Circles */}
-                            <div className="relative z-10 px-5 text-center text-white space-y-3 my-auto">
-                              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FAF3E3] font-semibold">
-                                {currentPhoneTheme?.eventType === 'BIRTHDAY'
-                                  ? 'BIRTHDAY CELEBRATION'
-                                  : currentPhoneTheme?.eventType ===
-                                      'GRADUATION'
-                                    ? 'GRADUATION CELEBRATION'
-                                    : currentPhoneTheme?.eventType === 'MEETING'
-                                      ? 'EXECUTIVE SUMMIT'
-                                      : currentPhoneTheme?.eventType ===
-                                          'GALA_DINNER'
-                                        ? 'ROYAL GALA DINNER'
-                                        : 'THE WEDDING OF'}
-                              </p>
-                              <h3 className="font-editorial italic text-2xl sm:text-3xl font-bold tracking-wide text-white drop-shadow-sm">
-                                {activeDummyMeta.coupleLabel}
-                              </h3>
-                              <p className="text-[11px] text-white/90 font-medium">
-                                {currentPhoneTheme?.name ||
-                                  activeDummyMeta.themeLabel}
-                              </p>
-
-                              {/* 4 Countdown Circles */}
-                              <div className="grid grid-cols-4 gap-2 pt-2 max-w-[220px] mx-auto">
-                                {[
-                                  { val: '151', label: 'Days' },
-                                  { val: '22', label: 'Hrs' },
-                                  { val: '12', label: 'Min' },
-                                  { val: '36', label: 'Sec' },
-                                ].map((cd) => (
-                                  <div
-                                    key={cd.label}
-                                    className="rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 py-2 px-1 text-center"
-                                  >
-                                    <p className="text-xs font-extrabold text-white leading-none">
-                                      {cd.val}
-                                    </p>
-                                    <p className="text-[9px] text-[#FAF3E3] mt-0.5">
-                                      {cd.label}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Guest Name Box */}
-                              <div className="pt-2">
-                                <div className="inline-block px-4 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25">
-                                  <p className="text-[9px] uppercase tracking-widest text-[#FAF3E3]">
-                                    To:
-                                  </p>
-                                  <p className="text-xs font-bold text-white mt-0.5">
-                                    {lang === 'ID'
-                                      ? 'Tamu Kehormatan'
-                                      : 'Honored Guest'}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Bottom Navigation Dock inside Phone */}
-                            <div className="relative z-10 px-4 pb-4">
-                              <div className="rounded-2xl bg-white/95 backdrop-blur-md px-3 py-2 flex items-center justify-around text-[9px] font-bold text-stone-800 shadow-lg">
-                                <span className="text-[#8B6914]">Home</span>
-                                <span>Acara</span>
-                                <span>Galeri</span>
-                                <span>Kado</span>
-                                <span>RSVP</span>
-                              </div>
-                            </div>
-                          </div>
+                          {/* Inside Phone Screen — 1:1 Archetype-Accurate Preview */}
+                          {renderPhoneScreenPreview(
+                            currentPhoneTheme,
+                            activeDummyMeta.coupleLabel,
+                            true
+                          )}
                         </div>
 
                         {/* Champagne Gold Pagination Dots Below Phone */}
@@ -6696,53 +7296,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         key={theme.id}
                         className="bg-white rounded-3xl p-4 border border-stone-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col items-center"
                       >
-                        {/* Realistic iPhone Mockup — Clean Unobstructed Cover */}
+                        {/* Realistic iPhone Mockup — 1:1 Archetype-Accurate Preview */}
                         <div
                           onClick={() => handleApplyCatalogThemeDemo(theme)}
                           className="w-[200px] mx-auto rounded-[32px] border-[6px] border-stone-900 aspect-[9/18] overflow-hidden relative shadow-md bg-stone-950 cursor-pointer group"
                         >
-                          <img
-                            src={theme.coverBgUrl || theme.thumbnailUrl}
-                            alt={theme.name}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.src =
-                                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80';
-                            }}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/80" />
-
-                          {/* Dynamic Island Notch */}
-                          <div className="w-14 h-3 bg-stone-950 rounded-full mx-auto mt-1.5 relative z-10" />
-
-                          {/* Phone Screen Content — Clean High-Contrast White Typography */}
-                          <div className="relative z-10 h-[calc(100%-20px)] flex flex-col justify-between p-4 text-center text-white">
-                            <div className="pt-2">
-                              <p className="text-[8px] uppercase tracking-[0.22em] text-white/90 font-semibold">
-                                {theme.eventType === 'WEDDING'
-                                  ? 'THE WEDDING OF'
-                                  : cleanCategoryText.toUpperCase()}
-                              </p>
-                            </div>
-
-                            <div className="space-y-1.5 my-auto">
-                              <h4 className="font-editorial italic text-lg font-bold text-white leading-snug drop-shadow-sm">
-                                {dummyMetaForTheme.coupleLabel}
-                              </h4>
-                              <p className="text-[10px] text-white/90 font-medium">
-                                {theme.styleCategory}
-                              </p>
-                            </div>
-
-                            <div className="pb-1">
-                              <span className="inline-block px-3.5 py-1.5 rounded-full bg-white text-stone-900 text-[9px] font-bold shadow-xs">
-                                {lang === 'ID'
-                                  ? 'Buka Undangan'
-                                  : 'Open Invitation'}
-                              </span>
-                            </div>
-                          </div>
+                          {renderPhoneScreenPreview(
+                            theme,
+                            dummyMetaForTheme.coupleLabel,
+                            false
+                          )}
                         </div>
 
                         {/* Centered High-Contrast Theme Title, Swatches & 1-Sentence Human Description on White Card */}
@@ -7494,46 +8057,93 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* FULLSCREEN LIVE INTERACTIVE UI LIGHTBOX MODAL */}
       {lightboxScreenshot && (
         <div
-          className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5"
           onClick={() => setLightboxScreenshot(null)}
         >
           <div
-            className="w-full max-w-6xl max-h-[92vh] rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-w-6xl max-h-[94vh] rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-3.5 bg-white border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 sm:px-6 py-3 bg-white border-b border-stone-200 flex flex-wrap items-center justify-between gap-2.5">
               <div className="min-w-0 flex items-center gap-2.5">
                 <h4 className="font-editorial text-sm sm:text-lg font-bold text-stone-900 truncate">
                   {lightboxScreenshot.title}
                 </h4>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {lightboxScreenshot.mode === 'invitation_sim' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLightboxScreenshot(null);
-                      if (onOpenDemoManager) {
-                        onOpenDemoManager(
-                          activeDummyMeta.id,
-                          simPackageTier,
-                          activeCatalogTheme?.id
-                        );
-                      } else {
-                        onOpenAdminPortal();
-                      }
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {lang === 'ID'
-                        ? 'Buka di Management Planner'
-                        : 'Open in Management Planner'}
-                    </span>
-                  </button>
+                  <>
+                    {/* Device Viewport Toggle: Mobile Phone Frame vs Desktop Fullscreen */}
+                    <div className="inline-flex items-center p-0.5 rounded-xl bg-stone-100 border border-stone-200">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDeviceMode('mobile')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          previewDeviceMode === 'mobile'
+                            ? 'bg-stone-900 text-white shadow-2xs'
+                            : 'text-stone-700 hover:text-stone-900'
+                        }`}
+                      >
+                        {lang === 'ID'
+                          ? '📱 Mode HP (Sesuai Mockup)'
+                          : '📱 Mobile Frame'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDeviceMode('desktop')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          previewDeviceMode === 'desktop'
+                            ? 'bg-stone-900 text-white shadow-2xs'
+                            : 'text-stone-700 hover:text-stone-900'
+                        }`}
+                      >
+                        {lang === 'ID' ? '💻 Mode Desktop' : '💻 Desktop View'}
+                      </button>
+                    </div>
+
+                    {/* Gate Toggle: Cover (Sampul) vs Main Invitation (Isi Undangan) */}
+                    <button
+                      type="button"
+                      onClick={() => setSimIsOpened((v) => !v)}
+                      className="px-3 py-1.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span>
+                        {simIsOpened
+                          ? lang === 'ID'
+                            ? '📖 Lihat Sampul'
+                            : '📖 View Cover'
+                          : lang === 'ID'
+                            ? '✨ Isi Undangan'
+                            : '✨ View Content'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLightboxScreenshot(null);
+                        if (onOpenDemoManager) {
+                          onOpenDemoManager(
+                            activeDummyMeta.id,
+                            simPackageTier,
+                            activeCatalogTheme?.id
+                          );
+                        } else {
+                          onOpenAdminPortal();
+                        }
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Buka di Management Planner'
+                          : 'Open in Management Planner'}
+                      </span>
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
@@ -7550,40 +8160,81 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </div>
 
             {/* Live Interactive React Body */}
-            <div className="flex-1 overflow-y-auto bg-[#FAF8F5]">
-              {lightboxScreenshot.mode === 'invitation_sim' ? (
-                <PublicInvitationView
-                  key={`lightbox-${activeDummyMeta.id}-${simPackageTier}-${selectedCatalogThemeId}-${lang}`}
-                  settings={activeDummyState.settings}
-                  guests={activeDummyState.guests}
-                  wishes={effectiveDummyWishes}
-                  guestParamName={activeDummyMeta.sampleGuestName}
-                  guestParamCode={activeDummyMeta.sampleHashToken}
-                  defaultOpened={simIsOpened}
-                  isAdminLoggedIn={false}
-                  onOpenAdminPortal={() => {
-                    setLightboxScreenshot(null);
-                    if (onOpenDemoManager) {
-                      onOpenDemoManager(
-                        activeDummyMeta.id,
-                        simPackageTier,
-                        activeCatalogTheme?.id
-                      );
-                    } else {
-                      onOpenAdminPortal();
-                    }
-                  }}
-                  onSubmitRsvp={handleDummyLiveRsvpSubmit}
-                  {...({ externalLang: lang } as any)}
-                />
+            {lightboxScreenshot.mode === 'invitation_sim' ? (
+              previewDeviceMode === 'mobile' ? (
+                <div className="flex-1 overflow-y-auto bg-stone-200/75 p-2 sm:p-4 flex items-center justify-center">
+                  <div className="w-full max-w-[430px] h-[80vh] mx-auto rounded-[42px] border-[8px] border-stone-900 shadow-2xl overflow-hidden bg-white relative [transform:translateZ(0)]">
+                    <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+                      <PublicInvitationView
+                        key={`lightbox-${activeDummyMeta.id}-${simPackageTier}-${selectedCatalogThemeId}-${lang}-${simIsOpened}-mobile`}
+                        settings={activeDummyState.settings}
+                        guests={activeDummyState.guests}
+                        wishes={effectiveDummyWishes}
+                        guestParamName={
+                          lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest'
+                        }
+                        guestParamCode=""
+                        defaultOpened={simIsOpened}
+                        isAdminLoggedIn={false}
+                        onOpenAdminPortal={() => {
+                          setLightboxScreenshot(null);
+                          if (onOpenDemoManager) {
+                            onOpenDemoManager(
+                              activeDummyMeta.id,
+                              simPackageTier,
+                              activeCatalogTheme?.id
+                            );
+                          } else {
+                            onOpenAdminPortal();
+                          }
+                        }}
+                        onSubmitRsvp={handleDummyLiveRsvpSubmit}
+                        {...({ externalLang: lang } as any)}
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
-                renderLiveDashboardModule(
+                <div className="flex-1 relative overflow-hidden bg-[#FAF8F5] [transform:translateZ(0)] h-[82vh]">
+                  <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+                    <PublicInvitationView
+                      key={`lightbox-${activeDummyMeta.id}-${simPackageTier}-${selectedCatalogThemeId}-${lang}-${simIsOpened}-desktop`}
+                      settings={activeDummyState.settings}
+                      guests={activeDummyState.guests}
+                      wishes={effectiveDummyWishes}
+                      guestParamName={
+                        lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest'
+                      }
+                      guestParamCode=""
+                      defaultOpened={simIsOpened}
+                      isAdminLoggedIn={false}
+                      onOpenAdminPortal={() => {
+                        setLightboxScreenshot(null);
+                        if (onOpenDemoManager) {
+                          onOpenDemoManager(
+                            activeDummyMeta.id,
+                            simPackageTier,
+                            activeCatalogTheme?.id
+                          );
+                        } else {
+                          onOpenAdminPortal();
+                        }
+                      }}
+                      onSubmitRsvp={handleDummyLiveRsvpSubmit}
+                      {...({ externalLang: lang } as any)}
+                    />
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="flex-1 overflow-y-auto bg-[#FAF8F5]">
+                {renderLiveDashboardModule(
                   lightboxScreenshot.moduleId ||
                     OFFICIAL_PRODUCT_SCREENSHOTS[activeShowcaseIdx]?.id ||
                     'tracker'
-                )
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
