@@ -2618,7 +2618,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#F3E5C8] hover:from-[#F3E5C8] hover:to-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/60 text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
             >
               <Sparkles className="w-3 h-3 text-[#D4AF37] shrink-0" />
-              <span>{lang === 'ID' ? 'Katalog MEPlanner' : 'MEPlanner Catalog'}</span>
+              <span>{lang === 'ID' ? 'Katalog' : 'Catalog'}</span>
             </button>
           )}
           <button

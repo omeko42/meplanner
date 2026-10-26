@@ -6224,46 +6224,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Right Actions: Workspace Switcher (Superadmin), Katalog MEPlanner, Preview Invitation, Admin Info & Logout */}
+            {/* Right Actions: Katalog, Preview Invitation, Admin Info & Logout */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {isSuperadmin &&
-                onSwitchWorkspaceClient &&
-                effectiveClientGroups.length > 0 && (
-                  <select
-                    value={activeWorkspaceClientId}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      onSwitchWorkspaceClient(nextId);
-                      const grp = effectiveClientGroups.find(
-                        (g) => g.id === nextId
-                      );
-                      showToast(
-                        `✓ Beralih ke Workspace Klien: ${
-                          grp?.coupleLabel || grp?.clientName || nextId
-                        }`
-                      );
-                    }}
-                    title="Pilih Workspace Klien Aktif (Superadmin Multi-Client Switcher)"
-                    className="max-w-[96px] sm:max-w-[175px] px-2.5 py-1.5 rounded-xl bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-bold truncate cursor-pointer focus:outline-none"
-                  >
-                    {effectiveClientGroups.map((cg) => (
-                      <option key={cg.id} value={cg.id}>
-                        💍 {cg.coupleLabel || cg.clientName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
               {onOpenLandingPage && (
                 <button
                   type="button"
                   onClick={onOpenLandingPage}
                   className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border ${activeManagerTheme.accentPillBg} ${activeManagerTheme.accentPillText} font-bold text-[10px] sm:text-xs transition-all shrink-0`}
-                  title="Buka Halaman Depan Komersial MEPlanner — My Event Planner"
+                  title="Buka Halaman Katalog Komersial MEPlanner"
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span className="lg:hidden">Katalog</span>
-                  <span className="hidden lg:inline">Katalog MEPlanner</span>
+                  <span>Katalog</span>
                 </button>
               )}
 
@@ -9074,7 +9045,51 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="flex flex-col xl:flex-row gap-5 items-start">
               <div className="flex-1 min-w-0 w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
-              <div className="lg:col-span-4 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-4 lg:sticky lg:top-[120px] space-y-2.5">
+                {/* SUPERADMIN-ONLY WORKSPACE SWITCHER (Moved above Konten Undangan per Project Lead instruction) */}
+                {isSuperadmin &&
+                  onSwitchWorkspaceClient &&
+                  effectiveClientGroups.length > 0 && (
+                    <div className="rounded-2xl bg-stone-900 border border-[#D4AF37]/50 p-3 shadow-xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D4AF37]">
+                          👑 Workspace Klien (Superadmin)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#FAF3E3] text-[9px] font-bold">
+                          {effectiveClientGroups.length} Klien
+                        </span>
+                      </div>
+                      <select
+                        value={
+                          activeWorkspaceClientId ||
+                          state.settings.activeClientId ||
+                          'client-utama'
+                        }
+                        onChange={(e) => {
+                          const nextId = e.target.value;
+                          onSwitchWorkspaceClient(nextId);
+                          const grp = effectiveClientGroups.find(
+                            (g) => g.id === nextId
+                          );
+                          showToast(
+                            `✓ Beralih ke Workspace Klien: ${
+                              grp?.coupleLabel || grp?.clientName || nextId
+                            }`
+                          );
+                        }}
+                        title="Pilih Workspace Klien Aktif (Khusus Superadmin)"
+                        className="w-full px-3 py-2 rounded-xl bg-stone-950 text-[#FAF3E3] border border-[#D4AF37]/50 text-xs font-bold truncate cursor-pointer focus:outline-none"
+                      >
+                        {effectiveClientGroups.map((cg) => (
+                          <option key={cg.id} value={cg.id}>
+                            💍 {cg.coupleLabel || cg.clientName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                <div className="lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -9158,6 +9173,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </button>
                     );
                   })}
+                </div>
               </div>
 
               {/* RIGHT CONTENT PANEL */}
@@ -9266,38 +9282,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                          {(activePackageInfo.maxInvitations > 1 || isSuperadmin) &&
-                            onSwitchWorkspaceClient &&
-                            effectiveClientGroups.length > 1 && (
-                              <select
-                                value={
-                                  activeWorkspaceClientId ||
-                                  state.settings.activeClientId ||
-                                  'client-utama'
-                                }
-                                onChange={(e) => {
-                                  const nextId = e.target.value;
-                                  onSwitchWorkspaceClient(nextId);
-                                  const grp = effectiveClientGroups.find(
-                                    (g) => g.id === nextId
-                                  );
-                                  showToast(
-                                    `✓ Beralih ke Workspace Undangan: ${
-                                      grp?.coupleLabel || grp?.clientName || nextId
-                                    }`
-                                  );
-                                }}
-                                title="Pilih Workspace Undangan Aktif"
-                                className="px-2.5 py-1.5 rounded-xl bg-white text-stone-800 border border-[#D4AF37]/60 text-[11px] font-extrabold cursor-pointer"
-                              >
-                                {effectiveClientGroups.map((cg, idx) => (
-                                  <option key={cg.id} value={cg.id}>
-                                    Undangan #{idx + 1}: {cg.coupleLabel || cg.clientName}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-
                           {(activePackageInfo.maxInvitations > 1 || isSuperadmin) && (
                             <button
                               type="button"
@@ -21159,20 +21143,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
-                  >
-                    omeko42
-                  </a>{' '}
-                  &copy; 2026
+                    >
+                      omeko42
+                    </a>{' '}
+                    &copy; 2026
+                  </p>
+                </div>
+                <p className="text-[11px] text-stone-500 mt-0.5">
+                  Platform Undangan Digital &amp; Manajemen Acara Terpadu
                 </p>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold">
-                  Official MEPlanner SaaS &amp; Multi-Event Planner Cloud Suite
-                </span>
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5">
-                Platform Multi-Event Readiness Tracker &amp; Undangan Digital Interaktif
-              </p>
             </div>
-          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
