@@ -200,7 +200,7 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
       'Undangan Aktif Selamanya',
       'Unlimited Kuota Tamu & Multi-Akses Panitia/Keluarga',
       'Foto & Video Gallery + Video Background Sinematik 25 MB',
-      'Ucapan & Doa + AI Wishes Insight',
+      'Ucapan & Doa + Moderasi Komentar Real-Time',
       'Semua Tema Premium Multi-Event (25+ Tema)',
       'Link Streaming',
       'Kado Cashless / Donasi Global (Bank, QRIS, PayPal & Crypto USDT)',
@@ -211,7 +211,7 @@ export const MEPLANNER_PACKAGE_TIERS: MeplannerPackageTierItem[] = [
       'Lifetime Active Invitations',
       'Unlimited Guest Quota & Multi-User Committee RBAC',
       'Photo & Video Gallery + 25 MB Cinematic Video Background',
-      'Guestbook Wishes & AI Wishes Insight',
+      'Guestbook Wishes + Real-Time Comment Moderation',
       'All 25+ Multi-Event Premium Themes',
       'Live Streaming Link',
       'Global Cashless Gift (Bank, QRIS, PayPal & Crypto USDT)',
@@ -3211,6 +3211,8 @@ export function getShowcaseDummyClientState(
     showFloralCorners?: boolean;
     themeLayoutArchetype?: ThemeLayoutArchetype;
     layoutArchetype?: ThemeLayoutArchetype;
+    showIgStorySection?: boolean;
+    igFilterUrl?: string;
   } = {
     ...INITIAL_SETTINGS,
     siteTitle: 'MEPlanner — My Event Planner',
@@ -3275,6 +3277,10 @@ export function getShowcaseDummyClientState(
     event2Venue: secondaryEvent.venue,
     event2Address: secondaryEvent.address,
     scheduleEvents: scheduleEventsForType,
+    showLiveStreaming: true,
+    liveStreamingPlatform: 'YouTube Live',
+    liveStreamingUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
+    showIgStorySection: true,
     showLoveStorySection: !isStarterTier,
     showGallerySection: !isStarterTier,
     musicSourceType: 'NCS_BUILTIN',

@@ -1436,35 +1436,35 @@ interface BlogArticleItem {
 
 const BLOG_ARTICLES: BlogArticleItem[] = [
   {
-    id: 'blog-ai-wishes',
-    category: 'MEPlanner AI & Inovasi',
+    id: 'blog-multi-session-streaming',
+    category: 'Fitur & Panduan Acara',
     readTime: '4 Menit Baca',
     titleId:
-      'Analisis Ucapan & Doa Berbasis AI: Cara MEPlanner AI Merangkum Ratusan Doa Tamu',
+      'Panduan Mengatur Rangkaian Acara Multi-Sesi, Live Streaming & Story Instagram di MEPlanner',
     titleEn:
-      'AI-Powered Wishes Insight: How MEPlanner AI Summarizes Hundreds of Guest Wishes',
+      'How to Set Up Multi-Session Schedules, Live Streaming & Instagram Story Cards in MEPlanner',
     excerptId:
-      'Tak perlu lagi membaca ratusan pesan satu per satu secara manual. Fitur MEPlanner AI merangkum sentimen, doa terpopuler, dan daftar tamu VIP yang perlu dibalas prioritas.',
+      'Pelajari cara mengatur jadwal bertingkat (Akad/Pemberkatan, Resepsi & Ngunduh Mantu), menautkan siaran langsung YouTube/Zoom, serta mengunduh kartu Story Instagram 9:16 siap unggah.',
     excerptEn:
-      'No need to manually sift through hundreds of guestbook messages. MEPlanner AI summarizes sentiment, top blessings, and VIP guests needing priority replies.',
+      'Learn how to configure multi-session schedules (Matrimony & Reception), embed YouTube/Zoom Live Streaming, and download ready-to-share 9:16 Instagram Story cards.',
     imageUrl:
       'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80',
     highlightsId: [
-      'Ringkasan Sentimen Otomatis: Mengelompokkan ucapan doa berdasarkan kategori (Keluarga, Rekan Kerja/Polri, Sahabat, Kolega VIP).',
-      'Rekomendasi Balasan Cerdas: Menghasilkan draf balasan sopan dan personal untuk tiap tamu hanya dalam 1 klik.',
-      'Audit Moderasi Real-Time: Menyaring komentar spam atau kata tidak pantas secara otomatis sebelum tampil di layar publik.',
-      'Sinkronisasi Layar Penerima Tamu: Menampilkan ucapan terpilih secara elegan di layar proyektor ballroom saat Hari-H.',
+      'Jadwal Rangkaian Multi-Sesi Fleksibel: Atur jam, lokasi gedung, titik koordinat Google Maps, dan dresscode terpisah untuk sesi Akad/Pemberkatan maupun Resepsi Malam.',
+      'Embed Siaran Langsung (YouTube & Zoom Live): Tamu yang berhalangan hadir fisik dapat menonton siaran langsung acara Anda langsung dari dalam halaman undangan digital.',
+      'Generator Story Instagram 9:16 (PNG 1080×1920): Unduh kartu e-invitation vertikal beresolusi tinggi lengkap dengan nama tamu dan QR Code Check-In hanya dalam 1 klik.',
+      'Moderasi Buku Tamu & Layar Penerima Tamu: Kelola ucapan doa secara real-time dan tampilkan daftar kehadiran tamu VIP di layar resepsi saat Hari-H.',
     ],
     highlightsEn: [
-      'Automated Sentiment Summary: Groups wishes by guest relationship (Family, VIP Officials, Colleagues, Friends).',
-      'Smart Reply Suggestions: Generates polite, personalized host replies in 1 click.',
-      'Real-Time Moderation Audit: Automatically filters spam or inappropriate words before public display.',
-      'Live Reception Screen Sync: Displays curated wishes on the ballroom projector during the event.',
+      'Flexible Multi-Session Schedules: Configure separate times, venues, Google Maps pins, and dresscodes for Holy Matrimony, Reception, or Gala sessions.',
+      'Embedded Live Streaming (YouTube & Zoom): Remote family and friends can watch your live broadcast directly inside the digital invitation page.',
+      '9:16 Instagram Story Card Generator (1080×1920 PNG): Download a high-resolution vertical e-invitation card with personalized guest name and Check-In QR in 1 click.',
+      'Real-Time Guestbook Moderation & Reception Screen: Manage guest wishes in real time and sync VIP check-ins at the venue reception desk.',
     ],
     conclusionId:
-      'Fitur AI Wishes Insight & Moderasi tersedia langsung di ekosistem MEPlanner untuk memastikan setiap doa tulus dari tamu Anda mendapatkan apresiasi terbaik.',
+      'Seluruh fitur Jadwal Multi-Sesi, Link Live Streaming, dan Template Story Instagram tersedia langsung di ekosistem MEPlanner untuk menyempurnakan momen bahagia Anda.',
     conclusionEn:
-      'AI Wishes Insight & Moderation is built right into the MEPlanner ecosystem so every heartfelt blessing is cherished.',
+      'Multi-Session Schedules, Live Streaming embeds, and 9:16 Instagram Story templates are built right into MEPlanner to elevate your celebration.',
   },
   {
     id: 'blog-85-questions',
@@ -1614,8 +1614,8 @@ const FAQ_ITEMS = [
   {
     qId: 'Apa keunggulan paket Business (Rp 74.250) dan Enterprise (Rp 180.000) dibanding Premium?',
     qEn: 'What is the difference between Premium (Rp 51,750), Business (Rp 74,250), and Enterprise (Rp 180,000)?',
-    aId: 'Paket Premium (Rp 51.750) mencakup 1 Undangan Premium aktif selamanya dengan kuota tamu unlimited. Paket Business (Rp 74.250) memberikan 2 Undangan Premium sekaligus (cocok untuk acara Ngunduh Mantu / 2 lokasi berbeda atau pasangan + bisnis) lengkap dengan Full Event Planner & status Mitra Bronze. Paket Enterprise (Rp 180.000) memberikan 5 Undangan Premium lengkap dengan Video Background HD 25MB, AI Wishes Insight, serta Amplop Digital Global (Bank, QRIS, PayPal & Crypto USDT).',
-    aEn: 'Premium (Rp 51,750) includes 1 lifetime Premium Invitation. Business (Rp 74,250) gives you 2 Premium Invitations plus Full Event Planner & Mitra Bronze. Enterprise (Rp 180,000) unlocks 5 Premium Invitations, 25MB HD Video Backgrounds, AI Wishes Insight, and Global Multi-Currency Envelopes.',
+    aId: 'Paket Premium (Rp 51.750) mencakup 1 Undangan Premium aktif selamanya dengan kuota tamu unlimited. Paket Business (Rp 74.250) memberikan 2 Undangan Premium sekaligus (cocok untuk acara Ngunduh Mantu / 2 lokasi berbeda atau pasangan + bisnis) lengkap dengan Full Event Planner & status Mitra Bronze. Paket Enterprise (Rp 180.000) memberikan 5 Undangan Premium lengkap dengan Video Background HD 25MB, Moderasi Komentar Real-Time, serta Amplop Digital Global (Bank, QRIS, PayPal & Crypto USDT).',
+    aEn: 'Premium (Rp 51,750) includes 1 lifetime Premium Invitation. Business (Rp 74,250) gives you 2 Premium Invitations plus Full Event Planner & Mitra Bronze. Enterprise (Rp 180,000) unlocks 5 Premium Invitations, 25MB HD Video Backgrounds, Real-Time Comment Moderation, and Global Multi-Currency Envelopes.',
   },
   {
     qId: 'Bagaimana cara kerja fitur White-Label pada paket Mitra Silver (Rp 375.000) & Mitra Gold (Rp 750.000) untuk WO/EO?',
@@ -1628,36 +1628,6 @@ const FAQ_ITEMS = [
     qEn: 'How can I contact the official MEPlanner team for technical support or license confirmation?',
     aId: 'Seluruh korespondensi resmi, konfirmasi bukti pembayaran lisensi, dan dukungan pelanggan MEPlanner dilayani melalui Email Resmi Gmail di e98.bisnis@gmail.com (Jam Operasional Setiap Hari 08.00 – 20.00 WIB).',
     aEn: 'All official support, license payment confirmations, and inquiries are handled via our Official Business Gmail at e98.bisnis@gmail.com (Daily 08:00 – 20:00 WIB).',
-  },
-] as const;
-
-const AI_QUICK_PROMPTS = [
-  {
-    id: 'ai-price',
-    questionId: '💰 Rincian harga resmi 6 paket MEPlanner',
-    questionEn: '💰 Official pricing for all 6 MEPlanner packages',
-    answerId:
-      '🤖 MEPlanner AI: Berikut daftar harga resmi MEPlanner (Sekali Bayar • Aktif Selamanya): Paket Gratis Rp 0 (Uji Coba 14 Hari), Paket Premium Rp 51.750 (1 Undangan Premium Unlimited), Business Rp 74.250 (2 Undangan Premium + Full Event Planner), Enterprise Rp 180.000 (5 Undangan Premium + Video HD & Global Gift), Mitra Silver Rp 375.000 (11 Undangan + Branding Teks WO/EO), dan Mitra Gold Rp 750.000 (23 Undangan + Branding Logo WO/EO)!',
-    answerEn:
-      '🤖 MEPlanner AI: Official MEPlanner one-time pricing: Free Rp 0 (14-Day Trial), Premium Rp 51,750 (1 Unlimited Invitation), Business Rp 74,250 (2 Invitations + Full Event Planner), Enterprise Rp 180,000 (5 Invitations + HD Video & Global Gift), Mitra Silver Rp 375,000 (11 Invitations + Text Branding), and Mitra Gold Rp 750,000 (23 Invitations + Logo Branding)!',
-  },
-  {
-    id: 'ai-theme',
-    questionId: '🎨 Rekomendasi tema & layout sesuai jenis acara saya',
-    questionEn: '🎨 Recommend a theme & layout for my event type',
-    answerId:
-      '🤖 MEPlanner AI: Setiap tema di MEPlanner memiliki arketipe tata letak yang unik! Untuk Pernikahan Adat & Keraton, gunakan "Wayang Keraton" atau "Adat Jawa Klasik" (Nusantara Heritage Layout). Untuk gaya majalah & polaroid modern, pilih "Polaroid Klasik", "Kolase Polaroid", atau "Pastel Ceria" (Polaroid Magazine Layout). Untuk nuansa taman minimalis, pilih "Embun Pagi", "Gading Minimalis", atau "Bunga Langit Biru" (Botanical Airy Layout). Untuk Ballroom & Eksekutif, pilih "Kilau Cahaya", "Malam Elegan", atau "Redaksi Modern"!',
-    answerEn:
-      '🤖 MEPlanner AI: Every MEPlanner theme features a distinct Layout Archetype! For Heritage Weddings, try "Wayang Keraton" or "Adat Jawa Klasik". For Polaroid & Magazine vibes, pick "Polaroid Klasik", "Kolase Polaroid", or "Pastel Ceria". For Botanical Minimalist, choose "Embun Pagi", "Gading Minimalis", or "Bunga Langit Biru"!',
-  },
-  {
-    id: 'ai-planner',
-    questionId: '📊 Apa saja fitur Event Planner & Layar Tamu Hari-H?',
-    questionEn: '📊 What is included in Event Planner & Guest Reception?',
-    answerId:
-      '🤖 MEPlanner AI: Selain undangan digital, Anda mendapatkan: (1) 8 Tahap Persiapan Acara, (2) Checklist H-6 Bulan s/d Hari-H dengan pembagian PIC, (3) Kalkulator Pagu Anggaran & Pelunasan Vendor, (4) Daftar Tamu VIP dengan Kirim WA 1-Klik & Kode Undangan Personal Tamu, serta (5) Layar Penerima Tamu (Guest Reception) untuk check-in tamu saat Hari-H.',
-    answerEn:
-      '🤖 MEPlanner AI: Beyond digital invitations, you get an 8-Stage Event Readiness Tracker, Phased Checklist with PIC roles, Vendor Budget Calculator, 1-Click WhatsApp Guest CRM with Personalized Guest Codes, and a Live Guest Reception Check-In Screen.',
   },
 ] as const;
 
@@ -1842,7 +1812,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   const [activeBlogArticle, setActiveBlogArticle] =
     useState<BlogArticleItem | null>(null);
   const [openFaqIdx, setOpenFaqIdx] = useState<number>(0);
-  const [selectedAiPromptIdx, setSelectedAiPromptIdx] = useState<number>(0);
 
   // Instant Google / Gmail Workspace Creation Modal States
   const [isGoogleOnboardingModalOpen, setIsGoogleOnboardingModalOpen] =
@@ -2715,7 +2684,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Undangan Aktif Selamanya',
                   'Unlimited Kuota Tamu',
                   'Foto & Video Gallery + Video Background HD',
-                  'Ucapan & Doa + AI Wishes Insight',
+                  'Ucapan & Doa + Moderasi Komentar Real-Time',
                   'Tema Premium Multi-Event',
                   'Link Streaming',
                   'Kado Cashless Global (Bank, QRIS, PayPal, Crypto USDT)',
@@ -2726,7 +2695,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   'Invitations Active Forever',
                   'Unlimited Guest Quota',
                   'Photo & Video Gallery + 25MB HD Video Background',
-                  'Guestbook Wishes + AI Wishes Insight',
+                  'Guestbook Wishes + Real-Time Comment Moderation',
                   'All Multi-Event Premium Themes',
                   'Live Streaming Link',
                   'Global Cashless Gift (Bank, QRIS, PayPal, Crypto USDT)',
@@ -7886,62 +7855,98 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
                 </div>
 
-                {/* Right 5 Cols: Customer Service & MEPlanner AI Assistant */}
+                {/* Right 5 Cols: Official Customer Service & Consultation Card */}
                 <div className="lg:col-span-5 rounded-3xl bg-[#FAF8F5] border border-stone-200/90 p-6 space-y-5">
                   <div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider mb-2.5">
+                      <Shield className="w-3.5 h-3.5 text-[#8B6914]" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Layanan Resmi MEPlanner'
+                          : 'Official MEPlanner Support'}
+                      </span>
+                    </span>
                     <h3 className="font-editorial text-xl font-bold text-stone-900">
                       {lang === 'ID'
-                        ? 'Masih Ada Pertanyaan? Tanya MEPlanner AI atau CS Kami'
-                        : 'Still Have Questions? Ask MEPlanner AI or Our CS'}
+                        ? 'Pusat Bantuan & Konsultasi Resmi MEPlanner'
+                        : 'Official MEPlanner Support & Consultation Center'}
                     </h3>
                     <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
                       {lang === 'ID'
-                        ? 'Pilih topik di bawah untuk jawaban instan dari MEPlanner AI, atau hubungi tim Customer Service kami.'
-                        : 'Select a topic below for an instant answer from MEPlanner AI, or contact our Customer Service.'}
+                        ? 'Butuh panduan memilih paket, aktivasi lisensi multi-acara, atau kustomisasi White-Label WO/EO? Tim Customer Service resmi kami siap membantu Anda.'
+                        : 'Need help choosing a plan, activating multi-event licenses, or setting up WO/EO White-Label branding? Our official support team is ready to assist.'}
                     </p>
                   </div>
 
-                  {/* Interactive AI Quick Prompts */}
-                  <div className="space-y-2">
-                    <div className="flex flex-col gap-1.5">
-                      {AI_QUICK_PROMPTS.map((prm, pIdx) => {
-                        const isSelected = selectedAiPromptIdx === pIdx;
-                        return (
-                          <button
-                            key={prm.id}
-                            type="button"
-                            onClick={() => setSelectedAiPromptIdx(pIdx)}
-                            className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
-                                : 'bg-white hover:bg-[#FAF3E3] text-stone-800 border-stone-200'
-                            }`}
-                          >
-                            {lang === 'ID' ? prm.questionId : prm.questionEn}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200 text-xs text-stone-800 leading-relaxed font-medium">
-                      {lang === 'ID'
-                        ? AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerId
-                        : AI_QUICK_PROMPTS[selectedAiPromptIdx]?.answerEn}
-                    </div>
+                  {/* Official License & Support Highlights */}
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        titleId: 'Aktivasi Instan via Akun Google / Gmail',
+                        titleEn: 'Instant Activation via Google / Gmail Account',
+                        descId:
+                          'Buat draf undangan dan buka dashboard manajemen acara langsung dalam 1 klik dengan akun Google Anda.',
+                        descEn:
+                          'Create your invitation draft and open the event management workspace in 1 click with your Google account.',
+                      },
+                      {
+                        titleId: 'Garansi Aktif Selamanya Sekali Bayar',
+                        titleEn: 'One-Time Payment • Lifetime Active Guarantee',
+                        descId:
+                          'Seluruh paket berbayar (Premium Rp 51.750 s/d Mitra Gold Rp 750.000) aktif selamanya tanpa biaya bulanan.',
+                        descEn:
+                          'All paid packages (from Premium Rp 51,750 to Mitra Gold Rp 750,000) remain active forever with zero monthly fees.',
+                      },
+                      {
+                        titleId: 'Panduan Migrasi & Multi-Acara',
+                        titleEn: 'Multi-Event & Agency Migration Guide',
+                        descId:
+                          'Dukungan penuh pengaturan jadwal multi-sesi, embed Live Streaming, template Story Instagram, dan kuota WO/EO.',
+                        descEn:
+                          'Full support for multi-session schedules, Live Streaming embeds, 9:16 Instagram Story templates, and WO/EO quotas.',
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.titleId}
+                        className="p-3.5 rounded-2xl bg-white border border-stone-200/90 space-y-1"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8B6914] shrink-0" />
+                          <p className="text-xs font-bold text-stone-900">
+                            {lang === 'ID' ? item.titleId : item.titleEn}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-stone-600 leading-relaxed pl-6">
+                          {lang === 'ID' ? item.descId : item.descEn}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="pt-2 border-t border-stone-200/80 flex flex-col sm:flex-row gap-2.5">
+                  <div className="pt-2 border-t border-stone-200/80 flex flex-col gap-2.5">
                     <a
                       href={mailtoGeneralSupportUrl}
-                      className="flex-1 py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-all"
+                      className="w-full py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-all"
                     >
                       <Mail className="w-4 h-4 shrink-0" />
                       <span>
                         {lang === 'ID'
-                          ? `Hubungi CS (${businessEmail})`
-                          : `Email Support (${businessEmail})`}
+                          ? `Hubungi CS Resmi: ${businessEmail}`
+                          : `Contact Official CS: ${businessEmail}`}
                       </span>
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => openGoogleOnboardingModal('GRATIS')}
+                      className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/60 text-[#8B6914] font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Buat Undangan Gratis Sekarang'
+                          : 'Create Free Invitation Now'}
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -8605,9 +8610,17 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all"
+              title="LinkedIn Resmi MEPlanner (omeko42)"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-semibold shadow-2xs transition-all"
             >
-              <span>Eko Agung Krisdianto</span>
+              <svg
+                className="w-3.5 h-3.5 fill-current shrink-0"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+              </svg>
+              <span>LinkedIn</span>
             </a>
           </div>
         </div>

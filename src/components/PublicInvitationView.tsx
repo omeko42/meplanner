@@ -2320,6 +2320,196 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
   };
 
+  const extractYouTubeStreamId = (url: string): string | null => {
+    const clean = (url || '').trim();
+    if (!clean) return null;
+    const match = clean.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i
+    );
+    return match ? match[1] : null;
+  };
+
+  const handleDownloadIgStoryPng = () => {
+    if (typeof document === 'undefined') return;
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // 1. Rich Dark Luxury Gradient Background (#1c1917 -> #0c0a09)
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+    bgGrad.addColorStop(0, '#1c1917');
+    bgGrad.addColorStop(0.5, '#141210');
+    bgGrad.addColorStop(1, '#0c0a09');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Subtle Center Gold Radial Glow
+    const glowGrad = ctx.createRadialGradient(540, 820, 80, 540, 820, 720);
+    glowGrad.addColorStop(0, 'rgba(212, 175, 55, 0.16)');
+    glowGrad.addColorStop(1, 'rgba(212, 175, 55, 0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // 2. Gold Double-Border Frame (#D4AF37)
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(56, 56, 1080 - 112, 1920 - 112);
+
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(76, 76, 1080 - 152, 1920 - 152);
+
+    // 3. Top Header Badge
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = '700 28px Georgia, "Times New Roman", serif';
+    ctx.fillText(editorialTopHeaderLabel.toUpperCase(), 540, 225);
+
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.65)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(360, 260);
+    ctx.lineTo(720, 260);
+    ctx.stroke();
+
+    // 4. Couple / Event Title (displayTitleShort)
+    ctx.fillStyle = '#FAF3E3';
+    ctx.font = 'bold 76px Georgia, "Times New Roman", serif';
+    ctx.fillText(displayTitleShort, 540, 385, 880);
+
+    // 5. Subtitle (displayTitleFull)
+    ctx.fillStyle = '#E7D8B9';
+    ctx.font = 'italic 30px Georgia, "Times New Roman", serif';
+    ctx.fillText(displayTitleFull, 540, 455, 880);
+
+    // 6. Schedule Date & Venue Box
+    ctx.fillStyle = 'rgba(255, 253, 249, 0.05)';
+    ctx.fillRect(140, 525, 800, 275);
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(140, 525, 800, 275);
+
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 26px Georgia, "Times New Roman", serif';
+    ctx.fillText(
+      (mainScheduleEvent?.title || scheduleTitle || 'Acara Utama').toUpperCase(),
+      540,
+      590,
+      740
+    );
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 36px Georgia, "Times New Roman", serif';
+    ctx.fillText(
+      mainScheduleEvent?.dateLabel || settings.event1DateLabel || '',
+      540,
+      655,
+      740
+    );
+
+    ctx.fillStyle = '#E7D8B9';
+    ctx.font = '600 26px sans-serif';
+    ctx.fillText(
+      mainScheduleEvent?.timeLabel || settings.event1TimeLabel || '',
+      540,
+      705,
+      740
+    );
+
+    ctx.fillStyle = '#FAF3E3';
+    ctx.font = 'bold 28px Georgia, "Times New Roman", serif';
+    ctx.fillText(
+      mainScheduleEvent?.venue || settings.event1Venue || '',
+      540,
+      760,
+      740
+    );
+
+    // 7. Personalized Guest Box (TO: heroGuestDisplayName)
+    ctx.fillStyle = 'rgba(212, 175, 55, 0.12)';
+    ctx.fillRect(160, 855, 760, 210);
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(160, 855, 760, 210);
+
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText(
+      lang === 'ID' ? 'KEPADA YTH. / TO:' : 'TO HONORED GUEST:',
+      540,
+      915
+    );
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 42px Georgia, "Times New Roman", serif';
+    ctx.fillText(heroGuestDisplayName, 540, 980, 700);
+
+    ctx.fillStyle = '#E7D8B9';
+    ctx.font = '600 22px monospace';
+    ctx.fillText(
+      effectiveMatchedGuest?.invitationCode || 'VIP E-INVITATION PASS',
+      540,
+      1035
+    );
+
+    // 8. QR Code Image + Footer
+    const qrDataUrl = renderQRCodeToDataUrl({
+      text: guestCheckInUrl,
+      size: 280,
+      colorDark: '#1c1917',
+      colorLight: '#ffffff',
+      correctLevel: 'M',
+    });
+
+    const finalizeAndDownload = () => {
+      ctx.fillStyle = '#E7D8B9';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(
+        lang === 'ID'
+          ? 'SCAN QR CODE CHECK-IN DI MEJA PENERIMA TAMU'
+          : 'SCAN CHECK-IN QR CODE AT RECEPTION DESK',
+        540,
+        1545
+      );
+
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 26px Georgia, "Times New Roman", serif';
+      ctx.fillText('MEPlanner Digital Invitation', 540, 1755);
+
+      ctx.fillStyle = 'rgba(250, 243, 227, 0.65)';
+      ctx.font = '500 22px sans-serif';
+      ctx.fillText('9:16 Official Instagram Story Card • 1080×1920 HD', 540, 1795);
+
+      const pngUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      const safeSlug =
+        displayTitleShort.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') ||
+        'Event';
+      link.download = `Story-Instagram-${safeSlug}.png`;
+      link.href = pngUrl;
+      link.click();
+    };
+
+    // White QR Frame
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(380, 1135, 320, 320);
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(380, 1135, 320, 320);
+
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, 400, 1155, 280, 280);
+      finalizeAndDownload();
+    };
+    qrImg.onerror = () => {
+      finalizeAndDownload();
+    };
+    qrImg.src = qrDataUrl;
+  };
+
   const renderDeveloperCreditBar = (compact = false) => {
     if (settings.showFooterCredit === false) return null;
     const rawDevUrl = settings.developerCreditUrl?.trim() || '';
@@ -2329,8 +2519,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         : rawDevUrl;
     const businessEmail =
       settings.contactBusinessEmail?.trim() || 'e98.bisnis@gmail.com';
-    const brandLogoUrl = (settings as WeddingSettings & { brandLogoUrl?: string })
-      .brandLogoUrl;
+    const brandLogoUrl = (
+      (settings as WeddingSettings & { brandLogoUrl?: string }).brandLogoUrl || ''
+    ).trim();
+    const whiteLabelName = (
+      (settings as WeddingSettings & { whiteLabelBrandName?: string })
+        .whiteLabelBrandName || ''
+    ).trim();
+    const whiteLabelUrl = (
+      (settings as WeddingSettings & { whiteLabelBrandUrl?: string })
+        .whiteLabelBrandUrl || ''
+    ).trim();
 
     return (
       <div
@@ -2338,6 +2537,39 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           compact ? 'mt-3 pt-3' : 'mt-5 pt-4 border-t border-[#D4AF37]/25'
         } flex flex-col items-center justify-center gap-2 text-center`}
       >
+        {(whiteLabelName || brandLogoUrl) && (
+          <div className="mb-1.5 inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#F3E5C8] border border-[#D4AF37]/60 shadow-2xs">
+            {brandLogoUrl && (
+              <img
+                src={brandLogoUrl}
+                alt={whiteLabelName || 'Official Partner Logo'}
+                className="w-6 h-6 rounded-full object-cover border border-[#D4AF37]/50 shrink-0"
+              />
+            )}
+            <div className="text-left">
+              <span className="block text-[9px] font-extrabold uppercase tracking-widest text-[#9A742B]">
+                {lang === 'ID'
+                  ? 'Official Event Organizer / Partner'
+                  : 'Official Event Organizer / Partner'}
+              </span>
+              {whiteLabelUrl ? (
+                <a
+                  href={whiteLabelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-stone-900 hover:text-[#8B6914] underline decoration-[#D4AF37]/60 underline-offset-2"
+                >
+                  {whiteLabelName || 'Official WO / EO Partner'}
+                </a>
+              ) : (
+                <span className="text-xs font-bold text-stone-900">
+                  {whiteLabelName || 'Official WO / EO Partner'}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <p className="inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-stone-700 flex-wrap">
           {onOpenLandingPage ? (
             <button
@@ -2429,7 +2661,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             href="https://www.linkedin.com/in/omeko42"
             target="_blank"
             rel="noopener noreferrer"
-            title="Profil LinkedIn Resmi Eko Agung Krisdianto (omeko42)"
+            title="LinkedIn Resmi MEPlanner (omeko42)"
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
             {/* LinkedIn Official SVG Icon */}
@@ -2440,7 +2672,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             >
               <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
             </svg>
-            <span>Eko Agung Krisdianto</span>
+            <span>LinkedIn</span>
           </a>
         </div>
       </div>
@@ -4668,56 +4900,112 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           </div>
 
           {/* LIVE STREAMING ACARA CARD (WHEN ENABLED IN SETTINGS) */}
-          {Boolean(settings.showLiveStreaming && settings.liveStreamingUrl?.trim()) && (
-            <div className="mt-6 sm:mt-8 max-w-3xl mx-auto">
-              <div
-                className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl ${
-                  layoutArchetype === 'NUSANTARA_HERITAGE'
-                    ? 'bg-[#FFFDF9]/95 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_18px_50px_rgba(175,145,95,0.16)]'
-                    : 'bg-gradient-to-r from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/85 border border-[#D4AF37]/50 shadow-[0_16px_45px_rgba(175,145,95,0.14)]'
-                }`}
-              >
-                <div className="space-y-1.5 text-left min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold uppercase tracking-wider">
-                      <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                      <span>
-                        {settings.liveStreamingPlatform?.trim() ||
-                          'YouTube / Zoom Live'}
-                      </span>
-                    </span>
-                    <span className="text-[11px] font-bold text-[#8B6914]">
-                      {lang === 'ID' ? 'Siaran Langsung' : 'Live Broadcast'}
-                    </span>
-                  </div>
-                  <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
-                    {settings.liveStreamingLabel?.trim() ||
-                      (lang === 'ID'
-                        ? '🎥 Live Streaming Acara'
-                        : '🎥 Live Event Streaming')}
-                  </h3>
-                  <p className="text-xs text-stone-600 leading-relaxed">
-                    {lang === 'ID'
-                      ? 'Bagi Bapak/Ibu/Saudara/i yang berhalangan hadir secara langsung, silakan menyaksikan momen bahagia kami secara virtual melalui tautan resmi berikut.'
-                      : 'For family and friends who are unable to attend in person, please join and witness our joyful moment virtually via the official stream link.'}
-                  </p>
-                </div>
+          {(settings as any).showLiveStreaming !== false &&
+            Boolean((settings as any).liveStreamingUrl?.trim()) &&
+            (() => {
+              const streamUrl = ((settings as any).liveStreamingUrl || '').trim();
+              const streamPlatform =
+                ((settings as any).liveStreamingPlatform || '').trim() ||
+                'YouTube Live';
+              const ytVideoId = extractYouTubeStreamId(streamUrl);
+              return (
+                <div className="mt-6 sm:mt-8 max-w-3xl mx-auto">
+                  <div
+                    className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col gap-5 backdrop-blur-xl ${
+                      layoutArchetype === 'NUSANTARA_HERITAGE'
+                        ? 'bg-[#FFFDF9]/95 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_18px_50px_rgba(175,145,95,0.16)]'
+                        : 'bg-gradient-to-r from-white/95 via-[#FFFDF9]/95 to-[#FAF3E3]/85 border border-[#D4AF37]/50 shadow-[0_16px_45px_rgba(175,145,95,0.14)]'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1.5 text-left min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                            <span>LIVE • {streamPlatform}</span>
+                          </span>
+                          <span className="text-[11px] font-bold text-[#8B6914]">
+                            {lang === 'ID'
+                              ? '📺 Siaran Langsung Acara (Live Streaming)'
+                              : '📺 Live Event Broadcast'}
+                          </span>
+                        </div>
+                        <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
+                          {settings.liveStreamingLabel?.trim() ||
+                            (lang === 'ID'
+                              ? '📺 Siaran Langsung Acara (Live Streaming)'
+                              : '📺 Live Event Streaming')}
+                        </h3>
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          {lang === 'ID'
+                            ? 'Bagi Bapak/Ibu/Saudara/i yang berhalangan hadir secara langsung, silakan menyaksikan momen bahagia kami secara virtual melalui siaran langsung resmi berikut.'
+                            : 'For family and friends who are unable to attend in person, please join and witness our joyful moment virtually via the official stream below.'}
+                        </p>
+                      </div>
 
-                <a
-                  href={settings.liveStreamingUrl?.trim()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
-                >
-                  <span>
-                    {lang === 'ID'
-                      ? 'Tonton Live Streaming ↗'
-                      : 'Watch Live Stream ↗'}
-                  </span>
-                </a>
-              </div>
-            </div>
-          )}
+                      <a
+                        href={streamUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                      >
+                        <span>
+                          {ytVideoId
+                            ? lang === 'ID'
+                              ? `Buka di ${streamPlatform} ↗`
+                              : `Open in ${streamPlatform} ↗`
+                            : lang === 'ID'
+                            ? `Gabung Siaran Langsung (${streamPlatform}) ↗`
+                            : `Join Live Broadcast (${streamPlatform}) ↗`}
+                        </span>
+                      </a>
+                    </div>
+
+                    {ytVideoId ? (
+                      <div className="w-full aspect-video rounded-2xl overflow-hidden border border-[#D4AF37]/45 bg-stone-950 shadow-md">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${ytVideoId}?rel=0`}
+                          title={`Live Streaming — ${displayTitleShort}`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl bg-stone-900 text-white p-4 sm:p-5 border border-[#D4AF37]/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 text-center sm:text-left">
+                          <span className="w-10 h-10 rounded-full bg-rose-600/20 border border-rose-500/40 flex items-center justify-center shrink-0">
+                            <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37]">
+                              {streamPlatform} Official Broadcast
+                            </p>
+                            <p className="text-xs text-stone-300 mt-0.5 break-all">
+                              {streamUrl}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={streamUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shrink-0 transition-all"
+                        >
+                          <span>
+                            {lang === 'ID'
+                              ? `Gabung Siaran Langsung (${streamPlatform})`
+                              : `Join Live Stream (${streamPlatform})`}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
         </section>
       )}
 
@@ -5065,6 +5353,128 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               </div>
             ))}
+        </section>
+      )}
+
+      {/* SECTION: STORY INSTAGRAM 9:16 HD PNG GENERATOR & FILTER AR */}
+      {(settings as any).showIgStorySection !== false && (
+        <section
+          id="story-instagram"
+          className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-5xl mx-auto"
+        >
+          <div
+            className={`inv-reveal inv-reveal-up rounded-3xl bg-white/90 backdrop-blur-xl p-5 sm:p-8 shadow-[0_18px_50px_rgba(175,145,95,0.14)] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center ${
+              layoutArchetype === 'NUSANTARA_HERITAGE'
+                ? 'border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30'
+                : 'border border-[#D4AF37]/45'
+            }`}
+          >
+            {/* Left 5 Cols: Live 9:16 Vertical Story Card Preview */}
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="w-56 sm:w-64 aspect-[9/16] rounded-3xl bg-gradient-to-b from-stone-900 via-stone-950 to-black p-4 border-2 border-[#D4AF37] shadow-xl flex flex-col items-center justify-between text-center relative overflow-hidden">
+                <div className="absolute inset-2 rounded-2xl border border-[#D4AF37]/40 pointer-events-none" />
+                <div className="relative z-10 pt-2 space-y-1">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#D4AF37]">
+                    {editorialTopHeaderLabel}
+                  </p>
+                  <div className="w-12 h-px bg-[#D4AF37]/60 mx-auto" />
+                  <h4 className="font-editorial text-lg sm:text-xl font-bold text-[#FAF3E3] leading-tight pt-1">
+                    {displayTitleShort}
+                  </h4>
+                  <p className="text-[10px] italic text-[#E7D8B9] line-clamp-1">
+                    {displayTitleFull}
+                  </p>
+                </div>
+
+                <div className="relative z-10 w-full rounded-xl bg-white/5 border border-[#D4AF37]/35 px-3 py-2 space-y-0.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#D4AF37] truncate">
+                    {mainScheduleEvent?.title || scheduleTitle}
+                  </p>
+                  <p className="text-[10px] font-bold text-white truncate">
+                    {mainScheduleEvent?.dateLabel || settings.event1DateLabel}
+                  </p>
+                  <p className="text-[9px] text-stone-300 truncate">
+                    {mainScheduleEvent?.venue || settings.event1Venue}
+                  </p>
+                </div>
+
+                <div className="relative z-10 w-full rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 px-3 py-2 space-y-0.5">
+                  <p className="text-[8px] font-extrabold uppercase tracking-widest text-[#D4AF37]">
+                    To: Honored Guest
+                  </p>
+                  <p className="text-xs font-bold text-white truncate">
+                    {heroGuestDisplayName}
+                  </p>
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center gap-1 pb-1">
+                  <div className="p-1.5 rounded-xl bg-white border border-[#D4AF37]">
+                    <QrCodeCanvas
+                      text={guestCheckInUrl}
+                      size={56}
+                      colorDark="#1c1917"
+                      colorLight="#ffffff"
+                      correctLevel="M"
+                    />
+                  </div>
+                  <span className="text-[8px] font-semibold uppercase tracking-widest text-[#E7D8B9]">
+                    MEPlanner Digital Invitation
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right 7 Cols: Story Instagram Generator Controls & AR Filter */}
+            <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                <Camera className="w-3.5 h-3.5 text-[#8B6914]" />
+                <span>📸 Story Instagram & E-Invitation Card</span>
+              </div>
+
+              <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
+                {lang === 'ID'
+                  ? 'Bagikan Momen ke Story Instagram (Format 9:16 HD)'
+                  : 'Share to Instagram Story (9:16 HD Card)'}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                {lang === 'ID'
+                  ? 'Unduh kartu e-invitation vertikal beresolusi tinggi (1080×1920 px) lengkap dengan nama tamu personal dan QR Code Check-In Anda untuk dibagikan langsung ke Story Instagram atau status WhatsApp.'
+                  : 'Download your personalized vertical 1080×1920 HD e-invitation card complete with your guest name and Check-In QR code, ready to share on Instagram Stories or WhatsApp Status.'}
+              </p>
+
+              <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleDownloadIgStoryPng}
+                  className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4 shrink-0" />
+                  <span>
+                    {lang === 'ID'
+                      ? '⬇️ Unduh Template Story Instagram (PNG 1080×1920)'
+                      : '⬇️ Download Instagram Story Card (PNG 1080×1920)'}
+                  </span>
+                </button>
+
+                {Boolean((settings as any).igFilterUrl?.trim()) && (
+                  <a
+                    href={(settings as any).igFilterUrl?.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-all"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? '✨ Buka Filter AR Instagram'
+                        : '✨ Open Instagram AR Filter'}
+                    </span>
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
@@ -6060,57 +6470,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 </div>
               )}
-          </div>
-        </section>
-      )}
-
-      {/* SECTION: FILTER & STORY INSTAGRAM (WHEN ENABLED IN SETTINGS) */}
-      {Boolean(settings.showIgStorySection && settings.igFilterUrl?.trim()) && (
-        <section className="relative z-10 py-4 sm:py-6 px-3 sm:px-4 max-w-5xl mx-auto">
-          <div
-            className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl ${
-              layoutArchetype === 'NUSANTARA_HERITAGE'
-                ? 'bg-[#FFFDF9]/95 border-2 border-[#C5A059]/60 outline outline-1 outline-offset-4 outline-[#C5A059]/30 shadow-[0_18px_50px_rgba(175,145,95,0.16)]'
-                : 'bg-white/90 border border-[#D4AF37]/45 shadow-[0_15px_45px_rgba(175,145,95,0.12)]'
-            }`}
-          >
-            <div className="flex items-start gap-3.5 text-left min-w-0">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center text-[#9A742B] shrink-0">
-                <Camera className="w-5 h-5" />
-              </div>
-              <div className="space-y-1 min-w-0">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A742B]">
-                  {lang === 'ID'
-                    ? '📸 Filter & Story Instagram'
-                    : '📸 Instagram Story & Filter'}
-                </span>
-                <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
-                  {lang === 'ID'
-                    ? 'Bagikan Momen Kebahagiaan di Instagram Story'
-                    : 'Share Our Joyful Moments on Instagram Story'}
-                </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
-                  {settings.igStoryNote?.trim() ||
-                    (lang === 'ID'
-                      ? 'Gunakan filter Instagram eksklusif acara kami dan tandai akun kami saat membagikan momen indah Anda.'
-                      : 'Use our exclusive event Instagram filter and tag us when sharing your wonderful moments.')}
-                </p>
-              </div>
-            </div>
-
-            <a
-              href={settings.igFilterUrl?.trim()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto shrink-0 py-3 px-5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-all"
-            >
-              <Camera className="w-3.5 h-3.5 shrink-0" />
-              <span>
-                {lang === 'ID'
-                  ? 'Buka Filter Instagram ↗'
-                  : 'Open Instagram Filter ↗'}
-              </span>
-            </a>
           </div>
         </section>
       )}

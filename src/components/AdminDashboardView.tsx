@@ -207,6 +207,7 @@ interface AdminDashboardViewProps {
   ) => void;
   activeWorkspaceClientId?: string;
   onSwitchWorkspaceClient?: (clientId: string) => void;
+  onCreateClientWorkspace?: (coupleLabel?: string) => Promise<string | void> | string | void;
   onOpenLandingPage?: () => void;
 }
 
@@ -516,6 +517,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSyncStateAndUser,
   activeWorkspaceClientId = 'client-demo',
   onSwitchWorkspaceClient,
+  onCreateClientWorkspace,
   onOpenLandingPage,
 }) => {
   const [commentAuditFilter, setCommentAuditFilter] = useState<
@@ -1634,7 +1636,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [showSplitLivePreview, setShowSplitLivePreview] = useState<boolean>(false);
   const [livePreviewDefaultOpened, setLivePreviewDefaultOpened] = useState<boolean>(true);
   const [quickStudioModal, setQuickStudioModal] = useState<
-    null | 'streaming' | 'ig_story'
+    null | 'streaming' | 'ig_story' | 'whitelabel'
   >(null);
   const [streamingPlatform, setStreamingPlatform] = useState<string>(
     () => (state.settings as any).liveStreamingPlatform || 'YouTube Live'
@@ -1647,6 +1649,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
   const [showIgStoryToggle, setShowIgStoryToggle] = useState<boolean>(
     () => (state.settings as any).showIgStorySection !== false
+  );
+  const [whiteLabelBrandNameInput, setWhiteLabelBrandNameInput] = useState<string>(
+    () => (state.settings as any).whiteLabelBrandName || ''
+  );
+  const [whiteLabelBrandUrlInput, setWhiteLabelBrandUrlInput] = useState<string>(
+    () => (state.settings as any).whiteLabelBrandUrl || ''
+  );
+  const [whiteLabelLogoUrlInput, setWhiteLabelLogoUrlInput] = useState<string>(
+    () => (state.settings as any).brandLogoUrl || ''
   );
   const [wishlistDraft, setWishlistDraft] = useState<{
     itemName: string;
@@ -1668,7 +1679,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   >([
     {
       role: 'assistant',
-      text: 'Halo! Saya MEPlanner Assistant (Online). Pilih topik bantuan cepat di bawah atau ketik pertanyaan seputar persiapan acara, susunan rundown, template WhatsApp VIP, maupun Layar Penerima Tamu Hari-H.',
+      text: 'Halo! Selamat datang di Panduan Cepat Planner MEPlanner. Pilih topik panduan di bawah atau ketik kata kunci seputar persiapan acara, susunan rundown, template WhatsApp VIP, maupun Layar Penerima Tamu Hari-H.',
     },
   ]);
   const [superadminMenuTab, setSuperadminMenuTab] = useState<
@@ -2415,6 +2426,413 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     isEditingSettingsRef.current = false;
     setSettingsFormInternal(nextSettings);
     await onUpdateSettings(nextSettings);
+  };
+
+  // ============================================================================
+  // REAL PACKAGE QUOTA & FEATURE MAPPING HELPER (ENFORCEABLE PER TIER)
+  // ============================================================================
+  const activeClientGroup = useMemo(() => {
+    const targetId =
+      activeWorkspaceClientId ||
+      state.settings.activeClientId ||
+      userClientId ||
+      'client-utama';
+    return (
+      effectiveClientGroups.find((g) => g.id === targetId) ||
+      effectiveClientGroups.find((g) => g.id === state.settings.activeClientId) ||
+      effectiveClientGroups[0]
+    );
+  }, [
+    effectiveClientGroups,
+    activeWorkspaceClientId,
+    state.settings.activeClientId,
+    userClientId,
+  ]);
+
+  const activePackageInfo = useMemo(() => {
+    const rawTier = String(
+      (settingsForm as any).wevPackageId ||
+        (state.settings as any).wevPackageId ||
+        (activeClientGroup as any)?.wevPackageId ||
+        activeClientGroup?.packageTier ||
+        (settingsForm as any).packageTier ||
+        (state.settings as any).packageTier ||
+        'EXCLUSIVE'
+    )
+      .trim()
+      .toUpperCase()
+      .replace(/[\s-]+/g, '_');
+
+    if (
+      rawTier === 'GRATIS' ||
+      rawTier === 'STARTER' ||
+      rawTier === 'FREE' ||
+      rawTier === 'TRIAL'
+    ) {
+      return {
+        tierKey: 'GRATIS' as const,
+        packageName: 'Paket Gratis',
+        maxInvitations: 1,
+        maxGuests: 30,
+        maxGalleryPhotos: 4,
+        activePeriodLabel: 'Uji Coba Gratis • Aktif 14 Hari',
+        hasWhiteLabelText: false,
+        hasWhiteLabelLogo: false,
+      };
+    }
+    if (rawTier === 'PREMIUM') {
+      return {
+        tierKey: 'PREMIUM' as const,
+        packageName: 'Paket Premium',
+        maxInvitations: 1,
+        maxGuests: Infinity,
+        maxGalleryPhotos: Infinity,
+        activePeriodLabel: 'Aktif Selamanya (1 Undangan Premium)',
+        hasWhiteLabelText: false,
+        hasWhiteLabelLogo: false,
+      };
+    }
+    if (rawTier === 'MITRA_SILVER' || rawTier === 'SILVER') {
+      return {
+        tierKey: 'MITRA_SILVER' as const,
+        packageName: 'Paket Mitra Silver',
+        maxInvitations: 11,
+        maxGuests: Infinity,
+        maxGalleryPhotos: Infinity,
+        activePeriodLabel: 'Aktif Selamanya (Kuota 11 Undangan WO/EO)',
+        hasWhiteLabelText: true,
+        hasWhiteLabelLogo: false,
+      };
+    }
+    if (rawTier === 'MITRA_GOLD' || rawTier === 'GOLD') {
+      return {
+        tierKey: 'MITRA_GOLD' as const,
+        packageName: 'Paket Mitra Gold',
+        maxInvitations: 23,
+        maxGuests: Infinity,
+        maxGalleryPhotos: Infinity,
+        activePeriodLabel: 'Aktif Selamanya (Kuota 23 Undangan Agensi VIP)',
+        hasWhiteLabelText: true,
+        hasWhiteLabelLogo: true,
+      };
+    }
+    if (rawTier === 'ENTERPRISE' || rawTier === 'ROYAL_VIP') {
+      return {
+        tierKey: 'ENTERPRISE' as const,
+        packageName: 'Paket Enterprise',
+        maxInvitations: 5,
+        maxGuests: Infinity,
+        maxGalleryPhotos: Infinity,
+        activePeriodLabel: 'Aktif Selamanya (Kuota 5 Undangan Premium)',
+        hasWhiteLabelText: false,
+        hasWhiteLabelLogo: false,
+      };
+    }
+    return {
+      tierKey: 'BUSINESS' as const,
+      packageName: 'Paket Business',
+      maxInvitations: 2,
+      maxGuests: Infinity,
+      maxGalleryPhotos: Infinity,
+      activePeriodLabel: 'Aktif Selamanya (Kuota 2 Undangan Premium)',
+      hasWhiteLabelText: false,
+      hasWhiteLabelLogo: false,
+    };
+  }, [settingsForm, state.settings, activeClientGroup]);
+
+  const ownedClientWorkspaces = useMemo(() => {
+    const nonDemo = effectiveClientGroups.filter((g) => g.id !== 'client-demo');
+    return nonDemo.length > 0 ? nonDemo : effectiveClientGroups;
+  }, [effectiveClientGroups]);
+
+  const usedInvitationsCount = Math.max(1, ownedClientWorkspaces.length);
+  const nextInvitationNumber = usedInvitationsCount + 1;
+
+  const handleCreateAdditionalInvitationWorkspace = async () => {
+    if (
+      !isSuperadmin &&
+      usedInvitationsCount >= activePackageInfo.maxInvitations
+    ) {
+      showToast(
+        `⚠️ Kuota undangan pada ${activePackageInfo.packageName} (${activePackageInfo.maxInvitations} Undangan) telah penuh. Silakan Upgrade Paket untuk menambah kuota undangan!`
+      );
+      setActiveTab('settings');
+      setSettingsMenuTab('paket');
+      return;
+    }
+
+    const baseCouple =
+      state.settings.showSecondProfile === false
+        ? state.settings.groomNickname || state.settings.groomFullName || 'Acara'
+        : `${state.settings.groomNickname || 'Mempelai'} & ${
+            state.settings.brideNickname || 'Pasangan'
+          }`;
+    const coupleLabel = `${baseCouple} (Undangan #${nextInvitationNumber})`;
+
+    if (onCreateClientWorkspace) {
+      const resId = await onCreateClientWorkspace(coupleLabel);
+      if (typeof resId === 'string' && resId && onSwitchWorkspaceClient) {
+        onSwitchWorkspaceClient(resId);
+      }
+      showToast(
+        `✓ Undangan ke-${nextInvitationNumber} berhasil dibuat sesuai kuota ${activePackageInfo.packageName}!`
+      );
+      return;
+    }
+
+    const rawCode = `inv${nextInvitationNumber}_${Date.now()
+      .toString(36)
+      .slice(-3)}`;
+    const newClientId = `client-${rawCode}`;
+    const nowIso = new Date().toISOString();
+    const newGroupItem: ClientGroupItem = {
+      id: newClientId,
+      clientCode: `INV${nextInvitationNumber}`,
+      clientName: `Undangan #${nextInvitationNumber} • ${baseCouple}`,
+      coupleLabel,
+      packageTier: activeClientGroup?.packageTier || 'EXCLUSIVE',
+      status: 'ACTIVE',
+      eventDate: state.settings.weddingDatetime?.slice(0, 10) || '2026-12-19',
+      notes: `Workspace Undangan ke-${nextInvitationNumber} (${activePackageInfo.packageName})`,
+      createdAt: nowIso,
+    };
+
+    const mergedGroups = [
+      ...effectiveClientGroups.filter((g) => g.id !== newClientId),
+      newGroupItem,
+    ];
+    const existingWorkspaces = {
+      ...(state.settings.clientWorkspaces || {}),
+      ...(settingsForm.clientWorkspaces || {}),
+    };
+    existingWorkspaces[newClientId] = {
+      clientId: newClientId,
+      settings: {
+        ...state.settings,
+        ...settingsForm,
+        activeClientId: newClientId,
+        subtitle: `Undangan #${nextInvitationNumber} • ${baseCouple}`,
+        updatedAt: nowIso,
+        updatedBy: adminUser.username,
+      },
+      tasks: state.tasks.map((t, idx) => ({
+        ...t,
+        id: `tsk_${rawCode}_${idx + 1}`,
+        done: false,
+        status: 'BELUM',
+        doneAt: '',
+      })),
+      guests: [],
+      wishes: [],
+      budgetItems: [],
+      updatedAt: nowIso,
+    };
+
+    const nextSettings: WeddingSettings = {
+      ...state.settings,
+      ...settingsForm,
+      clientGroups: mergedGroups,
+      clientWorkspaces: existingWorkspaces,
+      updatedBy: adminUser.username,
+    };
+
+    await commitImmediateSettings(nextSettings);
+    if (onSwitchWorkspaceClient) {
+      onSwitchWorkspaceClient(newClientId);
+    }
+    showToast(
+      `✓ Undangan ke-${nextInvitationNumber} (${coupleLabel}) berhasil dibuat & diaktifkan!`
+    );
+  };
+
+  const handleDownloadInstagramStoryPoster = async () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. Luxury Vertical 9:16 Background Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+      bgGrad.addColorStop(0, '#1C1613');
+      bgGrad.addColorStop(0.5, '#2C211B');
+      bgGrad.addColorStop(1, '#15110E');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // 2. Ornamental Gold Frames
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.65)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(56, 56, 968, 1808);
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.35)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(74, 74, 932, 1772);
+
+      // 3. Top Header Badge
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 28px sans-serif';
+      const badgeLabel = (
+        settingsForm.coverBadgeText ||
+        state.settings.coverBadgeText ||
+        'THE WEDDING INVITATION'
+      ).toUpperCase();
+      ctx.fillText(`✨ ${badgeLabel} ✨`, 540, 210);
+
+      // 4. Couple / Host Title
+      const isSingleHost =
+        (settingsForm.showSecondProfile ?? state.settings.showSecondProfile) ===
+        false;
+      const groomNick =
+        settingsForm.groomNickname ||
+        state.settings.groomNickname ||
+        'Mempelai Pria';
+      const brideNick =
+        settingsForm.brideNickname ||
+        state.settings.brideNickname ||
+        'Mempelai Wanita';
+      const mainTitle = isSingleHost
+        ? groomNick
+        : `${groomNick} & ${brideNick}`;
+
+      ctx.fillStyle = '#FAF3E3';
+      ctx.font = 'bold 84px Georgia, serif';
+      ctx.fillText(mainTitle, 540, 360, 900);
+
+      const fullSub = isSingleHost
+        ? settingsForm.groomFullName || state.settings.groomFullName || ''
+        : `${settingsForm.groomFullName || state.settings.groomFullName || ''} & ${
+            settingsForm.brideFullName || state.settings.brideFullName || ''
+          }`;
+      if (fullSub.trim()) {
+        ctx.fillStyle = '#E7D3A8';
+        ctx.font = '600 30px sans-serif';
+        ctx.fillText(fullSub, 540, 430, 880);
+      }
+
+      // 5. Divider Line
+      ctx.strokeStyle = '#D4AF37';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(340, 495);
+      ctx.lineTo(740, 495);
+      ctx.stroke();
+
+      // 6. Event Date, Time & Venue
+      const primaryEv = scheduleEvents[0];
+      const dateStr =
+        primaryEv?.dateLabel ||
+        (settingsForm as any).akadDate ||
+        (state.settings as any).akadDate ||
+        'Sabtu, 19 Desember 2026';
+      const timeStr =
+        primaryEv?.timeLabel ||
+        (settingsForm as any).akadTime ||
+        (state.settings as any).akadTime ||
+        '09.00 WIB - Selesai';
+      const venueStr =
+        primaryEv?.venue ||
+        (settingsForm as any).akadVenue ||
+        (state.settings as any).akadVenue ||
+        'Lokasi Acara Utama';
+      const addrStr =
+        primaryEv?.address ||
+        (settingsForm as any).akadAddress ||
+        (state.settings as any).akadAddress ||
+        '';
+
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText('SAVE THE DATE', 540, 580);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 46px Georgia, serif';
+      ctx.fillText(dateStr, 540, 650, 880);
+
+      ctx.fillStyle = '#FAF3E3';
+      ctx.font = '600 32px sans-serif';
+      ctx.fillText(timeStr, 540, 710, 860);
+
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(`📍 ${venueStr}`, 540, 805, 860);
+
+      if (addrStr) {
+        ctx.fillStyle = '#D6C7B2';
+        ctx.font = '28px sans-serif';
+        ctx.fillText(addrStr.slice(0, 68), 540, 855, 860);
+      }
+
+      // 7. QR Code Card (renderQRCodeToDataUrl)
+      const baseOrigin =
+        typeof window !== 'undefined' && window.location.origin
+          ? window.location.origin
+          : 'https://meplanner.vercel.app';
+      const activeCid = state.settings.activeClientId || 'client-utama';
+      const storyInviteUrl = `${baseOrigin}/?client=${encodeURIComponent(
+        activeCid
+      )}`;
+      const qrDataUrl = renderQRCodeToDataUrl({
+        text: storyInviteUrl,
+        size: 460,
+        colorDark: '#1c1917',
+        colorLight: '#ffffff',
+        correctLevel: 'H',
+      });
+
+      // White card box for QR
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(290, 960, 500, 500);
+      ctx.strokeStyle = '#D4AF37';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(290, 960, 500, 500);
+
+      if (qrDataUrl) {
+        await new Promise<void>((resolve) => {
+          const qrImg = new Image();
+          qrImg.onload = () => {
+            ctx.drawImage(qrImg, 310, 980, 460, 460);
+            resolve();
+          };
+          qrImg.onerror = () => resolve();
+          qrImg.src = qrDataUrl;
+        });
+      }
+
+      ctx.fillStyle = '#FAF3E3';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(
+        'SCAN QR UNTUK MEMBUKA UNDANGAN & KONFIRMASI RSVP',
+        540,
+        1540,
+        900
+      );
+
+      const wlBrand =
+        (settingsForm as any).whiteLabelBrandName ||
+        (state.settings as any).whiteLabelBrandName ||
+        '';
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText(
+        wlBrand
+          ? `Organized by ${wlBrand}`
+          : 'Powered by MEPlanner — My Event Planner',
+        540,
+        1775,
+        880
+      );
+
+      const pngUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = pngUrl;
+      a.download = 'Story-Instagram-1080x1920.png';
+      a.click();
+      showToast('✓ Poster Story Instagram (1080×1920 PNG) berhasil diunduh!');
+    } catch {
+      showToast('Gagal membuat Poster Story Instagram.');
+    }
   };
 
   const handleAddLoveStoryItem = async () => {
@@ -3852,6 +4270,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (
+      activePackageInfo.tierKey === 'GRATIS' &&
+      effectiveGalleryPhotos.length >= activePackageInfo.maxGalleryPhotos
+    ) {
+      showToast(
+        '⚠️ Kuota Paket Gratis dibatasi maksimal 4 Foto Galeri. Silakan Upgrade ke Paket Premium untuk Unlimited Galeri Foto!'
+      );
+      setActiveTab('settings');
+      setSettingsMenuTab('paket');
+      return;
+    }
     if (!isSupportedPhotoFile(file)) {
       showToast(
         'Pilih file gambar atau kamera RAW (JPG, PNG, WEBP, SVG, HEIC, CR2, CR3, NEF, ARW, DNG).'
@@ -3907,6 +4336,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const handleAddGalleryPhotoItem = async () => {
+    if (
+      activePackageInfo.tierKey === 'GRATIS' &&
+      effectiveGalleryPhotos.length >= activePackageInfo.maxGalleryPhotos
+    ) {
+      showToast(
+        '⚠️ Kuota Paket Gratis dibatasi maksimal 4 Foto Galeri. Silakan Upgrade ke Paket Premium untuk Unlimited Galeri Foto!'
+      );
+      setActiveTab('settings');
+      setSettingsMenuTab('paket');
+      return;
+    }
     if (!newPhotoForm.imageUrl.trim()) {
       showToast('Pilih preset atau upload foto terlebih dahulu.');
       return;
@@ -7520,7 +7960,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        if (
+                          activePackageInfo.tierKey === 'GRATIS' &&
+                          state.guests.length >= activePackageInfo.maxGuests
+                        ) {
+                          showToast(
+                            '⚠️ Kuota Paket Gratis dibatasi maksimal 30 Tamu Undangan. Silakan Upgrade ke Paket Premium untuk Unlimited Tamu!'
+                          );
+                          setActiveTab('settings');
+                          setSettingsMenuTab('paket');
+                          return;
+                        }
                         setEditingGuest({
                           guestName: '',
                           guestType: 'Pejabat/VIP',
@@ -7536,8 +7987,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           rsvpStatus: 'Belum Konfirmasi',
                           attendanceStatus: 'Belum Dicek',
                           notes: '',
-                        })
-                      }
+                        });
+                      }}
                       className="w-10 h-10 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-700 hover:text-[#8B6914] transition-colors"
                       title="Tambahkan tamu undangan"
                     >
@@ -8669,8 +9120,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   },
                   {
                     id: 'bantuan' as const,
-                    label: '🎧 CS & AI Assistant',
-                    title: 'Hubungi Kami, MEPlanner Assistant (Online) & Layanan Customer Service Resmi',
+                    label: '🎧 CS & Panduan Cepat',
+                    title: 'Hubungi Kami, Panduan Cepat Planner & Layanan Customer Service Resmi',
                     icon: MessageSquareHeart,
                     show: true,
                   },
@@ -8723,7 +9174,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
                           Konten &amp; Seksi Undangan (MEPlanner Studio)
                         </h3>
-                        <InfoTooltip text="Pilih Mode 1 untuk tampilan Grid Studio 15 Modul, atau Mode 2 untuk tampilan Daftar Seksi berbaris." />
+                        <InfoTooltip text="Pilih Mode 1 untuk tampilan Grid Studio 16 Modul, atau Mode 2 untuk tampilan Daftar Seksi berbaris." />
                       </div>
                       <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 shrink-0 self-start sm:self-auto">
                         <button
@@ -8738,7 +9189,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'text-stone-600 hover:text-[#8B6914]'
                           }`}
                         >
-                          ⊞ Mode 1: Grid Studio (15 Modul)
+                          ⊞ Mode 1: Grid Studio (16 Modul)
                         </button>
                         <button
                           type="button"
@@ -8757,11 +9208,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 15-TILE GRID) */}
+                    {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 16-TILE GRID) */}
                     <div className="rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
                       {/* Top Status Banner */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
-                        <div className="min-w-0">
+                        <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
                               ● AKTIF
@@ -8771,16 +9222,96 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 ? state.settings.groomNickname || state.settings.groomFullName
                                 : `${state.settings.groomNickname} & ${state.settings.brideNickname}`}
                             </h4>
+                            <button
+                              type="button"
+                              onClick={() => setSettingsMenuTab('paket')}
+                              title="Klik untuk melihat detail atau upgrade paket aktif Anda"
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 text-[10px] font-extrabold cursor-pointer transition-colors"
+                            >
+                              <span>💎</span>
+                              <span>
+                                {activePackageInfo.packageName} &bull; Kuota{' '}
+                                {Math.min(
+                                  usedInvitationsCount,
+                                  activePackageInfo.maxInvitations
+                                )}
+                                /{activePackageInfo.maxInvitations} Undangan
+                              </span>
+                            </button>
+                            {activePackageInfo.tierKey === 'GRATIS' && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-bold">
+                                Kuota Gratis: {state.guests.length}/30 Tamu &bull;{' '}
+                                {effectiveGalleryPhotos.length}/4 Foto
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[11px] text-stone-500 font-mono truncate mt-0.5">
-                            https://meplanner.vercel.app &bull; Kategori:{' '}
+                          <p className="text-[11px] text-stone-500 font-mono truncate">
+                            {activePackageInfo.activePeriodLabel} &bull; Kategori:{' '}
                             <span className="font-sans font-bold text-[#8B6914]">
                               {state.settings.eventType || 'WEDDING'}
                             </span>
+                            {((settingsForm as any).whiteLabelBrandName ||
+                              (state.settings as any).whiteLabelBrandName) && (
+                              <>
+                                {' '}
+                                &bull;{' '}
+                                <span className="font-sans font-bold text-emerald-700">
+                                  👑 WO/EO:{' '}
+                                  {(settingsForm as any).whiteLabelBrandName ||
+                                    (state.settings as any).whiteLabelBrandName}
+                                </span>
+                              </>
+                            )}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          {(activePackageInfo.maxInvitations > 1 || isSuperadmin) &&
+                            onSwitchWorkspaceClient &&
+                            effectiveClientGroups.length > 1 && (
+                              <select
+                                value={
+                                  activeWorkspaceClientId ||
+                                  state.settings.activeClientId ||
+                                  'client-utama'
+                                }
+                                onChange={(e) => {
+                                  const nextId = e.target.value;
+                                  onSwitchWorkspaceClient(nextId);
+                                  const grp = effectiveClientGroups.find(
+                                    (g) => g.id === nextId
+                                  );
+                                  showToast(
+                                    `✓ Beralih ke Workspace Undangan: ${
+                                      grp?.coupleLabel || grp?.clientName || nextId
+                                    }`
+                                  );
+                                }}
+                                title="Pilih Workspace Undangan Aktif"
+                                className="px-2.5 py-1.5 rounded-xl bg-white text-stone-800 border border-[#D4AF37]/60 text-[11px] font-extrabold cursor-pointer"
+                              >
+                                {effectiveClientGroups.map((cg, idx) => (
+                                  <option key={cg.id} value={cg.id}>
+                                    Undangan #{idx + 1}: {cg.coupleLabel || cg.clientName}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+
+                          {(activePackageInfo.maxInvitations > 1 || isSuperadmin) && (
+                            <button
+                              type="button"
+                              onClick={handleCreateAdditionalInvitationWorkspace}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-2 border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer"
+                              title={`Buat workspace undangan tambahan sesuai kuota ${activePackageInfo.packageName} (Maks. ${activePackageInfo.maxInvitations} Undangan)`}
+                            >
+                              <Plus className="w-3.5 h-3.5 shrink-0" />
+                              <span>
+                                + Buat Undangan ke-{nextInvitationNumber} (Sesuai Kuota Paket)
+                              </span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {
@@ -8847,10 +9378,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                       </div>
 
-                      {/* MODE 1: 15 Quick Action Tiles + 2 Exclusive Feature Banners */}
+                      {/* MODE 1: 16 Quick Action Tiles */}
                       {isQuickStudioOpen && (
                         <>
-                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
+                          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-1">
                             {[
                               {
                                 icon: '👫',
@@ -9018,6 +9549,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 },
                               },
                               {
+                                icon: '👑',
+                                label: 'White-Label WO',
+                                isActiveTile: quickStudioModal === 'whitelabel',
+                                onClick: () => {
+                                  setExpandedSectionKey(null);
+                                  setWhiteLabelBrandNameInput(
+                                    (settingsForm as any).whiteLabelBrandName ||
+                                      (state.settings as any).whiteLabelBrandName ||
+                                      ''
+                                  );
+                                  setWhiteLabelBrandUrlInput(
+                                    (settingsForm as any).whiteLabelBrandUrl ||
+                                      (state.settings as any).whiteLabelBrandUrl ||
+                                      ''
+                                  );
+                                  setWhiteLabelLogoUrlInput(
+                                    (settingsForm as any).brandLogoUrl ||
+                                      (state.settings as any).brandLogoUrl ||
+                                      ''
+                                  );
+                                  setQuickStudioModal(
+                                    quickStudioModal === 'whitelabel'
+                                      ? null
+                                      : 'whitelabel'
+                                  );
+                                },
+                              },
+                              {
                                 icon: '⚙️',
                                 label: 'Setting Akses',
                                 isActiveTile: false,
@@ -9139,7 +9698,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </div>
                           )}
 
-                          {/* Quick Studio Inline Drawer: Filter & Story IG */}
+                          {/* Quick Studio Inline Drawer: Filter & Story IG + 1-Click 1080x1920 PNG Generator */}
                           {quickStudioModal === 'ig_story' && (
                             <div className="p-3.5 rounded-xl bg-white border-2 border-[#B68D40] space-y-3 text-xs shadow-sm">
                               <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
@@ -9179,7 +9738,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   />
                                 </div>
                               </div>
-                              <div className="flex justify-end gap-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={handleDownloadInstagramStoryPoster}
+                                  className="px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 font-extrabold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5 shrink-0" />
+                                  <span>
+                                    ⬇️ Unduh Poster Story Instagram (PNG 1080×1920 HD)
+                                  </span>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={async () => {
@@ -9202,6 +9771,140 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs cursor-pointer"
                                 >
                                   Simpan Filter &amp; Story IG
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Studio Inline Drawer: White-Label WO/EO (Mitra Silver & Mitra Gold) */}
+                          {quickStudioModal === 'whitelabel' && (
+                            <div className="p-3.5 rounded-xl bg-white border-2 border-[#B68D40] space-y-3 text-xs shadow-sm">
+                              <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                                <div>
+                                  <span className="font-extrabold text-[#8B6914]">
+                                    👑 White-Label Branding WO / EO (Fitur Paket Mitra Silver &amp; Mitra Gold)
+                                  </span>
+                                  <p className="text-[11px] text-stone-500 mt-0.5">
+                                    Tampilkan Nama Brand &amp; Link WO/EO Anda di footer undangan (Mitra Silver: Teks WO/EO • Mitra Gold: Teks + Logo Kustom WO/EO).
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuickStudioModal(null)}
+                                  className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px] cursor-pointer shrink-0"
+                                >
+                                  ✕ Tutup
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div>
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    Nama Brand / Wedding &amp; Event Organizer (Mitra Silver &amp; Gold)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={whiteLabelBrandNameInput}
+                                    onChange={(e) =>
+                                      setWhiteLabelBrandNameInput(e.target.value)
+                                    }
+                                    placeholder="Contoh: Royal Mahkota Wedding Organizer"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-semibold"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    Link Website / Instagram WO / EO
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={whiteLabelBrandUrlInput}
+                                    onChange={(e) =>
+                                      setWhiteLabelBrandUrlInput(e.target.value)
+                                    }
+                                    placeholder="https://instagram.com/namaweddingorganizer"
+                                    className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-mono"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                    URL / Upload Logo Kustom WO / EO (Fitur Paket Mitra Gold)
+                                  </label>
+                                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={whiteLabelLogoUrlInput}
+                                      onChange={(e) =>
+                                        setWhiteLabelLogoUrlInput(e.target.value)
+                                      }
+                                      placeholder="https://... atau klik Upload Logo WO/EO"
+                                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] text-xs font-mono"
+                                    />
+                                    <label className="px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                                      <Upload className="w-3.5 h-3.5" />
+                                      <span>Upload Logo WO/EO</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const f = e.target.files?.[0];
+                                          e.target.value = '';
+                                          if (!f) return;
+                                          try {
+                                            const dataUrl =
+                                              await compressImageFileToDataUrl(
+                                                f,
+                                                600,
+                                                0.9
+                                              );
+                                            setWhiteLabelLogoUrlInput(dataUrl);
+                                            showToast(
+                                              '✓ Logo WO/EO berhasil dimuat! Klik Simpan White-Label WO/EO untuk menerapkan.'
+                                            );
+                                          } catch {
+                                            showToast(
+                                              'Gagal memproses file logo WO/EO.'
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2 pt-1">
+                                <span className="text-[11px] text-stone-500">
+                                  Status Paket Aktif:{' '}
+                                  <strong className="text-[#8B6914]">
+                                    {activePackageInfo.packageName}
+                                  </strong>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      brandLogoUrl:
+                                        whiteLabelLogoUrlInput.trim() || undefined,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    (nextSettings as any).whiteLabelBrandName =
+                                      whiteLabelBrandNameInput.trim();
+                                    (nextSettings as any).whiteLabelBrandUrl =
+                                      whiteLabelBrandUrlInput.trim();
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    setQuickStudioModal(null);
+                                    showToast(
+                                      '✓ Pengaturan White-Label Branding WO/EO berhasil disimpan ke undangan!'
+                                    );
+                                  }}
+                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs cursor-pointer"
+                                >
+                                  Simpan White-Label WO/EO
                                 </button>
                               </div>
                             </div>
@@ -15589,13 +16292,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </h3>
                       </div>
                       <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
-                        Aktif Selamanya &bull; Tanpa Biaya Bulanan
+                        Aktif Saat Ini: {activePackageInfo.packageName} &bull;{' '}
+                        {activePackageInfo.activePeriodLabel}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {[
                         {
+                          tierKey: 'GRATIS' as const,
                           name: 'Gratis',
                           strikePrice: '',
                           price: 'Rp 0',
@@ -15604,12 +16309,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           features: [
                             'Masa Aktif 14 Hari',
                             '1 Undangan Digital Dasar',
-                            'Kuota hingga 25 Tamu Undangan',
+                            'Kuota hingga 30 Tamu & 4 Foto Galeri',
                             'Form RSVP & Ucapan Dasar',
                           ],
                           popular: false,
                         },
                         {
+                          tierKey: 'PREMIUM' as const,
                           name: 'Premium',
                           strikePrice: 'Rp 75.000',
                           price: 'Rp 51.750',
@@ -15625,6 +16331,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           popular: true,
                         },
                         {
+                          tierKey: 'BUSINESS' as const,
                           name: 'Business',
                           strikePrice: 'Rp 150.000',
                           price: 'Rp 74.250',
@@ -15639,6 +16346,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           popular: false,
                         },
                         {
+                          tierKey: 'ENTERPRISE' as const,
                           name: 'Enterprise',
                           strikePrice: 'Rp 375.000',
                           price: 'Rp 180.000',
@@ -15653,6 +16361,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           popular: false,
                         },
                         {
+                          tierKey: 'MITRA_SILVER' as const,
                           name: 'Mitra - Silver',
                           strikePrice: 'Rp 825.000',
                           price: 'Rp 375.000',
@@ -15667,6 +16376,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           popular: false,
                         },
                         {
+                          tierKey: 'MITRA_GOLD' as const,
                           name: 'Mitra - Gold',
                           strikePrice: 'Rp 1.725.000',
                           price: 'Rp 750.000',
@@ -15680,96 +16390,116 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           ],
                           popular: false,
                         },
-                      ].map((pkg) => (
-                        <div
-                          key={pkg.name}
-                          className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all ${
-                            pkg.popular
-                              ? 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 shadow-sm'
-                              : 'bg-white border-stone-200/90 hover:border-[#D4AF37] text-stone-900'
-                          }`}
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-serif font-extrabold text-base text-stone-900">
-                                {pkg.name}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                                  pkg.popular
-                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
-                                    : 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
-                                }`}
-                              >
-                                {pkg.discountBadge}
-                              </span>
-                            </div>
-
-                            <div className="flex items-baseline gap-2">
-                              {pkg.strikePrice && (
-                                <span className="text-xs text-stone-400 line-through font-semibold">
-                                  {pkg.strikePrice}
+                      ].map((pkg) => {
+                        const isCurrentTier =
+                          activePackageInfo.tierKey === pkg.tierKey;
+                        return (
+                          <div
+                            key={pkg.name}
+                            className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all ${
+                              isCurrentTier
+                                ? 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border-2 border-[#B68D40] text-stone-900 shadow-sm'
+                                : pkg.popular
+                                  ? 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 shadow-sm'
+                                  : 'bg-white border-stone-200/90 hover:border-[#D4AF37] text-stone-900'
+                            }`}
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-serif font-extrabold text-base text-stone-900">
+                                  {pkg.name}
                                 </span>
-                              )}
-                              <span className="text-lg sm:text-xl font-extrabold text-[#8B6914]">
-                                {pkg.price}
-                              </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                                    isCurrentTier
+                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                      : pkg.popular
+                                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40]'
+                                        : 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                                  }`}
+                                >
+                                  {isCurrentTier
+                                    ? '✓ PAKET AKTIF'
+                                    : pkg.discountBadge}
+                                </span>
+                              </div>
+
+                              <div className="flex items-baseline gap-2">
+                                {pkg.strikePrice && (
+                                  <span className="text-xs text-stone-400 line-through font-semibold">
+                                    {pkg.strikePrice}
+                                  </span>
+                                )}
+                                <span className="text-lg sm:text-xl font-extrabold text-[#8B6914]">
+                                  {pkg.price}
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] font-bold text-stone-700">
+                                {pkg.subtitle}
+                              </p>
+
+                              <ul className="space-y-1 pt-1 border-t border-stone-100">
+                                {pkg.features.map((feat) => (
+                                  <li
+                                    key={feat}
+                                    className="flex items-start gap-1.5 text-[11px] text-stone-600"
+                                  >
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <span>{feat}</span>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
 
-                            <p className="text-[11px] font-bold text-stone-700">
-                              {pkg.subtitle}
-                            </p>
-
-                            <ul className="space-y-1 pt-1 border-t border-stone-100">
-                              {pkg.features.map((feat) => (
-                                <li
-                                  key={feat}
-                                  className="flex items-start gap-1.5 text-[11px] text-stone-600"
-                                >
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                  <span>{feat}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div className="pt-2 flex items-center gap-2">
-                            {onOpenLandingPage && (
+                            <div className="pt-2 flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
-                                onClick={onOpenLandingPage}
+                                onClick={async () => {
+                                  const nextSettings: WeddingSettings = {
+                                    ...state.settings,
+                                    ...settingsForm,
+                                    updatedBy: adminUser.username,
+                                  };
+                                  (nextSettings as any).wevPackageId =
+                                    pkg.tierKey;
+                                  setSettingsFormInternal(nextSettings);
+                                  await commitImmediateSettings(nextSettings);
+                                  showToast(
+                                    `✓ Paket "${pkg.name}" berhasil diterapkan ke sistem & kuota workspace!`
+                                  );
+                                }}
                                 className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-                                  pkg.popular
-                                    ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                                    : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50'
+                                  isCurrentTier
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : pkg.popular
+                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                                      : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50'
                                 }`}
                               >
-                                Checkout Paket
+                                {isCurrentTier
+                                  ? `✓ Aktif (${pkg.name})`
+                                  : `Terapkan Paket ${pkg.name}`}
                               </button>
-                            )}
-                            <a
-                              href={`mailto:e98.bisnis@gmail.com?subject=${encodeURIComponent(
-                                `Upgrade Paket MEPlanner - ${pkg.name} (${pkg.price})`
-                              )}&body=${encodeURIComponent(
-                                `Halo Tim MEPlanner,\n\nSaya ingin memilih paket ${pkg.name} (${pkg.price}) untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname}.\n\nTerima kasih.`
-                              )}`}
-                              className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs text-center transition-all ${
-                                !onOpenLandingPage && pkg.popular
-                                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
-                                  : 'bg-white hover:bg-[#FAF3E3]/70 text-[#8B6914] border border-[#D4AF37]/50 shadow-2xs'
-                              }`}
-                            >
-                              ✉️ Pilih Paket ({pkg.name})
-                            </a>
+                              {onOpenLandingPage && (
+                                <button
+                                  type="button"
+                                  onClick={onOpenLandingPage}
+                                  className="py-2 px-3 rounded-xl bg-white hover:bg-[#FAF3E3]/70 text-[#8B6914] border border-[#D4AF37]/50 font-extrabold text-xs transition-all cursor-pointer shadow-2xs"
+                                >
+                                  Checkout
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
                 {/* ===============================================================
-                    MENU 7: CUSTOMER SERVICE & MEPLANNER AI ASSISTANT (HUBUNGI KAMI)
+                    MENU 7: CUSTOMER SERVICE & PANDUAN CEPAT PLANNER (HUBUNGI KAMI)
                    =============================================================== */}
                 {settingsMenuTab === 'bantuan' && (
                   <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
@@ -15777,24 +16507,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2 min-w-0">
                         <MessageSquareHeart className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Hubungi Kami &bull; MEPlanner Assistant &amp; Customer Service
+                          Hubungi Kami &bull; Panduan Cepat Planner &amp; Customer Service
                         </h3>
                       </div>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>MEPlanner Assistant (Online)</span>
+                        <span>Panduan Cepat Planner</span>
                       </span>
                     </div>
 
-                    {/* Card 1: MEPlanner Assistant (Online) Interactive AI Q&A */}
+                    {/* Card 1: Panduan Cepat Planner Interactive Q&A */}
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 shadow-sm space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="font-extrabold text-xs sm:text-sm text-stone-900">
-                            🤖 MEPlanner Assistant (Online) — Asisten Cerdas Acara &amp; Undangan
+                            📖 Panduan Cepat Planner — Pusat Bantuan Acara &amp; Undangan
                           </p>
                           <p className="text-[11px] text-stone-500">
-                            Klik topik pertanyaan cepat atau ketik kebutuhan copywriting WhatsApp &amp; teknis acara Anda:
+                            Klik topik panduan cepat atau ketik kata kunci template WhatsApp &amp; teknis acara Anda:
                           </p>
                         </div>
                       </div>
@@ -15807,15 +16537,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             a: `Untuk resepsi ${state.settings.groomNickname} & ${state.settings.brideNickname}, buka menu "Konten Undangan" lalu klik tombol "🖥️ Buka Layar Penerima Tamu (Hari-H)". Petugas buku tamu cukup mengetik Nama Tamu, Kode (mis. INV-0001), atau scan Key Hash unik tamu, lalu klik "✓ Check-In Tamu Hadir" untuk menampilkan layar sapaan VIP penuh!`,
                           },
                           {
-                            q: 'Buatkan teks pengantar WhatsApp VIP',
+                            q: 'Template teks pengantar WhatsApp VIP',
                             a: `Yth. Bapak/Ibu/Sdr/i [Nama Tamu],\n\nTanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu untuk menghadiri acara ${state.settings.groomFullName} & ${state.settings.brideFullName}.\n\nInfo lengkap & konfirmasi kehadiran (RSVP) dapat diakses melalui tautan pribadi berikut:\nhttps://meplanner.vercel.app\n\nMerupakan suatu kehormatan bagi kami apabila Bapak/Ibu berkenan hadir.`,
                           },
                           {
-                            q: 'Tips pembagian budget acara ideal?',
+                            q: 'Panduan pembagian budget acara ideal?',
                             a: `Rekomendasi alokasi anggaran MEPlanner: Katering & Jamuan (40%), Gedung & Dekorasi (25%), Dokumentasi & Hiburan (12%), Busana & MUA (10%), Souvenir & Operasional Panitia (8%), serta Dana Cadangan (5%). Pantau realisasi pembayaran secara akurat di tab "Moneter".`,
                           },
                           {
-                            q: 'Keunggulan Paket Resmi MEPlanner?',
+                            q: 'Rincian Kuota Paket Resmi MEPlanner?',
                             a: `Seluruh paket berbayar MEPlanner (mulai Premium Rp 51.750 hingga Mitra Gold Rp 750.000) berlaku AKTIF SELAMANYA tanpa biaya langganan bulanan, mendukung Unlimited Tamu, 12 Tema Eksklusif, Event Planner lengkap, dan Layar Penerima Tamu Hari-H.`,
                           },
                         ].map((item) => (
@@ -15831,7 +16561,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             }
                             className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-[11px] transition-all cursor-pointer"
                           >
-                            ✨ {item.q}
+                            📖 {item.q}
                           </button>
                         ))}
                       </div>
@@ -15858,7 +16588,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           type="text"
                           value={aiAssistantQuestion}
                           onChange={(e) => setAiAssistantQuestion(e.target.value)}
-                          placeholder="Tanya MEPlanner Assistant seputar undangan, tamu, atau rundown..."
+                          placeholder="Cari topik panduan seputar undangan, tamu, atau rundown..."
                           className="flex-1 px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -15871,7 +16601,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 { role: 'user', text: q },
                                 {
                                   role: 'assistant',
-                                  text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
+                                  text: `Panduan untuk "${q}": Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
                                 },
                               ]);
                             }
@@ -15888,14 +16618,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               { role: 'user', text: q },
                               {
                                 role: 'assistant',
-                                text: `Terima kasih atas pertanyaan Anda mengenai "${q}". Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat 15 Modul di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
+                                text: `Panduan untuk "${q}": Untuk acara ${state.settings.groomNickname} & ${state.settings.brideNickname} (${state.guests.length} tamu terdaftar, kesiapan ${metrics.readinessPercent}%), Anda dapat mengatur seluruh modul melalui Pintasan Cepat di Konten Undangan atau menghubungi Customer Service kami via Email Resmi (e98.bisnis@gmail.com) di bawah.`,
                               },
                             ]);
                           }}
                           className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
                         >
                           <Send className="w-3.5 h-3.5" />
-                          <span>Kirim</span>
+                          <span>Cari</span>
                         </button>
                       </div>
                     </div>
@@ -15939,13 +16669,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                         <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col justify-between gap-1.5">
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
-                            🤖 MEPlanner Assistant Online
+                            📖 Panduan Cepat Planner
                           </span>
                           <span className="font-bold text-xs text-stone-900">
-                            Asisten Cerdas 24/7 Aktif
+                            Statistik &amp; Moderasi Ucapan
                           </span>
                           <span className="text-[10px] text-emerald-800 font-semibold">
-                            Tanya Jawab &amp; Copywriting Instan
+                            Panduan Teknis &amp; Template WhatsApp
                           </span>
                         </div>
                       </div>
@@ -20476,7 +21206,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
-              title="Profil LinkedIn Resmi Eko Agung Krisdianto"
+              title="LinkedIn Resmi MEPlanner (omeko42)"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition-all shadow-2xs"
             >
               <svg
@@ -20486,7 +21216,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               >
                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
               </svg>
-              <span>Eko Agung Krisdianto</span>
+              <span>LinkedIn</span>
             </a>
           </div>
         </div>
@@ -21288,6 +22018,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 type="button"
                 onClick={async () => {
                   if (!editingGuest.guestName?.trim()) return;
+                  if (
+                    !editingGuest.id &&
+                    activePackageInfo.tierKey === 'GRATIS' &&
+                    state.guests.length >= activePackageInfo.maxGuests
+                  ) {
+                    setEditingGuest(null);
+                    showToast(
+                      '⚠️ Kuota Paket Gratis dibatasi maksimal 30 Tamu Undangan. Silakan Upgrade ke Paket Premium untuk Unlimited Tamu!'
+                    );
+                    setActiveTab('settings');
+                    setSettingsMenuTab('paket');
+                    return;
+                  }
                   const normalizedPax = Math.max(
                     1,
                     Number(editingGuest.pax) || 1
