@@ -90,13 +90,6 @@ import {
   computeGuestInvitationHash,
   resolveGuestByHashTokenAcrossWorkspaces,
 } from '@/lib/guestTokenHash';
-import {
-  MEPLANNER_BRAND_LOGOS,
-  MEPLANNER_ICONS,
-  MEPLANNER_WEBKIT_COMPONENTS,
-  MEPLANNER_THEME_ASSETS,
-  resolveThemeWebkitBundle,
-} from '@/lib/meplannerBrandKit';
 
 function mergePreservingLocalMedia(
   serverState: WeddingDatabaseSchema,
@@ -2747,28 +2740,8 @@ function WeddingAppContent() {
     };
   }, [demoManagerClientId, demoPackageTier]);
 
-  const webkitBundle = useMemo(
-    () =>
-      resolveThemeWebkitBundle({
-        catalogThemeId:
-          (state.settings as any).selectedCatalogThemeId ||
-          (state.settings as any).catalogThemeId,
-        themePreset: state.settings.themePreset,
-        layoutArchetype: (state.settings as any).themeLayoutArchetype,
-        eventType: state.settings.eventType,
-      }),
-    [
-      state.settings.themePreset,
-      state.settings.eventType,
-      (state.settings as any).selectedCatalogThemeId,
-      (state.settings as any).catalogThemeId,
-      (state.settings as any).themeLayoutArchetype,
-    ]
-  );
-
   const demoSandboxBar = activeDummyClientIdForSandbox ? (
     <div className="fixed bottom-3 left-3 z-50 flex flex-wrap items-center gap-1 rounded-2xl bg-stone-900/95 px-2 py-1.5 text-[#FAF3E3] border border-[#D4AF37]/60 shadow-[0_14px_34px_rgba(12,10,9,0.55)] backdrop-blur-md max-w-[calc(100vw-1.5rem)]">
-      <WeddingRingsIcon className="w-6 h-6 shrink-0" />
       <button
         type="button"
         onClick={handleOpenLandingPage}
@@ -3185,7 +3158,9 @@ function WeddingAppContent() {
             {/* Top Brand Bar */}
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2.5">
-                <WeddingRingsIcon className="w-9 h-9 shrink-0" />
+                <div className="w-9 h-9 rounded-xl bg-white/95 shadow-sm flex items-center justify-center shrink-0">
+                  <WeddingRingsIcon className="w-6 h-6" />
+                </div>
                 <div className="leading-tight">
                   <p className="text-base font-extrabold text-white tracking-tight">
                     MEPlanner
@@ -3238,27 +3213,7 @@ function WeddingAppContent() {
             </div>
 
             {/* Minimalist White Card (max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl) */}
-            <div className="relative overflow-hidden max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl text-stone-800">
-              <img
-                src={webkitBundle.cardCornerSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute top-0 left-0 w-14 h-14 object-contain opacity-30"
-              />
-              <img
-                src={webkitBundle.cardCornerSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute bottom-0 right-0 w-14 h-14 object-contain opacity-30 rotate-180"
-              />
-              <div className="flex items-center justify-center mb-3">
-                <img
-                  src={webkitBundle.sectionDividerSvg}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-4 w-36 object-contain opacity-75"
-                />
-              </div>
+            <div className="max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl text-stone-800">
               {loginErrorMsg && (
                 <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -3744,12 +3699,7 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex flex-col items-center justify-center gap-2 text-sm font-bold">
-          <img
-            src={MEPLANNER_BRAND_LOGOS.iconBadge}
-            alt="MEPlanner"
-            className="w-12 h-12 rounded-2xl object-contain shadow-sm"
-          />
+        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex flex-col items-center justify-center gap-1 text-sm font-bold">
           <span>Memuat My Event Planner...</span>
           <span className="text-[11px] font-medium text-[#9A742B]">by omeko42</span>
         </div>

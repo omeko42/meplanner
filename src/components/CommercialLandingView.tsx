@@ -40,14 +40,6 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
-import {
-  MeplannerOfficialLogo,
-  MeplannerPartnerMedallion,
-  MeplannerDigitalEnvelopeCard,
-  MeplannerLicenseCertificateCard,
-  MeplannerGuestReceptionTerminal,
-  MeplannerAdaptiveButton,
-} from '@/components/MeplannerWebkitPrimitives';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
   ReactGoogleLoginButton,
@@ -78,15 +70,6 @@ import {
   ShowcasePackageTier,
 } from '@/data/showcaseDummyClients';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
-import {
-  MEPLANNER_BRAND_LOGOS,
-  MEPLANNER_ICONS,
-  MEPLANNER_WEBKIT_COMPONENTS,
-  MEPLANNER_THEME_ASSETS,
-  ALL_CORNER_CLUSTER_PRESETS,
-  resolveThemeWebkitBundle,
-  type ThemeWebkitBundle,
-} from '@/lib/meplannerBrandKit';
 
 const IDEMPOTENT_TX_STORAGE_KEY = 'mwm_active_idempotent_tx_v1';
 
@@ -2512,14 +2495,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     useState<BlogArticleItem | null>(null);
   const [openFaqIdx, setOpenFaqIdx] = useState<number>(0);
   const [selectedAiPromptIdx, setSelectedAiPromptIdx] = useState<number>(0);
-  const [heroCustomClusterId, setHeroCustomClusterId] = useState<number | null>(
-    null
-  );
-  const [heroPhoneDockTab, setHeroPhoneDockTab] = useState<
-    'home' | 'couple' | 'event' | 'map' | 'gallery' | 'wishes'
-  >('home');
-  const [heroSimMusicPlaying, setHeroSimMusicPlaying] = useState<boolean>(true);
-  const [copiedHeroBankKey, setCopiedHeroBankKey] = useState<boolean>(false);
 
   // Instant Google / Gmail Workspace Creation Modal States
   const [isGoogleOnboardingModalOpen, setIsGoogleOnboardingModalOpen] =
@@ -5592,27 +5567,33 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       {/* CLEAN TOP NAVBAR — MEPLANNER ORIGINAL WARM EDITORIAL HEADER */}
       <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
-          {/* Left: Official MEPlanner Brand Identity */}
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          {/* Left: Logo + MEPlanner (My Event Planner) */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="flex items-center gap-2.5 text-left cursor-pointer group"
+              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
               title="MEPlanner — My Event Planner"
             >
-              <MeplannerOfficialLogo
-                variant="light"
-                size="md"
-                showSubtitle={true}
+              <WeddingRingsIcon
+                className="w-8 h-8 sm:w-9 sm:h-9"
+                logoUrl={(primarySettings as any).brandLogoUrl}
               />
             </button>
-            <span
-              title="Official MEPlanner Mitra Gold & Enterprise Seal"
-              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[9px] font-extrabold uppercase tracking-wider shrink-0"
-            >
-              <MeplannerPartnerMedallion size={16} />
-              <span>Official Brand Kit</span>
-            </span>
+            <div className="min-w-0">
+              <button
+                type="button"
+                onClick={() => setIsCheckoutPageOpen(false)}
+                className="font-sans font-extrabold text-base sm:text-xl text-stone-900 tracking-tight leading-none text-left block cursor-pointer"
+              >
+                ME<span className="text-[#8B6914]">Planner</span>
+              </button>
+              <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 leading-tight truncate mt-0.5">
+                {lang === 'ID'
+                  ? 'My Event Planner • Undangan & Manajemen Acara'
+                  : 'My Event Planner • Event & Invitation Platform'}
+              </p>
+            </div>
           </div>
 
           {/* Right: Clean Text Links + Cek Undangan + ID/EN + Solid Charcoal Login Button */}
@@ -5852,33 +5833,21 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   {/* Selected Package Details */}
                   <div className="space-y-3 pt-2 border-t border-[#D4AF37]/30 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="px-3 py-1 rounded-full bg-white/90 border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
-                        <img
-                          src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                          alt="MEP Monogram"
-                          className="w-4 h-4 object-contain"
-                        />
-                        <span>{activeSelectedPackage.badge}</span>
+                      <span className="px-3 py-1 rounded-full bg-white/90 border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                        {activeSelectedPackage.badge}
                       </span>
                       <span className="text-[10px] font-mono text-stone-600">
                         {activeTransaction?.orderId || currentOrderId}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="space-y-0.5 min-w-0">
-                        <h2 className="font-serif text-2xl font-extrabold text-stone-900">
-                          Paket {activeSelectedPackage.name}
-                        </h2>
-                        <p className="text-xs text-stone-700">
-                          {activeSelectedPackage.subtitle}
-                        </p>
-                      </div>
-                      <img
-                        src={MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals}
-                        alt="Official License Tier Seals"
-                        className="h-12 w-auto object-contain rounded-xl border border-[#D4AF37]/40 bg-white/90 p-1 shrink-0 shadow-2xs"
-                      />
+                    <div className="space-y-0.5">
+                      <h2 className="font-serif text-2xl font-extrabold text-stone-900">
+                        Paket {activeSelectedPackage.name}
+                      </h2>
+                      <p className="text-xs text-stone-700">
+                        {activeSelectedPackage.subtitle}
+                      </p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-white/90 border border-[#D4AF37]/45 space-y-1.5 shadow-2xs">
@@ -6206,18 +6175,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 min-w-0">
                       <div className="sm:col-span-5 min-w-0 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                              {lang === 'ID'
-                                ? 'Nominal Terkunci'
-                                : 'Locked Exact Amount'}
-                            </p>
-                            <img
-                              src={MEPLANNER_ICONS.badgeChipAtm}
-                              alt="EMV Chip"
-                              className="w-6 h-5 object-contain shrink-0"
-                            />
-                          </div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                            {lang === 'ID'
+                              ? 'Nominal Terkunci'
+                              : 'Locked Exact Amount'}
+                          </p>
                           <p className="text-xl sm:text-2xl font-extrabold text-[#8B6914] mt-0.5 break-words">
                             {activeCheckoutAmountDisplay}
                           </p>
@@ -6243,11 +6205,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <img
-                                src={MEPLANNER_ICONS.btnCopyRekening}
-                                alt=""
-                                className="w-4 h-4 object-contain shrink-0"
-                              />
+                              <Copy className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">
                                 {lang === 'ID'
                                   ? 'Salin Nominal'
@@ -6261,25 +6219,18 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       <div className="sm:col-span-7 min-w-0 p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 flex flex-col justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-                              <img
-                                src={MEPLANNER_ICONS.badgeChipAtm}
-                                alt="EMV"
-                                className="w-5 h-4 object-contain shrink-0"
-                              />
-                              <span>
-                                {selectedChannel.category === 'CRYPTO'
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                              {selectedChannel.category === 'CRYPTO'
+                                ? lang === 'ID'
+                                  ? 'Alamat Wallet Crypto Resmi'
+                                  : 'Official Crypto Wallet Address'
+                                : selectedChannel.category === 'PAYPAL'
                                   ? lang === 'ID'
-                                    ? 'Alamat Wallet Crypto Resmi'
-                                    : 'Official Crypto Wallet Address'
-                                  : selectedChannel.category === 'PAYPAL'
-                                    ? lang === 'ID'
-                                      ? 'Merchant PayPal Resmi'
-                                      : 'Official PayPal Merchant'
-                                    : lang === 'ID'
-                                      ? 'Nomor Rekening / Tujuan'
-                                      : 'Target Account'}
-                              </span>
+                                    ? 'Merchant PayPal Resmi'
+                                    : 'Official PayPal Merchant'
+                                  : lang === 'ID'
+                                    ? 'Nomor Rekening / Tujuan'
+                                    : 'Target Account'}
                             </p>
                             {selectedChannel.networkOrBranch && (
                               <span className="text-[10px] font-extrabold text-[#8B6914] bg-[#FAF3E3] px-2 py-0.5 rounded-md border border-[#D4AF37]/30">
@@ -6320,11 +6271,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             </>
                           ) : (
                             <>
-                              <img
-                                src={MEPLANNER_ICONS.btnCopyRekening}
-                                alt=""
-                                className="w-4 h-4 object-contain shrink-0"
-                              />
+                              <Copy className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">
                                 {selectedChannel.category === 'CRYPTO'
                                   ? lang === 'ID'
@@ -6667,54 +6614,40 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 {checkoutWizardStep === 3 && (
                   <div className="rounded-3xl bg-gradient-to-br from-emerald-50/90 via-[#FFFDF9] to-amber-50/60 border-2 border-emerald-400 text-stone-900 p-5 sm:p-7 shadow-[0_18px_45px_rgba(16,185,129,0.12)] space-y-5 animate-fadeIn min-w-0 overflow-hidden">
                     <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-emerald-200">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                          alt="MEP Official Monogram"
-                          className="w-11 h-11 object-contain shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800">
+                          {lang === 'ID'
+                            ? 'Langkah 3 dari 3 • Pembayaran Tercatat & Sertifikat Keamanan'
+                            : 'Step 3 of 3 • Payment Recorded & Security Certificate'}
+                        </span>
+                        <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-stone-900 mt-0.5 flex items-center gap-2">
+                          <FileCheck2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                          <span>
                             {lang === 'ID'
-                              ? 'Langkah 3 dari 3 • Pembayaran Tercatat & Sertifikat Keamanan'
-                              : 'Step 3 of 3 • Payment Recorded & Security Certificate'}
+                              ? 'Bukti Konfirmasi Pembayaran Resmi'
+                              : 'Official Payment Confirmation Certificate'}
                           </span>
-                          <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-stone-900 mt-0.5 flex items-center gap-2">
-                            <FileCheck2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                            <span>
-                              {lang === 'ID'
-                                ? 'Bukti Konfirmasi Pembayaran Resmi'
-                                : 'Official Payment Confirmation Certificate'}
-                            </span>
-                          </h3>
-                        </div>
+                        </h3>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals}
-                          alt="Commercial License Tier Seals"
-                          className="h-9 w-auto object-contain rounded-lg border border-[#D4AF37]/40 bg-white p-0.5 hidden sm:block"
-                        />
-                        <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            activeTransaction?.onChainVerified ||
-                            activeTransaction?.status === 'PAID_VERIFIED'
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]'
-                          }`}
-                        >
-                          {activeTransaction?.onChainVerified
-                            ? '⛓️ PAID_VERIFIED (On-Chain Confirmed)'
-                            : activeTransaction?.status === 'PAID_VERIFIED'
-                              ? lang === 'ID'
-                                ? '✓ LUNAS TERVERIFIKASI'
-                                : '✓ PAID_VERIFIED'
-                              : lang === 'ID'
-                                ? '⏳ MENUNGGU VERIFIKASI (MAKS. H+3)'
-                                : '⏳ PENDING VERIFICATION (MAX D+3)'}
-                        </span>
-                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          activeTransaction?.onChainVerified ||
+                          activeTransaction?.status === 'PAID_VERIFIED'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]'
+                        }`}
+                      >
+                        {activeTransaction?.onChainVerified
+                          ? '⛓️ PAID_VERIFIED (On-Chain Confirmed)'
+                          : activeTransaction?.status === 'PAID_VERIFIED'
+                            ? lang === 'ID'
+                              ? '✓ LUNAS TERVERIFIKASI'
+                              : '✓ PAID_VERIFIED'
+                            : lang === 'ID'
+                              ? '⏳ MENUNGGU VERIFIKASI (MAKS. H+3)'
+                              : '⏳ PENDING VERIFICATION (MAX D+3)'}
+                      </span>
                     </div>
 
                     {/* Digital Certificate Details */}
@@ -6969,25 +6902,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left 7 Cols */}
                 <div className="lg:col-span-7 text-left">
-                  {/* Official MEPlanner Brand Identity & Webkit Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#D4AF37]/45 shadow-2xs mb-4">
-                    <img
-                      src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                      alt="MEPlanner Badge"
-                      className="w-4 h-4 object-contain shrink-0"
-                    />
-                    <span className="text-[11px] font-extrabold text-stone-800 tracking-wide">
-                      {lang === 'ID'
-                        ? 'MEPlanner Official Webkit • 8 Cornering 3-Layer & 20 Ikon Animasi'
-                        : 'MEPlanner Official Webkit • 8 3-Layer Cornerings & 20 Animated Icons'}
-                    </span>
-                    <img
-                      src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                      alt="MEP Monogram"
-                      className="w-4 h-4 object-contain shrink-0"
-                    />
-                  </div>
-
                   {/* Interactive 5-Category Switcher Pills at Top of Hero */}
                   <div className="flex flex-wrap items-center gap-2 mb-6">
                     {(
@@ -7027,7 +6941,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           onClick={() => {
                             setCatalogEventFilter(cat.id);
                             setSimEventType(cat.id);
-                            setHeroCustomClusterId(null);
                             const firstTheme = MULTI_EVENT_THEME_CATALOG.find(
                               (t) => t.eventType === cat.id
                             );
@@ -7068,18 +6981,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenAdminPortal()}
-                      className="px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm shadow-sm transition-all cursor-pointer inline-flex items-center gap-2"
+                      className="px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
                     >
-                      <img
-                        src={MEPLANNER_ICONS.btnBukaUndangan}
-                        alt=""
-                        className="w-5 h-5 object-contain shrink-0"
-                      />
-                      <span>
-                        {lang === 'ID'
-                          ? 'Mulai Buat Acara (Gratis)'
-                          : 'Start Creating (Free)'}
-                      </span>
+                      {lang === 'ID'
+                        ? 'Mulai Buat Acara (Gratis)'
+                        : 'Start Creating (Free)'}
                     </button>
 
                     <button
@@ -7112,13 +7018,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
                       <p className="text-xs sm:text-sm font-extrabold text-stone-900">
                         {lang === 'ID'
-                          ? '31 Tema + 8 Cornering'
-                          : '31 Themes + 8 Cornerings'}
+                          ? '31 Tema Interaktif'
+                          : '31 Interactive Themes'}
                       </p>
                       <p className="text-[11px] text-stone-500 mt-0.5">
                         {lang === 'ID'
-                          ? '3-Layer Floral & Ornamen Live'
-                          : '3-Layer Floral & Live Ornaments'}
+                          ? 'Sinkron Langsung ke Planner'
+                          : 'Synced Live to Planner'}
                       </p>
                     </div>
                     <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
@@ -7136,7 +7042,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </div>
                 </div>
 
-                {/* Right 5 Cols — Interactive Mobile Invitation Simulator with 3-Layer Cornering & Webkit */}
+                {/* Right 5 Cols — Realistic iPhone 15 Pro Mockup Frame */}
                 <div className="lg:col-span-5 flex flex-col items-center">
                   {(() => {
                     const categoryThemes = MULTI_EVENT_THEME_CATALOG.filter(
@@ -7153,19 +7059,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                       currentPhoneTheme?.thumbnailUrl ||
                       activeDummyState.settings.coverBgUrl;
 
-                    const autoWebkitBundle = resolveThemeWebkitBundle({
-                      catalogThemeId: currentPhoneTheme?.id,
-                      themePreset: currentPhoneTheme?.themePreset,
-                      layoutArchetype: currentPhoneTheme?.layoutArchetype,
-                      eventType: simEventType,
-                    });
-                    const webkitBundle: ThemeWebkitBundle =
-                      (heroCustomClusterId
-                        ? ALL_CORNER_CLUSTER_PRESETS.find(
-                            (c) => c.clusterId === heroCustomClusterId
-                          )
-                        : null) || autoWebkitBundle;
-
                     return (
                       <>
                         <div
@@ -7178,13 +7071,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           }}
                           title={
                             lang === 'ID'
-                              ? 'Klik layar HP untuk membuka Demo Interaktif Layar Penuh'
-                              : 'Click phone screen to open Fullscreen Interactive Demo'
+                              ? 'Klik layar HP untuk membuka Demo Interaktif'
+                              : 'Click phone screen to open Interactive Demo'
                           }
-                          className="w-[290px] sm:w-[318px] mx-auto rounded-[46px] border-[10px] border-stone-900 bg-white shadow-[0_25px_60px_rgba(0,0,0,0.18)] overflow-hidden relative cursor-pointer group"
+                          className="w-[270px] sm:w-[295px] mx-auto rounded-[46px] border-[10px] border-stone-900 bg-white shadow-[0_25px_60px_rgba(0,0,0,0.18)] overflow-hidden relative cursor-pointer group"
                         >
                           {/* Inside Phone Screen */}
-                          <div className="h-[575px] overflow-hidden relative bg-stone-950 flex flex-col justify-between">
+                          <div className="h-[500px] overflow-hidden relative bg-stone-950 flex flex-col justify-between">
                             {/* Background Cover Photo */}
                             <img
                               src={phoneCoverImg}
@@ -7197,145 +7090,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               }}
                               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-950/45 to-stone-950/90" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/85" />
 
-                            {/* ========================================================= */}
-                            {/* 3-LAYER STACKED CORNERING SYSTEM (TOP & BOTTOM OVERLAYS)  */}
-                            {/* ========================================================= */}
-                            {/* Top-Left & Top-Right Hanging Corner Clusters */}
-                            <img
-                              src={webkitBundle.cornerClusterTopSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute top-0 left-0 w-24 h-24 object-contain z-20 opacity-95"
-                            />
-                            <img
-                              src={webkitBundle.cornerClusterTopSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute top-0 right-0 w-24 h-24 object-contain -scale-x-100 z-20 opacity-95"
-                            />
-
-                            {/* Bottom-Left 3-Layer Stacked Cornering */}
-                            <img
-                              src={webkitBundle.cornerClusterBottomSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-12 -left-2 w-28 h-28 object-contain z-10 opacity-55 scale-110"
-                            />
-                            <img
-                              src={webkitBundle.cornerClusterBottomSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-11 left-0 w-24 h-24 object-contain z-20 opacity-95"
-                            />
-                            <img
-                              src={webkitBundle.cardCornerSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-12 left-1 w-11 h-11 object-contain z-20 opacity-90"
-                            />
-
-                            {/* Bottom-Right 3-Layer Stacked Cornering */}
-                            <img
-                              src={webkitBundle.cornerClusterBottomSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-12 -right-2 w-28 h-28 object-contain -scale-x-100 z-10 opacity-55 scale-110"
-                            />
-                            <img
-                              src={webkitBundle.cornerClusterBottomSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-11 right-0 w-24 h-24 object-contain -scale-x-100 z-20 opacity-95"
-                            />
-                            <img
-                              src={webkitBundle.cardCornerSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="pointer-events-none select-none absolute bottom-12 right-1 w-11 h-11 object-contain -scale-x-100 z-20 opacity-90"
-                            />
-
-                            {/* Top Dynamic Island Pill + Floating Music & QR Utility Icons */}
-                            <div className="relative z-30 pt-2 px-3 flex items-start justify-between">
-                              {/* Top-Left Active Cornering Badge Ornament */}
-                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/55 backdrop-blur-md border border-[#D4AF37]/50 text-[8px] font-bold text-[#FAF3E3]">
-                                <img
-                                  src={webkitBundle.badgeOrnamentSvg}
-                                  alt=""
-                                  className="w-3.5 h-3.5 object-contain shrink-0"
-                                />
-                                <span className="truncate max-w-[82px]">
-                                  #{webkitBundle.clusterId}{' '}
-                                  {webkitBundle.clusterLabelId.split(' ')[0]}
-                                </span>
-                              </div>
-
-                              {/* Dynamic Island */}
-                              <div className="w-20 h-4 bg-stone-950 rounded-full shadow-inner shrink-0" />
-
-                              {/* Top-Right Floating Music & QR Check-In Utility Widgets */}
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setHeroSimMusicPlaying((prev) => !prev);
-                                  }}
-                                  title={
-                                    lang === 'ID'
-                                      ? 'Putar / Bisu Musik Latar & Piringan Hitam'
-                                      : 'Toggle Music & Vinyl Disc'
-                                  }
-                                  className="relative w-7 h-7 rounded-full bg-black/60 border border-[#D4AF37]/60 flex items-center justify-center shadow-md hover:scale-105 transition-transform"
-                                >
-                                  <img
-                                    src={
-                                      MEPLANNER_WEBKIT_COMPONENTS.widgetVinylMusicDisc
-                                    }
-                                    alt="Vinyl Disc"
-                                    className={`w-6 h-6 object-contain ${
-                                      heroSimMusicPlaying ? 'animate-spin' : ''
-                                    }`}
-                                    style={{ animationDuration: '8s' }}
-                                  />
-                                  <img
-                                    src={
-                                      heroSimMusicPlaying
-                                        ? MEPLANNER_ICONS.floatMusicPlay
-                                        : MEPLANNER_ICONS.floatMusicMute
-                                    }
-                                    alt="Music Toggle"
-                                    className="w-3.5 h-3.5 object-contain absolute -bottom-0.5 -right-0.5"
-                                  />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setLookupGateError(null);
-                                    setGuestCodeInput('');
-                                    setIsGuestLookupModalOpen(true);
-                                  }}
-                                  title={
-                                    lang === 'ID'
-                                      ? 'QR Check-In & Kode Tamu VIP'
-                                      : 'QR Check-In & VIP Guest Key'
-                                  }
-                                  className="w-7 h-7 rounded-full bg-black/60 border border-[#D4AF37]/60 flex items-center justify-center shadow-md hover:scale-105 transition-transform"
-                                >
-                                  <img
-                                    src={MEPLANNER_ICONS.floatQrCheckin}
-                                    alt="QR Check-In"
-                                    className="w-5 h-5 object-contain"
-                                  />
-                                </button>
-                              </div>
+                            {/* Top Dynamic Island Pill */}
+                            <div className="relative z-10 pt-2">
+                              <div className="w-24 h-5 bg-stone-950 rounded-full mx-auto shadow-inner" />
                             </div>
 
-                            {/* Center Couple Names, Section Divider, Card Corner Ornaments & CTA Icons */}
-                            <div className="relative z-20 px-3.5 text-center text-white space-y-2 my-auto">
-                              <p className="text-[9px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
+                            {/* Center Couple Names & Countdown Circles */}
+                            <div className="relative z-10 px-5 text-center text-white space-y-3 my-auto">
+                              <p className="text-[10px] uppercase tracking-[0.25em] text-[#FAF3E3] font-semibold">
                                 {currentPhoneTheme?.eventType === 'BIRTHDAY'
                                   ? 'BIRTHDAY CELEBRATION'
                                   : currentPhoneTheme?.eventType ===
@@ -7348,27 +7112,16 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                         ? 'ROYAL GALA DINNER'
                                         : 'THE WEDDING OF'}
                               </p>
-                              <h3 className="font-editorial italic text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow-sm leading-tight">
+                              <h3 className="font-editorial italic text-2xl sm:text-3xl font-bold tracking-wide text-white drop-shadow-sm">
                                 {activeDummyMeta.coupleLabel}
                               </h3>
-
-                              {/* Active Theme Section Divider SVG */}
-                              <div className="flex justify-center">
-                                <img
-                                  src={webkitBundle.sectionDividerSvg}
-                                  alt="Section Divider"
-                                  className="h-4 w-36 object-contain opacity-95"
-                                />
-                              </div>
-
-                              <p className="text-[10px] text-white/90 font-medium">
+                              <p className="text-[11px] text-white/90 font-medium">
                                 {currentPhoneTheme?.name ||
-                                  activeDummyMeta.themeLabel}{' '}
-                                &bull; {webkitBundle.clusterLabelId}
+                                  activeDummyMeta.themeLabel}
                               </p>
 
                               {/* 4 Countdown Circles */}
-                              <div className="grid grid-cols-4 gap-1.5 pt-0.5 max-w-[210px] mx-auto">
+                              <div className="grid grid-cols-4 gap-2 pt-2 max-w-[220px] mx-auto">
                                 {[
                                   { val: '151', label: 'Days' },
                                   { val: '22', label: 'Hrs' },
@@ -7377,294 +7130,70 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 ].map((cd) => (
                                   <div
                                     key={cd.label}
-                                    className="rounded-xl bg-white/20 backdrop-blur-md border border-white/30 py-1.5 px-1 text-center"
+                                    className="rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 py-2 px-1 text-center"
                                   >
-                                    <p className="text-[11px] font-extrabold text-white leading-none">
+                                    <p className="text-xs font-extrabold text-white leading-none">
                                       {cd.val}
                                     </p>
-                                    <p className="text-[8px] text-[#FAF3E3] mt-0.5">
+                                    <p className="text-[9px] text-[#FAF3E3] mt-0.5">
                                       {cd.label}
                                     </p>
                                   </div>
                                 ))}
                               </div>
 
-                              {/* Interactive Inner Card with Modular Card Corner Ornaments + Official CTA Buttons */}
-                              <div className="relative rounded-2xl bg-black/45 backdrop-blur-md border border-[#D4AF37]/45 p-2.5 space-y-2 text-left">
-                                {/* 4 Modular Card Corner Ornaments */}
-                                <img
-                                  src={webkitBundle.cardCornerSvg}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="pointer-events-none select-none absolute top-0.5 left-0.5 w-4 h-4 object-contain opacity-90"
-                                />
-                                <img
-                                  src={webkitBundle.cardCornerSvg}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="pointer-events-none select-none absolute top-0.5 right-0.5 w-4 h-4 object-contain -scale-x-100 opacity-90"
-                                />
-                                <img
-                                  src={webkitBundle.cardCornerSvg}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="pointer-events-none select-none absolute bottom-0.5 left-0.5 w-4 h-4 object-contain -scale-y-100 opacity-90"
-                                />
-                                <img
-                                  src={webkitBundle.cardCornerSvg}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="pointer-events-none select-none absolute bottom-0.5 right-0.5 w-4 h-4 object-contain -scale-x-100 -scale-y-100 opacity-90"
-                                />
-
-                                {/* Primary Buka Undangan Button + Quick Action Buttons (Maps, Calendar, RSVP) */}
-                                <div className="flex items-center justify-between gap-1.5">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white text-[9px] font-extrabold shadow-xs">
-                                    <img
-                                      src={MEPLANNER_ICONS.btnBukaUndangan}
-                                      alt=""
-                                      className="w-3.5 h-3.5 object-contain shrink-0"
-                                    />
-                                    <span>
-                                      {lang === 'ID'
-                                        ? 'Buka Undangan'
-                                        : 'Open Invitation'}
-                                    </span>
-                                  </span>
-
-                                  <div className="flex items-center gap-1">
-                                    <span
-                                      title="Google Maps"
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-1 rounded-lg bg-white/15 border border-white/25 text-[8px] font-bold text-white"
-                                    >
-                                      <img
-                                        src={MEPLANNER_ICONS.btnGoogleMaps}
-                                        alt="Maps"
-                                        className="w-3 h-3 object-contain"
-                                      />
-                                      <span>Maps</span>
-                                    </span>
-                                    <span
-                                      title="Save Calendar"
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-1 rounded-lg bg-white/15 border border-white/25 text-[8px] font-bold text-white"
-                                    >
-                                      <img
-                                        src={MEPLANNER_ICONS.btnSaveCalendar}
-                                        alt="Calendar"
-                                        className="w-3 h-3 object-contain"
-                                      />
-                                      <span>Save</span>
-                                    </span>
-                                    <span
-                                      title="RSVP Ticket"
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-1 rounded-lg bg-white/15 border border-white/25 text-[8px] font-bold text-white"
-                                    >
-                                      <img
-                                        src={MEPLANNER_ICONS.btnRsvpTicket}
-                                        alt="RSVP"
-                                        className="w-3 h-3 object-contain"
-                                      />
-                                      <span>RSVP</span>
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Digital Envelope EMV Mini Strip inside Phone Simulator */}
-                                <div className="pt-1.5 border-t border-white/15 flex items-center justify-between gap-1.5">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <img
-                                      src={MEPLANNER_ICONS.badgeChipAtm}
-                                      alt="EMV Chip"
-                                      className="w-5 h-4 object-contain shrink-0"
-                                    />
-                                    <div className="min-w-0">
-                                      <p className="text-[8px] font-extrabold text-[#FAF3E3] truncate flex items-center gap-1">
-                                        <img
-                                          src={MEPLANNER_ICONS.btnKirimHadiah}
-                                          alt=""
-                                          className="w-3 h-3 object-contain shrink-0"
-                                        />
-                                        <span>BCA • 8820 4591 2026</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (
-                                        typeof navigator !== 'undefined' &&
-                                        navigator.clipboard
-                                      ) {
-                                        void navigator.clipboard.writeText(
-                                          '882045912026'
-                                        );
-                                      }
-                                      setCopiedHeroBankKey(true);
-                                      window.setTimeout(
-                                        () => setCopiedHeroBankKey(false),
-                                        1800
-                                      );
-                                    }}
-                                    className="px-2 py-0.5 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-[8px] font-extrabold text-white inline-flex items-center gap-1 shrink-0"
-                                  >
-                                    <img
-                                      src={MEPLANNER_ICONS.btnCopyRekening}
-                                      alt=""
-                                      className="w-3 h-3 object-contain"
-                                    />
-                                    <span>
-                                      {copiedHeroBankKey
-                                        ? lang === 'ID'
-                                          ? 'Tersalin!'
-                                          : 'Copied!'
-                                        : lang === 'ID'
-                                          ? 'Salin'
-                                          : 'Copy'}
-                                    </span>
-                                  </button>
+                              {/* Guest Name Box */}
+                              <div className="pt-2">
+                                <div className="inline-block px-4 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25">
+                                  <p className="text-[9px] uppercase tracking-widest text-[#FAF3E3]">
+                                    To:
+                                  </p>
+                                  <p className="text-xs font-bold text-white mt-0.5">
+                                    {lang === 'ID'
+                                      ? 'Tamu Kehormatan'
+                                      : 'Honored Guest'}
+                                  </p>
                                 </div>
                               </div>
                             </div>
 
-                            {/* 6-Icon Floating Bottom Navigation Dock inside Phone */}
-                            <div className="relative z-30 px-2.5 pb-3">
-                              <div className="rounded-2xl bg-white/95 backdrop-blur-md px-1.5 py-1.5 grid grid-cols-6 gap-0.5 text-[8px] font-bold text-stone-800 shadow-lg border border-[#D4AF37]/40">
-                                {[
-                                  {
-                                    id: 'home' as const,
-                                    label: lang === 'ID' ? 'Sampul' : 'Home',
-                                    icon: MEPLANNER_ICONS.navCoverHome,
-                                  },
-                                  {
-                                    id: 'couple' as const,
-                                    label: lang === 'ID' ? 'Profil' : 'Host',
-                                    icon: MEPLANNER_ICONS.navMempelaiHeart,
-                                  },
-                                  {
-                                    id: 'event' as const,
-                                    label: lang === 'ID' ? 'Acara' : 'Event',
-                                    icon: MEPLANNER_ICONS.navAcaraCalendar,
-                                  },
-                                  {
-                                    id: 'map' as const,
-                                    label: lang === 'ID' ? 'Lokasi' : 'Map',
-                                    icon: MEPLANNER_ICONS.navLokasiMap,
-                                  },
-                                  {
-                                    id: 'gallery' as const,
-                                    label: lang === 'ID' ? 'Galeri' : 'Photo',
-                                    icon: MEPLANNER_ICONS.navGaleriCamera,
-                                  },
-                                  {
-                                    id: 'wishes' as const,
-                                    label: lang === 'ID' ? 'Ucapan' : 'Wishes',
-                                    icon: MEPLANNER_ICONS.navUcapanWishes,
-                                  },
-                                ].map((navItem) => {
-                                  const isNavAct =
-                                    heroPhoneDockTab === navItem.id;
-                                  return (
-                                    <button
-                                      key={navItem.id}
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setHeroPhoneDockTab(navItem.id);
-                                      }}
-                                      className={`flex flex-col items-center justify-center py-1 rounded-xl transition-all ${
-                                        isNavAct
-                                          ? 'bg-[#FAF3E3] text-[#8B6914] shadow-2xs'
-                                          : 'text-stone-700 hover:bg-stone-100'
-                                      }`}
-                                    >
-                                      <img
-                                        src={navItem.icon}
-                                        alt={navItem.label}
-                                        className="w-4 h-4 object-contain"
-                                      />
-                                      <span className="mt-0.5 truncate max-w-full">
-                                        {navItem.label}
-                                      </span>
-                                    </button>
-                                  );
-                                })}
+                            {/* Bottom Navigation Dock inside Phone */}
+                            <div className="relative z-10 px-4 pb-4">
+                              <div className="rounded-2xl bg-white/95 backdrop-blur-md px-3 py-2 flex items-center justify-around text-[9px] font-bold text-stone-800 shadow-lg">
+                                <span className="text-[#8B6914]">Home</span>
+                                <span>Acara</span>
+                                <span>Galeri</span>
+                                <span>Kado</span>
+                                <span>RSVP</span>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Interactive 8 Corner Clusters Quick-Switcher + Theme Dots Below Phone */}
-                        <div className="w-full max-w-[330px] mt-4 space-y-2.5">
-                          <div className="p-2.5 rounded-2xl bg-white border border-[#D4AF37]/40 shadow-2xs">
-                            <div className="flex items-center justify-between gap-1 mb-1.5">
-                              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                                {lang === 'ID'
-                                  ? 'Uji 8 Cornering 3-Layer Live:'
-                                  : 'Test 8 3-Layer Cornerings Live:'}
-                              </span>
-                              <span className="text-[9px] font-bold text-stone-600 truncate">
-                                {webkitBundle.clusterLabelId}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-8 gap-1">
-                              {ALL_CORNER_CLUSTER_PRESETS.map((cl) => {
-                                const isClActive =
-                                  webkitBundle.clusterId === cl.clusterId;
-                                return (
-                                  <button
-                                    key={cl.clusterId}
-                                    type="button"
-                                    onClick={() =>
-                                      setHeroCustomClusterId(cl.clusterId)
-                                    }
-                                    title={`#${cl.clusterId} ${cl.clusterLabelId}`}
-                                    className={`p-1 rounded-xl border transition-all flex flex-col items-center justify-center cursor-pointer ${
-                                      isClActive
-                                        ? 'bg-[#FAF3E3] border-[#8B6914] ring-1 ring-[#D4AF37]'
-                                        : 'bg-[#FAF8F5] hover:bg-[#FAF3E3]/50 border-stone-200'
-                                    }`}
-                                  >
-                                    <img
-                                      src={cl.cornerClusterBottomSvg}
-                                      alt={cl.clusterLabelId}
-                                      className="w-5 h-5 object-contain"
-                                    />
-                                    <span className="text-[8px] font-extrabold text-stone-700 mt-0.5">
-                                      #{cl.clusterId}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Champagne Gold Pagination Dots Below Phone */}
-                          <div className="flex justify-center items-center gap-2">
-                            {heroThemes.map((tItem) => {
-                              const isDotActive =
-                                currentPhoneTheme?.id === tItem.id;
-                              return (
-                                <button
-                                  key={tItem.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCatalogThemeId(tItem.id);
-                                    setSelectedDemoClientId(tItem.dummyClientId);
-                                    setSimEventType(tItem.eventType);
-                                    setSimThemeOverride(tItem.themePreset);
-                                    setHeroCustomClusterId(null);
-                                  }}
-                                  title={tItem.name}
-                                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                                    isDotActive
-                                      ? 'w-7 bg-[#8B6914]'
-                                      : 'w-2.5 bg-stone-300 hover:bg-stone-400'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
+                        {/* Champagne Gold Pagination Dots Below Phone */}
+                        <div className="flex justify-center items-center gap-2 mt-5">
+                          {heroThemes.map((tItem) => {
+                            const isDotActive =
+                              currentPhoneTheme?.id === tItem.id;
+                            return (
+                              <button
+                                key={tItem.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCatalogThemeId(tItem.id);
+                                  setSelectedDemoClientId(tItem.dummyClientId);
+                                  setSimEventType(tItem.eventType);
+                                  setSimThemeOverride(tItem.themePreset);
+                                }}
+                                title={tItem.name}
+                                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                                  isDotActive
+                                    ? 'w-7 bg-[#8B6914]'
+                                    : 'w-2.5 bg-stone-300 hover:bg-stone-400'
+                                }`}
+                              />
+                            );
+                          })}
                         </div>
                       </>
                     );
@@ -7689,8 +7218,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </h2>
                   <p className="text-xs sm:text-sm text-stone-600 mt-3 leading-relaxed">
                     {lang === 'ID'
-                      ? 'Pilih kategori acara di bawah ini. Setiap tema dilengkapi sistem Cornering 3-Layer & Pernak-Pernik Webkit yang tersinkronisasi penuh dengan Management Planner.'
-                      : 'Select an event category below. Every theme includes our 3-Layer Cornering & Webkit Ornament system synced seamlessly with the Management Planner.'}
+                      ? 'Pilih kategori acara di bawah ini. Setiap tema tersinkronisasi penuh dengan editor Management Planner dan layar undangan tamu.'
+                      : 'Select an event category below. Every theme syncs seamlessly with the Management Planner editor and guest invitation screen.'}
                   </p>
                 </div>
 
@@ -7745,7 +7274,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   })}
                 </div>
 
-                {/* 4-Column Grid of Phone Mockup Cards with Live 3-Layer Corner Cluster Overlays */}
+                {/* 4-Column Grid of Clean Phone Mockup Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 max-w-6xl mx-auto">
                   {(showAllCatalogThemes
                     ? filteredCatalogThemes
@@ -7774,19 +7303,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                                 : 'Corporate'
                               : 'Gala Dinner';
 
-                    const webkitBundle = resolveThemeWebkitBundle({
-                      catalogThemeId: theme.id,
-                      themePreset: theme.themePreset,
-                      layoutArchetype: theme.layoutArchetype,
-                      eventType: theme.eventType,
-                    });
-
                     return (
                       <div
                         key={theme.id}
                         className="bg-white rounded-3xl p-4 border border-stone-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col items-center"
                       >
-                        {/* Realistic iPhone Mockup with Live 3-Layer Corner Cluster Overlays */}
+                        {/* Realistic iPhone Mockup — Clean Unobstructed Cover */}
                         <div
                           onClick={() => handleApplyCatalogThemeDemo(theme)}
                           className="w-[200px] mx-auto rounded-[32px] border-[6px] border-stone-900 aspect-[9/18] overflow-hidden relative shadow-md bg-stone-950 cursor-pointer group"
@@ -7803,37 +7325,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                           />
                           <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/80" />
 
-                          {/* Live 3-Layer Corner Cluster Overlays on Card Thumbnail */}
-                          <img
-                            src={webkitBundle.cornerClusterTopSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="pointer-events-none select-none absolute top-0 left-0 w-16 h-16 object-contain z-20 opacity-95"
-                          />
-                          <img
-                            src={webkitBundle.cornerClusterTopSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="pointer-events-none select-none absolute top-0 right-0 w-16 h-16 object-contain -scale-x-100 z-20 opacity-95"
-                          />
-                          <img
-                            src={webkitBundle.cornerClusterBottomSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="pointer-events-none select-none absolute bottom-0 left-0 w-18 h-18 object-contain z-20 opacity-95"
-                          />
-                          <img
-                            src={webkitBundle.cornerClusterBottomSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="pointer-events-none select-none absolute bottom-0 right-0 w-18 h-18 object-contain -scale-x-100 z-20 opacity-95"
-                          />
-
                           {/* Dynamic Island Notch */}
-                          <div className="w-14 h-3 bg-stone-950 rounded-full mx-auto mt-1.5 relative z-30" />
+                          <div className="w-14 h-3 bg-stone-950 rounded-full mx-auto mt-1.5 relative z-10" />
 
                           {/* Phone Screen Content — Clean High-Contrast White Typography */}
-                          <div className="relative z-30 h-[calc(100%-20px)] flex flex-col justify-between p-4 text-center text-white">
+                          <div className="relative z-10 h-[calc(100%-20px)] flex flex-col justify-between p-4 text-center text-white">
                             <div className="pt-2">
                               <p className="text-[8px] uppercase tracking-[0.22em] text-white/90 font-semibold">
                                 {theme.eventType === 'WEDDING'
@@ -7846,53 +7342,23 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               <h4 className="font-editorial italic text-lg font-bold text-white leading-snug drop-shadow-sm">
                                 {dummyMetaForTheme.coupleLabel}
                               </h4>
-                              <img
-                                src={webkitBundle.sectionDividerSvg}
-                                alt=""
-                                aria-hidden="true"
-                                className="h-3 w-24 mx-auto object-contain opacity-90"
-                              />
                               <p className="text-[10px] text-white/90 font-medium">
                                 {theme.styleCategory}
                               </p>
                             </div>
 
                             <div className="pb-1">
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-stone-900 text-[9px] font-bold shadow-xs">
-                                <img
-                                  src={MEPLANNER_ICONS.btnBukaUndangan}
-                                  alt=""
-                                  className="w-3 h-3 object-contain shrink-0"
-                                />
-                                <span>
-                                  {lang === 'ID'
-                                    ? 'Buka Undangan'
-                                    : 'Open Invitation'}
-                                </span>
+                              <span className="inline-block px-3.5 py-1.5 rounded-full bg-white text-stone-900 text-[9px] font-bold shadow-xs">
+                                {lang === 'ID'
+                                  ? 'Buka Undangan'
+                                  : 'Open Invitation'}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Matched Cornering Cluster Badge Pill + Ornament Preview */}
-                        <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[10px] font-bold text-[#8B6914] max-w-full">
-                          <img
-                            src={webkitBundle.badgeOrnamentSvg}
-                            alt=""
-                            className="w-3.5 h-3.5 object-contain shrink-0"
-                          />
-                          <span className="truncate">
-                            {webkitBundle.clusterLabelId}
-                          </span>
-                          <img
-                            src={webkitBundle.cardCornerSvg}
-                            alt=""
-                            className="w-3.5 h-3.5 object-contain shrink-0"
-                          />
-                        </div>
-
                         {/* Centered High-Contrast Theme Title & Subtle Category Text on White Card */}
-                        <div className="text-center mt-2 mb-3">
+                        <div className="text-center mt-3.5 mb-3">
                           <h3 className="text-sm font-bold text-stone-900">
                             {theme.name}
                           </h3>
@@ -7958,340 +7424,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </button>
                   </div>
                 )}
-
-                {/* ========================================================= */}
-                {/* KOLEKSI WEBKIT ORIGINAL MEPLANNER STUDIO BAR IN #tema     */}
-                {/* ========================================================= */}
-                <div className="mt-14 rounded-3xl bg-[#FAF8F5] border border-[#D4AF37]/45 p-6 sm:p-8 space-y-6 shadow-2xs">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
-                    <div className="space-y-1.5">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                        <img
-                          src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                          alt=""
-                          className="w-3.5 h-3.5 object-contain"
-                        />
-                        <span>MEPlanner Original Vector Webkit Studio</span>
-                      </div>
-                      <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
-                        {lang === 'ID'
-                          ? 'Koleksi Webkit Original MEPlanner: 8 Cornering 3-Layer, 20 Ikon Animasi & Pernak-Pernik'
-                          : 'MEPlanner Original Webkit Collection: 8 3-Layer Cornerings, 20 Animated Icons & Ornaments'}
-                      </h3>
-                      <p className="text-xs text-stone-600 max-w-2xl">
-                        {lang === 'ID'
-                          ? 'Klik salah satu dari 8 Cornering Cluster 3-Layer di bawah untuk menguji coba animasinya langsung pada Simulator HP di atas.'
-                          : 'Click any of the 8 self-animating 3-Layer Cornering Clusters below to preview it live in the Hero Phone Simulator.'}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <img
-                        src={MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals}
-                        alt="License Tier Seals"
-                        className="h-11 w-auto object-contain rounded-xl border border-[#D4AF37]/40 bg-white p-1 shadow-2xs"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 1: 8 Self-Animating 3-Layer Cornering Clusters */}
-                  <div className="space-y-2.5">
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                      {lang === 'ID'
-                        ? '1. 8 Self-Animating 3-Layer Cornering Clusters (Klik untuk Pratinjau di Simulator):'
-                        : '1. 8 Self-Animating 3-Layer Cornering Clusters (Click to Preview in Simulator):'}
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-                      {ALL_CORNER_CLUSTER_PRESETS.map((cluster) => {
-                        const isSelectedCluster =
-                          heroCustomClusterId === cluster.clusterId;
-                        return (
-                          <button
-                            key={cluster.clusterId}
-                            type="button"
-                            onClick={() => {
-                              setHeroCustomClusterId(cluster.clusterId);
-                              if (typeof window !== 'undefined') {
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }
-                            }}
-                            className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-between gap-2 cursor-pointer group ${
-                              isSelectedCluster
-                                ? 'bg-[#FAF3E3] border-2 border-[#8B6914] shadow-xs'
-                                : 'bg-white hover:bg-[#FAF3E3]/55 border-stone-200/90'
-                            }`}
-                          >
-                            <div className="relative w-14 h-14 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 flex items-center justify-center overflow-hidden">
-                              <img
-                                src={cluster.cornerClusterBottomSvg}
-                                alt={cluster.clusterLabelId}
-                                className="w-12 h-12 object-contain group-hover:scale-110 transition-transform"
-                              />
-                              <img
-                                src={cluster.badgeOrnamentSvg}
-                                alt=""
-                                className="w-4 h-4 object-contain absolute top-1 right-1"
-                              />
-                            </div>
-                            <div className="space-y-0.5">
-                              <span className="text-[9px] font-extrabold text-[#8B6914] block">
-                                Cluster #{cluster.clusterId}
-                              </span>
-                              <p className="text-[10px] font-bold text-stone-800 leading-tight line-clamp-2">
-                                {cluster.clusterLabelId}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Row 2: 5 Section Dividers, Wax Seal, Postmark Stamp, Cum Laude Medal, Vinyl Disc & Guest Reception Screen */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2">
-                    <div className="lg:col-span-6 p-4 rounded-2xl bg-white border border-stone-200/90 space-y-3">
-                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                        {lang === 'ID'
-                          ? '2. 5 Pembatas Seksi (Section Dividers) & 5 Sudut Kartu Modular:'
-                          : '2. 5 Section Dividers & 5 Modular Card Corners:'}
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {[
-                          {
-                            label: 'Gunungan Kraton',
-                            divider:
-                              MEPLANNER_WEBKIT_COMPONENTS.divider1GununganKraton,
-                            corner:
-                              MEPLANNER_WEBKIT_COMPONENTS.corner1NusantaraUkir,
-                          },
-                          {
-                            label: 'Botanical Olive & Eucalyptus',
-                            divider:
-                              MEPLANNER_WEBKIT_COMPONENTS.divider2BotanicalOlive,
-                            corner:
-                              MEPLANNER_WEBKIT_COMPONENTS.corner2BotanicalEucalyptus,
-                          },
-                          {
-                            label: 'Polaroid Ticket & Bento HUD',
-                            divider:
-                              MEPLANNER_WEBKIT_COMPONENTS.divider3PolaroidTicket,
-                            corner:
-                              MEPLANNER_WEBKIT_COMPONENTS.corner5BentoCyberHud,
-                          },
-                          {
-                            label: 'Glamour Tiara & Crystal Rose',
-                            divider:
-                              MEPLANNER_WEBKIT_COMPONENTS.divider4GlamourTiara,
-                            corner:
-                              MEPLANNER_WEBKIT_COMPONENTS.corner3GlamourCrystalRose,
-                          },
-                          {
-                            label: 'Academic Laurel Crest',
-                            divider:
-                              MEPLANNER_WEBKIT_COMPONENTS.divider5AcademicLaurel,
-                            corner:
-                              MEPLANNER_WEBKIT_COMPONENTS.corner4RoyalAcademicLaurel,
-                          },
-                        ].map((item) => (
-                          <div
-                            key={item.label}
-                            className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex items-center justify-between gap-2"
-                          >
-                            <div className="min-w-0 space-y-1 flex-1">
-                              <p className="text-[10px] font-bold text-stone-800 truncate">
-                                {item.label}
-                              </p>
-                              <img
-                                src={item.divider}
-                                alt={item.label}
-                                className="h-4 w-full object-contain object-left"
-                              />
-                            </div>
-                            <img
-                              src={item.corner}
-                              alt=""
-                              className="w-7 h-7 object-contain shrink-0"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-6 p-4 rounded-2xl bg-white border border-stone-200/90 space-y-3">
-                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                        {lang === 'ID'
-                          ? '3. Segel Lilin, Prangko Editorial, Medali Cum Laude, Vinyl & Layar Tamu:'
-                          : '3. Wax Seal, Postmark Stamp, Cum Laude Medal, Vinyl & Guest Screen:'}
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                        {[
-                          {
-                            title: 'Royal Wax Seal',
-                            src: MEPLANNER_WEBKIT_COMPONENTS.sealWaxRoyalCrimson,
-                          },
-                          {
-                            title: 'Editorial Postmark',
-                            src: MEPLANNER_WEBKIT_COMPONENTS.stampPostmarkEditorial,
-                          },
-                          {
-                            title: 'Cum Laude Medal',
-                            src: MEPLANNER_WEBKIT_COMPONENTS.medalCumlaudeRibbon,
-                          },
-                          {
-                            title: 'Vinyl Music Disc',
-                            src: MEPLANNER_WEBKIT_COMPONENTS.widgetVinylMusicDisc,
-                          },
-                          {
-                            title: 'Guest Reception',
-                            src: MEPLANNER_THEME_ASSETS.commercialGuestReceptionScreen,
-                          },
-                          {
-                            title: 'License Tier Seals',
-                            src: MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals,
-                          },
-                        ].map((orn) => (
-                          <div
-                            key={orn.title}
-                            className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex flex-col items-center justify-center text-center gap-1.5"
-                          >
-                            <img
-                              src={orn.src}
-                              alt={orn.title}
-                              className="h-10 w-auto object-contain"
-                            />
-                            <span className="text-[10px] font-bold text-stone-800">
-                              {orn.title}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* 20 Animated UI & Action Icons Strip */}
-                      <div className="mt-3 pt-3 border-t border-stone-200/80">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
-                          20 Ikon Animasi Interaktif (Floating Dock, Musik, CTA &amp; Amplop Digital)
-                        </p>
-                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-                          {[
-                            { label: 'Buka', src: MEPLANNER_ICONS.btnBukaUndangan },
-                            { label: 'Maps', src: MEPLANNER_ICONS.btnGoogleMaps },
-                            { label: 'Hadiah', src: MEPLANNER_ICONS.btnKirimHadiah },
-                            { label: 'Salin', src: MEPLANNER_ICONS.btnCopyRekening },
-                            { label: 'Kalender', src: MEPLANNER_ICONS.btnSaveCalendar },
-                            { label: 'RSVP', src: MEPLANNER_ICONS.btnRsvpTicket },
-                            { label: 'Cover', src: MEPLANNER_ICONS.navCoverHome },
-                            { label: 'Mempelai', src: MEPLANNER_ICONS.navMempelaiHeart },
-                            { label: 'Acara', src: MEPLANNER_ICONS.navAcaraCalendar },
-                            { label: 'Lokasi', src: MEPLANNER_ICONS.navLokasiMap },
-                            { label: 'Galeri', src: MEPLANNER_ICONS.navGaleriCamera },
-                            { label: 'Ucapan', src: MEPLANNER_ICONS.navUcapanWishes },
-                            { label: 'Play', src: MEPLANNER_ICONS.floatMusicPlay },
-                            { label: 'Mute', src: MEPLANNER_ICONS.floatMusicMute },
-                            { label: 'QR Pass', src: MEPLANNER_ICONS.floatQrCheckin },
-                            { label: 'Live', src: MEPLANNER_ICONS.floatLivestream },
-                            { label: 'Crown', src: MEPLANNER_ICONS.badgeBirthdayCrown },
-                            { label: 'Toga', src: MEPLANNER_ICONS.badgeGraduationToga },
-                            { label: 'Kado', src: MEPLANNER_ICONS.badgeKadoFisik },
-                            { label: 'EMV Chip', src: MEPLANNER_ICONS.badgeChipAtm },
-                          ].map((ico) => (
-                            <div
-                              key={ico.label}
-                              className="p-1.5 rounded-lg bg-[#FAF8F5] border border-stone-200/80 flex flex-col items-center justify-center gap-1 hover:border-[#C5A059] transition-colors"
-                              title={ico.label}
-                            >
-                              <img
-                                src={ico.src}
-                                alt={ico.label}
-                                className="w-5 h-5 object-contain"
-                              />
-                              <span className="text-[8px] font-semibold text-stone-600 truncate max-w-full">
-                                {ico.label}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {/* 6 Real Theme-Adaptive Buttons Showcase (sheet-theme-adaptive-buttons.jpg) */}
-                      <div className="mt-3 pt-3 border-t border-stone-200/80">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2.5">
-                          6 Tombol Adaptif Lintas-Tema (Nusantara, Botanical, Glamour, Editorial Tape, Academic &amp; Kids 3D)
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                          <MeplannerAdaptiveButton
-                            themeStyle="nusantara"
-                            iconSvg={MEPLANNER_ICONS.btnBukaUndangan}
-                            label="Buka Undangan"
-                          />
-                          <MeplannerAdaptiveButton
-                            themeStyle="botanical"
-                            iconSvg={MEPLANNER_ICONS.btnGoogleMaps}
-                            label="Petunjuk Lokasi"
-                          />
-                          <MeplannerAdaptiveButton
-                            themeStyle="glamour"
-                            iconSvg={MEPLANNER_ICONS.btnKirimHadiah}
-                            label="Kirim Tanda Kasih"
-                          />
-                          <MeplannerAdaptiveButton
-                            themeStyle="editorial"
-                            iconSvg={MEPLANNER_ICONS.btnSaveCalendar}
-                            label="SAVE THE DATE"
-                          />
-                          <MeplannerAdaptiveButton
-                            themeStyle="academic"
-                            iconSvg={MEPLANNER_ICONS.badgeGraduationToga}
-                            label="Konfirmasi Hadir"
-                          />
-                          <MeplannerAdaptiveButton
-                            themeStyle="kids"
-                            iconSvg={MEPLANNER_ICONS.badgeBirthdayCrown}
-                            label="Yuk Datang! 🎈"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Real Interactive Mockup-8 Components (Digital Envelope Card, Mitra Gold License Certificate & Live Guest Reception Terminal) */}
-                  <div className="pt-3 border-t border-[#D4AF37]/30 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                        {lang === 'ID'
-                          ? '4. Komponen Komersial Interaktif (Kartu Amplop Digital, Sertifikat Lisensi Mitra Gold & Layar Penerima Tamu VIP):'
-                          : '4. Interactive Commercial Components (Digital Envelope Card, Mitra Gold Certificate & VIP Reception Terminal):'}
-                      </p>
-                      <span className="text-[10px] font-semibold text-stone-500">
-                        {lang === 'ID'
-                          ? 'Klik tombol Salin No. Rekening untuk mencoba interaksi langsung'
-                          : 'Click Copy Account Number to test live interaction'}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-                      <MeplannerDigitalEnvelopeCard
-                        bankName="BCA"
-                        accountNumber="8720 1948 2910"
-                        accountHolder={
-                          primarySettings.groomFullName
-                            ? `${primarySettings.groomFullName} & ${primarySettings.brideNickname || 'Aulia'}`
-                            : 'Rizky Pratama & Aulia'
-                        }
-                        qrisImageUrl={primarySettings.qrisImageUrl}
-                      />
-                      <MeplannerLicenseCertificateCard
-                        partnerName="PT BINTANG KREASI ORGANIZER"
-                        licenseKey="MEP-GOLD-2026-8891-X99"
-                        tierLabel="MITRA GOLD • 1.000 CLIENT QUOTA"
-                      />
-                    </div>
-                    <MeplannerGuestReceptionTerminal
-                      eventTitle="THE WEDDING OF RIZKY & AULIA"
-                      guestName="Dr. H. Hendra Wijaya, M.Si. & Keluarga"
-                      tableLabel="VVIP — MEJA SAFIR 01"
-                      paxLabel="2 ORANG (HADIR)"
-                      tokenHash="DvVsH3CprCb3URDzq8Tmz"
-                    />
-                  </div>
-                </div>
               </div>
             </section>
 
@@ -8514,15 +7646,39 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Right 5 Cols: Real Interactive Guest Reception Terminal */}
+                  {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
                   <div className="lg:col-span-5">
-                    <MeplannerGuestReceptionTerminal
-                      eventTitle="THE WEDDING OF RIZKY & AULIA"
-                      guestName="Dr. H. Hendra Wijaya, M.Si. & Keluarga"
-                      tableLabel="VVIP — MEJA SAFIR 01"
-                      paxLabel="2 ORANG (HADIR)"
-                      tokenHash="DvVsH3CprCb3URDzq8Tmz"
-                    />
+                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-[#D4AF37]/30 p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                          <span className="text-xs font-bold text-white">
+                            Guest Reception Live Screen
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#FAF3E3]">
+                          QR &amp; Key Ready
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
+                        <div className="w-12 h-12 rounded-xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
+                          <QrCode className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B6914]">
+                            {lang === 'ID'
+                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
+                              : 'WELCOME HONORED GUEST'}
+                          </p>
+                          <p className="text-sm font-extrabold text-stone-900 truncate">
+                            Bpk/Ibu Tamu VIP &amp; Keluarga
+                          </p>
+                          <p className="text-[11px] text-stone-600">
+                            VIP Table 01 &bull; 2 Pax Terverifikasi
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -8536,18 +7692,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-16"
             >
               <div className="text-center max-w-2xl mx-auto space-y-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-extrabold uppercase tracking-wider">
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                    alt="MEP Monogram"
-                    className="w-4 h-4 object-contain"
-                  />
-                  <span>
-                    {lang === 'ID'
-                      ? 'Lisensi Resmi & Sertifikat Mitra Gold WO/EO'
-                      : 'Official License & Mitra Gold WO/EO Certificate'}
-                  </span>
-                </div>
                 <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-stone-900">
                   {lang === 'ID'
                     ? 'Pilihan Paket Lisensi MEPlanner'
@@ -8558,39 +7702,6 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     ? 'Mulai dari paket Gratis atau pilih paket lisensi lengkap dengan ruang kerja Management Planner, proteksi Key unik, dan layar penerima tamu. Sekali bayar, aktif selamanya.'
                     : 'Start free or unlock complete license tiers with Management Planner workspace, unique Key protection, and guest reception screen. One-time payment, active forever.'}
                 </p>
-              </div>
-
-              {/* Official License Tier Seals & Mitra Gold White-Label Certificate Banner */}
-              <div className="rounded-3xl bg-[#FAF8F5] border border-[#D4AF37]/45 p-5 sm:p-6 flex flex-col md:flex-row items-center justify-between gap-5 shadow-2xs">
-                <div className="flex items-center gap-4 text-left">
-                  <img
-                    src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                    alt="MEP Monogram Seal"
-                    className="w-14 h-14 object-contain shrink-0"
-                  />
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                      {lang === 'ID'
-                        ? 'SERTIFIKAT RESMI MITRA GOLD & ENTERPRISE'
-                        : 'OFFICIAL MITRA GOLD & ENTERPRISE CERTIFICATE'}
-                    </p>
-                    <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
-                      {lang === 'ID'
-                        ? 'Segel Lisensi Resmi & White-Label Agensi WO / EO'
-                        : 'Official Tier License Seals & WO / EO Agency White-Label'}
-                    </h3>
-                    <p className="text-xs text-stone-600 max-w-xl">
-                      {lang === 'ID'
-                        ? 'Paket Enterprise, Mitra Silver (11 Undangan), dan Mitra Gold (23 Undangan) dilengkapi lencana segel lisensi resmi serta dukungan White-Label nama & logo WO/EO Anda.'
-                        : 'Enterprise, Mitra Silver (11 Invitations), and Mitra Gold (23 Invitations) include official tier seals and full White-Label agency branding.'}
-                    </p>
-                  </div>
-                </div>
-                <img
-                  src={MEPLANNER_THEME_ASSETS.commercialLicenseTierSeals}
-                  alt="MEPlanner Commercial License Tier Seals"
-                  className="h-16 sm:h-20 w-auto object-contain rounded-2xl border border-[#D4AF37]/40 bg-white p-1.5 shadow-2xs shrink-0"
-                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch min-w-0">
@@ -8611,26 +7722,11 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     >
                       <div className="space-y-4 min-w-0">
                         <div className="min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              {isRoyal ? (
-                                <img
-                                  src={MEPLANNER_BRAND_LOGOS.monogramMep}
-                                  alt="MEP"
-                                  className="w-6 h-6 object-contain shrink-0"
-                                />
-                              ) : (
-                                <img
-                                  src={MEPLANNER_BRAND_LOGOS.iconBadge}
-                                  alt="MEP"
-                                  className="w-5 h-5 object-contain shrink-0"
-                                />
-                              )}
-                              <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900 truncate">
-                                {pkg.name}
-                              </h3>
-                            </div>
-                            <span className="text-[11px] font-bold text-[#8B6914] shrink-0">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
+                              {pkg.name}
+                            </h3>
+                            <span className="text-[11px] font-bold text-[#8B6914]">
                               {pkg.discountBadge}
                             </span>
                           </div>
@@ -9417,30 +8513,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       <footer className="bg-white border-t border-stone-200/80 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <MeplannerOfficialLogo
-              variant="light"
-              size="sm"
-              showSubtitle={false}
-            />
+            <div className="flex items-center justify-center shrink-0">
+              <WeddingRingsIcon
+                className="w-8 h-8"
+                logoUrl={(primarySettings as any).brandLogoUrl}
+              />
+            </div>
             <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-bold text-stone-900">
-                  by{' '}
-                  <a
-                    href={developerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#8B6914] hover:underline"
-                  >
-                    omeko42
-                  </a>{' '}
-                  &copy; 2026
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[9px] font-extrabold">
-                  <MeplannerPartnerMedallion size={14} />
-                  <span>Mitra Gold Certified</span>
-                </span>
-              </div>
+              <p className="text-xs sm:text-sm font-bold text-stone-900">
+                MEPlanner — My Event Planner by{' '}
+                <a
+                  href={developerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#8B6914] hover:underline"
+                >
+                  omeko42
+                </a>{' '}
+                &copy; 2026
+              </p>
               <p className="text-[11px] text-stone-500 mt-0.5">
                 {lang === 'ID'
                   ? 'Platform Undangan Digital & Manajemen Acara Terpadu'

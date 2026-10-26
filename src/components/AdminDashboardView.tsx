@@ -62,13 +62,6 @@ import {
   ListMusic,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
-import {
-  MeplannerOfficialLogo,
-  MeplannerPartnerMedallion,
-  MeplannerDigitalEnvelopeCard,
-  MeplannerLicenseCertificateCard,
-  MeplannerGuestReceptionTerminal,
-} from '@/components/MeplannerWebkitPrimitives';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PublicInvitationView } from '@/components/PublicInvitationView';
 import {
@@ -165,14 +158,6 @@ import {
   SupabaseStorageCapacityReport,
   upsertCommercialPaymentToSupabase,
 } from '@/lib/supabaseCloud';
-import {
-  MEPLANNER_BRAND_LOGOS,
-  MEPLANNER_ICONS,
-  MEPLANNER_WEBKIT_COMPONENTS,
-  MEPLANNER_THEME_ASSETS,
-  ALL_CORNER_CLUSTER_PRESETS,
-  resolveThemeWebkitBundle,
-} from '@/lib/meplannerBrandKit';
 
 export type AdminModuleTab =
   | 'readiness'
@@ -5066,32 +5051,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     );
   };
 
-  const webkitBundle = useMemo(
-    () =>
-      resolveThemeWebkitBundle({
-        catalogThemeId:
-          (settingsForm as any).selectedCatalogThemeId ||
-          (state.settings as any).selectedCatalogThemeId ||
-          (state.settings as any).catalogThemeId,
-        themePreset: settingsForm.themePreset || state.settings.themePreset,
-        layoutArchetype:
-          (settingsForm as any).themeLayoutArchetype ||
-          (state.settings as any).themeLayoutArchetype,
-        eventType: settingsForm.eventType || state.settings.eventType,
-      }),
-    [
-      settingsForm.themePreset,
-      state.settings.themePreset,
-      settingsForm.eventType,
-      state.settings.eventType,
-      (settingsForm as any).selectedCatalogThemeId,
-      (state.settings as any).selectedCatalogThemeId,
-      (state.settings as any).catalogThemeId,
-      (settingsForm as any).themeLayoutArchetype,
-      (state.settings as any).themeLayoutArchetype,
-    ]
-  );
-
   return (
     <div
       data-inv-theme={activeThemePresetId}
@@ -5202,7 +5161,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <header className={`fixed top-0 inset-x-0 z-40 ${activeManagerTheme.headerGrad} backdrop-blur-xl text-stone-900 border-b shadow-xs transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
-            {/* Brand Title with Official Dark Obsidian Squircle + 3D Champagne Gold Ribbon M */}
+            {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <button
                 type="button"
@@ -5211,7 +5170,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 className="flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
               >
                 <WeddingRingsIcon
-                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9"
                   logoUrl={
                     (settingsForm as any).brandLogoUrl ||
                     (state.settings as any).brandLogoUrl
@@ -5355,7 +5314,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Tracker',
                 title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
                 icon: LayoutDashboard,
-                iconSvg: MEPLANNER_ICONS.navCoverHome,
                 badge: `${metrics.readinessPercent}%`,
               },
               {
@@ -5363,7 +5321,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Checklist',
                 title: 'Daftar Tugas & Persiapan Acara per Timeline',
                 icon: CheckSquare,
-                iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
                 badge: `${metrics.completedTasks}/${metrics.totalTasks}`,
               },
               ...(!isPanitia
@@ -5373,7 +5330,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       label: 'Moneter',
                       title: 'Manajemen Anggaran, Vendor & Pembayaran',
                       icon: Wallet,
-                      iconSvg: MEPLANNER_ICONS.badgeChipAtm,
                       badge: `${state.budgetItems.length} Item`,
                     },
                   ]
@@ -5383,7 +5339,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Tamu',
                 title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
                 icon: Users,
-                iconSvg: MEPLANNER_ICONS.navUcapanWishes,
                 badge: `${metrics.totalGuests} (${metrics.totalPaxQuota} Pax)`,
               },
               {
@@ -5392,7 +5347,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 label: 'Pengaturan',
                 title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Akun',
                 icon: Settings,
-                iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
                 isActive:
                   activeTab === 'settings' && settingsMenuTab !== 'database',
                 onSelect: () => {
@@ -5409,7 +5363,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 title:
                   'Status Sinkronisasi Supabase Cloud, Backup/Restore JSON, Spreadsheet & Log Audit',
                 icon: FileSpreadsheet,
-                iconSvg: MEPLANNER_ICONS.btnCopyRekening,
                 statusDot:
                   errorAuditCount > 0
                     ? 'error'
@@ -5438,14 +5391,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       label: 'Superadmin',
                       title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                       icon: Shield,
-                      iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                       badge: `${effectiveClientGroups.length} Klien`,
                     },
                   ]
                 : []),
             ].map((tab) => {
               const Icon = tab.icon;
-              const iconSvg = (tab as { iconSvg?: string }).iconSvg;
               const active =
                 typeof (tab as { isActive?: boolean }).isActive === 'boolean'
                   ? (tab as { isActive?: boolean }).isActive!
@@ -5473,17 +5424,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       : `text-stone-600 ${activeManagerTheme.inactiveTabHover}`
                   }`}
                 >
-                  {iconSvg ? (
-                    <img
-                      src={iconSvg}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-4 h-4 object-contain shrink-0"
-                    />
-                  ) : (
-                    <Icon className="w-4 h-4 shrink-0" />
-                  )}
-                  {statusDot && (
+                  {statusDot ? (
                     <span
                       className={`w-2 h-2 rounded-full shrink-0 ${
                         statusDot === 'error'
@@ -5495,6 +5436,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           : 'bg-emerald-500 animate-pulse'
                       }`}
                     />
+                  ) : (
+                    <Icon className="w-4 h-4 shrink-0" />
                   )}
                   <span className="truncate">{tab.label}</span>
                   {tab.badge && (
@@ -5801,39 +5744,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'readiness' && (
           <div className="space-y-4 sm:space-y-5">
             {/* Full-Width Live Countdown Lengkap Card (Connected with Countdown Hari KPI Card below) */}
-            <div className="relative overflow-hidden w-full bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/70 rounded-3xl p-4 sm:p-5 shadow-sm border border-[#D4AF37]/45 space-y-3.5">
-              {/* Active Theme Webkit 3-Layer Corner Cluster & Card Corner Accents */}
-              <img
-                src={webkitBundle.cornerClusterTopSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute -top-2 -left-2 w-20 h-20 sm:w-28 sm:h-28 object-contain opacity-30"
-              />
-              <img
-                src={webkitBundle.cardCornerSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute -bottom-1 -right-1 w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-30 rotate-180"
-              />
+            <div className="w-full bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/70 rounded-3xl p-4 sm:p-5 shadow-sm border border-[#D4AF37]/45 space-y-3.5">
               {activeTrackerCountdownEvent ? (
                 <>
-                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-10 h-10 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0 p-1.5">
-                        <img
-                          src={MEPLANNER_ICONS.navAcaraCalendar}
-                          alt="Jadwal & Countdown"
-                          className="w-full h-full object-contain"
-                        />
+                      <div className="w-9 h-9 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <img
-                            src={webkitBundle.categoryBadgeSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-4 h-4 object-contain shrink-0"
-                          />
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
                             Countdown Lengkap
                           </span>
@@ -5841,12 +5761,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <span className="text-xs sm:text-sm font-extrabold text-stone-900 truncate">
                             {activeTrackerCountdownEvent.title}
                           </span>
-                          <img
-                            src={webkitBundle.badgeOrnamentSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-4 h-4 object-contain shrink-0 hidden sm:inline-block"
-                          />
                         </div>
                         <p className="text-[11px] text-stone-500 truncate">
                           {activeTrackerCountdownEvent.dateLabel} ({activeTrackerCountdownEvent.timeLabel}) &bull;{' '}
@@ -5879,27 +5793,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           setActiveTab('settings');
                           setSettingsMenuTab('jadwal');
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200 text-stone-600 hover:text-[#8B6914] text-[11px] font-bold transition-all"
+                        className="px-2.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200 text-stone-600 hover:text-[#8B6914] text-[11px] font-bold transition-all"
                         title="Atur Jadwal & Waktu Countdown"
                       >
-                        <img
-                          src={MEPLANNER_ICONS.btnSaveCalendar}
-                          alt=""
-                          aria-hidden="true"
-                          className="w-3.5 h-3.5 object-contain"
-                        />
-                        <span>Atur</span>
+                        Atur
                       </button>
                     </div>
-                  </div>
-
-                  <div className="relative z-10 flex items-center justify-center py-0.5">
-                    <img
-                      src={webkitBundle.sectionDividerSvg}
-                      alt=""
-                      aria-hidden="true"
-                      className="h-3.5 sm:h-4 w-44 sm:w-56 object-contain opacity-80"
-                    />
                   </div>
 
                   {(() => {
@@ -5991,12 +5890,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Countdown Hari
                   </span>
-                  <img
-                    src={MEPLANNER_ICONS.navAcaraCalendar}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-5 h-5 object-contain"
-                  />
+                  <Calendar className="w-5 h-5 text-[#B68D40]" />
                 </div>
                 {activeCountdownEvents.length === 0 ? (
                   <div className="my-3 p-3 rounded-2xl bg-[#FAF8F5] border border-dashed border-[#D4AF37]/40 text-center">
@@ -6070,12 +5964,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                       Moneter
                     </span>
-                    <img
-                      src={MEPLANNER_ICONS.badgeChipAtm}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-5 h-5 object-contain"
-                    />
+                    <Wallet className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div className="my-3">
                     <p className="text-xl sm:text-2xl font-extrabold text-stone-900">
@@ -6107,12 +5996,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
                     Tamu &amp; RSVP
                   </span>
-                  <img
-                    src={MEPLANNER_ICONS.floatQrCheckin}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-5 h-5 object-contain"
-                  />
+                  <Users className="w-5 h-5 text-[#B68D40]" />
                 </div>
                 <div className="my-3">
                   <div className="flex items-baseline gap-2">
@@ -6368,14 +6252,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Card Header: Title (Count) on left + Plus & Edit Icons on right */}
               <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center gap-2">
-                  <img
-                    src={MEPLANNER_ICONS.navAcaraCalendar}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                  <span>Checklist &amp; Timeline ({filteredTasks.length})</span>
+                <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
+                  <span>Checklist ({filteredTasks.length})</span>
                   <InfoTooltip text="Klik kotak pada baris tugas untuk mengubah status (Belum -> Proses -> Selesai), tombol + untuk menambah tugas baru, atau ikon pensil untuk mengedit." />
                 </h2>
                 <div className="flex items-center gap-1 shrink-0">
@@ -6603,13 +6481,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Header with + and Edit icons on top-right */}
               <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center gap-2">
-                  <img
-                    src={MEPLANNER_ICONS.badgeChipAtm}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-6 h-4 object-contain shrink-0"
-                  />
+                <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                   <span>Pos Moneter ({filteredBudgetItems.length})</span>
                   <InfoTooltip text="Klik + untuk menambah pos pengeluaran/vendor baru, atau ikon pensil untuk merevisi biaya dan status pembayaran." />
                 </h2>
@@ -6898,15 +6770,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setIsGuestReceptionModalOpen(true);
                     }}
                     title="Buka Layar Penerima Tamu (Guest Reception Check-In Hari-H)"
-                    className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
+                    className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
                   >
-                    <img
-                      src={MEPLANNER_ICONS.floatQrCheckin}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-4 h-4 object-contain shrink-0"
-                    />
-                    <span>🖥️ Layar Penerima Tamu (Hari-H)</span>
+                    🖥️ Layar Penerima Tamu (Hari-H)
                   </button>
                 </div>
 
@@ -7988,33 +7854,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         {activeTab === 'settings' && (
           <div className={`${showSplitLivePreview ? 'max-w-7xl' : 'max-w-5xl'} mx-auto space-y-4 sm:space-y-5 transition-all`}>
             {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
-            <div className="relative overflow-hidden bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
-              <img
-                src={webkitBundle.cardCornerSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute -top-1 -left-1 w-14 h-14 object-contain opacity-25"
-              />
-              <img
-                src={webkitBundle.cardCornerSvg}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none select-none absolute -bottom-1 -right-1 w-14 h-14 object-contain opacity-25 rotate-180"
-              />
-              <div className="relative z-10 flex items-center gap-3 min-w-0">
-                <WeddingRingsIcon
-                  className="w-10 h-10 sm:w-11 sm:h-11 shrink-0"
-                  logoUrl={
-                    (settingsForm as any).brandLogoUrl ||
-                    (state.settings as any).brandLogoUrl
-                  }
-                />
+            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs overflow-hidden">
+                  <WeddingRingsIcon
+                    className="w-5 h-5 sm:w-6 sm:h-6"
+                    logoUrl={
+                      (settingsForm as any).brandLogoUrl ||
+                      (state.settings as any).brandLogoUrl
+                    }
+                  />
+                </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
-                      Pengaturan Undangan &amp; Acara
-                    </h2>
-                  </div>
+                  <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
+                    Pengaturan Undangan &amp; Acara
+                  </h2>
                   <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
                     Workspace: <strong className="text-[#8B6914]">{state.settings.groomNickname} &amp; {state.settings.brideNickname}</strong> &bull; Tema:{' '}
                     <strong className="text-stone-800">
@@ -8067,7 +7921,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Konten Undangan',
                     title: 'Atur seksi undangan, kategori acara (MEPlanner — My Event Planner), profil, kisah kasih, galeri & amplop digital',
                     icon: Eye,
-                    iconSvg: MEPLANNER_ICONS.btnBukaUndangan,
                     show: true,
                   },
                   {
@@ -8075,7 +7928,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Tema & Latar',
                     title: 'Atur foto & video background interaktif (maks. 25 MB), katalog 12 preset tema, efek blur, serta musik undangan',
                     icon: Sparkles,
-                    iconSvg: MEPLANNER_ICONS.navCoverHome,
                     show: true,
                   },
                   {
@@ -8083,7 +7935,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Jadwal Acara',
                     title: 'Kelola daftar rangkaian acara, lokasi Google Maps & waktu hitung mundur (Countdown)',
                     icon: Calendar,
-                    iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
                     show: true,
                   },
                   {
@@ -8091,7 +7942,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Akun & Akses',
                     title: 'Kelola akun admin, panitia, kata sandi & hak akses',
                     icon: Lock,
-                    iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
                     show: !isPanitia,
                   },
                   {
@@ -8099,28 +7949,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Database',
                     title: 'Sinkronisasi Supabase Cloud, Google Sheets, Backup/Restore JSON & Kapasitas Storage',
                     icon: FileSpreadsheet,
-                    iconSvg: MEPLANNER_ICONS.btnCopyRekening,
                     show: true,
                   },
                   {
                     id: 'paket' as const,
-                    label: 'Upgrade Paket',
+                    label: '💎 Upgrade Paket',
                     title: 'Upgrade Paket Resmi MEPlanner (Gratis, Premium, Business, Enterprise, Mitra Silver & Gold)',
                     icon: Award,
-                    iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                     show: true,
                   },
                   {
                     id: 'bantuan' as const,
-                    label: 'CS & AI Assistant',
+                    label: '🎧 CS & AI Assistant',
                     title: 'Hubungi Kami, MEPlanner Assistant (Online) & Layanan Customer Service Resmi',
                     icon: MessageSquareHeart,
-                    iconSvg: MEPLANNER_ICONS.navUcapanWishes,
                     show: true,
                   },
                 ]
                   .filter((m) => m.show)
                   .map((menu) => {
+                    const IconComp = menu.icon;
                     const isActive = settingsMenuTab === menu.id;
                     return (
                       <button
@@ -8135,11 +7983,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
-                          <img
-                            src={menu.iconSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-4 h-4 lg:w-5 lg:h-5 object-contain shrink-0"
+                          <IconComp
+                            className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
+                              isActive ? 'text-[#B68D40]' : 'text-stone-400'
+                            }`}
                           />
                           <span className="text-[11px] sm:text-xs lg:text-sm whitespace-nowrap truncate">{menu.label}</span>
                         </div>
@@ -8202,44 +8049,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
 
                     {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 15-TILE GRID) */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
-                      {/* Active Theme Webkit 3-Layer Corner Cluster & Card Corner Accents */}
-                      <img
-                        src={webkitBundle.cornerClusterTopSvg}
-                        alt=""
-                        aria-hidden="true"
-                        className="pointer-events-none select-none absolute -top-2 -left-2 w-20 h-20 sm:w-24 sm:h-24 object-contain opacity-30"
-                      />
-                      <img
-                        src={webkitBundle.cardCornerSvg}
-                        alt=""
-                        aria-hidden="true"
-                        className="pointer-events-none select-none absolute -bottom-1 -right-1 w-16 h-16 object-contain opacity-30 rotate-180"
-                      />
+                    <div className="rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
                       {/* Top Status Banner */}
-                      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
                               ● AKTIF
                             </span>
-                            <img
-                              src={webkitBundle.categoryBadgeSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="w-4 h-4 object-contain shrink-0"
-                            />
                             <h4 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate">
                               {state.settings.showSecondProfile === false
                                 ? state.settings.groomNickname || state.settings.groomFullName
                                 : `${state.settings.groomNickname} & ${state.settings.brideNickname}`}
                             </h4>
-                            <img
-                              src={webkitBundle.badgeOrnamentSvg}
-                              alt=""
-                              aria-hidden="true"
-                              className="w-4 h-4 object-contain shrink-0"
-                            />
                           </div>
                           <p className="text-[11px] text-stone-500 font-mono truncate mt-0.5">
                             https://meplanner.vercel.app &bull; Kategori:{' '}
@@ -8260,24 +8082,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-xs transition-all cursor-pointer"
                             title="Buka Layar Penerima Tamu (Guest Reception Hari-H) untuk scan/ketik kode tamu & tampilkan layar sapaan VIP"
                           >
-                            <img
-                              src={MEPLANNER_ICONS.floatQrCheckin}
-                              alt=""
-                              aria-hidden="true"
-                              className="w-4 h-4 object-contain shrink-0"
-                            />
+                            <span>🖥️</span>
                             <span>Buka Layar Penerima Tamu (Hari-H)</span>
                           </button>
                         </div>
-                      </div>
-
-                      <div className="relative z-10 flex items-center justify-center">
-                        <img
-                          src={webkitBundle.sectionDividerSvg}
-                          alt=""
-                          aria-hidden="true"
-                          className="h-3.5 w-44 object-contain opacity-80"
-                        />
                       </div>
 
                       {/* 3 KPI Counters Row */}
@@ -12075,26 +11883,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       {/* 9. EDITOR AMPLOP DIGITAL & REKENING */}
                                       {sec.key === 'showGiftSection' && (
                                         <div className="space-y-3">
-                                          {/* Real Interactive Preview of Brushed Champagne Gold + Obsidian Digital Envelope Card */}
-                                          <MeplannerDigitalEnvelopeCard
-                                            bankName={
-                                              state.settings.bankAccounts?.[0]?.bankName ||
-                                              'BCA'
-                                            }
-                                            accountNumber={
-                                              state.settings.bankAccounts?.[0]?.accountNumber ||
-                                              '8720 1948 2910'
-                                            }
-                                            accountHolder={
-                                              state.settings.bankAccounts?.[0]?.accountHolder ||
-                                              `${state.settings.groomFullName || 'Rizky Pratama'} & ${state.settings.brideNickname || 'Aulia'}`
-                                            }
-                                            qrisImageUrl={state.settings.qrisImageUrl}
-                                            onCopyAccount={(accNum: string) => {
-                                              navigator.clipboard?.writeText(accNum);
-                                              showToast(`✓ Nomor rekening ${accNum} berhasil disalin!`);
-                                            }}
-                                          />
                                           <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <div className="flex items-center gap-1">
                                               <p className="font-bold text-[#8B6914] uppercase tracking-wider text-[11px]">
@@ -12674,190 +12462,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           Tema &amp; Latar
                         </h3>
                         <InfoTooltip text="Pilih struktur arketipe desain, tema dari katalog (Timeless Snapshot, Serein, Javanese Kraton, dll.), atau palet warna. Semua pilihan langsung mengubah tampilan undangan publik secara real-time." />
-                      </div>
-                    </div>
-
-                    {/* WEBKIT & PERNAK-PERNIK TEMA AKTIF (3-LAYER CORNERING, IKON & ORNAMEN) */}
-                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#FFFDF9] via-white to-[#FAF3E3]/70 border border-[#D4AF37]/50 space-y-3 shadow-2xs">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img
-                            src={webkitBundle.categoryBadgeSvg}
-                            alt=""
-                            aria-hidden="true"
-                            className="w-5 h-5 object-contain shrink-0"
-                          />
-                          <div>
-                            <p className="font-extrabold text-xs sm:text-sm text-stone-900">
-                              Webkit &amp; Pernak-Pernik Tema Aktif (3-Layer Cornering, Ikon &amp; Ornamen)
-                            </p>
-                            <p className="text-[11px] text-stone-500">
-                              Preset Cluster Aktif:{' '}
-                              <span className="font-bold text-[#8B6914]">
-                                {webkitBundle.clusterLabelId}
-                              </span>{' '}
-                              &bull; Sinkron otomatis dengan arketipe &amp; tema katalog pilihan Anda ({ALL_CORNER_CLUSTER_PRESETS.length} klaster tersedia).
-                            </p>
-                          </div>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold">
-                          3-Layer SVG Webkit Aktif
-                        </span>
-                      </div>
-
-                      {/* 5 Core Ornament & Widget Previews */}
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                        <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 flex flex-col items-center justify-between gap-1.5 text-center">
-                          <img
-                            src={webkitBundle.cornerClusterBottomSvg}
-                            alt="3-Layer Corner Cluster"
-                            className="w-14 h-14 object-contain"
-                          />
-                          <div>
-                            <p className="text-[10px] font-extrabold text-stone-800">
-                              3-Layer Cornering
-                            </p>
-                            <p className="text-[9px] text-stone-500 truncate max-w-[120px]">
-                              {webkitBundle.clusterLabelId}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 flex flex-col items-center justify-between gap-1.5 text-center">
-                          <img
-                            src={webkitBundle.cardCornerSvg}
-                            alt="Card Corner Filigree"
-                            className="w-12 h-12 object-contain"
-                          />
-                          <div>
-                            <p className="text-[10px] font-extrabold text-stone-800">
-                              Card Corner
-                            </p>
-                            <p className="text-[9px] text-stone-500">
-                              Sudut Kartu &amp; Modal
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 flex flex-col items-center justify-between gap-1.5 text-center">
-                          <div className="h-12 flex items-center justify-center">
-                            <img
-                              src={webkitBundle.sectionDividerSvg}
-                              alt="Section Divider"
-                              className="w-24 h-6 object-contain"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-extrabold text-stone-800">
-                              Section Divider
-                            </p>
-                            <p className="text-[9px] text-stone-500">
-                              Pembatas Seksi
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 flex flex-col items-center justify-between gap-1.5 text-center">
-                          <div className="h-12 flex items-center justify-center gap-1.5">
-                            <img
-                              src={webkitBundle.badgeOrnamentSvg}
-                              alt="Badge Ornament"
-                              className="w-9 h-9 object-contain"
-                            />
-                            <img
-                              src={MEPLANNER_WEBKIT_COMPONENTS.sealWaxRoyalCrimson}
-                              alt="Wax Seal"
-                              className="w-9 h-9 object-contain"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-extrabold text-stone-800">
-                              Wax Seal / Badge
-                            </p>
-                            <p className="text-[9px] text-stone-500">
-                              Segel &amp; Emblem
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-white border border-[#D4AF37]/35 flex flex-col items-center justify-between gap-1.5 text-center">
-                          <img
-                            src={MEPLANNER_WEBKIT_COMPONENTS.widgetVinylMusicDisc}
-                            alt="Vinyl Music Disc Widget"
-                            className="w-12 h-12 object-contain"
-                          />
-                          <div>
-                            <p className="text-[10px] font-extrabold text-stone-800">
-                              Vinyl Music Widget
-                            </p>
-                            <p className="text-[9px] text-stone-500">
-                              Pemutar Musik
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 6 Bottom Dock Icons & 6 CTA Button Icons Preview Strip */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-1.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                            6 Ikon Navigasi Bawah (Bottom Dock Webkit)
-                          </p>
-                          <div className="grid grid-cols-6 gap-1.5">
-                            {[
-                              { src: MEPLANNER_ICONS.navCoverHome, label: 'Sampul' },
-                              { src: MEPLANNER_ICONS.navMempelaiHeart, label: 'Mempelai' },
-                              { src: MEPLANNER_ICONS.navAcaraCalendar, label: 'Acara' },
-                              { src: MEPLANNER_ICONS.navLokasiMap, label: 'Lokasi' },
-                              { src: MEPLANNER_ICONS.navGaleriCamera, label: 'Galeri' },
-                              { src: MEPLANNER_ICONS.navUcapanWishes, label: 'Ucapan' },
-                            ].map((ic) => (
-                              <div
-                                key={ic.label}
-                                className="p-1.5 rounded-lg bg-white border border-[#D4AF37]/30 flex flex-col items-center gap-1"
-                              >
-                                <img
-                                  src={ic.src}
-                                  alt={ic.label}
-                                  className="w-5 h-5 object-contain"
-                                />
-                                <span className="text-[8px] font-bold text-stone-600 truncate max-w-full">
-                                  {ic.label}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200/90 space-y-1.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                            6 Ikon Tombol Aksi (CTA Button Webkit)
-                          </p>
-                          <div className="grid grid-cols-6 gap-1.5">
-                            {[
-                              { src: MEPLANNER_ICONS.btnBukaUndangan, label: 'Buka' },
-                              { src: MEPLANNER_ICONS.btnGoogleMaps, label: 'Maps' },
-                              { src: MEPLANNER_ICONS.btnSaveCalendar, label: 'Kalender' },
-                              { src: MEPLANNER_ICONS.btnCopyRekening, label: 'Salin' },
-                              { src: MEPLANNER_ICONS.btnKirimHadiah, label: 'Hadiah' },
-                              { src: MEPLANNER_ICONS.btnRsvpTicket, label: 'RSVP' },
-                            ].map((ic) => (
-                              <div
-                                key={ic.label}
-                                className="p-1.5 rounded-lg bg-white border border-[#D4AF37]/30 flex flex-col items-center gap-1"
-                              >
-                                <img
-                                  src={ic.src}
-                                  alt={ic.label}
-                                  className="w-5 h-5 object-contain"
-                                />
-                                <span className="text-[8px] font-bold text-stone-600 truncate max-w-full">
-                                  {ic.label}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -15516,37 +15120,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
                         Aktif Selamanya &bull; Tanpa Biaya Bulanan
                       </span>
-                    </div>
-
-                    {/* Real Interactive Mitra Gold License Certificate & Digital Envelope Cards */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
-                      <MeplannerLicenseCertificateCard
-                        partnerName={
-                          adminUser.nama ||
-                          `${state.settings.groomNickname} & ${state.settings.brideNickname} Organizer`
-                        }
-                        licenseKey={`MEP-GOLD-2026-${(state.settings.activeClientId || '8891-X99').toUpperCase().slice(0, 8)}`}
-                        tierLabel="MITRA GOLD • 1.000 CLIENT QUOTA"
-                      />
-                      <MeplannerDigitalEnvelopeCard
-                        bankName={
-                          state.settings.bankAccounts?.[0]?.bankName ||
-                          'BCA'
-                        }
-                        accountNumber={
-                          state.settings.bankAccounts?.[0]?.accountNumber ||
-                          '8720 1948 2910'
-                        }
-                        accountHolder={
-                          state.settings.bankAccounts?.[0]?.accountHolder ||
-                          `${state.settings.groomFullName || 'Rizky Pratama'} & ${state.settings.brideNickname || 'Aulia'}`
-                        }
-                        qrisImageUrl={state.settings.qrisImageUrl}
-                        onCopyAccount={(accNum: string) => {
-                          navigator.clipboard?.writeText(accNum);
-                          showToast(`✓ Nomor rekening ${accNum} berhasil disalin!`);
-                        }}
-                      />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -24936,44 +24509,28 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           onClick={() => setIsGuestReceptionModalOpen(false)}
         >
           <div
-            className="relative overflow-hidden max-w-3xl w-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-5 my-auto"
+            className="max-w-3xl w-full bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 rounded-3xl shadow-2xl p-4 sm:p-6 space-y-5 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={webkitBundle.cardCornerSvg}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none select-none absolute top-0 left-0 w-16 h-16 object-contain opacity-25"
-            />
-            <img
-              src={webkitBundle.cardCornerSvg}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none select-none absolute bottom-0 right-0 w-16 h-16 object-contain opacity-25 rotate-180"
-            />
             {/* Top Bar */}
-            <div className="relative z-10 flex items-start justify-between gap-3 border-b border-[#D4AF37]/30 pb-4">
+            <div className="flex items-start justify-between gap-3 border-b border-[#D4AF37]/30 pb-4">
               <div className="flex items-center gap-3 min-w-0">
-                <WeddingRingsIcon
-                  className="w-11 h-11 shrink-0"
-                  logoUrl={
-                    (settingsForm as any).brandLogoUrl ||
-                    (state.settings as any).brandLogoUrl
-                  }
-                />
+                <div className="w-11 h-11 rounded-2xl bg-white border border-[#D4AF37]/60 flex items-center justify-center shrink-0 shadow-2xs">
+                  <WeddingRingsIcon
+                    className="w-7 h-7"
+                    logoUrl={
+                      (settingsForm as any).brandLogoUrl ||
+                      (state.settings as any).brandLogoUrl
+                    }
+                  />
+                </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
-                      <img
-                        src={MEPLANNER_ICONS.floatQrCheckin}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-3.5 h-3.5 object-contain"
-                      />
-                      <span>Layar Penerima Tamu Hari-H</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                      🖥️ Layar Penerima Tamu Hari-H
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] text-[#8B6914] font-bold">
-                      <span>MEPlanner Guest Reception</span>
+                    <span className="text-[11px] text-[#8B6914] font-bold">
+                      MEPlanner Guest Reception
                     </span>
                   </div>
                   <h3 className="font-serif text-base sm:text-xl font-extrabold text-stone-900 truncate mt-0.5">
@@ -24992,51 +24549,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               >
                 <X className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Real Interactive Live Guest Reception & QR Check-In Terminal */}
-            <div className="relative z-10">
-              <MeplannerGuestReceptionTerminal
-                eventTitle={
-                  state.settings.showSecondProfile === false
-                    ? state.settings.groomFullName.toUpperCase()
-                    : `THE WEDDING OF ${state.settings.groomNickname.toUpperCase()} & ${state.settings.brideNickname.toUpperCase()}`
-                }
-                guestName={
-                  checkedInGuest?.guestName ||
-                  state.guests[0]?.guestName ||
-                  'Dr. H. Hendra Wijaya, M.Si. & Keluarga'
-                }
-                tableLabel={
-                  String(
-                    checkedInGuest?.priority || state.guests[0]?.priority || 'VIP'
-                  )
-                    .toUpperCase()
-                    .includes('VIP')
-                    ? 'VVIP — MEJA SAFIR 01'
-                    : `${checkedInGuest?.priority || state.guests[0]?.priority || 'VIP'} — MEJA UTAMA`
-                }
-                paxLabel={`${
-                  checkedInGuest?.confirmedPax ||
-                  checkedInGuest?.pax ||
-                  state.guests[0]?.confirmedPax ||
-                  state.guests[0]?.pax ||
-                  2
-                } ORANG (HADIR)`}
-                tokenHash={
-                  checkedInGuest
-                    ? computeGuestInvitationHash(
-                        state.settings.activeClientId || 'client-utama',
-                        checkedInGuest
-                      )
-                    : state.guests[0]
-                    ? computeGuestInvitationHash(
-                        state.settings.activeClientId || 'client-utama',
-                        state.guests[0]
-                      )
-                    : 'DvVsH3CprCb3URDzq8Tmz'
-                }
-              />
             </div>
 
             {/* Grand VIP Welcome Screen Banner (When a Guest is Checked-In) */}
@@ -25233,14 +24745,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Tracker',
               title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
               icon: LayoutDashboard,
-              iconSvg: MEPLANNER_ICONS.navCoverHome,
             },
             {
               id: 'checklist' as AdminModuleTab,
               label: 'Checklist',
               title: 'Daftar Tugas & Persiapan Acara per Timeline',
               icon: CheckSquare,
-              iconSvg: MEPLANNER_ICONS.navAcaraCalendar,
             },
             ...(!isPanitia
               ? [
@@ -25249,7 +24759,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Moneter',
                     title: 'Manajemen Anggaran, Vendor & Pembayaran',
                     icon: Wallet,
-                    iconSvg: MEPLANNER_ICONS.badgeChipAtm,
                   },
                 ]
               : []),
@@ -25258,14 +24767,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               label: 'Tamu',
               title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
               icon: Users,
-              iconSvg: MEPLANNER_ICONS.navUcapanWishes,
             },
             {
               id: 'settings' as AdminModuleTab,
               label: 'Setelan',
               title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
               icon: Settings,
-              iconSvg: MEPLANNER_ICONS.navMempelaiHeart,
             },
             ...(isSuperadmin
               ? [
@@ -25274,11 +24781,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     label: 'Owner',
                     title: 'Panel Superadmin Multi-Klien, Lisensi & Gateway Pembayaran',
                     icon: Shield,
-                    iconSvg: MEPLANNER_BRAND_LOGOS.monogramMep,
                   },
                 ]
               : []),
           ].map((tab) => {
+            const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
@@ -25295,11 +24802,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     : `text-stone-500 ${activeManagerTheme.inactiveTabHover} font-semibold`
                 }`}
               >
-                <img
-                  src={tab.iconSvg}
-                  alt=""
-                  aria-hidden="true"
-                  className="w-4 h-4 object-contain shrink-0"
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    active ? 'text-white' : 'text-stone-400'
+                  }`}
                 />
                 <span className="text-[9px] sm:text-[10px] font-bold tracking-tight leading-tight whitespace-nowrap truncate max-w-full px-0.5">
                   {tab.label}

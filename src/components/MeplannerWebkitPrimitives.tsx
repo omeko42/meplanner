@@ -45,9 +45,9 @@ export const MeplannerOfficialLogo: React.FC<{
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
       {/* Obsidian Squircle with 3D Gold Ribbon "M" + 4-Point Star Sparkle */}
       <div
-        className={`relative ${iconSize} bg-linear-to-br from-[#1C2230] via-[#0F131C] to-[#080A0F] border border-[#D4AF37]/45 shadow-[0_6px_18px_rgba(15,19,28,0.35),inset_0_1px_1px_rgba(255,255,255,0.18)] flex items-center justify-center shrink-0 overflow-hidden`}
+        className={`relative ${iconSize} bg-gradient-to-br from-[#1C2230] via-[#0F131C] to-[#080A0F] border border-[#D4AF37]/45 shadow-[0_6px_18px_rgba(15,19,28,0.35),inset_0_1px_1px_rgba(255,255,255,0.18)] flex items-center justify-center shrink-0 overflow-hidden`}
       >
-        <div className="absolute inset-x-0 top-0 h-1/2 bg-linear-to-b from-white/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
         <svg
           viewBox="0 0 64 64"
           className="w-[76%] h-[76%] drop-shadow-[0_2px_6px_rgba(212,175,55,0.35)]"
@@ -122,7 +122,7 @@ export const MeplannerOfficialLogo: React.FC<{
             isDarkBg ? 'text-white' : 'text-[#141413]'
           }`}
         >
-          <span className="bg-linear-to-r from-[#D4AF37] via-[#C59B27] to-[#9A7218] bg-clip-text text-transparent">
+          <span className="text-[#D4AF37]">
             ME
           </span>
           Planner
@@ -402,7 +402,7 @@ export const MeplannerDigitalEnvelopeCard: React.FC<{
       </div>
 
       {/* Gold Rim Divider Line */}
-      <div className="h-[1.5px] w-full bg-linear-to-r from-[#8A6412] via-[#FFF6D6] to-[#8A6412]" />
+      <div className="h-[1.5px] w-full bg-gradient-to-r from-[#8A6412] via-[#FFF6D6] to-[#8A6412]" />
 
       {/* Bottom 38%: Obsidian Black Glassmorphism Bar */}
       <div
@@ -631,7 +631,7 @@ export const MeplannerLicenseCertificateCard: React.FC<{
             <button
               type="button"
               onClick={onActionClick}
-              className="mt-4 px-5 py-2 rounded-full text-xs font-extrabold text-[#170F04] bg-linear-to-r from-[#FAF0CA] via-[#D4AF37] to-[#9A742B] shadow-md hover:brightness-110 transition cursor-pointer"
+              className="mt-4 px-5 py-2 rounded-full text-xs font-extrabold text-[#170F04] bg-gradient-to-r from-[#FAF0CA] via-[#D4AF37] to-[#9A742B] shadow-md hover:brightness-110 transition cursor-pointer"
             >
               {actionLabel}
             </button>
