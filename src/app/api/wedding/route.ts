@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, payload } = body;
 
-    if (action === 'SUBMIT_RSVP') {
+    if (action === 'SUBMIT_RSVP' || action === 'PUBLIC_CHECKIN_QR') {
       await serverStore.reconcileWithSupabase();
     }
 
     const adminSession = verifyAdminRequest(req);
 
-    // Only SUBMIT_RSVP is public; all other actions require a verified Admin Session
-    if (action !== 'SUBMIT_RSVP') {
+    // SUBMIT_RSVP and PUBLIC_CHECKIN_QR are public; all other actions require a verified Admin Session
+    if (action !== 'SUBMIT_RSVP' && action !== 'PUBLIC_CHECKIN_QR') {
       if (!adminSession) {
         return NextResponse.json(
           {
@@ -88,8 +88,18 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      case 'UPSERT_GUEST': {
-        const guest = serverStore.upsertGuest(payload);
+      case 'UPSERT_GUEST':
+      case 'PUBLIC_CHECKIN_QR': {
+        const guest = serverStore.upsertGuest(
+          action === 'PUBLIC_CHECKIN_QR'
+            ? {
+                ...payload,
+                rsvpStatus: 'Hadir',
+                attendanceStatus: 'Hadir di Lokasi',
+                updatedBy: 'QR Scan Check-In',
+              }
+            : payload
+        );
         return NextResponse.json({
           success: true,
           guest,

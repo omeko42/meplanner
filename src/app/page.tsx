@@ -92,15 +92,75 @@ import {
   resolveGuestByHashTokenAcrossWorkspaces,
 } from '@/lib/guestTokenHash';
 
+function mergeGuestCheckInStatus(
+  remoteGuests: WeddingGuest[],
+  localGuests: WeddingGuest[]
+): WeddingGuest[] {
+  const safeRemote = Array.isArray(remoteGuests) ? [...remoteGuests] : [];
+  const safeLocal = Array.isArray(localGuests) ? localGuests : [];
+  for (const lg of safeLocal) {
+    if (lg.attendanceStatus !== 'Hadir di Lokasi') continue;
+    const idx = safeRemote.findIndex(
+      (rg) =>
+        rg.id === lg.id ||
+        (rg.invitationCode &&
+          lg.invitationCode &&
+          rg.invitationCode.toLowerCase() === lg.invitationCode.toLowerCase()) ||
+        rg.guestName.trim().toLowerCase() === lg.guestName.trim().toLowerCase()
+    );
+    if (idx >= 0) {
+      if (safeRemote[idx].attendanceStatus !== 'Hadir di Lokasi') {
+        safeRemote[idx] = {
+          ...safeRemote[idx],
+          rsvpStatus: 'Hadir',
+          attendanceStatus: 'Hadir di Lokasi',
+          confirmedPax:
+            lg.confirmedPax ||
+            safeRemote[idx].confirmedPax ||
+            safeRemote[idx].pax ||
+            2,
+          updatedAt: lg.updatedAt || safeRemote[idx].updatedAt,
+          updatedBy: lg.updatedBy || 'QR Scan Check-In',
+        };
+      }
+    } else if (lg.id.startsWith('guest_qr_')) {
+      safeRemote.push(lg);
+    }
+  }
+  return safeRemote;
+}
+
 function mergePreservingLocalMedia(
   serverState: WeddingDatabaseSchema,
   localState: WeddingDatabaseSchema
 ): WeddingDatabaseSchema {
   const localOriginalPhotos = localState.settings?.originalPhotos;
+  const mergedRootGuests = mergeGuestCheckInStatus(
+    Array.isArray(serverState.guests) ? serverState.guests : [],
+    Array.isArray(localState.guests) ? localState.guests : []
+  );
+
+  const remoteWorkspaces = { ...(serverState.settings?.clientWorkspaces || {}) };
+  const localWorkspaces = localState.settings?.clientWorkspaces || {};
+  for (const [wsId, localWs] of Object.entries(localWorkspaces)) {
+    if (!localWs) continue;
+    const remoteWs = remoteWorkspaces[wsId];
+    if (remoteWs) {
+      remoteWorkspaces[wsId] = {
+        ...remoteWs,
+        guests: mergeGuestCheckInStatus(
+          remoteWs.guests || [],
+          localWs.guests || []
+        ),
+      };
+    } else {
+      remoteWorkspaces[wsId] = localWs;
+    }
+  }
 
   return {
     ...serverState,
-    guests: Array.isArray(serverState.guests) ? serverState.guests : [],
+    guests: mergedRootGuests,
     wishes: Array.isArray(serverState.wishes) ? serverState.wishes : [],
     tasks: Array.isArray(serverState.tasks) ? serverState.tasks : [],
     budgetItems: Array.isArray(serverState.budgetItems)
@@ -108,6 +168,7 @@ function mergePreservingLocalMedia(
       : [],
     settings: {
       ...serverState.settings,
+      clientWorkspaces: remoteWorkspaces,
       ...(localOriginalPhotos
         ? {
             originalPhotos: {
@@ -813,8 +874,15 @@ function WeddingAppContent() {
             const remote = cloudRes.state;
             setState((prev) => {
               const merged = mergePreservingLocalMedia(remote, prev);
+              const prevCheckedInCount = prev.guests.filter(
+                (g) => g.attendanceStatus === 'Hadir di Lokasi'
+              ).length;
+              const mergedCheckedInCount = merged.guests.filter(
+                (g) => g.attendanceStatus === 'Hadir di Lokasi'
+              ).length;
               const hasChanged =
                 merged.guests.length !== prev.guests.length ||
+                mergedCheckedInCount !== prevCheckedInCount ||
                 merged.wishes.length !== prev.wishes.length ||
                 merged.tasks.length !== prev.tasks.length ||
                 merged.budgetItems.length !== prev.budgetItems.length ||
@@ -846,7 +914,7 @@ function WeddingAppContent() {
 
     const intervalId = setInterval(() => {
       void handleReconnectOrVisible();
-    }, 60000);
+    }, 10000);
 
     window.addEventListener('online', handleReconnectOrVisible);
     window.addEventListener('focus', handleReconnectOrVisible);
@@ -872,7 +940,11 @@ function WeddingAppContent() {
           body: JSON.stringify({ action, payload: safePayload }),
         });
 
-        if (res.status === 401 && action !== 'SUBMIT_RSVP') {
+        if (
+          res.status === 401 &&
+          action !== 'SUBMIT_RSVP' &&
+          action !== 'PUBLIC_CHECKIN_QR'
+        ) {
           return null;
         }
 
@@ -2305,6 +2377,8 @@ function WeddingAppContent() {
       };
     };
 
+    markInitialCloudHydrationComplete();
+
     if (isShowcaseDummyClientId(activePublicClientId)) {
       updateDemoClientState(activePublicClientId, applyCheckInUpdate);
     } else {
@@ -2334,6 +2408,8 @@ function WeddingAppContent() {
       updatedBy: 'QR Scan Check-In',
     };
 
+    registerLocalItemTouch(finalGuest.id);
+
     appendAuditLog({
       actor: finalGuest.guestName,
       module: 'TAMU',
@@ -2344,7 +2420,7 @@ function WeddingAppContent() {
     });
 
     if (activePublicClientId === 'client-utama') {
-      await mutateServer('UPSERT_GUEST', finalGuest);
+      await mutateServer('PUBLIC_CHECKIN_QR', finalGuest);
     }
 
     return finalGuest;

@@ -737,6 +737,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [guestTypeFilter, setGuestTypeFilter] = useState<GuestType | 'ALL'>('ALL');
   const [guestPriorityFilter, setGuestPriorityFilter] = useState<GuestPriority | 'ALL'>('ALL');
   const [guestRsvpFilter, setGuestRsvpFilter] = useState<RsvpStatus | 'ALL'>('ALL');
+  const [guestAttendanceFilter, setGuestAttendanceFilter] = useState<
+    'ALL' | 'CHECKED_IN' | 'NOT_CHECKED_IN'
+  >('ALL');
   const [guestFormatFilter, setGuestFormatFilter] = useState<
     'ALL' | 'Cetak Tebal' | 'Cetak Biasa' | 'Online'
   >('ALL');
@@ -890,11 +893,34 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     return { cetakTebal, cetakBiasa, online };
   }, [state.guests]);
 
+  const checkedInMetrics = useMemo(() => {
+    const list = state.guests.filter(
+      (g) => g.attendanceStatus === 'Hadir di Lokasi'
+    );
+    const pax = list.reduce(
+      (sum, g) => sum + (Number(g.confirmedPax) || Number(g.pax) || 2),
+      0
+    );
+    return { count: list.length, pax };
+  }, [state.guests]);
+
   const filteredGuests = useMemo(() => {
     return state.guests.filter((g) => {
       if (guestTypeFilter !== 'ALL' && g.guestType !== guestTypeFilter) return false;
       if (guestPriorityFilter !== 'ALL' && g.priority !== guestPriorityFilter) return false;
       if (guestRsvpFilter !== 'ALL' && g.rsvpStatus !== guestRsvpFilter) return false;
+      if (
+        guestAttendanceFilter === 'CHECKED_IN' &&
+        g.attendanceStatus !== 'Hadir di Lokasi'
+      ) {
+        return false;
+      }
+      if (
+        guestAttendanceFilter === 'NOT_CHECKED_IN' &&
+        g.attendanceStatus === 'Hadir di Lokasi'
+      ) {
+        return false;
+      }
       if (
         guestFormatFilter !== 'ALL' &&
         normalizeGuestFormat(g.invitationFormat) !== guestFormatFilter
@@ -921,6 +947,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     guestTypeFilter,
     guestPriorityFilter,
     guestRsvpFilter,
+    guestAttendanceFilter,
     guestFormatFilter,
     guestSearch,
   ]);
@@ -7162,8 +7189,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'guests' && (
           <div className="space-y-4">
-            {/* Ringkasan Kuota Pax & Konfirmasi Kehadiran (Terhitung Otomatis) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+            {/* Ringkasan Kuota Pax, Konfirmasi RSVP & Kehadiran Scan QR (Terhitung Otomatis) */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
               <div className="bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 flex flex-col justify-between">
                 <p className="text-[10px] sm:text-[11px] font-bold uppercase text-stone-500">
                   Total Pax
@@ -7178,9 +7205,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-emerald-50/80 rounded-2xl p-3 sm:p-4 border border-emerald-200 flex flex-col justify-between">
+              <div className="bg-emerald-50/70 rounded-2xl p-3 sm:p-4 border border-emerald-200 flex flex-col justify-between">
                 <p className="text-[10px] sm:text-[11px] font-bold uppercase text-emerald-800">
-                  Pax Hadir
+                  RSVP Hadir
                 </p>
                 <div className="flex items-baseline gap-1.5 mt-1">
                   <span className="text-lg sm:text-2xl font-extrabold text-emerald-700">
@@ -7191,6 +7218,53 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </span>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setGuestSubTab('list');
+                  setGuestAttendanceFilter((prev) =>
+                    prev === 'CHECKED_IN' ? 'ALL' : 'CHECKED_IN'
+                  );
+                }}
+                title="Klik untuk memfilter tamu yang sudah Scan QR (Hadir di Lokasi)"
+                className={`rounded-2xl p-3 sm:p-4 border flex flex-col justify-between text-left transition-all cursor-pointer ${
+                  guestAttendanceFilter === 'CHECKED_IN'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                    : 'bg-gradient-to-br from-emerald-50 via-white to-[#FAF3E3] border-emerald-400/80 hover:border-emerald-600'
+                }`}
+              >
+                <p
+                  className={`text-[10px] sm:text-[11px] font-extrabold uppercase flex items-center gap-1 ${
+                    guestAttendanceFilter === 'CHECKED_IN'
+                      ? 'text-emerald-100'
+                      : 'text-emerald-800'
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5 shrink-0" />
+                  <span>Hadir Scan QR</span>
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span
+                    className={`text-lg sm:text-2xl font-extrabold ${
+                      guestAttendanceFilter === 'CHECKED_IN'
+                        ? 'text-white'
+                        : 'text-emerald-700'
+                    }`}
+                  >
+                    {checkedInMetrics.pax} Pax
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold ${
+                      guestAttendanceFilter === 'CHECKED_IN'
+                        ? 'text-emerald-100'
+                        : 'text-[#8B6914]'
+                    }`}
+                  >
+                    ({checkedInMetrics.count} Tamu)
+                  </span>
+                </div>
+              </button>
 
               <div className="bg-[#FAF8F5] rounded-2xl p-3 sm:p-4 border border-[#D4AF37]/40 flex flex-col justify-between">
                 <p className="text-[10px] sm:text-[11px] font-bold uppercase text-[#8B6914]">
@@ -7209,7 +7283,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 flex flex-col justify-between">
+              <div className="col-span-2 lg:col-span-1 bg-white rounded-2xl p-3 sm:p-4 border border-stone-200 flex flex-col justify-between">
                 <p className="text-[10px] sm:text-[11px] font-bold uppercase text-stone-500">
                   Format Undangan
                 </p>
@@ -7227,9 +7301,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"
-                    onClick={() => setGuestSubTab('list')}
-                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all ${
-                      guestSubTab === 'list'
+                    onClick={() => {
+                      setGuestSubTab('list');
+                      setGuestAttendanceFilter('ALL');
+                    }}
+                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all cursor-pointer ${
+                      guestSubTab === 'list' && guestAttendanceFilter === 'ALL'
                         ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                     }`}
@@ -7238,8 +7315,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      setGuestSubTab('list');
+                      setGuestAttendanceFilter((prev) =>
+                        prev === 'CHECKED_IN' ? 'ALL' : 'CHECKED_IN'
+                      );
+                    }}
+                    title="Lihat daftar tamu yang sudah Scan QR Code (Hadir di Lokasi)"
+                    className={`px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border text-center transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                      guestSubTab === 'list' && guestAttendanceFilter === 'CHECKED_IN'
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    }`}
+                  >
+                    <QrCode className="w-3.5 h-3.5 shrink-0" />
+                    <span>Sudah Scan QR ({checkedInMetrics.count})</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setGuestSubTab('wishes')}
-                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all ${
+                    className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-full text-xs font-bold border text-center transition-all cursor-pointer ${
                       guestSubTab === 'wishes'
                         ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
@@ -7303,7 +7398,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {guestSubTab === 'list' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
                   <div className="relative">
                     <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -7351,6 +7446,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <option value="Belum Konfirmasi">Belum Konfirmasi</option>
                     <option value="Masih Ragu">Masih Ragu</option>
                     <option value="Tidak Hadir">Tidak Hadir</option>
+                  </select>
+
+                  <select
+                    value={guestAttendanceFilter}
+                    onChange={(e) =>
+                      setGuestAttendanceFilter(
+                        e.target.value as 'ALL' | 'CHECKED_IN' | 'NOT_CHECKED_IN'
+                      )
+                    }
+                    className={`px-3 py-2 rounded-xl border font-extrabold ${
+                      guestAttendanceFilter === 'CHECKED_IN'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-400'
+                        : 'bg-[#FAF8F5] text-stone-800 border-stone-300'
+                    }`}
+                  >
+                    <option value="ALL">Semua Check-In QR</option>
+                    <option value="CHECKED_IN">
+                      📲 Sudah Scan QR ({checkedInMetrics.count})
+                    </option>
+                    <option value="NOT_CHECKED_IN">⏳ Belum Scan QR</option>
                   </select>
                 </div>
               )}
@@ -7524,6 +7639,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               >
                                 <KeyRound className="w-2.5 h-2.5 text-[#8B6914] shrink-0" />
                                 <span>{guestHashToken}</span>
+                              </button>
+
+                              {/* Status Kehadiran Scan QR Hari-H (1-Klik Toggle) */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const isPresent =
+                                    guest.attendanceStatus === 'Hadir di Lokasi';
+                                  const nextAttendance: AttendanceStatus = isPresent
+                                    ? 'Belum Dicek'
+                                    : 'Hadir di Lokasi';
+                                  await onUpsertGuest({
+                                    ...guest,
+                                    attendanceStatus: nextAttendance,
+                                    rsvpStatus:
+                                      nextAttendance === 'Hadir di Lokasi'
+                                        ? 'Hadir'
+                                        : guest.rsvpStatus,
+                                    confirmedPax:
+                                      nextAttendance === 'Hadir di Lokasi'
+                                        ? guest.confirmedPax || currentGuestPax
+                                        : guest.confirmedPax,
+                                    updatedBy: adminUser.username,
+                                  });
+                                  showToast(
+                                    nextAttendance === 'Hadir di Lokasi'
+                                      ? `✓ "${guest.guestName}" tercatat Hadir di Lokasi (Check-In QR).`
+                                      : `Status Check-In "${guest.guestName}" dikembalikan ke Belum Check-In.`
+                                  );
+                                }}
+                                title="Status Kehadiran Scan QR Hari-H (Klik untuk ubah status Check-In)"
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border transition-colors cursor-pointer shrink-0 ${
+                                  guest.attendanceStatus === 'Hadir di Lokasi'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200/80'
+                                    : 'bg-stone-100 text-stone-500 border-stone-200 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
+                                }`}
+                              >
+                                {guest.attendanceStatus === 'Hadir di Lokasi' ? (
+                                  <>
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <span>Hadir Scan QR</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <QrCode className="w-2.5 h-2.5 shrink-0" />
+                                    <span>Belum Check-In</span>
+                                  </>
+                                )}
                               </button>
                             </div>
 
@@ -7723,6 +7886,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     ))}
                                     <option value="CUSTOM">✏️ Isi Angka Bebas...</option>
                                   </select>
+
+                                  {/* Status Kehadiran Scan QR Hari-H */}
+                                  <select
+                                    aria-label={`Status Kehadiran QR ${guest.guestName}`}
+                                    value={
+                                      guest.attendanceStatus === 'Hadir di Lokasi'
+                                        ? 'Hadir di Lokasi'
+                                        : 'Belum Dicek'
+                                    }
+                                    onChange={async (e) => {
+                                      const nextAtt = e.target.value as AttendanceStatus;
+                                      await onUpsertGuest({
+                                        ...guest,
+                                        attendanceStatus: nextAtt,
+                                        rsvpStatus:
+                                          nextAtt === 'Hadir di Lokasi'
+                                            ? 'Hadir'
+                                            : guest.rsvpStatus,
+                                        confirmedPax:
+                                          nextAtt === 'Hadir di Lokasi'
+                                            ? guest.confirmedPax || currentGuestPax
+                                            : guest.confirmedPax,
+                                        updatedBy: adminUser.username,
+                                      });
+                                      showToast(
+                                        `Status Check-In QR "${guest.guestName}" diubah menjadi ${nextAtt}.`
+                                      );
+                                    }}
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold border cursor-pointer ${
+                                      guest.attendanceStatus === 'Hadir di Lokasi'
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                        : 'bg-white text-stone-600 border-stone-300'
+                                    }`}
+                                  >
+                                    <option value="Belum Dicek">⏳ Belum Check-In QR</option>
+                                    <option value="Hadir di Lokasi">
+                                      📲 Hadir di Lokasi (Scan QR)
+                                    </option>
+                                  </select>
                                 </div>
 
                                 <div className="space-y-1">
@@ -7854,6 +8056,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               >
                                 <KeyRound className="w-2.5 h-2.5 text-[#8B6914] shrink-0" />
                                 <span>{guestHashToken}</span>
+                              </button>
+
+                              {/* Status Kehadiran Scan QR Hari-H (1-Klik Toggle) */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const isPresent =
+                                    guest.attendanceStatus === 'Hadir di Lokasi';
+                                  const nextAttendance: AttendanceStatus = isPresent
+                                    ? 'Belum Dicek'
+                                    : 'Hadir di Lokasi';
+                                  await onUpsertGuest({
+                                    ...guest,
+                                    attendanceStatus: nextAttendance,
+                                    rsvpStatus:
+                                      nextAttendance === 'Hadir di Lokasi'
+                                        ? 'Hadir'
+                                        : guest.rsvpStatus,
+                                    confirmedPax:
+                                      nextAttendance === 'Hadir di Lokasi'
+                                        ? guest.confirmedPax || currentGuestPax
+                                        : guest.confirmedPax,
+                                    updatedBy: adminUser.username,
+                                  });
+                                  showToast(
+                                    nextAttendance === 'Hadir di Lokasi'
+                                      ? `✓ "${guest.guestName}" tercatat Hadir di Lokasi (Check-In QR).`
+                                      : `Status Check-In "${guest.guestName}" dikembalikan ke Belum Check-In.`
+                                  );
+                                }}
+                                title="Status Kehadiran Scan QR Hari-H (Klik untuk ubah status Check-In)"
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border transition-colors cursor-pointer shrink-0 ${
+                                  guest.attendanceStatus === 'Hadir di Lokasi'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200/80'
+                                    : 'bg-stone-100 text-stone-500 border-stone-200 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
+                                }`}
+                              >
+                                {guest.attendanceStatus === 'Hadir di Lokasi' ? (
+                                  <>
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <span>Hadir Scan QR</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <QrCode className="w-2.5 h-2.5 shrink-0" />
+                                    <span>Belum Check-In</span>
+                                  </>
+                                )}
                               </button>
                             </div>
 
@@ -8002,6 +8252,44 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 </option>
                               ))}
                               <option value="CUSTOM">✏️ Bebas...</option>
+                            </select>
+
+                            <select
+                              aria-label={`Status Kehadiran QR ${guest.guestName}`}
+                              value={
+                                guest.attendanceStatus === 'Hadir di Lokasi'
+                                  ? 'Hadir di Lokasi'
+                                  : 'Belum Dicek'
+                              }
+                              onChange={async (e) => {
+                                const nextAtt = e.target.value as AttendanceStatus;
+                                await onUpsertGuest({
+                                  ...guest,
+                                  attendanceStatus: nextAtt,
+                                  rsvpStatus:
+                                    nextAtt === 'Hadir di Lokasi'
+                                      ? 'Hadir'
+                                      : guest.rsvpStatus,
+                                  confirmedPax:
+                                    nextAtt === 'Hadir di Lokasi'
+                                      ? guest.confirmedPax || currentGuestPax
+                                      : guest.confirmedPax,
+                                  updatedBy: adminUser.username,
+                                });
+                                showToast(
+                                  `Status Check-In QR "${guest.guestName}" diubah menjadi ${nextAtt}.`
+                                );
+                              }}
+                              className={`col-span-3 w-full px-2 py-1 rounded-lg text-[10px] font-extrabold border cursor-pointer truncate ${
+                                guest.attendanceStatus === 'Hadir di Lokasi'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : 'bg-white text-stone-600 border-stone-300'
+                              }`}
+                            >
+                              <option value="Belum Dicek">⏳ Kehadiran Hari-H: Belum Check-In QR</option>
+                              <option value="Hadir di Lokasi">
+                                📲 Kehadiran Hari-H: Sudah Scan QR (Hadir di Lokasi)
+                              </option>
                             </select>
                           </div>
 
