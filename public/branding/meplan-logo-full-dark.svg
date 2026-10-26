@@ -1,54 +1,69 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 140" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bg-dark" x1="0" y1="0" x2="560" y2="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0D1021"/>
-      <stop offset="100%" stop-color="#070812"/>
+    <!-- 1. Left Vertical Pillar Gradient -->
+    <linearGradient id="d-pillar-left" x1="28" y1="30" x2="28" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A855F7" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#312E81" />
     </linearGradient>
-    <linearGradient id="badge-squircle" x1="16" y1="16" x2="124" y2="124" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#171B34"/>
-      <stop offset="100%" stop-color="#0B0D1A"/>
+
+    <!-- 2. Left-to-Center Fold Gradient -->
+    <linearGradient id="d-fold-left" x1="34" y1="34" x2="62" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3730A3" />
+      <stop offset="100%" stop-color="#6D28D9" />
     </linearGradient>
-    <linearGradient id="pillar-left" x1="42" y1="42" x2="42" y2="100" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#A855F7"/>
-      <stop offset="50%" stop-color="#6366F1"/>
-      <stop offset="100%" stop-color="#312E81"/>
+
+    <!-- 3. Right Vertical Pillar Gradient -->
+    <linearGradient id="d-pillar-right" x1="84" y1="34" x2="84" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="45%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#FB7185" />
     </linearGradient>
-    <linearGradient id="fold-left" x1="48" y1="45" x2="74" y2="86" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#3730A3"/>
-      <stop offset="100%" stop-color="#6D28D9"/>
+
+    <!-- 4. Center-to-Right Ascending Check Ribbon -->
+    <linearGradient id="d-fold-right" x1="48" y1="78" x2="90" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="45%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#00F0FF" />
     </linearGradient>
-    <linearGradient id="pillar-right" x1="94" y1="45" x2="94" y2="100" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="45%" stop-color="#8B5CF6"/>
-      <stop offset="100%" stop-color="#FB7185"/>
+
+    <!-- 5. 4-Point Celebration Sparkle Gradient -->
+    <linearGradient id="d-sparkle" x1="82" y1="12" x2="106" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="50%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#FDA4AF" />
     </linearGradient>
-    <linearGradient id="fold-right" x1="60" y1="86" x2="100" y2="42" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7C3AED"/>
-      <stop offset="45%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#00F0FF"/>
-    </linearGradient>
-    <linearGradient id="sparkle-grad" x1="92" y1="24" x2="114" y2="46" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FDE68A"/>
-      <stop offset="50%" stop-color="#EC4899"/>
-      <stop offset="100%" stop-color="#FB7185"/>
-    </linearGradient>
-    <linearGradient id="planner-grad" x1="230" y1="40" x2="500" y2="95" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="48%" stop-color="#818CF8"/>
-      <stop offset="100%" stop-color="#F472B6"/>
-    </linearGradient>
+
+    <filter id="d-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
   </defs>
-  <rect width="560" height="140" rx="28" fill="url(#bg-dark)"/>
-  <rect x="18" y="18" width="104" height="104" rx="26" fill="url(#badge-squircle)" stroke="#6366F1" stroke-opacity="0.45" stroke-width="1.5"/>
-  <path d="M41 44L73 81L62 89L35 55L41 44Z" fill="url(#fold-left)"/>
-  <rect x="83" y="44" width="16" height="54" rx="6" fill="url(#pillar-right)"/>
-  <rect x="33" y="44" width="16" height="54" rx="6" fill="url(#pillar-left)"/>
-  <path d="M59.5 84.5L83.5 47C85.3 44.1 88.5 43.8 91.7 43.8H93C97 43.8 99.4 47 99.4 50.6C99.4 52.5 98.7 54.2 97.4 55.8L72.6 88.8C69.3 93.2 62.7 93.2 59.5 88.8C57.7 86.3 57.9 83.3 59.5 84.5Z" fill="url(#fold-right)"/>
-  <path d="M102 25C102 32.8 105.2 36 113 36C105.2 36 102 39.2 102 47C102 39.2 98.8 36 91 36C98.8 36 102 32.8 102 25Z" fill="url(#sparkle-grad)"/>
-  <text x="144" y="83" font-family="'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" letter-spacing="-1.5">
-    <tspan fill="#FFFFFF">ME</tspan><tspan fill="url(#planner-grad)">Planner</tspan>
+
+  <!-- ICON MARK (3D Origami Ribbon M + Sparkle) -->
+  <g transform="translate(4, 2)" filter="url(#d-shadow)">
+    <!-- Back Layer: Left-to-Center Diagonal Fold -->
+    <path d="M28 32L63 73L51 81L22 44L28 32Z" fill="url(#d-fold-left)" />
+
+    <!-- Right Vertical Pillar -->
+    <rect x="74" y="32" width="18" height="60" rx="7" fill="url(#d-pillar-right)" />
+
+    <!-- Left Vertical Pillar -->
+    <rect x="20" y="32" width="18" height="60" rx="7" fill="url(#d-pillar-left)" />
+
+    <!-- Front Hero Layer: Ascending Cyan Checkmark Ribbon -->
+    <path d="M48.5 76.5L74.5 35.5C76.5 32.3 80 32 83.5 32H85C89.4 32 92 35.5 92 39.5C92 41.5 91.2 43.4 89.8 45.2L62.8 81.2C59.2 86 52 86 48.5 81.2C46.5 78.5 46.8 75.2 48.5 76.5Z" fill="url(#d-fold-right)" />
+
+    <!-- 4-Point Sparkle -->
+    <path d="M95 10C95 18.5 98.5 22 107 22C98.5 22 95 25.5 95 34C95 25.5 91.5 22 83 22C91.5 22 95 18.5 95 10Z" fill="url(#d-sparkle)" />
+  </g>
+
+  <!-- WORDMARK (Dark Mode: Crisp White "MEPlan" + "MY EVENT PLANNER") -->
+  <text x="124" y="72" font-family="'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="56" letter-spacing="-1">
+    <tspan font-weight="800" fill="#FFFFFF">ME</tspan><tspan font-weight="600" fill="#FFFFFF">Plan</tspan>
   </text>
-  <text x="147" y="108" fill="#94A3B8" font-family="'Inter', system-ui, sans-serif" font-size="11.5" font-weight="700" letter-spacing="4.2">
-    MY EVENT PLANNER • ECOSYSTEM
+
+  <!-- Subtitle: MY EVENT PLANNER -->
+  <text x="127" y="96" font-family="'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="5.2" fill="#CBD5E1">
+    MY EVENT PLANNER
   </text>
 </svg>

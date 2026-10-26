@@ -1,58 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
   <defs>
-    <!-- Obsidian Squircle Background -->
+    <!-- Squircle Background -->
     <linearGradient id="bg-squircle" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1E2433" />
-      <stop offset="55%" stop-color="#10141E" />
-      <stop offset="100%" stop-color="#080A0F" />
+      <stop offset="0%" stop-color="#131629" />
+      <stop offset="100%" stop-color="#090A14" />
     </linearGradient>
 
-    <linearGradient id="top-gloss" x1="60" y1="4" x2="60" y2="62" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16" />
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    <linearGradient id="border-glow" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#22D3EE" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FB7185" stop-opacity="0.6" />
     </linearGradient>
 
-    <linearGradient id="border-gold" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFF3B8" stop-opacity="0.75" />
-      <stop offset="50%" stop-color="#D4AF37" stop-opacity="0.45" />
-      <stop offset="100%" stop-color="#8A6412" stop-opacity="0.75" />
+    <!-- 1. Left Vertical Pillar Gradient (Violet to Deep Royal Blue) -->
+    <linearGradient id="m-pillar-left" x1="28" y1="30" x2="28" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A855F7" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#312E81" />
     </linearGradient>
 
-    <!-- 3D Champagne Gold Ribbon Gradients -->
-    <linearGradient id="gold-main" x1="20" y1="22" x2="96" y2="98" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFF7D6" />
-      <stop offset="32%" stop-color="#E6C35C" />
-      <stop offset="68%" stop-color="#C59B27" />
-      <stop offset="100%" stop-color="#8A6412" />
+    <!-- 2. Left-to-Center Fold Gradient (Deep Indigo Shadow Ribbon) -->
+    <linearGradient id="m-fold-left" x1="34" y1="34" x2="62" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3730A3" />
+      <stop offset="100%" stop-color="#6D28D9" />
     </linearGradient>
 
-    <linearGradient id="gold-pillar" x1="24" y1="96" x2="88" y2="24" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#8A6412" />
-      <stop offset="48%" stop-color="#D4AF37" />
-      <stop offset="100%" stop-color="#FFF2B2" />
+    <!-- 3. Right Vertical Pillar Gradient (Blue to Warm Coral/Peach) -->
+    <linearGradient id="m-pillar-right" x1="84" y1="34" x2="84" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="45%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#FB7185" />
     </linearGradient>
 
-    <linearGradient id="gold-shadow" x1="30" y1="28" x2="65" y2="82" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7A560E" />
-      <stop offset="100%" stop-color="#B88E22" />
+    <!-- 4. Center-to-Right Ascending Check Ribbon (Vivid Violet to Electric Cyan) -->
+    <linearGradient id="m-fold-right" x1="48" y1="78" x2="90" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="45%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#00F0FF" />
+    </linearGradient>
+
+    <!-- 5. 4-Point Celebration Sparkle Gradient -->
+    <linearGradient id="sparkle-grad" x1="82" y1="12" x2="106" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="50%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#FDA4AF" />
     </linearGradient>
 
     <filter id="ribbon-shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.45" />
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.35" />
     </filter>
   </defs>
 
   <!-- App Icon Squircle Base -->
   <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#bg-squircle)" />
-  <path d="M32 5H88C102.9 5 115 17.1 115 32V52C98 60 79 64 60 64C41 64 22 60 5 52V32C5 17.1 17.1 5 32 5Z" fill="url(#top-gloss)" />
-  <rect x="5" y="5" width="110" height="110" rx="27" stroke="url(#border-gold)" stroke-width="2" />
+  <rect x="5" y="5" width="110" height="110" rx="27" stroke="url(#border-glow)" stroke-width="2" />
 
-  <!-- 3D Champagne Gold Ribbon "M" + Star Sparkle -->
+  <!-- 3D Origami Ribbon "M" -->
   <g filter="url(#ribbon-shadow)">
-    <rect x="22" y="28" width="17" height="64" rx="4" fill="url(#gold-pillar)" />
-    <rect x="74" y="28" width="16" height="58" rx="4" fill="url(#gold-shadow)" />
-    <path d="M22 28H37L59 74H45L22 28Z" fill="url(#gold-main)" />
-    <path d="M45 74L69 28H86L59 74H45Z" fill="url(#gold-pillar)" />
-    <path d="M84 48C84 65 88.5 69.5 105 69.5C88.5 69.5 84 74 84 91C84 74 79.5 69.5 63 69.5C79.5 69.5 84 65 84 48Z" fill="url(#gold-main)" />
+    <!-- Back Layer: Left-to-Center Diagonal Fold -->
+    <path d="M28 32L63 73L51 81L22 44L28 32Z" fill="url(#m-fold-left)" />
+
+    <!-- Right Vertical Pillar (Coral Bottom to Blue Top) -->
+    <rect x="74" y="32" width="18" height="60" rx="7" fill="url(#m-pillar-right)" />
+
+    <!-- Left Vertical Pillar (Violet Top to Indigo Bottom) -->
+    <rect x="20" y="32" width="18" height="60" rx="7" fill="url(#m-pillar-left)" />
+
+    <!-- Front Hero Layer: Ascending Cyan Checkmark Ribbon -->
+    <path d="M48.5 76.5L74.5 35.5C76.5 32.3 80 32 83.5 32H85C89.4 32 92 35.5 92 39.5C92 41.5 91.2 43.4 89.8 45.2L62.8 81.2C59.2 86 52 86 48.5 81.2C46.5 78.5 46.8 75.2 48.5 76.5Z" fill="url(#m-fold-right)" />
   </g>
+
+  <!-- Iconic 4-Point Event Sparkle (Top Right) -->
+  <path d="M94 12C94 20.5 97.5 24 106 24C97.5 24 94 27.5 94 36C94 27.5 90.5 24 82 24C90.5 24 94 20.5 94 12Z" fill="url(#sparkle-grad)" />
 </svg>
