@@ -8,8 +8,29 @@ import {
   getShowcaseDummyClientState,
 } from '@/data/showcaseDummyClients';
 
-const FALLBACK_HERO_BANNER_URL =
-  'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp';
+const SITE_BASE_URL = 'https://meplanner.vercel.app';
+const FALLBACK_HERO_BANNER_URL = `${SITE_BASE_URL}/og-agung-selo.jpg`;
+
+function ensureWhatsAppCompatibleJpegUrl(rawUrl: string): string {
+  const trimmed = (rawUrl || '').trim();
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+    return FALLBACK_HERO_BANNER_URL;
+  }
+  // Agung & Selo primary hero/cover WebP photos -> serve our fast 99KB 1200x630 same-origin JPEG
+  if (
+    trimmed.includes('hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp') ||
+    trimmed.includes('cover_slide_cover_2_3_FlWCY4lLxJp77h.webp') ||
+    trimmed === `${SITE_BASE_URL}/og-agung-selo.jpg`
+  ) {
+    return FALLBACK_HERO_BANNER_URL;
+  }
+  // WhatsApp Link Preview crawler does NOT render .webp images or files > 300KB.
+  // Convert any .webp or external image URL into a 1200x630 <120KB JPEG automatically.
+  if (/\.webp(\?|$)/i.test(trimmed) || !/\.(jpe?g)(\?|$)/i.test(trimmed)) {
+    return `https://wsrv.nl/?url=${encodeURIComponent(trimmed)}&w=1200&h=630&fit=cover&a=attention&output=jpg&q=82`;
+  }
+  return trimmed;
+}
 
 async function fetchLiveCloudStateForOg(): Promise<Partial<WeddingDatabaseSchema> | null> {
   try {
@@ -51,11 +72,9 @@ function resolveHeroImageFromSettings(settings?: Partial<WeddingSettings>): stri
     settings.heroPrewedUrl ||
     coverSlideUrl ||
     settings.coverBgUrl ||
+    settings.groomPhotoUrl ||
     FALLBACK_HERO_BANNER_URL;
-  if (candidate && /^https?:\/\//i.test(candidate.trim())) {
-    return candidate.trim();
-  }
-  return FALLBACK_HERO_BANNER_URL;
+  return ensureWhatsAppCompatibleJpegUrl(candidate);
 }
 
 export async function buildInvitationOpenGraphMetadata(
@@ -76,7 +95,8 @@ export async function buildInvitationOpenGraphMetadata(
   if (!cleanHash) {
     const heroImg = resolveHeroImageFromSettings(rootSettings);
     return {
-      title: 'MEPlan — My Event Planner & Digital Invitation Suite',
+      metadataBase: new URL(SITE_BASE_URL),
+      title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
       description:
         'Platform Persiapan Acara & Undangan Digital Eksklusif (Wedding, Birthday, Graduation, Rapat & Gala Dinner).',
       icons: {
@@ -84,24 +104,29 @@ export async function buildInvitationOpenGraphMetadata(
         apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
       },
       openGraph: {
-        title: 'MEPlan — My Event Planner & Digital Invitation Suite',
+        title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
         description:
-          'Platform Persiapan Acara & Undangan Digital Eksklusif (Wedding, Birthday, Graduation, Rapat & Gala Dinner).',
+          'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
+        url: SITE_BASE_URL,
+        siteName: 'MEPlanner Digital Invitation',
+        locale: 'id_ID',
         type: 'website',
         images: [
           {
             url: heroImg,
+            secureUrl: heroImg,
+            type: 'image/jpeg',
             width: 1200,
             height: 630,
-            alt: 'MEPlan Digital Invitation',
+            alt: 'Undangan Pernikahan Agung & Selo',
           },
         ],
       },
       twitter: {
         card: 'summary_large_image',
-        title: 'MEPlan — My Event Planner & Digital Invitation Suite',
+        title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
         description:
-          'Platform Persiapan Acara & Undangan Digital Eksklusif.',
+          'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
         images: [heroImg],
       },
     };
@@ -207,6 +232,7 @@ export async function buildInvitationOpenGraphMetadata(
   }`;
 
   return {
+    metadataBase: new URL(SITE_BASE_URL),
     title: ogTitle,
     description: ogDescription,
     icons: {
@@ -216,10 +242,15 @@ export async function buildInvitationOpenGraphMetadata(
     openGraph: {
       title: ogTitle,
       description: ogDescription,
+      url: `${SITE_BASE_URL}/${encodeURIComponent(cleanHash)}`,
+      siteName: `${categoryBadge} ${hostShortTitle}`,
+      locale: 'id_ID',
       type: 'website',
       images: [
         {
           url: heroImageUrl,
+          secureUrl: heroImageUrl,
+          type: 'image/jpeg',
           width: 1200,
           height: 630,
           alt: `${categoryBadge} ${hostShortTitle}`,

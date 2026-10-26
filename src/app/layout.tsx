@@ -32,6 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://meplanner.vercel.app'),
   title:
     'MEPlanner — My Event Planner & Digital Invitation Suite',
   description:
@@ -44,10 +45,15 @@ export const metadata: Metadata = {
     title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
     description:
       'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
+    url: 'https://meplanner.vercel.app',
+    siteName: 'Undangan Pernikahan Agung & Selo',
+    locale: 'id_ID',
     type: 'website',
     images: [
       {
-        url: 'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
+        url: 'https://meplanner.vercel.app/og-agung-selo.jpg',
+        secureUrl: 'https://meplanner.vercel.app/og-agung-selo.jpg',
+        type: 'image/jpeg',
         width: 1200,
         height: 630,
         alt: 'Undangan Pernikahan Agung & Selo',
@@ -60,7 +66,7 @@ export const metadata: Metadata = {
     description:
       'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
     images: [
-      'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp',
+      'https://meplanner.vercel.app/og-agung-selo.jpg',
     ],
   },
 };
