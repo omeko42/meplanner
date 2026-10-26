@@ -106,6 +106,7 @@ import {
   MEPLANNER_THEME_PRESETS,
   ShowcasePackageTier,
   getShowcaseDummyClientState,
+  findCatalogThemePreset,
 } from '@/data/showcaseDummyClients';
 
 type BackgroundSectionKey = 'cover' | 'hero' | 'page';
@@ -1928,9 +1929,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         map.set(
           g.id,
           g.id === 'client-demo'
-            ? { ...demoGroup, ...g }
+            ? {
+                ...demoGroup,
+                ...g,
+                clientName: demoGroup.clientName,
+                coupleLabel: demoGroup.coupleLabel,
+              }
             : g.id === 'client-utama'
-              ? { ...baseGroup, ...g }
+              ? {
+                  ...baseGroup,
+                  ...g,
+                  clientName: baseGroup.clientName,
+                  coupleLabel: baseGroup.coupleLabel,
+                }
               : g
         );
       }
@@ -5655,12 +5666,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   >
                     <span className="sm:hidden font-sans font-extrabold tracking-tight">MEPlanner</span>
                     <span className="hidden sm:inline">
-                      {!state.settings.siteTitle ||
-                      /wedding\s*readiness\s*tracker|my\s*wedding\s*manager|my\s*event\s*planner|meplan\b/i.test(
-                        state.settings.siteTitle
-                      )
-                        ? 'MEPlanner — My Event Planner'
-                        : state.settings.siteTitle}
+                      MEPlanner — My Event Planner
                     </span>
                   </button>
                 </div>
@@ -8347,8 +8353,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
                     Workspace: <strong className="text-[#8B6914]">{state.settings.groomNickname} &amp; {state.settings.brideNickname}</strong> &bull; Tema:{' '}
                     <strong className="text-stone-800">
-                      {(settingsForm as any).selectedCatalogThemeName ||
-                        (state.settings as any).selectedCatalogThemeName ||
+                      {findCatalogThemePreset(
+                        (settingsForm as any).selectedCatalogThemeId ||
+                          (state.settings as any).selectedCatalogThemeId ||
+                          (settingsForm as any).selectedCatalogThemeName ||
+                          (state.settings as any).selectedCatalogThemeName
+                      )?.name ||
                         activeManagerTheme.name}
                     </strong>
                   </p>
@@ -13225,16 +13235,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 (settingsForm as any).selectedCatalogThemeName ||
                                 (state.settings as any).selectedCatalogThemeName ||
                                 '';
+                              const resolvedCurrentPreset = findCatalogThemePreset(
+                                currentCatalogId || currentCatalogName
+                              );
                               const isCurrent =
-                                currentCatalogId === presetItem.id ||
-                                (presetItem.aliases || []).includes(currentCatalogId) ||
-                                currentCatalogName === presetItem.name ||
-                                (!currentCatalogName &&
-                                  !currentCatalogId &&
-                                  activeThemePresetId === presetItem.themePreset &&
-                                  (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
-                                    presetItem.frameStyle &&
-                                  currentLayoutArchetype === presetItem.layoutArchetype);
+                                resolvedCurrentPreset
+                                  ? resolvedCurrentPreset.id === presetItem.id
+                                  : activeThemePresetId === presetItem.themePreset &&
+                                    (settingsForm.profileFrameStyle || 'ARCH_DOME') ===
+                                      presetItem.frameStyle &&
+                                    currentLayoutArchetype === presetItem.layoutArchetype;
                               const categoryIcon =
                                 presetItem.eventType === 'BIRTHDAY'
                                   ? '🎂'

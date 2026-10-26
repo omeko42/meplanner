@@ -1032,8 +1032,10 @@ export function findCatalogThemePreset(
     val
       .trim()
       .toLowerCase()
+      .replace(/^(culture|aesthetic|luxury|modern|classic|editorial):\s*/i, '')
       .replace(/^client[-_]/, '')
-      .replace(/_/g, '-');
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
   const stripCategoryPrefix = (val: string) =>
     normalizeKey(val).replace(/^(wed|bday|grad|corp|meet|gala)-/, '');
@@ -3212,9 +3214,7 @@ export function getShowcaseDummyClientState(
     layoutArchetype?: ThemeLayoutArchetype;
   } = {
     ...INITIAL_SETTINGS,
-    siteTitle: matchedTheme
-      ? `MEPlanner • ${meta.coupleLabel} — ${matchedTheme.name}`
-      : `MEPlanner • ${meta.coupleLabel}`,
+    siteTitle: 'MEPlanner — My Event Planner',
     subtitle: matchedTheme
       ? `${matchedTheme.name} (${matchedTheme.styleBadge}) • ${matchedTheme.previewSubtitle} • ${meta.dateSummary}`
       : `${meta.badgeId} • ${meta.dateSummary} • ${meta.venueSummary}`,

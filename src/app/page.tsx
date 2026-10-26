@@ -205,9 +205,19 @@ function buildEffectiveClientGroups(state: WeddingDatabaseSchema): ClientGroupIt
       map.set(
         g.id,
         g.id === 'client-demo'
-          ? { ...demoGroup, ...g }
+          ? {
+              ...demoGroup,
+              ...g,
+              clientName: demoGroup.clientName,
+              coupleLabel: demoGroup.coupleLabel,
+            }
           : g.id === 'client-utama'
-            ? { ...baseGroup, ...g }
+            ? {
+                ...baseGroup,
+                ...g,
+                clientName: baseGroup.clientName,
+                coupleLabel: baseGroup.coupleLabel,
+              }
             : g
       );
     }
@@ -1260,9 +1270,7 @@ function WeddingAppContent() {
       const customizedSettings: WeddingSettings & Record<string, unknown> = {
         ...baseTemplate.settings,
         ...profileOverrides,
-        siteTitle: cleanEventTitle
-          ? `MEPlanner • ${cleanEventTitle}`
-          : baseTemplate.settings.siteTitle,
+        siteTitle: 'MEPlanner — My Event Planner',
         activeClientId: clientId,
         eventType: effectiveEventType,
         storageQuotaLimitMb: storageQuotaMb,
