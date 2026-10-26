@@ -8979,83 +8979,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
            ===================================================================== */}
         {activeTab === 'settings' && (
-          <div className={`${showSplitLivePreview ? 'max-w-7xl' : 'max-w-5xl'} mx-auto space-y-4 sm:space-y-5 transition-all`}>
-            {/* WIRA SATYA 96 STYLE TOP HEADER BANNER (CHAMPAGNE GOLD & PEARL IVORY THEME) */}
-            <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FAF3E3] to-[#F3E3C3] border-2 border-[#D4AF37] flex items-center justify-center text-[#8B6914] shrink-0 shadow-2xs overflow-hidden">
-                  <WeddingRingsIcon
-                    className="w-5 h-5 sm:w-6 sm:h-6"
-                    logoUrl={
-                      (settingsForm as any).brandLogoUrl ||
-                      (state.settings as any).brandLogoUrl
-                    }
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-sm sm:text-lg font-extrabold text-stone-900 leading-tight">
-                    Pengaturan Undangan &amp; Acara
-                  </h2>
-                  <p className="text-[11px] sm:text-xs text-stone-600 font-medium truncate mt-0.5">
-                    Workspace: <strong className="text-[#8B6914]">{state.settings.groomNickname} &amp; {state.settings.brideNickname}</strong> &bull; Tema:{' '}
-                    <strong className="text-stone-800">
-                      {findCatalogThemePreset(
-                        (settingsForm as any).selectedCatalogThemeId ||
-                          (state.settings as any).selectedCatalogThemeId ||
-                          (settingsForm as any).selectedCatalogThemeName ||
-                          (state.settings as any).selectedCatalogThemeName
-                      )?.name ||
-                        activeManagerTheme.name}
-                    </strong>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setShowSplitLivePreview((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
-                    showSplitLivePreview
-                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-xs'
-                      : 'bg-white hover:bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
-                  }`}
-                  title="Tampilkan / sembunyikan Live Preview HP di samping kanan editor"
-                >
-                  <span>📱</span>
-                  <span>
-                    {showSplitLivePreview
-                      ? 'Tutup Live Preview'
-                      : 'Live Preview Samping'}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSwitchToPublicPreview()}
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-bold text-xs transition-colors cursor-pointer"
-                  title="Buka tampilan undangan publik layar penuh"
-                >
-                  <Eye className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
-                  <span className="hidden sm:inline">Pratinjau Undangan</span>
-                </button>
-              </div>
-            </div>
-
-            {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT + OPTIONAL STICKY LIVE PREVIEW PHONE */}
-            <div className="flex flex-col xl:flex-row gap-5 items-start">
-              <div className="flex-1 min-w-0 w-full grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5 transition-all">
+            {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
               <div className="lg:col-span-4 lg:sticky lg:top-[120px] space-y-2.5">
                 {/* SUPERADMIN-ONLY WORKSPACE SWITCHER (Moved above Konten Undangan per Project Lead instruction) */}
                 {isSuperadmin &&
                   onSwitchWorkspaceClient &&
                   effectiveClientGroups.length > 0 && (
-                    <div className="rounded-2xl bg-stone-900 border border-[#D4AF37]/50 p-3 shadow-xs space-y-1.5">
+                    <div className="rounded-2xl bg-stone-900 border border-[#D4AF37]/50 p-3 shadow-xs space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D4AF37]">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D4AF37] truncate">
                           👑 Workspace Klien (Superadmin)
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#FAF3E3] text-[9px] font-bold">
+                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#FAF3E3] text-[10px] font-bold whitespace-nowrap shrink-0">
                           {effectiveClientGroups.length} Klien
                         </span>
                       </div>
@@ -9188,9 +9126,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div className="flex items-center gap-2 min-w-0">
                         <Shield className="w-4 h-4 text-[#B68D40] shrink-0" />
                         <h3 className="text-sm sm:text-base font-extrabold text-stone-900 truncate">
-                          Konten &amp; Seksi Undangan (MEPlanner Studio)
+                          Konten &amp; Seksi Undangan
                         </h3>
-                        <InfoTooltip text="Pilih Mode 1 untuk tampilan Grid Studio 16 Modul, atau Mode 2 untuk tampilan Daftar Seksi berbaris." />
+                        <InfoTooltip text="Pilih Mode 1 untuk tampilan Grid Studio 15 Modul, atau Mode 2 untuk tampilan Daftar Seksi berbaris." />
                       </div>
                       <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/40 shrink-0 self-start sm:self-auto">
                         <button
@@ -9205,7 +9143,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'text-stone-600 hover:text-[#8B6914]'
                           }`}
                         >
-                          ⊞ Mode 1: Grid Studio (16 Modul)
+                          ⊞ Mode 1: Grid Studio (15 Modul)
                         </button>
                         <button
                           type="button"
@@ -9224,13 +9162,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 16-TILE GRID) */}
+                    {/* QUICK STUDIO LAUNCHER CARD (STATUS HEADER + LAYAR PENERIMA TAMU + MODE 1 15-TILE GRID) */}
                     <div className="rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/45 text-stone-900 p-3.5 sm:p-4 shadow-sm space-y-3.5">
                       {/* Top Status Banner */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#D4AF37]/25">
                         <div className="min-w-0 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap shrink-0">
                               ● AKTIF
                             </span>
                             <h4 className="font-serif font-extrabold text-sm sm:text-base text-stone-900 truncate">
@@ -9238,64 +9176,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 ? state.settings.groomNickname || state.settings.groomFullName
                                 : `${state.settings.groomNickname} & ${state.settings.brideNickname}`}
                             </h4>
-                            <button
-                              type="button"
-                              onClick={() => setSettingsMenuTab('paket')}
-                              title="Klik untuk melihat detail atau upgrade paket aktif Anda"
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/60 text-[10px] font-extrabold cursor-pointer transition-colors"
-                            >
-                              <span>💎</span>
-                              <span>
-                                {activePackageInfo.packageName} &bull; Kuota{' '}
-                                {Math.min(
-                                  usedInvitationsCount,
-                                  activePackageInfo.maxInvitations
-                                )}
-                                /{activePackageInfo.maxInvitations} Undangan
-                              </span>
-                            </button>
-                            {activePackageInfo.tierKey === 'GRATIS' && (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-bold">
-                                Kuota Gratis: {state.guests.length}/30 Tamu &bull;{' '}
-                                {effectiveGalleryPhotos.length}/4 Foto
-                              </span>
-                            )}
                           </div>
                           <p className="text-[11px] text-stone-500 font-mono truncate">
-                            {activePackageInfo.activePeriodLabel} &bull; Kategori:{' '}
+                            {typeof window !== 'undefined'
+                              ? window.location.origin
+                              : 'https://meplanner.vercel.app'}{' '}
+                            &bull; Kategori:{' '}
                             <span className="font-sans font-bold text-[#8B6914]">
                               {state.settings.eventType || 'WEDDING'}
                             </span>
-                            {((settingsForm as any).whiteLabelBrandName ||
-                              (state.settings as any).whiteLabelBrandName) && (
-                              <>
-                                {' '}
-                                &bull;{' '}
-                                <span className="font-sans font-bold text-emerald-700">
-                                  👑 WO/EO:{' '}
-                                  {(settingsForm as any).whiteLabelBrandName ||
-                                    (state.settings as any).whiteLabelBrandName}
-                                </span>
-                              </>
-                            )}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                          {(activePackageInfo.maxInvitations > 1 || isSuperadmin) && (
-                            <button
-                              type="button"
-                              onClick={handleCreateAdditionalInvitationWorkspace}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border-2 border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer"
-                              title={`Buat workspace undangan tambahan sesuai kuota ${activePackageInfo.packageName} (Maks. ${activePackageInfo.maxInvitations} Undangan)`}
-                            >
-                              <Plus className="w-3.5 h-3.5 shrink-0" />
-                              <span>
-                                + Buat Undangan ke-{nextInvitationNumber} (Sesuai Kuota Paket)
-                              </span>
-                            </button>
-                          )}
-
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -9303,7 +9196,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               setReceptionSearchInput('');
                               setIsGuestReceptionModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-xs transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white border border-[#B68D40] font-extrabold text-[11px] sm:text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap"
                             title="Buka Layar Penerima Tamu (Guest Reception Hari-H) untuk scan/ketik kode tamu & tampilkan layar sapaan VIP"
                           >
                             <span>🖥️</span>
@@ -9362,10 +9255,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </button>
                       </div>
 
-                      {/* MODE 1: 16 Quick Action Tiles */}
+                      {/* MODE 1: 15 Quick Action Tiles (5x3 Symmetrical Grid) */}
                       {isQuickStudioOpen && (
                         <>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-1">
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 pt-1">
                             {[
                               {
                                 icon: '👫',
@@ -9529,34 +9422,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     expandedSectionKey === 'showQuoteSection'
                                       ? null
                                       : 'showQuoteSection'
-                                  );
-                                },
-                              },
-                              {
-                                icon: '👑',
-                                label: 'White-Label WO',
-                                isActiveTile: quickStudioModal === 'whitelabel',
-                                onClick: () => {
-                                  setExpandedSectionKey(null);
-                                  setWhiteLabelBrandNameInput(
-                                    (settingsForm as any).whiteLabelBrandName ||
-                                      (state.settings as any).whiteLabelBrandName ||
-                                      ''
-                                  );
-                                  setWhiteLabelBrandUrlInput(
-                                    (settingsForm as any).whiteLabelBrandUrl ||
-                                      (state.settings as any).whiteLabelBrandUrl ||
-                                      ''
-                                  );
-                                  setWhiteLabelLogoUrlInput(
-                                    (settingsForm as any).brandLogoUrl ||
-                                      (state.settings as any).brandLogoUrl ||
-                                      ''
-                                  );
-                                  setQuickStudioModal(
-                                    quickStudioModal === 'whitelabel'
-                                      ? null
-                                      : 'whitelabel'
                                   );
                                 },
                               },
@@ -16281,6 +16146,83 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </span>
                     </div>
 
+                    {/* Kuota Multi-Undangan & White-Label WO/EO (Khusus Paket Aktif) */}
+                    <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/40 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-extrabold text-stone-900">
+                            💎 Kuota Workspace Undangan: {Math.min(usedInvitationsCount, activePackageInfo.maxInvitations)} / {activePackageInfo.maxInvitations} Undangan
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            {activePackageInfo.tierKey === 'GRATIS'
+                              ? `Kuota Gratis: ${state.guests.length}/30 Tamu • ${effectiveGalleryPhotos.length}/4 Foto Galeri`
+                              : 'Unlimited Tamu & Galeri Foto • Aktif Selamanya'}
+                          </p>
+                        </div>
+                        {(activePackageInfo.maxInvitations > 1 || isSuperadmin) && (
+                          <button
+                            type="button"
+                            onClick={handleCreateAdditionalInvitationWorkspace}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#B68D40] font-extrabold text-xs shadow-2xs transition-all cursor-pointer shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5 shrink-0" />
+                            <span>+ Buat Undangan ke-{nextInvitationNumber}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {(activePackageInfo.hasWhiteLabelText || isSuperadmin) && (
+                        <div className="pt-3 border-t border-stone-200/80 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                              👑 Nama WO / EO (White-Label)
+                            </label>
+                            <input
+                              type="text"
+                              value={whiteLabelBrandNameInput || (settingsForm as any).whiteLabelBrandName || (state.settings as any).whiteLabelBrandName || ''}
+                              onChange={(e) => setWhiteLabelBrandNameInput(e.target.value)}
+                              placeholder="Contoh: Royal Wedding Organizer"
+                              className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-semibold"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                              Link Website / IG WO/EO
+                            </label>
+                            <input
+                              type="url"
+                              value={whiteLabelBrandUrlInput || (settingsForm as any).whiteLabelBrandUrl || (state.settings as any).whiteLabelBrandUrl || ''}
+                              onChange={(e) => setWhiteLabelBrandUrlInput(e.target.value)}
+                              placeholder="https://instagram.com/..."
+                              className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const nextSettings: WeddingSettings = {
+                                  ...state.settings,
+                                  ...settingsForm,
+                                  updatedBy: adminUser.username,
+                                };
+                                (nextSettings as any).whiteLabelBrandName =
+                                  (whiteLabelBrandNameInput || (settingsForm as any).whiteLabelBrandName || '').trim();
+                                (nextSettings as any).whiteLabelBrandUrl =
+                                  (whiteLabelBrandUrlInput || (settingsForm as any).whiteLabelBrandUrl || '').trim();
+                                setSettingsFormInternal(nextSettings);
+                                await commitImmediateSettings(nextSettings);
+                                showToast('✓ White-Label WO/EO disimpan ke footer undangan!');
+                              }}
+                              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-extrabold text-xs cursor-pointer"
+                            >
+                              Simpan White-Label WO/EO
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {[
                         {
@@ -16667,70 +16609,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 )}
               </div>
-              </div>
-
-              {/* STICKY RIGHT-HAND MOBILE LIVE PREVIEW FRAME (WHEN showSplitLivePreview IS TRUE) */}
-              {showSplitLivePreview && (
-                <div className="sticky top-20 w-full xl:w-[390px] shrink-0 space-y-2.5">
-                  <div className="bg-white rounded-2xl border border-[#D4AF37]/40 p-3 shadow-xs flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                      <span className="text-xs font-extrabold text-stone-900 truncate">
-                        📱 Live Preview Undangan
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setLivePreviewDefaultOpened(false)}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
-                          !livePreviewDefaultOpened
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white'
-                            : 'bg-stone-100 text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        Sampul
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLivePreviewDefaultOpened(true)}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
-                          livePreviewDefaultOpened
-                            ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white'
-                            : 'bg-stone-100 text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        Isi Undangan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowSplitLivePreview(false)}
-                        title="Tutup Live Preview Samping"
-                        className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-600 text-[10px] font-bold cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="h-[640px] rounded-[32px] border-[6px] border-stone-900 overflow-hidden shadow-xl bg-white [transform:translateZ(0)] relative">
-                    <div className="w-full h-full overflow-y-auto overflow-x-hidden">
-                      <PublicInvitationView
-                        key={livePreviewDefaultOpened ? 'preview-opened' : 'preview-cover'}
-                        settings={{ ...state.settings, ...settingsForm }}
-                        guests={state.guests}
-                        wishes={state.wishes}
-                        guestParamName="Tamu Kehormatan VIP"
-                        guestParamCode=""
-                        defaultOpened={livePreviewDefaultOpened}
-                        isAdminLoggedIn={true}
-                        onOpenAdminPortal={() => {}}
-                        onSubmitRsvp={async () => {}}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
