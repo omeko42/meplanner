@@ -1162,8 +1162,7 @@ export function applyCatalogThemeToSettings(
   return nextSettings;
 }
 
-export const USER_REAL_QRIS_URL =
-  'https://gwoyalvivfemaeacbyvi.supabase.co/storage/v1/object/public/wedding-media/photos/qrisImageUrl_7_H3fEFgYXwW2R5G.webp';
+export const USER_REAL_QRIS_URL = '/media/utama/qris.webp';
 
 export interface ShowcaseDummyClientMeta {
   id: string;

@@ -20,18 +20,21 @@ import {
   wrapRasterDataUrlInSvg,
 } from './clientSync';
 
-export const SUPABASE_PROJECT_REF = 'gwoyalvivfemaeacbyvi';
+export const SUPABASE_PROJECT_REF = 'wkjnwkgpolpmzdfrfjso';
+const envSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  `https://${SUPABASE_PROJECT_REF}.supabase.co`;
+  envSupabaseUrl && !envSupabaseUrl.includes('gwoyalvivfemaeacbyvi')
+    ? envSupabaseUrl
+    : `https://${SUPABASE_PROJECT_REF}.supabase.co`;
 
+const envSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b3lhbHZpdmZlbWFlYWNieXZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNzQ3MDYsImV4cCI6MjEwNzg1MDcwNn0.TbcDMu0IYjfh4B7UW7Q5laVXlDQ_OhazvL4jXAB-o34';
+  envSupabaseAnonKey && !envSupabaseUrl.includes('gwoyalvivfemaeacbyvi') && envSupabaseAnonKey.includes('d2tqbnd')
+    ? envSupabaseAnonKey
+    : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indram53a2dwb2xwbXpkZnJmanNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTIyNDYsImV4cCI6MjEwODU4ODI0Nn0.xb6vHcEWrnLwQe_W0TxRVXXUTPVfcDrPNL6assS_YQQ';
 
 export const SUPABASE_PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'sb_publishable_huGPlGBgndER8CbMPtTH-g_gCbYXkKT';
+  'sb_publishable_hvCxUhQndVrsMB2obo9CfQ_p8Otlmp-';
 
 export const SUPABASE_TABLE_NAME = 'wedding_state';
 export const SUPABASE_ROW_ID = 'main';
