@@ -165,22 +165,31 @@ function normalizeParsedState(
 
   if (Array.isArray(mergedSettings.musicPlaylist)) {
     mergedSettings.musicPlaylist = mergedSettings.musicPlaylist.map((m) => {
+      const titleLower = (m.title || '').toLowerCase();
+      const urlLower = (m.url || '').toLowerCase();
       if (
-        m.url === '/musik/beautiful-in-white.mp3' &&
-        !/beautiful\s*in\s*white/i.test(m.title || '')
+        titleLower.includes('pernikahan kita') ||
+        urlLower.includes('pernikahan-kita')
       ) {
-        if (/pernikahan\s*kita/i.test(m.title || '')) {
-          return {
-            ...m,
-            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3`,
-          };
-        }
-        if (/jalaraning\s*tresna/i.test(m.title || '')) {
-          return {
-            ...m,
-            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3`,
-          };
-        }
+        return { ...m, url: '/musik/pernikahan-kita.mp3' };
+      }
+      if (
+        titleLower.includes('jalaraning tresna') ||
+        urlLower.includes('jalaraning-tresna')
+      ) {
+        return { ...m, url: '/musik/jalaraning-tresna.mp3' };
+      }
+      if (
+        titleLower.includes('cundamani') ||
+        urlLower.includes('music_mvgp1wrn')
+      ) {
+        return { ...m, url: '/musik/cundamani.mp3' };
+      }
+      if (
+        titleLower.includes('marry your daughter') ||
+        urlLower.includes('music_mvgp2o8h')
+      ) {
+        return { ...m, url: '/musik/marry-your-daughter.mp3' };
       }
       return m;
     });
@@ -244,22 +253,35 @@ function normalizeParsedState(
       'BCA / Mandiri / BRI / BNI (Konfirmasi via Email Resmi Gmail: e98.bisnis@gmail.com)';
   }
 
-  // Purge any accidental non-superadmin workspace created for owner email agungkrisdianto98@gmail.com
+  // Purge any accidental non-superadmin / test workspaces so they never bloat JSON
   if (Array.isArray(mergedSettings.clientGroups)) {
     mergedSettings.clientGroups = mergedSettings.clientGroups.filter(
-      (g) => g.id !== 'client-gmail-agungkrisdiant'
+      (g) =>
+        g.id !== 'client-gmail-agungkrisdiant' &&
+        g.id !== 'client-gmail-pasanganmempel'
     );
   }
-  if (
-    mergedSettings.clientWorkspaces &&
-    'client-gmail-agungkrisdiant' in mergedSettings.clientWorkspaces
-  ) {
+  if (mergedSettings.clientWorkspaces) {
     const nextWs = { ...mergedSettings.clientWorkspaces };
     delete nextWs['client-gmail-agungkrisdiant'];
+    delete nextWs['client-gmail-pasanganmempel'];
     mergedSettings.clientWorkspaces = nextWs;
   }
-  if (mergedSettings.activeClientId === 'client-gmail-agungkrisdiant') {
+  if (
+    mergedSettings.activeClientId === 'client-gmail-agungkrisdiant' ||
+    mergedSettings.activeClientId === 'client-gmail-pasanganmempel'
+  ) {
     mergedSettings.activeClientId = 'client-utama';
+  }
+  if (
+    mergedSettings.invitationAnalytics &&
+    Array.isArray(mergedSettings.invitationAnalytics.recentEvents) &&
+    mergedSettings.invitationAnalytics.recentEvents.length > 12
+  ) {
+    mergedSettings.invitationAnalytics = {
+      ...mergedSettings.invitationAnalytics,
+      recentEvents: mergedSettings.invitationAnalytics.recentEvents.slice(0, 12),
+    };
   }
 
   const rawAdminUsers =
@@ -267,6 +289,9 @@ function normalizeParsedState(
       ? parsed.adminUsers.filter(
           (u) =>
             u.id !== 'usr-gmail-agungkrisdiant' &&
+            u.id !== 'usr-gmail-pasanganmempel' &&
+            u.clientId !== 'client-gmail-agungkrisdiant' &&
+            u.clientId !== 'client-gmail-pasanganmempel' &&
             u.username?.toLowerCase() !== 'agungkrisdianto98@gmail.com'
         )
       : INITIAL_ADMIN_USERS;
@@ -2487,8 +2512,8 @@ export function appendInvitationAnalyticsEvent(
     giftCopyClicks,
     qrisClicks,
     rsvpSubmits,
-    visitedGuestKeys: nextVisitedKeys,
-    recentEvents: [newEvent, ...(base.recentEvents || [])].slice(0, 60),
+    visitedGuestKeys: nextVisitedKeys.slice(-100),
+    recentEvents: [newEvent, ...(base.recentEvents || [])].slice(0, 12),
     lastUpdatedAt: nowIso,
   };
 }

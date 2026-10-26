@@ -1355,22 +1355,34 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
     next.musicArtist = INITIAL_SETTINGS.musicArtist;
   }
 
-  // Heal custom tracks whose URL was previously overwritten with '/musik/beautiful-in-white.mp3'
+  // Heal custom tracks to serve from Vercel static CDN (/musik/...) with 0 Supabase Egress
   if (Array.isArray(next.musicPlaylist)) {
     next.musicPlaylist = next.musicPlaylist.map((m) => {
-      if (m.url === '/musik/beautiful-in-white.mp3' && !/beautiful\s*in\s*white/i.test(m.title || '')) {
-        if (/pernikahan\s*kita/i.test(m.title || '')) {
-          return {
-            ...m,
-            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/pernikahan-kita.mp3`,
-          };
-        }
-        if (/jalaraning\s*tresna/i.test(m.title || '')) {
-          return {
-            ...m,
-            url: `${SUPABASE_URL}/storage/v1/object/public/wedding-media/music/jalaraning-tresna-woro.mp3`,
-          };
-        }
+      const titleLower = (m.title || '').toLowerCase();
+      const urlLower = (m.url || '').toLowerCase();
+      if (
+        titleLower.includes('pernikahan kita') ||
+        urlLower.includes('pernikahan-kita')
+      ) {
+        return { ...m, url: '/musik/pernikahan-kita.mp3' };
+      }
+      if (
+        titleLower.includes('jalaraning tresna') ||
+        urlLower.includes('jalaraning-tresna')
+      ) {
+        return { ...m, url: '/musik/jalaraning-tresna.mp3' };
+      }
+      if (
+        titleLower.includes('cundamani') ||
+        urlLower.includes('music_mvgp1wrn')
+      ) {
+        return { ...m, url: '/musik/cundamani.mp3' };
+      }
+      if (
+        titleLower.includes('marry your daughter') ||
+        urlLower.includes('music_mvgp2o8h')
+      ) {
+        return { ...m, url: '/musik/marry-your-daughter.mp3' };
       }
       return m;
     });
@@ -1383,6 +1395,30 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
       next.musicTitle = next.musicPlaylist[0].title;
       next.musicArtist = next.musicPlaylist[0].artist;
     }
+  }
+  if (Array.isArray(next.clientGroups)) {
+    next.clientGroups = next.clientGroups.filter(
+      (g) =>
+        g &&
+        g.id !== 'client-gmail-agungkrisdiant' &&
+        g.id !== 'client-gmail-pasanganmempel'
+    );
+  }
+  if (next.clientWorkspaces) {
+    const nextWs = { ...next.clientWorkspaces };
+    delete nextWs['client-gmail-agungkrisdiant'];
+    delete nextWs['client-gmail-pasanganmempel'];
+    next.clientWorkspaces = nextWs;
+  }
+  if (
+    next.invitationAnalytics &&
+    Array.isArray(next.invitationAnalytics.recentEvents) &&
+    next.invitationAnalytics.recentEvents.length > 12
+  ) {
+    next.invitationAnalytics = {
+      ...next.invitationAnalytics,
+      recentEvents: next.invitationAnalytics.recentEvents.slice(0, 12),
+    };
   }
   if (
     typeof next.musicVolume !== 'number' ||
@@ -1521,6 +1557,98 @@ export const deleteAudioFromSupabaseStorage = deleteMediaFromSupabaseStorage;
 
 const uploadedImageUrlCache = new Map<string, string>();
 
+async function compressImageSourceToTinyWebpBlob(
+  source: File | string,
+  slotKey: string
+): Promise<{ blob: Blob; contentType: string; ext: string } | null> {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return null;
+  }
+  const isSmallSlot = /groomPhoto|bridePhoto|qris|logo/i.test(slotKey);
+  const maxDim = isSmallSlot ? 560 : 900;
+  const quality = isSmallSlot ? 0.68 : 0.65;
+
+  return new Promise((resolve) => {
+    let objectUrlToRevoke: string | null = null;
+    try {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.onerror = () => {
+        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+        resolve(null);
+      };
+      img.onload = () => {
+        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+        try {
+          let w = img.naturalWidth || img.width || 800;
+          let h = img.naturalHeight || img.height || 800;
+          if (w > maxDim || h > maxDim) {
+            if (w >= h) {
+              h = Math.max(1, Math.round((h * maxDim) / w));
+              w = maxDim;
+            } else {
+              w = Math.max(1, Math.round((w * maxDim) / h));
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            (webpBlob) => {
+              if (webpBlob && webpBlob.size > 0) {
+                resolve({
+                  blob: webpBlob,
+                  contentType: 'image/webp',
+                  ext: 'webp',
+                });
+              } else {
+                canvas.toBlob(
+                  (jpgBlob) => {
+                    if (jpgBlob && jpgBlob.size > 0) {
+                      resolve({
+                        blob: jpgBlob,
+                        contentType: 'image/jpeg',
+                        ext: 'jpg',
+                      });
+                    } else {
+                      resolve(null);
+                    }
+                  },
+                  'image/jpeg',
+                  quality
+                );
+              }
+            },
+            'image/webp',
+            quality
+          );
+        } catch {
+          resolve(null);
+        }
+      };
+
+      if (typeof source === 'string') {
+        img.src = source;
+      } else {
+        objectUrlToRevoke = URL.createObjectURL(source);
+        img.src = objectUrlToRevoke;
+      }
+    } catch {
+      if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+      resolve(null);
+    }
+  });
+}
+
 export async function uploadImageToSupabaseStorage(
   fileOrDataUrl: File | string | undefined,
   slotKey: string
@@ -1554,25 +1682,45 @@ export async function uploadImageToSupabaseStorage(
       const cachedUrl = uploadedImageUrlCache.get(cacheSig);
       if (cachedUrl) return cachedUrl;
 
-      const mimeMatch = sourceDataUrl.match(/^data:([^;,]+)[;,]/i);
-      if (mimeMatch && mimeMatch[1]) {
-        contentType = mimeMatch[1];
+      const compressed = await compressImageSourceToTinyWebpBlob(
+        sourceDataUrl,
+        slotKey
+      );
+      if (compressed) {
+        bodyBlob = compressed.blob;
+        contentType = compressed.contentType;
+        ext = compressed.ext;
+      } else {
+        const mimeMatch = sourceDataUrl.match(/^data:([^;,]+)[;,]/i);
+        if (mimeMatch && mimeMatch[1]) {
+          contentType = mimeMatch[1];
+          if (contentType.includes('svg')) ext = 'svg';
+          else if (contentType.includes('png')) ext = 'png';
+          else if (contentType.includes('jpeg') || contentType.includes('jpg'))
+            ext = 'jpg';
+          else if (contentType.includes('webp')) ext = 'webp';
+        }
+        const res = await fetch(sourceDataUrl);
+        bodyBlob = await res.blob();
+      }
+    } else {
+      cacheSig = `${slotKey}_${fileOrDataUrl.size}_${Date.now().toString(36)}`;
+      const compressed = await compressImageSourceToTinyWebpBlob(
+        fileOrDataUrl,
+        slotKey
+      );
+      if (compressed) {
+        bodyBlob = compressed.blob;
+        contentType = compressed.contentType;
+        ext = compressed.ext;
+      } else {
+        bodyBlob = fileOrDataUrl;
+        contentType = fileOrDataUrl.type || 'image/webp';
         if (contentType.includes('svg')) ext = 'svg';
         else if (contentType.includes('png')) ext = 'png';
         else if (contentType.includes('jpeg') || contentType.includes('jpg'))
           ext = 'jpg';
-        else if (contentType.includes('webp')) ext = 'webp';
       }
-      const res = await fetch(sourceDataUrl);
-      bodyBlob = await res.blob();
-    } else {
-      bodyBlob = fileOrDataUrl;
-      contentType = fileOrDataUrl.type || 'image/webp';
-      if (contentType.includes('svg')) ext = 'svg';
-      else if (contentType.includes('png')) ext = 'png';
-      else if (contentType.includes('jpeg') || contentType.includes('jpg'))
-        ext = 'jpg';
-      cacheSig = `${slotKey}_${fileOrDataUrl.size}_${Date.now().toString(36)}`;
     }
 
     const safeSlot = slotKey.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -1589,6 +1737,7 @@ export async function uploadImageToSupabaseStorage(
           apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': contentType,
+          'cache-control': 'max-age=31536000, immutable',
           'x-upsert': 'true',
         },
         body: bodyBlob,
@@ -2559,6 +2708,32 @@ async function recoverFromRelationalTablesIfNeeded(
 }
 
 /**
+ * Lightweight 45-byte check to see if `public.wedding_state` (`id = 'main'`)
+ * has been updated on another device without downloading the full JSON column.
+ */
+export async function checkCloudStateUpdatedAt(): Promise<string | null> {
+  try {
+    const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=updated_at`;
+    const res = await fetchSupabaseWithRetry(
+      restUrl,
+      {
+        method: 'GET',
+        headers: getSupabaseHeaders({ Accept: 'application/json' }),
+      },
+      3500,
+      1
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ updated_at?: string }>;
+    return Array.isArray(rows) && rows[0]?.updated_at
+      ? rows[0].updated_at
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Load WeddingDatabaseSchema from Supabase PostgreSQL table `public.wedding_state`
  * (with automatic slice-recovery if statement_timeout 57014 occurs).
  */
@@ -3108,28 +3283,38 @@ async function performActualSupabaseUpsert(
   let state = rawState;
 
   // Pre-Write Fresh Cloud Fetch & Multi-Device Full Database Merge:
-  // Ensures concurrent edits from PC, HP, Panitia, and dozens of RSVP Guests never overwrite each other
+  // First check 45-byte `updated_at` so we ONLY download `data` if another device wrote a newer snapshot!
   if (!options?.forceOverwrite) {
     try {
-      const freshRes = await fetchSupabaseWithRetry(
-        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data,updated_at`,
-        {
-          method: 'GET',
-          headers: getSupabaseHeaders({ Accept: 'application/json' }),
-        },
-        3500,
-        1
-      ).catch(() => null);
-      if (freshRes && freshRes.ok) {
-        const freshRows = (await freshRes.json().catch(() => null)) as Array<{
-          data?: Partial<WeddingDatabaseSchema>;
-          updated_at?: string;
-        }> | null;
-        if (Array.isArray(freshRows) && freshRows[0]?.data) {
-          lastKnownCloudState = normalizeCloudState(
-            freshRows[0].data,
-            freshRows[0].updated_at
-          );
+      const remoteUpdatedAt = await checkCloudStateUpdatedAt();
+      const knownSync = lastKnownCloudState?.lastSyncedAt || '';
+      const needsFullFetch =
+        !lastKnownCloudState ||
+        (remoteUpdatedAt &&
+          new Date(remoteUpdatedAt).getTime() >
+            new Date(knownSync || 0).getTime() + 500);
+
+      if (needsFullFetch) {
+        const freshRes = await fetchSupabaseWithRetry(
+          `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data,updated_at`,
+          {
+            method: 'GET',
+            headers: getSupabaseHeaders({ Accept: 'application/json' }),
+          },
+          3500,
+          1
+        ).catch(() => null);
+        if (freshRes && freshRes.ok) {
+          const freshRows = (await freshRes.json().catch(() => null)) as Array<{
+            data?: Partial<WeddingDatabaseSchema>;
+            updated_at?: string;
+          }> | null;
+          if (Array.isArray(freshRows) && freshRows[0]?.data) {
+            lastKnownCloudState = normalizeCloudState(
+              freshRows[0].data,
+              freshRows[0].updated_at
+            );
+          }
         }
       }
     } catch {
@@ -3247,7 +3432,6 @@ async function performActualSupabaseUpsert(
 
     if (res.ok) {
       lastKnownCloudState = cloudSafePayload;
-      void syncRelationalTablesInBackground(cloudSafePayload, updatedAt);
       setCloudStatus('SYNCED', updatedAt);
       return true;
     }

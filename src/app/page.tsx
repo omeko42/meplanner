@@ -70,6 +70,7 @@ import {
 } from '@/lib/clientSync';
 import {
   loadStateFromSupabase,
+  checkCloudStateUpdatedAt,
   saveStateToSupabase,
   appendAuditLog,
   upsertCommercialPaymentToSupabase,
@@ -679,6 +680,7 @@ function WeddingAppContent() {
   }, [urlMode, changeViewMode]);
 
   const isReconcilingRef = useRef(false);
+  const lastReconcileCheckMsRef = useRef(0);
 
   useEffect(() => {
     const handleReconnectOrVisible = async () => {
@@ -690,6 +692,12 @@ function WeddingAppContent() {
         return;
       }
 
+      const nowMs = Date.now();
+      if (nowMs - lastReconcileCheckMsRef.current < 15000) {
+        return;
+      }
+      lastReconcileCheckMsRef.current = nowMs;
+
       const currentStatus = getCloudSyncStatus().status;
       if (currentStatus === 'OFFLINE') {
         void saveStateToSupabase(state);
@@ -699,6 +707,17 @@ function WeddingAppContent() {
       if (currentStatus === 'SYNCED' && !isReconcilingRef.current) {
         isReconcilingRef.current = true;
         try {
+          // 1. Lightweight 45-byte check: only download JSON if `updated_at` on Supabase is newer
+          const remoteUpdatedAt = await checkCloudStateUpdatedAt();
+          const localSyncMs = new Date(state.lastSyncedAt || 0).getTime() || 0;
+          const remoteSyncMs = remoteUpdatedAt
+            ? new Date(remoteUpdatedAt).getTime() || 0
+            : 0;
+          if (!remoteUpdatedAt || remoteSyncMs <= localSyncMs + 500) {
+            return;
+          }
+
+          // 2. Full fetch ONLY when another device actually saved newer data
           const cloudRes = await loadStateFromSupabase();
           if (cloudRes.state) {
             const remote = cloudRes.state;
@@ -737,7 +756,7 @@ function WeddingAppContent() {
 
     const intervalId = setInterval(() => {
       void handleReconnectOrVisible();
-    }, 25000);
+    }, 60000);
 
     window.addEventListener('online', handleReconnectOrVisible);
     window.addEventListener('focus', handleReconnectOrVisible);
@@ -2398,25 +2417,30 @@ function WeddingAppContent() {
         return;
       }
       if (!isCloudHydratedRef.current) return;
-      updateClientScopedState(activePublicClientId, (prev) => {
-        const nextAnalytics = appendInvitationAnalyticsEvent(
-          prev.settings,
-          payload,
-          prev.guests,
-          prev.wishes
-        );
-        if (activePublicClientId === 'client-utama') {
-          void mutateServer('UPDATE_SETTINGS', {
-            invitationAnalytics: nextAnalytics,
-          });
+      // Only sync to Supabase Cloud on intentional RSVP/share actions; passive page views stay local to save Egress
+      const shouldSyncToCloud =
+        payload.type === 'SUBMIT_RSVP' ||
+        payload.type === 'SHARE_WA' ||
+        payload.type === 'COPY_LINK';
+
+      setState((prevRoot) => {
+        if (!activePublicClientId || activePublicClientId === 'client-utama') {
+          const nextAnalytics = appendInvitationAnalyticsEvent(
+            prevRoot.settings,
+            payload,
+            prevRoot.guests,
+            prevRoot.wishes
+          );
+          const updatedRoot: WeddingDatabaseSchema = {
+            ...prevRoot,
+            settings: {
+              ...prevRoot.settings,
+              invitationAnalytics: nextAnalytics,
+            },
+          };
+          return saveClientState(updatedRoot, shouldSyncToCloud);
         }
-        return {
-          ...prev,
-          settings: {
-            ...prev.settings,
-            invitationAnalytics: nextAnalytics,
-          },
-        };
+        return prevRoot;
       });
     },
     [
