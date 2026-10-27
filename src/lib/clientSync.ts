@@ -586,26 +586,17 @@ export function buildGuestInvitationUrl(
   originUrl?: string,
   clientSlug?: string
 ): string {
-  const base =
+  const base = (
     originUrl ||
     (typeof window !== 'undefined'
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || MEPLANNER_DEFAULT_SITE_URL);
+      : process.env.NEXT_PUBLIC_SITE_URL || MEPLANNER_DEFAULT_SITE_URL)
+  ).replace(/\/+$/, '');
   const hashToken = computeGuestInvitationHash(
     clientSlug || 'client-utama',
     guest
   );
-  const params = new URLSearchParams();
-  if (
-    clientSlug &&
-    clientSlug !== 'client-utama' &&
-    clientSlug.toLowerCase() !== 'utama'
-  ) {
-    params.set('client', clientSlug.replace(/^client-/i, '').toLowerCase());
-  }
-  params.set('to', guest.guestName);
-  params.set('code', hashToken);
-  return `${base}/?${params.toString()}`;
+  return `${base}/${hashToken}`;
 }
 
 export function sanitizeWhatsAppText(raw: string): string {
@@ -649,7 +640,9 @@ export const DEFAULT_WA_TEMPLATE_VIP = [
   '❖ *Lokasi:* {lokasi_utama}',
   '',
   'Tautan Undangan Resmi & Konfirmasi Kehadiran:',
+  '',
   '{link_undangan}',
+  '',
   '❖ *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.',
@@ -673,7 +666,9 @@ export const DEFAULT_WA_TEMPLATE_REGULAR = [
   '❖ *Tempat:* {lokasi_utama}',
   '',
   'Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:',
+  '',
   '{link_undangan}',
+  '',
   '❖ *Kode Akses Undangan:* `{kode_undangan}`',
   '',
   'Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.',
@@ -757,7 +752,7 @@ export function generateWhatsAppMessage(
     rawTemplate
       .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
       .replace(/\{instansi\}/g, instansiFormatted)
-      .replace(/\{link_undangan\}/g, inviteUrl)
+      .replace(/\s*\{link_undangan\}\s*/g, `\n\n${inviteUrl}\n\n`)
       .replace(/\{mempelai_pria\}/g, settings.groomFullName || 'Mempelai Pria')
       .replace(/\{mempelai_wanita\}/g, settings.brideFullName || 'Mempelai Wanita')
       .replace(/\{panggilan_pria\}/g, settings.groomNickname || 'Mempelai Pria')

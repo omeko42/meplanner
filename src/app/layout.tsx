@@ -51,8 +51,8 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://meplanner.vercel.app/og-agung-selo.jpg',
-        secureUrl: 'https://meplanner.vercel.app/og-agung-selo.jpg',
+        url: 'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
+        secureUrl: 'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
         type: 'image/jpeg',
         width: 1200,
         height: 630,
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     description:
       'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
     images: [
-      'https://meplanner.vercel.app/og-agung-selo.jpg',
+      'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
     ],
   },
 };

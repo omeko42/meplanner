@@ -28,6 +28,48 @@ function uint32ToBase62(num: number, length: number): string {
   return out;
 }
 
+function buildBase62HashWithPrefix(
+  prefix: string,
+  clientId: string | undefined | null,
+  guest: {
+    id?: string;
+    invitationCode?: string;
+    guestName?: string;
+  }
+): string {
+  const normalizedClient = (clientId || 'client-utama').trim().toLowerCase();
+  const guestKey = `${normalizedClient}::${(guest.id || '').trim()}::${(
+    guest.invitationCode || ''
+  ).trim()}::${(guest.guestName || '').trim().toLowerCase()}`;
+
+  const p1 = uint32ToBase62(fnv1a32(`${prefix}_s1_${guestKey}`, 0x811c9dc5), 6);
+  const p2 = uint32ToBase62(fnv1a32(`${prefix}_s2_${guestKey}`, 0x9e3779b9), 5);
+  const p3 = uint32ToBase62(fnv1a32(`${prefix}_s3_${guestKey}`, 0x517cc1b7), 5);
+  const p4 = uint32ToBase62(fnv1a32(`${prefix}_s4_${guestKey}`, 0x27d4eb2f), 5);
+
+  return `${p1}${p2}${p3}${p4}`; // 21 Base62 characters
+}
+
+export function computeLegacyGuestInvitationHash(
+  clientId: string | undefined | null,
+  guest: {
+    id?: string;
+    invitationCode?: string;
+    guestName?: string;
+    invitationToken?: string;
+  }
+): string {
+  const explicitToken = guest.invitationToken?.trim();
+  if (
+    explicitToken &&
+    explicitToken.length >= 12 &&
+    !/^INV-\d+$/i.test(explicitToken)
+  ) {
+    return explicitToken;
+  }
+  return buildBase62HashWithPrefix('mep', clientId, guest);
+}
+
 /**
  * Generates a deterministic 21-character Base62 invitation hash token
  * (e.g. "JHi4b3XgT2RQIDhZ9coLw") that uniquely identifies both the Client
@@ -50,18 +92,7 @@ export function computeGuestInvitationHash(
   ) {
     return explicitToken;
   }
-
-  const normalizedClient = (clientId || 'client-utama').trim().toLowerCase();
-  const guestKey = `${normalizedClient}::${(guest.id || '').trim()}::${(
-    guest.invitationCode || ''
-  ).trim()}::${(guest.guestName || '').trim().toLowerCase()}`;
-
-  const p1 = uint32ToBase62(fnv1a32(`mep_s1_${guestKey}`, 0x811c9dc5), 6);
-  const p2 = uint32ToBase62(fnv1a32(`mep_s2_${guestKey}`, 0x9e3779b9), 5);
-  const p3 = uint32ToBase62(fnv1a32(`mep_s3_${guestKey}`, 0x517cc1b7), 5);
-  const p4 = uint32ToBase62(fnv1a32(`mep_s4_${guestKey}`, 0x27d4eb2f), 5);
-
-  return `${p1}${p2}${p3}${p4}`; // 21 Base62 characters
+  return buildBase62HashWithPrefix('mep_v2', clientId, guest);
 }
 
 export interface ResolvedMultiClientGuestMatch {
@@ -83,27 +114,41 @@ export function resolveGuestByHashTokenAcrossWorkspaces(
   if (!q) return null;
   const qLower = q.toLowerCase();
 
-  // 1. Exact Base62 Hash Token match (case-sensitive first, then case-insensitive)
+  // 1. Exact Base62 Hash Token match (current v2 or legacy v1, case-sensitive first, then case-insensitive)
   for (const ws of workspaces) {
     for (const guest of ws.guests || []) {
       const hashToken = computeGuestInvitationHash(ws.clientId, guest);
-      if (hashToken === q || hashToken.toLowerCase() === qLower) {
+      const legacyToken = computeLegacyGuestInvitationHash(ws.clientId, guest);
+      if (
+        hashToken === q ||
+        hashToken.toLowerCase() === qLower ||
+        legacyToken === q ||
+        legacyToken.toLowerCase() === qLower
+      ) {
+        const matchedToken =
+          legacyToken === q || legacyToken.toLowerCase() === qLower
+            ? legacyToken
+            : hashToken;
         return {
           clientId: ws.clientId,
           clientLabel: ws.clientLabel,
           guest,
-          hashToken,
+          hashToken: matchedToken,
         };
       }
     }
   }
 
-  // 2. Fallback: if someone enters a full client+code or >= 10 char prefix of hashToken
+  // 2. Fallback: if someone enters a full client+code or >= 8 char prefix of hashToken / legacyToken
   if (q.length >= 8) {
     for (const ws of workspaces) {
       for (const guest of ws.guests || []) {
         const hashToken = computeGuestInvitationHash(ws.clientId, guest);
-        if (hashToken.toLowerCase().startsWith(qLower)) {
+        const legacyToken = computeLegacyGuestInvitationHash(ws.clientId, guest);
+        if (
+          hashToken.toLowerCase().startsWith(qLower) ||
+          legacyToken.toLowerCase().startsWith(qLower)
+        ) {
           return {
             clientId: ws.clientId,
             clientLabel: ws.clientLabel,
@@ -129,9 +174,12 @@ export function matchGuestWithinSingleClient(
 
   for (const g of guests) {
     const hashToken = computeGuestInvitationHash(clientId, g);
+    const legacyToken = computeLegacyGuestInvitationHash(clientId, g);
     if (
       hashToken === q ||
       hashToken.toLowerCase() === qLower ||
+      legacyToken === q ||
+      legacyToken.toLowerCase() === qLower ||
       g.invitationCode.trim().toLowerCase() === qLower ||
       g.guestName.trim().toLowerCase() === qLower
     ) {
