@@ -123,7 +123,7 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
     });
 
     const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), 650);
+      setTimeout(() => resolve(null), 2500);
     });
 
     return await Promise.race([fetchPromise, timeoutPromise]);
