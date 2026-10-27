@@ -512,21 +512,908 @@ function resolveNaturalEventBadge(
     MEETING:
       lang === 'ID' ? 'Undangan Rapat Resmi' : 'Official Executive Invitation',
     GALA_DINNER:
-      lang === 'ID' ? 'Malam Apresiasi & Gala Dinner' : 'Royal Gala Dinner',
+      lang === 'ID' ? 'Malam Apresiasi & Gala' : 'Royal Gala Dinner',
   };
   const fallback = naturalByType[eventType] || naturalByType.WEDDING;
   if (!rawBadge || !rawBadge.trim()) return fallback;
   const cleaned = rawBadge.trim();
-  if (/tema\s*:|theme\s*:/i.test(cleaned)) {
+  if (/tema\s*:|theme\s*:|•/i.test(cleaned)) {
     return fallback;
   }
   if (
     lang === 'EN' &&
-    /undangan|pernikahan|perayaan|syukuran|mempelai|hari bahagia/i.test(cleaned)
+    /undangan|pernikahan|perayaan|syukuran|mempelai|hari bahagia|malam apresiasi|rapat/i.test(
+      cleaned
+    )
+  ) {
+    return fallback;
+  }
+  if (
+    lang === 'ID' &&
+    /wedding|celebration|graduation|summit|royal|invitation|matrimony|party|honoree/i.test(
+      cleaned
+    )
   ) {
     return fallback;
   }
   return cleaned;
+}
+
+function localizeDateLabel(
+  rawDate: string | undefined,
+  lang: 'ID' | 'EN'
+): string {
+  if (!rawDate || !rawDate.trim()) return '';
+  let out = rawDate.trim();
+  if (lang === 'EN') {
+    const idToEn: Array<[RegExp, string]> = [
+      [/\bSenin\b/gi, 'Monday'],
+      [/\bSelasa\b/gi, 'Tuesday'],
+      [/\bRabu\b/gi, 'Wednesday'],
+      [/\bKamis\b/gi, 'Thursday'],
+      [/\bJum'?at\b/gi, 'Friday'],
+      [/\bSabtu\b/gi, 'Saturday'],
+      [/\bMinggu\b/gi, 'Sunday'],
+      [/\bJanuari\b/gi, 'January'],
+      [/\bFebruari\b/gi, 'February'],
+      [/\bMaret\b/gi, 'March'],
+      [/\bMei\b/gi, 'May'],
+      [/\bJuni\b/gi, 'June'],
+      [/\bJuli\b/gi, 'July'],
+      [/\bAgustus\b/gi, 'August'],
+      [/\bOktober\b/gi, 'October'],
+      [/\bDesember\b/gi, 'December'],
+      [/\bKuartal\b/gi, 'Quarter'],
+    ];
+    for (const [pattern, rep] of idToEn) {
+      out = out.replace(pattern, rep);
+    }
+  } else {
+    const enToId: Array<[RegExp, string]> = [
+      [/\bMonday\b/gi, 'Senin'],
+      [/\bTuesday\b/gi, 'Selasa'],
+      [/\bWednesday\b/gi, 'Rabu'],
+      [/\bThursday\b/gi, 'Kamis'],
+      [/\bFriday\b/gi, 'Jumat'],
+      [/\bSaturday\b/gi, 'Sabtu'],
+      [/\bSunday\b/gi, 'Minggu'],
+      [/\bJanuary\b/gi, 'Januari'],
+      [/\bFebruary\b/gi, 'Februari'],
+      [/\bMarch\b/gi, 'Maret'],
+      [/\bMay\b/gi, 'Mei'],
+      [/\bJune\b/gi, 'Juni'],
+      [/\bJuly\b/gi, 'Juli'],
+      [/\bAugust\b/gi, 'Agustus'],
+      [/\bOctober\b/gi, 'Oktober'],
+      [/\bDecember\b/gi, 'Desember'],
+      [/\bQuarter\b/gi, 'Kuartal'],
+    ];
+    for (const [pattern, rep] of enToId) {
+      out = out.replace(pattern, rep);
+    }
+  }
+  return out;
+}
+
+function localizeTimeLabel(
+  rawTime: string | undefined,
+  lang: 'ID' | 'EN'
+): string {
+  if (!rawTime || !rawTime.trim()) return '';
+  let out = rawTime.trim();
+  if (lang === 'EN') {
+    out = out
+      .replace(/\bPukul\s+/gi, '')
+      .replace(/\bs\/d\b/gi, '–')
+      .replace(/\bSelesai\b/gi, 'Onwards');
+  } else {
+    out = out.replace(/\bOnwards\b/gi, 'Selesai').replace(/\bFinish\b/gi, 'Selesai');
+  }
+  return out;
+}
+
+function localizeSubtitle(
+  rawSubtitle: string | undefined,
+  primaryDate: string | undefined,
+  primaryVenue: string | undefined,
+  lang: 'ID' | 'EN'
+): string {
+  const cleanDate = localizeDateLabel(primaryDate, lang);
+  const fallback = cleanDate
+    ? `${cleanDate}${primaryVenue ? ` • ${primaryVenue}` : ''}`
+    : primaryVenue || '';
+
+  if (!rawSubtitle || !rawSubtitle.trim()) return fallback;
+  const trimmed = rawSubtitle.trim();
+
+  // If subtitle was auto-constructed from theme catalog metadata, replace with clean date & venue
+  if (/\([^)]+\)\s*•/.test(trimmed)) {
+    return fallback || localizeDateLabel(trimmed, lang);
+  }
+
+  let out = localizeDateLabel(trimmed, lang);
+  if (lang === 'EN') {
+    out = out
+      .replace(/Pemberkatan Nikah/gi, 'Holy Matrimony')
+      .replace(/Akad Nikah/gi, 'Sacred Nikah')
+      .replace(/Resepsi/gi, 'Wedding Reception')
+      .replace(/Undangan Pernikahan/gi, 'Wedding Invitation')
+      .replace(/Perayaan Ulang Tahun/gi, 'Birthday Celebration')
+      .replace(/Syukuran Wisuda/gi, 'Graduation Celebration');
+  } else {
+    out = out
+      .replace(/Holy Matrimony/gi, 'Pemberkatan Nikah')
+      .replace(/Wedding Reception/gi, 'Resepsi')
+      .replace(/Wedding Invitation/gi, 'Undangan Pernikahan')
+      .replace(/Birthday Celebration/gi, 'Perayaan Ulang Tahun')
+      .replace(/Graduation Celebration/gi, 'Syukuran Wisuda');
+  }
+  return out;
+}
+
+function localizeRoleTitle(
+  rawRole: string | undefined,
+  fallback: string,
+  lang: 'ID' | 'EN'
+): string {
+  const cleaned = (rawRole || '').trim();
+  if (!cleaned || cleaned === '-') return fallback;
+
+  if (lang === 'ID') {
+    if (/^the groom$/i.test(cleaned)) return 'Mempelai Pria';
+    if (/^the bride$/i.test(cleaned)) return 'Mempelai Wanita';
+    if (/^mempelai pria\s*&\s*wanita$/i.test(cleaned)) return fallback;
+    if (/the celebrant.*sweet 17/i.test(cleaned))
+      return 'Yang Berulang Tahun • Usia Ke-17';
+    if (/sweet 17th birthday celebrant/i.test(cleaned))
+      return 'Yang Berulang Tahun Ke-17';
+    if (/executive host.*silver jubilee/i.test(cleaned))
+      return 'Tuan Rumah Kehormatan • 25 Tahun Perak';
+    if (/founder\s*&\s*chairman wijaya kusuma group/i.test(cleaned))
+      return 'Pendiri & Komisaris Utama Wijaya Kusuma Group';
+    if (/25th silver anniversary appreciation night/i.test(cleaned))
+      return 'Malam Apresiasi Perak 25 Tahun';
+  } else {
+    if (/^mempelai pria(\s*&\s*wanita)?$/i.test(cleaned)) return 'The Groom';
+    if (/^mempelai wanita$/i.test(cleaned)) return 'The Bride';
+    if (/wisudawan doktor.*cum laude/i.test(cleaned))
+      return 'Doctoral Graduate • Cum Laude';
+    if (/doktor teknik informatika.*cum laude/i.test(cleaned))
+      return 'Doctor of Informatics (Cum Laude)';
+    if (/komite eksekutif nasional/i.test(cleaned))
+      return 'National Executive Committee';
+    if (/dewan direksi.*pimpinan wilayah/i.test(cleaned))
+      return 'Board of Directors & Regional Leaders';
+    if (/yang berulang tahun/i.test(cleaned)) return 'Birthday Celebrant';
+  }
+  return cleaned;
+}
+
+function localizeParentDescription(
+  rawParents: string | undefined,
+  lang: 'ID' | 'EN'
+): string {
+  if (!rawParents || !rawParents.trim()) return '';
+  let out = rawParents.trim();
+  if (lang === 'EN') {
+    out = out
+      .replace(/Putra Pertama dari/gi, 'First son of')
+      .replace(/Putra Kedua dari/gi, 'Second son of')
+      .replace(/Putra Ketiga dari/gi, 'Third son of')
+      .replace(/Putra Bungsu dari/gi, 'Youngest son of')
+      .replace(/Putra Tunggal dari/gi, 'Only son of')
+      .replace(/Putra Tercinta dari/gi, 'Beloved son of')
+      .replace(/Putra dari/gi, 'Son of')
+      .replace(/Putri Pertama dari/gi, 'First daughter of')
+      .replace(/Putri Kedua dari/gi, 'Second daughter of')
+      .replace(/Putri Ketiga dari/gi, 'Third daughter of')
+      .replace(/Putri Bungsu dari/gi, 'Youngest daughter of')
+      .replace(/Putri Tunggal dari/gi, 'Only daughter of')
+      .replace(/Putri Tercinta dari/gi, 'Beloved daughter of')
+      .replace(/Putri dari/gi, 'Daughter of')
+      .replace(/mendiang Bapak/gi, 'the late Mr.')
+      .replace(/mendiang Ibu/gi, 'the late Mrs.')
+      .replace(/\bBapak\b/gi, 'Mr.')
+      .replace(/\bBpk\./gi, 'Mr.')
+      .replace(/\bIbu\b/gi, 'Mrs.')
+      .replace(
+        /Sekretariat Jenderal Korporat\s*•\s*Jakarta Pusat/gi,
+        'Corporate General Secretariat • Central Jakarta'
+      )
+      .replace(
+        /Menghormati Seluruh Mitra Strategis\s*&\s*Sahabat Kehormatan/gi,
+        'Honoring All Strategic Partners & Distinguished Guests'
+      );
+  } else {
+    out = out
+      .replace(/First son of/gi, 'Putra Pertama dari')
+      .replace(/Second son of/gi, 'Putra Kedua dari')
+      .replace(/Beloved son of/gi, 'Putra Tercinta dari')
+      .replace(/\bSon of/gi, 'Putra dari')
+      .replace(/First daughter of/gi, 'Putri Pertama dari')
+      .replace(/Second daughter of/gi, 'Putri Kedua dari')
+      .replace(/Beloved daughter of/gi, 'Putri Tercinta dari')
+      .replace(/\bDaughter of/gi, 'Putri dari');
+  }
+  return out;
+}
+
+function localizeOpeningText(
+  rawText: string | undefined,
+  eventType: EventCategoryType,
+  lang: 'ID' | 'EN'
+): string {
+  const defaultId: Record<EventCategoryType, string> = {
+    WEDDING:
+      'Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Pengasih, kami mengundang Bapak/Ibu/Saudara/i untuk hadir memberikan doa restu pada rangkaian acara pernikahan kami.',
+    BIRTHDAY:
+      'Dengan penuh sukacita, kami mengundang sahabat dan keluarga tercinta untuk merayakan malam spesial ulang tahun bersama kami.',
+    GRADUATION:
+      'Ungkapan syukur yang mendalam atas pencapaian akademik ini, kami mengundang Bapak/Ibu/Kolega untuk hadir pada acara Syukuran Wisuda.',
+    MEETING:
+      'Dengan hormat, kami mengundang jajaran Dewan Komisaris, Direksi, dan Pimpinan Wilayah untuk menghadiri Rapat Koordinasi Resmi.',
+    GALA_DINNER:
+      'Merayakan perjalanan penuh makna, kami mengundang Bapak/Ibu Tamu Kehormatan VVIP pada malam apresiasi Gala Dinner.',
+  };
+  const defaultEn: Record<EventCategoryType, string> = {
+    WEDDING:
+      'With grateful hearts and by the grace of God, we cordially invite you to share in our joy and give your blessings at our wedding celebration.',
+    BIRTHDAY:
+      'With great joy, we warmly invite our dearest family and friends to celebrate a special milestone birthday evening with us.',
+    GRADUATION:
+      'With deep gratitude for this academic achievement, we cordially invite you to join our Graduation Thanksgiving celebration.',
+    MEETING:
+      'We respectfully invite the Board of Commissioners, Directors, and Regional Leaders to attend our Official Executive Summit.',
+    GALA_DINNER:
+      'Celebrating a meaningful journey of excellence, we cordially invite our VVIP Honored Guests to the Royal Gala Dinner.',
+  };
+
+  const trimmed = (rawText || '').trim();
+  if (!trimmed) {
+    return lang === 'ID' ? defaultId[eventType] : defaultEn[eventType];
+  }
+  if (
+    lang === 'EN' &&
+    /dengan|kami mengundang|bapak\/ibu|syukur|merayakan|menghadiri|putra-putri/i.test(
+      trimmed
+    )
+  ) {
+    return defaultEn[eventType];
+  }
+  if (
+    lang === 'ID' &&
+    /with grateful|cordially invite|with great joy|respectfully invite/i.test(
+      trimmed
+    )
+  ) {
+    return defaultId[eventType];
+  }
+  return trimmed;
+}
+
+function localizeClosingText(
+  rawText: string | undefined,
+  eventType: EventCategoryType,
+  lang: 'ID' | 'EN'
+): string {
+  const defaultId: Record<EventCategoryType, string> = {
+    WEDDING:
+      'Merupakan suatu kehormatan dan kebahagiaan bagi kami serta keluarga besar apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.',
+    BIRTHDAY:
+      'Kehadiran dan doa terbaik dari teman-teman serta keluarga adalah kado terindah di hari ulang tahun ini.',
+    GRADUATION:
+      'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Rekan Akademisi berkenan hadir memberikan doa restu.',
+    MEETING:
+      'Partisipasi aktif dan kehadiran tepat waktu seluruh delegasi sangat menentukan keberhasilan agenda strategis bersama.',
+    GALA_DINNER:
+      'Kehadiran Bapak/Ibu merupakan kehormatan tertinggi dalam malam apresiasi dan perayaan istimewa ini.',
+  };
+  const defaultEn: Record<EventCategoryType, string> = {
+    WEDDING:
+      'It would be our greatest honor and joy to have your presence and warm blessings as we begin our new life together.',
+    BIRTHDAY:
+      'Your presence and warm wishes are the most cherished gift on this special birthday celebration.',
+    GRADUATION:
+      'It is a great honor and privilege to welcome you and receive your warm prayers and best wishes.',
+    MEETING:
+      'Your active participation and punctual attendance are vital to the success of our strategic summit.',
+    GALA_DINNER:
+      'Your distinguished presence is our highest honor on this special evening of appreciation.',
+  };
+
+  const trimmed = (rawText || '').trim();
+  if (!trimmed) {
+    return lang === 'ID' ? defaultId[eventType] : defaultEn[eventType];
+  }
+  if (
+    lang === 'EN' &&
+    /merupakan suatu kehormatan|kehadiran dan doa|partisipasi aktif|berkenan hadir|bapak\/ibu/i.test(
+      trimmed
+    )
+  ) {
+    return defaultEn[eventType];
+  }
+  if (
+    lang === 'ID' &&
+    /greatest honor|your presence|active participation|distinguished presence/i.test(
+      trimmed
+    )
+  ) {
+    return defaultId[eventType];
+  }
+  return trimmed;
+}
+
+function localizeQuote(
+  rawVerse: string | undefined,
+  rawSource: string | undefined,
+  lang: 'ID' | 'EN'
+): { verse: string; source: string } {
+  let verse = (rawVerse || '').trim();
+  let source = (rawSource || '').trim();
+
+  if (lang === 'EN') {
+    if (/kenakanlah kasih, sebagai pengikat yang mempersatukan/i.test(verse)) {
+      verse =
+        'And over all these virtues put on love, which binds them all together in perfect unity.';
+    } else if (/bersyukur atas setiap langkah pertumbuhan/i.test(verse)) {
+      verse =
+        'Grateful for every step of growth, family love, and cherished friendships at seventeen.';
+    } else if (/ilmu pengetahuan adalah pelita pengabdian/i.test(verse)) {
+      verse =
+        'Knowledge is the lamp of service; every degree is a trust to bring greater benefit to the nation.';
+    } else if (/sinergi kepemimpinan, transformasi digital/i.test(verse)) {
+      verse =
+        'Leadership synergy, digital transformation, and governance integrity toward sustainable growth in 2027.';
+    } else if (/dua puluh lima tahun berkarya bersama/i.test(verse)) {
+      verse =
+        'Twenty-five years of creating together in trust, dedication, and priceless partnership.';
+    }
+
+    source = source
+      .replace(/Kolose\s*3\s*:\s*14/gi, 'Colossians 3 : 14')
+      .replace(
+        /Syukuran Promosi Doktor ITB\s*—\s*2026/gi,
+        'ITB Doctoral Graduation — 2026'
+      )
+      .replace(
+        /Piagam Rakornas Nusantara Global/gi,
+        'Nusantara Global Summit Charter'
+      );
+  } else {
+    source = source
+      .replace(/Colossians\s*3\s*:\s*14/gi, 'Kolose 3 : 14')
+      .replace(
+        /Sweet 17th Milestone\s*—\s*Aurelia Valerie/gi,
+        'Momen Usia Ke-17 — Aurelia Valerie'
+      )
+      .replace(
+        /25th Silver Jubilee\s*—\s*Wijaya Kusuma/gi,
+        'Perayaan 25 Tahun Perak — Wijaya Kusuma'
+      );
+  }
+
+  return { verse, source };
+}
+
+function localizeScheduleEventItem(
+  ev: {
+    id: string;
+    badge: string;
+    title: string;
+    subtitle: string;
+    date: string;
+    time: string;
+    venue: string;
+    address: string;
+    mapsUrl: string;
+    dresscode: string;
+    highlight: boolean;
+  },
+  idx: number,
+  lang: 'ID' | 'EN'
+) {
+  let badge = (ev.badge || '').trim() || (lang === 'ID' ? `Acara ${idx + 1}` : `Event ${idx + 1}`);
+  let title = (ev.title || '').trim();
+  let subtitle = (ev.subtitle || '').trim();
+  let dresscode = (ev.dresscode || '').trim();
+
+  if (lang === 'ID') {
+    badge = badge
+      .replace(/SESI 1\s*•\s*CANDLE CEREMONY/gi, 'SESI 1 • PROSESI LILIN')
+      .replace(/SESI 2\s*•\s*DINNER & PARTY/gi, 'SESI 2 • JAMUAN & PERAYAAN')
+      .replace(/SESI 1\s*•\s*PLENARY SUMMIT/gi, 'SESI 1 • SIDANG PLENO')
+      .replace(/SESI 1\s*•\s*RED CARPET/gi, 'SESI 1 • KARPET MERAH')
+      .replace(/SESI 2\s*•\s*ROYAL GALA/gi, 'SESI 2 • MALAM PUNCAK GALA');
+
+    title = title
+      .replace(/Candle Ceremony & 17 Wishes/gi, 'Prosesi 17 Lilin & Doa Harapan')
+      .replace(
+        /Birthday Dinner & After Party DJ/gi,
+        'Jamuan Malam & Perayaan Ulang Tahun'
+      )
+      .replace(
+        /Plenary Session & Keynote Speech Direktur Utama/gi,
+        'Sidang Pleno & Sambutan Utama Direktur Utama'
+      )
+      .replace(
+        /Red Carpet & Welcome Symphony Cocktail/gi,
+        'Karpet Merah & Jamuan Penyambutan Simfoni'
+      )
+      .replace(
+        /Royal Gala Fine Dining & Awarding Night/gi,
+        'Jamuan Malam Gala & Penganugerahan'
+      );
+
+    subtitle = subtitle.replace(
+      /Fine Buffet, Games & Live DJ Performance/gi,
+      'Jamuan Makan Malam, Permainan & Hiburan Musik'
+    );
+
+    dresscode = dresscode
+      .replace(
+        /Cocktail Attire\s*—\s*Pastel \/ Blush Gold \/ White/gi,
+        'Busana Pesta — Nuansa Pastel / Emas / Putih'
+      )
+      .replace(/Party Chic \/ Semi-Formal/gi, 'Busana Pesta Rapi / Semi-Formal')
+      .replace(
+        /Executive Business Suit \/ Lounge Suit/gi,
+        'Jas Eksekutif / Busana Bisnis Resmi'
+      )
+      .replace(
+        /Black Tie \/ Evening Gown \/ Tuxedo/gi,
+        'Jas Resmi / Gaun Malam / Tuksedo'
+      )
+      .replace(
+        /Black Tie \/ National High Couture/gi,
+        'Jas Resmi / Busana Adat Nasional'
+      )
+      .replace(/Batik Keluarga \/ Smart Casual/gi, 'Batik Keluarga / Rapi Sopan')
+      .replace(
+        /Formal Nuansa Putih \/ Cmpgne\./gi,
+        'Busana Formal Nuansa Putih / Champagne'
+      );
+  } else {
+    badge = badge
+      .replace(/^Acara\s+(\d+)$/i, 'Event $1')
+      .replace(/Keluarga,\s*Warga Gereja/gi, 'Family & Congregation')
+      .replace(/Tamu Undangan/gi, 'Invited Guests')
+      .replace(/PRA-ACARA\s*•\s*KELUARGA/gi, 'PRE-EVENT • FAMILY')
+      .replace(/ACARA UTAMA\s*•\s*PEMBERKATAN/gi, 'MAIN CEREMONY • MATRIMONY')
+      .replace(/PUNCAK ACARA\s*•\s*RESEPSI/gi, 'GRAND RECEPTION')
+      .replace(/SESI 1\s*•\s*SIDANG WISUDA/gi, 'SESSION 1 • CONVOCATION')
+      .replace(/SESI 2\s*•\s*TASYAKURAN/gi, 'SESSION 2 • THANKSGIVING')
+      .replace(/SESI 1\s*•\s*PLENARY SUMMIT/gi, 'SESSION 1 • PLENARY SUMMIT')
+      .replace(/SESI 2\s*•\s*SIDANG KOMISI/gi, 'SESSION 2 • COMMISSION SESSION')
+      .replace(/SESI 1\s*•\s*CANDLE CEREMONY/gi, 'SESSION 1 • CANDLE CEREMONY')
+      .replace(/SESI 2\s*•\s*DINNER & PARTY/gi, 'SESSION 2 • DINNER & PARTY')
+      .replace(/SESI 1\s*•\s*RED CARPET/gi, 'SESSION 1 • RED CARPET')
+      .replace(/SESI 2\s*•\s*ROYAL GALA/gi, 'SESSION 2 • ROYAL GALA');
+
+    title = title
+      .replace(
+        /Biston & Pertemuan Keluarga Besar/gi,
+        'Biston & Extended Family Gathering'
+      )
+      .replace(/^Biston$/i, 'Biston Blessing Service')
+      .replace(/Pemberkatan \/ Akad Nikah Suci/gi, 'Holy Matrimony / Sacred Vows')
+      .replace(/Pemberkatan Nikah/gi, 'Holy Matrimony')
+      .replace(/Akad Nikah/gi, 'Sacred Nikah Ceremony')
+      .replace(/Resepsi Malam Kehormatan/gi, 'Evening Gala Wedding Reception')
+      .replace(/Resepsi Pernikahan/gi, 'Wedding Reception')
+      .replace(/^Resepsi$/i, 'Wedding Reception')
+      .replace(
+        /Sidang Terbuka Wisuda & Pengukuhan Doktor/gi,
+        'Doctoral Convocation & Conferment Ceremony'
+      )
+      .replace(
+        /Tasyakuran Kelulusan & Jamuan Siang/gi,
+        'Graduation Thanksgiving & Luncheon'
+      )
+      .replace(
+        /Plenary Session & Keynote Speech Direktur Utama/gi,
+        'Plenary Session & CEO Keynote Address'
+      )
+      .replace(
+        /Sidang Komisi Strategis & Penandatanganan Pakta/gi,
+        'Strategic Commission & Pact Signing'
+      );
+
+    subtitle = subtitle
+      .replace(
+        /Ungkapan Syukur & Doa Persiapan Pernikahan/gi,
+        'Thanksgiving & Wedding Preparation Prayer'
+      )
+      .replace(
+        /Peneguhan & Pemberkatan Janji Suci Pernikahan/gi,
+        'Affirmation & Blessing of Sacred Marriage Vows'
+      )
+      .replace(
+        /Ramah Tamah & Jamuan Kehormatan/gi,
+        'Fellowship & Reception Banquet'
+      )
+      .replace(
+        /Silaturahmi & Doa Restu Kedua Keluarga/gi,
+        'Fellowship & Blessing of Both Families'
+      )
+      .replace(/Pengucapan Janji Suci Pernikahan/gi, 'Exchange of Sacred Wedding Vows')
+      .replace(
+        /Perjamuan Malam & Ramah Tamah Tamu VVIP/gi,
+        'Evening Banquet & VVIP Reception'
+      )
+      .replace(
+        /Prosesi Tiup 17 Lilin Kehormatan & Doa Keluarga/gi,
+        '17 Candles of Honor Ceremony & Family Blessing'
+      )
+      .replace(
+        /Prosesi Akademik Resmi Senat ITB/gi,
+        'Official Academic Senate Convocation'
+      )
+      .replace(
+        /Ramah Tamah Keluarga, Promotor & Kolega/gi,
+        'Fellowship with Family, Advisors & Colleagues'
+      )
+      .replace(
+        /Paparan Kinerja 2026 & Cetak Biru Korporasi 2027/gi,
+        '2026 Performance Review & 2027 Corporate Blueprint'
+      )
+      .replace(
+        /Konsolidasi Target Regional & Komitmen Kinerja/gi,
+        'Regional Target Consolidation & Performance Commitment'
+      )
+      .replace(
+        /Penyambutan Tamu VVIP & Pameran 25 Tahun Karya/gi,
+        'VVIP Guest Welcome & 25 Years of Excellence Showcase'
+      )
+      .replace(
+        /Perjamuan 6-Course, Konser Orkestra & Penganugerahan/gi,
+        '6-Course Fine Dining, Symphony Concert & Awarding'
+      );
+
+    dresscode = dresscode
+      .replace(/Busana Formal \/ Batik Rapi/gi, 'Formal Attire / Neat Batik')
+      .replace(
+        /Formal Nuansa Putih \/ Cmpgne\./gi,
+        'Formal White / Champagne Palette'
+      )
+      .replace(
+        /Jas Formal \/ Batik \/ Gaun/gi,
+        'Formal Suit / Batik / Evening Dress'
+      )
+      .replace(/Batik Keluarga \/ Smart Casual/gi, 'Family Batik / Smart Casual')
+      .replace(
+        /Putih \/ Champagne \/ Kebaya Formal/gi,
+        'White / Champagne / Formal Kebaya'
+      )
+      .replace(
+        /Jas Formal \/PDU \/ Gaun Malam \/ Batik Eksekutif/gi,
+        'Formal Suit / Ceremonial Uniform / Evening Gown / Executive Batik'
+      )
+      .replace(
+        /PSL \/ Jas Formal \/ Batik Lengan Panjang/gi,
+        'Full Business Suit / Long-Sleeved Batik'
+      )
+      .replace(/Smart Formal \/ Batik Eksekutif/gi, 'Smart Formal / Executive Batik')
+      .replace(
+        /Batik Korporat Nusantara \/ Formal/gi,
+        'Corporate Batik / Formal Business Attire'
+      );
+  }
+
+  return {
+    ...ev,
+    badge,
+    title,
+    subtitle,
+    date: localizeDateLabel(ev.date, lang),
+    time: localizeTimeLabel(ev.time, lang),
+    dresscode,
+  };
+}
+
+function localizeLoveStoryItem(
+  story: {
+    id: string;
+    dateLabel: string;
+    title: string;
+    location?: string;
+    description: string;
+  },
+  lang: 'ID' | 'EN'
+) {
+  let title = (story.title || '').trim();
+  let description = (story.description || '').trim();
+  const dateLabel = localizeDateLabel(story.dateLabel, lang);
+
+  if (lang === 'ID') {
+    title = title
+      .replace(/Sweet 17th Milestone/gi, 'Momen Spesial Usia Ke-17')
+      .replace(/25th Silver Jubilee Royal Gala/gi, 'Malam Puncak 25 Tahun Perak');
+  } else {
+    title = title
+      .replace(/Pertemuan Pertama/gi, 'First Encounter')
+      .replace(/Komitmen Bersama/gi, 'Shared Commitment')
+      .replace(/Lamaran Resmi Kedua Keluarga/gi, 'Official Family Engagement')
+      .replace(/Ikatan Janji Suci Pernikahan/gi, 'Sacred Bonds of Matrimony')
+      .replace(/Ikatan Suci Pernikahan/gi, 'Sacred Bonds of Matrimony')
+      .replace(/Kelahiran Sang Buah Hati/gi, 'A Bundle of Joy Born')
+      .replace(/Prestasi Musik & Persahabatan/gi, 'Musical Achievements & Friendship')
+      .replace(
+        /Sarjana Teknik Informatika \(S\.T\.\)/gi,
+        'Bachelor of Informatics (B.Eng.)'
+      )
+      .replace(
+        /Magister Sains \(M\.Sc\.\) & Publikasi Riset/gi,
+        'Master of Science (M.Sc.) & Research'
+      )
+      .replace(
+        /Promosi Doktor \(Dr\. Cum Laude\)/gi,
+        'Doctoral Conferment (Ph.D. Cum Laude)'
+      )
+      .replace(
+        /Integrasi Ekosistem Digital Nasional/gi,
+        'National Digital Ecosystem Integration'
+      )
+      .replace(
+        /Ekspansi 34 Wilayah Operasional/gi,
+        'Expansion Across 34 Operational Regions'
+      )
+      .replace(
+        /Rakornas & Pakta Strategis 2027/gi,
+        'National Summit & 2027 Strategic Pact'
+      )
+      .replace(
+        /Fondasi Pertama Wijaya Kusuma/gi,
+        'The First Foundation of Wijaya Kusuma'
+      )
+      .replace(
+        /Transformasi Global & Filantropi/gi,
+        'Global Transformation & Philanthropy'
+      );
+
+    description = description
+      .replace(
+        /Awal mula perkenalan yang membawa kami saling mengenal lebih dekat\./gi,
+        'The beginning of our acquaintance that brought our hearts closer together.'
+      )
+      .replace(
+        /Menjalani suka duka bersama dan memantapkan hati untuk melangkah ke jenjang serius\./gi,
+        'Sharing life’s joys and challenges while strengthening our commitment toward marriage.'
+      )
+      .replace(
+        /Dengan restu Tuhan dan kedua orang tua, kami mengikat janji suci pernikahan\./gi,
+        'With God’s grace and our parents’ blessings, we unite in the sacred vows of marriage.'
+      )
+      .replace(
+        /Pertemuan tak terduga dalam penugasan bakti kesehatan bersama yang menumbuhkan kekaguman dan rasa saling menghormati\./gi,
+        'An unexpected meeting during a joint medical service mission that blossomed into mutual admiration and respect.'
+      )
+      .replace(
+        /Dengan restu penuh kedua orang tua, Rayhan meminang Clarissa dalam suasana hangat dan khidmat\./gi,
+        'With the full blessing of both families, Rayhan proposed to Clarissa in a warm and solemn gathering.'
+      )
+      .replace(
+        /Melangkah bersama dalam ikatan pernikahan suci untuk membangun rumah tangga yang diberkati selamanya\./gi,
+        'Stepping forward together in holy matrimony to build a forever blessed home.'
+      )
+      .replace(
+        /Awal kebahagiaan keluarga Bapak Hendrawan & Ibu Clarissa menyambut hadirnya Aurelia Valerie di dunia\./gi,
+        'The joyful beginning as Mr. Hendrawan & Mrs. Clarissa welcomed Aurelia Valerie into the world.'
+      )
+      .replace(
+        /Memenangkan kejuaraan piano klasik remaja tingkat nasional dan tumbuh bersama sahabat-sahabat terbaik\./gi,
+        'Winning the national youth classical piano championship and growing alongside dearest friends.'
+      )
+      .replace(
+        /Melangkah menuju usia dewasa muda dengan penuh rasa syukur, doa orang tua, dan cita-cita mulia\./gi,
+        'Stepping into young adulthood with gratitude, parents’ prayers, and noble aspirations.'
+      )
+      .replace(
+        /Menyelesaikan studi sarjana dengan fokus riset awal pada sistem terdistribusi dan kecerdasan buatan\./gi,
+        'Completed undergraduate studies focusing on distributed systems and artificial intelligence.'
+      )
+      .replace(
+        /Melanjutkan riset pascasarjana serta memublikasikan makalah ilmiah pada jurnal internasional bereputasi\./gi,
+        'Advanced postgraduate research with scientific publications in reputable international journals.'
+      )
+      .replace(
+        /Meraih gelar akademik tertinggi Doktor dengan predikat Cum Laude berkat doa keluarga dan bimbingan tim promotor\./gi,
+        'Achieved the highest academic degree of Doctor (Cum Laude) through family prayers and advisor guidance.'
+      )
+      .replace(
+        /Penyatuan infrastruktur teknologi seluruh entitas anak usaha dalam satu platform terpadu\./gi,
+        'Unifying technology infrastructure across all subsidiaries into one integrated platform.'
+      )
+      .replace(
+        /Pencapaian pertumbuhan kinerja positif di seluruh wilayah operasional Indonesia\./gi,
+        'Achieving positive performance growth across all operational regions in Indonesia.'
+      )
+      .replace(
+        /Penyelarasan visi jajaran Komisaris, Direksi, dan Pimpinan Wilayah menuju lompatan kinerja 2027\./gi,
+        'Aligning the vision of Commissioners, Directors, and Regional Leaders toward the 2027 leap.'
+      )
+      .replace(
+        /Berdirinya Wijaya Kusuma Group dengan komitmen luhur terhadap kualitas, integritas, dan kemitraan\./gi,
+        'The founding of Wijaya Kusuma Group with a noble commitment to quality, integrity, and partnership.'
+      )
+      .replace(
+        /Perluasan jejaring mitra internasional sekaligus pendirian Wijaya Kusuma Charity Foundation\./gi,
+        'Expanding international partner networks and establishing the Wijaya Kusuma Charity Foundation.'
+      )
+      .replace(
+        /Malam apresiasi tertinggi bagi para sahabat, mitra strategis, dan insan terbaik selama 25 tahun berkarya\./gi,
+        'A night of highest appreciation for our partners, friends, and finest talents across 25 years.'
+      );
+  }
+
+  return {
+    ...story,
+    dateLabel,
+    title,
+    description,
+  };
+}
+
+function localizeGalleryPhotoItem(
+  photo: GalleryPhotoItem,
+  lang: 'ID' | 'EN'
+): GalleryPhotoItem {
+  let title = (photo.title || '').trim();
+  let caption = (photo.caption || '').trim();
+  let category = (photo.category || '').trim();
+
+  if (lang === 'ID') {
+    title = title
+      .replace(/Golden Sunset Silhouette/gi, 'Siluet Senja Keemasan')
+      .replace(/Sacred Promises/gi, 'Janji Suci Pernikahan')
+      .replace(/Timeless Elegance/gi, 'Keanggunan Abadi')
+      .replace(/Forever Begins Here/gi, 'Selamanya Dimulai di Sini')
+      .replace(
+        /Eternal Promise\s*—\s*Rayhan & Clarissa/gi,
+        'Janji Suci Abadi — Rayhan & Clarissa'
+      )
+      .replace(/Two Souls One Heart/gi, 'Dua Jiwa Satu Hati')
+      .replace(/Grace & Devotion/gi, 'Kasih & Kesetiaan')
+      .replace(/Symphony of Blessing/gi, 'Simfoni Doa Restu')
+      .replace(
+        /Sweet 17th Portrait\s*—\s*Aurelia/gi,
+        'Potret Usia Ke-17 — Aurelia'
+      )
+      .replace(/Golden Candlelight Wishes/gi, 'Cahaya 17 Lilin Harapan')
+      .replace(/Blush Rose Editorial/gi, 'Potret Anggun Blush Rose')
+      .replace(/Sparkling Soirée Moments/gi, 'Momen Kebersamaan Malam Perayaan')
+      .replace(/Keynote & Strategic Vision/gi, 'Sambutan Utama & Visi Strategis')
+      .replace(/Executive Boardroom/gi, 'Ruang Sidang Eksekutif')
+      .replace(/National Summit Delegation/gi, 'Delegasi Rapat Koordinasi Nasional')
+      .replace(
+        /25th Silver Jubilee Ballroom/gi,
+        'Ballroom Perayaan 25 Tahun Perak'
+      )
+      .replace(
+        /Symphony & Toast of Honor/gi,
+        'Simfoni & Malam Kehormatan'
+      )
+      .replace(/Fine Dining Table Setting/gi, 'Tata Meja Perjamuan Kehormatan')
+      .replace(
+        /Silver Anniversary Awarding/gi,
+        'Malam Penganugerahan 25 Tahun'
+      );
+
+    caption = caption.replace(/^The Beginning$/i, 'Awal Kisah Bahagia');
+
+    category = category
+      .replace(/^Highlight$/i, 'Sorotan Utama')
+      .replace(/^Exclusive$/i, 'Eksklusif')
+      .replace(/^Celebration$/i, 'Perayaan')
+      .replace(/^Portrait$/i, 'Potret')
+      .replace(/^Party$/i, 'Pesta')
+      .replace(/^Leadership$/i, 'Kepemimpinan')
+      .replace(/^Awarding$/i, 'Penghargaan');
+  } else {
+    title = title
+      .replace(/Pengukuhan Doktor ITB/gi, 'ITB Doctoral Conferment')
+      .replace(/Aula Barat Ganesha/gi, 'Ganesha West Hall')
+      .replace(
+        /Syukuran Bersama Kolega & Promotor/gi,
+        'Thanksgiving with Advisors & Colleagues'
+      );
+
+    caption = caption
+      .replace(/^Momen Bersama$/i, 'Moments Together')
+      .replace(
+        /Potret utama kedua mempelai dalam balutan cahaya keemasan\./gi,
+        'Featured portrait of the couple bathed in golden light.'
+      )
+      .replace(
+        /Langkah bersama menuju janji suci pernikahan\./gi,
+        'Walking hand in hand toward sacred marriage vows.'
+      )
+      .replace(
+        /Keanggunan cinta kasih yang mempersatukan\./gi,
+        'The elegance of love that unites two hearts.'
+      )
+      .replace(
+        /Doa restu keluarga mengiringi hari bahagia\./gi,
+        'Family blessings accompanying our joyful day.'
+      )
+      .replace(
+        /Potret anggun Aurelia Valerie menyambut usia ke-17 tahun\./gi,
+        'Graceful portrait of Aurelia Valerie welcoming her 17th birthday.'
+      )
+      .replace(
+        /tujuh belas lilin harapan dan doa terbaik\./gi,
+        'Seventeen candles of hope and heartfelt wishes.'
+      )
+      .replace(
+        /Pesona masa remaja yang penuh semangat dan keceriaan\./gi,
+        'Youthful charm filled with spirit and joy.'
+      )
+      .replace(
+        /Kebersamaan hangat bersama keluarga dan sahabat tercinta\./gi,
+        'Warm togetherness with beloved family and friends.'
+      )
+      .replace(
+        /Momen bersejarah kelulusan Doktor dengan predikat Cum Laude\./gi,
+        'Historic moment of Doctoral graduation with Cum Laude honors.'
+      )
+      .replace(
+        /Dedikasi riset dan pengabdian ilmu pengetahuan\./gi,
+        'Research dedication and service to science.'
+      )
+      .replace(
+        /Potret resmi wisudawan program Doktor Teknik Informatika\./gi,
+        'Official portrait of the Informatics Doctoral graduate.'
+      )
+      .replace(
+        /Ungkapan terima kasih kepada keluarga dan guru besar\./gi,
+        'Heartfelt gratitude to family and academic professors.'
+      )
+      .replace(
+        /Forum pimpinan eksekutif Nusantara Global se-Indonesia\./gi,
+        'Executive leadership forum of Nusantara Global across Indonesia.'
+      )
+      .replace(
+        /Paparan peta jalan transformasi digital 2027\./gi,
+        'Presentation of the 2027 digital transformation roadmap.'
+      )
+      .replace(
+        /Sinergi kepemimpinan lintas divisi dan regional\./gi,
+        'Cross-divisional and regional leadership synergy.'
+      )
+      .replace(
+        /Komitmen bersama menuju pertumbuhan berkelanjutan\./gi,
+        'Shared commitment toward sustainable growth.'
+      )
+      .replace(
+        /Kemegahan malam perayaan 25 tahun Wijaya Kusuma\./gi,
+        'The grandeur of Wijaya Kusuma’s 25th anniversary evening.'
+      )
+      .replace(
+        /Alunan orkestra mengiringi malam apresiasi mitra VVIP\./gi,
+        'Symphony orchestra accompanying the VVIP partner appreciation night.'
+      )
+      .replace(
+        /Perjamuan kehormatan berstandar internasional\./gi,
+        'International-standard gala fine dining.'
+      )
+      .replace(
+        /Penghargaan tertinggi bagi insan dan mitra berdedikasi\./gi,
+        'Highest awards for dedicated talents and strategic partners.'
+      );
+
+    category = category
+      .replace(/^Momen Bersama$/i, 'Moments Together')
+      .replace(/^Wisuda ITB$/i, 'ITB Convocation')
+      .replace(/^Akademik$/i, 'Academic')
+      .replace(/^Tasyakuran$/i, 'Thanksgiving');
+  }
+
+  return {
+    ...photo,
+    title,
+    caption,
+    category,
+  };
 }
 
 const FLOATING_PETALS_DATA = [
@@ -1233,12 +2120,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const showLoveStory = settings.showLoveStorySection !== false;
   const showGallery = settings.showGallerySection !== false;
   const effectiveLoveStory = useMemo(
-    () => getEffectiveLoveStory(settings),
-    [settings]
+    () =>
+      getEffectiveLoveStory(settings).map((item) =>
+        localizeLoveStoryItem(item, lang)
+      ),
+    [settings, lang]
   );
   const effectiveGalleryPhotos = useMemo(
-    () => getEffectiveGalleryPhotos(settings),
-    [settings]
+    () =>
+      getEffectiveGalleryPhotos(settings).map((photo) =>
+        localizeGalleryPhotoItem(photo, lang)
+      ),
+    [settings, lang]
   );
 
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
@@ -1697,8 +2590,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ? eventMeta.wishesTitle
       : settings.wishesSectionTitle?.trim() || eventMeta.wishesTitle;
   const closingBadge =
-    settings.closingBadgeText !== undefined
+    settings.closingBadgeText !== undefined &&
+    settings.closingBadgeText.trim() !== '' &&
+    !/^(thank\s*you\s*&\s*blessing|terima\s*kasih\s*&\s*doa\s*restu)$/i.test(
+      settings.closingBadgeText.trim()
+    )
       ? settings.closingBadgeText.trim()
+      : lang === 'ID'
+      ? 'Terima Kasih & Doa Restu'
       : 'Thank You & Blessing';
   const closingSignature =
     lang === 'EN'
@@ -1938,13 +2837,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
   const editorialTopHeaderLabel =
     eventType === 'BIRTHDAY'
-      ? 'BIRTHDAY CELEBRATION'
+      ? lang === 'ID'
+        ? 'PERAYAAN ULANG TAHUN'
+        : 'BIRTHDAY CELEBRATION'
       : eventType === 'GRADUATION'
-      ? 'GRADUATION CELEBRATION'
+      ? lang === 'ID'
+        ? 'SYUKURAN WISUDA & KELULUSAN'
+        : 'GRADUATION CELEBRATION'
       : eventType === 'MEETING'
-      ? 'EXECUTIVE SUMMIT'
+      ? lang === 'ID'
+        ? 'AGENDA RAPAT & KONFERENSI'
+        : 'EXECUTIVE SUMMIT'
       : eventType === 'GALA_DINNER'
-      ? 'ROYAL GALA DINNER'
+      ? lang === 'ID'
+        ? 'MALAM APRESIASI & GALA'
+        : 'ROYAL GALA DINNER'
+      : lang === 'ID'
+      ? 'PERNIKAHAN DARI'
       : 'THE WEDDING OF';
 
   const allScheduleEvents = useMemo(
@@ -1985,6 +2894,102 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       countdownEvents[0]
     );
   }, [countdownEvents, selectedCountdownEventId]);
+
+  const localizedPrimaryDate = useMemo(
+    () =>
+      localizeDateLabel(
+        mainScheduleEvent?.dateLabel ||
+          activeCountdownEvent?.dateLabel ||
+          settings.event2DateLabel,
+        lang
+      ),
+    [
+      mainScheduleEvent?.dateLabel,
+      activeCountdownEvent?.dateLabel,
+      settings.event2DateLabel,
+      lang,
+    ]
+  );
+
+  const localizedSubtitle = useMemo(
+    () =>
+      localizeSubtitle(
+        settings.subtitle,
+        mainScheduleEvent?.dateLabel ||
+          activeCountdownEvent?.dateLabel ||
+          settings.event2DateLabel,
+        mainScheduleEvent?.venue ||
+          activeCountdownEvent?.venue ||
+          settings.event2Venue,
+        lang
+      ),
+    [
+      settings.subtitle,
+      mainScheduleEvent?.dateLabel,
+      mainScheduleEvent?.venue,
+      activeCountdownEvent?.dateLabel,
+      activeCountdownEvent?.venue,
+      settings.event2DateLabel,
+      settings.event2Venue,
+      lang,
+    ]
+  );
+
+  const localizedOpeningText = useMemo(
+    () => localizeOpeningText(settings.invitationOpeningText, eventType, lang),
+    [settings.invitationOpeningText, eventType, lang]
+  );
+
+  const localizedClosingText = useMemo(
+    () => localizeClosingText(settings.invitationClosingText, eventType, lang),
+    [settings.invitationClosingText, eventType, lang]
+  );
+
+  const localizedQuote = useMemo(
+    () => localizeQuote(settings.quoteVerse, settings.quoteSource, lang),
+    [settings.quoteVerse, settings.quoteSource, lang]
+  );
+
+  const localizedPrimaryRole = useMemo(
+    () =>
+      localizeRoleTitle(
+        settings.eventHostRoleLabel ||
+          (settings.groomRankAndTitle &&
+          settings.groomRankAndTitle !== 'Mempelai Pria'
+            ? settings.groomRankAndTitle
+            : ''),
+        eventMeta.primaryRoleBadge,
+        lang
+      ),
+    [
+      settings.eventHostRoleLabel,
+      settings.groomRankAndTitle,
+      eventMeta.primaryRoleBadge,
+      lang,
+    ]
+  );
+
+  const localizedSecondaryRole = useMemo(
+    () =>
+      localizeRoleTitle(
+        settings.brideTitle && settings.brideTitle !== 'Mempelai Wanita'
+          ? settings.brideTitle
+          : '',
+        eventMeta.secondaryRoleBadge,
+        lang
+      ),
+    [settings.brideTitle, eventMeta.secondaryRoleBadge, lang]
+  );
+
+  const localizedGroomParents = useMemo(
+    () => localizeParentDescription(settings.groomParents, lang),
+    [settings.groomParents, lang]
+  );
+
+  const localizedBrideParents = useMemo(
+    () => localizeParentDescription(settings.brideParents, lang),
+    [settings.brideParents, lang]
+  );
 
   // Countdown state to Active Countdown Event
   const [countdown, setCountdown] = useState({
@@ -2043,33 +3048,42 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     if (settings.showScheduleSection === false) return [];
     return allScheduleEvents
       .filter((ev) => ev.showOnInvitation !== false)
-      .map((ev, idx) => ({
-        id: ev.id,
-        badge: ev.badge || `Acara ${idx + 1}`,
-        title: ev.title,
-        subtitle: ev.subtitle,
-        date: ev.dateLabel,
-        time: ev.timeLabel,
-        venue: ev.venue,
-        address: ev.address,
-        mapsUrl: (ev.mapsUrl || '').trim(),
-        dresscode: ev.dresscode,
-        highlight:
-          ev.isMainEvent !== undefined
-            ? Boolean(ev.isMainEvent)
-            : idx === 1 || /pemberkatan|akad|utama/i.test(ev.title + ' ' + ev.badge),
-      }));
-  }, [allScheduleEvents, settings.showScheduleSection]);
+      .map((ev, idx) =>
+        localizeScheduleEventItem(
+          {
+            id: ev.id,
+            badge: ev.badge || (lang === 'ID' ? `Acara ${idx + 1}` : `Session ${idx + 1}`),
+            title: ev.title,
+            subtitle: ev.subtitle,
+            date: ev.dateLabel,
+            time: ev.timeLabel,
+            venue: ev.venue,
+            address: ev.address,
+            mapsUrl: (ev.mapsUrl || '').trim(),
+            dresscode: ev.dresscode,
+            highlight:
+              ev.isMainEvent !== undefined
+                ? Boolean(ev.isMainEvent)
+                : idx === 1 || /pemberkatan|akad|utama/i.test(ev.title + ' ' + ev.badge),
+          },
+          idx,
+          lang
+        )
+      );
+  }, [allScheduleEvents, settings.showScheduleSection, lang]);
 
   const sessionOptions = useMemo<{ value: string; label: string }[]>(() => {
     const rawOptions: { value: string; label: string }[] = [];
+    const allLabel =
+      lang === 'ID' ? 'Semua Rangkaian Acara' : 'All Event Sessions';
+    const onlySuffix = lang === 'ID' ? 'Saja' : 'Only';
 
     if (visibleEvents.length === 0) {
-      rawOptions.push({ value: 'Semua Sesi', label: 'Semua Rangkaian Acara' });
+      rawOptions.push({ value: 'Semua Sesi', label: allLabel });
     } else if (visibleEvents.length === 1) {
       rawOptions.push(
         { value: visibleEvents[0].title, label: visibleEvents[0].title },
-        { value: 'Semua Sesi', label: 'Semua Rangkaian Acara' }
+        { value: 'Semua Sesi', label: allLabel }
       );
     } else {
       const primaryPairTitle =
@@ -2080,8 +3094,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       visibleEvents.forEach((ev) => {
         rawOptions.push({
-          value: `${ev.title} Saja`,
-          label: ev.date ? `${ev.title} Saja (${ev.date})` : `${ev.title} Saja`,
+          value: `${ev.title} ${onlySuffix}`,
+          label: ev.date
+            ? `${ev.title} ${onlySuffix} (${ev.date})`
+            : `${ev.title} ${onlySuffix}`,
         });
       });
 
@@ -2090,7 +3106,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         rawOptions.push({ value: firstSecondPair, label: firstSecondPair });
       }
 
-      rawOptions.push({ value: 'Semua Sesi', label: 'Semua Rangkaian Acara' });
+      rawOptions.push({ value: 'Semua Sesi', label: allLabel });
     }
 
     const deduped: { value: string; label: string }[] = [];
@@ -2113,7 +3129,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     }
 
     return deduped;
-  }, [visibleEvents, effectiveMatchedGuest]);
+  }, [visibleEvents, effectiveMatchedGuest, lang]);
 
   useEffect(() => {
     if (sessionOptions.length === 0) return;
@@ -2394,7 +3410,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.fillStyle = '#D4AF37';
     ctx.font = 'bold 26px Georgia, "Times New Roman", serif';
     ctx.fillText(
-      (mainScheduleEvent?.title || scheduleTitle || 'Acara Utama').toUpperCase(),
+      (
+        visibleEvents[0]?.title ||
+        mainScheduleEvent?.title ||
+        scheduleTitle ||
+        (lang === 'ID' ? 'Acara Utama' : 'Main Event')
+      ).toUpperCase(),
       540,
       590,
       740
@@ -2403,7 +3424,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 36px Georgia, "Times New Roman", serif';
     ctx.fillText(
-      mainScheduleEvent?.dateLabel || settings.event1DateLabel || '',
+      localizedPrimaryDate ||
+        localizeDateLabel(settings.event1DateLabel, lang) ||
+        '',
       540,
       655,
       740
@@ -2412,7 +3435,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.fillStyle = '#E7D8B9';
     ctx.font = '600 26px sans-serif';
     ctx.fillText(
-      mainScheduleEvent?.timeLabel || settings.event1TimeLabel || '',
+      localizeTimeLabel(
+        mainScheduleEvent?.timeLabel || settings.event1TimeLabel || '',
+        lang
+      ),
       540,
       705,
       740
@@ -2437,7 +3463,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.fillStyle = '#D4AF37';
     ctx.font = 'bold 24px sans-serif';
     ctx.fillText(
-      lang === 'ID' ? 'KEPADA YTH. / TO:' : 'TO HONORED GUEST:',
+      lang === 'ID' ? 'KEPADA YTH.:' : 'TO HONORED GUEST:',
       540,
       915
     );
@@ -2449,7 +3475,8 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.fillStyle = '#E7D8B9';
     ctx.font = '600 22px monospace';
     ctx.fillText(
-      effectiveMatchedGuest?.invitationCode || 'VIP E-INVITATION PASS',
+      effectiveMatchedGuest?.invitationCode ||
+        (lang === 'ID' ? 'KARTU AKSES UNDANGAN VIP' : 'VIP E-INVITATION PASS'),
       540,
       1035
     );
@@ -2468,7 +3495,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ctx.font = 'bold 22px sans-serif';
       ctx.fillText(
         lang === 'ID'
-          ? 'SCAN QR CODE CHECK-IN DI MEJA PENERIMA TAMU'
+          ? 'PINDAI KODE QR CHECK-IN DI MEJA PENERIMA TAMU'
           : 'SCAN CHECK-IN QR CODE AT RECEPTION DESK',
         540,
         1545
@@ -2476,11 +3503,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
       ctx.fillStyle = '#D4AF37';
       ctx.font = 'bold 26px Georgia, "Times New Roman", serif';
-      ctx.fillText('MEPlanner Digital Invitation', 540, 1755);
+      ctx.fillText(
+        lang === 'ID'
+          ? 'Undangan Digital MEPlanner'
+          : 'MEPlanner Digital Invitation',
+        540,
+        1755
+      );
 
       ctx.fillStyle = 'rgba(250, 243, 227, 0.65)';
       ctx.font = '500 22px sans-serif';
-      ctx.fillText('9:16 Official Instagram Story Card • 1080×1920 HD', 540, 1795);
+      ctx.fillText(
+        lang === 'ID'
+          ? 'Kartu Story Instagram Resmi 9:16 • 1080×1920 HD'
+          : '9:16 Official Instagram Story Card • 1080×1920 HD',
+        540,
+        1795
+      );
 
       const pngUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -2549,7 +3588,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="text-left">
               <span className="block text-[9px] font-extrabold uppercase tracking-widest text-[#9A742B]">
                 {lang === 'ID'
-                  ? 'Official Event Organizer / Partner'
+                  ? 'Mitra / Penyelenggara Acara Resmi'
                   : 'Official Event Organizer / Partner'}
               </span>
               {whiteLabelUrl ? (
@@ -2559,11 +3598,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   rel="noopener noreferrer"
                   className="text-xs font-bold text-stone-900 hover:text-[#8B6914] underline decoration-[#D4AF37]/60 underline-offset-2"
                 >
-                  {whiteLabelName || 'Official WO / EO Partner'}
+                  {whiteLabelName ||
+                    (lang === 'ID'
+                      ? 'Mitra Resmi WO / EO'
+                      : 'Official WO / EO Partner')}
                 </a>
               ) : (
                 <span className="text-xs font-bold text-stone-900">
-                  {whiteLabelName || 'Official WO / EO Partner'}
+                  {whiteLabelName ||
+                    (lang === 'ID'
+                      ? 'Mitra Resmi WO / EO'
+                      : 'Official WO / EO Partner')}
                 </span>
               )}
             </div>
@@ -2575,7 +3620,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={onOpenLandingPage}
-              title="Buka Halaman Katalog Komersial MEPlanner — My Event Planner"
+              title={
+                lang === 'ID'
+                  ? 'Buka Halaman Katalog Komersial MEPlanner'
+                  : 'Open MEPlanner Commercial Catalog'
+              }
               className="inline-flex items-center gap-1.5 hover:text-[#8B6914] transition-colors cursor-pointer"
             >
               <WeddingRingsIcon
@@ -2583,7 +3632,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 logoUrl={brandLogoUrl}
               />
               <span className="underline decoration-[#D4AF37]/60 underline-offset-2 font-extrabold">
-                MEPlanner &bull; My Event Planner
+                {lang === 'ID'
+                  ? 'MEPlanner • Perencana Acara'
+                  : 'MEPlanner • My Event Planner'}
               </span>
             </button>
           ) : (
@@ -2592,11 +3643,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 className="w-4 h-4 shrink-0"
                 logoUrl={brandLogoUrl}
               />
-              <span>MEPlanner &bull; My Event Planner</span>
+              <span>
+                {lang === 'ID'
+                  ? 'MEPlanner • Perencana Acara'
+                  : 'MEPlanner • My Event Planner'}
+              </span>
             </span>
           )}
           <span>
-            by{' '}
+            {lang === 'ID' ? 'oleh' : 'by'}{' '}
             <a
               href={developerUrl}
               target="_blank"
@@ -2614,7 +3669,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <button
               type="button"
               onClick={onOpenLandingPage}
-              title="Buka Halaman Katalog Komersial MEPlanner — My Event Planner"
+              title={
+                lang === 'ID'
+                  ? 'Buka Halaman Katalog Komersial MEPlanner'
+                  : 'Open MEPlanner Commercial Catalog'
+              }
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#FAF3E3] via-[#FFFDF9] to-[#F3E5C8] hover:from-[#F3E5C8] hover:to-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/60 text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
             >
               <Sparkles className="w-3 h-3 text-[#D4AF37] shrink-0" />
@@ -2624,32 +3683,40 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <button
             type="button"
             onClick={() => void handleSharePublicLink()}
-            title="Bagikan atau salin tautan undangan ini"
+            title={
+              lang === 'ID'
+                ? 'Bagikan atau salin tautan undangan ini'
+                : 'Share or copy this invitation link'
+            }
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
             {shareCopiedToast ? (
               <>
                 <Check className="w-3 h-3 text-emerald-600" />
                 <span className="text-emerald-700">
-                  {lang === 'ID' ? 'Link Disalin!' : 'Link Copied!'}
+                  {lang === 'ID' ? 'Tautan Disalin!' : 'Link Copied!'}
                 </span>
               </>
             ) : (
               <>
                 <Copy className="w-3 h-3 text-[#B68D40]" />
-                <span>{lang === 'ID' ? 'Bagikan Link' : 'Share Link'}</span>
+                <span>{lang === 'ID' ? 'Bagikan Tautan' : 'Share Link'}</span>
               </>
             )}
           </button>
 
           <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest text-stone-500">
-            Contact Us:
+            {lang === 'ID' ? 'Hubungi Kami:' : 'Contact Us:'}
           </span>
 
           {/* Kontak Email Resmi MEPlanner */}
           <a
             href={`mailto:${businessEmail}`}
-            title={`Hubungi Email Resmi MEPlanner (${businessEmail})`}
+            title={
+              lang === 'ID'
+                ? `Hubungi Email Resmi MEPlanner (${businessEmail})`
+                : `Contact Official MEPlanner Email (${businessEmail})`
+            }
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] sm:text-[11px] font-bold shadow-2xs transition-all hover:scale-[1.02]"
           >
             <Send className="w-3 h-3 text-[#B68D40] shrink-0" />
@@ -2829,7 +3896,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-[#D4AF37]/40 shadow-2xs min-w-0">
               <Shield className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8B6914] truncate">
-                Moderasi Undangan Aktif
+                {lang === 'ID'
+                  ? 'Moderasi Undangan Aktif'
+                  : 'Invitation Moderation Active'}
               </span>
             </div>
             <button
@@ -2842,7 +3911,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:text-[#8B6914] shadow-2xs shrink-0"
             >
               <Lock className="w-3 h-3 text-[#B68D40]" />
-              <span>{isAdminLoggedIn ? 'Kembali ke Dashboard' : 'Portal Admin'}</span>
+              <span>
+                {isAdminLoggedIn
+                  ? lang === 'ID'
+                    ? 'Kembali ke Dasbor'
+                    : 'Back to Dashboard'
+                  : lang === 'ID'
+                  ? 'Portal Admin'
+                  : 'Admin Portal'}
+              </span>
             </button>
           </div>
         </header>
@@ -2853,14 +3930,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <EventCrestIcon eventType={eventType} className="w-8 h-8" />
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
-              <Clock className="w-3.5 h-3.5" /> Mode Penyesuaian / Segera Hadir
+              <Clock className="w-3.5 h-3.5" />{' '}
+              {lang === 'ID'
+                ? 'Mode Penyesuaian / Segera Hadir'
+                : 'Maintenance Mode / Coming Soon'}
             </span>
             <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900">
               {displayTitleShort}
             </h1>
             <p className="text-xs sm:text-sm text-stone-700 leading-relaxed max-w-md mx-auto">
               {settings.invitationMaintenanceMessage ||
-                'Mohon maaf, halaman undangan digital sedang dalam penyesuaian data oleh mempelai & tim pengelola. Silakan kunjungi kembali beberapa saat lagi.'}
+                (lang === 'ID'
+                  ? 'Mohon maaf, halaman undangan digital sedang dalam penyesuaian data oleh mempelai & tim pengelola. Silakan kunjungi kembali beberapa saat lagi.'
+                  : 'We apologize, this digital invitation page is currently being updated by the hosts and event management team. Please check back shortly.')}
             </p>
             {renderDeveloperCreditBar(false)}
           </div>
@@ -2874,10 +3956,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   // 1. COVER PEMBUKA (LIGHT AIRY EDITORIAL VEIL & ARCHETYPE-ADAPTIVE COVER GATE)
   // ============================================================================
   if (!isOpened) {
-    const coverPrimaryDate =
-      mainScheduleEvent?.dateLabel ||
-      activeCountdownEvent?.dateLabel ||
-      settings.event2DateLabel;
+    const coverPrimaryDate = localizedPrimaryDate;
     const coverPrimaryVenue =
       mainScheduleEvent?.venue ||
       activeCountdownEvent?.venue ||
@@ -2944,7 +4023,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 type="button"
                 onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
                 className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] backdrop-blur-md border border-[#D4AF37]/45 text-[10px] sm:text-[11px] font-bold text-[#8B6914] transition-all shadow-2xs"
-                title="Switch Language (Bahasa Indonesia / English)"
+                title={
+                  lang === 'ID'
+                    ? 'Ganti Bahasa (Bahasa Indonesia / Inggris)'
+                    : 'Switch Language (Indonesian / English)'
+                }
               >
                 <Globe className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
                 <span>{lang}</span>
@@ -2960,8 +4043,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white backdrop-blur-md border border-stone-300/70 text-[10px] sm:text-[11px] font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs shrink-0"
                 title={
                   isAdminLoggedIn
-                    ? 'Buka Workspace Planner (My Event Planner)'
-                    : 'Masuk ke Portal Planner (My Event Planner)'
+                    ? lang === 'ID'
+                      ? 'Buka Ruang Kerja Planner'
+                      : 'Open Planner Workspace'
+                    : lang === 'ID'
+                    ? 'Masuk ke Portal Planner'
+                    : 'Sign In to Planner Portal'
                 }
               >
                 <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
@@ -3020,8 +4107,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </h1>
 
                 <p className="text-xs sm:text-base text-white/90 font-medium tracking-wide">
-                  {catalogThemeMatch?.name ||
-                    settings.subtitle ||
+                  {localizedSubtitle ||
                     (coverPrimaryDate
                       ? `${coverPrimaryDate}${coverPrimaryVenue ? ` • ${coverPrimaryVenue}` : ''}`
                       : '')}
@@ -3030,10 +4116,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {/* 4 Frosted-Glass Countdown Boxes */}
                 <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 pt-2 max-w-[280px] sm:max-w-[360px] mx-auto">
                   {[
-                    { val: countdown.days, label: 'Days' },
-                    { val: countdown.hours, label: 'Hrs' },
-                    { val: countdown.minutes, label: 'Min' },
-                    { val: countdown.seconds, label: 'Sec' },
+                    {
+                      val: countdown.days,
+                      label: lang === 'ID' ? 'Hari' : 'Days',
+                    },
+                    {
+                      val: countdown.hours,
+                      label: lang === 'ID' ? 'Jam' : 'Hrs',
+                    },
+                    {
+                      val: countdown.minutes,
+                      label: lang === 'ID' ? 'Menit' : 'Min',
+                    },
+                    {
+                      val: countdown.seconds,
+                      label: lang === 'ID' ? 'Detik' : 'Sec',
+                    },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -3049,11 +4147,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   ))}
                 </div>
 
-                {/* Frosted-Glass Guest Box (To: Tamu Kehormatan) */}
+                {/* Frosted-Glass Guest Box (Kepada Yth / To) */}
                 <div className="pt-2">
                   <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
-                      To:
+                      {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
                       {heroGuestDisplayName}
@@ -3284,7 +4382,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         {/* Bottom Footer Note + Developer Credit */}
         <div className="relative z-10 text-center pb-4 sm:pb-5 px-4">
           <p className="text-[11px] text-stone-700 font-medium">
-            {settings.subtitle}
+            {localizedSubtitle}
           </p>
           {renderDeveloperCreditBar(true)}
         </div>
@@ -3373,10 +4471,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {displayTitleShort}
               </p>
               <p className="text-[10px] text-[#9A742B] font-medium truncate">
-                {sanitizedHeroBadge} &bull;{' '}
-                {mainScheduleEvent?.dateLabel ||
-                  activeCountdownEvent?.dateLabel ||
-                  settings.event2DateLabel}
+                {sanitizedHeroBadge} &bull; {localizedPrimaryDate}
               </p>
             </div>
           </div>
@@ -3391,7 +4486,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   ? 'bg-[#FAF3E3] text-[#8B6914]'
                   : 'text-stone-600 hover:bg-stone-50'
               }`}
-              title={isPlayingMusic ? 'Jeda Musik (Pause)' : 'Putar Musik (Play)'}
+              title={
+                isPlayingMusic
+                  ? lang === 'ID'
+                    ? 'Jeda Musik'
+                    : 'Pause Music'
+                  : lang === 'ID'
+                  ? 'Putar Musik'
+                  : 'Play Music'
+              }
             >
               {isPlayingMusic ? (
                 <span className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-[#D4AF37] via-[#8B6914] to-stone-900 animate-spin-vinyl shrink-0 shadow-2xs">
@@ -3401,7 +4504,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <Play className="w-3.5 h-3.5 text-[#B68D40]" />
               )}
               <span className="hidden sm:inline max-w-[130px] truncate">
-                {currentTrack?.title || settings.musicTitle || 'Musik'}
+                {currentTrack?.title ||
+                  settings.musicTitle ||
+                  (lang === 'ID' ? 'Musik' : 'Music')}
               </span>
               {isPlayingMusic && (
                 <span
@@ -3424,7 +4529,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   ? 'bg-[#B68D40] text-white'
                   : 'bg-white/90 hover:bg-[#FAF3E3] text-[#8B6914]'
               }`}
-              title="Buka Playlist & Pengaturan Volume"
+              title={
+                lang === 'ID'
+                  ? 'Buka Daftar Lagu & Pengaturan Volume'
+                  : 'Open Playlist & Volume Settings'
+              }
             >
               <ListMusic className="w-3.5 h-3.5" />
               <span className="text-[10px] font-extrabold">{playlist.length}</span>
@@ -3439,10 +4548,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200 bg-white">
                   <div className="min-w-0">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
-                      Pemutar Musik &amp; Playlist
+                      {lang === 'ID'
+                        ? 'Pemutar Musik & Daftar Lagu'
+                        : 'Music Player & Playlist'}
                     </p>
                     <p className="text-xs font-bold text-stone-900 truncate">
-                      {currentTrack?.title || settings.musicTitle || 'Belum ada lagu'}
+                      {currentTrack?.title ||
+                        settings.musicTitle ||
+                        (lang === 'ID' ? 'Belum ada lagu' : 'No track selected')}
                     </p>
                     <p className="text-[11px] text-stone-500 truncate">
                       {currentTrack?.artist || settings.musicArtist || 'Instrumental'}
@@ -3462,7 +4575,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div className="mt-2.5">
                     <div className="flex items-center justify-between gap-1.5 mb-1.5 px-0.5">
                       <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                        Koneksi Resmi {externalEmbed.provider}
+                        {lang === 'ID'
+                          ? `Koneksi Resmi ${externalEmbed.provider}`
+                          : `Official ${externalEmbed.provider} Player`}
                       </span>
                       {settings.musicExternalUrl && (
                         <a
@@ -3471,7 +4586,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[10px] font-bold text-[#B68D40] hover:underline"
                         >
-                          <span>Buka App</span>
+                          <span>
+                            {lang === 'ID' ? 'Buka Aplikasi' : 'Open App'}
+                          </span>
                           <ExternalLink className="w-2.5 h-2.5" />
                         </a>
                       )}
@@ -3495,7 +4612,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     onClick={() => weddingMusicPlayer.prevTrack()}
                     disabled={playlist.length <= 1}
                     className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40 transition-all"
-                    title="Lagu Sebelumnya"
+                    title={lang === 'ID' ? 'Lagu Sebelumnya' : 'Previous Track'}
                   >
                     <SkipBack className="w-3.5 h-3.5" />
                   </button>
@@ -3506,11 +4623,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   >
                     {isPlayingMusic ? (
                       <>
-                        <Pause className="w-3.5 h-3.5" /> Pause
+                        <Pause className="w-3.5 h-3.5" />{' '}
+                        {lang === 'ID' ? 'Jeda' : 'Pause'}
                       </>
                     ) : (
                       <>
-                        <Play className="w-3.5 h-3.5" /> Play
+                        <Play className="w-3.5 h-3.5" />{' '}
+                        {lang === 'ID' ? 'Putar' : 'Play'}
                       </>
                     )}
                   </button>
@@ -3519,7 +4638,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     onClick={() => weddingMusicPlayer.nextTrack()}
                     disabled={playlist.length <= 1}
                     className="p-2 rounded-full border border-stone-200 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-stone-700 disabled:opacity-40 transition-all"
-                    title="Lagu Berikutnya"
+                    title={lang === 'ID' ? 'Lagu Berikutnya' : 'Next Track'}
                   >
                     <SkipForward className="w-3.5 h-3.5" />
                   </button>
@@ -3538,7 +4657,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       ) : (
                         <Volume2 className="w-3.5 h-3.5 text-[#B68D40]" />
                       )}
-                      <span>{isMusicMuted ? 'Muted' : 'Volume'}</span>
+                      <span>
+                        {isMusicMuted
+                          ? lang === 'ID'
+                            ? 'Senyap'
+                            : 'Muted'
+                          : 'Volume'}
+                      </span>
                     </button>
                     <span className="text-[11px] font-extrabold text-[#8B6914]">
                       {isMusicMuted ? '0%' : `${musicVolume}%`}
@@ -3560,7 +4685,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {/* Track List */}
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 bg-white">
                   <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 px-1">
-                    Daftar Lagu ({playlist.length})
+                    {lang === 'ID'
+                      ? `Daftar Lagu (${playlist.length})`
+                      : `Tracklist (${playlist.length})`}
                   </p>
                   {playlist.map((track, idx) => {
                     const isCurrent = currentTrack?.id === track.id;
@@ -3597,7 +4724,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 <div className="mt-2.5 pt-2 border-t border-stone-200/80 text-[9.5px] leading-snug text-stone-500">
-                  <span className="font-bold text-[#8B6914]">Info Musik:</span> Lagu bawaan menggunakan instrumen <span className="font-semibold">NCS (NoCopyrightSounds)</span> bebas royalti. Penggunaan lagu kustom merupakan pilihan &amp; tanggung jawab penyelenggara acara.
+                  {lang === 'ID' ? (
+                    <>
+                      <span className="font-bold text-[#8B6914]">Info Musik:</span> Lagu bawaan menggunakan instrumen <span className="font-semibold">NCS (NoCopyrightSounds)</span> bebas royalti. Penggunaan lagu kustom merupakan pilihan &amp; tanggung jawab penyelenggara acara.
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold text-[#8B6914]">Music Info:</span> Default tracks use royalty-free <span className="font-semibold">NCS (NoCopyrightSounds)</span> instrumentals. Custom audio tracks are the sole choice and responsibility of the event host.
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -3606,7 +4741,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
               className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-[11px] sm:text-xs font-bold text-[#8B6914] transition-all shadow-2xs"
-              title="Switch Language (Bahasa Indonesia / English)"
+              title={
+                lang === 'ID'
+                  ? 'Ganti Bahasa (Bahasa Indonesia / Inggris)'
+                  : 'Switch Language (Indonesian / English)'
+              }
             >
               <Globe className="w-3.5 h-3.5 text-[#B68D40] shrink-0" />
               <span>{lang}</span>
@@ -3622,8 +4761,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-[#FAF3E3] border border-[#D4AF37]/35 text-xs font-bold text-stone-700 hover:text-[#8B6914] transition-all shadow-2xs"
               title={
                 isAdminLoggedIn
-                  ? 'Buka Workspace Planner (My Event Planner)'
-                  : 'Masuk ke Portal Planner (My Event Planner)'
+                  ? lang === 'ID'
+                    ? 'Buka Ruang Kerja Planner'
+                    : 'Open Planner Workspace'
+                  : lang === 'ID'
+                  ? 'Masuk ke Portal Planner'
+                  : 'Sign In to Planner Portal'
               }
             >
               <Lock className="w-3.5 h-3.5 text-[#B68D40]" />
@@ -3680,7 +4823,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="mb-4">
                   <div className="inline-block px-5 py-2 rounded-2xl bg-[#fdf8f0]/90 border border-[#C89D54] shadow-2xs">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8b5a2b] font-semibold">
-                      To:
+                      {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-[#6b4226] mt-0.5">
                       {heroGuestDisplayName}
@@ -3717,7 +4860,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 )}
 
                 <p className="max-w-2xl mx-auto text-xs sm:text-base text-[#6b4226]/90 leading-relaxed mb-6">
-                  {settings.invitationOpeningText}
+                  {localizedOpeningText}
                 </p>
 
                 {/* 5. Traditional Date & Venue Plaque */}
@@ -3726,9 +4869,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     {lang === 'ID' ? 'Wanci & Sasana Pawiwahan' : 'Sacred Date & Venue'}
                   </p>
                   <p className="font-editorial text-base sm:text-xl font-bold text-[#6b4226]">
-                    {mainScheduleEvent?.dateLabel ||
-                      activeCountdownEvent?.dateLabel ||
-                      settings.event2DateLabel}
+                    {localizedPrimaryDate}
                   </p>
                   <p className="text-xs sm:text-sm font-semibold text-[#8b5a2b] mt-1">
                     {mainScheduleEvent?.venue ||
@@ -3781,14 +4922,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 )}
 
-                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                {settings.showQuoteSection !== false && localizedQuote.verse && (
                   <div className="max-w-2xl mx-auto rounded-2xl bg-[#f5e9d6]/90 border-2 border-[#C89D54]/80 p-5 sm:p-7 shadow-2xs">
                     <p className="font-editorial italic text-xs sm:text-base text-[#6b4226] leading-relaxed mb-2">
-                      &ldquo;{settings.quoteVerse}&rdquo;
+                      &ldquo;{localizedQuote.verse}&rdquo;
                     </p>
-                    {settings.quoteSource && (
+                    {localizedQuote.source && (
                       <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#8b5a2b]">
-                        — {settings.quoteSource} —
+                        — {localizedQuote.source} —
                       </p>
                     )}
                   </div>
@@ -3848,15 +4989,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div className="flex flex-wrap items-center gap-2.5">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs font-semibold">
                       <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
-                      <span>
-                        {mainScheduleEvent?.dateLabel ||
-                          activeCountdownEvent?.dateLabel ||
-                          settings.event2DateLabel}
-                      </span>
+                      <span>{localizedPrimaryDate}</span>
                     </div>
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold">
                       <span className="text-[10px] uppercase tracking-wider text-[#FAF3E3]">
-                        To:
+                        {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </span>
                       <span>{heroGuestDisplayName}</span>
                     </div>
@@ -3878,7 +5015,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
 
                   <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
-                    {settings.invitationOpeningText}
+                    {localizedOpeningText}
                   </p>
 
                   {/* 4-Box Bento Countdown */}
@@ -3948,14 +5085,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
 
                 {/* Quote in Right Bento Column */}
-                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                {settings.showQuoteSection !== false && localizedQuote.verse && (
                   <div className="rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-4">
                     <p className="font-editorial italic text-xs text-stone-700 leading-relaxed mb-1.5">
-                      &ldquo;{settings.quoteVerse}&rdquo;
+                      &ldquo;{localizedQuote.verse}&rdquo;
                     </p>
-                    {settings.quoteSource && (
+                    {localizedQuote.source && (
                       <p className="text-[10px] font-bold tracking-widest uppercase text-[#9A742B]">
-                        — {settings.quoteSource}
+                        — {localizedQuote.source}
                       </p>
                     )}
                   </div>
@@ -3971,15 +5108,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               {/* Top Magazine Masthead Row */}
               <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-6 border-b-2 border-stone-900/15">
                 <span className="text-[10px] sm:text-xs font-mono font-extrabold uppercase tracking-[0.22em] text-stone-700">
-                  ISSUE NO. 01 &bull; {sanitizedHeroBadge}
+                  {lang === 'ID' ? 'EDISI NO. 01' : 'ISSUE NO. 01'} &bull;{' '}
+                  {sanitizedHeroBadge}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-dashed border-[#8B6914]/70 bg-white text-[#8B6914] text-[10px] sm:text-xs font-mono font-extrabold uppercase tracking-widest rotate-1 shadow-2xs">
                   <Calendar className="w-3 h-3 text-[#B68D40]" />
-                  <span>
-                    {mainScheduleEvent?.dateLabel ||
-                      activeCountdownEvent?.dateLabel ||
-                      settings.event2DateLabel}
-                  </span>
+                  <span>{localizedPrimaryDate}</span>
                 </span>
               </div>
 
@@ -3998,7 +5132,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <div className="mb-4">
                 <div className="inline-block px-5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
                   <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#8B6914] font-bold">
-                    To:
+                    {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                     {heroGuestDisplayName}
@@ -4044,7 +5178,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               )}
 
               <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mt-6 mb-8">
-                {settings.invitationOpeningText}
+                {localizedOpeningText}
               </p>
 
               {/* Polaroid Capsule Countdown */}
@@ -4091,14 +5225,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
               )}
 
-              {settings.showQuoteSection !== false && settings.quoteVerse && (
+              {settings.showQuoteSection !== false && localizedQuote.verse && (
                 <div className="max-w-2xl mx-auto rounded-2xl bg-white border border-stone-200 p-5 sm:p-7 shadow-2xs">
                   <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
-                    &ldquo;{settings.quoteVerse}&rdquo;
+                    &ldquo;{localizedQuote.verse}&rdquo;
                   </p>
-                  {settings.quoteSource && (
+                  {localizedQuote.source && (
                     <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
-                      — {settings.quoteSource} —
+                      — {localizedQuote.source} —
                     </p>
                   )}
                 </div>
@@ -4134,7 +5268,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <div className="mb-4">
                   <div className="inline-block px-5 py-2 rounded-2xl bg-white/95 border border-emerald-300/70 shadow-2xs">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8B6914] font-semibold">
-                      To:
+                      {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                       {heroGuestDisplayName}
@@ -4171,7 +5305,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 )}
 
                 <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-8">
-                  {settings.invitationOpeningText}
+                  {localizedOpeningText}
                 </p>
 
                 {/* Airy Pill Countdown */}
@@ -4218,14 +5352,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </div>
                 )}
 
-                {settings.showQuoteSection !== false && settings.quoteVerse && (
+                {settings.showQuoteSection !== false && localizedQuote.verse && (
                   <div className="max-w-2xl mx-auto rounded-3xl bg-white/90 border border-emerald-200/70 p-5 sm:p-7 shadow-2xs">
                     <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
-                      &ldquo;{settings.quoteVerse}&rdquo;
+                      &ldquo;{localizedQuote.verse}&rdquo;
                     </p>
-                    {settings.quoteSource && (
+                    {localizedQuote.source && (
                       <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
-                        — {settings.quoteSource} —
+                        — {localizedQuote.source} —
                       </p>
                     )}
                   </div>
@@ -4285,21 +5419,32 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </h1>
 
                   <p className="text-xs sm:text-base text-white/90 font-medium tracking-wide">
-                    {catalogThemeMatch?.name ||
-                      settings.subtitle ||
-                      (mainScheduleEvent?.dateLabel
-                        ? `${mainScheduleEvent.dateLabel} • ${mainScheduleEvent.venue}`
+                    {localizedSubtitle ||
+                      (localizedPrimaryDate
+                        ? `${localizedPrimaryDate} • ${mainScheduleEvent?.venue || ''}`
                         : '')}
                   </p>
 
-                  {/* 4 Frosted-Glass Live Countdown Boxes (Days / Hrs / Min / Sec) */}
+                  {/* 4 Frosted-Glass Live Countdown Boxes (Hari/Jam/Menit/Detik or Days/Hrs/Min/Sec) */}
                   {activeCountdownEvent && (
                     <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 pt-2 max-w-[280px] sm:max-w-[360px] mx-auto">
                       {[
-                        { val: countdown.days, label: 'Days' },
-                        { val: countdown.hours, label: 'Hrs' },
-                        { val: countdown.minutes, label: 'Min' },
-                        { val: countdown.seconds, label: 'Sec' },
+                        {
+                          val: countdown.days,
+                          label: lang === 'ID' ? 'Hari' : 'Days',
+                        },
+                        {
+                          val: countdown.hours,
+                          label: lang === 'ID' ? 'Jam' : 'Hrs',
+                        },
+                        {
+                          val: countdown.minutes,
+                          label: lang === 'ID' ? 'Menit' : 'Min',
+                        },
+                        {
+                          val: countdown.seconds,
+                          label: lang === 'ID' ? 'Detik' : 'Sec',
+                        },
                       ].map((item) => (
                         <div
                           key={item.label}
@@ -4316,11 +5461,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     </div>
                   )}
 
-                  {/* Frosted-Glass Guest Box (To: Tamu Kehormatan) */}
+                  {/* Frosted-Glass Guest Box (Kepada Yth / To) */}
                   <div className="pt-2">
                     <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
                       <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
-                        To:
+                        {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </p>
                       <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
                         {heroGuestDisplayName}
@@ -4332,9 +5477,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {/* Bottom Date & Save to Calendar Pill */}
                 <div className="relative z-20 pt-4 flex flex-col items-center gap-3">
                   <p className="text-[11px] sm:text-xs text-white/80 font-medium">
-                    {mainScheduleEvent?.dateLabel ||
-                      activeCountdownEvent?.dateLabel ||
-                      settings.event2DateLabel}
+                    {localizedPrimaryDate}
                     {mainScheduleEvent?.venue || activeCountdownEvent?.venue
                       ? ` • ${mainScheduleEvent?.venue || activeCountdownEvent?.venue}`
                       : ''}
@@ -4369,17 +5512,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   )}
 
                   <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-600 leading-relaxed mb-5">
-                    {settings.invitationOpeningText}
+                    {localizedOpeningText}
                   </p>
 
-                  {settings.showQuoteSection !== false && settings.quoteVerse && (
+                  {settings.showQuoteSection !== false && localizedQuote.verse && (
                     <div className="max-w-2xl mx-auto rounded-2xl bg-[#FAF6EE]/95 border border-[#D4AF37]/35 p-5 sm:p-6 shadow-2xs">
                       <p className="font-editorial italic text-xs sm:text-base text-stone-700 leading-relaxed mb-2">
-                        &ldquo;{settings.quoteVerse}&rdquo;
+                        &ldquo;{localizedQuote.verse}&rdquo;
                       </p>
-                      {settings.quoteSource && (
+                      {localizedQuote.source && (
                         <p className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#9A742B]">
-                          — {settings.quoteSource} —
+                          — {localizedQuote.source} —
                         </p>
                       )}
                     </div>
@@ -4432,14 +5575,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div>
                     <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
                       <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                        {settings.eventHostRoleLabel ||
-                          (settings.groomRankAndTitle &&
-                          settings.groomRankAndTitle !== 'Mempelai Pria'
-                            ? settings.groomRankAndTitle
-                            : eventMeta.primaryRoleBadge)}
+                        {localizedPrimaryRole}
                       </span>
                       <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
-                        PROFILE &bull; 01
+                        {lang === 'ID' ? 'PROFIL • 01' : 'PROFILE • 01'}
                       </span>
                     </div>
 
@@ -4464,11 +5603,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                               {settings.groomUnit || settings.groomOrigin}
                             </p>
                           )}
-                        {settings.groomParents &&
-                          settings.groomParents.trim() !== '' &&
-                          settings.groomParents.trim() !== '-' && (
+                        {localizedGroomParents &&
+                          localizedGroomParents.trim() !== '' &&
+                          localizedGroomParents.trim() !== '-' && (
                             <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 text-xs text-stone-600 leading-relaxed">
-                              {settings.groomParents}
+                              {localizedGroomParents}
                             </div>
                           )}
                       </div>
@@ -4550,11 +5689,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       </div>
                     )}
                     <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                      {settings.eventHostRoleLabel ||
-                        (settings.groomRankAndTitle &&
-                        settings.groomRankAndTitle !== 'Mempelai Pria'
-                          ? settings.groomRankAndTitle
-                          : eventMeta.primaryRoleBadge)}
+                      {localizedPrimaryRole}
                     </span>
                     <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                       {settings.groomFullName}
@@ -4565,11 +5700,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           {settings.groomUnit || settings.groomOrigin}
                         </p>
                       )}
-                    {settings.groomParents &&
-                      settings.groomParents.trim() !== '' &&
-                      settings.groomParents.trim() !== '-' && (
+                    {localizedGroomParents &&
+                      localizedGroomParents.trim() !== '' &&
+                      localizedGroomParents.trim() !== '-' && (
                         <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
-                          {settings.groomParents}
+                          {localizedGroomParents}
                         </p>
                       )}
                   </div>
@@ -4646,13 +5781,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <div>
                         <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200/80">
                           <span className="px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
-                            {settings.brideTitle &&
-                            settings.brideTitle !== 'Mempelai Wanita'
-                              ? settings.brideTitle
-                              : eventMeta.secondaryRoleBadge}
+                            {localizedSecondaryRole}
                           </span>
                           <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
-                            PROFILE &bull; 02
+                            {lang === 'ID' ? 'PROFIL • 02' : 'PROFILE • 02'}
                           </span>
                         </div>
 
@@ -4678,11 +5810,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                                 {settings.brideOrigin}
                               </p>
                             )}
-                            {settings.brideParents &&
-                              settings.brideParents.trim() !== '' &&
-                              settings.brideParents.trim() !== '-' && (
+                            {localizedBrideParents &&
+                              localizedBrideParents.trim() !== '' &&
+                              localizedBrideParents.trim() !== '-' && (
                                 <div className="rounded-2xl bg-[#FAF8F5] border border-stone-200/90 p-3 text-xs text-stone-600 leading-relaxed">
-                                  {settings.brideParents}
+                                  {localizedBrideParents}
                                 </div>
                               )}
                           </div>
@@ -4750,10 +5882,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         </div>
                       )}
                       <span className="px-3.5 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-bold uppercase tracking-wider mb-3.5 sm:mb-4">
-                        {settings.brideTitle &&
-                        settings.brideTitle !== 'Mempelai Wanita'
-                          ? settings.brideTitle
-                          : eventMeta.secondaryRoleBadge}
+                        {localizedSecondaryRole}
                       </span>
                       <h3 className="font-editorial text-xl sm:text-3xl font-bold text-stone-900 mb-2 sm:mb-2.5 leading-snug break-words">
                         {settings.brideFullName}
@@ -4763,11 +5892,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           {settings.brideOrigin}
                         </p>
                       )}
-                      {settings.brideParents &&
-                        settings.brideParents.trim() !== '' &&
-                        settings.brideParents.trim() !== '-' && (
+                      {localizedBrideParents &&
+                        localizedBrideParents.trim() !== '' &&
+                        localizedBrideParents.trim() !== '-' && (
                           <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
-                            {settings.brideParents}
+                            {localizedBrideParents}
                           </p>
                         )}
                     </div>
@@ -4785,7 +5914,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <EditorialSectionHeader
             badge={lang === 'ID' ? 'Agenda & Waktu' : 'Date & Venue'}
             title={scheduleTitle}
-            subtitle={settings.subtitle}
+            subtitle={localizedSubtitle}
             archetype={layoutArchetype}
           />
 
@@ -4868,7 +5997,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <div className="space-y-3 pt-3 border-t border-stone-200/70 mt-auto relative z-10">
                       {hasDresscode && (
                         <div className="text-[11px] text-stone-500 break-words">
-                          <span className="font-bold text-[#8B6914]">Dresscode:</span>{' '}
+                          <span className="font-bold text-[#8B6914]">
+                            {lang === 'ID' ? 'Busana:' : 'Dresscode:'}
+                          </span>{' '}
                           {ev.dresscode}
                         </div>
                       )}
@@ -4922,19 +6053,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold uppercase tracking-wider">
                             <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                            <span>LIVE • {streamPlatform}</span>
+                            <span>
+                              {lang === 'ID'
+                                ? `SIARAN LANGSUNG • ${streamPlatform}`
+                                : `LIVE • ${streamPlatform}`}
+                            </span>
                           </span>
                           <span className="text-[11px] font-bold text-[#8B6914]">
                             {lang === 'ID'
-                              ? '📺 Siaran Langsung Acara (Live Streaming)'
+                              ? '📺 Siaran Langsung Acara'
                               : '📺 Live Event Broadcast'}
                           </span>
                         </div>
                         <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
-                          {settings.liveStreamingLabel?.trim() ||
-                            (lang === 'ID'
-                              ? '📺 Siaran Langsung Acara (Live Streaming)'
-                              : '📺 Live Event Streaming')}
+                          {lang === 'EN'
+                            ? '📺 Live Event Streaming'
+                            : settings.liveStreamingLabel?.trim() ||
+                              '📺 Siaran Langsung Acara'}
                         </h3>
                         <p className="text-xs text-stone-600 leading-relaxed">
                           {lang === 'ID'
@@ -4980,7 +6115,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           </span>
                           <div>
                             <p className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37]">
-                              {streamPlatform} Official Broadcast
+                              {lang === 'ID'
+                                ? `Siaran Resmi ${streamPlatform}`
+                                : `${streamPlatform} Official Broadcast`}
                             </p>
                             <p className="text-xs text-stone-300 mt-0.5 break-all">
                               {streamUrl}
@@ -5017,13 +6154,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             title={
               settings.showLoveStorySection && settings.showGallerySection
                 ? `${storyTitle} & ${
-                    settings.gallerySectionTitle?.trim() ||
-                    (lang === 'ID' ? 'Galeri' : 'Gallery')
+                    lang === 'EN'
+                      ? 'Photo Gallery'
+                      : settings.gallerySectionTitle?.trim() || 'Galeri'
                   }`
                 : settings.showLoveStorySection
                 ? storyTitle
-                : settings.gallerySectionTitle?.trim() ||
-                  (lang === 'ID' ? 'Galeri Momen' : 'Photo Gallery')
+                : lang === 'EN'
+                ? 'Photo Gallery'
+                : settings.gallerySectionTitle?.trim() || 'Galeri Momen'
             }
             archetype={layoutArchetype}
           />
@@ -5388,19 +6527,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 <div className="relative z-10 w-full rounded-xl bg-white/5 border border-[#D4AF37]/35 px-3 py-2 space-y-0.5">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-[#D4AF37] truncate">
-                    {mainScheduleEvent?.title || scheduleTitle}
+                    {visibleEvents[0]?.title || scheduleTitle}
                   </p>
                   <p className="text-[10px] font-bold text-white truncate">
-                    {mainScheduleEvent?.dateLabel || settings.event1DateLabel}
+                    {localizedPrimaryDate}
                   </p>
                   <p className="text-[9px] text-stone-300 truncate">
-                    {mainScheduleEvent?.venue || settings.event1Venue}
+                    {visibleEvents[0]?.venue || settings.event1Venue}
                   </p>
                 </div>
 
                 <div className="relative z-10 w-full rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 px-3 py-2 space-y-0.5">
                   <p className="text-[8px] font-extrabold uppercase tracking-widest text-[#D4AF37]">
-                    To: Honored Guest
+                    {lang === 'ID' ? 'Kepada Yth:' : 'To: Honored Guest'}
                   </p>
                   <p className="text-xs font-bold text-white truncate">
                     {heroGuestDisplayName}
@@ -5418,7 +6557,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     />
                   </div>
                   <span className="text-[8px] font-semibold uppercase tracking-widest text-[#E7D8B9]">
-                    MEPlanner Digital Invitation
+                    {lang === 'ID'
+                      ? 'Undangan Digital MEPlanner'
+                      : 'MEPlanner Digital Invitation'}
                   </span>
                 </div>
               </div>
@@ -5428,7 +6569,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
             <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
                 <Camera className="w-3.5 h-3.5 text-[#8B6914]" />
-                <span>📸 Story Instagram & E-Invitation Card</span>
+                <span>
+                  {lang === 'ID'
+                    ? '📸 Kartu Story Instagram & Undangan Digital'
+                    : '📸 Instagram Story & E-Invitation Card'}
+                </span>
               </div>
 
               <h3 className="font-editorial text-xl sm:text-2xl font-bold text-stone-900">
@@ -5604,22 +6749,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       className="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-stone-900 focus:border-[#C5A059] focus:outline-none"
                     >
                       <option value="Hadir">
-                        {lang === 'ID' ? 'Hadir' : 'Will Attend (Hadir)'}
+                        {lang === 'ID' ? 'Hadir' : 'Will Attend'}
                       </option>
                       <option value="Tidak Hadir">
                         {lang === 'ID'
                           ? 'Berhalangan Hadir'
-                          : 'Unable to Attend (Berhalangan)'}
+                          : 'Unable to Attend'}
                       </option>
                       <option value="Masih Ragu">
-                        {lang === 'ID' ? 'Masih Ragu' : 'Tentative (Masih Ragu)'}
+                        {lang === 'ID' ? 'Masih Ragu' : 'Tentative'}
                       </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      {lang === 'ID' ? 'Jumlah Orang (Pax)' : 'Number of Guests (Pax)'}
+                      {lang === 'ID' ? 'Jumlah Orang' : 'Number of Guests (Pax)'}
                     </label>
                     <select
                       value={Math.max(1, Number(rsvpPax) || 1)}
@@ -5756,7 +6901,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </h3>
                 </div>
                 <span className="text-[11px] text-[#9A742B] font-semibold shrink-0">
-                  Real-Time Feed
+                  {lang === 'ID' ? 'Pembaruan Langsung' : 'Real-Time Feed'}
                 </span>
               </div>
 
@@ -5856,8 +7001,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                               : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
-                          {w.rsvpStatus}{' '}
-                          {w.rsvpStatus === 'Hadir' ? `(${w.pax} Pax)` : ''}
+                          {lang === 'ID'
+                            ? w.rsvpStatus === 'Tidak Hadir'
+                              ? 'Berhalangan'
+                              : w.rsvpStatus
+                            : w.rsvpStatus === 'Hadir'
+                            ? 'Attending'
+                            : w.rsvpStatus === 'Tidak Hadir'
+                            ? 'Unable to Attend'
+                            : 'Tentative'}{' '}
+                          {w.rsvpStatus === 'Hadir'
+                            ? `(${w.pax} ${lang === 'ID' ? 'Orang' : 'Pax'})`
+                            : ''}
                         </span>
                       </div>
 
@@ -6026,19 +7181,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <Gift className="w-6 h-6" />
             </div>
             <span className="text-xs uppercase tracking-[0.25em] text-[#9A742B] font-bold relative z-10">
-              Wedding Gift
+              {lang === 'ID' ? 'Tanda Kasih' : 'Wedding Gift'}
             </span>
             <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900 mt-1 mb-2 relative z-10">
-              {settings.giftSectionTitle?.trim() ||
-                (lang === 'ID'
-                  ? 'Amplop Digital & Tanda Kasih'
-                  : 'Digital Envelope & Wedding Gift')}
+              {lang === 'ID'
+                ? settings.giftSectionTitle?.trim() ||
+                  'Amplop Digital & Tanda Kasih'
+                : 'Digital Envelope & Wedding Gift'}
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto mb-5 leading-relaxed relative z-10">
-              {settings.giftSectionSubtitle?.trim() ||
-                (lang === 'ID'
-                  ? 'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui informasi resmi berikut:'
-                  : 'Your prayers and blessings are the greatest gift to us. However, if you wish to send a digital gift, crypto transfer, or wedding present, you may use the official channels below:')}
+              {lang === 'ID'
+                ? settings.giftSectionSubtitle?.trim() ||
+                  'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital, kripto, atau pengiriman kado, dapat melalui informasi resmi berikut:'
+                : 'Your prayers and blessings are the greatest gift to us. However, if you wish to send a digital gift, crypto transfer, or wedding present, you may use the official channels below:'}
             </p>
 
             {/* Segmented Gift Category Filter Tabs (Semua | Rekening Bank | QRIS | Global & Crypto | Wishlist Kado) */}
@@ -6058,7 +7213,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 },
                 {
                   id: 'GLOBAL_CRYPTO' as const,
-                  label: lang === 'ID' ? '🌐 Global & Crypto' : '🌐 Global & Crypto',
+                  label: lang === 'ID' ? '🌐 Global & Kripto' : '🌐 Global & Crypto',
                 },
                 ...(Array.isArray(settings.giftWishlistItems) &&
                 settings.giftWishlistItems.length > 0
@@ -6066,7 +7221,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       {
                         id: 'WISHLIST' as const,
                         label:
-                          lang === 'ID' ? '🎁 Wishlist Kado' : '🎁 Gift Registry',
+                          lang === 'ID' ? '🎁 Daftar Kado' : '🎁 Gift Registry',
                       },
                     ]
                   : []),
@@ -6176,12 +7331,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             }`}
                           >
                             {isCrypto
-                              ? 'CRYPTO WALLET'
+                              ? lang === 'ID'
+                                ? 'DOMPET KRIPTO'
+                                : 'CRYPTO WALLET'
                               : isPaypal
                               ? 'PAYPAL'
                               : isEwallet
-                              ? 'E-WALLET'
-                              : 'TRANSFER BANK'}
+                              ? lang === 'ID'
+                                ? 'DOMPET DIGITAL'
+                                : 'E-WALLET'
+                              : lang === 'ID'
+                              ? 'TRANSFER BANK'
+                              : 'BANK TRANSFER'}
                           </span>
 
                           {isCrypto && (
@@ -6221,7 +7382,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                         {!isCrypto && acc.branchOrNote && (
                           <p className="text-[11px] text-stone-600 mt-0.5 break-words">
-                            {acc.branchOrNote}
+                            {lang === 'EN'
+                              ? acc.branchOrNote
+                                  .replace(
+                                    /Konfirmasi via WhatsApp setelah transfer/gi,
+                                    'Please confirm via WhatsApp after transfer'
+                                  )
+                                  .replace(/KCP\s+/gi, 'Branch ')
+                              : acc.branchOrNote}
                           </p>
                         )}
                       </div>
@@ -6345,10 +7513,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           {settings.giftShippingAddress}
                         </p>
                         <p className="text-[11px] text-stone-500 italic">
-                          {settings.giftShippingNote?.trim() ||
-                            (lang === 'ID'
-                              ? 'Konfirmasi pengiriman bingkisan dapat melalui keluarga atau panitia acara.'
-                              : 'Please confirm physical gift delivery with our family or wedding committee.')}
+                          {lang === 'ID'
+                            ? settings.giftShippingNote?.trim() ||
+                              'Konfirmasi pengiriman bingkisan dapat melalui keluarga atau panitia acara.'
+                            : 'Please confirm physical gift delivery with our family or wedding committee.'}
                         </p>
                       </div>
 
@@ -6402,12 +7570,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <div>
                       <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9A742B]">
                         {lang === 'ID'
-                          ? '🎁 Referensi Kado Pilihan (Gift Registry)'
+                          ? '🎁 Referensi Kado Pilihan'
                           : '🎁 Curated Gift Wishlist Registry'}
                       </span>
                       <h3 className="font-editorial text-base sm:text-lg font-bold text-stone-900">
                         {lang === 'ID'
-                          ? 'Daftar Wishlist Kado Mempelai / Tuan Rumah'
+                          ? 'Daftar Referensi Kado Mempelai / Tuan Rumah'
                           : 'Host & Couple Gift Registry'}
                       </h3>
                     </div>
@@ -6432,7 +7600,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                           <div className="space-y-1">
                             <div className="flex items-center justify-between gap-2">
                               <span className="px-2 py-0.5 rounded-md bg-white border border-[#D4AF37]/35 text-[#8B6914] text-[10px] font-extrabold">
-                                🎁 Wishlist #{wIdx + 1}
+                                {lang === 'ID'
+                                  ? `🎁 Kado #${wIdx + 1}`
+                                  : `🎁 Wishlist #${wIdx + 1}`}
                               </span>
                               {item.reservedBy && (
                                 <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold truncate">
@@ -6505,7 +7675,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           )}
 
           <p className="text-xs sm:text-base text-stone-700 font-medium leading-relaxed max-w-2xl mx-auto mb-8 sm:mb-10 relative z-10">
-            {settings.invitationClosingText}
+            {localizedClosingText}
           </p>
 
           {/* Inner Champagne Gold Couple Signature Box */}
@@ -6539,7 +7709,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
           <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent mx-auto mt-8 sm:mt-10 mb-3.5" />
           <p className="text-[11px] font-semibold tracking-wider uppercase text-[#9A742B]/80 mb-2">
-            All-in-One My Event Planner &amp; Digital Invitation
+            {lang === 'ID'
+              ? 'Platform Perencana Acara & Undangan Digital Terpadu'
+              : 'All-in-One My Event Planner & Digital Invitation'}
           </p>
 
           {renderDeveloperCreditBar(false)}
@@ -6551,7 +7723,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
         {[
           {
             href: '#pembuka',
-            label: 'Home',
+            label: lang === 'ID' ? 'Beranda' : 'Home',
             icon: Sparkles,
           },
           ...(visibleEvents.length > 0
@@ -6689,13 +7861,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {resolvedGuestDisplayName}
                 </p>
                 <p className="text-[11px] text-[#8B6914] font-semibold">
-                  {effectiveMatchedGuest?.institution || 'Tamu Kehormatan'}{' '}
+                  {effectiveMatchedGuest?.institution ||
+                    (lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest')}{' '}
                   &bull; {effectiveMatchedGuest?.priority || 'VIP'} &bull;{' '}
                   {effectiveMatchedGuest?.confirmedPax ||
                     effectiveMatchedGuest?.pax ||
                     rsvpPax ||
                     2}{' '}
-                  Pax
+                  {lang === 'ID' ? 'Orang' : 'Pax'}
                 </p>
                 {guestCheckInHash && (
                   <p className="font-mono text-[10px] text-stone-400 truncate">
@@ -6829,9 +8002,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               <X className="w-4 h-4" />
             </button>
             <QrCode className="w-8 h-8 text-[#B68D40] mx-auto mb-2" />
-            <h3 className="font-serif text-lg font-bold">QRIS Wedding Gift</h3>
+            <h3 className="font-serif text-lg font-bold">
+              {lang === 'ID' ? 'QRIS Tanda Kasih' : 'QRIS Wedding Gift'}
+            </h3>
             <p className="text-xs text-stone-500 mb-4">
-              a.n.{' '}
+              {lang === 'ID' ? 'a.n.' : 'Recipient:'}{' '}
               {settings.giftRecipientName && settings.giftRecipientName !== 'Mempelai'
                 ? settings.giftRecipientName
                 : displayTitleFull}
@@ -6855,7 +8030,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   centerBadgeText="QRIS"
                 />
                 <span className="text-[10px] font-mono text-stone-500 mt-2">
-                  SCAN QRIS BANK / E-WALLET
+                  {lang === 'ID'
+                    ? 'PINDAI QRIS BANK / DOMPET DIGITAL'
+                    : 'SCAN QRIS BANK / E-WALLET'}
                 </span>
               </div>
             )}
@@ -6869,7 +8046,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   className="w-full py-2.5 px-4 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>Simpan Gambar QRIS</span>
+                  <span>
+                    {lang === 'ID' ? 'Simpan Gambar QRIS' : 'Save QRIS Image'}
+                  </span>
                 </a>
               )}
               <button
@@ -6877,7 +8056,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 onClick={() => setShowQrisModal(false)}
                 className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs"
               >
-                Tutup QRIS
+                {lang === 'ID' ? 'Tutup QRIS' : 'Close QRIS'}
               </button>
             </div>
           </div>
@@ -6924,7 +8103,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 onClick={() => setSelectedPhoto(null)}
                 className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 shrink-0"
               >
-                Tutup
+                {lang === 'ID' ? 'Tutup' : 'Close'}
               </button>
             </div>
           </div>

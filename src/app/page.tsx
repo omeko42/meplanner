@@ -3598,10 +3598,9 @@ function WeddingAppContent() {
                 type="button"
                 onClick={handleOpenLandingPage}
                 className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-full bg-stone-900/90 hover:bg-stone-900 text-[#FAF3E3] border border-[#D4AF37]/50 text-[11px] font-extrabold shadow-lg backdrop-blur-md transition-all"
-                title="Kembali ke Halaman Depan My Event Planner (MEPlanner)"
+                title="Kembali ke Katalog"
               >
-                <span className="sm:hidden">&larr; MEPlanner</span>
-                <span className="hidden sm:inline">&larr; Katalog MEPlanner</span>
+                <span>&larr; Katalog</span>
               </button>
             )
           )}

@@ -2503,13 +2503,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             lang === 'ID'
               ? '🌱 COBA DULU GRATIS • AKTIF 14 HARI'
               : '🌱 FREE TRIAL • 14 DAYS ACTIVE',
-          name: 'Gratis',
+          name: lang === 'ID' ? 'Gratis' : 'Free',
           subtitle:
             lang === 'ID'
               ? 'Cocok untuk uji coba fitur dasar sebelum upgrade'
               : 'Ideal for testing core features before upgrading',
           normalPriceLabel: lang === 'ID' ? 'Uji Coba Gratis' : 'Free Trial',
-          discountBadge: 'PROMO AKTIF',
+          discountBadge: lang === 'ID' ? 'PROMO AKTIF' : 'ACTIVE PROMO',
           priceMain: lang === 'ID' ? 'Rp 0' : '$0 USD',
           priceCryptoDisplay: '0 USDT',
           amountNumeric: 0,
@@ -2555,7 +2555,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               : 'Best for couples or individuals (1 Event)',
           normalPriceLabel:
             lang === 'ID' ? 'Harga Normal: Rp 75.000' : 'Regular: $7.50 USD',
-          discountBadge: 'PROMO 31% OFF • TERPOPULER',
+          discountBadge:
+            lang === 'ID'
+              ? 'PROMO 31% OFF • TERPOPULER'
+              : 'PROMO 31% OFF • MOST POPULAR',
           priceMain: lang === 'ID' ? 'Rp 51.750' : '$3.75 USD',
           priceCryptoDisplay: '3.75 USDT',
           amountNumeric: lang === 'ID' ? 51750 : 4,
@@ -2609,7 +2612,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               : 'Ideal for 2 events or couples + small businesses',
           normalPriceLabel:
             lang === 'ID' ? 'Harga Normal: Rp 150.000' : 'Regular: $11 USD',
-          discountBadge: 'PROMO 50% OFF • 2 ACARA',
+          discountBadge:
+            lang === 'ID'
+              ? 'PROMO 50% OFF • 2 ACARA'
+              : 'PROMO 50% OFF • 2 EVENTS',
           priceMain: lang === 'ID' ? 'Rp 74.250' : '$5.25 USD',
           priceCryptoDisplay: '5.25 USDT',
           amountNumeric: lang === 'ID' ? 74250 : 5,
@@ -2667,7 +2673,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               : 'Ideal for medium businesses or large families — 5 Invitations',
           normalPriceLabel:
             lang === 'ID' ? 'Harga Normal: Rp 375.000' : 'Regular: $25 USD',
-          discountBadge: 'PROMO 52% OFF • 5 ACARA',
+          discountBadge:
+            lang === 'ID'
+              ? 'PROMO 52% OFF • 5 ACARA'
+              : 'PROMO 52% OFF • 5 EVENTS',
           priceMain: lang === 'ID' ? 'Rp 180.000' : '$12 USD',
           priceCryptoDisplay: '12 USDT',
           amountNumeric: lang === 'ID' ? 180000 : 12,
@@ -2717,7 +2726,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               : 'Designed for Wedding & Event Organizers — 11 Invitations',
           normalPriceLabel:
             lang === 'ID' ? 'Harga Normal: Rp 825.000' : 'Regular: $55 USD',
-          discountBadge: 'PROMO 54% OFF • PAKET WO/EO',
+          discountBadge:
+            lang === 'ID'
+              ? 'PROMO 54% OFF • PAKET WO/EO'
+              : 'PROMO 54% OFF • WO/EO BUNDLE',
           priceMain: lang === 'ID' ? 'Rp 375.000' : '$25 USD',
           priceCryptoDisplay: '25 USDT',
           amountNumeric: lang === 'ID' ? 375000 : 25,
@@ -2769,7 +2781,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               : 'Flagship for Enterprise WO / EO Agencies — 23 Invitations',
           normalPriceLabel:
             lang === 'ID' ? 'Harga Normal: Rp 1.725.000' : 'Regular: $110 USD',
-          discountBadge: 'PROMO 56% OFF • AGENSI VIP',
+          discountBadge:
+            lang === 'ID'
+              ? 'PROMO 56% OFF • AGENSI VIP'
+              : 'PROMO 56% OFF • VIP AGENCY',
           priceMain: lang === 'ID' ? 'Rp 750.000' : '$49 USD',
           priceCryptoDisplay: '49 USDT',
           amountNumeric: lang === 'ID' ? 750000 : 49,
@@ -4980,28 +4995,46 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
     const eventTopBadge =
       theme?.eventType === 'BIRTHDAY'
-        ? 'BIRTHDAY CELEBRATION'
+        ? lang === 'ID'
+          ? 'PERAYAAN ULANG TAHUN'
+          : 'BIRTHDAY CELEBRATION'
         : theme?.eventType === 'GRADUATION'
-          ? 'GRADUATION CELEBRATION'
+          ? lang === 'ID'
+            ? 'SYUKURAN WISUDA'
+            : 'GRADUATION CELEBRATION'
           : theme?.eventType === 'MEETING'
-            ? 'EXECUTIVE SUMMIT'
+            ? lang === 'ID'
+              ? 'RAPAT EKSEKUTIF'
+              : 'EXECUTIVE SUMMIT'
             : theme?.eventType === 'GALA_DINNER'
-              ? 'ROYAL GALA DINNER'
-              : 'THE WEDDING OF';
+              ? lang === 'ID'
+                ? 'JAMUAN GALA DINNER'
+                : 'ROYAL GALA DINNER'
+              : lang === 'ID'
+                ? 'PERNIKAHAN DARI'
+                : 'THE WEDDING OF';
 
     const honoredGuestLabel =
       lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest';
 
+    const toLabel = lang === 'ID' ? 'Kepada Yth:' : 'To:';
+
     const countdownBoxes = [
-      { val: String(phoneLiveCountdown.days).padStart(2, '0'), label: 'Days' },
-      { val: String(phoneLiveCountdown.hours).padStart(2, '0'), label: 'Hrs' },
+      {
+        val: String(phoneLiveCountdown.days).padStart(2, '0'),
+        label: lang === 'ID' ? 'Hari' : 'Days',
+      },
+      {
+        val: String(phoneLiveCountdown.hours).padStart(2, '0'),
+        label: lang === 'ID' ? 'Jam' : 'Hrs',
+      },
       {
         val: String(phoneLiveCountdown.minutes).padStart(2, '0'),
-        label: 'Min',
+        label: lang === 'ID' ? 'Mnt' : 'Min',
       },
       {
         val: String(phoneLiveCountdown.seconds).padStart(2, '0'),
-        label: 'Sec',
+        label: lang === 'ID' ? 'Dtk' : 'Sec',
       },
     ];
 
@@ -5028,7 +5061,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             } text-center my-auto`}
           >
             <div className="flex items-center justify-between border-b border-stone-300/90 pb-1 text-[7px] sm:text-[8px] font-mono font-extrabold uppercase tracking-wider text-[#8B6914]">
-              <span>ISSUE NO. 01</span>
+              <span>{lang === 'ID' ? 'EDISI NO. 01' : 'ISSUE NO. 01'}</span>
               <span>{eventTopBadge.split(' ')[0]}</span>
             </div>
 
@@ -5105,7 +5138,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
                   } font-bold text-stone-800`}
                 >
-                  To: <span className="text-[#8B6914]">{honoredGuestLabel}</span>
+                  {toLabel}{' '}
+                  <span className="text-[#8B6914]">{honoredGuestLabel}</span>
                 </p>
               </div>
             </div>
@@ -5122,10 +5156,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
               } flex items-center justify-around font-bold text-stone-800 shadow-md`}
             >
-              <span className="text-[#8B6914]">Home</span>
-              <span>Acara</span>
-              <span>Galeri</span>
-              <span>Kado</span>
+              <span className="text-[#8B6914]">
+                {lang === 'ID' ? 'Beranda' : 'Home'}
+              </span>
+              <span>{lang === 'ID' ? 'Acara' : 'Events'}</span>
+              <span>{lang === 'ID' ? 'Galeri' : 'Gallery'}</span>
+              <span>{lang === 'ID' ? 'Kado' : 'Gift'}</span>
               <span>RSVP</span>
             </div>
           </div>
@@ -5230,7 +5266,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
                   } font-bold text-stone-800`}
                 >
-                  To: <span className="text-[#8B6914]">{honoredGuestLabel}</span>
+                  {toLabel}{' '}
+                  <span className="text-[#8B6914]">{honoredGuestLabel}</span>
                 </p>
               </div>
             </div>
@@ -5247,10 +5284,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
               } flex items-center justify-around font-bold text-stone-800 shadow-md`}
             >
-              <span className="text-[#8B6914]">Home</span>
-              <span>Acara</span>
-              <span>Galeri</span>
-              <span>Kado</span>
+              <span className="text-[#8B6914]">
+                {lang === 'ID' ? 'Beranda' : 'Home'}
+              </span>
+              <span>{lang === 'ID' ? 'Acara' : 'Events'}</span>
+              <span>{lang === 'ID' ? 'Galeri' : 'Gallery'}</span>
+              <span>{lang === 'ID' ? 'Kado' : 'Gift'}</span>
               <span>RSVP</span>
             </div>
           </div>
@@ -5348,7 +5387,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     isHeroSize ? 'text-[9px]' : 'text-[7.5px]'
                   } font-bold text-[#6b4226]`}
                 >
-                  To: <span className="text-[#8b5a2b]">{honoredGuestLabel}</span>
+                  {toLabel}{' '}
+                  <span className="text-[#8b5a2b]">{honoredGuestLabel}</span>
                 </p>
               </div>
             </div>
@@ -5365,10 +5405,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
               } flex items-center justify-around font-bold text-[#6b4226] shadow-md`}
             >
-              <span className="text-[#8B6914]">Home</span>
-              <span>Acara</span>
-              <span>Galeri</span>
-              <span>Kado</span>
+              <span className="text-[#8B6914]">
+                {lang === 'ID' ? 'Beranda' : 'Home'}
+              </span>
+              <span>{lang === 'ID' ? 'Acara' : 'Events'}</span>
+              <span>{lang === 'ID' ? 'Galeri' : 'Gallery'}</span>
+              <span>{lang === 'ID' ? 'Kado' : 'Gift'}</span>
               <span>RSVP</span>
             </div>
           </div>
@@ -5453,7 +5495,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             {/* Guest Bento Pill */}
             <div className="rounded-xl bg-white/10 border border-white/15 px-3 py-1.5 flex items-center justify-between">
               <span className="text-[8px] uppercase tracking-wider text-white/70">
-                To:
+                {toLabel}
               </span>
               <span
                 className={`${
@@ -5476,10 +5518,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
               } flex items-center justify-around font-bold text-stone-800 shadow-lg`}
             >
-              <span className="text-[#8B6914]">Home</span>
-              <span>Acara</span>
-              <span>Galeri</span>
-              <span>Kado</span>
+              <span className="text-[#8B6914]">
+                {lang === 'ID' ? 'Beranda' : 'Home'}
+              </span>
+              <span>{lang === 'ID' ? 'Acara' : 'Events'}</span>
+              <span>{lang === 'ID' ? 'Galeri' : 'Gallery'}</span>
+              <span>{lang === 'ID' ? 'Kado' : 'Gift'}</span>
               <span>RSVP</span>
             </div>
           </div>
@@ -5583,7 +5627,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   isHeroSize ? 'text-[9px]' : 'text-[7px]'
                 } uppercase tracking-widest text-[#FAF3E3]`}
               >
-                To:
+                {toLabel}
               </p>
               <p
                 className={`${
@@ -5607,10 +5651,12 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               isHeroSize ? 'px-3 py-2 text-[9px]' : 'px-2 py-1 text-[7px]'
             } flex items-center justify-around font-bold text-stone-800 shadow-lg`}
           >
-            <span className="text-[#8B6914]">Home</span>
-            <span>Acara</span>
-            <span>Galeri</span>
-            <span>Kado</span>
+            <span className="text-[#8B6914]">
+              {lang === 'ID' ? 'Beranda' : 'Home'}
+            </span>
+            <span>{lang === 'ID' ? 'Acara' : 'Events'}</span>
+            <span>{lang === 'ID' ? 'Galeri' : 'Gallery'}</span>
+            <span>{lang === 'ID' ? 'Kado' : 'Gift'}</span>
             <span>RSVP</span>
           </div>
         </div>
