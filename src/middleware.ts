@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveInvitationOgPayload } from '@/lib/ogInvitationMetadata';
+import {
+  resolveInvitationOgPayload,
+  resolveWhatsAppRedirectUrlByHash,
+} from '@/lib/ogInvitationMetadata';
 
 const LINK_PREVIEW_BOT_REGEX =
   /whatsapp|facebookexternalhit|facebot|telegrambot|twitterbot|discordbot|linkedinbot|slackbot|skypeuripreview|line-poker|linespider|\bline\/|viber|kakaotalk|pinterest|iframely|embedly|opengraph|metainspector|vkshare|snapchat|redditbot|applebot|quora link preview/i;
@@ -25,13 +28,33 @@ export async function middleware(req: NextRequest) {
   }
 
   const ua = req.headers.get('user-agent') || '';
+  const isBot = LINK_PREVIEW_BOT_REGEX.test(ua);
   const forceOgPreview = searchParams.get('og_preview') === '1';
 
-  if (!forceOgPreview && !LINK_PREVIEW_BOT_REGEX.test(ua)) {
+  const segments = pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  const isShortWaRoute =
+    (segments[0]?.toLowerCase() === 'wa' && Boolean(segments[1])) ||
+    searchParams.get('wa') === '1';
+  const waHashSegment =
+    segments[0]?.toLowerCase() === 'wa'
+      ? decodeURIComponent(segments[1] || '')
+      : segments[0]
+        ? decodeURIComponent(segments[0])
+        : searchParams.get('u') || searchParams.get('code') || '';
+
+  if (isShortWaRoute && !isBot && !forceOgPreview && waHashSegment) {
+    const waRedirectUrl = await resolveWhatsAppRedirectUrlByHash(waHashSegment);
+    if (waRedirectUrl) {
+      return NextResponse.redirect(waRedirectUrl, 302);
+    }
+  }
+
+  if (!forceOgPreview && !isBot) {
     return NextResponse.next();
   }
 
-  const pathSegment = pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || '';
+  const pathSegment =
+    segments[0]?.toLowerCase() === 'wa' ? segments[1] || '' : segments[0] || '';
   const hashOrCode =
     (pathSegment ? decodeURIComponent(pathSegment) : '') ||
     searchParams.get('u') ||

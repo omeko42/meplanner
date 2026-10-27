@@ -2052,22 +2052,47 @@ function WeddingAppContent() {
   ) => {
     const targetId = guest.id || `gst_${Date.now().toString(36)}`;
     registerLocalItemTouch(targetId);
-    const isEdit = Boolean(
-      guest.id && activeAdminState.guests.some((g) => g.id === guest.id)
-    );
+    const existingGuest = guest.id
+      ? activeAdminState.guests.find((g) => g.id === guest.id)
+      : undefined;
+    const isEdit = Boolean(existingGuest);
+    const maxCodeNum = activeAdminState.guests.reduce((max, g) => {
+      const m = /INV-(\d+)/i.exec(g.invitationCode || '');
+      const num = m ? parseInt(m[1], 10) : 0;
+      return num > max ? num : max;
+    }, activeAdminState.guests.length);
+    const resolvedInvitationCode =
+      guest.invitationCode ||
+      existingGuest?.invitationCode ||
+      `INV-${String(maxCodeNum + 1).padStart(4, '0')}`;
+    const resolvedInvitationToken =
+      guest.invitationToken ||
+      existingGuest?.invitationToken ||
+      computeGuestInvitationHash(activeWorkspaceClientId, {
+        id: targetId,
+        invitationCode: resolvedInvitationCode,
+        guestName: guest.guestName,
+      });
+
     updateClientScopedState(activeWorkspaceClientId, (prev) => {
       const exists = guest.id && prev.guests.some((g) => g.id === guest.id);
       const nextGuests = exists
         ? prev.guests.map((g) =>
-            g.id === guest.id ? ({ ...g, ...guest } as WeddingGuest) : g
+            g.id === guest.id
+              ? ({
+                  ...g,
+                  ...guest,
+                  invitationCode: g.invitationCode || resolvedInvitationCode,
+                  invitationToken: g.invitationToken || resolvedInvitationToken,
+                } as WeddingGuest)
+              : g
           )
         : [
             ...prev.guests,
             {
               id: targetId,
-              invitationCode:
-                guest.invitationCode ||
-                `INV-${String(prev.guests.length + 1).padStart(4, '0')}`,
+              invitationCode: resolvedInvitationCode,
+              invitationToken: resolvedInvitationToken,
               guestName: guest.guestName,
               guestType: guest.guestType || 'Keluarga',
               side: guest.side || 'Pria',
@@ -2098,7 +2123,12 @@ function WeddingAppContent() {
       detail: `Format: ${guest.invitationFormat || 'Cetak Tebal'} • RSVP: ${guest.rsvpStatus || 'Belum Konfirmasi'}`,
     });
     if (activeWorkspaceClientId === 'client-utama') {
-      await mutateServer('UPSERT_GUEST', { ...guest, id: targetId });
+      await mutateServer('UPSERT_GUEST', {
+        ...guest,
+        id: targetId,
+        invitationCode: resolvedInvitationCode,
+        invitationToken: resolvedInvitationToken,
+      });
     }
   };
 

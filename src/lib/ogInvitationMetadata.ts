@@ -62,6 +62,8 @@ export function resolveHeroImageFromSettings(
 
 interface LightweightCloudProjection {
   guests?: WeddingGuest[];
+  groomFullName?: string;
+  brideFullName?: string;
   groomNickname?: string;
   brideNickname?: string;
   eventType?: WeddingSettings['eventType'];
@@ -69,8 +71,13 @@ interface LightweightCloudProjection {
   subtitle?: string;
   event2DateLabel?: string;
   event2Venue?: string;
+  event3Venue?: string;
+  event3Address?: string;
   heroPrewedUrl?: string;
   coverBgUrl?: string;
+  waTemplateRegular?: string;
+  waTemplateVip?: string;
+  scheduleEvents?: WeddingSettings['scheduleEvents'];
   clientWorkspaces?: WeddingDatabaseSchema['settings']['clientWorkspaces'];
 }
 
@@ -78,6 +85,8 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
   try {
     const queryCols = [
       'guests:data->guests',
+      'groomFullName:data->settings->>groomFullName',
+      'brideFullName:data->settings->>brideFullName',
       'groomNickname:data->settings->>groomNickname',
       'brideNickname:data->settings->>brideNickname',
       'eventType:data->settings->>eventType',
@@ -85,8 +94,13 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
       'subtitle:data->settings->>subtitle',
       'event2DateLabel:data->settings->>event2DateLabel',
       'event2Venue:data->settings->>event2Venue',
+      'event3Venue:data->settings->>event3Venue',
+      'event3Address:data->settings->>event3Address',
       'heroPrewedUrl:data->settings->>heroPrewedUrl',
       'coverBgUrl:data->settings->>coverBgUrl',
+      'waTemplateRegular:data->settings->>waTemplateRegular',
+      'waTemplateVip:data->settings->>waTemplateVip',
+      'scheduleEvents:data->settings->scheduleEvents',
       'clientWorkspaces:data->settings->clientWorkspaces',
     ].join(',');
 
@@ -97,7 +111,7 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
           apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        next: { revalidate: 60 },
+        next: { revalidate: 30 },
       }
     ).then(async (res) => {
       if (!res.ok) return null;
@@ -108,6 +122,8 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
         guests: Array.isArray(row.guests) ? row.guests : undefined,
         settings: {
           ...INITIAL_SETTINGS,
+          ...(row.groomFullName ? { groomFullName: row.groomFullName } : {}),
+          ...(row.brideFullName ? { brideFullName: row.brideFullName } : {}),
           ...(row.groomNickname ? { groomNickname: row.groomNickname } : {}),
           ...(row.brideNickname ? { brideNickname: row.brideNickname } : {}),
           ...(row.eventType ? { eventType: row.eventType } : {}),
@@ -115,8 +131,13 @@ async function fetchLightweightCloudStateForOg(): Promise<Partial<WeddingDatabas
           ...(row.subtitle ? { subtitle: row.subtitle } : {}),
           ...(row.event2DateLabel ? { event2DateLabel: row.event2DateLabel } : {}),
           ...(row.event2Venue ? { event2Venue: row.event2Venue } : {}),
+          ...(row.event3Venue ? { event3Venue: row.event3Venue } : {}),
+          ...(row.event3Address ? { event3Address: row.event3Address } : {}),
           ...(row.heroPrewedUrl ? { heroPrewedUrl: row.heroPrewedUrl } : {}),
           ...(row.coverBgUrl ? { coverBgUrl: row.coverBgUrl } : {}),
+          ...(row.waTemplateRegular ? { waTemplateRegular: row.waTemplateRegular } : {}),
+          ...(row.waTemplateVip ? { waTemplateVip: row.waTemplateVip } : {}),
+          ...(Array.isArray(row.scheduleEvents) ? { scheduleEvents: row.scheduleEvents } : {}),
           ...(row.clientWorkspaces ? { clientWorkspaces: row.clientWorkspaces } : {}),
         },
       } as Partial<WeddingDatabaseSchema>;
@@ -426,4 +447,218 @@ export async function buildInvitationOpenGraphMetadata(
       images: [payload.imageUrl],
     },
   };
+}
+
+const DEFAULT_EDGE_WA_TEMPLATE_REGULAR = [
+  'Kepada Yth.:',
+  '*{nama_tamu}*',
+  '{instansi}',
+  'di Tempat',
+  '',
+  'Dengan penuh rasa syukur ke hadirat Tuhan Yang Maha Esa, tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan memberikan doa restu pada acara pernikahan kami:',
+  '',
+  '✨ *{mempelai_pria}* & *{mempelai_wanita}* ✨',
+  '',
+  '{jadwal_acara}',
+  '❖ *Tempat:* {lokasi_utama}',
+  '',
+  'Silakan buka Undangan Digital lengkap beserta lokasi peta & konfirmasi kehadiran (RSVP) melalui tautan berikut:',
+  '',
+  '{link_undangan}',
+  '',
+  '❖ *Kode Akses Undangan:* `{kode_undangan}`',
+  '',
+  'Kehadiran dan doa restu Bapak/Ibu/Saudara/i merupakan sukacita yang tak ternilai bagi kami.',
+  '',
+  'Salam kasih,',
+  '*{panggilan_pria} & {panggilan_wanita}*',
+].join('\n');
+
+const DEFAULT_EDGE_WA_TEMPLATE_VIP = [
+  'Selamat Pagi/Siang/Sore Jenderal / Komandan,',
+  'Kepada Yth.',
+  '*{nama_tamu}*',
+  '{instansi}',
+  '',
+  'Mohon izin Jenderal / Komandan, dengan penuh rasa hormat dan kerendahan hati, kami bermaksud menyampaikan undangan digital rangkaian acara pernikahan kami:',
+  '',
+  '✨ *{mempelai_pria}*',
+  '&',
+  '✨ *{mempelai_wanita}*',
+  '',
+  '{jadwal_acara}',
+  '❖ *Lokasi:* {lokasi_utama}',
+  '',
+  'Tautan Undangan Resmi & Konfirmasi Kehadiran:',
+  '',
+  '{link_undangan}',
+  '',
+  '❖ *Kode Akses Undangan:* `{kode_undangan}`',
+  '',
+  'Merupakan suatu kehormatan dan kebahagiaan besar bagi kami apabila Jenderal / Komandan berkenan memberikan doa restu kepada kami berdua.',
+  '',
+  'Hormat kami,',
+  '*{mempelai_pria}* & Keluarga',
+].join('\n');
+
+export async function resolveWhatsAppRedirectUrlByHash(
+  rawHashOrToken?: string
+): Promise<string | null> {
+  const cleanHash = (rawHashOrToken || '').trim();
+  if (!cleanHash) return null;
+
+  let matched: {
+    clientId: string;
+    guest: WeddingGuest;
+    settings: WeddingSettings;
+  } | null = null;
+
+  const localWorkspaces = buildLocalSeedWorkspaces();
+  const localMatch = resolveGuestByHashTokenAcrossWorkspaces(
+    cleanHash,
+    localWorkspaces
+  );
+  if (localMatch) {
+    const targetWs =
+      localWorkspaces.find((w) => w.clientId === localMatch.clientId) ||
+      localWorkspaces[0];
+    matched = {
+      clientId: localMatch.clientId,
+      guest: localMatch.guest,
+      settings: targetWs.settings,
+    };
+  } else {
+    const cloudData = await fetchLightweightCloudStateForOg();
+    const rootSettings: WeddingSettings = {
+      ...INITIAL_SETTINGS,
+      ...(cloudData?.settings || {}),
+    };
+    const rootGuests: WeddingGuest[] =
+      Array.isArray(cloudData?.guests) && cloudData.guests.length > 0
+        ? cloudData.guests
+        : INITIAL_GUESTS;
+
+    const cloudWorkspaces: Array<{
+      clientId: string;
+      clientLabel: string;
+      guests: WeddingGuest[];
+      settings: WeddingSettings;
+    }> = [
+      {
+        clientId: 'client-utama',
+        clientLabel: `${rootSettings.groomNickname || 'Agung'} & ${
+          rootSettings.brideNickname || 'Selo'
+        }`,
+        guests: rootGuests,
+        settings: rootSettings,
+      },
+    ];
+
+    if (rootSettings.clientWorkspaces) {
+      for (const [cid, ws] of Object.entries(rootSettings.clientWorkspaces)) {
+        if (!ws || cid === 'client-utama') continue;
+        cloudWorkspaces.push({
+          clientId: cid,
+          clientLabel: ws.settings?.groomNickname || cid,
+          guests: ws.guests || [],
+          settings: ws.settings || rootSettings,
+        });
+      }
+    }
+
+    const cloudMatch = resolveGuestByHashTokenAcrossWorkspaces(
+      cleanHash,
+      cloudWorkspaces
+    );
+    if (cloudMatch) {
+      const activeWs =
+        cloudWorkspaces.find((w) => w.clientId === cloudMatch.clientId) ||
+        cloudWorkspaces[0];
+      matched = {
+        clientId: cloudMatch.clientId,
+        guest: cloudMatch.guest,
+        settings: activeWs.settings,
+      };
+    }
+  }
+
+  if (!matched) return null;
+
+  const { clientId, guest, settings } = matched;
+  const guestHashToken =
+    guest.invitationToken || computeGuestInvitationHash(clientId, guest);
+  const inviteUrl = `${SITE_BASE_URL}/${guestHashToken}`;
+
+  const isVipPolri =
+    guest.guestType === 'Pejabat/VIP' ||
+    guest.priority === 'P1 - VIP' ||
+    /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(guest.guestName);
+
+  const activeEvents = Array.isArray(settings.scheduleEvents)
+    ? settings.scheduleEvents.filter((ev) => ev.showOnInvitation !== false)
+    : [];
+  const jadwalAcaraText =
+    activeEvents.length > 0
+      ? activeEvents
+          .map((ev) => `• *${ev.title}:* ${ev.dateLabel} (${ev.timeLabel})`)
+          .join('\n')
+      : [
+          `• *${settings.event1Title}:* ${settings.event1DateLabel} (${settings.event1TimeLabel})`,
+          `• *${settings.event2Title}:* ${settings.event2DateLabel} (${settings.event2TimeLabel})`,
+          `• *${settings.event3Title}:* ${settings.event3DateLabel} (${settings.event3TimeLabel})`,
+        ].join('\n');
+
+  const lastEvent = activeEvents[activeEvents.length - 1];
+  const lokasiUtamaText = lastEvent
+    ? `${lastEvent.venue}${lastEvent.address ? ` — ${lastEvent.address}` : ''}`
+    : `${settings.event3Venue}${settings.event3Address ? ` — ${settings.event3Address}` : ''}`;
+
+  const rawTemplate = isVipPolri
+    ? settings.waTemplateVip?.trim() || DEFAULT_EDGE_WA_TEMPLATE_VIP
+    : settings.waTemplateRegular?.trim() || DEFAULT_EDGE_WA_TEMPLATE_REGULAR;
+
+  const rawInstansi = (guest.institution || '').trim();
+  const isDefaultDiTempat =
+    !rawInstansi ||
+    rawInstansi === '-' ||
+    rawInstansi.toLowerCase() === 'di tempat';
+  const effectiveInstansi = isDefaultDiTempat ? 'di Tempat' : rawInstansi;
+  const instansiFormatted = isVipPolri
+    ? `(${effectiveInstansi})`
+    : isDefaultDiTempat
+      ? 'di Tempat'
+      : `_${effectiveInstansi}_`;
+
+  const templateNormalizedInstansi = isDefaultDiTempat
+    ? rawTemplate.replace(/\{instansi\}[ \t]*\r?\n[ \t]*(di Tempat)/gi, '$1')
+    : rawTemplate;
+
+  const messageText = templateNormalizedInstansi
+    .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
+    .replace(/\{instansi\}/g, instansiFormatted)
+    .replace(/\s*\{link_undangan\}\s*/g, `\n\n${inviteUrl}\n\n`)
+    .replace(/\{mempelai_pria\}/g, settings.groomFullName || 'Mempelai Pria')
+    .replace(/\{mempelai_wanita\}/g, settings.brideFullName || 'Mempelai Wanita')
+    .replace(/\{panggilan_pria\}/g, settings.groomNickname || 'Mempelai Pria')
+    .replace(/\{panggilan_wanita\}/g, settings.brideNickname || 'Mempelai Wanita')
+    .replace(/\{jadwal_acara\}/g, jadwalAcaraText)
+    .replace(/\{lokasi_utama\}/g, lokasiUtamaText)
+    .replace(/\{kode_undangan\}/g, guestHashToken)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const digits = (guest.phone || '').replace(/\D+/g, '');
+  let normalizedPhone = '';
+  if (digits.startsWith('08')) {
+    normalizedPhone = `62${digits.slice(1)}`;
+  } else if (digits.startsWith('62')) {
+    normalizedPhone = digits;
+  } else if (digits.length >= 9) {
+    normalizedPhone = digits;
+  }
+
+  const encodedText = encodeURIComponent(messageText);
+  return normalizedPhone
+    ? `https://api.whatsapp.com/send?phone=${normalizedPhone}&text=${encodedText}`
+    : `https://api.whatsapp.com/send?text=${encodedText}`;
 }

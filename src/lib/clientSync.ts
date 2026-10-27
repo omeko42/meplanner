@@ -738,18 +738,28 @@ export function generateWhatsAppMessage(
     : DEFAULT_WA_TEMPLATE_REGULAR;
 
   const rawInstansi = (guest.institution || '').trim();
-  const effectiveInstansi = rawInstansi && rawInstansi !== '-' ? rawInstansi : 'di Tempat';
+  const isDefaultDiTempat =
+    !rawInstansi ||
+    rawInstansi === '-' ||
+    rawInstansi.toLowerCase() === 'di tempat';
+  const effectiveInstansi = isDefaultDiTempat ? 'di Tempat' : rawInstansi;
   const instansiFormatted = isVipPolri
     ? `(${effectiveInstansi})`
-    : `_${effectiveInstansi}_`;
+    : isDefaultDiTempat
+      ? 'di Tempat'
+      : `_${effectiveInstansi}_`;
 
   const guestHashToken = computeGuestInvitationHash(
     settings.activeClientId || 'client-utama',
     guest
   );
 
+  const templateNormalizedInstansi = isDefaultDiTempat
+    ? rawTemplate.replace(/\{instansi\}[ \t]*\r?\n[ \t]*(di Tempat)/gi, '$1')
+    : rawTemplate;
+
   const messageText = sanitizeWhatsAppText(
-    rawTemplate
+    templateNormalizedInstansi
       .replace(/\{nama_tamu\}/g, guest.guestName || 'Tamu Kehormatan')
       .replace(/\{instansi\}/g, instansiFormatted)
       .replace(/\s*\{link_undangan\}\s*/g, `\n\n${inviteUrl}\n\n`)
