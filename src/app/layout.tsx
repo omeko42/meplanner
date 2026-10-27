@@ -36,37 +36,37 @@ export const metadata: Metadata = {
   title:
     'MEPlanner — My Event Planner & Digital Invitation Suite',
   description:
-    'Platform Persiapan Acara & Undangan Digital Eksklusif (Wedding, Birthday, Graduation, Rapat & Gala Dinner).',
+    'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
   },
   openGraph: {
-    title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
+    title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
     description:
-      'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
+      'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
     url: 'https://meplanner.vercel.app',
-    siteName: 'Undangan Pernikahan Agung & Selo',
+    siteName: 'MEPlanner — My Event Planner',
     locale: 'id_ID',
     type: 'website',
     images: [
       {
-        url: 'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
-        secureUrl: 'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
+        url: 'https://meplanner.vercel.app/og-meplanner-official.jpg',
+        secureUrl: 'https://meplanner.vercel.app/og-meplanner-official.jpg',
         type: 'image/jpeg',
         width: 1200,
         height: 630,
-        alt: 'Undangan Pernikahan Agung & Selo',
+        alt: 'MEPlanner — My Event Planner & Digital Invitation Suite',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
+    title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
     description:
-      'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran, Semarang.',
+      'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
     images: [
-      'https://meplanner.vercel.app/og-undangan-agung-selo.jpg',
+      'https://meplanner.vercel.app/og-meplanner-official.jpg',
     ],
   },
 };

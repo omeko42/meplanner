@@ -644,7 +644,7 @@ function WeddingAppContent() {
         return resolvedKey.clientId;
       }
     }
-    if (urlClientParam || urlGuestTo || urlGuestCode || urlCheckinParam) {
+    if (urlClientParam || urlGuestTo) {
       return urlClientParam
         ? resolveClientIdFromParam(urlClientParam, [])
         : 'client-utama';
@@ -683,7 +683,7 @@ function WeddingAppContent() {
         return;
       }
     }
-    if (urlClientParam || urlGuestTo || urlGuestCode || urlCheckinParam) {
+    if (urlClientParam || urlGuestTo) {
       const resolved = urlClientParam
         ? resolveClientIdFromParam(urlClientParam, clientGroups)
         : 'client-utama';

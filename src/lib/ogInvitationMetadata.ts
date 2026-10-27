@@ -13,6 +13,7 @@ import {
 } from '@/data/showcaseDummyClients';
 
 export const SITE_BASE_URL = 'https://meplanner.vercel.app';
+export const MEPLANNER_BRAND_OG_IMAGE_URL = `${SITE_BASE_URL}/og-meplanner-official.jpg`;
 export const FALLBACK_HERO_BANNER_URL = `${SITE_BASE_URL}/og-undangan-agung-selo.jpg`;
 
 export function ensureWhatsAppCompatibleJpegUrl(rawUrl: string): string {
@@ -248,6 +249,18 @@ function formatOgCardFromWorkspace(
   };
 }
 
+function buildOfficialBrandOgPayload(canonicalUrl = SITE_BASE_URL): ResolvedOgCardPayload {
+  return {
+    title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
+    description:
+      'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
+    siteName: 'MEPlanner — My Event Planner',
+    canonicalUrl,
+    imageUrl: MEPLANNER_BRAND_OG_IMAGE_URL,
+    imageAlt: 'MEPlanner — My Event Planner & Digital Invitation Suite',
+  };
+}
+
 export async function resolveInvitationOgPayload(
   rawHashOrToken?: string,
   explicitGuestName?: string
@@ -255,17 +268,9 @@ export async function resolveInvitationOgPayload(
   const cleanHash = (rawHashOrToken || '').trim();
   const cleanExplicitGuest = (explicitGuestName || '').trim();
 
-  // 1. Root URL without guest token -> resolve in 0ms
+  // 1. Root URL without guest token -> resolve MEPlanner Official Brand Card in 0ms
   if (!cleanHash && !cleanExplicitGuest) {
-    return {
-      title: 'Undangan Pernikahan Agung & Selo • MEPlanner Digital Invitation',
-      description:
-        'Sabtu, 19 Desember 2026 • GKJ Immanuel Ungaran & Aula Kantor Kec. Gunungpati, Semarang. Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.',
-      siteName: 'Undangan Pernikahan Agung & Selo',
-      canonicalUrl: SITE_BASE_URL,
-      imageUrl: FALLBACK_HERO_BANNER_URL,
-      imageAlt: 'Undangan Pernikahan Agung & Selo',
-    };
+    return buildOfficialBrandOgPayload(SITE_BASE_URL);
   }
 
   // 2. Fast-path: check local INITIAL_GUESTS & SHOWCASE_DUMMY_CLIENT_METAS synchronously in 0ms!
@@ -329,15 +334,32 @@ export async function resolveInvitationOgPayload(
   const cloudMatch = cleanHash
     ? resolveGuestByHashTokenAcrossWorkspaces(cleanHash, cloudWorkspaces)
     : null;
-  const activeWs = cloudMatch
-    ? cloudWorkspaces.find((w) => w.clientId === cloudMatch.clientId) ||
-      cloudWorkspaces[0]
-    : cloudWorkspaces[0];
 
-  return formatOgCardFromWorkspace(
-    activeWs.settings,
-    cleanHash,
-    cloudMatch?.guest?.guestName || cleanExplicitGuest || undefined
+  if (cloudMatch) {
+    const activeWs =
+      cloudWorkspaces.find((w) => w.clientId === cloudMatch.clientId) ||
+      cloudWorkspaces[0];
+    return formatOgCardFromWorkspace(
+      activeWs.settings,
+      cleanHash,
+      cloudMatch.guest.guestName || cleanExplicitGuest || undefined
+    );
+  }
+
+  // If explicit ?to=... parameter was provided without a hash match, use rootSettings
+  if (cleanExplicitGuest) {
+    return formatOgCardFromWorkspace(
+      rootSettings,
+      cleanHash,
+      cleanExplicitGuest
+    );
+  }
+
+  // Unrecognized/non-matching hash -> return MEPlanner Official Brand Card (never expose personal wedding)
+  return buildOfficialBrandOgPayload(
+    cleanHash
+      ? `${SITE_BASE_URL}/${encodeURIComponent(cleanHash)}`
+      : SITE_BASE_URL
   );
 }
 
