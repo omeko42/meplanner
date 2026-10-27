@@ -1970,7 +1970,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     return merged;
   }, [state.adminUsers]);
   const panitiaUsers = useMemo(
-    () => (state.adminUsers || []).filter((u) => !u.isDefaultUser || u.role === 'PANITIA'),
+    () =>
+      (state.adminUsers || []).filter(
+        (u) => u.role !== 'SUPERADMIN' && (!u.isDefaultUser || u.role === 'PANITIA')
+      ),
+    [state.adminUsers]
+  );
+
+  // Co-Superadmin / Partner Developer Users
+  const [isCoSuperadminModalOpen, setIsCoSuperadminModalOpen] = useState(false);
+  const [coSuperEditId, setCoSuperEditId] = useState<string | undefined>(undefined);
+  const [coSuperUsername, setCoSuperUsername] = useState('');
+  const [coSuperEmail, setCoSuperEmail] = useState('');
+  const [coSuperNama, setCoSuperNama] = useState('');
+  const [coSuperJabatan, setCoSuperJabatan] = useState('Co-Superadmin & Partner Developer');
+  const [coSuperPassword, setCoSuperPassword] = useState('');
+  const [isSavingCoSuperadmin, setIsSavingCoSuperadmin] = useState(false);
+
+  const coSuperadminUsers = useMemo(
+    () =>
+      (state.adminUsers || []).filter(
+        (u) =>
+          u.role === 'SUPERADMIN' &&
+          u.id !== 'usr-superadmin-owner' &&
+          u.username?.toLowerCase() !== 'omeko42' &&
+          u.email?.toLowerCase() !== 'e98.bisnis@gmail.com'
+      ),
     [state.adminUsers]
   );
 
@@ -2037,6 +2062,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       }
     }
     for (const u of state.adminUsers || []) {
+      if (u.role === 'SUPERADMIN') continue;
       const cid = u.clientId || 'client-utama';
       if (!map.has(cid)) {
         map.set(cid, {
@@ -5400,6 +5426,80 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             summary: `Kesalahan jaringan saat menghapus akun Panitia (@${username})`,
             detail: err instanceof Error ? err.message : String(err),
           });
+          showToast('Gagal menghubungi server.');
+        }
+      },
+    });
+  };
+
+  const handleUpsertCoSuperadminForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCoSuperadmin(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'UPSERT_SUPERADMIN',
+          id: coSuperEditId,
+          username: coSuperUsername,
+          email: coSuperEmail,
+          nama: coSuperNama,
+          jabatan: coSuperJabatan,
+          password: coSuperPassword,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Gagal menyimpan akun Co-Superadmin.');
+        return;
+      }
+      setCoSuperEditId(undefined);
+      setCoSuperUsername('');
+      setCoSuperEmail('');
+      setCoSuperNama('');
+      setCoSuperJabatan('Co-Developer & Superadmin');
+      setCoSuperPassword('');
+      setIsCoSuperadminModalOpen(false);
+      if (onSyncStateAndUser && json.data) {
+        onSyncStateAndUser(json.data);
+      }
+      showToast(
+        json.message || '✓ Akun Co-Superadmin / Partner Developer berhasil disimpan!'
+      );
+    } catch {
+      showToast('Gagal menghubungi server otentikasi.');
+    } finally {
+      setIsSavingCoSuperadmin(false);
+    }
+  };
+
+  const handleDeleteCoSuperadminAccount = (id: string, username: string) => {
+    requestConfirm({
+      title: 'Hapus Akun Co-Superadmin / Developer?',
+      message: `Apakah Anda yakin ingin mencabut akses Superadmin untuk "@${username}"?`,
+      confirmLabel: 'Ya, Hapus Akses',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/auth', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'DELETE_SUPERADMIN',
+              id,
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            showToast(json.error || 'Gagal menghapus akun Co-Superadmin.');
+            return;
+          }
+          if (onSyncStateAndUser && json.data) {
+            onSyncStateAndUser(json.data);
+          }
+          showToast(`Akses Co-Superadmin "@${username}" berhasil dihapus.`);
+        } catch {
           showToast('Gagal menghubungi server.');
         }
       },
@@ -16806,6 +16906,248 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                    =========================================================== */}
                 {superadminMenuTab === 'clients' && (
                   <div className="space-y-4">
+                    {/* CO-SUPERADMIN & DEVELOPER PARTNER MANAGEMENT CARD */}
+                    <div className="rounded-2xl border-2 border-[#D4AF37]/45 bg-gradient-to-br from-[#FAF3E3]/70 via-white to-[#FAF8F5] p-4 space-y-3 shadow-2xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#D4AF37]/25 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-stone-900 text-[#D4AF37] flex items-center justify-center shrink-0">
+                            <Shield className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="text-xs sm:text-sm font-extrabold text-stone-900">
+                                Tim Superadmin &amp; Co-Developer ({1 + coSuperadminUsers.length})
+                              </h3>
+                              <span className="px-2 py-0.5 rounded-full bg-stone-900 text-[#D4AF37] text-[9px] font-extrabold uppercase tracking-wider">
+                                Full System Access
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-stone-600 mt-0.5">
+                              Kelola akun rekan developer / partner dengan hak akses penuh Panel Superadmin &amp; lintas Workspace Klien.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCoSuperEditId(undefined);
+                            setCoSuperUsername('');
+                            setCoSuperEmail('');
+                            setCoSuperNama('');
+                            setCoSuperJabatan('Co-Developer & Superadmin');
+                            setCoSuperPassword('');
+                            setIsCoSuperadminModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-[#D4AF37] border border-[#D4AF37]/50 font-extrabold text-[11px] shadow-2xs shrink-0 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Tambah Co-Superadmin / Developer</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {/* Primary Owner Card */}
+                        <div className="p-3 rounded-xl bg-white border border-[#D4AF37]/40 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-xs font-extrabold text-stone-900 truncate">
+                                Eko Agung Krisdianto
+                              </p>
+                              <span className="px-1.5 py-0.5 rounded bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[9px] font-extrabold">
+                                OWNER UTAMA
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-mono text-[#8B6914] truncate mt-0.5">
+                              @omeko42 &bull; e98.bisnis@gmail.com
+                            </p>
+                          </div>
+                          <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shrink-0">
+                            Aktif
+                          </span>
+                        </div>
+
+                        {/* Added Co-Superadmin / Partner Developer Cards */}
+                        {coSuperadminUsers.map((su) => (
+                          <div
+                            key={su.id}
+                            className="p-3 rounded-xl bg-white border border-stone-200 flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-extrabold text-stone-900 truncate">
+                                  {su.nama}
+                                </p>
+                                <span className="px-1.5 py-0.5 rounded bg-stone-900 text-[#D4AF37] text-[9px] font-extrabold">
+                                  SUPERADMIN
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-mono text-[#8B6914] truncate mt-0.5">
+                                @{su.username}
+                                {su.email ? ` • ${su.email}` : ''}
+                              </p>
+                              {su.jabatan && (
+                                <p className="text-[10px] text-stone-500 truncate">
+                                  {su.jabatan}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCoSuperEditId(su.id);
+                                  setCoSuperUsername(su.username);
+                                  setCoSuperEmail(su.email || '');
+                                  setCoSuperNama(su.nama);
+                                  setCoSuperJabatan(
+                                    su.jabatan || 'Co-Developer & Superadmin'
+                                  );
+                                  setCoSuperPassword('');
+                                  setIsCoSuperadminModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeleteCoSuperadminAccount(su.id, su.username)
+                                }
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
+                                title="Hapus Co-Superadmin"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {isCoSuperadminModalOpen && (
+                      <div className="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl border-2 border-[#D4AF37]/50 shadow-2xl w-full max-w-md overflow-hidden">
+                          <div className="px-5 py-4 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-[#D4AF37]" />
+                              <h4 className="text-sm font-extrabold text-[#FAF3E3]">
+                                {coSuperEditId
+                                  ? 'Edit Akun Co-Superadmin / Developer'
+                                  : 'Tambah Co-Superadmin / Partner Developer'}
+                              </h4>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsCoSuperadminModalOpen(false)}
+                              className="p-1 rounded-lg text-stone-400 hover:text-white cursor-pointer"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <form onSubmit={handleUpsertCoSuperadminForm} className="p-5 space-y-3.5">
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                Nama Lengkap Rekan Developer *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={coSuperNama}
+                                onChange={(e) => setCoSuperNama(e.target.value)}
+                                placeholder="Contoh: Raka Pratama"
+                                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                  Username Login *
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={coSuperUsername}
+                                  onChange={(e) =>
+                                    setCoSuperUsername(
+                                      e.target.value.toLowerCase().replace(/\s+/g, '_')
+                                    )
+                                  }
+                                  placeholder="Contoh: raka_dev"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-mono text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                  Email Google / Gmail
+                                </label>
+                                <input
+                                  type="email"
+                                  value={coSuperEmail}
+                                  onChange={(e) =>
+                                    setCoSuperEmail(e.target.value.trim().toLowerCase())
+                                  }
+                                  placeholder="raka@gmail.com"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                Jabatan / Label Peran
+                              </label>
+                              <input
+                                type="text"
+                                value={coSuperJabatan}
+                                onChange={(e) => setCoSuperJabatan(e.target.value)}
+                                placeholder="Co-Developer & Superadmin"
+                                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                {coSuperEditId
+                                  ? 'Password Baru (Kosongkan jika tidak diubah)'
+                                  : 'Password Login Superadmin (Min. 6 Karakter) *'}
+                              </label>
+                              <input
+                                type="password"
+                                required={!coSuperEditId}
+                                minLength={6}
+                                value={coSuperPassword}
+                                onChange={(e) => setCoSuperPassword(e.target.value)}
+                                placeholder="Minimal 6 karakter"
+                                className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:border-[#B68D40]"
+                              />
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-[#FAF3E3]/70 border border-[#D4AF37]/35 text-[11px] text-[#8B6914]">
+                              Akun ini akan memiliki akses penuh ke <strong>Panel Superadmin</strong>, pemindah ruang kerja seluruh klien, manajemen pembayaran, dan konfigurasi sistem.
+                            </div>
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setIsCoSuperadminModalOpen(false)}
+                                className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-50 cursor-pointer"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isSavingCoSuperadmin}
+                                className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#D4AF37] font-extrabold text-xs shadow-xs cursor-pointer disabled:opacity-50"
+                              >
+                                {isSavingCoSuperadmin
+                                  ? 'Menyimpan...'
+                                  : coSuperEditId
+                                    ? 'Simpan Perubahan'
+                                    : 'Aktifkan Co-Superadmin'}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">

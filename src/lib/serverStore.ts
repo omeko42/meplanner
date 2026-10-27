@@ -298,6 +298,82 @@ export const serverStore = {
     return true;
   },
 
+  upsertSuperadminUser: (input: {
+    id?: string;
+    username: string;
+    email?: string;
+    nama: string;
+    jabatan?: string;
+    passwordHash?: string;
+  }): AdminUser => {
+    const store = getStore();
+    const cleanUsername = input.username.trim().toLowerCase();
+    const cleanEmail = (input.email || '').trim().toLowerCase() || `${cleanUsername}@meplanner.id`;
+    const existingIdx = input.id
+      ? store.adminUsers.findIndex((u) => u.id === input.id)
+      : store.adminUsers.findIndex(
+          (u) =>
+            u.role === 'SUPERADMIN' &&
+            (u.username.toLowerCase() === cleanUsername ||
+              (u.email && u.email.toLowerCase() === cleanEmail))
+        );
+
+    if (existingIdx >= 0) {
+      const prev = store.adminUsers[existingIdx];
+      const updated: AdminUser = {
+        ...prev,
+        username: cleanUsername,
+        email: cleanEmail,
+        nama: input.nama.trim(),
+        role: 'SUPERADMIN',
+        jabatan: input.jabatan || prev.jabatan || 'Co-Developer & Superadmin',
+        clientId: 'client-demo',
+        clientName: 'Klien Demo • Rayhan & Clarissa',
+        isDefaultUser: false,
+        ...(input.passwordHash ? { passwordHash: input.passwordHash, password: '' } : {}),
+      };
+      store.adminUsers[existingIdx] = updated;
+      persistStore(store);
+      return updated;
+    }
+
+    const newSuperadmin: AdminUser = {
+      id: `superadmin_${Date.now().toString(36)}`,
+      username: cleanUsername,
+      email: cleanEmail,
+      nama: input.nama.trim(),
+      role: 'SUPERADMIN',
+      jabatan: input.jabatan || 'Co-Developer & Superadmin',
+      isDefaultUser: false,
+      clientId: 'client-demo',
+      clientName: 'Klien Demo • Rayhan & Clarissa',
+      passwordHash: input.passwordHash,
+    };
+    store.adminUsers.push(newSuperadmin);
+    persistStore(store);
+    return newSuperadmin;
+  },
+
+  deleteSuperadminUser: (id: string): boolean => {
+    const store = getStore();
+    const target = store.adminUsers.find((u) => u.id === id && u.role === 'SUPERADMIN');
+    if (!target) return false;
+    const lowerUser = (target.username || '').toLowerCase();
+    const lowerEmail = (target.email || '').toLowerCase();
+    if (
+      target.id === 'superadmin-owner' ||
+      lowerUser === 'superadmin' ||
+      lowerUser === 'omeko42' ||
+      lowerEmail === 'agungkrisdianto98@gmail.com' ||
+      lowerEmail === 'e98.bisnis@gmail.com'
+    ) {
+      return false; // Primary owner cannot be deleted
+    }
+    store.adminUsers = store.adminUsers.filter((u) => u.id !== id);
+    persistStore(store);
+    return true;
+  },
+
   createClientDefaultUsersGroup: (input: {
     clientId: string;
     clientCode: string;

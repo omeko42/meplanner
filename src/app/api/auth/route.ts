@@ -246,6 +246,124 @@ export async function PUT(request: NextRequest) {
       });
     }
 
+    // 2A-SUPER. Tambah / Edit Akun Co-Superadmin / Partner Developer (Hanya oleh SUPERADMIN)
+    if (action === 'UPSERT_SUPERADMIN') {
+      if (sessionUser.role !== 'SUPERADMIN') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Hanya Superadmin yang dapat menambahkan atau mengubah akun Co-Superadmin / Developer.',
+          },
+          { status: 403 }
+        );
+      }
+
+      const id = body.id ? String(body.id).trim() : undefined;
+      const username = String(body.username || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+      const email = String(body.email || '').trim().toLowerCase();
+      const nama = String(body.nama || '').trim();
+      const jabatan = String(body.jabatan || 'Co-Developer & Superadmin').trim();
+      const newPassword = String(body.password || '').trim();
+
+      if (!username || !nama) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Username dan Nama Lengkap Developer wajib diisi.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (!id && (!newPassword || newPassword.length < 6)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Kata sandi untuk akun Co-Superadmin / Developer baru minimal 6 karakter.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const dbAdmins = serverStore.getAdminUsers();
+      const collidingOther = dbAdmins.find(
+        (u) =>
+          u.id !== id &&
+          (u.username.toLowerCase() === username ||
+            (email && u.email && u.email.toLowerCase() === email))
+      );
+      if (collidingOther && collidingOther.role !== 'SUPERADMIN') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Username atau Email tersebut sudah dipakai oleh akun klien/panitia lain.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const superUser = serverStore.upsertSuperadminUser({
+        id,
+        username,
+        email: email || `${username}@meplanner.id`,
+        nama,
+        jabatan,
+        ...(newPassword ? { passwordHash: hashPassword(newPassword) } : {}),
+      });
+
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
+
+      return NextResponse.json({
+        success: true,
+        message: id
+          ? `Akun Co-Superadmin "${superUser.nama}" (@${superUser.username}) berhasil diperbarui.`
+          : `Akun Co-Superadmin "${superUser.nama}" (@${superUser.username}) berhasil ditambahkan!`,
+        superadminUser: superUser,
+        data: fullState,
+      });
+    }
+
+    // 2B-SUPER. Hapus Akun Co-Superadmin / Partner Developer (Hanya oleh SUPERADMIN)
+    if (action === 'DELETE_SUPERADMIN') {
+      if (sessionUser.role !== 'SUPERADMIN') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Hanya Superadmin yang dapat menghapus akun Co-Superadmin.',
+          },
+          { status: 403 }
+        );
+      }
+      const targetId = String(body.id || '').trim();
+      if (!targetId) {
+        return NextResponse.json(
+          { success: false, error: 'ID akun Co-Superadmin wajib disertakan.' },
+          { status: 400 }
+        );
+      }
+      const deleted = serverStore.deleteSuperadminUser(targetId);
+      if (!deleted) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Akun tidak ditemukan atau merupakan akun Owner Utama yang dilindungi.',
+          },
+          { status: 400 }
+        );
+      }
+      const fullState = serverStore.getFullState(false);
+      await saveStateToSupabase(fullState);
+      return NextResponse.json({
+        success: true,
+        message: 'Akun Co-Superadmin berhasil dihapus.',
+        data: fullState,
+      });
+    }
+
     // 2B. Buat Grup Client Baru + 4 User Default Khusus Client (Superadmin / Komersialisasi)
     if (action === 'CREATE_CLIENT_GROUP_USERS') {
       const clientCode = String(body.clientCode || '')

@@ -1230,27 +1230,42 @@ function WeddingAppContent() {
         localPart === 'omeko42' ||
         localPart === 'e98.bisnis';
 
-      if (isOwnerAccount) {
+      const matchedCoSuperadmin = (state.adminUsers || []).find(
+        (u) =>
+          u.role === 'SUPERADMIN' &&
+          ((u.email && u.email.trim().toLowerCase() === email) ||
+            u.username.trim().toLowerCase() === rawEmail ||
+            u.username.trim().toLowerCase() === localPart)
+      );
+
+      if (isOwnerAccount || matchedCoSuperadmin) {
         if (payload.isOAuthVerified) {
-          const ownerUser: AdminUser = {
-            id: 'superadmin-owner',
-            username: 'superadmin',
-            nama: 'Eko Agung Krisdianto (Superadmin)',
-            role: 'SUPERADMIN',
-            jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
-            email:
-              email === 'e98.bisnis@gmail.com'
-                ? 'e98.bisnis@gmail.com'
-                : 'agungkrisdianto98@gmail.com',
-            isDefaultUser: true,
-            clientId: 'client-demo',
-            clientName: 'Klien Demo • Rayhan & Clarissa',
-          };
+          const superUser: AdminUser = matchedCoSuperadmin
+            ? {
+                ...matchedCoSuperadmin,
+                role: 'SUPERADMIN',
+                clientId: 'client-demo',
+                clientName: 'Klien Demo • Rayhan & Clarissa',
+              }
+            : {
+                id: 'superadmin-owner',
+                username: 'superadmin',
+                nama: 'Eko Agung Krisdianto (Superadmin)',
+                role: 'SUPERADMIN',
+                jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
+                email:
+                  email === 'e98.bisnis@gmail.com'
+                    ? 'e98.bisnis@gmail.com'
+                    : 'agungkrisdianto98@gmail.com',
+                isDefaultUser: true,
+                clientId: 'client-demo',
+                clientName: 'Klien Demo • Rayhan & Clarissa',
+              };
           handleLoginSuccess(
-            ownerUser,
+            superUser,
             loginLang === 'EN'
-              ? 'Welcome back, Eko (Superadmin)! Verified via Google OAuth.'
-              : 'Selamat datang kembali, Eko (Superadmin)! Terverifikasi via Google OAuth.'
+              ? `Welcome back, ${superUser.nama}! Verified via Google OAuth.`
+              : `Selamat datang kembali, ${superUser.nama}! Terverifikasi via Google OAuth.`
           );
           return;
         }
@@ -1259,8 +1274,8 @@ function WeddingAppContent() {
         setLoginIdentifier(email);
         setLoginErrorMsg(
           loginLang === 'EN'
-            ? 'System Owner account detected. Please enter your password to verify Superadmin access.'
-            : 'Akun Pemilik Sistem terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses Superadmin.'
+            ? 'Superadmin / Developer account detected. Please enter your password to verify access.'
+            : 'Akun Superadmin / Developer terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses.'
         );
         return;
       }
@@ -1550,7 +1565,15 @@ function WeddingAppContent() {
       localPart === 'omeko42' ||
       localPart === 'e98.bisnis';
 
-    if (isOwnerAccount) {
+    const matchedCoSuperadmin = (state.adminUsers || []).find(
+      (u) =>
+        u.role === 'SUPERADMIN' &&
+        ((u.email && u.email.trim().toLowerCase() === normalizedEmail) ||
+          u.username.trim().toLowerCase() === raw ||
+          u.username.trim().toLowerCase() === localPart)
+    );
+
+    if (isOwnerAccount || matchedCoSuperadmin) {
       setGmailAddressInput('');
       setGmailEventTitleInput('');
       setIsGmailExpanded(false);
@@ -1558,8 +1581,8 @@ function WeddingAppContent() {
       setLoginIdentifier(normalizedEmail);
       setLoginErrorMsg(
         loginLang === 'EN'
-          ? 'System Owner account detected. Please enter your password to verify Superadmin access.'
-          : 'Akun Pemilik Sistem terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses Superadmin.'
+          ? 'Superadmin / Developer account detected. Please enter your password to verify access.'
+          : 'Akun Superadmin / Developer terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses.'
       );
       return;
     }
@@ -1597,7 +1620,13 @@ function WeddingAppContent() {
       lowerId === 'omeko42@gmail.com' ||
       lowerId === 'agungkrisdianto98' ||
       lowerId === 'omeko42' ||
-      lowerId === 'superadmin';
+      lowerId === 'superadmin' ||
+      (state.adminUsers || []).some(
+        (u) =>
+          u.role === 'SUPERADMIN' &&
+          (u.username.toLowerCase() === lowerId ||
+            (u.email && u.email.toLowerCase() === lowerId))
+      );
 
     setIsSubmittingLogin(true);
     try {
