@@ -48,6 +48,10 @@ export async function middleware(req: NextRequest) {
   const safeUrl = escapeHtmlAttr(og.canonicalUrl);
   const safeImage = escapeHtmlAttr(og.imageUrl);
   const safeAlt = escapeHtmlAttr(og.imageAlt);
+  const isSquareLogo = og.imageUrl.includes('og-meplanner-logo-m');
+  const imgW = isSquareLogo ? '800' : '1200';
+  const imgH = isSquareLogo ? '800' : '630';
+  const twitterCard = isSquareLogo ? 'summary' : 'summary_large_image';
 
   const html = `<!DOCTYPE html>
 <html lang="id" prefix="og: https://ogp.me/ns#">
@@ -65,10 +69,10 @@ export async function middleware(req: NextRequest) {
 <meta property="og:image" content="${safeImage}" />
 <meta property="og:image:secure_url" content="${safeImage}" />
 <meta property="og:image:type" content="image/jpeg" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image:width" content="${imgW}" />
+<meta property="og:image:height" content="${imgH}" />
 <meta property="og:image:alt" content="${safeAlt}" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="${twitterCard}" />
 <meta name="twitter:title" content="${safeTitle}" />
 <meta name="twitter:description" content="${safeDesc}" />
 <meta name="twitter:image" content="${safeImage}" />
@@ -79,12 +83,12 @@ export async function middleware(req: NextRequest) {
 <span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
 <link itemprop="url" href="${safeImage}" />
 <meta itemprop="type" content="image/jpeg" />
-<meta itemprop="width" content="1200" />
-<meta itemprop="height" content="630" />
+<meta itemprop="width" content="${imgW}" />
+<meta itemprop="height" content="${imgH}" />
 </span>
 <h1>${safeTitle}</h1>
 <p>${safeDesc}</p>
-<img src="${safeImage}" alt="${safeAlt}" width="1200" height="630" />
+<img src="${safeImage}" alt="${safeAlt}" width="${imgW}" height="${imgH}" />
 </body>
 </html>`;
 

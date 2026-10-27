@@ -51,22 +51,22 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://meplanner.vercel.app/og-meplanner-official.jpg',
-        secureUrl: 'https://meplanner.vercel.app/og-meplanner-official.jpg',
+        url: 'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
+        secureUrl: 'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
         type: 'image/jpeg',
-        width: 1200,
-        height: 630,
+        width: 800,
+        height: 800,
         alt: 'MEPlanner — My Event Planner & Digital Invitation Suite',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
     description:
       'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
     images: [
-      'https://meplanner.vercel.app/og-meplanner-official.jpg',
+      'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
     ],
   },
 };

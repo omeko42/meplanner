@@ -13,7 +13,7 @@ import {
 } from '@/data/showcaseDummyClients';
 
 export const SITE_BASE_URL = 'https://meplanner.vercel.app';
-export const MEPLANNER_BRAND_OG_IMAGE_URL = `${SITE_BASE_URL}/og-meplanner-official.jpg`;
+export const MEPLANNER_BRAND_OG_IMAGE_URL = `${SITE_BASE_URL}/og-meplanner-logo-m.jpg`;
 export const FALLBACK_HERO_BANNER_URL = `${SITE_BASE_URL}/og-undangan-agung-selo.jpg`;
 
 export function ensureWhatsAppCompatibleJpegUrl(rawUrl: string): string {
