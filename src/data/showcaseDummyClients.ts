@@ -1162,7 +1162,7 @@ export function applyCatalogThemeToSettings(
   return nextSettings;
 }
 
-export const USER_REAL_QRIS_URL = '/media/utama/qris.webp';
+export const USER_REAL_QRIS_URL = '/paypal-qr-mwm.png';
 
 export interface ShowcaseDummyClientMeta {
   id: string;

@@ -14,17 +14,18 @@ import {
 
 export const SITE_BASE_URL = 'https://meplanner.vercel.app';
 export const MEPLANNER_BRAND_OG_IMAGE_URL = `${SITE_BASE_URL}/og-meplanner-logo-m-light.jpg`;
-export const FALLBACK_HERO_BANNER_URL = `${SITE_BASE_URL}/og-undangan-agung-selo.jpg`;
+export const FALLBACK_HERO_BANNER_URL = `${SUPABASE_URL}/storage/v1/object/public/wedding/utama/og-undangan-agung-selo.jpg`;
 
 export function ensureWhatsAppCompatibleJpegUrl(rawUrl: string): string {
   const trimmed = (rawUrl || '').trim();
   if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
     return FALLBACK_HERO_BANNER_URL;
   }
-  // Agung & Selo primary hero/cover photos -> serve our fast 84KB 1200x630 same-origin baseline JPEG
   if (
     trimmed.includes('hero_slide_hero_slide_1792846417331_1_h6da_5_43TUZpYY1qKbBk.webp') ||
     trimmed.includes('cover_slide_cover_2_3_FlWCY4lLxJp77h.webp') ||
+    trimmed.includes('/utama/hero.webp') ||
+    trimmed.includes('/utama/cover.webp') ||
     trimmed.includes('/media/utama/') ||
     trimmed === `${SITE_BASE_URL}/og-agung-selo.jpg` ||
     trimmed === `${SITE_BASE_URL}/og-undangan-agung-selo.jpg`

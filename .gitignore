@@ -37,6 +37,9 @@ coverage/
 .data/
 database/
 data_aplikasi/
+public/media/utama/
+public/og-agung-selo.jpg
+public/og-undangan-agung-selo.jpg
 wedding_backup_*.json
 *.bak
 *.sql
