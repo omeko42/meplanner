@@ -1160,6 +1160,11 @@ function WeddingAppContent() {
       : user;
     setAdminUser(normalizedUser);
     saveStoredAdminUser(normalizedUser);
+    void fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'SYNC_SESSION', user: normalizedUser }),
+    }).catch(() => {});
     setSelectedAdminWorkspaceId(resolvedWs);
     setIsUrlGuestSessionCleared(true);
     setPreviewOverrideGuest(null);

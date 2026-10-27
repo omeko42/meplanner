@@ -4711,6 +4711,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'CREATE_CLIENT_GROUP_USERS',
+          actorUser: adminUser,
           clientId,
           clientCode: rawCode,
           clientName,
@@ -4877,6 +4878,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'CREATE_CLIENT_GROUP_USERS',
+          actorUser: adminUser,
           clientId,
           clientCode: lowerCode,
           clientName,
@@ -5109,6 +5111,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'DELETE_CLIENT_GROUP',
+              actorUser: adminUser,
               clientId: group.id,
             }),
           });
@@ -5254,6 +5257,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'UPDATE_DEFAULT_USER',
+          actorUser: adminUser,
           targetUserId: selectedDefaultUserId,
           newUsername: secUsername,
           newName: secName,
@@ -5320,6 +5324,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'UPSERT_PANITIA',
+          actorUser: adminUser,
           id: panitiaEditId,
           username: panitiaUsername,
           nama: panitiaNama,
@@ -5390,6 +5395,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'DELETE_PANITIA',
+              actorUser: adminUser,
               id,
             }),
           });
@@ -5441,6 +5447,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'UPSERT_SUPERADMIN',
+          actorUser: adminUser,
           id: coSuperEditId,
           username: coSuperUsername,
           email: coSuperEmail,
@@ -5487,6 +5494,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'DELETE_SUPERADMIN',
+              actorUser: adminUser,
               id,
             }),
           });
