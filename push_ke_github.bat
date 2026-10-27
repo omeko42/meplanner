@@ -1,7 +1,7 @@
 @echo off
-title Push MEPlan (My Event Planner) ke GitHub
+title Push MEPlanner (My Event Planner) ke GitHub
 echo =======================================================
-echo [MEPLAN] MENGUNGGAH KODE KE GITHUB (omeko11/meplan)...
+echo [MEPLANNER] MENGUNGGAH KODE KE GITHUB (omeko42/meplanner)...
 echo =======================================================
 echo.
 cd /d "%~dp0"

@@ -17595,10 +17595,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                     'EWALLET' as CommercialPaymentCategory,
                                   marketScope: 'ID' as const,
                                   providerName: 'GoPay / DANA / OVO / ShopeePay',
-                                  accountOrWalletAddress: '089638616516',
+                                  accountOrWalletAddress: 'Atur Nomor E-Wallet di Menu Superadmin',
                                   accountHolder: 'Eko Agung Krisdianto',
                                   networkOrBranch: 'Dompet Digital Indonesia (IDR)',
-                                  minAmountNote: 'Mulai Rp 50.000',
+                                  minAmountNote: 'Mulai Rp 51.750',
                                   instructions:
                                     'Kirim ke nomor E-Wallet resmi di atas dan simpan nomor referensi transaksi.',
                                 },

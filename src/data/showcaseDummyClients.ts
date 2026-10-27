@@ -2473,9 +2473,9 @@ export function getShowcaseDummyClientState(
     { id: 'ps_3', imageUrl: imgCover1, title: 'Wallpaper Slide 3' },
   ].slice(0, slideLimit);
 
-  // Real user BCA & QRIS Digital Envelope:
-  // - Wedding (2 Mempelai) -> 2 Rekening BCA
-  // - Single-Host Event (Birthday, Graduation, Meeting, Gala Dinner) -> 1 Rekening BCA
+  // Showcase BCA & QRIS Digital Envelope:
+  // - Wedding (2 Mempelai) -> 2 Rekening BCA Simulasi
+  // - Single-Host Event (Birthday, Graduation, Meeting, Gala Dinner) -> 1 Rekening BCA Simulasi
   const bankAccountsForEvent: NonNullable<WeddingSettings['bankAccounts']> =
     isWedding
       ? [
@@ -2483,16 +2483,16 @@ export function getShowcaseDummyClientState(
             id: 'ba_demo_wedding_1',
             type: 'BANK',
             bankName: 'BANK BCA',
-            accountNumber: '6790440143',
-            accountHolder: 'Eko Agung Krisdianto (Mempelai Pria)',
+            accountNumber: '8810241020',
+            accountHolder: 'Rayhan Pratama (Mempelai Pria)',
             branchOrNote: 'Transfer Amplop Digital',
           },
           {
             id: 'ba_demo_wedding_2',
             type: 'BANK',
             bankName: 'BANK BCA',
-            accountNumber: '5005205708',
-            accountHolder: 'Selo Nelci Agustina (Mempelai Wanita)',
+            accountNumber: '8820241026',
+            accountHolder: 'Clarissa Putri (Mempelai Wanita)',
             branchOrNote: 'Transfer Amplop Digital',
           },
         ]
@@ -2502,8 +2502,8 @@ export function getShowcaseDummyClientState(
               id: 'ba_demo_birthday_1',
               type: 'BANK',
               bankName: 'BANK BCA',
-              accountNumber: '6790440143',
-              accountHolder: 'Aurelia Valerie (a.n. Eko Agung Krisdianto)',
+              accountNumber: '8830171126',
+              accountHolder: 'Aurelia Valerie',
               branchOrNote: 'Kado Digital Sweet 17th',
             },
           ]
@@ -2513,9 +2513,8 @@ export function getShowcaseDummyClientState(
                 id: 'ba_demo_graduation_1',
                 type: 'BANK',
                 bankName: 'BANK BCA',
-                accountNumber: '6790440143',
-                accountHolder:
-                  'Dr. Bagaskara Putra, M.Sc. (a.n. Eko Agung Krisdianto)',
+                accountNumber: '8840281126',
+                accountHolder: 'Dr. Bagaskara Putra, M.Sc.',
                 branchOrNote: 'Tanda Kasih Syukuran Wisuda',
               },
             ]
@@ -2525,9 +2524,8 @@ export function getShowcaseDummyClientState(
                   id: 'ba_demo_meeting_1',
                   type: 'BANK',
                   bankName: 'BANK BCA',
-                  accountNumber: '6790440143',
-                  accountHolder:
-                    'Panitia Rakornas Nusantara (a.n. Eko Agung Krisdianto)',
+                  accountNumber: '8850051226',
+                  accountHolder: 'Panitia Rakornas Nusantara',
                   branchOrNote: 'Kontribusi & Sponsorship Resmi',
                 },
               ]
@@ -2536,9 +2534,8 @@ export function getShowcaseDummyClientState(
                   id: 'ba_demo_gala_1',
                   type: 'BANK',
                   bankName: 'BANK BCA',
-                  accountNumber: '6790440143',
-                  accountHolder:
-                    'Wijaya Kusuma Foundation (a.n. Eko Agung Krisdianto)',
+                  accountNumber: '8860121226',
+                  accountHolder: 'Wijaya Kusuma Foundation',
                   branchOrNote: 'Apresiasi & Charity Gala Dinner',
                 },
               ];

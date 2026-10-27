@@ -1,6 +1,6 @@
 # ==============================================================================
-# MY WEDDING MANAGER (ALL-IN-ONE WEDDING PLANNER & DIGITAL INVITATION)
-# Commercial Security & Build Ignore Rules — by @omeko11
+# MEPLANNER — MY EVENT PLANNER & DIGITAL INVITATION SUITE
+# Commercial Security & Build Ignore Rules — by @omeko42
 # ==============================================================================
 
 # Dependencies
@@ -33,8 +33,10 @@ coverage/
 *secret*
 *credentials*
 
-# Database Backups & Local Runtime Data
+# Local Database Backups, Snapshots & Runtime Data (NEVER COMMIT PERSONAL DATA)
 .data/
+database/
+data_aplikasi/
 wedding_backup_*.json
 *.bak
 *.sql
