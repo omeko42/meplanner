@@ -6250,10 +6250,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
                 <div className="text-right leading-tight">
-                  <p className="text-xs font-bold text-stone-800 truncate max-w-[160px]">
+                  <p className="text-xs font-bold text-stone-800 truncate max-w-[15rem] xl:max-w-[21rem]">
                     {adminUser.nama}
                   </p>
-                  <p className={`text-[10px] ${activeManagerTheme.accentPillText} font-semibold truncate max-w-[160px]`}>
+                  <p className={`text-[10px] ${activeManagerTheme.accentPillText} font-semibold truncate max-w-[15rem] xl:max-w-[21rem]`}>
                     {isPanitia ? 'Panitia (Non-Budgeting)' : adminUser.jabatan}
                   </p>
                 </div>
@@ -8979,11 +8979,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 5: PENGATURAN KONTEN UNDANGAN & SINKRONISASI / BACKUP DATABASE
            ===================================================================== */}
         {activeTab === 'settings' && (
-          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5 transition-all">
+          <div className="w-full space-y-4 sm:space-y-5 transition-all">
             {/* WIRA SATYA 96 STYLE 2-COLUMN LAYOUT */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
-              <div className="lg:col-span-4 lg:sticky lg:top-[120px] space-y-2.5">
+              <div className="lg:col-span-3 lg:sticky lg:top-[120px] space-y-2.5">
                 {/* SUPERADMIN-ONLY WORKSPACE SWITCHER (Moved above Konten Undangan per Project Lead instruction) */}
                 {isSuperadmin &&
                   onSwitchWorkspaceClient &&
@@ -9115,7 +9115,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
+              <div className="lg:col-span-9 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===============================================================
                     MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
                    =============================================================== */}
@@ -16617,7 +16617,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             TAB 6: MODUL KHUSUS SUPERADMIN (2-COLUMN SIDEBAR LAYOUT)
            =================================================================== */}
         {activeTab === 'superadmin' && isSuperadmin && (
-          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5">
+          <div className="w-full space-y-4 sm:space-y-5">
             {/* TOP HEADER BANNER CARD (MATCHING PENGATURAN THEME) */}
             <div className="bg-white rounded-2xl border border-[#D4AF37]/35 px-4 sm:px-6 py-3.5 sm:py-4 shadow-2xs flex items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3 min-w-0">
@@ -16709,7 +16709,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-4 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-3 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
                 {(
                   [
                     {
@@ -16800,7 +16800,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
+              <div className="lg:col-span-9 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===========================================================
                     1. DAFTAR KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
                    =========================================================== */}

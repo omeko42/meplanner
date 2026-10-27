@@ -19,6 +19,53 @@ html {
   overflow-x: clip;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
+  /* Default 100% (16px) calibrated for 1920x1080 PC; auto-shrinks proportionally on narrower/wider PCs and Mobile */
+  font-size: 16px;
+}
+
+/* Mobile / HP: Auto-shrink proportionally for narrower phones (320px–430px) so content never overflows */
+@media (max-width: 767px) {
+  html {
+    font-size: clamp(11px, 3.72vw, 15px);
+  }
+}
+
+/* Tablet / Small Window (768px–1023px): Auto-shrink proportionally */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html {
+    font-size: clamp(11px, 1.48vw, 14.5px);
+  }
+}
+
+/* Desktop / PC (< 1920px): 1920x1080 is 100% (16px); narrower or shorter PC screens auto-shrink proportionally */
+@media (min-width: 1024px) and (max-width: 1920px) {
+  html {
+    font-size: clamp(10.5px, min(0.833333vw, 1.68vh), 16px);
+  }
+}
+
+/* Wide / Ultrawide Desktop (> 1920px): Auto-shrink proportionally when wider than 1920x1080 */
+@media (min-width: 1921px) {
+  html {
+    font-size: clamp(12px, min(calc(20px - 0.208333vw), 1.68vh), 16px);
+  }
+}
+
+/* Convert arbitrary pixel text classes to rem so they auto-shrink with html root font-size */
+.text-\[8px\] {
+  font-size: 0.5rem;
+}
+.text-\[9px\] {
+  font-size: 0.5625rem;
+}
+.text-\[10px\] {
+  font-size: 0.625rem;
+}
+.text-\[11px\] {
+  font-size: 0.6875rem;
+}
+.text-\[13px\] {
+  font-size: 0.8125rem;
 }
 
 body {
