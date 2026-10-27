@@ -6052,7 +6052,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   return (
     <div
       data-inv-theme={activeThemePresetId}
-      className={`min-h-screen ${activeManagerTheme.pageBg} text-stone-900 pt-16 sm:pt-[108px] pb-28 sm:pb-24 transition-colors duration-300`}
+      className={`min-h-screen flex flex-col ${activeManagerTheme.pageBg} text-stone-900 pt-16 sm:pt-[108px] transition-colors duration-300`}
     >
       {/* Global Hidden JSON Backup File Input (Accessible from Header & Settings) */}
       <input
@@ -6708,7 +6708,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       )}
 
       {/* MAIN CONTENT CONTAINER */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
         {/* =====================================================================
             MODUL 1: READINESS TRACKER (EXECUTIVE DASHBOARD)
            ===================================================================== */}
@@ -20992,7 +20992,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* ===================================================================
           FOOTER CREDIT & CONTACT US (FULL-WIDTH EDGE-TO-EDGE MATCHING KATALOG)
          =================================================================== */}
-      <footer className="w-full bg-white border-t border-stone-200/90 py-6 px-4 sm:px-6 lg:px-8 mt-10">
+      <footer className="mt-auto w-full bg-white border-t border-stone-200/90 pt-6 pb-20 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
             <div className="flex items-center justify-center shrink-0">
