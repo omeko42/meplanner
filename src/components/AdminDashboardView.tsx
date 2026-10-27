@@ -1683,7 +1683,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     },
   ]);
   const [superadminMenuTab, setSuperadminMenuTab] = useState<
-    'clients' | 'payments' | 'moderation' | 'insights' | 'storage' | 'branding'
+    'team' | 'clients' | 'payments' | 'moderation' | 'insights' | 'storage' | 'branding'
   >('clients');
 
   // Superadmin Dynamic Wallet Manager & Idempotent Payment Ledger States
@@ -16819,6 +16819,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       badge: `${effectiveClientGroups.length}`,
                     },
                     {
+                      id: 'team' as const,
+                      label: 'Tim Superadmin',
+                      icon: KeyRound,
+                      badge: `${1 + coSuperadminUsers.length}`,
+                    },
+                    {
                       id: 'payments' as const,
                       label: 'Pembayaran',
                       icon: Wallet,
@@ -16902,9 +16908,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {/* RIGHT CONTENT PANEL */}
               <div className="lg:col-span-9 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
                 {/* ===========================================================
-                    1. DAFTAR KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
+                    0. TIM SUPERADMIN & CO-DEVELOPER (TERPISAH DARI DAFTAR KLIEN)
                    =========================================================== */}
-                {superadminMenuTab === 'clients' && (
+                {superadminMenuTab === 'team' && (
                   <div className="space-y-4">
                     {/* CO-SUPERADMIN & DEVELOPER PARTNER MANAGEMENT CARD */}
                     <div className="rounded-2xl border-2 border-[#D4AF37]/45 bg-gradient-to-br from-[#FAF3E3]/70 via-white to-[#FAF8F5] p-4 space-y-3 shadow-2xs">
@@ -17147,7 +17153,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
 
+                {/* ===========================================================
+                    1. DAFTAR KLIEN (GROUPING USER DEFAULT & MULTI-CLIENT SAAS)
+                   =========================================================== */}
+                {superadminMenuTab === 'clients' && (
+                  <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] flex items-center justify-center shrink-0">
