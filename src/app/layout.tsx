@@ -51,8 +51,8 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
-        secureUrl: 'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
+        url: 'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
+        secureUrl: 'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
         type: 'image/jpeg',
         width: 800,
         height: 800,
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     description:
       'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
     images: [
-      'https://meplanner.vercel.app/og-meplanner-logo-m.jpg',
+      'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
     ],
   },
 };
