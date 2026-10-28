@@ -52,7 +52,7 @@ function getAuthSecret(): string {
 }
 
 export function hashPassword(plainPassword: string): string {
-  const salt = crypto.createHash('sha256').update(getAuthSecret()).digest('hex').slice(0, 16);
+  const salt = crypto.randomBytes(8).toString('hex');
   const derived = crypto.scryptSync(plainPassword, salt, 64).toString('hex');
   return `scrypt$${salt}$${derived}`;
 }
