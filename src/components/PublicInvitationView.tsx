@@ -4167,15 +4167,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
-                    <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
+                    <p className="text-sm sm:text-base font-bold text-white mt-0.5 break-words">
                       {heroGuestDisplayName}
                     </p>
                     {hasCustomGuestInstitution && (
-                      <p className="text-[11px] sm:text-xs font-medium italic text-[#FAF3E3]/95 mt-0.5 break-words">
+                      <p className="text-[11px] sm:text-xs font-normal italic text-white/75 mt-0.5 break-words">
                         {guestRawInstitution}
                       </p>
                     )}
-                    <p className="text-[11px] sm:text-xs font-medium text-white/80 mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] font-normal text-white/65 mt-0.5">
                       {guestLocationLabel}
                     </p>
                   </div>
@@ -4367,12 +4367,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </h2>
 
                 {hasCustomGuestInstitution && (
-                  <p className="text-xs sm:text-sm text-[#9A742B] italic font-semibold mt-2 break-words">
+                  <p className="text-xs sm:text-sm text-stone-900/75 italic font-normal mt-1.5 break-words">
                     {guestRawInstitution}
                   </p>
                 )}
 
-                <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-1 break-words">
+                <p className="text-[11px] sm:text-xs text-stone-900/60 font-normal mt-1 break-words">
                   {guestLocationLabel}
                 </p>
 
@@ -4842,15 +4842,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8b5a2b] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
-                    <p className="text-xs sm:text-sm font-bold text-[#6b4226] mt-0.5">
+                    <p className="text-sm sm:text-base font-bold text-[#6b4226] mt-0.5">
                       {heroGuestDisplayName}
                     </p>
                     {hasCustomGuestInstitution && (
-                      <p className="text-[11px] font-medium italic text-[#8b5a2b] mt-0.5">
+                      <p className="text-[11px] sm:text-xs font-normal italic text-[#6b4226]/75 mt-0.5">
                         {guestRawInstitution}
                       </p>
                     )}
-                    <p className="text-[11px] font-medium text-[#8b5a2b]/85 mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] font-normal text-[#6b4226]/60 mt-0.5">
                       {guestLocationLabel}
                     </p>
                   </div>
@@ -5016,17 +5016,17 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
                       <span>{localizedPrimaryDate}</span>
                     </div>
-                    <div className="inline-flex flex-wrap items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold">
+                    <div className="inline-flex flex-wrap items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs sm:text-sm font-bold">
                       <span className="text-[10px] uppercase tracking-wider text-[#FAF3E3]">
                         {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </span>
                       <span>{heroGuestDisplayName}</span>
                       {hasCustomGuestInstitution && (
-                        <span className="text-[11px] font-medium italic text-[#FAF3E3]/95">
+                        <span className="text-[10px] sm:text-xs font-normal italic text-white/75">
                           • {guestRawInstitution}
                         </span>
                       )}
-                      <span className="text-[11px] font-medium text-white/80">
+                      <span className="text-[10px] sm:text-[11px] font-normal text-white/65">
                         • {guestLocationLabel}
                       </span>
                     </div>
@@ -5167,15 +5167,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#8B6914] font-bold">
                     {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                   </p>
-                  <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
+                  <p className="text-sm sm:text-base font-bold text-stone-900 mt-0.5">
                     {heroGuestDisplayName}
                   </p>
                   {hasCustomGuestInstitution && (
-                    <p className="text-[11px] font-medium italic text-[#8B6914] mt-0.5">
+                    <p className="text-[11px] sm:text-xs font-normal italic text-stone-900/75 mt-0.5">
                       {guestRawInstitution}
                     </p>
                   )}
-                  <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                  <p className="text-[10px] sm:text-[11px] font-normal text-stone-900/60 mt-0.5">
                     {guestLocationLabel}
                   </p>
                 </div>
@@ -5311,15 +5311,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8B6914] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
-                    <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
+                    <p className="text-sm sm:text-base font-bold text-stone-900 mt-0.5">
                       {heroGuestDisplayName}
                     </p>
                     {hasCustomGuestInstitution && (
-                      <p className="text-[11px] font-medium italic text-[#8B6914] mt-0.5">
+                      <p className="text-[11px] sm:text-xs font-normal italic text-stone-900/75 mt-0.5">
                         {guestRawInstitution}
                       </p>
                     )}
-                    <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] font-normal text-stone-900/60 mt-0.5">
                       {guestLocationLabel}
                     </p>
                   </div>
@@ -5516,15 +5516,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
                         {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </p>
-                      <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
+                      <p className="text-sm sm:text-base font-bold text-white mt-0.5 break-words">
                         {heroGuestDisplayName}
                       </p>
                       {hasCustomGuestInstitution && (
-                        <p className="text-[11px] sm:text-xs font-medium italic text-[#FAF3E3]/95 mt-0.5 break-words">
+                        <p className="text-[11px] sm:text-xs font-normal italic text-white/75 mt-0.5 break-words">
                           {guestRawInstitution}
                         </p>
                       )}
-                      <p className="text-[11px] sm:text-xs font-medium text-white/80 mt-0.5">
+                      <p className="text-[10px] sm:text-[11px] font-normal text-white/65 mt-0.5">
                         {guestLocationLabel}
                       </p>
                     </div>
