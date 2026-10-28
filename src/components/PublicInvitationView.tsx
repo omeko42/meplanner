@@ -2660,8 +2660,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [checkInSearchQuery, setCheckInSearchQuery] = useState('');
   const hasAutoCheckedInRef = useRef(false);
 
-  // Restore saved guest pass from localStorage if guest scans general venue QR (?checkin=venue)
+  // Restore saved guest pass from localStorage ONLY if guest scans general venue QR (?checkin=venue)
   useEffect(() => {
+    if (!autoCheckInParam) return;
     if (matchedGuest || selectedGuestFromSearch || verifiedGuestByCode) return;
     if (typeof window === 'undefined') return;
     try {
@@ -2691,6 +2692,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       // Ignore storage parse error
     }
   }, [
+    autoCheckInParam,
     activeClientId,
     guests,
     matchedGuest,

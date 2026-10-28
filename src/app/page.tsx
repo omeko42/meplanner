@@ -3464,6 +3464,8 @@ function WeddingAppContent() {
             state={activeDemoAdminState}
             adminUser={activeDemoAdminUser}
             onSwitchToPublicPreview={(guest) => {
+              setIsUrlGuestSessionCleared(true);
+              setManualGuestLookup({});
               if (guest) {
                 setPreviewOverrideGuest(guest);
                 if (typeof window !== 'undefined' && demoManagerClientId) {
@@ -3475,6 +3477,11 @@ function WeddingAppContent() {
                     '',
                     `/${encodeURIComponent(hashToken)}`
                   );
+                }
+              } else {
+                setPreviewOverrideGuest(null);
+                if (typeof window !== 'undefined') {
+                  window.history.pushState({}, '', '/');
                 }
               }
               setDemoManagerClientId(null);
