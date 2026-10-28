@@ -1081,6 +1081,63 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     onConfirm: () => Promise<void> | void;
   } | null>(null);
   const [isConfirmExecuting, setIsConfirmExecuting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const playUiMicroSound = (kind: 'warning' | 'confirm' | 'logout') => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const now = ctx.currentTime;
+      if (kind === 'warning') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(240, now + 0.14);
+        gain.gain.setValueAtTime(0.045, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (kind === 'confirm') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(780, now + 0.16);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      } else {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(640, now);
+        osc.frequency.exponentialRampToValueAtTime(380, now + 0.22);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
+        osc.start(now);
+        osc.stop(now + 0.23);
+      }
+      window.setTimeout(() => {
+        void ctx.close().catch(() => {});
+      }, 300);
+    } catch {
+      // Ignore Web Audio errors on restricted browsers
+    }
+  };
+
+  const handleAnimatedLogout = () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    playUiMicroSound('logout');
+    window.setTimeout(() => {
+      onLogoutAdmin();
+    }, 420);
+  };
 
   const requestConfirm = (opts: {
     title: string;
@@ -1089,6 +1146,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     variant?: 'danger' | 'primary';
     onConfirm: () => Promise<void> | void;
   }) => {
+    playUiMicroSound(opts.variant === 'danger' ? 'warning' : 'confirm');
     setConfirmDialog(opts);
   };
 
@@ -6179,26 +6237,56 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* Global Confirmation Dialog for Save / Delete / Restore / Reset Actions */}
+      {/* Smooth Logout Transition Overlay (Video #9 — InfiWeb Craft) */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[75] bg-stone-950/55 backdrop-blur-md flex items-center justify-center p-4 animate-luxe-modal">
+          <div className="luxe-glass-modal rounded-3xl px-6 py-5 max-w-xs w-full text-center space-y-2.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/50 flex items-center justify-center mx-auto text-[#8B6914] shadow-xs">
+              <LogOut className="w-5 h-5 animate-pulse" />
+            </div>
+            <p className="font-serif font-extrabold text-sm text-stone-900">
+              Menutup Sesi Ruang Kerja...
+            </p>
+            <p className="text-[11px] text-stone-500 font-medium">
+              Menyimpan sinkronisasi akhir &amp; mengamankan kredensial Anda.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Dialog for Save / Delete / Restore / Reset Actions (Video #8 — Codea con Horacio) */}
       {confirmDialog && (
-        <div className="fixed inset-0 z-[60] bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
+        <div className="fixed inset-0 z-[60] bg-stone-950/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="luxe-glass-modal animate-luxe-modal rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3.5">
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border shadow-xs ${
                   confirmDialog.variant === 'danger'
-                    ? 'bg-rose-50 border-rose-200 text-rose-600'
-                    : 'bg-[#FAF3E3] border-[#D4AF37]/50 text-[#8B6914]'
+                    ? 'bg-gradient-to-br from-rose-50 to-rose-100/80 border-rose-200 text-rose-600 animate-trash-shake'
+                    : 'bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border-[#D4AF37]/50 text-[#8B6914]'
                 }`}
               >
                 {confirmDialog.variant === 'danger' ? (
-                  <AlertTriangle className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" />
                 ) : (
                   <CheckCircle2 className="w-5 h-5" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${
+                      confirmDialog.variant === 'danger'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                    }`}
+                  >
+                    {confirmDialog.variant === 'danger'
+                      ? 'Konfirmasi Hapus'
+                      : 'Konfirmasi Aksi'}
+                  </span>
+                </div>
+                <h3 className="font-serif font-extrabold text-base sm:text-lg text-stone-900 mt-1 tracking-tight">
                   {confirmDialog.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed">
@@ -6207,12 +6295,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-200/70">
               <button
                 type="button"
                 disabled={isConfirmExecuting}
                 onClick={() => setConfirmDialog(null)}
-                className="px-4 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 font-bold text-xs transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-xl border border-stone-200 bg-white/80 hover:bg-stone-100 text-stone-700 font-bold text-xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 Batal
               </button>
@@ -6221,6 +6309,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 disabled={isConfirmExecuting}
                 onClick={async () => {
                   setIsConfirmExecuting(true);
+                  playUiMicroSound('confirm');
                   try {
                     await confirmDialog.onConfirm();
                   } catch (err) {
@@ -6238,9 +6327,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     setConfirmDialog(null);
                   }
                 }}
-                className={`px-5 py-2 rounded-full font-bold text-xs text-white shadow-xs transition-all disabled:opacity-50 inline-flex items-center gap-1.5 ${
+                className={`px-5 py-2 rounded-xl font-extrabold text-xs text-white shadow-sm transition-all disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer ${
                   confirmDialog.variant === 'danger'
-                    ? 'bg-rose-600 hover:bg-rose-700'
+                    ? 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800'
                     : 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B]'
                 }`}
               >
@@ -6250,12 +6339,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span>Memproses...</span>
                   </>
                 ) : (
-                  <span>
-                    {confirmDialog.confirmLabel ||
-                      (confirmDialog.variant === 'danger'
-                        ? 'Ya, Hapus'
-                        : 'Ya, Lanjutkan')}
-                  </span>
+                  <>
+                    {confirmDialog.variant === 'danger' && (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>
+                      {confirmDialog.confirmLabel ||
+                        (confirmDialog.variant === 'danger'
+                          ? 'Ya, Hapus Permanen'
+                          : 'Ya, Lanjutkan')}
+                    </span>
+                  </>
                 )}
               </button>
             </div>
@@ -6263,8 +6357,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       )}
 
-      {/* TOP FIXED HEADER BAR (DYNAMIC INVITATION THEME ATMOSPHERE) */}
-      <header className={`fixed top-0 inset-x-0 z-40 ${activeManagerTheme.headerGrad} backdrop-blur-xl text-stone-900 border-b shadow-xs transition-colors duration-300`}>
+      {/* TOP FIXED HEADER BAR (UNIFIED APPLE-LINEAR LUXE GLASS NAVBAR) */}
+      <header className={`fixed top-0 inset-x-0 z-40 luxe-glass-navbar ${activeManagerTheme.headerGrad} text-stone-900 border-b transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
             {/* Brand Title with Pure 3D Ribbon M + Sparkle Letter Mark */}
@@ -6369,8 +6463,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <button
                 type="button"
-                onClick={onLogoutAdmin}
-                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition-colors"
+                onClick={handleAnimatedLogout}
+                disabled={isLoggingOut}
+                className="p-2 rounded-xl bg-rose-50/90 hover:bg-rose-600 border border-rose-200/90 hover:border-rose-600 text-rose-600 hover:text-white transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                 title="Keluar dari Sesi Admin"
               >
                 <LogOut className="w-4 h-4" />
@@ -9135,7 +9230,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                   )}
 
-                <div className="lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+                <div className="lg:luxe-glass-surface lg:rounded-2xl overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-1 lg:p-1.5">
                 {[
                   {
                     id: 'visibilitas' as const,
@@ -9197,13 +9292,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         type="button"
                         title={menu.title}
                         onClick={() => setSettingsMenuTab(menu.id)}
-                        className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left whitespace-nowrap truncate transition-all ${
+                        className={`w-full px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl flex items-center justify-between text-left whitespace-nowrap truncate transition-all cursor-pointer ${
                           isActive
-                            ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-2 border-[#B68D40] shadow-xs lg:shadow-none lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
-                            : 'bg-white lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-[#D4AF37]/35 shadow-2xs lg:shadow-none lg:border-0'
+                            ? 'bg-gradient-to-r from-[#FAF3E3] to-[#F3E5C8]/85 text-[#8B6914] font-extrabold border border-[#B68D40]/60 shadow-xs'
+                            : 'bg-white/80 lg:bg-transparent hover:bg-[#FAF3E3]/60 text-stone-700 font-medium border border-[#D4AF37]/25 lg:border-transparent'
                         }`}
                       >
-                        <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                        <div className="flex items-center gap-2 lg:gap-2.5 min-w-0">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                              isActive ? 'bg-[#B68D40] scale-110' : 'bg-transparent'
+                            }`}
+                          />
                           <IconComp
                             className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
                               isActive ? 'text-[#B68D40]' : 'text-stone-400'
@@ -9212,8 +9312,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <span className="text-[11px] sm:text-xs lg:text-sm whitespace-nowrap truncate">{menu.label}</span>
                         </div>
                         <ChevronRight
-                          className={`hidden lg:block w-4 h-4 shrink-0 ${
-                            isActive ? 'text-[#B68D40]' : 'text-stone-400'
+                          className={`hidden lg:block w-4 h-4 shrink-0 transition-transform ${
+                            isActive ? 'text-[#B68D40] translate-x-0.5' : 'text-stone-300'
                           }`}
                         />
                       </button>
@@ -9223,7 +9323,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-9 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
+              <div className="lg:col-span-9 luxe-glass-surface rounded-2xl p-4 sm:p-6 space-y-5 min-w-0 overflow-hidden">
                 {/* ===============================================================
                     MENU 1: VISIBILITAS & ISI KONTEN UNDANGAN (SWITCH + EDITOR TERPADU)
                    =============================================================== */}
@@ -16817,7 +16917,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {/* 2-COLUMN LAYOUT (LEFT SIDEBAR + RIGHT CONTENT PANEL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU */}
-              <div className="lg:col-span-3 lg:sticky lg:top-[120px] lg:bg-white lg:rounded-2xl lg:border lg:border-[#D4AF37]/30 lg:shadow-2xs overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-0 divide-y-0 lg:divide-y divide-stone-100">
+              <div className="lg:col-span-3 lg:sticky lg:top-[120px] lg:luxe-glass-surface lg:rounded-2xl overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-1 lg:p-1.5">
                 {(
                   [
                     {
@@ -16880,13 +16980,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       key={menu.id}
                       type="button"
                       onClick={() => setSuperadminMenuTab(menu.id)}
-                      className={`w-full px-3 lg:px-5 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none flex items-center justify-between text-left transition-all ${
+                      className={`w-full px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-[#FAF3E3] text-[#8B6914] font-bold border-2 border-[#B68D40] shadow-xs lg:shadow-none lg:border-0 lg:border-l-4 lg:border-[#B68D40]'
-                          : 'bg-white lg:bg-white hover:bg-[#FAF8F5] text-stone-700 font-medium border border-[#D4AF37]/35 shadow-2xs lg:shadow-none lg:border-0'
+                          ? 'bg-gradient-to-r from-[#FAF3E3] to-[#F3E5C8]/85 text-[#8B6914] font-extrabold border border-[#B68D40]/60 shadow-xs'
+                          : 'bg-white/80 lg:bg-transparent hover:bg-[#FAF3E3]/60 text-stone-700 font-medium border border-[#D4AF37]/25 lg:border-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                      <div className="flex items-center gap-2 lg:gap-2.5 min-w-0">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                            isActive ? 'bg-[#B68D40] scale-110' : 'bg-transparent'
+                          }`}
+                        />
                         <IconComp
                           className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 ${
                             isActive ? 'text-[#B68D40]' : 'text-stone-400'
@@ -16898,13 +17003,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {'badge' in menu && menu.badge && (
-                          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold">
+                          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/35 text-[10px] font-bold tabular-nums">
                             {menu.badge}
                           </span>
                         )}
                         <ChevronRight
-                          className={`hidden lg:block w-4 h-4 shrink-0 ${
-                            isActive ? 'text-[#B68D40]' : 'text-stone-400'
+                          className={`hidden lg:block w-4 h-4 shrink-0 transition-transform ${
+                            isActive ? 'text-[#B68D40] translate-x-0.5' : 'text-stone-300'
                           }`}
                         />
                       </div>
@@ -16914,7 +17019,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
 
               {/* RIGHT CONTENT PANEL */}
-              <div className="lg:col-span-9 bg-white rounded-2xl border border-[#D4AF37]/30 p-4 sm:p-6 shadow-2xs space-y-5 min-w-0 overflow-hidden">
+              <div className="lg:col-span-9 luxe-glass-surface rounded-2xl p-4 sm:p-6 space-y-5 min-w-0 overflow-hidden">
                 {/* ===========================================================
                     0. TIM SUPERADMIN & CO-DEVELOPER (TERPISAH DARI DAFTAR KLIEN)
                    =========================================================== */}

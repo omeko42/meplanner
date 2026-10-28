@@ -5667,7 +5667,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
   return (
     <div className="min-h-screen pt-16 sm:pt-18 overflow-x-clip bg-white text-stone-900 flex flex-col justify-between selection:bg-[#D4AF37]/25">
       {/* CLEAN TOP NAVBAR — MEPLANNER ORIGINAL WARM EDITORIAL HEADER */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200/80">
+      <header className="fixed top-0 inset-x-0 z-50 luxe-glass-navbar">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
           {/* Left: Logo + MEPlanner (My Event Planner) */}
           <div className="flex items-center gap-2.5 min-w-0">

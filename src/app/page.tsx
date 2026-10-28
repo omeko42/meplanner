@@ -3767,10 +3767,59 @@ function WeddingAppContent() {
               </div>
             </div>
 
-            {/* Minimalist White Card (max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl) */}
-            <div className="max-w-[420px] w-full rounded-2xl bg-white p-8 sm:p-10 shadow-2xl text-stone-800">
+            {/* Unified Premium Apple-Linear Frosted Glass Auth Card */}
+            <div className="max-w-[420px] w-full rounded-3xl luxe-glass-modal animate-luxe-modal p-6 sm:p-8 text-stone-800">
+              {authModalMode !== 'GOOGLE_CHOOSER' && (
+                <div
+                  className="grid grid-cols-3 gap-1 p-1 mb-6 rounded-2xl bg-stone-900/[0.06] border border-stone-900/[0.07] shadow-inner"
+                  role="tablist"
+                  aria-label="Authentication mode"
+                >
+                  {(
+                    [
+                      {
+                        mode: 'SIGN_IN' as const,
+                        labelId: 'Masuk',
+                        labelEn: 'Sign In',
+                      },
+                      {
+                        mode: 'ACCESS_CODE' as const,
+                        labelId: 'Kode Akses',
+                        labelEn: 'Access Key',
+                      },
+                      {
+                        mode: 'REGISTER' as const,
+                        labelId: 'Daftar',
+                        labelEn: 'Sign Up',
+                      },
+                    ] as const
+                  ).map((tab) => {
+                    const isActive = authModalMode === tab.mode;
+                    return (
+                      <button
+                        key={tab.mode}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => {
+                          setLoginErrorMsg('');
+                          setAuthModalMode(tab.mode);
+                        }}
+                        className={`py-2 px-2 rounded-xl text-xs font-extrabold tracking-tight transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-white text-stone-900 shadow-[0_2px_10px_rgba(40,30,15,0.10)] border border-[#D4AF37]/40'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        {loginLang === 'ID' ? tab.labelId : tab.labelEn}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {loginErrorMsg && (
-                <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-2 text-xs font-medium">
+                <div className="mb-4 p-3 rounded-xl bg-rose-50/95 border border-rose-200/90 text-rose-800 flex items-start gap-2 text-xs font-medium animate-luxe-modal">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{loginErrorMsg}</span>
                 </div>
@@ -3778,11 +3827,11 @@ function WeddingAppContent() {
 
               {authModalMode === 'SIGN_IN' && (
                 <>
-                  <div className="text-center mb-6">
-                    <p className="text-sm font-medium text-stone-600">
-                      {loginLang === 'ID' ? 'Masuk ke Ruang Kerja' : 'Sign In to Workspace'}
+                  <div className="text-center mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#8B6914]">
+                      {loginLang === 'ID' ? 'Ruang Kerja Eksklusif' : 'Exclusive Workspace'}
                     </p>
-                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
+                    <h3 className="text-2xl font-extrabold text-stone-900 tracking-tight mt-0.5">
                       ME<span className="text-[#8B6914]">Planner</span>
                     </h3>
                   </div>
@@ -3795,18 +3844,22 @@ function WeddingAppContent() {
                       <label className="block text-xs font-bold text-stone-800 mb-1.5">
                         {loginLang === 'ID' ? 'Email atau Username' : 'Email or Username'}
                       </label>
-                      <input
-                        type="text"
-                        value={loginIdentifier}
-                        onChange={(e) => setLoginIdentifier(e.target.value)}
-                        placeholder={
-                          loginLang === 'ID'
-                            ? 'Masukkan email atau username Anda'
-                            : 'Enter your email or username'
-                        }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                        required
-                      />
+                      <div className="relative">
+                        <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          autoComplete="username"
+                          value={loginIdentifier}
+                          onChange={(e) => setLoginIdentifier(e.target.value)}
+                          placeholder={
+                            loginLang === 'ID'
+                              ? 'Masukkan email atau username Anda'
+                              : 'Enter your email or username'
+                          }
+                          className="w-full h-11 pl-10 pr-4 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -3830,33 +3883,64 @@ function WeddingAppContent() {
                             : 'Forgot Password?'}
                         </button>
                       </div>
-                      <input
-                        type="password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                        required
-                      />
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type={showLoginPassword ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full h-11 pl-10 pr-11 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword((p) => !p)}
+                          className="w-8 h-8 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 flex items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 transition-colors cursor-pointer"
+                          aria-label={
+                            showLoginPassword
+                              ? 'Sembunyikan kata sandi'
+                              : 'Tampilkan kata sandi'
+                          }
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <button
                       type="submit"
                       disabled={isSubmittingLogin}
-                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all shadow-xs cursor-pointer disabled:opacity-60"
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-950 text-white font-bold text-sm transition-all shadow-md cursor-pointer disabled:opacity-60 inline-flex items-center justify-center gap-2"
                     >
-                      {isSubmittingLogin
-                        ? loginLang === 'ID'
-                          ? 'Memproses...'
-                          : 'Signing In...'
-                        : loginLang === 'ID'
-                          ? 'Masuk'
-                          : 'Sign In'}
+                      {isSubmittingLogin ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>
+                            {loginLang === 'ID'
+                              ? 'Memverifikasi Sesi...'
+                              : 'Verifying Session...'}
+                          </span>
+                        </>
+                      ) : loginLang === 'ID' ? (
+                        'Masuk ke Workspace'
+                      ) : (
+                        'Sign In to Workspace'
+                      )}
                     </button>
                   </form>
 
-                  <div className="py-3 text-center text-xs font-medium text-stone-400 uppercase tracking-wider">
-                    {loginLang === 'ID' ? 'ATAU' : 'OR'}
+                  <div className="flex items-center gap-3 py-3.5">
+                    <div className="h-px flex-1 bg-stone-200/80" />
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">
+                      {loginLang === 'ID' ? 'ATAU' : 'OR'}
+                    </span>
+                    <div className="h-px flex-1 bg-stone-200/80" />
                   </div>
 
                   <div className="space-y-2.5">
@@ -3893,32 +3977,6 @@ function WeddingAppContent() {
                         }
                       }}
                     />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginErrorMsg('');
-                        setAuthModalMode('ACCESS_CODE');
-                      }}
-                      className="w-full h-11 rounded-lg bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-stone-800 font-semibold text-sm transition-all cursor-pointer"
-                    >
-                      {loginLang === 'ID'
-                        ? 'Masuk dengan Kode Akses Workspace'
-                        : 'Sign in with Workspace Access Code'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginErrorMsg('');
-                        setAuthModalMode('REGISTER');
-                      }}
-                      className="w-full h-11 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] font-semibold text-sm transition-all cursor-pointer"
-                    >
-                      {loginLang === 'ID'
-                        ? 'Buat Akun Baru (Gratis)'
-                        : 'Create New Account (Free)'}
-                    </button>
                   </div>
                 </>
               )}
@@ -3981,7 +4039,7 @@ function WeddingAppContent() {
                             ? 'nama.anda@gmail.com'
                             : 'your.name@gmail.com'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
                         required
                       />
                     </div>
@@ -4003,13 +4061,13 @@ function WeddingAppContent() {
                             ? 'Contoh: Andi & Rina'
                             : 'Example: Andi & Rina'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-11 px-4 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all cursor-pointer"
+                      className="w-full h-11 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm transition-all cursor-pointer"
                     >
                       {loginLang === 'ID' ? 'Lanjutkan' : 'Continue'}
                     </button>
@@ -4032,171 +4090,294 @@ function WeddingAppContent() {
 
               {authModalMode === 'ACCESS_CODE' && (
                 <div>
-                  <div className="text-center mb-6">
-                    <p className="text-base font-medium text-stone-700">
-                      {loginLang === 'ID' ? 'Masuk dengan' : 'Sign In with'}
-                    </p>
-                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
-                      {loginLang === 'ID' ? 'Kode Akses' : 'Access Code'}
+                  <div className="text-center mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/45 flex items-center justify-center mx-auto mb-2.5 shadow-xs">
+                      <KeyRound className="w-5 h-5 text-[#8B6914]" />
+                    </div>
+                    <h3 className="text-xl font-extrabold text-stone-900 tracking-tight">
+                      {loginLang === 'ID'
+                        ? 'Verifikasi Kode Akses'
+                        : 'Verify Access Key'}
                     </h3>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {loginLang === 'ID'
+                        ? 'Tempel 21-digit Key Hash undangan, INV-XXXX, atau kode workspace Anda'
+                        : 'Paste your 21-digit invitation hash, INV-XXXX, or workspace code'}
+                    </p>
                   </div>
 
                   <form onSubmit={handleAccessCodeSubmit} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-stone-800 mb-1.5">
-                        {loginLang === 'ID'
-                          ? 'Kode Akses Undangan / Workspace'
-                          : 'Invitation / Workspace Access Code'}
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-stone-800">
+                          {loginLang === 'ID'
+                            ? 'Key Hash / Kode Undangan'
+                            : 'Invitation Hash / Access Key'}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const clip = await navigator.clipboard.readText();
+                              if (!clip) return;
+                              const clean = clip
+                                .trim()
+                                .replace(
+                                  /^https?:\/\/[^/]+\/(?:wa\/)?([^/?#\s]+).*$/i,
+                                  '$1'
+                                );
+                              setAccessCodeInput(clean);
+                            } catch {
+                              // Clipboard permission denied
+                            }
+                          }}
+                          className="text-[11px] font-bold text-[#8B6914] hover:text-[#B68D40] inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FAF3E3] border border-[#D4AF37]/35 cursor-pointer"
+                        >
+                          <span>
+                            {loginLang === 'ID' ? 'Tempel Otomatis' : 'Auto-Paste'}
+                          </span>
+                        </button>
+                      </div>
                       <input
                         type="text"
                         autoFocus
                         value={accessCodeInput}
-                        onChange={(e) => setAccessCodeInput(e.target.value)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const extracted = raw.includes('http')
+                            ? raw
+                                .trim()
+                                .replace(
+                                  /^https?:\/\/[^/]+\/(?:wa\/)?([^/?#\s]+).*$/i,
+                                  '$1'
+                                )
+                            : raw;
+                          setAccessCodeInput(extracted);
+                        }}
                         placeholder={
                           loginLang === 'ID'
-                            ? 'Masukkan kode akses...'
-                            : 'Enter access code...'
+                            ? 'Contoh: apDRD44vYBA77QLHiv6E8'
+                            : 'Example: apDRD44vYBA77QLHiv6E8'
                         }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
+                        className="w-full h-12 px-4 rounded-xl luxe-otp-input outline-none text-sm font-mono font-bold text-center text-stone-900 transition-all"
                         required
                       />
+                      {accessCodeInput.trim().length > 0 && (
+                        <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>
+                            {accessCodeInput.trim().length === 21
+                              ? loginLang === 'ID'
+                                ? 'Hash Undangan 21-Karakter Valid Terdeteksi'
+                                : 'Valid 21-Char Invitation Hash Detected'
+                              : loginLang === 'ID'
+                                ? `Kode Akses (${accessCodeInput.trim().length} karakter) siap diverifikasi`
+                                : `Access code (${accessCodeInput.trim().length} chars) ready`}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all cursor-pointer"
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B68D40] hover:opacity-95 text-stone-950 font-extrabold text-sm transition-all shadow-md cursor-pointer"
                     >
-                      {loginLang === 'ID' ? 'Masuk' : 'Sign In'}
+                      {loginLang === 'ID'
+                        ? 'Buka dengan Kode Akses'
+                        : 'Unlock with Access Key'}
                     </button>
                   </form>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginErrorMsg('');
-                      setAuthModalMode('SIGN_IN');
-                    }}
-                    className="mt-5 w-full text-center text-xs font-semibold text-stone-500 hover:text-stone-900 cursor-pointer"
-                  >
-                    {loginLang === 'ID'
-                      ? '← Kembali ke Sign In'
-                      : '← Back to Sign In'}
-                  </button>
                 </div>
               )}
 
               {authModalMode === 'REGISTER' && (
                 <div>
-                  <div className="text-center mb-5">
-                    <p className="text-sm font-medium text-stone-600">
-                      {loginLang === 'ID' ? 'Buat Ruang Kerja Baru' : 'Create New Workspace'}
+                  <div className="text-center mb-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#8B6914]">
+                      {loginLang === 'ID' ? 'Mulai Gratis' : 'Start for Free'}
                     </p>
-                    <h3 className="text-2xl font-extrabold text-stone-900 mt-0.5">
-                      ME<span className="text-[#8B6914]">Planner</span>
+                    <h3 className="text-xl font-extrabold text-stone-900 tracking-tight mt-0.5">
+                      {loginLang === 'ID'
+                        ? 'Buat Workspace Acara Baru'
+                        : 'Create New Event Workspace'}
                     </h3>
                   </div>
 
                   <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-800 mb-1">
-                        {loginLang === 'ID'
-                          ? 'Nama Pasangan / Acara'
-                          : 'Couple / Event Name'}
-                      </label>
-                      <input
-                        type="text"
-                        value={gmailEventTitleInput}
-                        onChange={(e) =>
-                          setGmailEventTitleInput(e.target.value)
-                        }
-                        placeholder={
-                          loginLang === 'ID'
-                            ? 'Contoh: Andi & Rina'
-                            : 'Example: Andi & Rina'
-                        }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                        required
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-stone-800 mb-1">
+                          {loginLang === 'ID'
+                            ? 'Nama Pasangan / Acara'
+                            : 'Couple / Event Name'}
+                        </label>
+                        <input
+                          type="text"
+                          value={gmailEventTitleInput}
+                          onChange={(e) =>
+                            setGmailEventTitleInput(e.target.value)
+                          }
+                          placeholder={
+                            loginLang === 'ID'
+                              ? 'Andi & Rina'
+                              : 'Andi & Rina'
+                          }
+                          className="w-full h-10 px-3.5 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                          required
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-stone-800 mb-1">
-                        {loginLang === 'ID'
-                          ? 'Kategori Acara'
-                          : 'Event Category'}
-                      </label>
-                      <select
-                        value={gmailEventTypeInput}
-                        onChange={(e) =>
-                          setGmailEventTypeInput(
-                            e.target.value as EventCategoryType
-                          )
-                        }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                      >
-                        <option value="WEDDING">
-                          {loginLang === 'ID' ? 'Pernikahan' : 'Wedding'}
-                        </option>
-                        <option value="BIRTHDAY">
-                          {loginLang === 'ID' ? 'Ulang Tahun' : 'Birthday'}
-                        </option>
-                        <option value="GRADUATION">
-                          {loginLang === 'ID' ? 'Wisuda' : 'Graduation'}
-                        </option>
-                        <option value="MEETING">
-                          {loginLang === 'ID' ? 'Rapat Resmi' : 'Corporate Meeting'}
-                        </option>
-                        <option value="GALA_DINNER">Gala Dinner</option>
-                      </select>
+                      <div>
+                        <label className="block text-xs font-bold text-stone-800 mb-1">
+                          {loginLang === 'ID'
+                            ? 'Kategori Acara'
+                            : 'Event Category'}
+                        </label>
+                        <select
+                          value={gmailEventTypeInput}
+                          onChange={(e) =>
+                            setGmailEventTypeInput(
+                              e.target.value as EventCategoryType
+                            )
+                          }
+                          className="w-full h-10 px-3 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                        >
+                          <option value="WEDDING">
+                            {loginLang === 'ID' ? 'Pernikahan' : 'Wedding'}
+                          </option>
+                          <option value="BIRTHDAY">
+                            {loginLang === 'ID' ? 'Ulang Tahun' : 'Birthday'}
+                          </option>
+                          <option value="GRADUATION">
+                            {loginLang === 'ID' ? 'Wisuda' : 'Graduation'}
+                          </option>
+                          <option value="MEETING">
+                            {loginLang === 'ID' ? 'Rapat Resmi' : 'Corporate Meeting'}
+                          </option>
+                          <option value="GALA_DINNER">Gala Dinner</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-stone-800 mb-1">
                         Email
                       </label>
-                      <input
-                        type="email"
-                        value={gmailAddressInput}
-                        onChange={(e) => setGmailAddressInput(e.target.value)}
-                        placeholder="nama@gmail.com"
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                        required
-                      />
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="email"
+                          autoComplete="email"
+                          value={gmailAddressInput}
+                          onChange={(e) => setGmailAddressInput(e.target.value)}
+                          placeholder="nama@gmail.com"
+                          className="w-full h-11 pl-10 pr-4 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-stone-800 mb-1">
                         Password
                       </label>
-                      <input
-                        type="password"
-                        value={registerPasswordInput}
-                        onChange={(e) =>
-                          setRegisterPasswordInput(e.target.value)
-                        }
-                        className="w-full h-11 px-4 rounded-lg bg-[#FAF8F5] border border-stone-200 focus:border-[#B68D40] focus:bg-white outline-none text-sm text-stone-900 transition-all"
-                        required
-                      />
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type={showLoginPassword ? 'text' : 'password'}
+                          autoComplete="new-password"
+                          value={registerPasswordInput}
+                          onChange={(e) =>
+                            setRegisterPasswordInput(e.target.value)
+                          }
+                          placeholder={
+                            loginLang === 'ID'
+                              ? 'Minimal 6 karakter'
+                              : 'Minimum 6 characters'
+                          }
+                          className="w-full h-11 pl-10 pr-11 rounded-xl luxe-glass-input outline-none text-sm text-stone-900"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword((p) => !p)}
+                          className="w-8 h-8 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 flex items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 transition-colors cursor-pointer"
+                          aria-label={
+                            showLoginPassword
+                              ? 'Sembunyikan kata sandi'
+                              : 'Tampilkan kata sandi'
+                          }
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      {registerPasswordInput.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <div className="grid grid-cols-4 gap-1">
+                            {[1, 2, 3, 4].map((lvl) => {
+                              const pw = registerPasswordInput;
+                              const score =
+                                (pw.length >= 6 ? 1 : 0) +
+                                (pw.length >= 10 ? 1 : 0) +
+                                (/[A-Z0-9]/.test(pw) ? 1 : 0) +
+                                (/[^A-Za-z0-9]/.test(pw) ? 1 : 0);
+                              const active = lvl <= Math.max(1, score);
+                              const barColor =
+                                score <= 1
+                                  ? 'bg-rose-500'
+                                  : score === 2
+                                    ? 'bg-amber-500'
+                                    : score === 3
+                                      ? 'bg-emerald-500'
+                                      : 'bg-emerald-600';
+                              return (
+                                <div
+                                  key={lvl}
+                                  className={`h-1 rounded-full transition-colors ${
+                                    active ? barColor : 'bg-stone-200'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] font-semibold text-stone-500 text-right">
+                            {registerPasswordInput.length < 6
+                              ? loginLang === 'ID'
+                                ? 'Terlalu pendek (min. 6 karakter)'
+                                : 'Too short (min. 6 chars)'
+                              : registerPasswordInput.length >= 10
+                                ? loginLang === 'ID'
+                                  ? '✓ Kekuatan Password: Sangat Kuat'
+                                  : '✓ Password Strength: Very Strong'
+                                : loginLang === 'ID'
+                                  ? '✓ Kekuatan Password: Aman'
+                                  : '✓ Password Strength: Good'}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm transition-all shadow-xs cursor-pointer"
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-950 text-white font-bold text-sm transition-all shadow-md cursor-pointer"
                     >
                       {loginLang === 'ID'
-                        ? 'Buat Akun Gratis & Masuk ke Management'
-                        : 'Create Free Account & Enter Management'}
+                        ? 'Buat Akun Gratis & Masuk ke Studio'
+                        : 'Create Free Account & Enter Studio'}
                     </button>
                   </form>
 
-                  <div className="mt-2.5">
+                  <div className="mt-3">
                     <ReactGoogleLoginButton
                       lang={loginLang}
                       buttonText={
                         loginLang === 'ID'
-                          ? 'Daftar dengan Google'
-                          : 'Sign up with Google'
+                          ? 'Daftar Instan dengan Google'
+                          : 'Instant Sign up with Google'
                       }
                       onSuccess={(response: GoogleLoginResponse) => {
                         setLoginErrorMsg('');
@@ -4227,19 +4408,6 @@ function WeddingAppContent() {
                       }}
                     />
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginErrorMsg('');
-                      setAuthModalMode('SIGN_IN');
-                    }}
-                    className="mt-4 w-full text-center text-xs font-semibold text-stone-500 hover:text-stone-900 cursor-pointer"
-                  >
-                    {loginLang === 'ID'
-                      ? '← Kembali ke Sign In'
-                      : '← Back to Sign In'}
-                  </button>
                 </div>
               )}
             </div>

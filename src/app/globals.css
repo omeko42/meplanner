@@ -1006,5 +1006,126 @@ select {
   letter-spacing: 0.004em;
 }
 
+/* ============================================================================
+ * UNIFIED PREMIUM APPLE-LINEAR LUXE GLASS THEME (Cohesive Across Entire App)
+ * ============================================================================ */
+
+/* 1. Linear-Style Tabular Numbers & Tight Display Tracking ("Feel Expensive") */
+.tabular-nums,
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2. Cohesive Frosted Glass Surfaces & Specular 1px Inner Hairlines */
+.luxe-glass-navbar {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 253, 249, 0.88) 0%,
+    rgba(250, 246, 238, 0.78) 100%
+  );
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+    0 10px 30px -10px rgba(90, 70, 40, 0.08);
+}
+
+.luxe-glass-surface,
+.luxe-glass-card {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 253, 249, 0.76) 100%
+  );
+  -webkit-backdrop-filter: blur(20px) saturate(175%);
+  backdrop-filter: blur(20px) saturate(175%);
+  border: 1px solid rgba(197, 160, 89, 0.28);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.92),
+    0 16px 40px -12px rgba(110, 85, 45, 0.1),
+    0 2px 8px -1px rgba(40, 30, 20, 0.04);
+}
+
+.luxe-glass-modal {
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(250, 246, 238, 0.88) 100%
+  );
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.96),
+    0 28px 68px -14px rgba(35, 25, 12, 0.28),
+    0 8px 24px -4px rgba(120, 95, 60, 0.12);
+}
+
+.luxe-glass-input {
+  background: rgba(250, 248, 245, 0.78);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(180, 160, 130, 0.34);
+  box-shadow: inset 0 1px 2px rgba(40, 30, 20, 0.04);
+  transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.luxe-glass-input:focus {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--inv-mid, #B68D40);
+  box-shadow:
+    0 0 0 3px rgba(197, 160, 89, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+/* 3. Embossed Glass OTP / Access Code Input Styling */
+.luxe-otp-input {
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, rgba(250, 246, 238, 0.9) 0%, rgba(255, 255, 255, 0.96) 100%);
+  border: 1.5px solid rgba(197, 160, 89, 0.42);
+  box-shadow:
+    inset 0 2px 4px rgba(120, 95, 60, 0.06),
+    0 4px 14px -2px rgba(197, 160, 89, 0.12);
+}
+
+.luxe-otp-input:focus {
+  border-color: #B68D40;
+  box-shadow:
+    0 0 0 4px rgba(212, 175, 55, 0.22),
+    0 8px 24px -4px rgba(182, 141, 64, 0.18);
+}
+
+/* 4. Confirmed Deletion & Logout Micro-Animations */
+@keyframes luxeTrashShake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-10deg) scale(1.08); }
+  45% { transform: rotate(9deg) scale(1.08); }
+  70% { transform: rotate(-5deg) scale(1.04); }
+}
+
+.animate-trash-shake {
+  animation: luxeTrashShake 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes luxeModalEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.animate-luxe-modal {
+  animation: luxeModalEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+
 
 
