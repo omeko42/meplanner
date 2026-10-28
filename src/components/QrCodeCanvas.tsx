@@ -6,6 +6,7 @@ import {
   QRErrorCorrectLevelKey,
   renderQRCodeToDataUrl,
 } from '@/lib/qrcodeGenerator';
+import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 
 export interface QrCodeCanvasProps {
   text: string;
@@ -16,6 +17,7 @@ export interface QrCodeCanvasProps {
   quietZone?: number;
   className?: string;
   centerBadgeText?: string;
+  showBrandLogo?: boolean;
 }
 
 export const QrCodeCanvas: React.FC<QrCodeCanvasProps> = ({
@@ -26,7 +28,7 @@ export const QrCodeCanvas: React.FC<QrCodeCanvasProps> = ({
   correctLevel = 'M',
   quietZone = 2,
   className = '',
-  centerBadgeText,
+  showBrandLogo = true,
 }) => {
   const matrix = useMemo(
     () => createQRCodeMatrix(text || 'https://meplanner.vercel.app', correctLevel),
@@ -35,6 +37,8 @@ export const QrCodeCanvas: React.FC<QrCodeCanvasProps> = ({
 
   const moduleCount = matrix.length;
   const totalModules = moduleCount + quietZone * 2;
+  const logoBoxPx = Math.max(16, Math.round(size * 0.22));
+  const logoIconPx = Math.max(12, Math.round(size * 0.16));
 
   return (
     <div
@@ -67,11 +71,16 @@ export const QrCodeCanvas: React.FC<QrCodeCanvasProps> = ({
           )
         )}
       </svg>
-      {centerBadgeText && (
+      {showBrandLogo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="px-1.5 py-0.5 rounded-md bg-white border border-[#D4AF37] text-[#8B6914] font-serif font-extrabold text-[10px] shadow-xs">
-            {centerBadgeText}
-          </span>
+          <div
+            className="rounded-lg bg-white border border-[#D4AF37]/80 shadow-xs flex items-center justify-center"
+            style={{ width: logoBoxPx, height: logoBoxPx }}
+          >
+            <div style={{ width: logoIconPx, height: logoIconPx }}>
+              <WeddingRingsIcon className="w-full h-full" />
+            </div>
+          </div>
         </div>
       )}
     </div>

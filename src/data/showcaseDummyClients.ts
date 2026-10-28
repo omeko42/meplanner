@@ -3276,7 +3276,7 @@ export function getShowcaseDummyClientState(
     scheduleEvents: scheduleEventsForType,
     showLiveStreaming: true,
     liveStreamingPlatform: 'YouTube Live',
-    liveStreamingUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
+    liveStreamingUrl: 'https://www.youtube.com/watch?v=LXb3EKWsInQ',
     showIgStorySection: true,
     showLoveStorySection: !isStarterTier,
     showGallerySection: !isStarterTier,

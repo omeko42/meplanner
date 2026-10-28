@@ -2751,6 +2751,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
 
+  // Digital Envelope / Gift Transaction Confirmation State
+  const [isGiftConfirmOpen, setIsGiftConfirmOpen] = useState(false);
+  const [giftConfirmChannel, setGiftConfirmChannel] = useState<string>('');
+  const [giftConfirmAmountOrNote, setGiftConfirmAmountOrNote] = useState<string>('');
+  const [giftConfirmSubmitted, setGiftConfirmSubmitted] = useState(false);
+
   const guestCheckInHash = useMemo(() => {
     if (effectiveMatchedGuest) {
       return (
@@ -3411,10 +3417,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     ctx.font = 'bold 76px Georgia, "Times New Roman", serif';
     ctx.fillText(displayTitleShort, 540, 385, 880);
 
-    // 5. Subtitle (displayTitleFull)
+    // 5. Subtitle (displayTitleFull) — wrap onto 2 lines if long so it never gets cut off
     ctx.fillStyle = '#E7D8B9';
-    ctx.font = 'italic 30px Georgia, "Times New Roman", serif';
-    ctx.fillText(displayTitleFull, 540, 455, 880);
+    ctx.font = 'italic 28px Georgia, "Times New Roman", serif';
+    if (displayTitleFull.length > 42) {
+      const splitIdx = displayTitleFull.indexOf('&');
+      if (splitIdx > 0 && splitIdx < displayTitleFull.length - 2) {
+        const line1 = displayTitleFull.slice(0, splitIdx + 1).trim();
+        const line2 = displayTitleFull.slice(splitIdx + 1).trim();
+        ctx.fillText(line1, 540, 442, 880);
+        ctx.fillText(line2, 540, 480, 880);
+      } else {
+        ctx.fillText(displayTitleFull, 540, 455, 880);
+      }
+    } else {
+      ctx.fillText(displayTitleFull, 540, 455, 880);
+    }
 
     // 6. Schedule Date & Venue Box
     ctx.fillStyle = 'rgba(255, 253, 249, 0.05)';
@@ -3485,16 +3503,18 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     );
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Georgia, "Times New Roman", serif';
-    ctx.fillText(heroGuestDisplayName, 540, 980, 700);
+    ctx.font = 'bold 36px Georgia, "Times New Roman", serif';
+    ctx.fillText(heroGuestDisplayName, 540, 975, 720);
 
-    ctx.fillStyle = '#E7D8B9';
-    ctx.font = '600 22px monospace';
+    ctx.fillStyle = 'rgba(231, 216, 185, 0.85)';
+    ctx.font = 'italic 22px Georgia, "Times New Roman", serif';
     ctx.fillText(
-      effectiveMatchedGuest?.invitationCode ||
-        (lang === 'ID' ? 'KARTU AKSES UNDANGAN VIP' : 'VIP E-INVITATION PASS'),
+      hasCustomGuestInstitution
+        ? `${guestRawInstitution} • ${guestLocationLabel}`
+        : guestLocationLabel,
       540,
-      1035
+      1030,
+      700
     );
 
     // 8. QR Code Image + Footer
@@ -6097,9 +6117,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               const streamPlatform =
                 ((settings as any).liveStreamingPlatform || '').trim() ||
                 'YouTube Live';
-              const ytVideoId = extractYouTubeStreamId(streamUrl);
+              const rawYtId = extractYouTubeStreamId(streamUrl);
+              const ytVideoId =
+                rawYtId === 'jfKfPfyJRdk' ? 'LXb3EKWsInQ' : rawYtId;
               return (
-                <div className="mt-6 sm:mt-8 max-w-3xl mx-auto">
+                <div className="mt-6 sm:mt-8 w-full">
                   <div
                     className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col gap-5 backdrop-blur-xl ${
                       layoutArchetype === 'NUSANTARA_HERITAGE'
@@ -6569,29 +6591,29 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           >
             {/* Left 5 Cols: Live 9:16 Vertical Story Card Preview */}
             <div className="lg:col-span-5 flex justify-center">
-              <div className="w-56 sm:w-64 aspect-[9/16] rounded-3xl bg-gradient-to-b from-stone-900 via-stone-950 to-black p-4 border-2 border-[#D4AF37] shadow-xl flex flex-col items-center justify-between text-center relative overflow-hidden">
+              <div className="w-60 sm:w-68 aspect-[9/16] rounded-3xl bg-gradient-to-b from-stone-900 via-stone-950 to-black p-4 border-2 border-[#D4AF37] shadow-xl flex flex-col items-center justify-between text-center relative overflow-hidden">
                 <div className="absolute inset-2 rounded-2xl border border-[#D4AF37]/40 pointer-events-none" />
-                <div className="relative z-10 pt-2 space-y-1">
+                <div className="relative z-10 pt-2 space-y-1 px-1">
                   <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#D4AF37]">
                     {editorialTopHeaderLabel}
                   </p>
                   <div className="w-12 h-px bg-[#D4AF37]/60 mx-auto" />
-                  <h4 className="font-editorial text-lg sm:text-xl font-bold text-[#FAF3E3] leading-tight pt-1">
+                  <h4 className="font-editorial text-lg sm:text-xl font-bold text-[#FAF3E3] leading-tight pt-1 break-words">
                     {displayTitleShort}
                   </h4>
-                  <p className="text-[10px] italic text-[#E7D8B9] line-clamp-1">
+                  <p className="text-[9px] sm:text-[10px] italic text-[#E7D8B9] leading-snug break-words">
                     {displayTitleFull}
                   </p>
                 </div>
 
                 <div className="relative z-10 w-full rounded-xl bg-white/5 border border-[#D4AF37]/35 px-3 py-2 space-y-0.5">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#D4AF37] truncate">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#D4AF37] break-words leading-snug">
                     {visibleEvents[0]?.title || scheduleTitle}
                   </p>
-                  <p className="text-[10px] font-bold text-white truncate">
+                  <p className="text-[10px] font-bold text-white break-words leading-snug">
                     {localizedPrimaryDate}
                   </p>
-                  <p className="text-[9px] text-stone-300 truncate">
+                  <p className="text-[9px] text-stone-300 break-words leading-snug">
                     {visibleEvents[0]?.venue || settings.event1Venue}
                   </p>
                 </div>
@@ -6600,13 +6622,26 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <p className="text-[8px] font-extrabold uppercase tracking-widest text-[#D4AF37]">
                     {lang === 'ID' ? 'Kepada Yth:' : 'To: Honored Guest'}
                   </p>
-                  <p className="text-xs font-bold text-white truncate">
+                  <p className="text-[11px] sm:text-xs font-bold text-white break-words leading-snug">
                     {heroGuestDisplayName}
+                  </p>
+                  {hasCustomGuestInstitution && (
+                    <p className="text-[9px] italic text-white/75 break-words leading-tight">
+                      {guestRawInstitution}
+                    </p>
+                  )}
+                  <p className="text-[9px] text-white/65 leading-tight">
+                    {guestLocationLabel}
                   </p>
                 </div>
 
-                <div className="relative z-10 flex flex-col items-center gap-1 pb-1">
-                  <div className="p-1.5 rounded-xl bg-white border border-[#D4AF37]">
+                <button
+                  type="button"
+                  onClick={() => setShowCheckInQrModal(true)}
+                  title="Klik untuk membuka E-Ticket QR Check-In Lokasi"
+                  className="relative z-10 flex flex-col items-center gap-1 pb-1 group cursor-pointer"
+                >
+                  <div className="p-1.5 rounded-xl bg-white border border-[#D4AF37] group-hover:scale-105 transition-transform shadow-sm">
                     <QrCodeCanvas
                       text={guestCheckInUrl}
                       size={56}
@@ -6615,12 +6650,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       correctLevel="M"
                     />
                   </div>
-                  <span className="text-[8px] font-semibold uppercase tracking-widest text-[#E7D8B9]">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-[#D4AF37]">
                     {lang === 'ID'
-                      ? 'Undangan Digital MEPlanner'
-                      : 'MEPlanner Digital Invitation'}
+                      ? 'QR E-Ticket Check-In Lokasi'
+                      : 'Venue Check-In QR Pass'}
                   </span>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -7153,14 +7188,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       </span>
                     </span>
                   )}
-                  {effectiveMatchedGuest?.invitationCode && (
-                    <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-mono text-[10px] font-bold">
-                      {effectiveMatchedGuest.invitationCode}
-                    </span>
-                  )}
                 </div>
 
-                <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900 truncate">
+                <h4 className="font-editorial text-base sm:text-lg font-bold text-stone-900 break-words">
                   {resolvedGuestDisplayName}
                 </h4>
                 <p className="text-xs text-stone-600 leading-relaxed max-w-xl">
@@ -7550,7 +7580,13 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {settings.showPhysicalGiftAddress !== false &&
                   Boolean(settings.giftShippingAddress?.trim()) && (
-                    <div className="max-w-2xl mx-auto min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div
+                      className={`${
+                        settings.bankAccounts.length > 2
+                          ? 'w-full'
+                          : 'max-w-3xl mx-auto'
+                      } min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
+                    >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
@@ -7617,6 +7653,164 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       </button>
                     </div>
                   )}
+
+                {/* 1-Click Digital Envelope / Gift Transaction Confirmation Recorder */}
+                <div
+                  className={`${
+                    settings.bankAccounts.length > 2
+                      ? 'w-full'
+                      : 'max-w-3xl mx-auto'
+                  } rounded-2xl bg-white/95 border border-[#D4AF37]/45 p-4 sm:p-5 text-left space-y-3 shadow-xs`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'PENCATATAN TRANSAKSI AMPLOP DIGITAL & KADO'
+                            : 'DIGITAL GIFT & TRANSFER CONFIRMATION'}
+                        </span>
+                      </span>
+                      <p className="text-xs font-bold text-stone-800">
+                        {lang === 'ID'
+                          ? 'Sudah melakukan transfer atau mengirim bingkisan? Catat konfirmasi Anda agar langsung diterima mempelai.'
+                          : 'Have you completed a transfer or sent a gift? Record your confirmation here for the couple.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!giftConfirmChannel && settings.bankAccounts[0]) {
+                          setGiftConfirmChannel(
+                            `${settings.bankAccounts[0].bankName} (${settings.bankAccounts[0].accountNumber})`
+                          );
+                        }
+                        setIsGiftConfirmOpen((prev) => !prev);
+                      }}
+                      className="w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {isGiftConfirmOpen
+                          ? lang === 'ID'
+                            ? 'Tutup Form'
+                            : 'Close Form'
+                          : lang === 'ID'
+                            ? 'Konfirmasi Tanda Kasih'
+                            : 'Confirm Gift / Transfer'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {giftConfirmSubmitted && (
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        {lang === 'ID'
+                          ? 'Terima kasih! Konfirmasi pengiriman Tanda Kasih Anda telah tercatat otomatis di Dasbor Mempelai.'
+                          : 'Thank you! Your gift confirmation has been recorded in the couple dashboard.'}
+                      </span>
+                    </div>
+                  )}
+
+                  {isGiftConfirmOpen && (
+                    <div className="pt-2 border-t border-stone-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          {lang === 'ID' ? 'Nama Pengirim' : 'Sender Name'}
+                        </label>
+                        <input
+                          type="text"
+                          value={rsvpName || (effectiveMatchedGuest ? effectiveMatchedGuest.guestName : '')}
+                          onChange={(e) => setRsvpName(e.target.value)}
+                          placeholder={lang === 'ID' ? 'Nama lengkap Anda' : 'Your full name'}
+                          className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          {lang === 'ID' ? 'Saluran Tujuan' : 'Channel / Account'}
+                        </label>
+                        <select
+                          value={giftConfirmChannel}
+                          onChange={(e) => setGiftConfirmChannel(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
+                        >
+                          {settings.bankAccounts.map((acc) => (
+                            <option
+                              key={acc.id}
+                              value={`${acc.bankName} (${acc.accountNumber})`}
+                            >
+                              {acc.bankName} — {acc.accountNumber}
+                            </option>
+                          ))}
+                          {settings.showQrisButton !== false && (
+                            <option value="QRIS Amplop Digital">
+                              QRIS Amplop Digital
+                            </option>
+                          )}
+                          {settings.showPhysicalGiftAddress !== false && (
+                            <option value="Kirim Kado / Bingkisan Fisik">
+                              {lang === 'ID'
+                                ? 'Kirim Kado / Bingkisan Fisik'
+                                : 'Physical Gift Delivery'}
+                            </option>
+                          )}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                          {lang === 'ID'
+                            ? 'Nominal / Catatan (Opsional)'
+                            : 'Amount / Note (Optional)'}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={giftConfirmAmountOrNote}
+                            onChange={(e) => setGiftConfirmAmountOrNote(e.target.value)}
+                            placeholder={
+                              lang === 'ID'
+                                ? 'Misal: Rp 500.000 / Kado Rumah'
+                                : 'e.g. Gift / Transfer Note'
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sender =
+                                rsvpName.trim() ||
+                                effectiveMatchedGuest?.guestName ||
+                                resolvedGuestDisplayName;
+                              const channel =
+                                giftConfirmChannel ||
+                                (settings.bankAccounts[0]
+                                  ? `${settings.bankAccounts[0].bankName} (${settings.bankAccounts[0].accountNumber})`
+                                  : 'Amplop Digital');
+                              const notePart = giftConfirmAmountOrNote.trim()
+                                ? ` • Nominal/Catatan: ${giftConfirmAmountOrNote.trim()}`
+                                : '';
+                              emitAnalytics(
+                                'COPY_REKENING',
+                                `✓ KONFIRMASI TRANSAKSI TANDA KASIH via ${channel}${notePart}`,
+                                sender,
+                                effectiveMatchedGuest?.invitationCode
+                              );
+                              setGiftConfirmSubmitted(true);
+                              setIsGiftConfirmOpen(false);
+                              setGiftConfirmAmountOrNote('');
+                            }}
+                            className="shrink-0 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer transition-all"
+                          >
+                            {lang === 'ID' ? 'Simpan' : 'Save'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -7920,21 +8114,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {resolvedGuestDisplayName}
                 </p>
                 <p className="text-[11px] text-[#8B6914] font-semibold">
-                  {effectiveMatchedGuest?.institution ||
-                    (lang === 'ID' ? 'Tamu Kehormatan' : 'Honored Guest')}{' '}
-                  &bull; {effectiveMatchedGuest?.priority || 'VIP'} &bull;{' '}
+                  {hasCustomGuestInstitution
+                    ? `${guestRawInstitution} • ${guestLocationLabel}`
+                    : guestLocationLabel}{' '}
+                  &bull;{' '}
                   {effectiveMatchedGuest?.confirmedPax ||
                     effectiveMatchedGuest?.pax ||
                     rsvpPax ||
                     2}{' '}
                   {lang === 'ID' ? 'Orang' : 'Pax'}
                 </p>
-                {guestCheckInHash && (
-                  <p className="font-mono text-[10px] text-stone-400 truncate">
-                    ID: {effectiveMatchedGuest?.invitationCode || 'INV'} &bull;{' '}
-                    {guestCheckInHash}
-                  </p>
-                )}
               </div>
             ) : (
               <div className="p-3.5 rounded-2xl bg-white border border-[#D4AF37]/45 text-left space-y-2">

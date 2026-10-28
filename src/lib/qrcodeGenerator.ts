@@ -906,6 +906,45 @@ export function renderQRCodeToDataUrl(options: {
           }
         }
       }
+
+      // Draw MEPlanner "M" Ribbon Logo badge in the center of the QR canvas
+      const boxSize = Math.round(size * 0.22);
+      const boxX = Math.round((size - boxSize) / 2);
+      const boxY = Math.round((size - boxSize) / 2);
+      const radius = Math.max(4, Math.round(boxSize * 0.22));
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, boxSize, boxSize, radius);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.5, size * 0.008);
+      ctx.strokeStyle = '#D4AF37';
+      ctx.stroke();
+
+      // Draw stylized M ribbon in violet-blue-coral gradient inside the center badge
+      const mGrad = ctx.createLinearGradient(
+        boxX + boxSize * 0.18,
+        boxY + boxSize * 0.22,
+        boxX + boxSize * 0.82,
+        boxY + boxSize * 0.78
+      );
+      mGrad.addColorStop(0, '#8B5CF6');
+      mGrad.addColorStop(0.5, '#3B82F6');
+      mGrad.addColorStop(1, '#FB7185');
+      ctx.strokeStyle = mGrad;
+      ctx.lineWidth = Math.max(2, boxSize * 0.13);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(boxX + boxSize * 0.24, boxY + boxSize * 0.74);
+      ctx.lineTo(boxX + boxSize * 0.24, boxY + boxSize * 0.28);
+      ctx.lineTo(boxX + boxSize * 0.5, boxY + boxSize * 0.58);
+      ctx.lineTo(boxX + boxSize * 0.76, boxY + boxSize * 0.28);
+      ctx.lineTo(boxX + boxSize * 0.76, boxY + boxSize * 0.74);
+      ctx.stroke();
+      ctx.restore();
+
       return canvas.toDataURL('image/png');
     }
   }

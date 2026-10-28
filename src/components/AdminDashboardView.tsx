@@ -6420,7 +6420,24 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </span>
                   <span className="hidden sm:inline">
                     {' '}
-                    &bull; {state.settings.subtitle}
+                    &bull;{' '}
+                    {(() => {
+                      const primaryEv =
+                        activeTrackerCountdownEvent ||
+                        scheduleEvents.find((e) =>
+                          /pemberkatan|akad|utama/i.test(
+                            `${e.title} ${e.badge || ''}`
+                          )
+                        ) ||
+                        scheduleEvents[0];
+                      const extraCount = Math.max(0, scheduleEvents.length - 1);
+                      if (!primaryEv) {
+                        return state.settings.subtitle;
+                      }
+                      return `${primaryEv.title} • ${primaryEv.dateLabel}${
+                        extraCount > 0 ? ` • +${extraCount} Lainnya` : ''
+                      }`;
+                    })()}
                   </span>
                 </p>
               </div>
@@ -6453,10 +6470,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-stone-200">
                 <div className="text-right leading-tight">
                   <p className="text-xs font-bold text-stone-800 truncate max-w-[15rem] xl:max-w-[21rem]">
-                    {adminUser.nama}
+                    {adminUser.nama.replace(/\s*\(Superadmin\)/gi, '').trim()}
                   </p>
                   <p className={`text-[10px] ${activeManagerTheme.accentPillText} font-semibold truncate max-w-[15rem] xl:max-w-[21rem]`}>
-                    {isPanitia ? 'Panitia (Non-Budgeting)' : adminUser.jabatan}
+                    {isPanitia
+                      ? 'Panitia (Non-Budgeting)'
+                      : adminUser.role === 'SUPERADMIN' ||
+                          /superadmin/i.test(adminUser.jabatan || '')
+                        ? 'Superadmin'
+                        : adminUser.jabatan}
                   </p>
                 </div>
               </div>
