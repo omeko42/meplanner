@@ -2835,6 +2835,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       ? 'Tamu Kehormatan'
       : 'Honored Guest');
 
+  const guestRawInstitution = (
+    effectiveMatchedGuest?.institution ||
+    matchedGuest?.institution ||
+    ''
+  ).trim();
+
+  const hasCustomGuestInstitution =
+    Boolean(guestRawInstitution) &&
+    guestRawInstitution !== '-' &&
+    guestRawInstitution.toLowerCase() !== 'di tempat' &&
+    guestRawInstitution.toLowerCase() !== 'in place';
+
+  const guestLocationLabel = lang === 'ID' ? 'di Tempat' : 'In Place';
+
   const editorialTopHeaderLabel =
     eventType === 'BIRTHDAY'
       ? lang === 'ID'
@@ -4149,12 +4163,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {/* Frosted-Glass Guest Box (Kepada Yth / To) */}
                 <div className="pt-2">
-                  <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
+                  <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
                       {heroGuestDisplayName}
+                    </p>
+                    {hasCustomGuestInstitution && (
+                      <p className="text-[11px] sm:text-xs font-medium italic text-[#FAF3E3]/95 mt-0.5 break-words">
+                        {guestRawInstitution}
+                      </p>
+                    )}
+                    <p className="text-[11px] sm:text-xs font-medium text-white/80 mt-0.5">
+                      {guestLocationLabel}
                     </p>
                   </div>
                 </div>
@@ -4344,19 +4366,14 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   {effectiveMatchedGuest?.guestName || resolvedGuestDisplayName}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-[#9A742B] font-semibold mt-2.5 sm:mt-3 break-words">
-                  {(() => {
-                    const rawInst = (
-                      effectiveMatchedGuest?.institution ||
-                      matchedGuest?.institution ||
-                      ''
-                    ).trim();
-                    return rawInst && rawInst !== '-'
-                      ? rawInst
-                      : lang === 'ID'
-                        ? 'di Tempat'
-                        : 'In Place';
-                  })()}
+                {hasCustomGuestInstitution && (
+                  <p className="text-xs sm:text-sm text-[#9A742B] italic font-semibold mt-2 break-words">
+                    {guestRawInstitution}
+                  </p>
+                )}
+
+                <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-1 break-words">
+                  {guestLocationLabel}
                 </p>
 
                 {coverApology && coverApology !== '-' && (
@@ -4821,12 +4838,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {/* Personalized Kraton Guest Badge */}
                 <div className="mb-4">
-                  <div className="inline-block px-5 py-2 rounded-2xl bg-[#fdf8f0]/90 border border-[#C89D54] shadow-2xs">
+                  <div className="inline-block px-5 py-2.5 rounded-2xl bg-[#fdf8f0]/90 border border-[#C89D54] shadow-2xs">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8b5a2b] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-[#6b4226] mt-0.5">
                       {heroGuestDisplayName}
+                    </p>
+                    {hasCustomGuestInstitution && (
+                      <p className="text-[11px] font-medium italic text-[#8b5a2b] mt-0.5">
+                        {guestRawInstitution}
+                      </p>
+                    )}
+                    <p className="text-[11px] font-medium text-[#8b5a2b]/85 mt-0.5">
+                      {guestLocationLabel}
                     </p>
                   </div>
                 </div>
@@ -4991,11 +5016,19 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <Calendar className="w-3.5 h-3.5 text-[#F3D77D] shrink-0" />
                       <span>{localizedPrimaryDate}</span>
                     </div>
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold">
+                    <div className="inline-flex flex-wrap items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold">
                       <span className="text-[10px] uppercase tracking-wider text-[#FAF3E3]">
                         {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </span>
                       <span>{heroGuestDisplayName}</span>
+                      {hasCustomGuestInstitution && (
+                        <span className="text-[11px] font-medium italic text-[#FAF3E3]/95">
+                          • {guestRawInstitution}
+                        </span>
+                      )}
+                      <span className="text-[11px] font-medium text-white/80">
+                        • {guestLocationLabel}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -5130,12 +5163,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </p>
               )}
               <div className="mb-4">
-                <div className="inline-block px-5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
+                <div className="inline-block px-5 py-2.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
                   <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#8B6914] font-bold">
                     {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                     {heroGuestDisplayName}
+                  </p>
+                  {hasCustomGuestInstitution && (
+                    <p className="text-[11px] font-medium italic text-[#8B6914] mt-0.5">
+                      {guestRawInstitution}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                    {guestLocationLabel}
                   </p>
                 </div>
               </div>
@@ -5266,12 +5307,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   </p>
                 )}
                 <div className="mb-4">
-                  <div className="inline-block px-5 py-2 rounded-2xl bg-white/95 border border-emerald-300/70 shadow-2xs">
+                  <div className="inline-block px-5 py-2.5 rounded-2xl bg-white/95 border border-emerald-300/70 shadow-2xs">
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#8B6914] font-semibold">
                       {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
                       {heroGuestDisplayName}
+                    </p>
+                    {hasCustomGuestInstitution && (
+                      <p className="text-[11px] font-medium italic text-[#8B6914] mt-0.5">
+                        {guestRawInstitution}
+                      </p>
+                    )}
+                    <p className="text-[11px] font-medium text-stone-500 mt-0.5">
+                      {guestLocationLabel}
                     </p>
                   </div>
                 </div>
@@ -5463,12 +5512,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                   {/* Frosted-Glass Guest Box (Kepada Yth / To) */}
                   <div className="pt-2">
-                    <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
+                    <div className="inline-block px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 shadow-lg">
                       <p className="text-[10px] uppercase tracking-[0.22em] text-[#FAF3E3] font-semibold">
                         {lang === 'ID' ? 'Kepada Yth:' : 'To:'}
                       </p>
                       <p className="text-xs sm:text-base font-bold text-white mt-0.5 break-words">
                         {heroGuestDisplayName}
+                      </p>
+                      {hasCustomGuestInstitution && (
+                        <p className="text-[11px] sm:text-xs font-medium italic text-[#FAF3E3]/95 mt-0.5 break-words">
+                          {guestRawInstitution}
+                        </p>
+                      )}
+                      <p className="text-[11px] sm:text-xs font-medium text-white/80 mt-0.5">
+                        {guestLocationLabel}
                       </p>
                     </div>
                   </div>
