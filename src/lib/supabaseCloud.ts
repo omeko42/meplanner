@@ -1571,6 +1571,91 @@ function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   return next;
 }
 
+export async function verifyMediaMagicBytes(
+  blob: Blob,
+  category: 'image' | 'audio' | 'video'
+): Promise<{ valid: boolean; detectedMime?: string; detectedExt?: string }> {
+  try {
+    if (!blob || blob.size < 8) return { valid: false };
+    const headerBuf = await blob.slice(0, 16).arrayBuffer();
+    const b = new Uint8Array(headerBuf);
+    const ascii4 = String.fromCharCode(b[0], b[1], b[2], b[3]);
+    const ascii4to8 = String.fromCharCode(b[4], b[5], b[6], b[7]);
+    const ascii8to12 = String.fromCharCode(b[8], b[9], b[10], b[11]);
+
+    // Block HTML, XML, SVG, PHP, or script payloads disguised as media
+    const headText = String.fromCharCode(...Array.from(b))
+      .trimStart()
+      .toLowerCase();
+    if (
+      headText.startsWith('<?php') ||
+      headText.startsWith('<html') ||
+      headText.startsWith('<!doc') ||
+      headText.startsWith('<scri') ||
+      headText.startsWith('<svg')
+    ) {
+      return { valid: false };
+    }
+
+    if (category === 'image') {
+      if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) {
+        return { valid: true, detectedMime: 'image/jpeg', detectedExt: 'jpg' };
+      }
+      if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) {
+        return { valid: true, detectedMime: 'image/png', detectedExt: 'png' };
+      }
+      if (ascii4 === 'RIFF' && ascii8to12 === 'WEBP') {
+        return { valid: true, detectedMime: 'image/webp', detectedExt: 'webp' };
+      }
+      if (ascii4 === 'GIF8') {
+        return { valid: true, detectedMime: 'image/gif', detectedExt: 'gif' };
+      }
+      if (ascii4to8 === 'ftyp') {
+        return { valid: true, detectedMime: 'image/avif', detectedExt: 'avif' };
+      }
+      return { valid: false };
+    }
+
+    if (category === 'audio') {
+      if (
+        (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) ||
+        (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)
+      ) {
+        return { valid: true, detectedMime: 'audio/mpeg', detectedExt: 'mp3' };
+      }
+      if (ascii4 === 'RIFF' && ascii8to12 === 'WAVE') {
+        return { valid: true, detectedMime: 'audio/wav', detectedExt: 'wav' };
+      }
+      if (ascii4 === 'OggS') {
+        return { valid: true, detectedMime: 'audio/ogg', detectedExt: 'ogg' };
+      }
+      if (ascii4to8 === 'ftyp') {
+        return { valid: true, detectedMime: 'audio/mp4', detectedExt: 'm4a' };
+      }
+      return { valid: false };
+    }
+
+    if (category === 'video') {
+      if (
+        ascii4to8 === 'ftyp' ||
+        ascii4to8 === 'moov' ||
+        ascii4to8 === 'mdat' ||
+        ascii4to8 === 'wide'
+      ) {
+        return { valid: true, detectedMime: 'video/mp4', detectedExt: 'mp4' };
+      }
+      if (b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) {
+        return { valid: true, detectedMime: 'video/webm', detectedExt: 'webm' };
+      }
+      return { valid: false };
+    }
+
+    return { valid: false };
+  } catch {
+    return { valid: false };
+  }
+}
+
 export async function uploadAudioToSupabaseStorage(
   fileOrDataUrl: File | string,
   trackId: string
@@ -1616,6 +1701,13 @@ export async function uploadAudioToSupabaseStorage(
       else if (ext === 'aac') contentType = 'audio/aac';
       else contentType = 'audio/mpeg';
     }
+
+    const magicCheck = await verifyMediaMagicBytes(bodyBlob, 'audio');
+    if (!magicCheck.valid) {
+      return null;
+    }
+    if (magicCheck.detectedMime) contentType = magicCheck.detectedMime;
+    if (magicCheck.detectedExt) ext = magicCheck.detectedExt;
 
     const safeId = trackId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const objectPath = `music/${safeId}.${ext}`;
@@ -1812,8 +1904,7 @@ export async function uploadImageToSupabaseStorage(
         const mimeMatch = sourceDataUrl.match(/^data:([^;,]+)[;,]/i);
         if (mimeMatch && mimeMatch[1]) {
           contentType = mimeMatch[1];
-          if (contentType.includes('svg')) ext = 'svg';
-          else if (contentType.includes('png')) ext = 'png';
+          if (contentType.includes('png')) ext = 'png';
           else if (contentType.includes('jpeg') || contentType.includes('jpg'))
             ext = 'jpg';
           else if (contentType.includes('webp')) ext = 'webp';
@@ -1834,12 +1925,18 @@ export async function uploadImageToSupabaseStorage(
       } else {
         bodyBlob = fileOrDataUrl;
         contentType = fileOrDataUrl.type || 'image/webp';
-        if (contentType.includes('svg')) ext = 'svg';
-        else if (contentType.includes('png')) ext = 'png';
+        if (contentType.includes('png')) ext = 'png';
         else if (contentType.includes('jpeg') || contentType.includes('jpg'))
           ext = 'jpg';
       }
     }
+
+    const magicCheck = await verifyMediaMagicBytes(bodyBlob, 'image');
+    if (!magicCheck.valid) {
+      return null;
+    }
+    if (magicCheck.detectedMime) contentType = magicCheck.detectedMime;
+    if (magicCheck.detectedExt) ext = magicCheck.detectedExt;
 
     const safeSlot = slotKey.replace(/[^a-zA-Z0-9_-]/g, '_');
     const shortHash = cacheSig
@@ -1888,21 +1985,16 @@ export async function uploadVideoToSupabaseStorage(
     };
   }
   try {
-    let ext = 'mp4';
-    const nameExt = file.name.split('.').pop()?.toLowerCase() || '';
-    if (['mp4', 'webm', 'mov', 'm4v'].includes(nameExt)) {
-      ext = nameExt === 'm4v' ? 'mp4' : nameExt;
-    } else if (file.type.includes('webm')) {
-      ext = 'webm';
-    } else if (file.type.includes('quicktime')) {
-      ext = 'mov';
+    const magicCheck = await verifyMediaMagicBytes(file, 'video');
+    if (!magicCheck.valid) {
+      return {
+        url: null,
+        error:
+          'Format biner file tidak valid (Security MIME Check gagal). Pastikan mengunggah file video asli (.mp4 / .webm / .mov).',
+      };
     }
-    const contentType =
-      file.type && file.type.startsWith('video/')
-        ? file.type
-        : ext === 'webm'
-          ? 'video/webm'
-          : 'video/mp4';
+    const ext = magicCheck.detectedExt || 'mp4';
+    const contentType = magicCheck.detectedMime || 'video/mp4';
 
     const safeSlot = slotKey.replace(/[^a-zA-Z0-9_-]/g, '_');
     const stamp = `${file.size.toString(36)}_${Date.now().toString(36)}`;

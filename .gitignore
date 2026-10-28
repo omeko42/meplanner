@@ -70,3 +70,4 @@ Desktop.ini
 .idea/
 .vscode/*
 !.vscode/settings.json
+.agents/
