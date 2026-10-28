@@ -13918,6 +13918,80 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                                 )}
                                             </div>
 
+                                            {/* 5. Buku Catatan Pengirim Amplop Digital & Kado (Real-Time) */}
+                                            {(() => {
+                                              const giftRecords = (
+                                                state.settings.invitationAnalytics
+                                                  ?.recentEvents || []
+                                              ).filter(
+                                                (ev) =>
+                                                  ev.type === 'CLICK_GIFT_COPY' ||
+                                                  ev.type === 'CLICK_QRIS'
+                                              );
+                                              return (
+                                                <div className="p-3 rounded-xl bg-emerald-50/40 border border-emerald-200/80 space-y-2.5">
+                                                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                    <div>
+                                                      <p className="font-bold text-stone-900 text-xs">
+                                                        5. 💳 Buku Catatan Pengirim Amplop Digital &amp; Kado
+                                                      </p>
+                                                      <p className="text-[11px] text-stone-500">
+                                                        Rekap otomatis tamu yang melanjutkan transaksi rekening, QRIS, atau pengiriman kado beserta nominalnya.
+                                                      </p>
+                                                    </div>
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-white border border-emerald-300 text-emerald-800 font-extrabold text-[10px]">
+                                                      {giftRecords.length} Transaksi Tercatat
+                                                    </span>
+                                                  </div>
+
+                                                  {giftRecords.length === 0 ? (
+                                                    <p className="text-xs text-stone-500 italic bg-white p-3 rounded-lg border border-stone-200">
+                                                      Belum ada pencatatan pengiriman amplop digital atau kado dari tamu.
+                                                    </p>
+                                                  ) : (
+                                                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                                      {giftRecords.map((rec) => (
+                                                        <div
+                                                          key={rec.id}
+                                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-white border border-stone-200 text-xs"
+                                                        >
+                                                          <div className="min-w-0">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                              <span
+                                                                className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${
+                                                                  rec.type === 'CLICK_QRIS'
+                                                                    ? 'bg-purple-50 text-purple-800 border-purple-200'
+                                                                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                                }`}
+                                                              >
+                                                                {rec.type === 'CLICK_QRIS'
+                                                                  ? '📱 QRIS'
+                                                                  : '💳 TRANSFER / KADO'}
+                                                              </span>
+                                                              <span className="font-extrabold text-stone-900">
+                                                                {rec.guestName || 'Tamu Kehormatan'}
+                                                              </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-stone-600 mt-0.5 break-words">
+                                                              {rec.detail}
+                                                            </p>
+                                                          </div>
+                                                          <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                                                            {new Date(rec.timestamp).toLocaleString('id-ID', {
+                                                              day: '2-digit',
+                                                              month: 'short',
+                                                              hour: '2-digit',
+                                                              minute: '2-digit',
+                                                            })}
+                                                          </span>
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+
                                             <div className="flex justify-end">
                                               <button
                                                 type="submit"

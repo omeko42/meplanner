@@ -2751,11 +2751,23 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
 
-  // Digital Envelope / Gift Transaction Confirmation State
-  const [isGiftConfirmOpen, setIsGiftConfirmOpen] = useState(false);
-  const [giftConfirmChannel, setGiftConfirmChannel] = useState<string>('');
-  const [giftConfirmAmountOrNote, setGiftConfirmAmountOrNote] = useState<string>('');
-  const [giftConfirmSubmitted, setGiftConfirmSubmitted] = useState(false);
+  // Interactive 2-Step Digital Envelope / Gift Proceed Modal State
+  const [activeGiftProceedModal, setActiveGiftProceedModal] = useState<{
+    kind: 'ACCOUNT' | 'QRIS' | 'PHYSICAL_GIFT';
+    accountId: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolder?: string;
+    branchOrNote?: string;
+    accType?: 'BANK' | 'EWALLET' | 'CRYPTO' | 'PAYPAL' | 'QRIS';
+    cryptoNetwork?: string;
+    paypalDirectUrl?: string;
+  } | null>(null);
+  const [giftProceedStep, setGiftProceedStep] = useState<'FORM' | 'PROCEED'>('FORM');
+  const [giftSenderInput, setGiftSenderInput] = useState<string>('');
+  const [giftNominalInput, setGiftNominalInput] = useState<string>('');
+  const [giftNoteInput, setGiftNoteInput] = useState<string>('');
+  const [giftFormError, setGiftFormError] = useState<string>('');
 
   const guestCheckInHash = useMemo(() => {
     if (effectiveMatchedGuest) {
@@ -3790,8 +3802,111 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const handleCopyAccount = (id: string, numberStr: string) => {
     navigator.clipboard.writeText(numberStr);
     setCopiedAccountId(id);
-    emitAnalytics('CLICK_GIFT_COPY', `Menyalin nomor rekening amplop digital (${numberStr})`);
     setTimeout(() => setCopiedAccountId(null), 2500);
+  };
+
+  const hasPersonalGuestHash = Boolean(
+    effectiveMatchedGuest || (guestParamName && guestParamName.trim() !== '')
+  );
+
+  const handleOpenGiftProceedModal = (target: {
+    kind: 'ACCOUNT' | 'QRIS' | 'PHYSICAL_GIFT';
+    accountId: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolder?: string;
+    branchOrNote?: string;
+    accType?: 'BANK' | 'EWALLET' | 'CRYPTO' | 'PAYPAL' | 'QRIS';
+    cryptoNetwork?: string;
+    paypalDirectUrl?: string;
+  }) => {
+    const prefilledName =
+      effectiveMatchedGuest?.guestName ||
+      (guestParamName ? guestParamName.trim() : rsvpName.trim());
+    setGiftSenderInput(prefilledName);
+    setGiftNominalInput('');
+    setGiftNoteInput('');
+    setGiftFormError('');
+    setGiftProceedStep('FORM');
+    setActiveGiftProceedModal(target);
+  };
+
+  const handleConfirmAndProceedGift = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeGiftProceedModal) return;
+
+    const finalSender = hasPersonalGuestHash
+      ? effectiveMatchedGuest?.guestName ||
+        (guestParamName ? guestParamName.trim() : resolvedGuestDisplayName)
+      : giftSenderInput.trim();
+
+    if (!finalSender) {
+      setGiftFormError(
+        lang === 'ID'
+          ? 'Mohon isi nama lengkap pengirim terlebih dahulu.'
+          : 'Please enter the sender full name first.'
+      );
+      return;
+    }
+
+    const cleanNominal = giftNominalInput.trim();
+    if (!cleanNominal) {
+      setGiftFormError(
+        activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+          ? lang === 'ID'
+            ? 'Mohon isi nama bingkisan atau estimasi kado.'
+            : 'Please enter the gift description.'
+          : lang === 'ID'
+            ? 'Mohon isi atau pilih nominal tanda kasih terlebih dahulu.'
+            : 'Please enter or select the gift amount first.'
+      );
+      return;
+    }
+
+    setGiftFormError('');
+    if (!rsvpName.trim() && finalSender) {
+      setRsvpName(finalSender);
+    }
+
+    const extraNote = giftNoteInput.trim() ? ` (${giftNoteInput.trim()})` : '';
+    if (activeGiftProceedModal.kind === 'QRIS') {
+      emitAnalytics(
+        'CLICK_QRIS',
+        `✓ TRANSAKSI QRIS • Nominal: ${cleanNominal}${extraNote} • Penerima: ${
+          activeGiftProceedModal.accountHolder || displayTitleShort
+        }`,
+        finalSender,
+        effectiveMatchedGuest?.invitationCode
+      );
+    } else if (activeGiftProceedModal.kind === 'PHYSICAL_GIFT') {
+      navigator.clipboard.writeText(
+        `${
+          activeGiftProceedModal.accountHolder
+            ? `${activeGiftProceedModal.accountHolder} — `
+            : ''
+        }${activeGiftProceedModal.accountNumber}`
+      );
+      setCopiedAccountId(activeGiftProceedModal.accountId);
+      setTimeout(() => setCopiedAccountId(null), 3500);
+      emitAnalytics(
+        'CLICK_GIFT_COPY',
+        `✓ KIRIM KADO FISIK • Bingkisan: ${cleanNominal}${extraNote}`,
+        finalSender,
+        effectiveMatchedGuest?.invitationCode
+      );
+    } else {
+      navigator.clipboard.writeText(activeGiftProceedModal.accountNumber);
+      setCopiedAccountId(activeGiftProceedModal.accountId);
+      setTimeout(() => setCopiedAccountId(null), 3500);
+      emitAnalytics(
+        'CLICK_GIFT_COPY',
+        `✓ TRANSAKSI ${activeGiftProceedModal.bankName} (${activeGiftProceedModal.accountNumber}) • Nominal: ${cleanNominal}${extraNote}`,
+        finalSender,
+        effectiveMatchedGuest?.invitationCode
+      );
+    }
+
+    setGiftProceedStep('PROCEED');
   };
 
   const handleRsvpFormSubmit = async (e: React.FormEvent) => {
@@ -7487,8 +7602,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <div className="mt-4 space-y-2 relative z-10">
                         <button
                           type="button"
-                          onClick={() => handleCopyAccount(acc.id, acc.accountNumber)}
-                          className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          onClick={() =>
+                            handleOpenGiftProceedModal({
+                              kind: 'ACCOUNT',
+                              accountId: acc.id,
+                              bankName: acc.bankName || (isPaypal ? 'PayPal' : 'Bank'),
+                              accountNumber: acc.accountNumber,
+                              accountHolder: acc.accountHolder,
+                              branchOrNote: acc.branchOrNote,
+                              accType: acc.type || 'BANK',
+                              cryptoNetwork: acc.cryptoNetwork,
+                              paypalDirectUrl,
+                            })
+                          }
+                          className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                             isCopied
                               ? 'bg-emerald-600 text-white'
                               : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
@@ -7560,14 +7687,21 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   <div className="flex justify-center">
                     <button
                       type="button"
-                      onClick={() => {
-                        emitAnalytics(
-                          'CLICK_QRIS',
-                          'Membuka tampilan Barcode QRIS Amplop Digital'
-                        );
-                        setShowQrisModal(true);
-                      }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all"
+                      onClick={() =>
+                        handleOpenGiftProceedModal({
+                          kind: 'QRIS',
+                          accountId: 'qris-digital-envelope',
+                          bankName: 'QRIS Amplop Digital',
+                          accountNumber: 'QRIS',
+                          accountHolder:
+                            settings.giftRecipientName &&
+                            settings.giftRecipientName !== 'Mempelai'
+                              ? settings.giftRecipientName
+                              : displayTitleFull,
+                          accType: 'QRIS',
+                        })
+                      }
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/45 text-[#8B6914] text-xs font-bold transition-all cursor-pointer"
                     >
                       <QrCode className="w-4 h-4 shrink-0" />
                       <span>
@@ -7615,16 +7749,20 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       <button
                         type="button"
                         onClick={() =>
-                          handleCopyAccount(
-                            'physical-gift-address',
-                            `${
-                              settings.giftRecipientName
-                                ? `${settings.giftRecipientName} — `
-                                : ''
-                            }${settings.giftShippingAddress}`
-                          )
+                          handleOpenGiftProceedModal({
+                            kind: 'PHYSICAL_GIFT',
+                            accountId: 'physical-gift-address',
+                            bankName:
+                              lang === 'ID'
+                                ? 'Kirim Kado / Bingkisan Fisik'
+                                : 'Physical Wedding Gift',
+                            accountNumber: settings.giftShippingAddress || '',
+                            accountHolder:
+                              settings.giftRecipientName || displayTitleFull,
+                            branchOrNote: settings.giftShippingNote || '',
+                          })
                         }
-                        className={`w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
+                        className={`w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           copiedAccountId === 'physical-gift-address'
                             ? 'bg-emerald-600 text-white'
                             : 'bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40'
@@ -7650,160 +7788,6 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                       </button>
                     </div>
                   )}
-
-                {/* 1-Click Digital Envelope / Gift Transaction Confirmation Recorder */}
-                <div
-                  className={`${giftUnifiedWidthClass} rounded-2xl bg-white/95 border border-[#D4AF37]/45 p-4 sm:p-5 text-left space-y-3 shadow-xs`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>
-                          {lang === 'ID'
-                            ? 'PENCATATAN TRANSAKSI AMPLOP DIGITAL & KADO'
-                            : 'DIGITAL GIFT & TRANSFER CONFIRMATION'}
-                        </span>
-                      </span>
-                      <p className="text-xs font-bold text-stone-800">
-                        {lang === 'ID'
-                          ? 'Sudah melakukan transfer atau mengirim bingkisan? Catat konfirmasi Anda agar langsung diterima mempelai.'
-                          : 'Have you completed a transfer or sent a gift? Record your confirmation here for the couple.'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!giftConfirmChannel && settings.bankAccounts[0]) {
-                          setGiftConfirmChannel(
-                            `${settings.bankAccounts[0].bankName} (${settings.bankAccounts[0].accountNumber})`
-                          );
-                        }
-                        setIsGiftConfirmOpen((prev) => !prev);
-                      }}
-                      className="w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5 shrink-0" />
-                      <span>
-                        {isGiftConfirmOpen
-                          ? lang === 'ID'
-                            ? 'Tutup Form'
-                            : 'Close Form'
-                          : lang === 'ID'
-                            ? 'Konfirmasi Tanda Kasih'
-                            : 'Confirm Gift / Transfer'}
-                      </span>
-                    </button>
-                  </div>
-
-                  {giftConfirmSubmitted && (
-                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>
-                        {lang === 'ID'
-                          ? 'Terima kasih! Konfirmasi pengiriman Tanda Kasih Anda telah tercatat otomatis di Dasbor Mempelai.'
-                          : 'Thank you! Your gift confirmation has been recorded in the couple dashboard.'}
-                      </span>
-                    </div>
-                  )}
-
-                  {isGiftConfirmOpen && (
-                    <div className="pt-2 border-t border-stone-200/80 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-                      <div className="sm:col-span-4">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                          {lang === 'ID' ? 'Nama Pengirim' : 'Sender Name'}
-                        </label>
-                        <input
-                          type="text"
-                          value={rsvpName || (effectiveMatchedGuest ? effectiveMatchedGuest.guestName : '')}
-                          onChange={(e) => setRsvpName(e.target.value)}
-                          placeholder={lang === 'ID' ? 'Nama lengkap Anda' : 'Your full name'}
-                          className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
-                        />
-                      </div>
-                      <div className="sm:col-span-4">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                          {lang === 'ID' ? 'Saluran Tujuan' : 'Channel / Account'}
-                        </label>
-                        <select
-                          value={giftConfirmChannel}
-                          onChange={(e) => setGiftConfirmChannel(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
-                        >
-                          {settings.bankAccounts.map((acc) => (
-                            <option
-                              key={acc.id}
-                              value={`${acc.bankName} (${acc.accountNumber})`}
-                            >
-                              {acc.bankName} — {acc.accountNumber}
-                            </option>
-                          ))}
-                          {settings.showQrisButton !== false && (
-                            <option value="QRIS Amplop Digital">
-                              QRIS Amplop Digital
-                            </option>
-                          )}
-                          {settings.showPhysicalGiftAddress !== false && (
-                            <option value="Kirim Kado / Bingkisan Fisik">
-                              {lang === 'ID'
-                                ? 'Kirim Kado / Bingkisan Fisik'
-                                : 'Physical Gift Delivery'}
-                            </option>
-                          )}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-4">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                          {lang === 'ID'
-                            ? 'Nominal / Catatan (Opsional)'
-                            : 'Amount / Note (Optional)'}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={giftConfirmAmountOrNote}
-                            onChange={(e) => setGiftConfirmAmountOrNote(e.target.value)}
-                            placeholder={
-                              lang === 'ID'
-                                ? 'Misal: Rp 500.000 / Kado Rumah'
-                                : 'e.g. Gift / Transfer Note'
-                            }
-                            className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const sender =
-                                rsvpName.trim() ||
-                                effectiveMatchedGuest?.guestName ||
-                                resolvedGuestDisplayName;
-                              const channel =
-                                giftConfirmChannel ||
-                                (settings.bankAccounts[0]
-                                  ? `${settings.bankAccounts[0].bankName} (${settings.bankAccounts[0].accountNumber})`
-                                  : 'Amplop Digital');
-                              const notePart = giftConfirmAmountOrNote.trim()
-                                ? ` • Nominal/Catatan: ${giftConfirmAmountOrNote.trim()}`
-                                : '';
-                              emitAnalytics(
-                                'CLICK_GIFT_COPY',
-                                `✓ KONFIRMASI TRANSAKSI TANDA KASIH via ${channel}${notePart}`,
-                                sender,
-                                effectiveMatchedGuest?.invitationCode
-                              );
-                              setGiftConfirmSubmitted(true);
-                              setIsGiftConfirmOpen(false);
-                              setGiftConfirmAmountOrNote('');
-                            }}
-                            className="shrink-0 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer transition-all"
-                          >
-                            {lang === 'ID' ? 'Simpan' : 'Save'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
             )}
                 </>
@@ -8224,6 +8208,400 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 <span>{lang === 'ID' ? 'Unduh QR (PNG)' : 'Download QR'}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* INTERACTIVE 2-STEP GIFT / DIGITAL ENVELOPE PROCEED MODAL */}
+      {activeGiftProceedModal && (
+        <div
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setActiveGiftProceedModal(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 text-left text-stone-900 relative shadow-2xl border border-[#D4AF37]/50 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveGiftProceedModal(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1 pr-8">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+                  {activeGiftProceedModal.kind === 'QRIS'
+                    ? '📱 QRIS AMPLOP DIGITAL'
+                    : activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                      ? lang === 'ID'
+                        ? '🎁 KIRIM KADO FISIK'
+                        : '🎁 PHYSICAL GIFT'
+                      : activeGiftProceedModal.accType === 'CRYPTO'
+                        ? '🪙 CRYPTO WALLET'
+                        : activeGiftProceedModal.accType === 'PAYPAL'
+                          ? '🌐 PAYPAL'
+                          : activeGiftProceedModal.accType === 'EWALLET'
+                            ? '📱 E-WALLET'
+                            : lang === 'ID'
+                              ? '🏦 TRANSFER BANK'
+                              : '🏦 BANK TRANSFER'}
+                </span>
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                  {giftProceedStep === 'FORM'
+                    ? lang === 'ID'
+                      ? 'Langkah 1/2 • Data Nominal'
+                      : 'Step 1/2 • Enter Amount'
+                    : lang === 'ID'
+                      ? 'Langkah 2/2 • Selesaikan Transaksi'
+                      : 'Step 2/2 • Complete Payment'}
+                </span>
+              </div>
+              <h3 className="font-editorial text-lg font-extrabold text-stone-900">
+                {activeGiftProceedModal.bankName}
+              </h3>
+              {activeGiftProceedModal.accountHolder && (
+                <p className="text-xs font-semibold text-stone-600">
+                  {lang === 'ID' ? 'Penerima:' : 'Recipient:'}{' '}
+                  <span className="font-bold text-stone-800">
+                    {activeGiftProceedModal.accountHolder}
+                  </span>
+                </p>
+              )}
+            </div>
+
+            {giftProceedStep === 'FORM' ? (
+              <form onSubmit={handleConfirmAndProceedGift} className="space-y-3.5">
+                {/* Sender Identification from Personal Hash vs General Input */}
+                {hasPersonalGuestHash ? (
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-[#FAF3E3]/90 to-[#FFFDF9] border border-[#D4AF37]/45 space-y-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Pengirim Terdeteksi dari Undangan Anda'
+                            : 'Sender Identified from Your Invitation'}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="font-serif text-sm sm:text-base font-extrabold text-stone-900">
+                      {effectiveMatchedGuest?.guestName || guestParamName}
+                    </p>
+                    {hasCustomGuestInstitution && (
+                      <p className="text-[11px] text-stone-600 italic">
+                        {guestRawInstitution}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                      {lang === 'ID'
+                        ? 'Nama Lengkap Pengirim *'
+                        : 'Sender Full Name *'}
+                    </label>
+                    <input
+                      type="text"
+                      value={giftSenderInput}
+                      onChange={(e) => {
+                        setGiftSenderInput(e.target.value);
+                        if (giftFormError) setGiftFormError('');
+                      }}
+                      placeholder={
+                        lang === 'ID'
+                          ? 'Ketik nama lengkap Anda...'
+                          : 'Enter your full name...'
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
+                    />
+                  </div>
+                )}
+
+                {/* Nominal / Gift Description Input + Quick Presets */}
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                    {activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                      ? lang === 'ID'
+                        ? 'Nama Barang / Bingkisan Kado *'
+                        : 'Gift Item Description *'
+                      : lang === 'ID'
+                        ? 'Nominal Tanda Kasih *'
+                        : 'Gift Amount *'}
+                  </label>
+                  <input
+                    type="text"
+                    value={giftNominalInput}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (
+                        activeGiftProceedModal.kind !== 'PHYSICAL_GIFT' &&
+                        activeGiftProceedModal.accType !== 'CRYPTO' &&
+                        activeGiftProceedModal.accType !== 'PAYPAL' &&
+                        /^(?:rp\s*)?[\d.,]+$/i.test(raw.trim())
+                      ) {
+                        const digits = raw.replace(/\D/g, '');
+                        setGiftNominalInput(
+                          digits
+                            ? `Rp ${Number(digits).toLocaleString('id-ID')}`
+                            : ''
+                        );
+                      } else {
+                        setGiftNominalInput(raw);
+                      }
+                      if (giftFormError) setGiftFormError('');
+                    }}
+                    placeholder={
+                      activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                        ? lang === 'ID'
+                          ? 'Contoh: Air Fryer / Perlengkapan Rumah'
+                          : 'e.g. Home Appliance / Wedding Gift'
+                        : activeGiftProceedModal.accType === 'CRYPTO'
+                          ? 'Contoh: 50 USDT'
+                          : activeGiftProceedModal.accType === 'PAYPAL'
+                            ? 'Contoh: $50 USD'
+                            : 'Contoh: Rp 500.000'
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-[#FAF8F5] text-sm font-extrabold text-stone-900 focus:outline-none focus:border-[#D4AF37]"
+                  />
+
+                  {activeGiftProceedModal.kind !== 'PHYSICAL_GIFT' && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {(activeGiftProceedModal.accType === 'CRYPTO'
+                        ? ['25 USDT', '50 USDT', '100 USDT', '250 USDT']
+                        : activeGiftProceedModal.accType === 'PAYPAL'
+                          ? ['$25 USD', '$50 USD', '$100 USD', '$250 USD']
+                          : [
+                              'Rp 100.000',
+                              'Rp 250.000',
+                              'Rp 500.000',
+                              'Rp 1.000.000',
+                              'Rp 2.000.000',
+                            ]
+                      ).map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setGiftNominalInput(preset);
+                            if (giftFormError) setGiftFormError('');
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                            giftNominalInput === preset
+                              ? 'bg-[#8B6914] text-white border-[#8B6914]'
+                              : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Optional Short Note */}
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-600 mb-1">
+                    {lang === 'ID'
+                      ? 'Catatan / Pesan Singkat (Opsional)'
+                      : 'Short Note (Optional)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={giftNoteInput}
+                    onChange={(e) => setGiftNoteInput(e.target.value)}
+                    placeholder={
+                      lang === 'ID'
+                        ? 'Contoh: Semoga bahagia selalu / Nomor resi...'
+                        : 'e.g. Best wishes for the couple...'
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] text-xs text-stone-800 focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                {giftFormError && (
+                  <p className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+                    {giftFormError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <span>
+                    {activeGiftProceedModal.kind === 'QRIS'
+                      ? lang === 'ID'
+                        ? 'Lanjutkan & Tampilkan Barcode QRIS →'
+                        : 'Proceed & Show QRIS Barcode →'
+                      : activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                        ? lang === 'ID'
+                          ? 'Lanjutkan & Salin Alamat Kado →'
+                          : 'Proceed & Copy Gift Address →'
+                        : lang === 'ID'
+                          ? 'Lanjutkan & Salin Nomor Rekening →'
+                          : 'Proceed & Copy Account Number →'}
+                  </span>
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-extrabold text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      {lang === 'ID'
+                        ? 'Data Pengirim & Nominal Tercatat!'
+                        : 'Sender & Amount Recorded!'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700">
+                    <span className="font-bold">
+                      {hasPersonalGuestHash
+                        ? effectiveMatchedGuest?.guestName || guestParamName
+                        : giftSenderInput}
+                    </span>{' '}
+                    &bull;{' '}
+                    <span className="font-extrabold">{giftNominalInput}</span>
+                  </p>
+                </div>
+
+                {activeGiftProceedModal.kind === 'QRIS' ? (
+                  <div className="text-center space-y-3">
+                    {settings.qrisImageUrl &&
+                    settings.qrisImageUrl.trim() !== '' ? (
+                      <div className="w-60 h-60 sm:w-64 sm:h-64 mx-auto rounded-2xl border-2 border-[#D4AF37]/60 bg-white flex flex-col items-center justify-center p-2.5 shadow-inner overflow-hidden">
+                        <img
+                          src={settings.qrisImageUrl}
+                          alt="Barcode QRIS Wedding Gift"
+                          className="w-full h-full object-contain rounded-xl"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-56 h-56 mx-auto rounded-2xl border-2 border-dashed border-[#D4AF37] bg-white flex flex-col items-center justify-center p-4">
+                        <QrCodeCanvas
+                          text={`QRIS:${displayTitleFull}:${settings.bankAccounts?.[0]?.accountNumber || 'MEPLANNER'}`}
+                          size={168}
+                          colorDark="#1c1917"
+                          colorLight="#ffffff"
+                          correctLevel="M"
+                          centerBadgeText="QRIS"
+                        />
+                        <span className="text-[10px] font-mono text-stone-500 mt-2">
+                          {lang === 'ID'
+                            ? 'PINDAI QRIS BANK / DOMPET DIGITAL'
+                            : 'SCAN QRIS BANK / E-WALLET'}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      {settings.qrisImageUrl &&
+                        settings.qrisImageUrl.trim() !== '' && (
+                          <a
+                            href={settings.qrisImageUrl}
+                            download="QRIS-Wedding-Gift.webp"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2.5 px-4 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] border border-[#D4AF37]/50 text-[#8B6914] font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>
+                              {lang === 'ID'
+                                ? 'Simpan Gambar QRIS'
+                                : 'Save QRIS Image'}
+                            </span>
+                          </a>
+                        )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveGiftProceedModal(null)}
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs cursor-pointer"
+                      >
+                        {lang === 'ID' ? 'Selesai' : 'Done'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF3E3] to-[#F3E5C8] border border-[#D4AF37]/55 space-y-1.5">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B6914]">
+                        {activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                          ? lang === 'ID'
+                            ? 'Alamat Pengiriman Kado (Tersalin Otomatis)'
+                            : 'Gift Shipping Address (Auto-Copied)'
+                          : lang === 'ID'
+                            ? 'Nomor Rekening / Tujuan (Tersalin Otomatis)'
+                            : 'Account / Wallet Number (Auto-Copied)'}
+                      </p>
+                      <p className="font-mono text-base sm:text-lg font-extrabold text-stone-900 break-all">
+                        {activeGiftProceedModal.accountNumber}
+                      </p>
+                      {activeGiftProceedModal.accountHolder && (
+                        <p className="text-xs font-bold text-stone-700">
+                          a.n. {activeGiftProceedModal.accountHolder}
+                        </p>
+                      )}
+                      <p className="text-xs font-extrabold text-[#8B6914] pt-1 border-t border-[#D4AF37]/30">
+                        {activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                          ? `${lang === 'ID' ? 'Bingkisan:' : 'Gift:'} ${giftNominalInput}`
+                          : `${lang === 'ID' ? 'Nominal Transfer:' : 'Transfer Amount:'} ${giftNominalInput}`}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopyAccount(
+                            activeGiftProceedModal.accountId,
+                            activeGiftProceedModal.accountNumber
+                          )
+                        }
+                        className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <Check className="w-4 h-4 shrink-0" />
+                        <span>
+                          {activeGiftProceedModal.kind === 'PHYSICAL_GIFT'
+                            ? lang === 'ID'
+                              ? '✓ Alamat Kado Tersalin (Salin Ulang)'
+                              : '✓ Address Copied (Copy Again)'
+                            : lang === 'ID'
+                              ? '✓ Nomor Rekening Tersalin (Salin Ulang)'
+                              : '✓ Account Copied (Copy Again)'}
+                        </span>
+                      </button>
+
+                      {activeGiftProceedModal.paypalDirectUrl && (
+                        <a
+                          href={activeGiftProceedModal.paypalDirectUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2.5 px-4 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <span>
+                            {lang === 'ID'
+                              ? 'Lanjut Buka PayPal.Me'
+                              : 'Continue to PayPal.Me'}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveGiftProceedModal(null)}
+                        className="w-full py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs cursor-pointer"
+                      >
+                        {lang === 'ID' ? 'Selesai & Tutup' : 'Done & Close'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

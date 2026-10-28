@@ -327,11 +327,22 @@ function normalizeParsedState(
   if (
     mergedSettings.invitationAnalytics &&
     Array.isArray(mergedSettings.invitationAnalytics.recentEvents) &&
-    mergedSettings.invitationAnalytics.recentEvents.length > 12
+    mergedSettings.invitationAnalytics.recentEvents.length > 15
   ) {
+    const rawEvents = mergedSettings.invitationAnalytics.recentEvents;
+    const giftEvents = rawEvents
+      .filter((e) => e.type === 'CLICK_GIFT_COPY' || e.type === 'CLICK_QRIS')
+      .slice(0, 50);
+    const otherEvents = rawEvents
+      .filter((e) => e.type !== 'CLICK_GIFT_COPY' && e.type !== 'CLICK_QRIS')
+      .slice(0, 12);
     mergedSettings.invitationAnalytics = {
       ...mergedSettings.invitationAnalytics,
-      recentEvents: mergedSettings.invitationAnalytics.recentEvents.slice(0, 12),
+      recentEvents: [...giftEvents, ...otherEvents].sort(
+        (a, b) =>
+          new Date(b.timestamp || 0).getTime() -
+          new Date(a.timestamp || 0).getTime()
+      ),
     };
   }
 
@@ -2556,6 +2567,19 @@ export function appendInvitationAnalyticsEvent(
     timestamp: nowIso,
   };
 
+  const combinedEvents = [newEvent, ...(base.recentEvents || [])];
+  const giftEvents = combinedEvents
+    .filter((e) => e.type === 'CLICK_GIFT_COPY' || e.type === 'CLICK_QRIS')
+    .slice(0, 50);
+  const nonGiftEvents = combinedEvents
+    .filter((e) => e.type !== 'CLICK_GIFT_COPY' && e.type !== 'CLICK_QRIS')
+    .slice(0, 12);
+  const preservedRecentEvents = [...giftEvents, ...nonGiftEvents].sort(
+    (a, b) =>
+      new Date(b.timestamp || 0).getTime() -
+      new Date(a.timestamp || 0).getTime()
+  );
+
   return {
     totalShares,
     waShares,
@@ -2569,7 +2593,7 @@ export function appendInvitationAnalyticsEvent(
     qrisClicks,
     rsvpSubmits,
     visitedGuestKeys: nextVisitedKeys.slice(-100),
-    recentEvents: [newEvent, ...(base.recentEvents || [])].slice(0, 12),
+    recentEvents: preservedRecentEvents,
     lastUpdatedAt: nowIso,
   };
 }
