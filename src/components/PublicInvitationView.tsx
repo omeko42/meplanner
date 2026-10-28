@@ -6000,10 +6000,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           <div
             className={`grid grid-cols-1 gap-4 sm:gap-6 items-stretch ${
               visibleEvents.length === 1
-                ? 'max-w-lg mx-auto'
+                ? 'max-w-2xl mx-auto'
                 : visibleEvents.length === 2 || visibleEvents.length === 4
-                  ? 'md:grid-cols-2 max-w-4xl mx-auto'
-                  : 'lg:grid-cols-3'
+                  ? 'md:grid-cols-2 w-full'
+                  : 'lg:grid-cols-3 w-full'
             }`}
           >
             {visibleEvents.map((ev, idx) => {
@@ -6121,7 +6121,11 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               const ytVideoId =
                 rawYtId === 'jfKfPfyJRdk' ? 'LXb3EKWsInQ' : rawYtId;
               return (
-                <div className="mt-6 sm:mt-8 w-full">
+                <div
+                  className={`mt-6 sm:mt-8 ${
+                    visibleEvents.length === 1 ? 'max-w-2xl mx-auto' : 'w-full'
+                  }`}
+                >
                   <div
                     className={`inv-reveal inv-reveal-up relative overflow-hidden rounded-3xl p-5 sm:p-7 flex flex-col gap-5 backdrop-blur-xl ${
                       layoutArchetype === 'NUSANTARA_HERITAGE'
@@ -7333,48 +7337,45 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
               })}
             </div>
 
-            {giftCategoryFilter !== 'QRIS' &&
-              giftCategoryFilter !== 'WISHLIST' &&
-              settings.bankAccounts.length > 0 && (
-              <div
-                className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch relative z-10 ${
-                  settings.bankAccounts.length === 1
-                    ? 'max-w-md mx-auto'
-                    : settings.bankAccounts.length === 2
-                    ? 'md:grid-cols-2 max-w-3xl mx-auto'
-                    : 'md:grid-cols-3'
-                }`}
-              >
-                {(settings.bankAccounts.filter((acc) => {
-                  const accType = acc.type || 'BANK';
-                  if (giftCategoryFilter === 'BANK') {
-                    return accType === 'BANK' || accType === 'EWALLET';
-                  }
-                  if (giftCategoryFilter === 'GLOBAL_CRYPTO') {
-                    return (
-                      accType === 'CRYPTO' ||
-                      accType === 'PAYPAL' ||
-                      accType === 'EWALLET'
-                    );
-                  }
-                  return true;
-                }).length > 0
-                  ? settings.bankAccounts.filter((acc) => {
-                      const accType = acc.type || 'BANK';
-                      if (giftCategoryFilter === 'BANK') {
-                        return accType === 'BANK' || accType === 'EWALLET';
-                      }
-                      if (giftCategoryFilter === 'GLOBAL_CRYPTO') {
-                        return (
-                          accType === 'CRYPTO' ||
-                          accType === 'PAYPAL' ||
-                          accType === 'EWALLET'
-                        );
-                      }
-                      return true;
-                    })
-                  : settings.bankAccounts
-                ).map((acc) => {
+            {(() => {
+              const filteredAccounts = settings.bankAccounts.filter((acc) => {
+                const accType = acc.type || 'BANK';
+                if (giftCategoryFilter === 'BANK') {
+                  return accType === 'BANK' || accType === 'EWALLET';
+                }
+                if (giftCategoryFilter === 'GLOBAL_CRYPTO') {
+                  return (
+                    accType === 'CRYPTO' ||
+                    accType === 'PAYPAL' ||
+                    accType === 'EWALLET'
+                  );
+                }
+                return true;
+              });
+              const displayedBankAccounts =
+                filteredAccounts.length > 0
+                  ? filteredAccounts
+                  : settings.bankAccounts;
+              const giftUnifiedWidthClass =
+                displayedBankAccounts.length >= 3
+                  ? 'w-full'
+                  : 'max-w-3xl mx-auto';
+
+              return (
+                <>
+                  {giftCategoryFilter !== 'QRIS' &&
+                    giftCategoryFilter !== 'WISHLIST' &&
+                    displayedBankAccounts.length > 0 && (
+                      <div
+                        className={`grid grid-cols-1 gap-4 mb-6 text-left items-stretch relative z-10 ${giftUnifiedWidthClass} ${
+                          displayedBankAccounts.length === 1
+                            ? 'md:grid-cols-1'
+                            : displayedBankAccounts.length === 2
+                              ? 'md:grid-cols-2'
+                              : 'md:grid-cols-3'
+                        }`}
+                      >
+                        {displayedBankAccounts.map((acc) => {
                   const isCopied = copiedAccountId === acc.id;
                   const accType = acc.type || 'BANK';
                   const isCrypto = accType === 'CRYPTO';
@@ -7581,11 +7582,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 {settings.showPhysicalGiftAddress !== false &&
                   Boolean(settings.giftShippingAddress?.trim()) && (
                     <div
-                      className={`${
-                        settings.bankAccounts.length > 2
-                          ? 'w-full'
-                          : 'max-w-3xl mx-auto'
-                      } min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
+                      className={`${giftUnifiedWidthClass} min-w-0 overflow-hidden rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 p-4 sm:p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -7656,11 +7653,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
                 {/* 1-Click Digital Envelope / Gift Transaction Confirmation Recorder */}
                 <div
-                  className={`${
-                    settings.bankAccounts.length > 2
-                      ? 'w-full'
-                      : 'max-w-3xl mx-auto'
-                  } rounded-2xl bg-white/95 border border-[#D4AF37]/45 p-4 sm:p-5 text-left space-y-3 shadow-xs`}
+                  className={`${giftUnifiedWidthClass} rounded-2xl bg-white/95 border border-[#D4AF37]/45 p-4 sm:p-5 text-left space-y-3 shadow-xs`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-0.5">
@@ -7793,7 +7786,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                                 ? ` • Nominal/Catatan: ${giftConfirmAmountOrNote.trim()}`
                                 : '';
                               emitAnalytics(
-                                'COPY_REKENING',
+                                'CLICK_GIFT_COPY',
                                 `✓ KONFIRMASI TRANSAKSI TANDA KASIH via ${channel}${notePart}`,
                                 sender,
                                 effectiveMatchedGuest?.invitationCode
@@ -7813,6 +7806,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
               </div>
             )}
+                </>
+              );
+            })()}
 
             {/* WISHLIST KADO / GIFT REGISTRY CARDS (WHEN CONFIGURED) */}
             {(giftCategoryFilter === 'ALL' || giftCategoryFilter === 'WISHLIST') &&

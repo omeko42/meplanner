@@ -375,9 +375,9 @@ export function authenticateAdminCredentials(
     return {
       id: 'superadmin-owner',
       username: 'superadmin',
-      nama: 'Pemilik Aplikasi (Superadmin)',
+      nama: 'Eko Agung Krisdianto',
       role: 'SUPERADMIN',
-      jabatan: 'Superadmin • Pemilik Sistem',
+      jabatan: 'Superadmin',
       email: 'owner@system.local',
       isDefaultUser: true,
       clientId: 'client-demo',

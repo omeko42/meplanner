@@ -510,6 +510,8 @@ function WeddingAppContent() {
           : 'client-utama');
       return {
         ...stored,
+        nama: 'Eko Agung Krisdianto',
+        jabatan: 'Superadmin',
         role: 'SUPERADMIN',
         clientId: rememberedWs,
       };
@@ -790,6 +792,8 @@ function WeddingAppContent() {
           const normalizedUser: AdminUser = isSuper
             ? {
                 ...authData.user,
+                nama: 'Eko Agung Krisdianto',
+                jabatan: 'Superadmin',
                 role: 'SUPERADMIN',
                 clientId: resolvedDefaultWs,
                 clientName:
@@ -1241,6 +1245,9 @@ function WeddingAppContent() {
     const normalizedUser: AdminUser = isSuperadminUser(user)
       ? {
           ...user,
+          nama: 'Eko Agung Krisdianto',
+          jabatan: 'Superadmin',
+          role: 'SUPERADMIN',
           clientId: resolvedWs,
           clientName:
             resolvedWs === 'client-demo'
@@ -1347,9 +1354,9 @@ function WeddingAppContent() {
             : {
                 id: 'superadmin-owner',
                 username: 'superadmin',
-                nama: 'Eko Agung Krisdianto (Superadmin)',
+                nama: 'Eko Agung Krisdianto',
                 role: 'SUPERADMIN',
-                jabatan: 'Superadmin • Pemilik Sistem (omeko42)',
+                jabatan: 'Superadmin',
                 email:
                   email === 'e98.bisnis@gmail.com'
                     ? 'e98.bisnis@gmail.com'

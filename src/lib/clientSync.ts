@@ -289,10 +289,33 @@ function normalizeParsedState(
         g.id !== 'client-gmail-pasanganmempel'
     );
   }
+  if (
+    mergedSettings.liveStreamingUrl &&
+    mergedSettings.liveStreamingUrl.includes('jfKfPfyJRdk')
+  ) {
+    mergedSettings.liveStreamingUrl = mergedSettings.liveStreamingUrl.replace(
+      /jfKfPfyJRdk/g,
+      'LXb3EKWsInQ'
+    );
+  }
   if (mergedSettings.clientWorkspaces) {
     const nextWs = { ...mergedSettings.clientWorkspaces };
     delete nextWs['client-gmail-agungkrisdiant'];
     delete nextWs['client-gmail-pasanganmempel'];
+    for (const [cid, ws] of Object.entries(nextWs)) {
+      if (ws?.settings?.liveStreamingUrl?.includes('jfKfPfyJRdk')) {
+        nextWs[cid] = {
+          ...ws,
+          settings: {
+            ...ws.settings,
+            liveStreamingUrl: ws.settings.liveStreamingUrl.replace(
+              /jfKfPfyJRdk/g,
+              'LXb3EKWsInQ'
+            ),
+          },
+        };
+      }
+    }
     mergedSettings.clientWorkspaces = nextWs;
   }
   if (

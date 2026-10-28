@@ -262,6 +262,9 @@ export const INITIAL_SETTINGS: WeddingSettings = {
   giftSectionSubtitle:
     'Doa restu Anda merupakan karunia terindah bagi kami. Namun apabila Bapak/Ibu/Saudara/i berkenan memberikan tanda kasih secara digital atau pengiriman kado, dapat melalui saluran resmi berikut:',
   showPhysicalGiftAddress: true,
+  showLiveStreaming: true,
+  liveStreamingPlatform: 'YouTube Live',
+  liveStreamingUrl: 'https://www.youtube.com/watch?v=LXb3EKWsInQ',
   giftShippingNote:
     'Konfirmasi pengiriman bingkisan dapat melalui keluarga atau panitia acara.',
   giftRecipientName: 'Rayhan Dirgantara & Clarissa Aurelia',
