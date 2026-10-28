@@ -443,6 +443,32 @@ function projectStateForClient(
   };
 }
 
+const SUPERADMIN_ACTIVE_WORKSPACE_KEY = 'meplanner_superadmin_active_workspace_v1';
+
+function getStoredSuperadminWorkspace(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const val = window.localStorage.getItem(SUPERADMIN_ACTIVE_WORKSPACE_KEY)?.trim();
+    if (!val || val === 'client-gmail-agungkrisdiant') return null;
+    return val;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredSuperadminWorkspace(clientId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const normalized =
+      !clientId || clientId === 'client-gmail-agungkrisdiant'
+        ? 'client-utama'
+        : clientId.trim();
+    window.localStorage.setItem(SUPERADMIN_ACTIVE_WORKSPACE_KEY, normalized);
+  } catch {
+    // ignore storage errors
+  }
+}
+
 function WeddingAppContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname() || '/';
@@ -476,15 +502,16 @@ function WeddingAppContent() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
     const stored = getStoredAdminUser();
     if (!stored) return null;
-    if (
-      isSuperadminUser(stored) &&
-      (!stored.clientId || stored.clientId === 'client-utama')
-    ) {
+    if (isSuperadminUser(stored)) {
+      const rememberedWs =
+        getStoredSuperadminWorkspace() ||
+        (stored.clientId && stored.clientId !== 'client-gmail-agungkrisdiant'
+          ? stored.clientId
+          : 'client-utama');
       return {
         ...stored,
         role: 'SUPERADMIN',
-        clientId: 'client-demo',
-        clientName: 'Klien Demo • Rayhan & Clarissa',
+        clientId: rememberedWs,
       };
     }
     return stored;
@@ -579,11 +606,12 @@ function WeddingAppContent() {
     useState<string>(() => {
       const storedUser = getStoredAdminUser();
       if (isSuperadminUser(storedUser)) {
+        const rememberedWs = getStoredSuperadminWorkspace();
+        if (rememberedWs) return rememberedWs;
         return storedUser?.clientId &&
-          storedUser.clientId !== 'client-utama' &&
           storedUser.clientId !== 'client-gmail-agungkrisdiant'
           ? storedUser.clientId
-          : 'client-demo';
+          : 'client-utama';
       }
       return storedUser?.clientId || 'client-utama';
     });
@@ -593,8 +621,8 @@ function WeddingAppContent() {
       return adminUser?.clientId || 'client-utama';
     }
     return selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant'
-      ? 'client-demo'
-      : selectedAdminWorkspaceId || 'client-demo';
+      ? 'client-utama'
+      : selectedAdminWorkspaceId || 'client-utama';
   }, [adminUser, selectedAdminWorkspaceId]);
 
   const resolveExactKeyAcrossWorkspaces = useCallback(
@@ -733,12 +761,14 @@ function WeddingAppContent() {
             }
           } else {
             setAdminUser(cachedUser);
-            if (
-              isSuperadminUser(cachedUser) &&
-              (selectedAdminWorkspaceId === 'client-gmail-agungkrisdiant' ||
-                selectedAdminWorkspaceId === 'client-utama')
-            ) {
-              setSelectedAdminWorkspaceId('client-demo');
+            if (isSuperadminUser(cachedUser)) {
+              const rememberedWs =
+                getStoredSuperadminWorkspace() ||
+                (cachedUser.clientId &&
+                cachedUser.clientId !== 'client-gmail-agungkrisdiant'
+                  ? cachedUser.clientId
+                  : 'client-utama');
+              setSelectedAdminWorkspaceId(rememberedWs);
             }
           }
           return;
@@ -746,11 +776,17 @@ function WeddingAppContent() {
         const authData = await res.json();
         if (authData.authenticated && authData.user) {
           const isSuper = isSuperadminUser(authData.user);
+          const rememberedSuperWs = isSuper ? getStoredSuperadminWorkspace() : null;
           const resolvedDefaultWs = isSuper
-            ? authData.user.clientId && authData.user.clientId !== 'client-utama'
-              ? authData.user.clientId
-              : 'client-demo'
+            ? rememberedSuperWs ||
+              (authData.user.clientId &&
+              authData.user.clientId !== 'client-gmail-agungkrisdiant'
+                ? authData.user.clientId
+                : 'client-utama')
             : authData.user.clientId || 'client-utama';
+          if (isSuper) {
+            saveStoredSuperadminWorkspace(resolvedDefaultWs);
+          }
           const normalizedUser: AdminUser = isSuper
             ? {
                 ...authData.user,
@@ -759,7 +795,9 @@ function WeddingAppContent() {
                 clientName:
                   resolvedDefaultWs === 'client-demo'
                     ? 'Klien Demo • Rayhan & Clarissa'
-                    : authData.user.clientName,
+                    : resolvedDefaultWs === 'client-utama'
+                      ? 'Klien Utama • Agung & Selo'
+                      : authData.user.clientName,
               }
             : authData.user;
           setAdminUser(normalizedUser);
@@ -1099,6 +1137,40 @@ function WeddingAppContent() {
     []
   );
 
+  const handleSwitchWorkspaceClient = useCallback(
+    (nextClientId: string) => {
+      const normalizedWs =
+        !nextClientId || nextClientId === 'client-gmail-agungkrisdiant'
+          ? 'client-utama'
+          : nextClientId.trim();
+      setSelectedAdminWorkspaceId(normalizedWs);
+      saveStoredSuperadminWorkspace(normalizedWs);
+      setAdminUser((prevUser) => {
+        if (!prevUser) return prevUser;
+        const grp = clientGroups.find((g) => g.id === normalizedWs);
+        const resolvedClientName =
+          normalizedWs === 'client-demo'
+            ? 'Klien Demo • Rayhan & Clarissa'
+            : normalizedWs === 'client-utama'
+              ? 'Klien Utama • Agung & Selo'
+              : grp?.clientName || prevUser.clientName;
+        const updatedUser: AdminUser = {
+          ...prevUser,
+          clientId: normalizedWs,
+          clientName: resolvedClientName,
+        };
+        saveStoredAdminUser(updatedUser);
+        void fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'SYNC_SESSION', user: updatedUser }),
+        }).catch(() => {});
+        return updatedUser;
+      });
+    },
+    [clientGroups]
+  );
+
   const handleOpenAdminPortal = () => {
     weddingMusicPlayer.stop();
     if (
@@ -1111,6 +1183,13 @@ function WeddingAppContent() {
         demoSelectedThemeId
       );
       return;
+    }
+    if (
+      publicSelectedClientId &&
+      !isShowcaseDummyClientId(publicSelectedClientId) &&
+      isSuperadminUser(adminUser)
+    ) {
+      handleSwitchWorkspaceClient(publicSelectedClientId);
     }
     setIsUrlGuestSessionCleared(true);
     setPreviewOverrideGuest(null);
@@ -1143,19 +1222,32 @@ function WeddingAppContent() {
   }, [loginWelcomeToast]);
 
   const handleLoginSuccess = (user: AdminUser, welcomeToastText?: string) => {
+    const activePublicRealClient =
+      publicSelectedClientId && !isShowcaseDummyClientId(publicSelectedClientId)
+        ? publicSelectedClientId
+        : null;
+    const rememberedSuperWs = getStoredSuperadminWorkspace();
     const resolvedWs = isSuperadminUser(user)
-      ? user.clientId && user.clientId !== 'client-utama'
-        ? user.clientId
-        : 'client-demo'
+      ? activePublicRealClient ||
+        rememberedSuperWs ||
+        (user.clientId && user.clientId !== 'client-gmail-agungkrisdiant'
+          ? user.clientId
+          : 'client-utama')
       : user.clientId || 'client-utama';
+    if (isSuperadminUser(user)) {
+      saveStoredSuperadminWorkspace(resolvedWs);
+    }
+    const matchedGrp = clientGroups.find((g) => g.id === resolvedWs);
     const normalizedUser: AdminUser = isSuperadminUser(user)
       ? {
           ...user,
           clientId: resolvedWs,
           clientName:
-            user.clientName && user.clientId !== 'client-utama'
-              ? user.clientName
-              : 'Klien Demo • Rayhan & Clarissa',
+            resolvedWs === 'client-demo'
+              ? 'Klien Demo • Rayhan & Clarissa'
+              : resolvedWs === 'client-utama'
+                ? 'Klien Utama • Agung & Selo'
+                : matchedGrp?.clientName || user.clientName,
         }
       : user;
     setAdminUser(normalizedUser);
@@ -3634,7 +3726,7 @@ function WeddingAppContent() {
           onResetDefault={handleResetDefault}
           onSyncStateAndUser={handleSyncStateAndUser}
           activeWorkspaceClientId={activeWorkspaceClientId}
-          onSwitchWorkspaceClient={setSelectedAdminWorkspaceId}
+          onSwitchWorkspaceClient={handleSwitchWorkspaceClient}
           onOpenLandingPage={handleOpenLandingPage}
         />
       ) : publicSelectedClientId === null ? (
