@@ -122,7 +122,13 @@ import {
   DEFAULT_WA_TEMPLATE_VIP,
   DEFAULT_WA_TEMPLATE_REGULAR,
   exportTasksToCsv,
+  exportTasksToExcelXls,
+  exportTasksToWordDoc,
+  openTasksPdfPrintPreview,
   exportGuestsToCsv,
+  exportGuestsToExcelXls,
+  exportGuestsToWordDoc,
+  openGuestsPdfPrintPreview,
   exportBudgetToCsv,
   exportBudgetToExcelXls,
   exportBudgetToWordDoc,
@@ -7449,13 +7455,65 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* LinkedIn-Style Checklist Section Card */}
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-              {/* Card Header: Title (Count) on left + Plus & Edit Icons on right */}
-              <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2">
+              {/* Card Header: Title (Count) on left + Export Excel / Word / PDF + Plus & Edit Icons on right */}
+              <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                   <span>Checklist ({filteredTasks.length})</span>
-                  <InfoTooltip text="Klik kotak pada baris tugas untuk mengubah status (Belum -> Proses -> Selesai), tombol + untuk menambah tugas baru, atau ikon pensil untuk mengedit." />
+                  <InfoTooltip text="Klik Excel, Word, atau PDF untuk mengunduh laporan checklist rapi, klik kotak pada baris tugas untuk mengubah status (Belum -> Proses -> Selesai), tombol + untuk menambah tugas baru, atau ikon pensil untuk mengedit." />
                 </h2>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                  {filteredTasks.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                          triggerFileDownload(
+                            `Laporan_Checklist_${safeSlug}.xls`,
+                            exportTasksToExcelXls(filteredTasks, coupleLabel),
+                            'application/vnd.ms-excel;charset=utf-8'
+                          );
+                          showToast('Laporan Checklist Excel (.xls) berhasil diunduh!');
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition-colors"
+                        title="Unduh Laporan Checklist format Microsoft Excel (.xls)"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                        <span>Excel</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                          triggerFileDownload(
+                            `Laporan_Checklist_${safeSlug}.doc`,
+                            exportTasksToWordDoc(filteredTasks, coupleLabel),
+                            'application/msword;charset=utf-8'
+                          );
+                          showToast('Laporan Checklist Word (.doc) berhasil diunduh!');
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] transition-colors"
+                        title="Unduh Laporan Checklist format Microsoft Word (.doc)"
+                      >
+                        <Download className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                        <span>Word</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          openTasksPdfPrintPreview(filteredTasks, coupleLabel);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-[11px] transition-colors"
+                        title="Cetak atau Simpan Laporan Checklist sebagai PDF"
+                      >
+                        <Download className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                        <span>PDF</span>
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() =>
@@ -8176,16 +8234,68 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {guestSubTab === 'list' ? (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-                {/* LinkedIn-Style Header with View Switcher, Format WA, + and Edit icons */}
+                {/* LinkedIn-Style Header with View Switcher, Export Excel / Word / PDF, Format WA, + and Edit icons */}
                 <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                     <span>
                       Daftar Tamu ({filteredGuests.length} &bull;{' '}
                       {filteredGuests.reduce((s, g) => s + (Number(g.pax) || 0), 0)} Pax)
                     </span>
-                    <InfoTooltip text="Pilih penanda undangan (Cetak Tebal, Cetak Biasa, Online), status RSVP, dan jumlah Pax langsung pada baris atau kartu tamu." />
+                    <InfoTooltip text="Klik Excel, Word, atau PDF untuk mengunduh daftar tamu rapi, pilih penanda undangan (Cetak Tebal, Cetak Biasa, Online), status RSVP, dan jumlah Pax langsung pada baris atau kartu tamu." />
                   </h2>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                    {filteredGuests.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                            const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                            triggerFileDownload(
+                              `Daftar_Tamu_${safeSlug}.xls`,
+                              exportGuestsToExcelXls(filteredGuests, coupleLabel),
+                              'application/vnd.ms-excel;charset=utf-8'
+                            );
+                            showToast('Daftar Tamu Excel (.xls) berhasil diunduh!');
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition-colors"
+                          title="Unduh Daftar Tamu format Microsoft Excel (.xls)"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span>Excel</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                            const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                            triggerFileDownload(
+                              `Daftar_Tamu_${safeSlug}.doc`,
+                              exportGuestsToWordDoc(filteredGuests, coupleLabel),
+                              'application/msword;charset=utf-8'
+                            );
+                            showToast('Daftar Tamu Word (.doc) berhasil diunduh!');
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] transition-colors"
+                          title="Unduh Daftar Tamu format Microsoft Word (.doc)"
+                        >
+                          <Download className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                          <span>Word</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                            openGuestsPdfPrintPreview(filteredGuests, coupleLabel);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-[11px] transition-colors"
+                          title="Cetak atau Simpan Daftar Tamu sebagai PDF"
+                        >
+                          <Download className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                          <span>PDF</span>
+                        </button>
+                      </>
+                    )}
                     <div className="inline-flex items-center p-0.5 rounded-full bg-stone-100 border border-stone-200/90 text-[11px] font-bold">
                       <button
                         type="button"
@@ -16341,7 +16451,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Export CSV */}
+                      {/* Export Excel (.XLS), Word (.DOC) & PDF */}
                       <div className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
@@ -16349,54 +16459,64 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </div>
                           <div className="flex items-center gap-1.5">
                             <p className="font-bold text-stone-900">
-                              Ekspor Excel (.CSV)
+                              Ekspor Laporan Rapi (Excel / Word / PDF)
                             </p>
-                            <InfoTooltip text="Unduh tabel Checklist, Tamu, atau Moneter dalam format .CSV untuk Microsoft Excel." />
+                            <InfoTooltip text="Unduh laporan rapi berformat Microsoft Excel (.xls), Word (.doc), atau cetak PDF untuk Checklist, Tamu, dan Moneter." />
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap self-end sm:self-center justify-end">
                           <button
                             type="button"
                             onClick={() => {
+                              const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                              const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
                               triggerFileDownload(
-                                'DB_Wedding_Tasks.csv',
-                                exportTasksToCsv(state.tasks),
-                                'text/csv;charset=utf-8;'
+                                `Laporan_Checklist_${safeSlug}.xls`,
+                                exportTasksToExcelXls(state.tasks, coupleLabel),
+                                'application/vnd.ms-excel;charset=utf-8'
                               );
-                              showToast('Tasks.csv berhasil diunduh!');
+                              showToast('Laporan Checklist (.xls) berhasil diunduh!');
                             }}
-                            className="px-2.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
+                            className="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs"
                           >
-                            Checklist
+                            Checklist (.xls)
                           </button>
                           <button
                             type="button"
                             onClick={() => {
+                              const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                              const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
                               triggerFileDownload(
-                                'DB_Wedding_Guests.csv',
-                                exportGuestsToCsv(state.guests),
-                                'text/csv;charset=utf-8;'
+                                `Daftar_Tamu_${safeSlug}.xls`,
+                                exportGuestsToExcelXls(state.guests, coupleLabel),
+                                'application/vnd.ms-excel;charset=utf-8'
                               );
-                              showToast('Guests.csv berhasil diunduh!');
+                              showToast('Daftar Tamu (.xls) berhasil diunduh!');
                             }}
-                            className="px-2.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
+                            className="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs"
                           >
-                            Tamu
+                            Tamu (.xls)
                           </button>
                           {!isPanitia && (
                             <button
                               type="button"
                               onClick={() => {
+                                const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                                const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
                                 triggerFileDownload(
-                                  'DB_Wedding_Budget.csv',
-                                  exportBudgetToCsv(state.budgetItems),
-                                  'text/csv;charset=utf-8;'
+                                  `Laporan_Keuangan_${safeSlug}.xls`,
+                                  exportBudgetToExcelXls(
+                                    state.budgetItems,
+                                    coupleLabel,
+                                    state.settings.totalBudgetCap
+                                  ),
+                                  'application/vnd.ms-excel;charset=utf-8'
                                 );
-                                showToast('Budget.csv berhasil diunduh!');
+                                showToast('Laporan Keuangan (.xls) berhasil diunduh!');
                               }}
-                              className="px-2.5 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs"
+                              className="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs"
                             >
-                              Moneter
+                              Moneter (.xls)
                             </button>
                           )}
                         </div>
