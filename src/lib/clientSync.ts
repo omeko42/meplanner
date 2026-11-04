@@ -861,6 +861,21 @@ export function exportTasksToCsv(tasks: WeddingTask[]): string {
   return [headers.join(','), ...rows].join('\n');
 }
 
+export function normalizeInvitationFormat(
+  fmt?: string
+): 'Cetak Tebal' | 'Cetak Biasa' | 'Online' {
+  if (fmt === 'Cetak Tebal') return 'Cetak Tebal';
+  if (
+    fmt === 'Cetak Biasa' ||
+    fmt === 'Cetak Reguler' ||
+    fmt === 'Cetak & Digital'
+  ) {
+    return 'Cetak Biasa';
+  }
+  if (fmt === 'Online' || fmt === 'Digital WA') return 'Online';
+  return 'Cetak Tebal';
+}
+
 export function exportGuestsToCsv(guests: WeddingGuest[]): string {
   // Exact 19 columns matching user's Google Sheet DB (gid=1134858514)
   const headers = [
@@ -892,7 +907,7 @@ export function exportGuestsToCsv(guests: WeddingGuest[]): string {
       g.guestType,
       g.side,
       g.institution,
-      g.invitationFormat,
+      normalizeInvitationFormat(g.invitationFormat),
       g.priority,
       g.cardQty,
       g.pax,
@@ -1761,15 +1776,14 @@ function buildGuestsReportData(guests: WeddingGuest[]) {
     (s, g) => s + (Number(g.confirmedPax ?? g.pax) || 0),
     0
   );
-  const cetakTebalCount = safeGuests.filter((g) => g.invitationFormat === 'Cetak Tebal').length;
+  const cetakTebalCount = safeGuests.filter(
+    (g) => normalizeInvitationFormat(g.invitationFormat) === 'Cetak Tebal'
+  ).length;
   const cetakBiasaCount = safeGuests.filter(
-    (g) =>
-      g.invitationFormat === 'Cetak Biasa' ||
-      g.invitationFormat === 'Cetak Reguler' ||
-      g.invitationFormat === 'Cetak & Digital'
+    (g) => normalizeInvitationFormat(g.invitationFormat) === 'Cetak Biasa'
   ).length;
   const onlineCount = safeGuests.filter(
-    (g) => !g.invitationFormat || g.invitationFormat === 'Online' || g.invitationFormat === 'Digital WA'
+    (g) => normalizeInvitationFormat(g.invitationFormat) === 'Online'
   ).length;
   return {
     safeGuests,
@@ -1814,7 +1828,7 @@ export function exportGuestsToExcelXls(
         <td style="border:1px solid #D6D3D1;padding:6px 8px;font-weight:bold;">${escapeHtmlText(g.guestName)}</td>
         <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.institution || '-')}</td>
         <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.guestType)} (${escapeHtmlText(g.side)})</td>
-        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;font-weight:bold;">${escapeHtmlText(g.invitationFormat || 'Online')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;font-weight:bold;">${escapeHtmlText(normalizeInvitationFormat(g.invitationFormat))}</td>
         <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;font-weight:bold;">${Number(g.pax) || 1}</td>
         <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;background:${statusBg};color:${statusColor};font-weight:bold;">${escapeHtmlText(g.rsvpStatus || 'Belum Konfirmasi')}</td>
         <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(g.attendanceStatus || 'Belum Dicek')}</td>
@@ -1909,7 +1923,7 @@ function buildPrintableGuestsHtmlDocument(
           <div style="color:#57534E;">${escapeHtmlText(g.side)}</div>
         </td>
         <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;font-size:8.5pt;font-weight:bold;">
-          ${escapeHtmlText(g.invitationFormat || 'Online')}
+          ${escapeHtmlText(normalizeInvitationFormat(g.invitationFormat))}
         </td>
         <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;font-size:9pt;font-weight:bold;">
           ${Number(g.pax) || 1}
