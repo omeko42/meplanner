@@ -952,7 +952,8 @@ export function exportBudgetToCsv(items: BudgetVendorItem[]): string {
 
 export function triggerFileDownload(filename: string, content: string, mimeType: string): void {
   if (typeof window === 'undefined') return;
-  const blob = new Blob([content], { type: mimeType });
+  const bom = mimeType.includes('csv') || mimeType.includes('excel') || mimeType.includes('msword') ? '\uFEFF' : '';
+  const blob = new Blob([bom + content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -961,6 +962,449 @@ export function triggerFileDownload(filename: string, content: string, mimeType:
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function escapeHtmlText(val: unknown): string {
+  return String(val ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function buildBudgetReportData(items: BudgetVendorItem[], totalBudgetCap = 0) {
+  const safeItems = Array.isArray(items) ? items : [];
+  const totalEstimated = safeItems.reduce((s, b) => s + (Number(b.estimatedCost) || 0), 0);
+  const totalActual = safeItems.reduce(
+    (s, b) => s + (Number(b.actualCost) || Number(b.estimatedCost) || 0),
+    0
+  );
+  const totalPaid = safeItems.reduce((s, b) => s + (Number(b.paidAmount) || 0), 0);
+  const totalRemaining = Math.max(0, totalActual - totalPaid);
+  const effectiveCap = totalBudgetCap > 0 ? totalBudgetCap : totalEstimated;
+
+  const lunasItems = safeItems.filter((b) => b.paymentStatus === 'LUNAS');
+  const pendingItems = safeItems.filter((b) => b.paymentStatus !== 'LUNAS');
+
+  const lunasActual = lunasItems.reduce(
+    (s, b) => s + (Number(b.actualCost) || Number(b.estimatedCost) || 0),
+    0
+  );
+  const lunasPaid = lunasItems.reduce((s, b) => s + (Number(b.paidAmount) || 0), 0);
+
+  const pendingActual = pendingItems.reduce(
+    (s, b) => s + (Number(b.actualCost) || Number(b.estimatedCost) || 0),
+    0
+  );
+  const pendingPaid = pendingItems.reduce((s, b) => s + (Number(b.paidAmount) || 0), 0);
+  const pendingRemaining = Math.max(0, pendingActual - pendingPaid);
+
+  return {
+    safeItems,
+    totalEstimated,
+    totalActual,
+    totalPaid,
+    totalRemaining,
+    effectiveCap,
+    lunasItems,
+    pendingItems,
+    lunasActual,
+    lunasPaid,
+    pendingActual,
+    pendingPaid,
+    pendingRemaining,
+  };
+}
+
+export function exportBudgetToExcelXls(
+  items: BudgetVendorItem[],
+  coupleTitle = 'Agung & Selo',
+  totalBudgetCap = 0
+): string {
+  const d = buildBudgetReportData(items, totalBudgetCap);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const renderRows = (list: BudgetVendorItem[]) =>
+    list
+      .map((b, idx) => {
+        const est = Number(b.estimatedCost) || 0;
+        const act = Number(b.actualCost) || est;
+        const paid = Number(b.paidAmount) || 0;
+        const rem = Math.max(0, act - paid);
+        const statusBg =
+          b.paymentStatus === 'LUNAS'
+            ? '#D1FAE5'
+            : b.paymentStatus === 'DP_TERBAYAR' || b.paymentStatus === 'CICILAN'
+            ? '#FEF3C7'
+            : '#FFE4E6';
+        const statusColor =
+          b.paymentStatus === 'LUNAS'
+            ? '#065F46'
+            : b.paymentStatus === 'DP_TERBAYAR' || b.paymentStatus === 'CICILAN'
+            ? '#92400E'
+            : '#9F1239';
+        const detailNotes = [
+          b.revisionNote ? `[Revisi: ${b.revisionNote}]` : '',
+          b.notes || '',
+        ]
+          .filter(Boolean)
+          .join(' — ');
+        return `
+        <tr>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;font-weight:bold;">${escapeHtmlText(b.itemName)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(b.category)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(b.vendorName || '-')}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;background:${statusBg};color:${statusColor};font-weight:bold;">${escapeHtmlText(b.paymentStatus.replace('_', ' '))}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${est}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:right;font-weight:bold;mso-number-format:'\\#\\,\\#\\#0';">${act}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:right;color:#047857;font-weight:bold;mso-number-format:'\\#\\,\\#\\#0';">${paid}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:right;color:${rem > 0 ? '#BE123C' : '#57534E'};font-weight:bold;mso-number-format:'\\#\\,\\#\\#0';">${rem}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(detailNotes)}</td>
+        </tr>`;
+      })
+      .join('');
+
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8" />
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Laporan Keuangan</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head>
+<body style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1C1917;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr>
+      <td colspan="10" style="font-size:16pt;font-weight:bold;color:#8B6914;padding:8px 0 2px 0;">
+        LAPORAN ANGGARAN &amp; REALISASI KEUANGAN PERNIKAHAN — ${escapeHtmlText(coupleTitle.toUpperCase())}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="10" style="font-size:10pt;color:#57534E;padding-bottom:12px;">
+        Dicetak dari MEPlanner pada ${escapeHtmlText(dateStr)} &bull; Total ${d.safeItems.length} Pos Anggaran
+      </td>
+    </tr>
+    <tr><td colspan="10"></td></tr>
+    <tr style="background:#FAF3E3;font-weight:bold;">
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Target Pagu Anggaran</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Total Estimasi Awal</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Total Realisasi / Kebutuhan</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#047857;">Sudah Dibayar / Dibendel</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#BE123C;">Sisa Pelunasan / Dana Kurang</td>
+    </tr>
+    <tr style="font-size:12pt;font-weight:bold;">
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">${escapeHtmlText(formatRupiah(d.effectiveCap))}</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">${escapeHtmlText(formatRupiah(d.totalEstimated))}</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#8B6914;">${escapeHtmlText(formatRupiah(d.totalActual))}</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;background:#ECFDF5;color:#047857;">${escapeHtmlText(formatRupiah(d.totalPaid))}</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;background:#FFF1F2;color:#BE123C;">${escapeHtmlText(formatRupiah(d.totalRemaining))}</td>
+    </tr>
+    <tr><td colspan="10"></td></tr>
+
+    <tr>
+      <td colspan="10" style="background:#065F46;color:#FFFFFF;font-weight:bold;padding:8px;">
+        A. DAFTAR POS LUNAS &amp; UANG TUNAI SUDAH DIBENDEL (${d.lunasItems.length} POS)
+      </td>
+    </tr>
+    <tr style="background:#F5F5F4;font-weight:bold;text-align:center;">
+      <td style="border:1px solid #A8A29E;padding:7px;width:40px;">No</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:260px;">Nama Pos Anggaran</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:150px;">Kategori</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:200px;">Vendor / Keterangan Dana</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:110px;">Status</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">Estimasi (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">Aktual (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">Dibayar (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">Sisa (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:360px;">Rincian Item &amp; Catatan</td>
+    </tr>
+    ${renderRows(d.lunasItems)}
+    <tr style="background:#ECFDF5;font-weight:bold;">
+      <td colspan="6" style="border:1px solid #A8A29E;padding:7px;text-align:right;">SUBTOTAL POS LUNAS &amp; DANA DIBENDEL</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${d.lunasActual}</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#047857;mso-number-format:'\\#\\,\\#\\#0';">${d.lunasPaid}</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">0</td>
+      <td style="border:1px solid #A8A29E;padding:7px;"></td>
+    </tr>
+    <tr><td colspan="10"></td></tr>
+
+    <tr>
+      <td colspan="10" style="background:#9F1239;color:#FFFFFF;font-weight:bold;padding:8px;">
+        B. DAFTAR POS DP &amp; DANA BELUM TERSEDIA / SISA PELUNASAN (${d.pendingItems.length} POS)
+      </td>
+    </tr>
+    <tr style="background:#F5F5F4;font-weight:bold;text-align:center;">
+      <td style="border:1px solid #A8A29E;padding:7px;">No</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Nama Pos Anggaran</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Kategori</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Vendor / Keterangan Dana</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Status</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Estimasi (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Aktual (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Sudah DP (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Sisa Kurang (Rp)</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Rincian Item &amp; Catatan</td>
+    </tr>
+    ${renderRows(d.pendingItems)}
+    <tr style="background:#FFF1F2;font-weight:bold;">
+      <td colspan="6" style="border:1px solid #A8A29E;padding:7px;text-align:right;">SUBTOTAL POS DP &amp; SISA PELUNASAN</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${d.pendingActual}</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#047857;mso-number-format:'\\#\\,\\#\\#0';">${d.pendingPaid}</td>
+      <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#BE123C;mso-number-format:'\\#\\,\\#\\#0';">${d.pendingRemaining}</td>
+      <td style="border:1px solid #A8A29E;padding:7px;"></td>
+    </tr>
+    <tr><td colspan="10"></td></tr>
+
+    <tr style="background:#FAF3E3;font-weight:bold;font-size:12pt;">
+      <td colspan="5" style="border:2px solid #8B6914;padding:8px;text-align:right;">GRAND TOTAL KESELURUHAN (${d.safeItems.length} POS)</td>
+      <td style="border:2px solid #8B6914;padding:8px;text-align:right;mso-number-format:'\\#\\,\\#\\#0';">${d.totalEstimated}</td>
+      <td style="border:2px solid #8B6914;padding:8px;text-align:right;color:#8B6914;mso-number-format:'\\#\\,\\#\\#0';">${d.totalActual}</td>
+      <td style="border:2px solid #8B6914;padding:8px;text-align:right;color:#047857;mso-number-format:'\\#\\,\\#\\#0';">${d.totalPaid}</td>
+      <td style="border:2px solid #8B6914;padding:8px;text-align:right;color:#BE123C;mso-number-format:'\\#\\,\\#\\#0';">${d.totalRemaining}</td>
+      <td style="border:2px solid #8B6914;padding:8px;"></td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function buildPrintableBudgetHtmlDocument(
+  items: BudgetVendorItem[],
+  coupleTitle = 'Agung & Selo',
+  totalBudgetCap = 0,
+  forWordDoc = false
+): string {
+  const d = buildBudgetReportData(items, totalBudgetCap);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const renderSectionRows = (list: BudgetVendorItem[]) =>
+    list
+      .map((b, idx) => {
+        const est = Number(b.estimatedCost) || 0;
+        const act = Number(b.actualCost) || est;
+        const paid = Number(b.paidAmount) || 0;
+        const rem = Math.max(0, act - paid);
+        const statusLabel = b.paymentStatus.replace('_', ' ');
+        const badgeStyle =
+          b.paymentStatus === 'LUNAS'
+            ? 'background:#D1FAE5;color:#065F46;'
+            : b.paymentStatus === 'DP_TERBAYAR' || b.paymentStatus === 'CICILAN'
+            ? 'background:#FEF3C7;color:#92400E;'
+            : 'background:#FFE4E6;color:#9F1239;';
+        return `
+        <tr>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;font-size:9.5pt;">${idx + 1}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px;vertical-align:top;">
+            <div style="font-weight:bold;font-size:10pt;color:#1C1917;">${escapeHtmlText(b.itemName)}</div>
+            <div style="font-size:8.5pt;color:#57534E;margin-top:2px;">${escapeHtmlText(b.category)} &bull; ${escapeHtmlText(b.vendorName || '-')}</div>
+            ${
+              b.revisionNote
+                ? `<div style="font-size:8.5pt;color:#8B6914;margin-top:2px;"><b>Revisi:</b> ${escapeHtmlText(b.revisionNote)}</div>`
+                : ''
+            }
+            ${
+              b.notes
+                ? `<div style="font-size:8.5pt;color:#44403C;margin-top:3px;line-height:1.35;">${escapeHtmlText(b.notes)}</div>`
+                : ''
+            }
+          </td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;">
+            <span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:8pt;font-weight:bold;${badgeStyle}">${escapeHtmlText(statusLabel)}</span>
+          </td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:right;vertical-align:top;font-weight:bold;font-size:9.5pt;white-space:nowrap;">${escapeHtmlText(formatRupiah(act))}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:right;vertical-align:top;color:#047857;font-weight:bold;font-size:9.5pt;white-space:nowrap;">${escapeHtmlText(formatRupiah(paid))}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:right;vertical-align:top;color:${rem > 0 ? '#BE123C' : '#78716C'};font-weight:bold;font-size:9.5pt;white-space:nowrap;">${escapeHtmlText(formatRupiah(rem))}</td>
+        </tr>`;
+      })
+      .join('');
+
+  return `<html ${
+    forWordDoc
+      ? 'xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
+      : 'lang="id"'
+  }>
+<head>
+<meta charset="utf-8" />
+<title>Laporan Keuangan Pernikahan — ${escapeHtmlText(coupleTitle)}</title>
+${
+  forWordDoc
+    ? '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->'
+    : ''
+}
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    color: #1C1917;
+    margin: 0;
+    padding: ${forWordDoc ? '0' : '16px'};
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .no-print {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1C1917;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .btn-print {
+    background: #B68D40;
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  ${
+    !forWordDoc
+      ? `<div class="no-print">
+          <div>
+            <strong>Pratinjau Cetak / Simpan PDF</strong> — Pilih <em>"Save as PDF"</em> pada tujuan printer untuk menyimpan file PDF.
+          </div>
+          <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
+        </div>`
+      : ''
+  }
+
+  <div style="border-bottom:2px solid #B68D40;padding-bottom:10px;margin-bottom:14px;">
+    <div style="font-size:16pt;font-weight:bold;color:#8B6914;letter-spacing:0.3px;">
+      LAPORAN ANGGARAN &amp; REALISASI KEUANGAN ACARA
+    </div>
+    <div style="font-size:11pt;font-weight:bold;color:#1C1917;margin-top:2px;">
+      Workspace: ${escapeHtmlText(coupleTitle)} &bull; Tanggal Cetak: ${escapeHtmlText(dateStr)}
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <tr>
+      <td style="width:25%;border:1px solid #D6D3D1;background:#FAF8F5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#57534E;text-transform:uppercase;font-weight:bold;">Target Pagu</div>
+        <div style="font-size:12pt;font-weight:bold;color:#1C1917;margin-top:2px;">${escapeHtmlText(formatRupiah(d.effectiveCap))}</div>
+      </td>
+      <td style="width:25%;border:1px solid #D4AF37;background:#FAF3E3;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#8B6914;text-transform:uppercase;font-weight:bold;">Total Kebutuhan (${d.safeItems.length} Pos)</div>
+        <div style="font-size:12pt;font-weight:bold;color:#8B6914;margin-top:2px;">${escapeHtmlText(formatRupiah(d.totalActual))}</div>
+      </td>
+      <td style="width:25%;border:1px solid #A7F3D0;background:#ECFDF5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#065F46;text-transform:uppercase;font-weight:bold;">Sudah Lunas / Dibendel</div>
+        <div style="font-size:12pt;font-weight:bold;color:#047857;margin-top:2px;">${escapeHtmlText(formatRupiah(d.totalPaid))}</div>
+      </td>
+      <td style="width:25%;border:1px solid #FECDD3;background:#FFF1F2;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#9F1239;text-transform:uppercase;font-weight:bold;">Sisa Pelunasan / Kurang</div>
+        <div style="font-size:12pt;font-weight:bold;color:#BE123C;margin-top:2px;">${escapeHtmlText(formatRupiah(d.totalRemaining))}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:11pt;font-weight:bold;color:#065F46;background:#ECFDF5;border:1px solid #A7F3D0;padding:6px 10px;margin-bottom:6px;">
+    A. DAFTAR POS LUNAS &amp; UANG TUNAI SUDAH DIBENDEL (${d.lunasItems.length} Pos — ${escapeHtmlText(formatRupiah(d.lunasPaid))})
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <thead>
+      <tr style="background:#F5F5F4;font-size:9pt;font-weight:bold;text-align:center;">
+        <th style="border:1px solid #A8A29E;padding:6px;width:5%;">No</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:47%;text-align:left;">Nama Pos, Kategori, Vendor &amp; Rincian</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;">Status</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Aktual</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Dibayar</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Sisa</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${renderSectionRows(d.lunasItems)}
+      <tr style="background:#ECFDF5;font-weight:bold;font-size:9.5pt;">
+        <td colspan="3" style="border:1px solid #A8A29E;padding:7px;text-align:right;">SUBTOTAL POS LUNAS &amp; DANA DIBENDEL</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;">${escapeHtmlText(formatRupiah(d.lunasActual))}</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#047857;">${escapeHtmlText(formatRupiah(d.lunasPaid))}</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;">Rp 0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="font-size:11pt;font-weight:bold;color:#9F1239;background:#FFF1F2;border:1px solid #FECDD3;padding:6px 10px;margin-bottom:6px;">
+    B. DAFTAR POS DP &amp; DANA BELUM TERSEDIA / SISA PELUNASAN (${d.pendingItems.length} Pos — Kurang ${escapeHtmlText(formatRupiah(d.pendingRemaining))})
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;">
+    <thead>
+      <tr style="background:#F5F5F4;font-size:9pt;font-weight:bold;text-align:center;">
+        <th style="border:1px solid #A8A29E;padding:6px;width:5%;">No</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:47%;text-align:left;">Nama Pos, Kategori, Vendor &amp; Rincian</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;">Status</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Aktual</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Sudah DP</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;text-align:right;">Sisa Kurang</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${renderSectionRows(d.pendingItems)}
+      <tr style="background:#FFF1F2;font-weight:bold;font-size:9.5pt;">
+        <td colspan="3" style="border:1px solid #A8A29E;padding:7px;text-align:right;">SUBTOTAL POS DP &amp; SISA PELUNASAN</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;">${escapeHtmlText(formatRupiah(d.pendingActual))}</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#047857;">${escapeHtmlText(formatRupiah(d.pendingPaid))}</td>
+        <td style="border:1px solid #A8A29E;padding:7px;text-align:right;color:#BE123C;">${escapeHtmlText(formatRupiah(d.pendingRemaining))}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;">
+    <tr style="background:#FAF3E3;font-weight:bold;font-size:10.5pt;">
+      <td style="border:2px solid #8B6914;padding:8px;width:64%;text-align:right;">GRAND TOTAL KESELURUHAN (${d.safeItems.length} POS ANGGARAN)</td>
+      <td style="border:2px solid #8B6914;padding:8px;width:12%;text-align:right;color:#8B6914;">${escapeHtmlText(formatRupiah(d.totalActual))}</td>
+      <td style="border:2px solid #8B6914;padding:8px;width:12%;text-align:right;color:#047857;">${escapeHtmlText(formatRupiah(d.totalPaid))}</td>
+      <td style="border:2px solid #8B6914;padding:8px;width:12%;text-align:right;color:#BE123C;">${escapeHtmlText(formatRupiah(d.totalRemaining))}</td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export function exportBudgetToWordDoc(
+  items: BudgetVendorItem[],
+  coupleTitle = 'Agung & Selo',
+  totalBudgetCap = 0
+): string {
+  return buildPrintableBudgetHtmlDocument(items, coupleTitle, totalBudgetCap, true);
+}
+
+export function openBudgetPdfPrintPreview(
+  items: BudgetVendorItem[],
+  coupleTitle = 'Agung & Selo',
+  totalBudgetCap = 0
+): void {
+  if (typeof window === 'undefined') return;
+  const html = buildPrintableBudgetHtmlDocument(items, coupleTitle, totalBudgetCap, false);
+  const printWin = window.open('', '_blank');
+  if (!printWin) return;
+  printWin.document.open();
+  printWin.document.write(html);
+  printWin.document.close();
+  setTimeout(() => {
+    try {
+      printWin.focus();
+      printWin.print();
+    } catch {
+      // Ignore if print dialog blocked
+    }
+  }, 350);
 }
 
 export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [

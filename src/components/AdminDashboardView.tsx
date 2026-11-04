@@ -124,6 +124,9 @@ import {
   exportTasksToCsv,
   exportGuestsToCsv,
   exportBudgetToCsv,
+  exportBudgetToExcelXls,
+  exportBudgetToWordDoc,
+  openBudgetPdfPrintPreview,
   triggerFileDownload,
   getEffectiveScheduleEvents,
   buildScheduleSummarySubtitle,
@@ -7675,13 +7678,77 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             {/* LinkedIn-Style Budget & Vendor Section Card */}
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
-              {/* Header with + and Edit icons on top-right */}
-              <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2">
+              {/* Header with Export Excel / Word / PDF + and Edit icons on top-right */}
+              <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
                   <span>Pos Moneter ({filteredBudgetItems.length})</span>
-                  <InfoTooltip text="Klik + untuk menambah pos pengeluaran/vendor baru, atau ikon pensil untuk merevisi biaya dan status pembayaran." />
+                  <InfoTooltip text="Klik Excel, Word, atau PDF untuk mengunduh laporan keuangan rapi, tombol + untuk menambah pos baru, atau ikon pensil untuk merevisi biaya." />
                 </h2>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                  {filteredBudgetItems.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                          triggerFileDownload(
+                            `Laporan_Keuangan_${safeSlug}.xls`,
+                            exportBudgetToExcelXls(
+                              state.budgetItems,
+                              coupleLabel,
+                              state.settings.totalBudgetCap
+                            ),
+                            'application/vnd.ms-excel;charset=utf-8'
+                          );
+                          showToast('Laporan Keuangan Excel (.xls) berhasil diunduh!');
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition-colors"
+                        title="Unduh Laporan Keuangan format Microsoft Excel (.xls)"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                        <span>Excel</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+                          triggerFileDownload(
+                            `Laporan_Keuangan_${safeSlug}.doc`,
+                            exportBudgetToWordDoc(
+                              state.budgetItems,
+                              coupleLabel,
+                              state.settings.totalBudgetCap
+                            ),
+                            'application/msword;charset=utf-8'
+                          );
+                          showToast('Laporan Keuangan Word (.doc) berhasil diunduh!');
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] transition-colors"
+                        title="Unduh Laporan Keuangan format Microsoft Word (.doc)"
+                      >
+                        <Download className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                        <span>Word</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
+                          openBudgetPdfPrintPreview(
+                            state.budgetItems,
+                            coupleLabel,
+                            state.settings.totalBudgetCap
+                          );
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-[11px] transition-colors"
+                        title="Cetak atau Simpan Laporan Keuangan sebagai PDF"
+                      >
+                        <Download className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                        <span>PDF</span>
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() =>
