@@ -16,6 +16,7 @@ import {
   INITIAL_ADMIN_USERS,
 } from '@/data/seedData';
 import {
+  normalizeInvitationFormat,
   unwrapSvgEmbeddedRasterUrl,
   wrapRasterDataUrlInSvg,
 } from './clientSync';
@@ -2356,13 +2357,18 @@ function normalizeCloudState(
       )
     : INITIAL_TASKS;
   const cleanGuests = Array.isArray(parsed.guests)
-    ? parsed.guests.filter(
-        (g) =>
-          g &&
-          g.id &&
-          !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')) &&
-          !explicitlyDeletedGuestIds.has(g.id)
-      )
+    ? parsed.guests
+        .filter(
+          (g) =>
+            g &&
+            g.id &&
+            !/^guest_[0-9a-f]{8}-/i.test(String(g.id || '')) &&
+            !explicitlyDeletedGuestIds.has(g.id)
+        )
+        .map((g) => ({
+          ...g,
+          invitationFormat: normalizeInvitationFormat(g.invitationFormat),
+        }))
     : INITIAL_GUESTS;
   const cleanWishes = Array.isArray(parsed.wishes)
     ? parsed.wishes.filter(
