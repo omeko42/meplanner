@@ -1407,6 +1407,660 @@ export function openBudgetPdfPrintPreview(
   }, 350);
 }
 
+// ============================================================================
+// CHECKLIST KESIAPAN — EXCEL (.XLS), WORD (.DOC) & PDF EXPORTERS
+// ============================================================================
+function buildTasksReportData(tasks: WeddingTask[]) {
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const doneTasks = safeTasks.filter((t) => t.done || t.status === 'SELESAI');
+  const inProgressTasks = safeTasks.filter((t) => !t.done && t.status === 'PROSES');
+  const pendingTasks = safeTasks.filter((t) => !t.done && t.status !== 'SELESAI' && t.status !== 'PROSES');
+  const activeTasks = [...inProgressTasks, ...pendingTasks];
+  const readinessPercent =
+    safeTasks.length > 0
+      ? Math.round(((doneTasks.length + inProgressTasks.length * 0.5) / safeTasks.length) * 100)
+      : 0;
+  return {
+    safeTasks,
+    doneTasks,
+    inProgressTasks,
+    pendingTasks,
+    activeTasks,
+    readinessPercent,
+  };
+}
+
+export function exportTasksToExcelXls(
+  tasks: WeddingTask[],
+  coupleTitle = 'Agung & Selo'
+): string {
+  const d = buildTasksReportData(tasks);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const renderTaskRows = (list: WeddingTask[]) =>
+    list
+      .map((t, idx) => {
+        const effStatus = t.done ? 'SELESAI' : t.status || 'BELUM';
+        const statusBg =
+          effStatus === 'SELESAI' ? '#D1FAE5' : effStatus === 'PROSES' ? '#FEF3C7' : '#FFE4E6';
+        const statusColor =
+          effStatus === 'SELESAI' ? '#065F46' : effStatus === 'PROSES' ? '#92400E' : '#9F1239';
+        return `
+        <tr>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;font-weight:bold;">${escapeHtmlText(t.title)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(t.category)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(t.timelinePhase)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(t.priority)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(t.owner)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(t.due || '-')}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;background:${statusBg};color:${statusColor};font-weight:bold;">${escapeHtmlText(effStatus)}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(t.notes || '')}</td>
+        </tr>`;
+      })
+      .join('');
+
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8" />
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Checklist Kesiapan</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head>
+<body style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1C1917;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr>
+      <td colspan="9" style="font-size:16pt;font-weight:bold;color:#8B6914;padding:8px 0 2px 0;">
+        LAPORAN CHECKLIST KESIAPAN ACARA — ${escapeHtmlText(coupleTitle.toUpperCase())}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="9" style="font-size:10pt;color:#57534E;padding-bottom:12px;">
+        Dicetak dari MEPlanner pada ${escapeHtmlText(dateStr)} &bull; Total ${d.safeTasks.length} Tugas (${d.readinessPercent}% Siap)
+      </td>
+    </tr>
+    <tr><td colspan="9"></td></tr>
+    <tr style="background:#FAF3E3;font-weight:bold;">
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Total Tugas Checklist</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#047857;">Sudah Selesai</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#92400E;">Sedang Proses</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;color:#BE123C;">Belum Mulai</td>
+      <td style="border:1px solid #D4AF37;padding:8px;color:#8B6914;">Progres Kesiapan</td>
+    </tr>
+    <tr style="font-size:12pt;font-weight:bold;">
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">${d.safeTasks.length} Tugas</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;background:#ECFDF5;color:#047857;">${d.doneTasks.length} Selesai</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;background:#FFFBEB;color:#92400E;">${d.inProgressTasks.length} Proses</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;background:#FFF1F2;color:#BE123C;">${d.pendingTasks.length} Belum</td>
+      <td style="border:1px solid #D4AF37;padding:8px;color:#8B6914;">${d.readinessPercent}%</td>
+    </tr>
+    <tr><td colspan="9"></td></tr>
+
+    <tr>
+      <td colspan="9" style="background:#9F1239;color:#FFFFFF;font-weight:bold;padding:8px;">
+        A. DAFTAR TUGAS SEDANG PROSES &amp; BELUM MULAI (${d.activeTasks.length} TUGAS)
+      </td>
+    </tr>
+    <tr style="background:#F5F5F4;font-weight:bold;text-align:center;">
+      <td style="border:1px solid #A8A29E;padding:7px;width:40px;">No</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:280px;">Nama Tugas / Persiapan</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:150px;">Kategori</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:110px;">Fase Timeline</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:90px;">Prioritas</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:110px;">PIC</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:110px;">Target Selesai</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:100px;">Status</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:300px;">Catatan</td>
+    </tr>
+    ${renderTaskRows(d.activeTasks)}
+    <tr><td colspan="9"></td></tr>
+
+    <tr>
+      <td colspan="9" style="background:#065F46;color:#FFFFFF;font-weight:bold;padding:8px;">
+        B. DAFTAR TUGAS SUDAH SELESAI (${d.doneTasks.length} TUGAS)
+      </td>
+    </tr>
+    <tr style="background:#F5F5F4;font-weight:bold;text-align:center;">
+      <td style="border:1px solid #A8A29E;padding:7px;">No</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Nama Tugas / Persiapan</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Kategori</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Fase Timeline</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Prioritas</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">PIC</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Target Selesai</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Status</td>
+      <td style="border:1px solid #A8A29E;padding:7px;">Catatan</td>
+    </tr>
+    ${renderTaskRows(d.doneTasks)}
+  </table>
+</body>
+</html>`;
+}
+
+function buildPrintableTasksHtmlDocument(
+  tasks: WeddingTask[],
+  coupleTitle = 'Agung & Selo',
+  forWordDoc = false
+): string {
+  const d = buildTasksReportData(tasks);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const renderRows = (list: WeddingTask[]) =>
+    list
+      .map((t, idx) => {
+        const effStatus = t.done ? 'SELESAI' : t.status || 'BELUM';
+        const badgeStyle =
+          effStatus === 'SELESAI'
+            ? 'background:#D1FAE5;color:#065F46;'
+            : effStatus === 'PROSES'
+            ? 'background:#FEF3C7;color:#92400E;'
+            : 'background:#FFE4E6;color:#9F1239;';
+        return `
+        <tr>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;font-size:9.5pt;">${idx + 1}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px;vertical-align:top;">
+            <div style="font-weight:bold;font-size:10pt;color:#1C1917;">${escapeHtmlText(t.title)}</div>
+            ${
+              t.notes
+                ? `<div style="font-size:8.5pt;color:#44403C;margin-top:3px;line-height:1.35;">${escapeHtmlText(t.notes)}</div>`
+                : ''
+            }
+          </td>
+          <td style="border:1px solid #D6D3D1;padding:6px;vertical-align:top;font-size:9pt;">
+            <div><b>${escapeHtmlText(t.category)}</b></div>
+            <div style="color:#57534E;font-size:8.5pt;">${escapeHtmlText(t.timelinePhase)}</div>
+          </td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;font-size:9pt;">
+            <div><b>${escapeHtmlText(t.owner)}</b></div>
+            <div style="color:#57534E;font-size:8.5pt;">Prio: ${escapeHtmlText(t.priority)}</div>
+          </td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;font-size:9pt;white-space:nowrap;">${escapeHtmlText(t.due || '-')}</td>
+          <td style="border:1px solid #D6D3D1;padding:6px;text-align:center;vertical-align:top;">
+            <span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:8pt;font-weight:bold;${badgeStyle}">${escapeHtmlText(effStatus)}</span>
+          </td>
+        </tr>`;
+      })
+      .join('');
+
+  return `<html ${
+    forWordDoc
+      ? 'xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
+      : 'lang="id"'
+  }>
+<head>
+<meta charset="utf-8" />
+<title>Laporan Checklist Kesiapan — ${escapeHtmlText(coupleTitle)}</title>
+${
+  forWordDoc
+    ? '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->'
+    : ''
+}
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    color: #1C1917;
+    margin: 0;
+    padding: ${forWordDoc ? '0' : '16px'};
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .no-print {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1C1917;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .btn-print {
+    background: #B68D40;
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  ${
+    !forWordDoc
+      ? `<div class="no-print">
+          <div>
+            <strong>Pratinjau Cetak / Simpan PDF Checklist</strong> — Pilih <em>"Save as PDF"</em> pada tujuan printer.
+          </div>
+          <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
+        </div>`
+      : ''
+  }
+
+  <div style="border-bottom:2px solid #B68D40;padding-bottom:10px;margin-bottom:14px;">
+    <div style="font-size:16pt;font-weight:bold;color:#8B6914;">
+      LAPORAN CHECKLIST KESIAPAN ACARA
+    </div>
+    <div style="font-size:11pt;font-weight:bold;color:#1C1917;margin-top:2px;">
+      Workspace: ${escapeHtmlText(coupleTitle)} &bull; Tanggal Cetak: ${escapeHtmlText(dateStr)}
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <tr>
+      <td style="width:25%;border:1px solid #D4AF37;background:#FAF3E3;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#8B6914;text-transform:uppercase;font-weight:bold;">Total Checklist</div>
+        <div style="font-size:12pt;font-weight:bold;color:#1C1917;margin-top:2px;">${d.safeTasks.length} Tugas (${d.readinessPercent}%)</div>
+      </td>
+      <td style="width:25%;border:1px solid #A7F3D0;background:#ECFDF5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#065F46;text-transform:uppercase;font-weight:bold;">Sudah Selesai</div>
+        <div style="font-size:12pt;font-weight:bold;color:#047857;margin-top:2px;">${d.doneTasks.length} Tugas</div>
+      </td>
+      <td style="width:25%;border:1px solid #FDE68A;background:#FFFBEB;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#92400E;text-transform:uppercase;font-weight:bold;">Sedang Proses</div>
+        <div style="font-size:12pt;font-weight:bold;color:#92400E;margin-top:2px;">${d.inProgressTasks.length} Tugas</div>
+      </td>
+      <td style="width:25%;border:1px solid #FECDD3;background:#FFF1F2;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#9F1239;text-transform:uppercase;font-weight:bold;">Belum Mulai</div>
+        <div style="font-size:12pt;font-weight:bold;color:#BE123C;margin-top:2px;">${d.pendingTasks.length} Tugas</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:11pt;font-weight:bold;color:#9F1239;background:#FFF1F2;border:1px solid #FECDD3;padding:6px 10px;margin-bottom:6px;">
+    A. TUGAS SEDANG PROSES &amp; BELUM MULAI (${d.activeTasks.length} Tugas)
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <thead>
+      <tr style="background:#F5F5F4;font-size:9pt;font-weight:bold;text-align:center;">
+        <th style="border:1px solid #A8A29E;padding:6px;width:5%;">No</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:43%;text-align:left;">Nama Tugas &amp; Catatan</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:16%;text-align:left;">Kategori &amp; Fase</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:13%;">PIC &amp; Prio</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;">Target</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:11%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${renderRows(d.activeTasks)}
+    </tbody>
+  </table>
+
+  <div style="font-size:11pt;font-weight:bold;color:#065F46;background:#ECFDF5;border:1px solid #A7F3D0;padding:6px 10px;margin-bottom:6px;">
+    B. TUGAS SUDAH SELESAI (${d.doneTasks.length} Tugas)
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#F5F5F4;font-size:9pt;font-weight:bold;text-align:center;">
+        <th style="border:1px solid #A8A29E;padding:6px;width:5%;">No</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:43%;text-align:left;">Nama Tugas &amp; Catatan</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:16%;text-align:left;">Kategori &amp; Fase</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:13%;">PIC &amp; Prio</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:12%;">Target</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:11%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${renderRows(d.doneTasks)}
+    </tbody>
+  </table>
+</body>
+</html>`;
+}
+
+export function exportTasksToWordDoc(
+  tasks: WeddingTask[],
+  coupleTitle = 'Agung & Selo'
+): string {
+  return buildPrintableTasksHtmlDocument(tasks, coupleTitle, true);
+}
+
+export function openTasksPdfPrintPreview(
+  tasks: WeddingTask[],
+  coupleTitle = 'Agung & Selo'
+): void {
+  if (typeof window === 'undefined') return;
+  const html = buildPrintableTasksHtmlDocument(tasks, coupleTitle, false);
+  const printWin = window.open('', '_blank');
+  if (!printWin) return;
+  printWin.document.open();
+  printWin.document.write(html);
+  printWin.document.close();
+  setTimeout(() => {
+    try {
+      printWin.focus();
+      printWin.print();
+    } catch {
+      // Ignore
+    }
+  }, 350);
+}
+
+// ============================================================================
+// DAFTAR TAMU & RSVP — EXCEL (.XLS), WORD (.DOC) & PDF EXPORTERS
+// ============================================================================
+function buildGuestsReportData(guests: WeddingGuest[]) {
+  const safeGuests = Array.isArray(guests) ? guests : [];
+  const totalPax = safeGuests.reduce((s, g) => s + (Number(g.pax) || 0), 0);
+  const hadirGuests = safeGuests.filter(
+    (g) => g.rsvpStatus === 'Hadir' || g.attendanceStatus === 'Hadir di Lokasi'
+  );
+  const hadirPax = hadirGuests.reduce(
+    (s, g) => s + (Number(g.confirmedPax ?? g.pax) || 0),
+    0
+  );
+  const cetakTebalCount = safeGuests.filter((g) => g.invitationFormat === 'Cetak Tebal').length;
+  const cetakBiasaCount = safeGuests.filter(
+    (g) =>
+      g.invitationFormat === 'Cetak Biasa' ||
+      g.invitationFormat === 'Cetak Reguler' ||
+      g.invitationFormat === 'Cetak & Digital'
+  ).length;
+  const onlineCount = safeGuests.filter(
+    (g) => !g.invitationFormat || g.invitationFormat === 'Online' || g.invitationFormat === 'Digital WA'
+  ).length;
+  return {
+    safeGuests,
+    totalPax,
+    hadirGuests,
+    hadirPax,
+    cetakTebalCount,
+    cetakBiasaCount,
+    onlineCount,
+  };
+}
+
+export function exportGuestsToExcelXls(
+  guests: WeddingGuest[],
+  coupleTitle = 'Agung & Selo'
+): string {
+  const d = buildGuestsReportData(guests);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const rowsHtml = d.safeGuests
+    .map((g, idx) => {
+      const isHadir =
+        g.rsvpStatus === 'Hadir' || g.attendanceStatus === 'Hadir di Lokasi';
+      const statusBg = isHadir
+        ? '#D1FAE5'
+        : g.rsvpStatus === 'Tidak Hadir'
+        ? '#FFE4E6'
+        : '#FEF3C7';
+      const statusColor = isHadir
+        ? '#065F46'
+        : g.rsvpStatus === 'Tidak Hadir'
+        ? '#9F1239'
+        : '#92400E';
+      return `
+      <tr>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${idx + 1}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(g.invitationCode || '-')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;font-weight:bold;">${escapeHtmlText(g.guestName)}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.institution || '-')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.guestType)} (${escapeHtmlText(g.side)})</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;font-weight:bold;">${escapeHtmlText(g.invitationFormat || 'Online')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;font-weight:bold;">${Number(g.pax) || 1}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;background:${statusBg};color:${statusColor};font-weight:bold;">${escapeHtmlText(g.rsvpStatus || 'Belum Konfirmasi')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;text-align:center;">${escapeHtmlText(g.attendanceStatus || 'Belum Dicek')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.phone || '-')}</td>
+        <td style="border:1px solid #D6D3D1;padding:6px 8px;">${escapeHtmlText(g.notes || g.address || '')}</td>
+      </tr>`;
+    })
+    .join('');
+
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8" />
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Daftar Tamu</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head>
+<body style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1C1917;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr>
+      <td colspan="11" style="font-size:16pt;font-weight:bold;color:#8B6914;padding:8px 0 2px 0;">
+        DAFTAR TAMU UNDANGAN &amp; KONFIRMASI RSVP — ${escapeHtmlText(coupleTitle.toUpperCase())}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="11" style="font-size:10pt;color:#57534E;padding-bottom:12px;">
+        Dicetak dari MEPlanner pada ${escapeHtmlText(dateStr)} &bull; Total ${d.safeGuests.length} Undangan (${d.totalPax} Pax)
+      </td>
+    </tr>
+    <tr><td colspan="11"></td></tr>
+    <tr style="background:#FAF3E3;font-weight:bold;">
+      <td colspan="3" style="border:1px solid #D4AF37;padding:8px;">Total Tamu &amp; Kuota Pax</td>
+      <td colspan="3" style="border:1px solid #D4AF37;padding:8px;color:#047857;">Konfirmasi Hadir</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Cetak Tebal</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">Cetak Biasa</td>
+      <td style="border:1px solid #D4AF37;padding:8px;">Undangan Online</td>
+    </tr>
+    <tr style="font-size:12pt;font-weight:bold;">
+      <td colspan="3" style="border:1px solid #D4AF37;padding:8px;">${d.safeGuests.length} Tamu (${d.totalPax} Pax)</td>
+      <td colspan="3" style="border:1px solid #D4AF37;padding:8px;background:#ECFDF5;color:#047857;">${d.hadirGuests.length} Tamu (${d.hadirPax} Pax)</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">${d.cetakTebalCount} Undangan</td>
+      <td colspan="2" style="border:1px solid #D4AF37;padding:8px;">${d.cetakBiasaCount} Undangan</td>
+      <td style="border:1px solid #D4AF37;padding:8px;">${d.onlineCount} Undangan</td>
+    </tr>
+    <tr><td colspan="11"></td></tr>
+    <tr style="background:#065F46;color:#FFFFFF;font-weight:bold;text-align:center;">
+      <td style="border:1px solid #A8A29E;padding:7px;width:40px;">No</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:95px;">Kode</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:240px;">Nama Lengkap Tamu</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:180px;">Jabatan / Di Tempat</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:160px;">Kategori &amp; Pihak</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:110px;">Format</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:65px;">Pax</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:130px;">Status RSVP</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">Check-In Hari-H</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:120px;">No. WA</td>
+      <td style="border:1px solid #A8A29E;padding:7px;width:220px;">Catatan / Alamat</td>
+    </tr>
+    ${rowsHtml}
+  </table>
+</body>
+</html>`;
+}
+
+function buildPrintableGuestsHtmlDocument(
+  guests: WeddingGuest[],
+  coupleTitle = 'Agung & Selo',
+  forWordDoc = false
+): string {
+  const d = buildGuestsReportData(guests);
+  const dateStr = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const rowsHtml = d.safeGuests
+    .map((g, idx) => {
+      const isHadir =
+        g.rsvpStatus === 'Hadir' || g.attendanceStatus === 'Hadir di Lokasi';
+      const badgeStyle = isHadir
+        ? 'background:#D1FAE5;color:#065F46;'
+        : g.rsvpStatus === 'Tidak Hadir'
+        ? 'background:#FFE4E6;color:#9F1239;'
+        : 'background:#FEF3C7;color:#92400E;';
+      return `
+      <tr>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;font-size:9pt;">${idx + 1}</td>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;vertical-align:top;">
+          <div style="font-weight:bold;font-size:9.5pt;color:#1C1917;">${escapeHtmlText(g.guestName)}</div>
+          <div style="font-size:8pt;color:#57534E;">${escapeHtmlText(g.invitationCode || '-')} &bull; ${escapeHtmlText(g.institution || 'Di Tempat')}</div>
+        </td>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;vertical-align:top;font-size:8.5pt;">
+          <div><b>${escapeHtmlText(g.guestType)}</b></div>
+          <div style="color:#57534E;">${escapeHtmlText(g.side)}</div>
+        </td>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;font-size:8.5pt;font-weight:bold;">
+          ${escapeHtmlText(g.invitationFormat || 'Online')}
+        </td>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;font-size:9pt;font-weight:bold;">
+          ${Number(g.pax) || 1}
+        </td>
+        <td style="border:1px solid #D6D3D1;padding:5px 6px;text-align:center;vertical-align:top;">
+          <span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:8pt;font-weight:bold;${badgeStyle}">
+            ${escapeHtmlText(g.rsvpStatus || 'Belum Konfirmasi')}
+          </span>
+        </td>
+      </tr>`;
+    })
+    .join('');
+
+  return `<html ${
+    forWordDoc
+      ? 'xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
+      : 'lang="id"'
+  }>
+<head>
+<meta charset="utf-8" />
+<title>Daftar Tamu &amp; RSVP — ${escapeHtmlText(coupleTitle)}</title>
+${
+  forWordDoc
+    ? '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->'
+    : ''
+}
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    color: #1C1917;
+    margin: 0;
+    padding: ${forWordDoc ? '0' : '16px'};
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .no-print {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1C1917;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .btn-print {
+    background: #B68D40;
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  ${
+    !forWordDoc
+      ? `<div class="no-print">
+          <div>
+            <strong>Pratinjau Cetak / Simpan PDF Daftar Tamu</strong> — Pilih <em>"Save as PDF"</em> pada tujuan printer.
+          </div>
+          <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
+        </div>`
+      : ''
+  }
+
+  <div style="border-bottom:2px solid #B68D40;padding-bottom:10px;margin-bottom:14px;">
+    <div style="font-size:16pt;font-weight:bold;color:#8B6914;">
+      DAFTAR TAMU UNDANGAN &amp; KONFIRMASI RSVP
+    </div>
+    <div style="font-size:11pt;font-weight:bold;color:#1C1917;margin-top:2px;">
+      Workspace: ${escapeHtmlText(coupleTitle)} &bull; Tanggal Cetak: ${escapeHtmlText(dateStr)}
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <tr>
+      <td style="width:25%;border:1px solid #D4AF37;background:#FAF3E3;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#8B6914;text-transform:uppercase;font-weight:bold;">Total Undangan</div>
+        <div style="font-size:12pt;font-weight:bold;color:#1C1917;margin-top:2px;">${d.safeGuests.length} Tamu (${d.totalPax} Pax)</div>
+      </td>
+      <td style="width:25%;border:1px solid #A7F3D0;background:#ECFDF5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#065F46;text-transform:uppercase;font-weight:bold;">Konfirmasi Hadir</div>
+        <div style="font-size:12pt;font-weight:bold;color:#047857;margin-top:2px;">${d.hadirGuests.length} Tamu (${d.hadirPax} Pax)</div>
+      </td>
+      <td style="width:25%;border:1px solid #D6D3D1;background:#FAF8F5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#57534E;text-transform:uppercase;font-weight:bold;">Cetak Tebal / Biasa</div>
+        <div style="font-size:12pt;font-weight:bold;color:#1C1917;margin-top:2px;">${d.cetakTebalCount} Tebal &bull; ${d.cetakBiasaCount} Biasa</div>
+      </td>
+      <td style="width:25%;border:1px solid #D6D3D1;background:#FAF8F5;padding:8px 10px;">
+        <div style="font-size:8.5pt;color:#57534E;text-transform:uppercase;font-weight:bold;">Undangan Online</div>
+        <div style="font-size:12pt;font-weight:bold;color:#1C1917;margin-top:2px;">${d.onlineCount} Online</div>
+      </td>
+    </tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#F5F5F4;font-size:9pt;font-weight:bold;text-align:center;">
+        <th style="border:1px solid #A8A29E;padding:6px;width:6%;">No</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:38%;text-align:left;">Nama Lengkap Tamu &amp; Instansi</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:20%;text-align:left;">Kategori &amp; Pihak</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:13%;">Format</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:8%;">Pax</th>
+        <th style="border:1px solid #A8A29E;padding:6px;width:15%;">Status RSVP</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+    </tbody>
+  </table>
+</body>
+</html>`;
+}
+
+export function exportGuestsToWordDoc(
+  guests: WeddingGuest[],
+  coupleTitle = 'Agung & Selo'
+): string {
+  return buildPrintableGuestsHtmlDocument(guests, coupleTitle, true);
+}
+
+export function openGuestsPdfPrintPreview(
+  guests: WeddingGuest[],
+  coupleTitle = 'Agung & Selo'
+): void {
+  if (typeof window === 'undefined') return;
+  const html = buildPrintableGuestsHtmlDocument(guests, coupleTitle, false);
+  const printWin = window.open('', '_blank');
+  if (!printWin) return;
+  printWin.document.open();
+  printWin.document.write(html);
+  printWin.document.close();
+  setTimeout(() => {
+    try {
+      printWin.focus();
+      printWin.print();
+    } catch {
+      // Ignore
+    }
+  }, 350);
+}
+
 export const DEFAULT_MUSIC_PLAYLIST: MusicTrackItem[] = [
   {
     id: 'track-default-1',
