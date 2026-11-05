@@ -854,9 +854,44 @@ export const serverStore = {
 
   deleteWish: (id: string): boolean => {
     const store = getStore();
+    const target = store.wishes.find((w) => w.id === id);
     const before = store.wishes.length;
     store.wishes = store.wishes.filter((w) => w.id !== id);
-    if (store.wishes.length !== before) {
+
+    const syntheticGuestId = id.startsWith('rsvp_guest_')
+      ? id.replace(/^rsvp_guest_/, '')
+      : undefined;
+
+    const matchedGuestIdx = store.guests.findIndex((g) => {
+      if (syntheticGuestId && g.id === syntheticGuestId) return true;
+      if (!target) return false;
+      return (
+        (target.guestId && g.id === target.guestId) ||
+        (target.invitationCode &&
+          g.invitationCode &&
+          g.invitationCode.toLowerCase() === target.invitationCode.toLowerCase()) ||
+        g.guestName.trim().toLowerCase() === target.guestName.trim().toLowerCase()
+      );
+    });
+
+    let guestChanged = false;
+    if (matchedGuestIdx >= 0) {
+      const g = store.guests[matchedGuestIdx];
+      if (g.id.startsWith('guest_rsvp_')) {
+        store.guests.splice(matchedGuestIdx, 1);
+        guestChanged = true;
+      } else {
+        store.guests[matchedGuestIdx] = {
+          ...g,
+          rsvpStatus: 'Belum Konfirmasi',
+          attendanceStatus: 'Belum Dicek',
+          wishes: '',
+        };
+        guestChanged = true;
+      }
+    }
+
+    if (store.wishes.length !== before || guestChanged) {
       persistStore(store);
       return true;
     }
