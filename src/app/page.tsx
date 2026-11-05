@@ -2707,27 +2707,85 @@ function WeddingAppContent() {
 
   const handleDeleteWish = async (id: string) => {
     registerExplicitCloudDeletion('wishes', id);
+    const syntheticGuestId = id.startsWith('rsvp_guest_')
+      ? id.replace(/^rsvp_guest_/, '')
+      : undefined;
     const target = activeAdminState.wishes.find((w) => w.id === id);
-    updateClientScopedState(activeWorkspaceClientId, (prev) => ({
-      ...prev,
-      wishes: prev.wishes.filter((w) => w.id !== id),
-      settings: {
-        ...prev.settings,
-        deletedIdsRegistry: {
-          ...(prev.settings.deletedIdsRegistry || {}),
-          wishes: Array.from(
-            new Set([...(prev.settings.deletedIdsRegistry?.wishes || []), id])
-          ),
+
+    updateClientScopedState(activeWorkspaceClientId, (prev) => {
+      const remainingWishes = prev.wishes.filter((w) => w.id !== id);
+      const removedWalkInGuestIds: string[] = [];
+
+      const nextGuests = prev.guests
+        .map((g) => {
+          const isMatched =
+            (syntheticGuestId && g.id === syntheticGuestId) ||
+            (target &&
+              ((target.guestId && g.id === target.guestId) ||
+                (target.invitationCode &&
+                  g.invitationCode &&
+                  g.invitationCode.toLowerCase() ===
+                    target.invitationCode.toLowerCase()) ||
+                g.guestName.trim().toLowerCase() ===
+                  target.guestName.trim().toLowerCase()));
+
+          if (!isMatched) return g;
+
+          const stillHasOtherWish = remainingWishes.some(
+            (w) =>
+              (w.guestId && w.guestId === g.id) ||
+              (w.invitationCode &&
+                g.invitationCode &&
+                w.invitationCode.toLowerCase() ===
+                  g.invitationCode.toLowerCase()) ||
+              w.guestName.trim().toLowerCase() ===
+                g.guestName.trim().toLowerCase()
+          );
+          if (stillHasOtherWish) return g;
+
+          if (g.id.startsWith('guest_rsvp_')) {
+            removedWalkInGuestIds.push(g.id);
+            registerExplicitCloudDeletion('guests', g.id);
+            return null;
+          }
+
+          return {
+            ...g,
+            rsvpStatus: 'Belum Konfirmasi' as const,
+            attendanceStatus: 'Belum Dicek' as const,
+            wishes: '',
+          };
+        })
+        .filter((g): g is WeddingGuest => g !== null);
+
+      return {
+        ...prev,
+        guests: nextGuests,
+        wishes: remainingWishes,
+        settings: {
+          ...prev.settings,
+          deletedIdsRegistry: {
+            ...(prev.settings.deletedIdsRegistry || {}),
+            wishes: Array.from(
+              new Set([...(prev.settings.deletedIdsRegistry?.wishes || []), id])
+            ),
+            guests: Array.from(
+              new Set([
+                ...(prev.settings.deletedIdsRegistry?.guests || []),
+                ...removedWalkInGuestIds,
+              ])
+            ),
+          },
+          updatedAt: new Date().toISOString(),
         },
-        updatedAt: new Date().toISOString(),
-      },
-    }));
+      };
+    });
     appendAuditLog({
       actor: adminUser?.username || 'admin',
       module: 'DOA_RSVP',
       action: 'HAPUS',
       status: 'SUCCESS',
-      summary: `Menghapus ucapan doa dari "${target?.guestName || id}"`,
+      summary: `Menghapus ucapan doa / reset RSVP dari "${target?.guestName || id}"`,
     });
     if (activeWorkspaceClientId === 'client-utama') {
       await mutateServer('DELETE_WISH', { id });

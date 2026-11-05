@@ -675,6 +675,53 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     };
   }, [state.tasks, state.budgetItems, state.guests, state.settings]);
 
+  const syncedGuestbookEntries = useMemo<GuestWish[]>(() => {
+    const entries: GuestWish[] = [...state.wishes];
+    for (const g of state.guests) {
+      const isConfirmed =
+        g.rsvpStatus !== 'Belum Konfirmasi' ||
+        g.attendanceStatus === 'Hadir di Lokasi';
+      if (!isConfirmed) continue;
+
+      const alreadyInWishes = entries.some(
+        (w) =>
+          (w.guestId && w.guestId === g.id) ||
+          (w.invitationCode &&
+            g.invitationCode &&
+            w.invitationCode.toLowerCase() === g.invitationCode.toLowerCase()) ||
+          w.guestName.trim().toLowerCase() === g.guestName.trim().toLowerCase()
+      );
+      if (alreadyInWishes) continue;
+
+      entries.push({
+        id: `rsvp_guest_${g.id}`,
+        guestId: g.id,
+        invitationCode: g.invitationCode,
+        guestName: g.guestName,
+        institution: g.institution || 'di Tempat',
+        relation: g.guestType,
+        phone: g.phone || '',
+        rsvpStatus:
+          g.attendanceStatus === 'Hadir di Lokasi' ? 'Hadir' : g.rsvpStatus,
+        pax:
+          g.rsvpStatus === 'Hadir' || g.attendanceStatus === 'Hadir di Lokasi'
+            ? Number(g.confirmedPax ?? g.pax ?? 2)
+            : 0,
+        message:
+          g.wishes && g.wishes.trim()
+            ? g.wishes.trim()
+            : g.attendanceStatus === 'Hadir di Lokasi'
+              ? `Hadir di lokasi acara (Scan QR Check-In • ${g.confirmedPax ?? g.pax ?? 2} Pax).`
+              : g.rsvpStatus === 'Hadir'
+                ? `Konfirmasi kehadiran: Hadir (${g.confirmedPax ?? g.pax ?? 2} Pax).`
+                : `Konfirmasi kehadiran: ${g.rsvpStatus}.`,
+        createdAt: g.updatedAt || g.createdAt || new Date().toISOString(),
+        isPinned: false,
+      });
+    }
+    return entries;
+  }, [state.wishes, state.guests]);
+
   // ============================================================================
   // CHECKLIST MODULE STATE
   // ============================================================================
@@ -8105,7 +8152,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
                     }`}
                   >
-                    Buku Tamu ({state.wishes.length})
+                    Buku Tamu ({syncedGuestbookEntries.length})
                   </button>
                   <button
                     type="button"
@@ -9231,25 +9278,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
                 <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                   <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
-                    <span>Buku Tamu &amp; RSVP ({state.wishes.length})</span>
+                    <span>Buku Tamu &amp; RSVP ({syncedGuestbookEntries.length})</span>
                     <InfoTooltip text="Semua konfirmasi kehadiran (RSVP + jumlah Pax) dan doa dari tamu masuk ke sini. Klik Balas untuk menjawab ucapan tamu." />
                   </h2>
-                  {state.wishes.length > 0 && (
+                  {syncedGuestbookEntries.length > 0 && (
                     <button
                       type="button"
-                      title="Hapus seluruh ucapan Buku Tamu secara permanen dari database"
+                      title="Hapus seluruh ucapan Buku Tamu & reset konfirmasi RSVP dari database"
                       onClick={() =>
                         requestConfirm({
-                          title: 'Bersihkan Semua Buku Tamu?',
-                          message: `Seluruh ${state.wishes.length} ucapan doa & konfirmasi RSVP pada Buku Tamu akan dihapus permanen dari database Supabase.`,
+                          title: 'Bersihkan Semua Buku Tamu & RSVP?',
+                          message: `Seluruh ${syncedGuestbookEntries.length} ucapan doa & konfirmasi RSVP pada Buku Tamu akan dihapus/direset permanen dari database Supabase.`,
                           confirmLabel: 'Ya, Bersihkan Semua',
                           variant: 'danger',
                           onConfirm: async () => {
-                            for (const w of state.wishes) {
+                            for (const w of syncedGuestbookEntries) {
                               await onDeleteWish(w.id);
                             }
                             showToast(
-                              '✓ Seluruh ucapan Buku Tamu berhasil dibersihkan dari database.'
+                              '✓ Seluruh ucapan Buku Tamu & status RSVP berhasil dibersihkan dari database.'
                             );
                           },
                         })
@@ -9261,13 +9308,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </button>
                   )}
                 </div>
-                {state.wishes.length === 0 ? (
+                {syncedGuestbookEntries.length === 0 ? (
                   <div className="p-8 text-center text-xs text-stone-500">
                     Belum ada konfirmasi kehadiran atau ucapan doa yang masuk dari tamu.
                   </div>
                 ) : (
                   <div className="divide-y divide-stone-200 px-4 sm:px-6">
-                    {state.wishes.map((w) => (
+                    {syncedGuestbookEntries.map((w) => (
                       <div key={w.id} className="py-4 space-y-2">
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div>
