@@ -3863,6 +3863,22 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
       return;
     }
 
+    if (
+      activeGiftProceedModal.kind !== 'PHYSICAL_GIFT' &&
+      activeGiftProceedModal.accType !== 'CRYPTO' &&
+      activeGiftProceedModal.accType !== 'PAYPAL'
+    ) {
+      const numericAmount = Number(cleanNominal.replace(/\D/g, '')) || 0;
+      if (numericAmount < 50000) {
+        setGiftFormError(
+          lang === 'ID'
+            ? 'Nominal tanda kasih minimal Rp 50.000.'
+            : 'Minimum gift amount is Rp 50,000.'
+        );
+        return;
+      }
+    }
+
     setGiftFormError('');
     if (!rsvpName.trim() && finalSender) {
       setRsvpName(finalSender);
@@ -8368,17 +8384,16 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                   />
 
                   {activeGiftProceedModal.kind !== 'PHYSICAL_GIFT' && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
                       {(activeGiftProceedModal.accType === 'CRYPTO'
                         ? ['25 USDT', '50 USDT', '100 USDT', '250 USDT']
                         : activeGiftProceedModal.accType === 'PAYPAL'
                           ? ['$25 USD', '$50 USD', '$100 USD', '$250 USD']
                           : [
+                              'Rp 50.000',
                               'Rp 100.000',
                               'Rp 250.000',
                               'Rp 500.000',
-                              'Rp 1.000.000',
-                              'Rp 2.000.000',
                             ]
                       ).map((preset) => (
                         <button
@@ -8388,7 +8403,7 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                             setGiftNominalInput(preset);
                             if (giftFormError) setGiftFormError('');
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                          className={`w-full px-2 py-1.5 rounded-lg text-[11px] font-bold border text-center whitespace-nowrap transition-all cursor-pointer ${
                             giftNominalInput === preset
                               ? 'bg-[#8B6914] text-white border-[#8B6914]'
                               : 'bg-[#FAF8F5] hover:bg-[#FAF3E3] text-[#8B6914] border-[#D4AF37]/40'
