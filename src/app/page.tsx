@@ -499,32 +499,9 @@ function WeddingAppContent() {
   const [state, setState] = useState<WeddingDatabaseSchema>(() =>
     getInitialClientState()
   );
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
-    const stored = getStoredAdminUser();
-    if (!stored) return null;
-    if (isSuperadminUser(stored)) {
-      const rememberedWs =
-        getStoredSuperadminWorkspace() ||
-        (stored.clientId && stored.clientId !== 'client-gmail-agungkrisdiant'
-          ? stored.clientId
-          : 'client-utama');
-      return {
-        ...stored,
-        nama: 'Eko Agung Krisdianto',
-        jabatan: 'Superadmin',
-        role: 'SUPERADMIN',
-        clientId: rememberedWs,
-      };
-    }
-    return stored;
-  });
-  const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>(() => {
-    if (hasInitialGuestOrClientUrl && urlMode !== 'admin') return 'PUBLIC';
-    const storedMode = getStoredViewMode();
-    const storedUser = getStoredAdminUser();
-    if (storedUser && storedMode === 'ADMIN') return 'ADMIN';
-    return 'PUBLIC';
-  });
+  // Never trust unverified localStorage on initial render; wait for server HttpOnly JWT verification (/api/auth)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [viewMode, setViewMode] = useState<'PUBLIC' | 'ADMIN'>('PUBLIC');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginLang, setLoginLang] = useState<'ID' | 'EN'>('ID');
   const [authModalMode, setAuthModalMode] = useState<
@@ -747,31 +724,20 @@ function WeddingAppContent() {
     }
   }, [viewMode, publicSelectedClientId]);
 
-  // Verify server-side HttpOnly Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
+  // Verify server-side HttpOnly JWT Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
   useEffect(() => {
     let isMounted = true;
 
-    fetch('/api/auth', { cache: 'no-store' })
+    fetch('/api/auth', { cache: 'no-store', credentials: 'include' })
       .then(async (res) => {
         if (!isMounted) return;
         if (!res.ok) {
-          const cachedUser = getStoredAdminUser();
-          if (!cachedUser) {
-            setAdminUser(null);
-            if (urlMode === 'admin') {
-              setIsLoginModalOpen(true);
-            }
-          } else {
-            setAdminUser(cachedUser);
-            if (isSuperadminUser(cachedUser)) {
-              const rememberedWs =
-                getStoredSuperadminWorkspace() ||
-                (cachedUser.clientId &&
-                cachedUser.clientId !== 'client-gmail-agungkrisdiant'
-                  ? cachedUser.clientId
-                  : 'client-utama');
-              setSelectedAdminWorkspaceId(rememberedWs);
-            }
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          saveStoredViewMode('PUBLIC');
+          setViewMode('PUBLIC');
+          if (urlMode === 'admin') {
+            setIsLoginModalOpen(true);
           }
           return;
         }
@@ -813,12 +779,22 @@ function WeddingAppContent() {
           ) {
             changeViewMode('ADMIN');
           }
-        } else if (urlMode === 'admin') {
-          setIsLoginModalOpen(true);
+        } else {
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          saveStoredViewMode('PUBLIC');
+          setViewMode('PUBLIC');
+          if (urlMode === 'admin') {
+            setIsLoginModalOpen(true);
+          }
         }
       })
       .catch(() => {
-        if (urlMode === 'admin' && !getStoredAdminUser()) {
+        setAdminUser(null);
+        saveStoredAdminUser(null);
+        saveStoredViewMode('PUBLIC');
+        setViewMode('PUBLIC');
+        if (urlMode === 'admin') {
           setIsLoginModalOpen(true);
         }
       });
@@ -1175,40 +1151,100 @@ function WeddingAppContent() {
     [clientGroups]
   );
 
-  const handleOpenAdminPortal = () => {
+  // Periodic server JWT session verification while in ADMIN mode
+  useEffect(() => {
+    if (viewMode !== 'ADMIN' || demoManagerClientId) return;
+    let isMounted = true;
+
+    const verifyActiveJwtSession = async () => {
+      try {
+        const res = await fetch('/api/auth', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
+        if (!isMounted) return;
+        if (!res.ok) {
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          changeViewMode('PUBLIC');
+          setAuthModalMode('SIGN_IN');
+          setLoginErrorMsg(
+            loginLang === 'EN'
+              ? 'Your JWT session has expired. Please sign in again to access Planner.'
+              : 'Sesi keamanan JWT Anda telah berakhir. Silakan masuk kembali untuk mengakses Planner.'
+          );
+          setIsLoginModalOpen(true);
+          return;
+        }
+        const data = await res.json();
+        if (!data.authenticated || !data.user) {
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          changeViewMode('PUBLIC');
+          setAuthModalMode('SIGN_IN');
+          setLoginErrorMsg(
+            loginLang === 'EN'
+              ? 'Your JWT session has expired. Please sign in again to access Planner.'
+              : 'Sesi keamanan JWT Anda telah berakhir. Silakan masuk kembali untuk mengakses Planner.'
+          );
+          setIsLoginModalOpen(true);
+        }
+      } catch {
+        // Keep current session on temporary network blip
+      }
+    };
+
+    const intervalId = window.setInterval(verifyActiveJwtSession, 120_000);
+    const handleFocus = () => {
+      void verifyActiveJwtSession();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [viewMode, demoManagerClientId, changeViewMode, loginLang]);
+
+  const handleOpenAdminPortal = async () => {
     weddingMusicPlayer.stop();
-    if (
-      publicSelectedClientId &&
-      isShowcaseDummyClientId(publicSelectedClientId)
-    ) {
-      handleOpenDemoManager(
-        publicSelectedClientId,
-        demoPackageTier,
-        demoSelectedThemeId
-      );
-      return;
-    }
-    if (
-      publicSelectedClientId &&
-      !isShowcaseDummyClientId(publicSelectedClientId) &&
-      isSuperadminUser(adminUser)
-    ) {
-      handleSwitchWorkspaceClient(publicSelectedClientId);
-    }
-    setIsUrlGuestSessionCleared(true);
-    setPreviewOverrideGuest(null);
-    setManualGuestLookup({});
-    if (typeof window !== 'undefined') {
-      window.history.replaceState({}, '', '/');
-    }
+    // Always verify live HttpOnly JWT cookie with server before opening Planner
     if (adminUser) {
-      changeViewMode('ADMIN');
-    } else {
-      setAuthModalMode('SIGN_IN');
-      setShowCustomGoogleInput(false);
-      setLoginErrorMsg('');
-      setIsLoginModalOpen(true);
+      try {
+        const res = await fetch('/api/auth', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
+        const authData = res.ok ? await res.json() : { authenticated: false };
+        if (authData.authenticated && authData.user) {
+          if (
+            publicSelectedClientId &&
+            !isShowcaseDummyClientId(publicSelectedClientId) &&
+            isSuperadminUser(adminUser)
+          ) {
+            handleSwitchWorkspaceClient(publicSelectedClientId);
+          }
+          setDemoManagerClientId(null);
+          setIsUrlGuestSessionCleared(true);
+          setPreviewOverrideGuest(null);
+          setManualGuestLookup({});
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', '/');
+          }
+          changeViewMode('ADMIN');
+          return;
+        }
+      } catch {
+        // Fall through to login modal if server check fails
+      }
+      setAdminUser(null);
+      saveStoredAdminUser(null);
     }
+
+    setAuthModalMode('SIGN_IN');
+    setShowCustomGoogleInput(false);
+    setLoginErrorMsg('');
+    setIsLoginModalOpen(true);
   };
 
   useEffect(() => {
@@ -1614,6 +1650,14 @@ function WeddingAppContent() {
       setSelectedAdminWorkspaceId(clientId);
       setAdminUser(sessionUser);
       saveStoredAdminUser(sessionUser);
+      void fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REGISTER_GMAIL_WORKSPACE',
+          user: sessionUser,
+        }),
+      }).catch(() => {});
       setIsUrlGuestSessionCleared(true);
       setPreviewOverrideGuest(null);
       setManualGuestLookup({});
@@ -1848,17 +1892,13 @@ function WeddingAppContent() {
     );
     if (matchedGroup) {
       setAccessCodeInput('');
-      const wsUser: AdminUser = {
-        id: `usr-code-${matchedGroup.id}`,
-        username: matchedGroup.clientCode.toLowerCase(),
-        nama: matchedGroup.coupleLabel || matchedGroup.clientName,
-        role: 'MEMPELAI_PRIA',
-        jabatan: `Workspace • ${matchedGroup.packageTier}`,
-        email: `${matchedGroup.clientCode.toLowerCase()}@meplanner.id`,
-        clientId: matchedGroup.id,
-        clientName: matchedGroup.clientName,
-      };
-      handleLoginSuccess(wsUser);
+      setAuthModalMode('SIGN_IN');
+      setLoginIdentifier(matchedGroup.clientCode.toLowerCase());
+      setLoginErrorMsg(
+        loginLang === 'ID'
+          ? `Workspace "${matchedGroup.coupleLabel || matchedGroup.clientName}" ditemukan. Silakan masukkan kata sandi akun Anda untuk masuk ke Planner.`
+          : `Workspace "${matchedGroup.coupleLabel || matchedGroup.clientName}" found. Please enter your account password to sign in to Planner.`
+      );
       return;
     }
 
