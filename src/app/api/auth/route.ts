@@ -8,6 +8,7 @@ import {
   isPrivilegedDefaultOrSuperUser,
   recordFailedAttempt,
   SESSION_COOKIE_NAME,
+  SESSION_TTL_SECONDS,
   verifyAdminRequest,
   verifySuperadminIdentity,
   verifySuperadminPassword,
@@ -20,10 +21,20 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const user = verifyAdminRequest(request);
   if (!user) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       { authenticated: false, user: null },
-      { status: 200 }
+      { status: 401 }
     );
+    if (request.cookies.get(SESSION_COOKIE_NAME)?.value) {
+      response.cookies.set(SESSION_COOKIE_NAME, '', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 0,
+      });
+    }
+    return response;
   }
   return NextResponse.json({
     authenticated: true,
@@ -53,53 +64,90 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'SYNC_SESSION' && body.user && typeof body.user === 'object') {
-      const u = body.user;
-      const uname = String(u.username || '').trim().toLowerCase();
-      const uemail = String(u.email || '').trim().toLowerCase();
-      const urole = String(u.role || '').trim().toUpperCase();
-      const isValidSuper =
-        urole === 'SUPERADMIN' &&
-        (verifySuperadminIdentity(uname) ||
-          verifySuperadminIdentity(uemail) ||
-          serverStore
-            .getAdminUsers()
-            .some(
-              (adm) =>
-                adm.role === 'SUPERADMIN' &&
-                (adm.username.toLowerCase() === uname ||
-                  (adm.email && adm.email.toLowerCase() === uemail))
-            ));
-      const matchedAdm = serverStore
-        .getAdminUsers()
-        .find((adm) => adm.username.toLowerCase() === uname);
-
-      const resolvedUser = isValidSuper
-        ? {
-            id: String(u.id || 'usr-superadmin-owner'),
-            username: uname || 'omeko42',
-            nama: String(u.nama || 'Eko Agung Krisdianto (Superadmin)'),
-            role: 'SUPERADMIN' as const,
-            jabatan: String(u.jabatan || 'Superadmin'),
-            email: uemail || 'e98.bisnis@gmail.com',
-            isDefaultUser: true,
-          }
-        : matchedAdm || null;
-
-      if (resolvedUser) {
-        const token = createSessionToken(resolvedUser);
-        const response = NextResponse.json({
-          success: true,
-          user: resolvedUser,
-        });
-        response.cookies.set(SESSION_COOKIE_NAME, token, {
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          path: '/',
-          maxAge: 60 * 60 * 24 * 7,
-        });
-        return response;
+      const existingSession = verifyAdminRequest(request);
+      if (!existingSession) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Sesi JWT tidak valid atau telah kedaluwarsa. Silakan login kembali.',
+          },
+          { status: 401 }
+        );
       }
+
+      const u = body.user;
+      const requestedClientId = String(u.clientId || existingSession.clientId || 'client-utama').trim();
+      const requestedClientName = String(u.clientName || existingSession.clientName || '').trim();
+
+      const updatedSessionUser =
+        existingSession.role === 'SUPERADMIN'
+          ? {
+              ...existingSession,
+              clientId: requestedClientId,
+              clientName: requestedClientName || existingSession.clientName,
+            }
+          : existingSession;
+
+      const token = createSessionToken(updatedSessionUser);
+      const response = NextResponse.json({
+        success: true,
+        user: updatedSessionUser,
+      });
+      response.cookies.set(SESSION_COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: SESSION_TTL_SECONDS,
+      });
+      return response;
+    }
+
+    if (action === 'REGISTER_GMAIL_WORKSPACE' && body.user && typeof body.user === 'object') {
+      const u = body.user;
+      const email = String(u.email || u.username || '').trim().toLowerCase();
+      const clientId = String(u.clientId || '').trim();
+
+      if (
+        !email ||
+        verifySuperadminIdentity(email) ||
+        !clientId.startsWith('client-gmail-') ||
+        clientId === 'client-gmail-agungkrisdiant'
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Akun ini memerlukan otentikasi kata sandi resmi.',
+          },
+          { status: 403 }
+        );
+      }
+
+      const gmailUser = {
+        id: String(u.id || `usr-gmail-${clientId.replace('client-gmail-', '')}`),
+        username: email,
+        nama: String(u.nama || email.split('@')[0]),
+        role: 'MEMPELAI_PRIA' as const,
+        jabatan: String(u.jabatan || 'Owner Workspace'),
+        email,
+        isDefaultUser: true,
+        clientId,
+        clientName: String(u.clientName || clientId),
+      };
+
+      const token = createSessionToken(gmailUser);
+      const response = NextResponse.json({
+        success: true,
+        user: gmailUser,
+      });
+      response.cookies.set(SESSION_COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: SESSION_TTL_SECONDS,
+      });
+      return response;
     }
 
     const identifier = String(body.identifier || '').trim();
@@ -155,7 +203,7 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: SESSION_TTL_SECONDS,
     });
 
     return response;
@@ -175,49 +223,11 @@ export async function PUT(request: NextRequest) {
   await serverStore.reconcileWithSupabase();
   try {
     const body = await request.json();
-    let sessionUser = verifyAdminRequest(request);
-
-    if (!sessionUser && body.actorUser && typeof body.actorUser === 'object') {
-      const actor = body.actorUser;
-      const actorUsername = String(actor.username || '').trim().toLowerCase();
-      const actorEmail = String(actor.email || '').trim().toLowerCase();
-      const actorRole = String(actor.role || '').trim().toUpperCase();
-
-      if (
-        actorRole === 'SUPERADMIN' &&
-        (verifySuperadminIdentity(actorUsername) ||
-          verifySuperadminIdentity(actorEmail) ||
-          serverStore
-            .getAdminUsers()
-            .some(
-              (u) =>
-                u.role === 'SUPERADMIN' &&
-                (u.username.toLowerCase() === actorUsername ||
-                  (u.email && u.email.toLowerCase() === actorEmail))
-            ))
-      ) {
-        sessionUser = {
-          id: String(actor.id || 'usr-superadmin-owner'),
-          username: actorUsername || 'omeko42',
-          nama: String(actor.nama || 'Eko Agung Krisdianto (Superadmin)'),
-          role: 'SUPERADMIN',
-          jabatan: String(actor.jabatan || 'Superadmin'),
-          email: actorEmail || 'e98.bisnis@gmail.com',
-          isDefaultUser: true,
-        };
-      } else if (actorUsername) {
-        const matchedDbUser = serverStore
-          .getAdminUsers()
-          .find((u) => u.username.toLowerCase() === actorUsername);
-        if (matchedDbUser) {
-          sessionUser = matchedDbUser;
-        }
-      }
-    }
+    const sessionUser = verifyAdminRequest(request);
 
     if (!sessionUser) {
       return NextResponse.json(
-        { success: false, error: 'Sesi tidak valid. Silakan login kembali.' },
+        { success: false, error: 'Sesi JWT tidak valid atau telah berakhir. Silakan login kembali.' },
         { status: 401 }
       );
     }
@@ -664,7 +674,7 @@ export async function PUT(request: NextRequest) {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: SESSION_TTL_SECONDS,
       });
     }
 

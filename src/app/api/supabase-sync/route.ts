@@ -6,6 +6,7 @@ import {
   SUPABASE_ROW_ID,
   mergeFullDatabaseMultiDevice,
 } from '@/lib/supabaseCloud';
+import { verifyAdminRequest } from '@/lib/auth';
 import { WeddingDatabaseSchema } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -89,6 +90,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const adminSession = verifyAdminRequest(req);
+    const isAuthenticatedAdmin = Boolean(adminSession);
+    const allowForceOverwrite = Boolean(body.forceOverwrite && isAuthenticatedAdmin);
+
     const syncTime = body.updatedAt || new Date().toISOString();
     let mergedData: WeddingDatabaseSchema = {
       ...body.data,
@@ -97,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     // Server-Side Multi-Device Full Database Merge
     // Protects guests, RSVP confirmations, wishes, tasks, budgets, adminUsers, and clientWorkspaces across concurrent users
-    if (!body.forceOverwrite) {
+    if (!allowForceOverwrite) {
       try {
         const existingRes = await fetch(
           `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data`,
@@ -114,24 +119,42 @@ export async function POST(req: NextRequest) {
           }>;
           const cloudData = existingRows?.[0]?.data;
           if (cloudData && typeof cloudData === 'object') {
+            // Unauthenticated public callers (RSVP / Wishes / Gift Confirmation) cannot delete records or overwrite budgetItems/tasks/adminUsers
+            const safeInputData: WeddingDatabaseSchema = isAuthenticatedAdmin
+              ? mergedData
+              : {
+                  ...mergedData,
+                  budgetItems: Array.isArray(cloudData.budgetItems)
+                    ? cloudData.budgetItems
+                    : mergedData.budgetItems,
+                  tasks: Array.isArray(cloudData.tasks)
+                    ? cloudData.tasks
+                    : mergedData.tasks,
+                  adminUsers: Array.isArray(cloudData.adminUsers)
+                    ? cloudData.adminUsers
+                    : mergedData.adminUsers,
+                };
+
             mergedData = mergeFullDatabaseMultiDevice(
-              mergedData,
+              safeInputData,
               cloudData,
               true,
-              {
-                guests: new Set<string>(
-                  Array.isArray(body.deletedGuestIds) ? body.deletedGuestIds : []
-                ),
-                tasks: new Set<string>(
-                  Array.isArray(body.deletedTaskIds) ? body.deletedTaskIds : []
-                ),
-                wishes: new Set<string>(
-                  Array.isArray(body.deletedWishIds) ? body.deletedWishIds : []
-                ),
-                budgets: new Set<string>(
-                  Array.isArray(body.deletedBudgetIds) ? body.deletedBudgetIds : []
-                ),
-              }
+              isAuthenticatedAdmin
+                ? {
+                    guests: new Set<string>(
+                      Array.isArray(body.deletedGuestIds) ? body.deletedGuestIds : []
+                    ),
+                    tasks: new Set<string>(
+                      Array.isArray(body.deletedTaskIds) ? body.deletedTaskIds : []
+                    ),
+                    wishes: new Set<string>(
+                      Array.isArray(body.deletedWishIds) ? body.deletedWishIds : []
+                    ),
+                    budgets: new Set<string>(
+                      Array.isArray(body.deletedBudgetIds) ? body.deletedBudgetIds : []
+                    ),
+                  }
+                : undefined
             );
             mergedData = {
               ...mergedData,

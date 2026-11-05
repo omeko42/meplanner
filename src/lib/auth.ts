@@ -4,7 +4,9 @@ import { AdminUser } from '@/types';
 import { serverStore } from '@/lib/serverStore';
 
 export const SESSION_COOKIE_NAME = 'wedding_admin_session';
-const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+export const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours JWT session lifetime
+const SESSION_TTL_MS = SESSION_TTL_SECONDS * 1000;
+const JWT_ISSUER = 'meplanner-auth';
 
 // One-way scrypt hash of the out-of-system Superadmin (App Owner) identifier & password.
 // Plaintext never appears in code, UI, or git history.
@@ -13,7 +15,15 @@ const SUPERADMIN_ID_HASH =
 const SUPERADMIN_PW_HASH =
   'scrypt$wedplan_2026_slt$9c1f8ee1209324d79ce7a003be6aae62261f930bedab3ce9b604c64d783370463ef76a6a857459c6504f2392984d759f0c63bb2293736d206bdabecc9883330a';
 
+interface JwtHeader {
+  alg: 'HS256';
+  typ: 'JWT';
+}
+
 interface SessionPayload {
+  iss?: string;
+  jti?: string;
+  iat?: number;
   sub: string;
   username: string;
   email: string;
@@ -174,7 +184,15 @@ export function clearFailedAttempts(clientKey: string): void {
 }
 
 export function createSessionToken(user: AdminUser): string {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const header: JwtHeader = {
+    alg: 'HS256',
+    typ: 'JWT',
+  };
   const payload: SessionPayload = {
+    iss: JWT_ISSUER,
+    jti: crypto.randomUUID(),
+    iat: nowSec,
     sub: user.id,
     username: user.username,
     email: user.email,
@@ -186,22 +204,55 @@ export function createSessionToken(user: AdminUser): string {
     clientName: user.clientName,
     exp: Date.now() + SESSION_TTL_MS,
   };
+  const headerBase64 = Buffer.from(JSON.stringify(header), 'utf-8').toString('base64url');
   const payloadBase64 = Buffer.from(JSON.stringify(payload), 'utf-8').toString('base64url');
+  const signingInput = `${headerBase64}.${payloadBase64}`;
   const signature = crypto
     .createHmac('sha256', getAuthSecret())
-    .update(payloadBase64)
+    .update(signingInput)
     .digest('base64url');
-  return `${payloadBase64}.${signature}`;
+  return `${signingInput}.${signature}`;
 }
 
 export function verifySessionToken(token?: string): AdminUser | null {
   if (!token || !token.includes('.')) return null;
-  const [payloadBase64, signature] = token.split('.');
-  if (!payloadBase64 || !signature) return null;
+  const parts = token.split('.');
+
+  let payloadBase64 = '';
+  let signingInput = '';
+  let signature = '';
+
+  if (parts.length === 3) {
+    // Standard RFC 7519 JWT: header.payload.signature
+    const [headerB64, payloadB64, sig] = parts;
+    if (!headerB64 || !payloadB64 || !sig) return null;
+    try {
+      const parsedHeader = JSON.parse(
+        Buffer.from(headerB64, 'base64url').toString('utf-8')
+      ) as Partial<JwtHeader>;
+      if (parsedHeader.alg !== 'HS256' || parsedHeader.typ !== 'JWT') {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+    payloadBase64 = payloadB64;
+    signingInput = `${headerB64}.${payloadB64}`;
+    signature = sig;
+  } else if (parts.length === 2) {
+    // Legacy 2-part HMAC token support
+    const [payloadB64, sig] = parts;
+    if (!payloadB64 || !sig) return null;
+    payloadBase64 = payloadB64;
+    signingInput = payloadB64;
+    signature = sig;
+  } else {
+    return null;
+  }
 
   const expectedSignature = crypto
     .createHmac('sha256', getAuthSecret())
-    .update(payloadBase64)
+    .update(signingInput)
     .digest('base64url');
 
   const sigBuf = Buffer.from(signature, 'utf-8');
@@ -215,7 +266,9 @@ export function verifySessionToken(token?: string): AdminUser | null {
       Buffer.from(payloadBase64, 'base64url').toString('utf-8')
     ) as SessionPayload;
 
-    if (!parsed.exp || Date.now() > parsed.exp) {
+    // Support both millisecond and second exp timestamps
+    const expMs = parsed.exp < 1e12 ? parsed.exp * 1000 : parsed.exp;
+    if (!expMs || Date.now() > expMs) {
       return null;
     }
 
@@ -224,16 +277,13 @@ export function verifySessionToken(token?: string): AdminUser | null {
       verifySuperadminIdentity(parsed.username || '') ||
       verifySuperadminIdentity(parsed.email || '');
     const normalizedClientId = isSuperadminSession
-      ? !parsed.clientId || parsed.clientId === 'client-utama'
-        ? 'client-demo'
-        : parsed.clientId
-      : parsed.clientId;
+      ? parsed.clientId || 'client-utama'
+      : parsed.clientId || 'client-utama';
     const normalizedClientName = isSuperadminSession
-      ? !parsed.clientName ||
-        parsed.clientId === 'client-utama' ||
-        parsed.clientName.includes('Klien Utama')
-        ? 'Klien Demo • Rayhan & Clarissa'
-        : parsed.clientName
+      ? parsed.clientName ||
+        (normalizedClientId === 'client-demo'
+          ? 'Klien Demo • Rayhan & Clarissa'
+          : 'Klien Utama • Agung & Selo')
       : parsed.clientName;
 
     return {
