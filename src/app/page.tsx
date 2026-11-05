@@ -1151,12 +1151,22 @@ function WeddingAppContent() {
     [clientGroups]
   );
 
-  // Periodic server JWT session verification while in ADMIN mode
+  // Periodic server JWT session verification while in ADMIN mode (throttled to save Vercel Function CPU)
   useEffect(() => {
     if (viewMode !== 'ADMIN' || demoManagerClientId) return;
     let isMounted = true;
+    let lastCheckedAt = Date.now();
 
     const verifyActiveJwtSession = async () => {
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'hidden'
+      ) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastCheckedAt < 300_000) return; // Max once every 5 minutes on focus
+      lastCheckedAt = now;
       try {
         const res = await fetch('/api/auth', {
           cache: 'no-store',
@@ -1194,7 +1204,7 @@ function WeddingAppContent() {
       }
     };
 
-    const intervalId = window.setInterval(verifyActiveJwtSession, 120_000);
+    const intervalId = window.setInterval(verifyActiveJwtSession, 600_000);
     const handleFocus = () => {
       void verifyActiveJwtSession();
     };
