@@ -1952,9 +1952,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       if (found) return found;
     }
     return (
+      activeCountdownEvents.find((e) => e.isMainEvent) ||
       activeCountdownEvents.find((e) =>
-        /pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
-      ) || activeCountdownEvents[0]
+        /resepsi|pemberkatan|akad|utama/i.test(e.title + ' ' + e.badge)
+      ) ||
+      activeCountdownEvents[0]
     );
   }, [activeCountdownEvents, selectedTrackerCountdownId]);
 
@@ -6479,9 +6481,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     &bull;{' '}
                     {(() => {
                       const primaryEv =
+                        scheduleEvents.find((e) => e.isMainEvent) ||
                         activeTrackerCountdownEvent ||
                         scheduleEvents.find((e) =>
-                          /pemberkatan|akad|utama/i.test(
+                          /resepsi|pemberkatan|akad|utama/i.test(
                             `${e.title} ${e.badge || ''}`
                           )
                         ) ||
