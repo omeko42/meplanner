@@ -1219,36 +1219,50 @@ function WeddingAppContent() {
   const handleOpenAdminPortal = async () => {
     weddingMusicPlayer.stop();
     // Always verify live HttpOnly JWT cookie with server before opening Planner
-    if (adminUser) {
-      try {
-        const res = await fetch('/api/auth', {
-          cache: 'no-store',
-          credentials: 'include',
-        });
-        const authData = res.ok ? await res.json() : { authenticated: false };
-        if (authData.authenticated && authData.user) {
-          if (
-            publicSelectedClientId &&
-            !isShowcaseDummyClientId(publicSelectedClientId) &&
-            isSuperadminUser(adminUser)
-          ) {
-            handleSwitchWorkspaceClient(publicSelectedClientId);
-          }
-          setDemoManagerClientId(null);
-          setIsUrlGuestSessionCleared(true);
-          setPreviewOverrideGuest(null);
-          setManualGuestLookup({});
-          if (typeof window !== 'undefined') {
-            window.history.replaceState({}, '', '/');
-          }
-          changeViewMode('ADMIN');
-          return;
+    try {
+      const res = await fetch('/api/auth', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      const authData = res.ok ? await res.json() : { authenticated: false };
+      if (authData.authenticated && authData.user) {
+        const verifiedUser = authData.user as AdminUser;
+        if (!adminUser) {
+          setAdminUser(verifiedUser);
+          saveStoredAdminUser(verifiedUser);
         }
-      } catch {
-        // Fall through to login modal if server check fails
+        if (
+          publicSelectedClientId &&
+          !isShowcaseDummyClientId(publicSelectedClientId) &&
+          isSuperadminUser(verifiedUser)
+        ) {
+          handleSwitchWorkspaceClient(publicSelectedClientId);
+        }
+        setDemoManagerClientId(null);
+        setIsUrlGuestSessionCleared(true);
+        setPreviewOverrideGuest(null);
+        setManualGuestLookup({});
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', '/');
+        }
+        changeViewMode('ADMIN');
+        return;
       }
       setAdminUser(null);
       saveStoredAdminUser(null);
+    } catch {
+      // If offline / network blip while already authenticated in memory, allow returning to Planner
+      if (adminUser) {
+        setDemoManagerClientId(null);
+        setIsUrlGuestSessionCleared(true);
+        setPreviewOverrideGuest(null);
+        setManualGuestLookup({});
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', '/');
+        }
+        changeViewMode('ADMIN');
+        return;
+      }
     }
 
     setAuthModalMode('SIGN_IN');

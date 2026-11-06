@@ -4,7 +4,7 @@ import { AdminUser } from '@/types';
 import { serverStore } from '@/lib/serverStore';
 
 export const SESSION_COOKIE_NAME = 'wedding_admin_session';
-export const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours JWT session lifetime
+export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days sliding JWT session lifetime
 const SESSION_TTL_MS = SESSION_TTL_SECONDS * 1000;
 const JWT_ISSUER = 'meplanner-auth';
 
