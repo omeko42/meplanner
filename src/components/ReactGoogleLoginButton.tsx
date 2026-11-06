@@ -158,6 +158,26 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                 }
               );
               const profile = await userInfoRes.json();
+              let serverVerifiedUser: unknown = undefined;
+              try {
+                const authRes = await fetch('/api/auth', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    action: 'GOOGLE_OAUTH_LOGIN',
+                    accessToken: tokenResponse.access_token,
+                  }),
+                });
+                if (authRes.ok) {
+                  const authJson = await authRes.json();
+                  if (authJson?.success && authJson?.user) {
+                    serverVerifiedUser = authJson.user;
+                  }
+                }
+              } catch {
+                // Continue even if session sync completes in handleLoginSuccess
+              }
               const now = Date.now();
               const response: GoogleLoginResponse = {
                 googleId: profile.sub || `gid_${now}`,
@@ -181,6 +201,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                   expires_at:
                     now + (Number(tokenResponse.expires_in) || 3599) * 1000,
                 },
+                verifiedAdminUser: serverVerifiedUser,
                 isOAuthVerified: true,
               };
               setIsLoading(false);

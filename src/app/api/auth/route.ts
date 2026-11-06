@@ -36,10 +36,19 @@ export async function GET(request: NextRequest) {
     }
     return response;
   }
-  return NextResponse.json({
+  const renewedToken = createSessionToken(user);
+  const response = NextResponse.json({
     authenticated: true,
     user,
   });
+  response.cookies.set(SESSION_COOKIE_NAME, renewedToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: SESSION_TTL_SECONDS,
+  });
+  return response;
 }
 
 export async function POST(request: NextRequest) {
@@ -59,6 +68,106 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: 0,
+      });
+      return response;
+    }
+
+    if (action === 'GOOGLE_OAUTH_LOGIN' && body.accessToken) {
+      const accessToken = String(body.accessToken).trim();
+      let verifiedEmail = '';
+      let verifiedName = '';
+
+      try {
+        const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: 'no-store',
+        });
+        if (gRes.ok) {
+          const gData = await gRes.json();
+          if (gData?.email && gData?.email_verified !== false) {
+            verifiedEmail = String(gData.email).trim().toLowerCase();
+            verifiedName = String(gData.name || gData.given_name || verifiedEmail).trim();
+          }
+        }
+      } catch {
+        // Ignore and check fallback
+      }
+
+      if (!verifiedEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Token Google OAuth tidak valid atau telah kedaluwarsa.' },
+          { status: 401 }
+        );
+      }
+
+      const dbAdmins = serverStore.getAdminUsers();
+      const matchedAdmin = dbAdmins.find(
+        (u) =>
+          (u.email && u.email.trim().toLowerCase() === verifiedEmail) ||
+          u.username.trim().toLowerCase() === verifiedEmail
+      );
+
+      const isOwnerSuperadmin =
+        verifySuperadminIdentity(verifiedEmail) ||
+        verifiedEmail === 'agungkrisdianto98@gmail.com' ||
+        verifiedEmail === 'e98.bisnis@gmail.com' ||
+        verifiedEmail === 'omeko42@gmail.com';
+
+      const requestedClientId = String(body.clientId || 'client-utama').trim();
+      const requestedClientName = String(
+        body.clientName ||
+          (requestedClientId === 'client-demo'
+            ? 'Klien Demo • Rayhan & Clarissa'
+            : 'Klien Utama • Agung & Selo')
+      ).trim();
+
+      const sessionUser = isOwnerSuperadmin
+        ? {
+            id: 'superadmin-owner',
+            username: 'superadmin',
+            nama: 'Eko Agung Krisdianto',
+            role: 'SUPERADMIN' as const,
+            jabatan: 'Superadmin',
+            email: verifiedEmail,
+            isDefaultUser: true,
+            clientId: requestedClientId,
+            clientName: requestedClientName,
+          }
+        : matchedAdmin
+          ? {
+              id: matchedAdmin.id,
+              username: matchedAdmin.username,
+              nama: matchedAdmin.nama,
+              role: matchedAdmin.role,
+              jabatan: matchedAdmin.jabatan,
+              email: matchedAdmin.email || verifiedEmail,
+              isDefaultUser: Boolean(matchedAdmin.isDefaultUser),
+              clientId: matchedAdmin.clientId || 'client-utama',
+              clientName: matchedAdmin.clientName || 'Klien Utama • Agung & Selo',
+            }
+          : {
+              id: `usr-gmail-${verifiedEmail.replace(/[^a-z0-9]/g, '').slice(0, 14)}`,
+              username: verifiedEmail,
+              nama: verifiedName || verifiedEmail.split('@')[0],
+              role: 'MEMPELAI_PRIA' as const,
+              jabatan: 'Owner Workspace',
+              email: verifiedEmail,
+              isDefaultUser: true,
+              clientId: `client-gmail-${verifiedEmail.replace(/[^a-z0-9]/g, '').slice(0, 14)}`,
+              clientName: `Client • ${verifiedName || verifiedEmail.split('@')[0]}`,
+            };
+
+      const token = createSessionToken(sessionUser);
+      const response = NextResponse.json({
+        success: true,
+        user: sessionUser,
+      });
+      response.cookies.set(SESSION_COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: SESSION_TTL_SECONDS,
       });
       return response;
     }
