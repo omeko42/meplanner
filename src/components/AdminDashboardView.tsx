@@ -22671,6 +22671,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block font-medium text-stone-700 mb-1 truncate">
+                  Catatan / Keterangan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={editingGuest.notes || ''}
+                  onChange={(e) =>
+                    setEditingGuest({ ...editingGuest, notes: e.target.value })
+                  }
+                  placeholder="Misal: Tamu Orang Tua (Bapak) • Letting 94-1"
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300"
+                />
+              </div>
             </div>
 
             <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
