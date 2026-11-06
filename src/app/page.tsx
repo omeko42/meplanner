@@ -2223,6 +2223,7 @@ function WeddingAppContent() {
         guestName: guest.guestName,
       });
 
+    const nowIso = new Date().toISOString();
     updateClientScopedState(activeWorkspaceClientId, (prev) => {
       const exists = guest.id && prev.guests.some((g) => g.id === guest.id);
       const nextGuests = exists
@@ -2233,6 +2234,7 @@ function WeddingAppContent() {
                   ...guest,
                   invitationCode: g.invitationCode || resolvedInvitationCode,
                   invitationToken: g.invitationToken || resolvedInvitationToken,
+                  updatedAt: nowIso,
                 } as WeddingGuest)
               : g
           )
@@ -2256,8 +2258,8 @@ function WeddingAppContent() {
               rsvpStatus: guest.rsvpStatus || 'Belum Konfirmasi',
               attendanceStatus: guest.attendanceStatus || 'Belum Hadir',
               notes: guest.notes || '',
-              createdAt: new Date().toISOString().slice(0, 10),
-              updatedAt: new Date().toISOString().slice(0, 10),
+              createdAt: nowIso.slice(0, 10),
+              updatedAt: nowIso,
               updatedBy: adminUser?.username || 'admin',
             } as WeddingGuest,
           ];
@@ -2277,6 +2279,7 @@ function WeddingAppContent() {
         id: targetId,
         invitationCode: resolvedInvitationCode,
         invitationToken: resolvedInvitationToken,
+        updatedAt: nowIso,
       });
     }
   };
