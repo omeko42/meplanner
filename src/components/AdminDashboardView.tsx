@@ -6554,7 +6554,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                   <span
                     className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse"
-                    title="Sesi JWT Aktif (7 Hari)"
+                    title="Sesi JWT Aktif (4 Jam)"
                   />
                 </div>
                 <div className="leading-tight min-w-0">
@@ -22105,7 +22105,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                     <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
                       <p className="text-[10px] text-stone-500 font-semibold">Masa Aktif Sesi</p>
-                      <p className="font-bold text-emerald-800">Sliding Window 7 Hari (Auto-Renew)</p>
+                      <p className="font-bold text-emerald-800">Sliding Window 4 Jam (Auto-Renew)</p>
                     </div>
                     <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
                       <p className="text-[10px] text-stone-500 font-semibold">Isolasi Multi-Tenant</p>
@@ -22124,7 +22124,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   type="button"
                   onClick={() => {
                     void fetch('/api/auth', { cache: 'no-store', credentials: 'include' }).then(() => {
-                      showToast('✓ Sesi JWT berhasil diperpanjang 7 hari');
+                      showToast('✓ Sesi JWT berhasil diperpanjang 4 jam');
                     });
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 font-bold text-xs transition-colors cursor-pointer"
