@@ -40,6 +40,13 @@ interface SessionPayload {
   isDefaultUser?: boolean;
   clientId?: string;
   clientName?: string;
+  /**
+   * Tenant this session belongs to.
+   *
+   * Bound on the server at issue time and never taken from the browser, so
+   * every query the API issues can be scoped to exactly one workspace.
+   */
+  tenantId?: string;
   exp: number;
 }
 
@@ -190,7 +197,7 @@ export function clearFailedAttempts(clientKey: string): void {
   getRateLimitMap().delete(clientKey);
 }
 
-export function createSessionToken(user: AdminUser): string {
+export function createSessionToken(user: SessionUser): string {
   const nowSec = Math.floor(Date.now() / 1000);
   const header: JwtHeader = {
     alg: 'HS256',
@@ -209,6 +216,7 @@ export function createSessionToken(user: AdminUser): string {
     isDefaultUser: user.isDefaultUser,
     clientId: user.clientId,
     clientName: user.clientName,
+    tenantId: user.tenantId,
     exp: Date.now() + SESSION_TTL_MS,
   };
   const headerBase64 = Buffer.from(JSON.stringify(header), 'utf-8').toString('base64url');
@@ -221,7 +229,7 @@ export function createSessionToken(user: AdminUser): string {
   return `${signingInput}.${signature}`;
 }
 
-export function verifySessionToken(token?: string): AdminUser | null {
+export function verifySessionToken(token?: string): SessionUser | null {
   if (!token || !token.includes('.')) return null;
   const parts = token.split('.');
 
@@ -303,13 +311,25 @@ export function verifySessionToken(token?: string): AdminUser | null {
       isDefaultUser: parsed.isDefaultUser,
       clientId: normalizedClientId,
       clientName: normalizedClientName,
+      tenantId: parsed.tenantId,
     };
   } catch {
     return null;
   }
 }
 
-export function verifyAdminRequest(request: NextRequest): AdminUser | null {
+/**
+ * A verified session, as seen by the server.
+ *
+ * It extends the client-facing `AdminUser` with the tenant binding, which
+ * the API uses to scope every query. The tenant is set when the session is
+ * issued and is never read from the request.
+ */
+export interface SessionUser extends AdminUser {
+  tenantId?: string;
+}
+
+export function verifyAdminRequest(request: NextRequest): SessionUser | null {
   const cookieToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (cookieToken) {
     const verified = verifySessionToken(cookieToken);

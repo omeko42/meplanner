@@ -28,6 +28,8 @@ import { PublicInvitationView } from '@/components/PublicInvitationView';
 import { AdminDashboardView } from '@/components/AdminDashboardView';
 import { CommercialLandingView } from '@/components/CommercialLandingView';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import { TURNSTILE_PUBLIC_SITE_KEY } from '@/lib/turnstileClient';
 import {
   ReactGoogleLoginButton,
   type GoogleLoginResponse,
@@ -515,6 +517,11 @@ function WeddingAppContent() {
   const [gmailEventTitleInput, setGmailEventTitleInput] = useState('');
   const [gmailEventTypeInput, setGmailEventTypeInput] =
     useState<EventCategoryType>('WEDDING');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<
+    string | null
+  >(null);
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -1708,7 +1715,7 @@ function WeddingAppContent() {
     ]
   );
 
-  const handleGmailLoginSubmit = (
+  const handleGmailLoginSubmit = async (
     e?: React.FormEvent,
     overrideEmail?: string
   ) => {
@@ -1759,17 +1766,76 @@ function WeddingAppContent() {
       return;
     }
 
+    // Self-service signup now requires a verified email address. The server
+    // sends a verification link and withholds the session until the link is
+    // opened, so no account can be claimed by typing someone else's address.
     const titleToUse = gmailEventTitleInput.trim();
-    setGmailAddressInput('');
-    setGmailEventTitleInput('');
-    setIsGmailExpanded(false);
-    void handleQuickCreateWithGoogle({
-      email: normalizedEmail,
-      eventTitle: titleToUse || undefined,
-      eventType: gmailEventTypeInput,
-      packageId: 'GRATIS',
-      catalogThemeId: demoSelectedThemeId,
-    });
+    setIsSubmittingLogin(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REGISTER_WORKSPACE',
+          email: normalizedEmail,
+          displayName: titleToUse || undefined,
+          eventType: gmailEventTypeInput,
+          packageId: 'GRATIS',
+          catalogThemeId: demoSelectedThemeId,
+          turnstileToken,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.success) {
+        setGmailAddressInput('');
+        setGmailEventTitleInput('');
+        setIsGmailExpanded(false);
+        setPendingVerificationEmail(normalizedEmail);
+        setTurnstileToken('');
+        setTurnstileResetKey((k) => k + 1);
+        return;
+      }
+
+      if (json.code === 'ACCOUNT_EXISTS') {
+        // The account is already there: send them to the sign-in form
+        // instead of pretending a fresh registration happened.
+        setAuthModalMode('SIGN_IN');
+        setLoginIdentifier(normalizedEmail);
+        setLoginErrorMsg(
+          loginLang === 'EN'
+            ? 'This email is already registered. Please sign in.'
+            : 'Email ini sudah terdaftar. Silakan masuk dengan kata sandi Anda.'
+        );
+        return;
+      }
+
+      if (json.code === 'CAPTCHA_FAILED') {
+        setTurnstileResetKey((k) => k + 1);
+        setLoginErrorMsg(
+          loginLang === 'EN'
+            ? 'Please complete the security check and try again.'
+            : 'Silakan selesaikan verifikasi keamanan lalu coba lagi.'
+        );
+        return;
+      }
+
+      setLoginErrorMsg(
+        json.error ||
+          (loginLang === 'EN'
+            ? 'Registration failed. Please try again.'
+            : 'Pendaftaran gagal. Silakan coba lagi.')
+      );
+    } catch {
+      setLoginErrorMsg(
+        loginLang === 'EN'
+          ? 'Network error. Please try again.'
+          : 'Terjadi kesalahan jaringan. Silakan coba lagi.'
+      );
+    } finally {
+      setIsSubmittingLogin(false);
+    }
   };
 
   const handlePlannerCredentialsSubmit = async (e: React.FormEvent) => {
@@ -4298,10 +4364,49 @@ function WeddingAppContent() {
 
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm transition-all cursor-pointer"
+                      disabled={isSubmittingLogin}
+                      className="w-full h-11 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white font-bold text-sm transition-all cursor-pointer"
                     >
-                      {loginLang === 'ID' ? 'Lanjutkan' : 'Continue'}
+                      {isSubmittingLogin
+                        ? loginLang === 'ID'
+                          ? 'Mengirim...'
+                          : 'Sending...'
+                        : loginLang === 'ID'
+                          ? 'Lanjutkan'
+                          : 'Continue'}
                     </button>
+
+                    {pendingVerificationEmail && (
+                      <div
+                        role="status"
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs leading-relaxed text-emerald-900"
+                      >
+                        {loginLang === 'EN' ? (
+                          <>
+                            <strong>Verification sent.</strong> We emailed a
+                            verification link to{' '}
+                            <strong>{pendingVerificationEmail}</strong>. Open
+                            it to activate your workspace.
+                          </>
+                        ) : (
+                          <>
+                            <strong>Verifikasi telah dikirim.</strong> Kami
+                            telah mengirim tautan verifikasi ke{' '}
+                            <strong>{pendingVerificationEmail}</strong>. Buka
+                            tautan tersebut untuk mengaktifkan workspace Anda.
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <TurnstileWidget
+                      siteKey={TURNSTILE_PUBLIC_SITE_KEY}
+                      action="register"
+                      onToken={setTurnstileToken}
+                      onError={() => setTurnstileToken('')}
+                      resetKey={turnstileResetKey}
+                      theme="light"
+                    />
                   </form>
 
                   <button

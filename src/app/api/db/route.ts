@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest } from '@/lib/auth';
 import { apiError, rejectDisallowedOrigin } from '@/lib/apiGuard';
-import { SUPABASE_URL } from '@/lib/env';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env';
-import { SUPABASE_ANON_KEY } from '@/lib/supabaseCloud';
+import {
+  dbFetch,
+  dbHeaders,
+  scopeRowsToTenant,
+  withTenantFilter,
+} from '@/lib/tenantScope';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,24 +27,15 @@ const ALLOWED_TABLES = new Set([
   'wedding_budgets',
   'wedding_users',
   'wedding_payments',
+  'tenant_guests',
+  'tenant_wishes',
+  'tenant_tasks',
+  'tenant_budget_items',
+  'tenant_settings',
 ]);
 
 /** Only `main` exists as the single-workspace row today. */
 const SINGLETON_TABLES = new Set(['wedding_state']);
-
-function dbKey(): string {
-  return SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-}
-
-function dbHeaders(extra?: Record<string, string>): Record<string, string> {
-  const key = dbKey();
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    'Content-Type': 'application/json',
-    ...(extra || {}),
-  };
-}
 
 /**
  * Strips credential material from a row before it is written.
@@ -93,14 +87,22 @@ export async function GET(req: NextRequest) {
     const select = req.nextUrl.searchParams.get('select');
     const filters = req.nextUrl.searchParams.get('filters');
 
+    // The tenant comes from the verified session, never from the browser.
+    // The service-role key bypasses RLS, so this server-side filter is the
+    // thing that actually keeps workspaces apart.
+    const scopedFilters = withTenantFilter(
+      filters || '',
+      table,
+      adminSession.tenantId
+    );
+
     const parts = [`table=${encodeURIComponent(table)}`];
     if (select) parts.push(`select=${encodeURIComponent(select)}`);
-    if (filters) parts.push(filters);
+    if (scopedFilters) parts.push(scopedFilters);
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${parts.join('&')}`, {
+    const res = await dbFetch(parts.join('&'), {
       method: 'GET',
       headers: dbHeaders({ Accept: 'application/json' }),
-      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -147,19 +149,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => null);
-    const rows = stripCredentialsFromRows(table, body?.rows ?? body);
-
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/${table}?on_conflict=id`,
-      {
-        method: 'POST',
-        headers: dbHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(rows),
-        cache: 'no-store',
-      }
+    const rawRows = body?.rows ?? body;
+    const rows = scopeRowsToTenant(
+      table,
+      stripCredentialsFromRows(table, rawRows),
+      adminSession.tenantId
     );
+
+    const res = await dbFetch(`${table}?on_conflict=id`, {
+      method: 'POST',
+      headers: dbHeaders({
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      }),
+      body: JSON.stringify(rows),
+    });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
@@ -222,21 +225,25 @@ export async function DELETE(req: NextRequest) {
 
     // `keepIds` prunes rows that are no longer present: everything except the
     // ids the client still has.
-    const filter =
+    const filterParts = [
       id !== ''
         ? `id=eq.${encodeURIComponent(id)}`
         : projectWide
           ? 'project_id=eq.main'
-          : `id=not.in.(${keepIds!.map((k: string) => `"${k.replace(/"/g, '')}"`).join(',')})`;
+          : `id=not.in.(${keepIds!.map((k: string) => `"${k.replace(/"/g, '')}"`).join(',')})`,
+    ];
 
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/${table}?${filter}`,
-      {
-        method: 'DELETE',
-        headers: dbHeaders(),
-        cache: 'no-store',
-      }
+    // Tenant-scoped deletes must never reach another workspace's rows.
+    const scoped = withTenantFilter(
+      filterParts.join('&'),
+      table,
+      adminSession.tenantId
     );
+
+    const res = await dbFetch(`${table}?${scoped}`, {
+      method: 'DELETE',
+      headers: dbHeaders(),
+    });
 
     if (!res.ok && res.status !== 404) {
       const errText = await res.text().catch(() => '');

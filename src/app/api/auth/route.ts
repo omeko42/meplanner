@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import {
   authenticateAdminCredentials,
   checkRateLimit,
@@ -9,12 +10,22 @@ import {
   recordFailedAttempt,
   SESSION_COOKIE_NAME,
   SESSION_TTL_SECONDS,
+  type SessionUser,
   verifyAdminRequest,
   verifySuperadminIdentity,
   verifySuperadminPassword,
 } from '@/lib/auth';
-import { serverStore } from '@/lib/serverStore';
+import { serverStore, setPendingRegistration } from '@/lib/serverStore';
 import { saveStateToSupabase } from '@/lib/supabaseCloud';
+import { apiError, rateLimitByIp } from '@/lib/apiGuard';
+import { verifyTurnstileToken } from '@/lib/turnstile';
+import { buildVerificationEmail, sendEmail } from '@/lib/email';
+import { SITE_URL, resolveClientIp } from '@/lib/env';
+import { setSessionCookie } from '@/lib/authSession';
+import {
+  ensureDefaultTenant,
+  findWorkspaceSlugForUser,
+} from '@/lib/tenantResolver';
 
 export const dynamic = 'force-dynamic';
 
@@ -210,33 +221,127 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    if (action === 'REGISTER_GMAIL_WORKSPACE' && body.user && typeof body.user === 'object') {
-      const u = body.user;
-      const email = String(u.email || u.username || '').trim().toLowerCase();
-      const clientId = String(u.clientId || '').trim();
+    if (action === 'REGISTER_WORKSPACE' && body.email) {
+      const email = String(body.email).trim().toLowerCase();
+      const displayName = String(body.displayName || '').trim();
+      const eventType = String(body.eventType || 'WEDDING').trim();
+      const packageId = String(body.packageId || 'GRATIS').trim();
+      const catalogThemeId = String(body.catalogThemeId || '').trim();
 
-      if (
-        !email ||
-        verifySuperadminIdentity(email) ||
-        !clientId.startsWith('client-gmail-') ||
-        clientId === 'client-gmail-agungkrisdiant'
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Akun ini memerlukan otentikasi kata sandi resmi.',
-          },
-          { status: 403 }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return apiError('Alamat email tidak valid.', 400, {
+          code: 'INVALID_EMAIL',
+        });
+      }
+
+      if (verifySuperadminIdentity(email)) {
+        return apiError('Gunakan alur login untuk akun admin.', 403, {
+          code: 'RESERVED_EMAIL',
+        });
+      }
+
+      // Anti-abuse: captcha + per-IP rate limit before anything is created.
+      const captcha = await verifyTurnstileToken(body.turnstileToken, {
+        expectedAction: 'register',
+        remoteIp: resolveClientIp(request.headers),
+      });
+      if (!captcha.success) {
+        return apiError(
+          captcha.skipped
+            ? 'Verifikasi keamanan sedang tidak tersedia. Coba lagi nanti.'
+            : 'Verifikasi keamanan gagal. Silakan coba lagi.',
+          403,
+          { code: 'CAPTCHA_FAILED' }
         );
       }
 
+      const limit = rateLimitByIp(request, 'auth:register', {
+        limit: 5,
+        windowMs: 60 * 60 * 1000,
+      });
+      if (!limit.allowed) {
+        return apiError(
+          `Terlalu banyak percobaan pendaftaran. Coba lagi dalam ${limit.retryAfterSeconds} detik.`,
+          429,
+          {
+            code: 'RATE_LIMITED',
+            headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+          }
+        );
+      }
+
+      const existingAdmins = serverStore.getAdminUsers();
+      const alreadyRegistered = existingAdmins.some(
+        (u) =>
+          (u.email && u.email.trim().toLowerCase() === email) ||
+          u.username.trim().toLowerCase() === email
+      );
+      if (alreadyRegistered) {
+        // Do not leak whether the account exists beyond a generic message.
+        return apiError(
+          'Jika email ini terdaftar, gunakan tautan verifikasi atau hubungi admin.',
+          409,
+          { code: 'ACCOUNT_EXISTS' }
+        );
+      }
+
+      // A session is NOT issued here. The user receives a verification link by
+      // email and can only sign in once the address is confirmed.
+      const slug = email.replace(/[^a-z0-9]/g, '').slice(0, 14) || 'planner';
+      const clientId = `client-gmail-${slug}`;
+
+      const verifyToken = randomBytes(32).toString('hex');
+      const verifyUrl = `${SITE_URL}/auth/verify?token=${encodeURIComponent(
+        verifyToken
+      )}&email=${encodeURIComponent(email)}`;
+
+      const emailResult = await sendEmail({
+        to: email,
+        ...buildVerificationEmail({ email, verifyUrl }),
+      });
+
+      if (!emailResult.ok) {
+        // Without a delivered verification email the account cannot be
+        // activated, so do not create it.
+        return apiError(
+          'Email verifikasi gagal terkirim. Silakan coba lagi atau hubungi admin.',
+          503,
+          { code: 'EMAIL_SEND_FAILED' }
+        );
+      }
+
+      // Pending registration record: the account is only activated after the
+      // emailed link is opened.
+      setPendingRegistration(email, {
+        id: `usr-gmail-${slug}`,
+        username: email,
+        nama: displayName || email.split('@')[0],
+        role: 'MEMPELAI_PRIA' as const,
+        jabatan: `Paket ${packageId} • ${eventType}`,
+        clientId,
+        clientName: `Client • ${displayName || email.split('@')[0]}`,
+        packageId,
+        eventType,
+        catalogThemeId,
+        verifyToken,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Link verifikasi telah dikirim ke email Anda.',
+        email,
+        clientId,
+      });
+    }
+
+    if (action === 'REGISTER_GMAIL_WORKSPACE' && body.user && typeof body.user === 'object') {
       // This action used to mint a session straight from an unverified
       // request body: any caller could POST {email, clientId} and receive a
       // valid cookie, without proving they own the mailbox.
       //
       // A session is now only issued after the emailed verification link is
-      // opened (see /api/auth/verify). Reaching this branch means the caller
-      // is trying to use the old bypass.
+      // opened (see /api/auth/verify). This branch exists purely to reject
+      // the old bypass, whatever it carries.
       return NextResponse.json(
         {
           success: false,
@@ -289,20 +394,31 @@ export async function POST(request: NextRequest) {
     }
 
     clearFailedAttempts(rateKey);
-    const token = createSessionToken(authenticatedUser);
+
+    // Bind the session to a tenant. The tenant comes from server-side data,
+    // never from the request, so every later query can be scoped to exactly
+    // one workspace.
+    const workspaceSlug =
+      authenticatedUser.clientId?.trim() ||
+      findWorkspaceSlugForUser(authenticatedUser) ||
+      'client-utama';
+    const tenantId = await ensureDefaultTenant(
+      workspaceSlug,
+      authenticatedUser.clientName || authenticatedUser.nama || workspaceSlug
+    );
+
+    const sessionUser: SessionUser = tenantId
+      ? { ...authenticatedUser, tenantId }
+      : { ...authenticatedUser };
+
+    const token = createSessionToken(sessionUser);
 
     const response = NextResponse.json({
       success: true,
       user: authenticatedUser,
     });
 
-    response.cookies.set(SESSION_COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: SESSION_TTL_SECONDS,
-    });
+    setSessionCookie(response, token);
 
     return response;
   } catch (error) {
