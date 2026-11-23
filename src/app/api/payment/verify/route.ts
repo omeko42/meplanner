@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiError, rateLimitByIp, rejectDisallowedOrigin } from '@/lib/apiGuard';
+import {
+  isAllowedRecipient,
+  isAmountSatisfied,
+  resolveExpectedAmount,
+} from '@/lib/packageCatalog';
 
 interface VerifyPaymentRequestBody {
   orderId?: string;
@@ -9,6 +15,8 @@ interface VerifyPaymentRequestBody {
   expectedWalletAddress?: string;
   expectedAmount?: number;
   currency?: string;
+  /** Package the buyer selected — resolved against the server catalogue. */
+  packageId?: string;
 }
 
 interface CachedVerificationResult {
@@ -44,14 +52,76 @@ function buildExplorerUrl(networkUpper: string, txHash: string): string {
   return '';
 }
 
+/**
+ * Validates the observed on-chain transfer against the server catalogue.
+ *
+ * Returns a human-readable rejection reason, or null when the transfer is
+ * acceptable. When the network does not expose the amount or the recipient
+ * (some RPCs omit token-transfer details), the check is skipped rather than
+ * blocking a genuine payment — the recipient allow-list still applies when
+ * the address is observable.
+ */
+function checkOnChainMismatch(
+  observedAmount: number | undefined,
+  observedRecipient: string | undefined,
+  expected: { amount: number; cryptoAmount: number; currency: string }
+): string | null {
+  // Recipient must be one of the configured payout addresses when observable.
+  if (observedRecipient && !isAllowedRecipient(observedRecipient)) {
+    return 'Alamat tujuan transaksi tidak sesuai dengan alamat resmi MEPlanner.';
+  }
+
+  if (observedAmount === undefined) return null;
+
+  // Compare against both the fiat amount and the crypto amount: the two
+  // representations of the same package.
+  const okAgainstCrypto = isAmountSatisfied(
+    observedAmount,
+    expected.cryptoAmount,
+    0.05
+  );
+  const okAgainstFiat = isAmountSatisfied(
+    observedAmount,
+    expected.amount,
+    0.02
+  );
+
+  if (!okAgainstCrypto && !okAgainstFiat) {
+    return `Nominal transaksi (${observedAmount}) tidak sesuai dengan harga paket resmi.`;
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const originGuard = rejectDisallowedOrigin(req);
+    if (originGuard) return originGuard;
+
+    // Verification attempts are abuse-prone: without a limit an attacker
+    // could hammer the public RPC endpoints through this route.
+    const limit = rateLimitByIp(req, 'payment:verify', {
+      limit: 30,
+      windowMs: 10 * 60 * 1000,
+    });
+    if (!limit.allowed) {
+      return apiError(
+        `Terlalu banyak percobaan verifikasi. Coba lagi dalam ${limit.retryAfterSeconds} detik.`,
+        429,
+        {
+          code: 'RATE_LIMITED',
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      );
+    }
+
     const body = (await req.json()) as VerifyPaymentRequestBody;
     const orderId = (body.orderId || '').trim();
     const idempotencyKey = (body.idempotencyKey || '').trim();
     const category = (body.category || '').trim().toUpperCase();
     const networkUpper = (body.network || '').trim().toUpperCase();
     const txHashOrRef = (body.txHashOrRef || '').trim();
+    const packageId = (body.packageId || '').trim().toUpperCase();
 
     if (!orderId || !idempotencyKey) {
       return NextResponse.json(
@@ -68,6 +138,35 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: 'Mohon masukkan TXID / Hash / Nomor Referensi Pembayaran yang valid (minimal 4 karakter).',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Resolve the expected amount from the server catalogue. The value the
+    // browser sends is never trusted — it is only used to detect a mismatch.
+    const catalogAmount = resolveExpectedAmount(packageId);
+    if (!catalogAmount) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Paket tidak dikenal sehingga pembayaran tidak dapat diverifikasi.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const clientAmount = Number(body.expectedAmount);
+    if (
+      Number.isFinite(clientAmount) &&
+      clientAmount !== catalogAmount.amount &&
+      clientAmount !== catalogAmount.cryptoAmount
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            'Nominal yang dikirim tidak sesuai dengan katalog paket resmi.',
         },
         { status: 400 }
       );
@@ -120,6 +219,17 @@ export async function POST(req: NextRequest) {
               id?: string;
               blockNumber?: number;
               receipt?: { result?: string };
+              raw_data?: {
+                contract?: Array<{
+                  parameter?: {
+                    value?: {
+                      amount?: number;
+                      owner_address?: string;
+                      to_address?: string;
+                    };
+                  };
+                }>;
+              };
             };
             if (
               tronData &&
@@ -127,6 +237,32 @@ export async function POST(req: NextRequest) {
                 (typeof tronData.blockNumber === 'number' &&
                   tronData.blockNumber > 0))
             ) {
+              // TRC20 USDT transfers are recorded in the contract call, not
+              // the outer transaction, so the observed amount has to be read
+              // from there.
+              const contractValue =
+                tronData.raw_data?.contract?.[0]?.parameter?.value;
+              const observedAmount = contractValue?.amount
+                ? contractValue.amount / 1_000_000
+                : undefined;
+              const observedRecipient = contractValue?.to_address;
+
+              const mismatch = checkOnChainMismatch(
+                observedAmount,
+                observedRecipient,
+                catalogAmount
+              );
+              if (mismatch) {
+                return NextResponse.json(
+                  {
+                    ok: false,
+                    error: mismatch,
+                    verificationStatus: 'REJECTED',
+                  },
+                  { status: 400 }
+                );
+              }
+
               const responsePayload = {
                 ok: true,
                 orderId,
@@ -168,7 +304,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               jsonrpc: '2.0',
-              method: 'eth_getTransactionReceipt',
+              method: 'eth_getTransactionByHash',
               params: [txHash],
               id: 1,
             }),
@@ -178,9 +314,41 @@ export async function POST(req: NextRequest) {
 
           if (rpcRes.ok) {
             const rpcData = (await rpcRes.json()) as {
-              result?: { status?: string; blockNumber?: string } | null;
+              result?: {
+                status?: string;
+                blockNumber?: string;
+                to?: string;
+                value?: string;
+              } | null;
             };
-            if (rpcData?.result && rpcData.result.status === '0x1') {
+            const evmTx = rpcData?.result;
+            if (evmTx && evmTx.blockNumber && evmTx.blockNumber !== '0x0') {
+              // ERC-20 transfers carry the token amount in the calldata; the
+              // outer transaction `value` is the native coin amount and is 0
+              // for a token transfer.
+              const observedNative = evmTx.value
+                ? Number(BigInt(evmTx.value)) / 1e18
+                : 0;
+              const observedAmount =
+                observedNative > 0 ? observedNative : undefined;
+              const observedRecipient = evmTx.to;
+
+              const mismatch = checkOnChainMismatch(
+                observedAmount,
+                observedRecipient,
+                catalogAmount
+              );
+              if (mismatch) {
+                return NextResponse.json(
+                  {
+                    ok: false,
+                    error: mismatch,
+                    verificationStatus: 'REJECTED',
+                  },
+                  { status: 400 }
+                );
+              }
+
               const evmExplorer = isBep20
                 ? `https://bscscan.com/tx/${txHash}`
                 : `https://etherscan.io/tx/${txHash}`;

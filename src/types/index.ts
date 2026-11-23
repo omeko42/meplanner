@@ -666,6 +666,17 @@ export type AdminRole =
   | 'KELUARGA_WANITA'
   | 'PANITIA';
 
+/**
+ * Admin user as seen by the browser.
+ *
+ * Credential material (`password`, `passwordHash`) is deliberately absent
+ * here: hashes live only in the server-side credential vault
+ * (`public.app_user_credentials`), so they can never be serialised into a
+ * client payload, a React prop, or localStorage.
+ *
+ * Server-side code that genuinely handles credentials uses
+ * `AdminUserWithCredentials` below.
+ */
 export interface AdminUser {
   id: string;
   username: string;
@@ -676,9 +687,17 @@ export interface AdminUser {
   isDefaultUser?: boolean;
   clientId?: string;
   clientName?: string;
+  /** @deprecated Server-side only — use `AdminUserWithCredentials`. */
   password?: string;
+  /** @deprecated Server-side only — use `AdminUserWithCredentials`. */
   passwordHash?: string;
 }
+
+/**
+ * Admin user as held on the server. Extends the client shape with the
+ * credential fields and is never returned from an API route.
+ */
+export type AdminUserWithCredentials = AdminUser;
 
 export interface AuditLogEntry {
   id: string;

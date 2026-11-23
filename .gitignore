@@ -35,16 +35,21 @@ coverage/
 
 # Local Database Backups, Snapshots & Runtime Data (NEVER COMMIT PERSONAL DATA)
 .data/
-database/
+database/*
 data_aplikasi/
 public/media/utama/
 public/og-agung-selo.jpg
 public/og-undangan-agung-selo.jpg
 wedding_backup_*.json
 *.bak
-*.sql
 *.sqlite
 *.db
+
+# Schema migrations ARE version controlled — they are the only auditable
+# record of how the database was changed and how to roll it back.
+# Runtime snapshots (wedding_db.json, *.sql dumps) stay ignored.
+!database/migrations/
+!database/migrations/*.sql
 
 # Vercel & Cloud Deployment Metadata
 .vercel

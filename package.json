@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:security": "next lint --file src/app/api --file src/lib/apiGuard.ts --file src/lib/auth.ts --file src/lib/authSession.ts --file src/lib/email.ts --file src/lib/env.ts --file src/lib/packageCatalog.ts --file src/lib/serverStore.ts --file src/lib/turnstile.ts --file src/middleware.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^1.57.0",

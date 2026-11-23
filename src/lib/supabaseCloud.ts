@@ -20,19 +20,42 @@ import {
   unwrapSvgEmbeddedRasterUrl,
   wrapRasterDataUrlInSvg,
 } from './clientSync';
+import {
+  SUPABASE_ANON_KEY as ENV_SUPABASE_ANON_KEY,
+  SUPABASE_BUCKET_NAME as ENV_SUPABASE_BUCKET_NAME,
+  SUPABASE_ROW_ID as ENV_SUPABASE_ROW_ID,
+  SUPABASE_TABLE_NAME as ENV_SUPABASE_TABLE_NAME,
+  SUPABASE_URL as ENV_SUPABASE_URL,
+} from '@/lib/env';
 
-export const SUPABASE_PROJECT_REF = 'wkjnwkgpolpmzdfrfjso';
-export const SUPABASE_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co`;
+export const SUPABASE_URL = ENV_SUPABASE_URL;
 
-export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indram53a2dwb2xwbXpkZnJmanNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTIyNDYsImV4cCI6MjEwODU4ODI0Nn0.xb6vHcEWrnLwQe_W0TxRVXXUTPVfcDrPNL6assS_YQQ';
+/**
+ * Project reference derived from the project URL.
+ *
+ * Kept as an export because a few helpers build legacy storage paths from
+ * it, but it is no longer a hardcoded constant — rotating the project URL in
+ * the environment is enough.
+ */
+export const SUPABASE_PROJECT_REF = (() => {
+  try {
+    const match = ENV_SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase\.co/);
+    return match?.[1] || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+})();
 
-export const SUPABASE_PUBLISHABLE_KEY =
-  'sb_publishable_hvCxUhQndVrsMB2obo9CfQ_p8Otlmp-';
+/**
+ * Publishable (anon) key. It is safe to ship to the browser — Row Level
+ * Security in Postgres is what actually protects the data. See
+ * database/migrations/002_credential_vault_and_rls.sql.
+ */
+export const SUPABASE_ANON_KEY = ENV_SUPABASE_ANON_KEY;
 
-export const SUPABASE_TABLE_NAME = 'wedding_state';
-export const SUPABASE_ROW_ID = 'main';
-export const SUPABASE_BUCKET_NAME = 'wedding';
+export const SUPABASE_TABLE_NAME = ENV_SUPABASE_TABLE_NAME;
+export const SUPABASE_ROW_ID = ENV_SUPABASE_ROW_ID;
+export const SUPABASE_BUCKET_NAME = ENV_SUPABASE_BUCKET_NAME;
 export const SUPABASE_OBJECT_PATH = 'wedding_db.json';
 
 export const SUPABASE_SETUP_SQL = `-- ============================================================================
@@ -54,10 +77,10 @@ alter table public.wedding_state enable row level security;
 drop policy if exists "allow_all" on public.wedding_state;
 drop policy if exists "wedding_state_main_access" on public.wedding_state;
 drop policy if exists "wedding_state_full_access" on public.wedding_state;
-create policy "wedding_state_full_access" on public.wedding_state
-  for all to anon, authenticated
-  using (true) with check (true);
-grant all on table public.wedding_state to anon, authenticated, service_role;
+-- Access to public.wedding_state is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_state from anon, authenticated;
+grant all on table public.wedding_state to service_role;
 
 -- ============================================================================
 -- 3. TABEL PENGATURAN & PROFIL MEMPELAI (public.wedding_settings)
@@ -75,9 +98,10 @@ create table if not exists public.wedding_settings (
 );
 alter table public.wedding_settings enable row level security;
 drop policy if exists "wedding_settings_access" on public.wedding_settings;
-create policy "wedding_settings_access" on public.wedding_settings
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_settings to anon, authenticated, service_role;
+-- Access to public.wedding_settings is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_settings from anon, authenticated;
+grant all on table public.wedding_settings to service_role;
 
 -- ============================================================================
 -- 4. TABEL PENYIMPANAN FOTO & MEDIA TERPISAH (public.wedding_media)
@@ -94,9 +118,10 @@ create table if not exists public.wedding_media (
 );
 alter table public.wedding_media enable row level security;
 drop policy if exists "wedding_media_access" on public.wedding_media;
-create policy "wedding_media_access" on public.wedding_media
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_media to anon, authenticated, service_role;
+-- Access to public.wedding_media is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_media from anon, authenticated;
+grant all on table public.wedding_media to service_role;
 
 -- ============================================================================
 -- 5. TABEL CHECKLIST KESIAPAN PANITIA (public.wedding_tasks)
@@ -118,9 +143,10 @@ create table if not exists public.wedding_tasks (
 );
 alter table public.wedding_tasks enable row level security;
 drop policy if exists "wedding_tasks_access" on public.wedding_tasks;
-create policy "wedding_tasks_access" on public.wedding_tasks
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_tasks to anon, authenticated, service_role;
+-- Access to public.wedding_tasks is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_tasks from anon, authenticated;
+grant all on table public.wedding_tasks to service_role;
 
 -- ============================================================================
 -- 6. TABEL DAFTAR TAMU & KONFIRMASI RSVP (public.wedding_guests)
@@ -143,9 +169,10 @@ create table if not exists public.wedding_guests (
 );
 alter table public.wedding_guests enable row level security;
 drop policy if exists "wedding_guests_access" on public.wedding_guests;
-create policy "wedding_guests_access" on public.wedding_guests
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_guests to anon, authenticated, service_role;
+-- Access to public.wedding_guests is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_guests from anon, authenticated;
+grant all on table public.wedding_guests to service_role;
 
 -- ============================================================================
 -- 7. TABEL BUKU TAMU & UCAPAN DOA (public.wedding_wishes)
@@ -167,9 +194,10 @@ create table if not exists public.wedding_wishes (
 );
 alter table public.wedding_wishes enable row level security;
 drop policy if exists "wedding_wishes_access" on public.wedding_wishes;
-create policy "wedding_wishes_access" on public.wedding_wishes
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_wishes to anon, authenticated, service_role;
+-- Access to public.wedding_wishes is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_wishes from anon, authenticated;
+grant all on table public.wedding_wishes to service_role;
 
 -- ============================================================================
 -- 8. TABEL ANGGARAN & VENDOR MONETER (public.wedding_budgets)
@@ -190,9 +218,10 @@ create table if not exists public.wedding_budgets (
 );
 alter table public.wedding_budgets enable row level security;
 drop policy if exists "wedding_budgets_access" on public.wedding_budgets;
-create policy "wedding_budgets_access" on public.wedding_budgets
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_budgets to anon, authenticated, service_role;
+-- Access to public.wedding_budgets is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_budgets from anon, authenticated;
+grant all on table public.wedding_budgets to service_role;
 
 -- ============================================================================
 -- 9. TABEL AKUN INTI & PANITIA (public.wedding_users)
@@ -210,9 +239,10 @@ create table if not exists public.wedding_users (
 );
 alter table public.wedding_users enable row level security;
 drop policy if exists "wedding_users_access" on public.wedding_users;
-create policy "wedding_users_access" on public.wedding_users
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_users to anon, authenticated, service_role;
+-- Access to public.wedding_users is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_users from anon, authenticated;
+grant all on table public.wedding_users to service_role;
 
 -- ============================================================================
 -- 10. TABEL TRANSAKSI & PEMBAYARAN KOMERSIAL IDEMPOTEN (public.wedding_payments)
@@ -242,9 +272,10 @@ create table if not exists public.wedding_payments (
 );
 alter table public.wedding_payments enable row level security;
 drop policy if exists "wedding_payments_access" on public.wedding_payments;
-create policy "wedding_payments_access" on public.wedding_payments
-  for all to anon, authenticated using (true) with check (true);
-grant all on table public.wedding_payments to anon, authenticated, service_role;`;
+-- Access to public.wedding_payments is server-side only.
+-- The browser talks to the Next.js API routes, which use the service_role key.
+revoke all on table public.wedding_payments from anon, authenticated;
+grant all on table public.wedding_payments to service_role;`;
 
 export type CloudSyncStatus =
   | 'IDLE'
@@ -398,18 +429,15 @@ export function registerExplicitCloudDeletion(
   }
   persistDeletedIdsRegistryToLocal();
 
-  // Immediately delete from relational table in Supabase so deleted items never resurrect
+  // Immediately delete from relational table in Supabase so deleted items never
+  // resurrect. The delete goes through the server proxy: the browser must not
+  // hold a credential that can delete rows.
   if (relationalTable) {
-    void fetch(
-      `${SUPABASE_URL}/rest/v1/${relationalTable}?id=eq.${encodeURIComponent(id)}`,
-      {
-        method: 'DELETE',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-      }
-    ).catch(() => {});
+    void fetch('/api/supabase-sync', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: relationalTable, id }),
+    }).catch(() => {});
   }
 }
 
@@ -1001,36 +1029,6 @@ export function mergeFullDatabaseMultiDevice(
   };
 }
 
-async function fetchSupabaseWithRetry(
-  url: string,
-  init: RequestInit,
-  timeoutMs = 6500,
-  maxAttempts = 2
-): Promise<Response> {
-  let lastError: unknown = null;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, {
-        ...init,
-        cache: 'no-store',
-        signal: controller.signal,
-      });
-      return res;
-    } catch (err) {
-      lastError = err;
-      if (attempt < maxAttempts) {
-        await new Promise((r) => setTimeout(r, 450 * attempt));
-      }
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error('Gagal terhubung ke Supabase');
-}
 
 // ============================================================================
 // REAL-TIME AUDIT & ERROR LOG SYSTEM
@@ -1161,14 +1159,6 @@ function setCloudStatus(status: CloudSyncStatus, detail = ''): void {
   });
 }
 
-function getSupabaseHeaders(extra?: Record<string, string>): Record<string, string> {
-  return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json',
-    ...(extra || {}),
-  };
-}
 
 function healStalePlaceholderSettings(s: WeddingSettings): WeddingSettings {
   const next = { ...INITIAL_SETTINGS, ...s };
@@ -1712,29 +1702,23 @@ export async function uploadAudioToSupabaseStorage(
 
     const safeId = trackId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const objectPath = `music/${safeId}.${ext}`;
-    const targetUrl = `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`;
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const upRes = await fetch(targetUrl, {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': contentType,
-            'cache-control': 'max-age=31536000, immutable',
-            'x-upsert': 'true',
-          },
-          body: bodyBlob,
-        });
-        if (upRes.ok) {
-          return `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${objectPath}`;
-        }
-      } catch {
-        if (attempt < 2) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+    // Uploads go through the server proxy: the browser must not hold a
+    // credential that can write to the bucket (the storage policies are
+    // locked down to public-read only).
+    const proxyRes = await fetch(
+      `/api/media?path=${encodeURIComponent(objectPath)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': contentType },
+        body: bodyBlob,
       }
+    );
+    if (proxyRes.ok) {
+      const proxyJson = (await proxyRes.json().catch(() => null)) as {
+        url?: string;
+      } | null;
+      if (proxyJson?.url) return proxyJson.url;
     }
     return null;
   } catch {
@@ -1752,13 +1736,11 @@ export async function deleteMediaFromSupabaseStorage(
     if (idx === -1) return;
     const objectPath = mediaUrl.slice(idx + marker.length).split('?')[0];
     if (!objectPath) return;
-    await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`, {
+    // Deletion goes through the server proxy so the browser never needs a
+    // write credential for the bucket.
+    await fetch(`/api/media?path=${encodeURIComponent(objectPath)}`, {
       method: 'DELETE',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
+    }).catch(() => {});
   } catch {
     // Ignore storage delete errors
   }
@@ -1946,15 +1928,11 @@ export async function uploadImageToSupabaseStorage(
     const objectPath = `photos/${safeSlot}_${shortHash}.${ext}`;
 
     const upRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+      `/api/media?path=${encodeURIComponent(objectPath)}`,
       {
         method: 'POST',
         headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': contentType,
-          'cache-control': 'max-age=31536000, immutable',
-          'x-upsert': 'true',
         },
         body: bodyBlob,
       }
@@ -2002,14 +1980,11 @@ export async function uploadVideoToSupabaseStorage(
     const objectPath = `videos/${safeSlot}_${stamp}.${ext}`;
 
     const upRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/wedding-media/${objectPath}`,
+      `/api/media?path=${encodeURIComponent(objectPath)}`,
       {
         method: 'POST',
         headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': contentType,
-          'x-upsert': 'true',
         },
         body: file,
       }
@@ -2110,26 +2085,14 @@ export async function cleanupOrphanedStorageMedia(
 
     for (const folder of ['photos', 'music', 'videos']) {
       const listRes = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prefix: folder,
-            limit: 300,
-            offset: 0,
-          }),
-        }
+        `/api/media?prefix=${encodeURIComponent(folder)}`,
+        { method: 'GET', cache: 'no-store' }
       );
       if (!listRes.ok) continue;
-      const items = (await listRes.json()) as Array<{
-        name: string;
-        id?: string | null;
-      }>;
+      const listJson = (await listRes.json().catch(() => null)) as {
+        objects?: Array<{ name: string; id?: string | null }>;
+      } | null;
+      const items = listJson?.objects;
       if (!Array.isArray(items)) continue;
 
       for (const item of items) {
@@ -2137,14 +2100,8 @@ export async function cleanupOrphanedStorageMedia(
         const fullObjectPath = `${folder}/${item.name}`;
         if (!activeObjectPaths.has(fullObjectPath)) {
           await fetch(
-            `${SUPABASE_URL}/storage/v1/object/wedding-media/${fullObjectPath}`,
-            {
-              method: 'DELETE',
-              headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-            }
+            `/api/media?path=${encodeURIComponent(fullObjectPath)}`,
+            { method: 'DELETE' }
           ).catch(() => {});
         }
       }
@@ -2255,30 +2212,21 @@ export async function fetchSupabaseStorageCapacity(
   for (const folder of ['photos', 'music', 'videos'] as const) {
     try {
       const listRes = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/list/wedding-media`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prefix: folder,
-            limit: 300,
-            offset: 0,
-          }),
-        }
+        `/api/media?prefix=${encodeURIComponent(folder)}`,
+        { method: 'GET', cache: 'no-store' }
       );
       if (!listRes.ok) continue;
-      const items = (await listRes.json()) as Array<{
-        name: string;
-        id?: string | null;
-        metadata?: {
-          size?: number;
-          mimetype?: string;
-        };
-      }>;
+      const listJson = (await listRes.json().catch(() => null)) as {
+        objects?: Array<{
+          name: string;
+          id?: string | null;
+          metadata?: {
+            size?: number;
+            mimetype?: string;
+          };
+        }>;
+      } | null;
+      const items = listJson?.objects;
       if (!Array.isArray(items)) continue;
 
       for (const item of items) {
@@ -2672,92 +2620,20 @@ async function prepareCloudSafeState(
   };
 }
 
+
 /**
- * Self-healing slice recovery in case `id = 'main'` in `public.wedding_state`
- * ever exceeds statement_timeout during a full `SELECT data`.
+ * Tables the client may read through the `/api/db` proxy.
+ * `app_user_credentials` is intentionally absent — password hashes stay
+ * server-side.
  */
-async function recoverStateFromSupabaseBySlices(): Promise<WeddingDatabaseSchema | null> {
-  try {
-    const fetchSlice = async (selectExpr: string) => {
-      const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=${encodeURIComponent(
-        selectExpr
-      )}`;
-      const r = await fetch(url, {
-        method: 'GET',
-        headers: getSupabaseHeaders({ Accept: 'application/json' }),
-        cache: 'no-store',
-      });
-      if (!r.ok) return null;
-      const rows = await r.json();
-      return Array.isArray(rows) && rows[0] ? rows[0] : null;
-    };
-
-    const metaRow = await fetchSlice('updated_at,lastSyncedAt:data->>lastSyncedAt');
-    if (!metaRow) return null;
-
-    const [tasksRow, guestsRow, wishesRow, budgetsRow, usersRow] =
-      await Promise.all([
-        fetchSlice('v:data->tasks'),
-        fetchSlice('v:data->guests'),
-        fetchSlice('v:data->wishes'),
-        fetchSlice('v:data->budgetItems'),
-        fetchSlice('v:data->adminUsers'),
-      ]);
-
-    const settingsKeys = Object.keys(INITIAL_SETTINGS).filter(
-      (k) => k !== 'originalPhotos'
-    );
-    const recoveredSettings: Record<string, unknown> = { ...INITIAL_SETTINGS };
-
-    for (let i = 0; i < settingsKeys.length; i += 2) {
-      const batch = settingsKeys.slice(i, i + 2);
-      const expr = batch.map((k) => `${k}:data->settings->${k}`).join(',');
-      const row = await fetchSlice(expr);
-      if (row) {
-        for (const k of batch) {
-          if (row[k] !== null && row[k] !== undefined) {
-            recoveredSettings[k] = row[k];
-          }
-        }
-      }
-    }
-
-    for (const extraKey of [
-      'scheduleEvents',
-      'photoAdjustments',
-      'musicPlaylist',
-      'waTemplateVip',
-      'waTemplateRegular',
-      'coverSlides',
-      'heroSlides',
-      'pageSlides',
-    ]) {
-      const row = await fetchSlice(`v:data->settings->${extraKey}`);
-      if (row && row.v !== null && row.v !== undefined) {
-        recoveredSettings[extraKey] = row.v;
-      }
-    }
-
-    const normalized = normalizeCloudState(
-      {
-        settings: recoveredSettings as unknown as WeddingSettings,
-        tasks: tasksRow?.v,
-        guests: guestsRow?.v,
-        wishes: wishesRow?.v,
-        budgetItems: budgetsRow?.v,
-        adminUsers: usersRow?.v,
-        lastSyncedAt: metaRow.lastSyncedAt || metaRow.updated_at,
-      },
-      metaRow.updated_at
-    );
-
-    // Immediately heal the bloated row in Supabase in the background
-    void saveStateToSupabase(normalized);
-    return normalized;
-  } catch {
-    return null;
-  }
-}
+const ALLOWED_READ_TABLES = new Set([
+  'wedding_guests',
+  'wedding_tasks',
+  'wedding_wishes',
+  'wedding_budgets',
+  'wedding_settings',
+  'wedding_media',
+]);
 
 async function recoverFromRelationalTablesIfNeeded(
   base: WeddingDatabaseSchema
@@ -2791,14 +2667,34 @@ async function recoverFromRelationalTablesIfNeeded(
   }
 
   try {
-    const fetchJson = async (path: string) => {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-        method: 'GET',
-        headers: getSupabaseHeaders({ Accept: 'application/json' }),
-        cache: 'no-store',
-      });
+    interface RelationalRow {
+      payload?: unknown;
+      data?: unknown;
+      settings_json?: unknown;
+      [key: string]: unknown;
+    }
+
+    const fetchJson = async <T = RelationalRow>(
+      path: string
+    ): Promise<T[] | null> => {
+      // Reads go through the server proxy; the browser holds no read
+      // credential for the database.
+      const table = path.split('?')[0] || '';
+      if (!ALLOWED_READ_TABLES.has(table)) return null;
+      const r = await fetch(
+        `/api/db?table=${encodeURIComponent(table)}&filters=${encodeURIComponent(
+          path.split('?')[1] || ''
+        )}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      );
       if (!r.ok) return null;
-      return r.json();
+      const json = (await r.json().catch(() => null)) as {
+        rows?: unknown[];
+      } | null;
+      return (json?.rows as T[] | undefined) ?? null;
     };
 
     const [guestsRows, tasksRows, wishesRows, budgetsRows, settingsRows, mediaRows] =
@@ -2823,7 +2719,7 @@ async function recoverFromRelationalTablesIfNeeded(
     if (Array.isArray(guestsRows) && guestsRows.length > 0) {
       const recoveredGuests = (
         guestsRows
-          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .map((r) => r?.payload ?? r?.data)
           .filter(Boolean) as WeddingDatabaseSchema['guests']
       ).filter((g) => g && g.id && !explicitlyDeletedGuestIds.has(g.id));
       if (recoveredGuests.length > 0) {
@@ -2834,7 +2730,7 @@ async function recoverFromRelationalTablesIfNeeded(
     if (Array.isArray(tasksRows) && tasksRows.length > 0) {
       const recoveredTasks = (
         tasksRows
-          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .map((r) => r?.payload ?? r?.data)
           .filter(Boolean) as WeddingDatabaseSchema['tasks']
       ).filter((t) => t && t.id && !explicitlyDeletedTaskIds.has(t.id));
       if (recoveredTasks.length > 0) {
@@ -2845,7 +2741,7 @@ async function recoverFromRelationalTablesIfNeeded(
     if (Array.isArray(wishesRows) && wishesRows.length > 0) {
       const recoveredWishes = (
         wishesRows
-          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .map((r) => r?.payload ?? r?.data)
           .filter(Boolean) as WeddingDatabaseSchema['wishes']
       ).filter((w) => w && w.id && !explicitlyDeletedWishIds.has(w.id));
       if (recoveredWishes.length > 0) {
@@ -2856,7 +2752,7 @@ async function recoverFromRelationalTablesIfNeeded(
     if (Array.isArray(budgetsRows) && budgetsRows.length > 0) {
       const recoveredBudgets = (
         budgetsRows
-          .map((r: { payload?: unknown; data?: unknown }) => r?.payload ?? r?.data)
+          .map((r) => r?.payload ?? r?.data)
           .filter(Boolean) as WeddingDatabaseSchema['budgetItems']
       ).filter((b) => b && b.id && !explicitlyDeletedBudgetIds.has(b.id));
       if (recoveredBudgets.length > 0) {
@@ -2866,7 +2762,7 @@ async function recoverFromRelationalTablesIfNeeded(
 
     const rawSettingsObj =
       Array.isArray(settingsRows) && settingsRows[0]
-        ? settingsRows[0].payload ?? settingsRows[0].settings_json
+        ? (settingsRows[0].payload ?? settingsRows[0].settings_json)
         : null;
     if (rawSettingsObj && typeof rawSettingsObj === 'object') {
       nextState.settings = healStalePlaceholderSettings({
@@ -2929,21 +2825,17 @@ async function recoverFromRelationalTablesIfNeeded(
  */
 export async function checkCloudStateUpdatedAt(): Promise<string | null> {
   try {
-    const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=updated_at`;
-    const res = await fetchSupabaseWithRetry(
-      restUrl,
-      {
-        method: 'GET',
-        headers: getSupabaseHeaders({ Accept: 'application/json' }),
-      },
-      3500,
-      1
-    );
+    // Goes through the server: the browser must not hold a credential that can
+    // read the database directly.
+    const res = await fetch('/api/state-version', {
+      method: 'GET',
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
-    const rows = (await res.json()) as Array<{ updated_at?: string }>;
-    return Array.isArray(rows) && rows[0]?.updated_at
-      ? rows[0].updated_at
-      : null;
+    const json = (await res.json().catch(() => null)) as {
+      updatedAt?: string | null;
+    } | null;
+    return json?.updatedAt || null;
   } catch {
     return null;
   }
@@ -2996,117 +2888,14 @@ export async function loadStateFromSupabase(): Promise<{
   };
 
   try {
-    const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`;
-    let res: Response | null = null;
-    let directFetchError: unknown = null;
+    // Reading goes through the server proxy only. The browser deliberately has
+    // no direct read path to the database, so the anon key it carries cannot
+    // be used to pull the snapshot.
+    const proxyResult = await tryLoadViaSameOriginProxy();
+    if (proxyResult) return proxyResult;
 
-    try {
-      res = await fetchSupabaseWithRetry(
-        restUrl,
-        {
-          method: 'GET',
-          headers: getSupabaseHeaders({
-            Accept: 'application/json',
-          }),
-        },
-        6500,
-        2
-      );
-    } catch (fetchErr) {
-      directFetchError = fetchErr;
-    }
-
-    if (!res) {
-      const proxyResult = await tryLoadViaSameOriginProxy();
-      if (proxyResult) return proxyResult;
-      throw directFetchError instanceof Error
-        ? directFetchError
-        : new Error('Gagal terhubung ke Supabase');
-    }
-
-    if (res.ok) {
-      const rows = (await res.json()) as Array<{
-        id: string;
-        data: Partial<WeddingDatabaseSchema>;
-        updated_at?: string;
-      }>;
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
-        const normalized = normalizeCloudState(rows[0].data, rows[0].updated_at);
-        const loaded = await recoverFromRelationalTablesIfNeeded(normalized);
-        markInitialCloudHydrationComplete(loaded);
-        setCloudStatus('SYNCED', loaded.lastSyncedAt || '');
-        return { state: loaded, tableExists: true };
-      }
-      // Table exists, just empty (no row yet)
-      markInitialCloudHydrationComplete(null);
-      setCloudStatus('SYNCED', 'Tabel siap (belum ada baris)');
-      return { state: null, tableExists: true };
-    }
-
-    if (res.status !== 404) {
-      const proxyResult = await tryLoadViaSameOriginProxy();
-      if (proxyResult) return proxyResult;
-    }
-
-    const errText = await res.text();
-
-    // If GET timed out (57014 statement timeout / 500 / 504), self-heal via slice recovery!
-    if (
-      res.status === 500 ||
-      res.status === 504 ||
-      res.status === 502 ||
-      errText.includes('57014') ||
-      errText.includes('statement timeout')
-    ) {
-      const recoveredRaw = await recoverStateFromSupabaseBySlices();
-      if (recoveredRaw) {
-        const recovered = await recoverFromRelationalTablesIfNeeded(recoveredRaw);
-        markInitialCloudHydrationComplete(recovered);
-        setCloudStatus('SYNCED', recovered.lastSyncedAt || '');
-        appendAuditLog({
-          actor: 'system',
-          module: 'DATABASE',
-          action: 'SYNC',
-          status: 'SUCCESS',
-          summary:
-            'Optimasi otomatis ukuran payload database Supabase berhasil dijalankan',
-        });
-        return { state: recovered, tableExists: true };
-      }
-    }
-
-    const isTableMissing =
-      res.status === 404 ||
-      errText.includes('PGRST205') ||
-      errText.includes('Could not find the table') ||
-      errText.includes('relation') ||
-      errText.includes('does not exist');
-
-    if (isTableMissing) {
-      setCloudStatus(
-        'NEEDS_TABLE_SETUP',
-        'Tabel public.wedding_state belum dibuat di SQL Editor Supabase'
-      );
-      appendAuditLog({
-        actor: 'system',
-        module: 'DATABASE',
-        action: 'ERROR',
-        status: 'WARNING',
-        summary: 'Tabel public.wedding_state belum ditemukan di Supabase',
-        detail: `HTTP ${res.status}: ${errText.slice(0, 200)}`,
-      });
-      return { state: null, tableExists: false };
-    }
-
-    setCloudStatus('OFFLINE', `HTTP ${res.status}`);
-    appendAuditLog({
-      actor: 'system',
-      module: 'DATABASE',
-      action: 'ERROR',
-      status: 'ERROR',
-      summary: `Gagal memuat data dari Supabase (HTTP ${res.status})`,
-      detail: errText.slice(0, 250),
-    });
+    markInitialCloudHydrationComplete(null);
+    setCloudStatus('OFFLINE', 'Server tidak dapat memuat state');
     return { state: null, tableExists: false };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Gagal terhubung ke Supabase';
@@ -3117,343 +2906,7 @@ export async function loadStateFromSupabase(): Promise<{
 
 // ============================================================================
 // MULTI-TABLE RELATIONAL BACKGROUND SYNC (WHEN MULTI-TABLES ARE CREATED)
-// ============================================================================
-let multiTableAvailability: 'UNKNOWN' | 'AVAILABLE' | 'MISSING' = 'UNKNOWN';
 
-async function pruneDeletedRelationalRows(
-  tableName: string,
-  pkColumn: string,
-  activeKeys: string[]
-): Promise<void> {
-  try {
-    const cleanKeys = activeKeys
-      .map((k) => String(k || '').trim())
-      .filter(Boolean);
-    if (cleanKeys.length === 0) {
-      // When wishes, tasks, or budgets are intentionally cleared to [], delete all rows for project_id=eq.main
-      if (
-        tableName === 'wedding_wishes' ||
-        tableName === 'wedding_tasks' ||
-        tableName === 'wedding_budgets'
-      ) {
-        await fetch(
-          `${SUPABASE_URL}/rest/v1/${tableName}?project_id=eq.main`,
-          {
-            method: 'DELETE',
-            headers: getSupabaseHeaders(),
-          }
-        );
-      }
-      return;
-    }
-    const filterExpr = `${pkColumn}=not.in.(${cleanKeys
-      .map((k) => `"${k.replace(/"/g, '')}"`)
-      .join(',')})`;
-    await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?${filterExpr}`, {
-      method: 'DELETE',
-      headers: getSupabaseHeaders(),
-    });
-  } catch {
-    // Ignore optional prune errors
-  }
-}
-
-async function syncRelationalTablesInBackground(
-  state: WeddingDatabaseSchema,
-  updatedAt: string
-): Promise<void> {
-  if (multiTableAvailability === 'MISSING') return;
-
-  try {
-    const s = state.settings;
-    const tasksList = Array.isArray(state.tasks) ? state.tasks : [];
-    const guestsList = Array.isArray(state.guests) ? state.guests : [];
-    const wishesList = Array.isArray(state.wishes) ? state.wishes : [];
-    const budgetsList = Array.isArray(state.budgetItems)
-      ? state.budgetItems
-      : [];
-
-    // 0. Prune deleted relational rows FIRST so any database trigger on wedding_settings / wedding_guests / wedding_wishes
-    // never resurrects deleted rows back into public.wedding_state!
-    await Promise.all([
-      pruneDeletedRelationalRows(
-        'wedding_tasks',
-        'id',
-        tasksList.map((t) => t.id)
-      ),
-      pruneDeletedRelationalRows(
-        'wedding_guests',
-        'id',
-        guestsList.map((g) => g.id)
-      ),
-      pruneDeletedRelationalRows(
-        'wedding_wishes',
-        'id',
-        wishesList.map((w) => w.id)
-      ),
-      pruneDeletedRelationalRows(
-        'wedding_budgets',
-        'id',
-        budgetsList.map((b) => b.id)
-      ),
-    ]);
-
-    // 1. Upsert into public.wedding_settings
-    const lightSettingsCopy: Record<string, unknown> = { ...s };
-    delete lightSettingsCopy.originalPhotos;
-    delete lightSettingsCopy.groomPhotoUrl;
-    delete lightSettingsCopy.bridePhotoUrl;
-    delete lightSettingsCopy.coverBgUrl;
-    delete lightSettingsCopy.heroPrewedUrl;
-    delete lightSettingsCopy.pageBgUrl;
-    delete lightSettingsCopy.galleryPhotos;
-
-    const settingsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/wedding_settings?on_conflict=id`,
-      {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify({
-          id: 'main',
-          project_id: 'main',
-          site_title: s.siteTitle,
-          groom_full_name: s.groomFullName,
-          bride_full_name: s.brideFullName,
-          wedding_datetime: s.weddingDatetime,
-          total_budget_cap: s.totalBudgetCap || 0,
-          payload: lightSettingsCopy,
-          updated_at: updatedAt,
-        }),
-      }
-    );
-
-    if (settingsRes.status === 404) {
-      multiTableAvailability = 'MISSING';
-      return;
-    }
-    if (!settingsRes.ok) return;
-    multiTableAvailability = 'AVAILABLE';
-
-    // 2. Upsert Media Slots into public.wedding_media & hard-delete removed slots
-    const mediaRows = [
-      {
-        slot_key: 'groomPhotoUrl',
-        project_id: 'main',
-        media_type: 'couple_groom',
-        title: s.groomFullName || 'Mempelai Pria',
-        category: 'Profil Mempelai',
-        caption: 'Foto Profil Mempelai Pria',
-        size_kb: 0,
-        data_url: s.groomPhotoUrl || '',
-        adjustment: s.photoAdjustments?.groomPhotoUrl || {},
-        updated_at: updatedAt,
-      },
-      {
-        slot_key: 'bridePhotoUrl',
-        project_id: 'main',
-        media_type: 'couple_bride',
-        title: s.brideFullName || 'Mempelai Wanita',
-        category: 'Profil Mempelai',
-        caption: 'Foto Profil Mempelai Wanita',
-        size_kb: 0,
-        data_url: s.bridePhotoUrl || '',
-        adjustment: s.photoAdjustments?.bridePhotoUrl || {},
-        updated_at: updatedAt,
-      },
-      {
-        slot_key: 'coverBgUrl',
-        project_id: 'main',
-        media_type: 'theme_cover',
-        title: 'Sampul Pembuka (Cover)',
-        category: 'Tema & Latar',
-        caption: 'Background Sampul Pembuka',
-        size_kb: 0,
-        data_url: s.coverBgUrl || '',
-        adjustment: s.photoAdjustments?.coverBgUrl || {},
-        updated_at: updatedAt,
-      },
-      {
-        slot_key: 'heroPrewedUrl',
-        project_id: 'main',
-        media_type: 'theme_hero',
-        title: 'Banner Utama (Hero)',
-        category: 'Tema & Latar',
-        caption: 'Banner Hero Prewedding',
-        size_kb: 0,
-        data_url: s.heroPrewedUrl || '',
-        adjustment: s.photoAdjustments?.heroPrewedUrl || {},
-        updated_at: updatedAt,
-      },
-      {
-        slot_key: 'pageBgUrl',
-        project_id: 'main',
-        media_type: 'theme_bg',
-        title: 'Wallpaper Latar Undangan',
-        category: 'Tema & Latar',
-        caption: 'Background Halaman Undangan',
-        size_kb: 0,
-        data_url: s.pageBgUrl || '',
-        adjustment: s.photoAdjustments?.pageBgUrl || {},
-        updated_at: updatedAt,
-      },
-      ...(s.qrisImageUrl
-        ? [
-            {
-              slot_key: 'qrisImageUrl',
-              project_id: 'main',
-              media_type: 'gift_qris',
-              title: 'Barcode QRIS Amplop Digital',
-              category: 'Amplop Digital',
-              caption: 'QRIS Pernikahan',
-              size_kb: 0,
-              data_url: s.qrisImageUrl,
-              adjustment: {},
-              updated_at: updatedAt,
-            },
-          ]
-        : []),
-      ...(Array.isArray(s.galleryPhotos)
-        ? s.galleryPhotos.map((gp) => ({
-            slot_key: `gallery_${gp.id}`,
-            project_id: 'main',
-            media_type: 'gallery_photo',
-            title: gp.title || 'Foto Galeri',
-            category: gp.category || 'Galeri Prewedding',
-            caption: gp.caption || '',
-            size_kb: 0,
-            data_url: gp.imageUrl || '',
-            adjustment: gp.adjustment || {},
-            updated_at: updatedAt,
-          }))
-        : []),
-    ];
-
-    await fetch(`${SUPABASE_URL}/rest/v1/wedding_media?on_conflict=slot_key`, {
-      method: 'POST',
-      headers: getSupabaseHeaders({
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      }),
-      body: JSON.stringify(mediaRows),
-    }).catch(() => {});
-    await pruneDeletedRelationalRows(
-      'wedding_media',
-      'slot_key',
-      mediaRows.map((m) => m.slot_key)
-    );
-
-    // 3. Upsert & hard-delete removed rows in Tasks, Guests, Wishes, Budgets, Users
-    if (tasksList.length > 0) {
-      const taskRows = tasksList.map((t) => ({
-        id: t.id,
-        project_id: 'main',
-        category: t.category,
-        title: t.title,
-        status: t.status,
-        done: Boolean(t.done),
-        payload: t,
-        updated_at: updatedAt,
-      }));
-      await fetch(`${SUPABASE_URL}/rest/v1/wedding_tasks?on_conflict=id`, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(taskRows),
-      }).catch(() => {});
-    }
-
-    if (guestsList.length > 0) {
-      const guestRows = guestsList.map((g) => ({
-        id: g.id,
-        project_id: 'main',
-        name: g.guestName,
-        category: g.guestType,
-        rsvp_status: g.rsvpStatus,
-        pax: g.pax || 1,
-        phone: g.phone || '',
-        payload: g,
-        updated_at: updatedAt,
-      }));
-      await fetch(`${SUPABASE_URL}/rest/v1/wedding_guests?on_conflict=id`, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(guestRows),
-      }).catch(() => {});
-    }
-
-    if (wishesList.length > 0) {
-      const wishRows = wishesList.map((w) => ({
-        id: w.id,
-        project_id: 'main',
-        name: w.guestName,
-        attendance: w.rsvpStatus,
-        message: w.message || '',
-        created_at_label: w.createdAt || '',
-        payload: w,
-        updated_at: updatedAt,
-      }));
-      await fetch(`${SUPABASE_URL}/rest/v1/wedding_wishes?on_conflict=id`, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(wishRows),
-      }).catch(() => {});
-    }
-
-    if (budgetsList.length > 0) {
-      const budgetRows = budgetsList.map((b) => ({
-        id: b.id,
-        project_id: 'main',
-        category: b.category,
-        item_name: b.itemName,
-        estimated_cost: b.estimatedCost || 0,
-        actual_cost: b.actualCost || 0,
-        payload: b,
-        updated_at: updatedAt,
-      }));
-      await fetch(`${SUPABASE_URL}/rest/v1/wedding_budgets?on_conflict=id`, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(budgetRows),
-      }).catch(() => {});
-    }
-
-    const usersList = Array.isArray(state.adminUsers) ? state.adminUsers : [];
-    if (usersList.length > 0) {
-      const userRows = usersList.map((u) => ({
-        id: u.id,
-        project_id: 'main',
-        username: u.username,
-        full_name: u.nama,
-        role: u.role,
-        committee_role: u.jabatan || '',
-        payload: u,
-        updated_at: updatedAt,
-      }));
-      await fetch(`${SUPABASE_URL}/rest/v1/wedding_users?on_conflict=id`, {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify(userRows),
-      }).catch(() => {});
-    }
-    await pruneDeletedRelationalRows(
-      'wedding_users',
-      'id',
-      usersList.map((u) => u.id)
-    );
-  } catch {
-    // Ignore optional relational table sync errors
-  }
-}
 
 // ============================================================================
 // SINGLE-FLIGHT SERIALIZED UPSERT ENGINE (NO OVERLAPPING ROW LOCKS)
@@ -3511,24 +2964,24 @@ async function performActualSupabaseUpsert(
             new Date(knownSync || 0).getTime() + 500);
 
       if (needsFullFetch) {
-        const freshRes = await fetchSupabaseWithRetry(
-          `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=data,updated_at`,
-          {
-            method: 'GET',
-            headers: getSupabaseHeaders({ Accept: 'application/json' }),
-          },
-          3500,
-          1
-        ).catch(() => null);
+        // The fresh snapshot is fetched through the server proxy — the browser
+        // has no direct read path into the database.
+        const freshRes = await fetch('/api/supabase-sync', {
+          method: 'GET',
+          cache: 'no-store',
+        }).catch(() => null);
         if (freshRes && freshRes.ok) {
-          const freshRows = (await freshRes.json().catch(() => null)) as Array<{
-            data?: Partial<WeddingDatabaseSchema>;
-            updated_at?: string;
-          }> | null;
-          if (Array.isArray(freshRows) && freshRows[0]?.data) {
+          const freshJson = (await freshRes.json().catch(() => null)) as {
+            rows?: Array<{
+              data?: Partial<WeddingDatabaseSchema>;
+              updated_at?: string;
+            }>;
+          } | null;
+          const freshRow = freshJson?.rows?.[0];
+          if (freshRow?.data) {
             lastKnownCloudState = normalizeCloudState(
-              freshRows[0].data,
-              freshRows[0].updated_at
+              freshRow.data,
+              freshRow.updated_at
             );
           }
         }
@@ -3547,23 +3000,23 @@ async function performActualSupabaseUpsert(
   const tryUpsertTable = async (
     dataToSave: WeddingDatabaseSchema
   ): Promise<Response> => {
-    const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?on_conflict=id`;
-    return fetchSupabaseWithRetry(
-      restUrl,
-      {
-        method: 'POST',
-        headers: getSupabaseHeaders({
-          Prefer: 'resolution=merge-duplicates,return=minimal',
-        }),
-        body: JSON.stringify({
-          id: SUPABASE_ROW_ID,
-          data: dataToSave,
-          updated_at: updatedAt,
-        }),
-      },
-      6500,
-      2
-    );
+    // Writes go through the server proxy. The browser must not hold a
+    // credential that can write to the database — otherwise the RLS policies
+    // would have to stay wide open.
+    const deletedSnap = getExplicitlyDeletedIdsSnapshot();
+    return fetch('/api/supabase-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: dataToSave,
+        updatedAt,
+        forceOverwrite: Boolean(options?.forceOverwrite),
+        deletedGuestIds: deletedSnap.guests,
+        deletedTaskIds: deletedSnap.tasks,
+        deletedWishIds: deletedSnap.wishes,
+        deletedBudgetIds: deletedSnap.budgets,
+      }),
+    });
   };
 
   const tryUpsertViaSameOriginProxy = async (
@@ -3762,12 +3215,11 @@ export async function upsertCommercialPaymentToSupabase(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const restUrl = `${SUPABASE_URL}/rest/v1/wedding_payments?on_conflict=idempotency_key`;
-    const res = await fetch(restUrl, {
+    // Payment rows are written through the server proxy: the browser must not
+    // hold a credential that can write to the payments table.
+    const res = await fetch(`/api/db?table=wedding_payments`, {
       method: 'POST',
-      headers: getSupabaseHeaders({
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      }),
+      headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
         id: tx.id,

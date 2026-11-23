@@ -2,6 +2,13 @@ import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 import { AdminUser } from '@/types';
 import { serverStore } from '@/lib/serverStore';
+import {
+  AUTH_SECRET,
+  SUPERADMIN_EMAILS,
+  SUPERADMIN_PASSWORD,
+  SUPERADMIN_PASSWORD_HASH,
+  SUPERADMIN_USERNAME,
+} from '@/lib/env';
 
 export const SESSION_COOKIE_NAME = 'wedding_admin_session';
 export const SESSION_TTL_SECONDS = 60 * 60 * 4; // 4 hours sliding JWT session lifetime
@@ -54,11 +61,9 @@ function getRateLimitMap(): Map<string, RateLimitEntry> {
 }
 
 function getAuthSecret(): string {
-  return (
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    'wedding-manager-hmac-secret-key-2026-prod-ready'
-  );
+  // AUTH_SECRET is validated in lib/env.ts: in production a missing or short
+  // secret throws instead of falling back to a value committed to git.
+  return AUTH_SECRET;
 }
 
 export function hashPassword(plainPassword: string): string {
@@ -102,21 +107,20 @@ export function verifyPasswordTimingSafe(
 /**
  * Verifies whether the provided confirmation identifier matches the out-of-system
  * Superadmin (App Owner) without storing the Superadmin email in plaintext.
+ *
+ * The allowlist now lives in the environment (`SUPERADMIN_EMAILS`). The
+ * previously hardcoded personal addresses are removed from source so they
+ * stop leaking through the public bundle and git history.
  */
 export function verifySuperadminIdentity(inputIdentifier: string): boolean {
   const clean = inputIdentifier.trim().toLowerCase();
   if (!clean) return false;
 
-  if (
-    clean === 'agungkrisdianto98@gmail.com' ||
-    clean === 'e98.bisnis@gmail.com' ||
-    clean === 'omeko42'
-  ) {
+  if (SUPERADMIN_EMAILS.includes(clean)) {
     return true;
   }
 
-  const envSuperadmin = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase();
-  if (envSuperadmin && verifyPasswordTimingSafe(clean, envSuperadmin)) {
+  if (SUPERADMIN_USERNAME && clean === SUPERADMIN_USERNAME) {
     return true;
   }
 
@@ -131,9 +135,12 @@ export function verifySuperadminPassword(inputPassword: string): boolean {
   const clean = inputPassword.trim();
   if (!clean) return false;
 
-  const envSuperadminPw = process.env.SUPERADMIN_PASSWORD?.trim();
-  if (envSuperadminPw && verifyPasswordTimingSafe(clean, envSuperadminPw)) {
-    return true;
+  if (SUPERADMIN_PASSWORD_HASH) {
+    return verifyPasswordTimingSafe(clean, undefined, SUPERADMIN_PASSWORD_HASH);
+  }
+
+  if (SUPERADMIN_PASSWORD) {
+    return verifyPasswordTimingSafe(clean, SUPERADMIN_PASSWORD);
   }
 
   return verifyPasswordTimingSafe(clean, undefined, SUPERADMIN_PW_HASH);
@@ -318,6 +325,16 @@ export function verifyAdminRequest(request: NextRequest): AdminUser | null {
   return null;
 }
 
+/**
+ * Demo accounts exist so a fresh checkout can be explored without setup.
+ * They carry a known password, so they are only usable when the deployment
+ * explicitly opts in (`ENABLE_DEMO_LOGIN=true`) — never in production.
+ */
+const DEMO_LOGIN_ENABLED =
+  process.env.ENABLE_DEMO_LOGIN === 'true' ||
+  (process.env.NODE_ENV !== 'production' &&
+    process.env.ENABLE_DEMO_LOGIN !== 'false');
+
 const DEMO_FALLBACK_USERS: AdminUser[] = [
   {
     id: 'adm-demo-pria',
@@ -401,22 +418,24 @@ export function authenticateAdminCredentials(
   }
 
   // 1b. Check 4 Default Demo Workspace Users (client-demo)
-  for (const demoUser of DEMO_FALLBACK_USERS) {
-    const matchId =
-      demoUser.username.toLowerCase() === cleanId ||
-      (demoUser.email && demoUser.email.toLowerCase() === cleanId);
-    if (matchId && verifyPasswordTimingSafe(cleanPw, demoUser.password)) {
-      return {
-        id: demoUser.id,
-        username: demoUser.username,
-        nama: demoUser.nama,
-        role: demoUser.role,
-        jabatan: demoUser.jabatan,
-        email: demoUser.email,
-        isDefaultUser: true,
-        clientId: 'client-demo',
-        clientName: 'Klien Demo • Rayhan & Clarissa',
-      };
+  if (DEMO_LOGIN_ENABLED) {
+    for (const demoUser of DEMO_FALLBACK_USERS) {
+      const matchId =
+        demoUser.username.toLowerCase() === cleanId ||
+        (demoUser.email && demoUser.email.toLowerCase() === cleanId);
+      if (matchId && verifyPasswordTimingSafe(cleanPw, demoUser.password)) {
+        return {
+          id: demoUser.id,
+          username: demoUser.username,
+          nama: demoUser.nama,
+          role: demoUser.role,
+          jabatan: demoUser.jabatan,
+          email: demoUser.email,
+          isDefaultUser: true,
+          clientId: 'client-demo',
+          clientName: 'Klien Demo • Rayhan & Clarissa',
+        };
+      }
     }
   }
 

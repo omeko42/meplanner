@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
     if (action === 'GOOGLE_OAUTH_LOGIN' && body.accessToken) {
       const accessToken = String(body.accessToken).trim();
       let verifiedEmail = '';
-      let verifiedName = '';
 
       try {
         const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -86,7 +85,6 @@ export async function POST(request: NextRequest) {
           const gData = await gRes.json();
           if (gData?.email && gData?.email_verified !== false) {
             verifiedEmail = String(gData.email).trim().toLowerCase();
-            verifiedName = String(gData.name || gData.given_name || verifiedEmail).trim();
           }
         }
       } catch {
@@ -107,11 +105,22 @@ export async function POST(request: NextRequest) {
           u.username.trim().toLowerCase() === verifiedEmail
       );
 
-      const isOwnerSuperadmin =
-        verifySuperadminIdentity(verifiedEmail) ||
-        verifiedEmail === 'agungkrisdianto98@gmail.com' ||
-        verifiedEmail === 'e98.bisnis@gmail.com' ||
-        verifiedEmail === 'omeko42@gmail.com';
+      const isOwnerSuperadmin = verifySuperadminIdentity(verifiedEmail);
+
+      // An unknown Google account must NOT receive a session. Previously any
+      // Google email got an automatic MEMPELAI_PRIA session with its own
+      // workspace, which was a self-service privilege escalation.
+      if (!isOwnerSuperadmin && !matchedAdmin) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Akun ini belum terdaftar. Silakan daftar terlebih dahulu atau hubungi admin.',
+            code: 'ACCOUNT_NOT_REGISTERED',
+          },
+          { status: 403 }
+        );
+      }
 
       const requestedClientId = String(body.clientId || 'client-utama').trim();
       const requestedClientName = String(
@@ -133,29 +142,18 @@ export async function POST(request: NextRequest) {
             clientId: requestedClientId,
             clientName: requestedClientName,
           }
-        : matchedAdmin
-          ? {
-              id: matchedAdmin.id,
-              username: matchedAdmin.username,
-              nama: matchedAdmin.nama,
-              role: matchedAdmin.role,
-              jabatan: matchedAdmin.jabatan,
-              email: matchedAdmin.email || verifiedEmail,
-              isDefaultUser: Boolean(matchedAdmin.isDefaultUser),
-              clientId: matchedAdmin.clientId || 'client-utama',
-              clientName: matchedAdmin.clientName || 'Klien Utama • Agung & Selo',
-            }
-          : {
-              id: `usr-gmail-${verifiedEmail.replace(/[^a-z0-9]/g, '').slice(0, 14)}`,
-              username: verifiedEmail,
-              nama: verifiedName || verifiedEmail.split('@')[0],
-              role: 'MEMPELAI_PRIA' as const,
-              jabatan: 'Owner Workspace',
-              email: verifiedEmail,
-              isDefaultUser: true,
-              clientId: `client-gmail-${verifiedEmail.replace(/[^a-z0-9]/g, '').slice(0, 14)}`,
-              clientName: `Client • ${verifiedName || verifiedEmail.split('@')[0]}`,
-            };
+        : {
+            id: matchedAdmin!.id,
+            username: matchedAdmin!.username,
+            nama: matchedAdmin!.nama,
+            role: matchedAdmin!.role,
+            jabatan: matchedAdmin!.jabatan,
+            email: matchedAdmin!.email || verifiedEmail,
+            isDefaultUser: Boolean(matchedAdmin!.isDefaultUser),
+            clientId: matchedAdmin!.clientId || 'client-utama',
+            clientName:
+              matchedAdmin!.clientName || 'Klien Utama • Agung & Selo',
+          };
 
       const token = createSessionToken(sessionUser);
       const response = NextResponse.json({
@@ -232,31 +230,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const gmailUser = {
-        id: String(u.id || `usr-gmail-${clientId.replace('client-gmail-', '')}`),
-        username: email,
-        nama: String(u.nama || email.split('@')[0]),
-        role: 'MEMPELAI_PRIA' as const,
-        jabatan: String(u.jabatan || 'Owner Workspace'),
-        email,
-        isDefaultUser: true,
-        clientId,
-        clientName: String(u.clientName || clientId),
-      };
-
-      const token = createSessionToken(gmailUser);
-      const response = NextResponse.json({
-        success: true,
-        user: gmailUser,
-      });
-      response.cookies.set(SESSION_COOKIE_NAME, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: SESSION_TTL_SECONDS,
-      });
-      return response;
+      // This action used to mint a session straight from an unverified
+      // request body: any caller could POST {email, clientId} and receive a
+      // valid cookie, without proving they own the mailbox.
+      //
+      // A session is now only issued after the emailed verification link is
+      // opened (see /api/auth/verify). Reaching this branch means the caller
+      // is trying to use the old bypass.
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Pendaftaran langsung tidak lagi diizinkan. Gunakan alur verifikasi email.',
+          code: 'LEGACY_REGISTER_DISABLED',
+        },
+        { status: 403 }
+      );
     }
 
     const identifier = String(body.identifier || '').trim();

@@ -3286,6 +3286,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             category: selectedChannel.category,
             network: selectedChannel.networkOrBranch,
             txHashOrRef: trimmedRef,
+            // The server resolves the real price from its own catalogue;
+            // these fields are only a consistency signal.
+            packageId: activeSelectedPackage.id,
             expectedWalletAddress: selectedChannel.accountOrWalletAddress,
             expectedAmount: activeSelectedPackage.amountNumeric,
             currency,

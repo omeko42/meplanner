@@ -41,6 +41,23 @@ export const MEPLANNER_BRAND_NAME = 'MEPlanner';
 export const MEPLANNER_BRAND_TITLE = 'MEPlanner — My Event Planner';
 export const MEPLANNER_DEFAULT_SITE_URL = 'https://meplanner.vercel.app';
 
+/**
+ * Removes password material from an admin user before it is written to the
+ * browser or persisted in localStorage / IndexedDB.
+ *
+ * Credential hashes are only ever valid on the server, inside the
+ * credential vault. Anything that reaches the client must be stripped.
+ */
+function stripAdminCredentials(user: AdminUser): AdminUser {
+  const clean = { ...user } as AdminUser & {
+    password?: string;
+    passwordHash?: string;
+  };
+  delete clean.password;
+  delete clean.passwordHash;
+  return clean;
+}
+
 function normalizeParsedState(
   parsed: Partial<WeddingDatabaseSchema>
 ): WeddingDatabaseSchema {
@@ -366,7 +383,13 @@ function normalizeParsedState(
     budgetItems: Array.isArray(parsed.budgetItems)
       ? parsed.budgetItems
       : INITIAL_BUDGET_ITEMS,
-    adminUsers: rawAdminUsers.length > 0 ? rawAdminUsers : INITIAL_ADMIN_USERS,
+    // Credential material must never survive a round-trip through
+    // localStorage / IndexedDB. A hash that reaches this point would stay in
+    // the browser indefinitely, readable by any script on the origin.
+    adminUsers:
+      rawAdminUsers.length > 0
+        ? rawAdminUsers.map(stripAdminCredentials)
+        : INITIAL_ADMIN_USERS.map(stripAdminCredentials),
     lastSyncedAt: parsed.lastSyncedAt || '2026-01-01T00:00:00.000Z',
   };
 }
@@ -464,13 +487,26 @@ export async function saveClientStateToIndexedDB(
     try {
       const tx = db.transaction(IDB_STORE, 'readwrite');
       const store = tx.objectStore(IDB_STORE);
-      store.put(state, IDB_KEY);
+      // Strip credentials: IndexedDB persists for a long time and is
+      // readable by any script running on this origin.
+      store.put(stripStateCredentials(state), IDB_KEY);
       tx.oncomplete = () => resolve();
       tx.onerror = () => resolve();
     } catch {
       resolve();
     }
   });
+}
+
+/**
+ * Removes credential material from an entire state object.
+ */
+function stripStateCredentials(state: WeddingDatabaseSchema): WeddingDatabaseSchema {
+  if (!Array.isArray(state.adminUsers)) return state;
+  return {
+    ...state,
+    adminUsers: state.adminUsers.map(stripAdminCredentials),
+  };
 }
 
 export function saveClientState(
@@ -501,7 +537,10 @@ export function saveClientState(
     };
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ ...syncedState, settings: lsSettings })
+      JSON.stringify({
+        ...stripStateCredentials(syncedState),
+        settings: lsSettings,
+      })
     );
   } catch {
     // If localStorage hits 5MB limit due to large base64 audio/images, save a compact copy to localStorage
@@ -568,7 +607,15 @@ export function getStoredAdminUser(): AdminUser | null {
       localStorage.removeItem(ADMIN_AUTH_KEY);
       return null;
     }
-    return parsed;
+    // Purge any credential left behind by an older build.
+    const clean = stripAdminCredentials(parsed);
+    if (
+      (parsed as AdminUser & { passwordHash?: string }).passwordHash ||
+      (parsed as AdminUser & { password?: string }).password
+    ) {
+      localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(clean));
+    }
+    return clean;
   } catch {
     return null;
   }
@@ -578,7 +625,12 @@ export function saveStoredAdminUser(user: AdminUser | null): void {
   if (typeof window === 'undefined') return;
   try {
     if (user) {
-      localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(user));
+      // Never persist credentials in the browser: a hash left in
+      // localStorage is readable by every script on the origin.
+      localStorage.setItem(
+        ADMIN_AUTH_KEY,
+        JSON.stringify(stripAdminCredentials(user))
+      );
       const cleanEmail = (user.email || '').trim().toLowerCase();
       if (cleanEmail && cleanEmail.includes('@') && !cleanEmail.endsWith('.local')) {
         const cleanDisplayName = (user.nama || cleanEmail)

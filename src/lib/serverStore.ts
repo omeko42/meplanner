@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import {
   WeddingDatabaseSchema,
   WeddingSettings,
@@ -148,6 +149,14 @@ function getStore(): WeddingDatabaseSchema {
   return globalThis.__weddingGlobalStore;
 }
 
+/**
+ * Strips every credential material before a state object leaves the server.
+ *
+ * `password` (plaintext) and `passwordHash` must never be serialised into an
+ * HTTP response, a browser cache, or the client-side localStorage snapshot.
+ * They stay server-side only; the client identifies accounts by id/username/
+ * email/role and authenticates through the session cookie.
+ */
 function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSchema {
   return {
     ...store,
@@ -161,9 +170,64 @@ function sanitizeStoreForClient(store: WeddingDatabaseSchema): WeddingDatabaseSc
       isDefaultUser: u.isDefaultUser,
       clientId: u.clientId || 'client-utama',
       clientName: u.clientName || 'Client Utama • Eko & Selo',
-      passwordHash: u.passwordHash,
     })),
   };
+}
+
+/**
+ * Removes credential material from a state object before it is written to the
+ * cloud. The password hashes live in the server-side credential vault only.
+ */
+export function stripCredentialFields(
+  store: WeddingDatabaseSchema
+): WeddingDatabaseSchema {
+  return {
+    ...store,
+    adminUsers: store.adminUsers.map((u) => ({
+      id: u.id,
+      username: u.username,
+      nama: u.nama,
+      role: u.role,
+      jabatan: u.jabatan,
+      email: u.email,
+      isDefaultUser: u.isDefaultUser,
+      clientId: u.clientId || 'client-utama',
+      clientName: u.clientName || 'Client Utama • Eko & Selo',
+    })),
+  };
+}
+
+/**
+ * Re-attaches server-held password hashes to an incoming user list.
+ *
+ * The browser never receives password hashes (see `sanitizeStoreForClient`),
+ * so a full-state write coming back from a client has users without hashes.
+ * Without this, a routine sync would erase every stored credential and lock
+ * all accounts out. Only a server-side write may change a hash.
+ */
+export function preserveCredentials(
+  existing: AdminUser[],
+  incoming: AdminUser[]
+): AdminUser[] {
+  const byId = new Map<string, AdminUser>();
+  const byUsername = new Map<string, AdminUser>();
+
+  for (const user of existing) {
+    if (user?.id) byId.set(user.id, user);
+    const uname = (user?.username || '').trim().toLowerCase();
+    if (uname) byUsername.set(uname, user);
+  }
+
+  return incoming.map((user) => {
+    const prior =
+      byId.get(user.id) ||
+      byUsername.get((user.username || '').trim().toLowerCase());
+    if (!prior) return user;
+    if (prior.passwordHash && !user.passwordHash) {
+      return { ...user, passwordHash: prior.passwordHash };
+    }
+    return user;
+  });
 }
 
 function formatDateSlash(date: Date = new Date()): string {
@@ -171,6 +235,146 @@ function formatDateSlash(date: Date = new Date()): string {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const y = date.getFullYear();
   return `${d}/${m}/${y}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pending registrations (email verification)                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface PendingRegistration {
+  userId: string;
+  username: string;
+  email: string;
+  nama: string;
+  role: AdminUser['role'];
+  jabatan: string;
+  clientId: string;
+  clientName: string;
+  packageId: string;
+  eventType: string;
+  catalogThemeId: string;
+  /** SHA-256 of the emailed token. The raw token is never stored. */
+  tokenHash: string;
+  expiresAt: number;
+}
+
+const PENDING_REGISTRATIONS_PATH = path.join(
+  process.cwd(),
+  '.data',
+  'pending_registrations.json'
+);
+
+let pendingRegistrations: Map<string, PendingRegistration> | null = null;
+
+function loadPendingRegistrations(): Map<string, PendingRegistration> {
+  if (pendingRegistrations) return pendingRegistrations;
+  const map = new Map<string, PendingRegistration>();
+  try {
+    if (fs.existsSync(PENDING_REGISTRATIONS_PATH)) {
+      const parsed = JSON.parse(
+        fs.readFileSync(PENDING_REGISTRATIONS_PATH, 'utf-8')
+      ) as PendingRegistration[];
+      if (Array.isArray(parsed)) {
+        const now = Date.now();
+        for (const entry of parsed) {
+          if (entry?.email && entry.expiresAt > now) {
+            map.set(entry.email.toLowerCase(), entry);
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore unreadable cache — the user can simply register again.
+  }
+  pendingRegistrations = map;
+  return map;
+}
+
+function persistPendingRegistrations(): void {
+  try {
+    const map = loadPendingRegistrations();
+    const dir = path.dirname(PENDING_REGISTRATIONS_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      PENDING_REGISTRATIONS_PATH,
+      JSON.stringify(Array.from(map.values()), null, 2),
+      'utf-8'
+    );
+  } catch {
+    // Ignore write errors in restricted serverless environments.
+  }
+}
+
+/**
+ * Stores a registration that is waiting for email verification.
+ *
+ * Only the hash of the verification token is kept, so a leaked file cannot be
+ * used to activate an account.
+ */
+export function setPendingRegistration(
+  email: string,
+  data: {
+    id: string;
+    username: string;
+    nama: string;
+    role: AdminUser['role'];
+    jabatan: string;
+    clientId: string;
+    clientName: string;
+    packageId: string;
+    eventType: string;
+    catalogThemeId: string;
+    verifyToken: string;
+  }
+): PendingRegistration {
+  const map = loadPendingRegistrations();
+  const entry: PendingRegistration = {
+    userId: data.id,
+    username: data.username,
+    email: email.toLowerCase(),
+    nama: data.nama,
+    role: data.role,
+    jabatan: data.jabatan,
+    clientId: data.clientId,
+    clientName: data.clientName,
+    packageId: data.packageId,
+    eventType: data.eventType,
+    catalogThemeId: data.catalogThemeId,
+    tokenHash: hashVerificationToken(data.verifyToken),
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+  };
+  map.set(entry.email, entry);
+  persistPendingRegistrations();
+  return entry;
+}
+
+/**
+ * Consumes a pending registration when a valid verification token is
+ * presented. Returns null when the token is unknown, expired or already used.
+ */
+export function consumePendingRegistration(
+  email: string,
+  rawToken: string
+): PendingRegistration | null {
+  const map = loadPendingRegistrations();
+  const key = email.trim().toLowerCase();
+  const entry = map.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    map.delete(key);
+    persistPendingRegistrations();
+    return null;
+  }
+  if (entry.tokenHash !== hashVerificationToken(rawToken)) {
+    return null;
+  }
+  map.delete(key);
+  persistPendingRegistrations();
+  return entry;
+}
+
+export function hashVerificationToken(rawToken: string): string {
+  return crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
 }
 
 export const serverStore = {

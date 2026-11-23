@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
 import { isPrivilegedDefaultOrSuperUser, verifyAdminRequest } from '@/lib/auth';
+import { apiError, rateLimitByIp, rejectDisallowedOrigin } from '@/lib/apiGuard';
+import { verifyTurnstileToken } from '@/lib/turnstile';
+import { resolveClientIp } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    await serverStore.reconcileWithSupabase();
+    // The full database (guest PII, wishes, settings) must never be readable
+    // without a verified session.
     const sessionUser = verifyAdminRequest(req);
+    if (!sessionUser) {
+      return apiError(
+        'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
+        401,
+        { code: 'UNAUTHENTICATED' }
+      );
+    }
+
+    await serverStore.reconcileWithSupabase();
     const hideBudget = !isPrivilegedDefaultOrSuperUser(sessionUser);
     const state = serverStore.getFullState(hideBudget);
     return NextResponse.json({
@@ -27,6 +40,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const originGuard = rejectDisallowedOrigin(req);
+    if (originGuard) return originGuard;
+
     const body = await req.json();
     const { action, payload } = body;
 
@@ -39,12 +55,46 @@ export async function POST(req: NextRequest) {
     // SUBMIT_RSVP and PUBLIC_CHECKIN_QR are public; all other actions require a verified Admin Session
     if (action !== 'SUBMIT_RSVP' && action !== 'PUBLIC_CHECKIN_QR') {
       if (!adminSession) {
-        return NextResponse.json(
+        return apiError(
+          'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
+          401,
+          { code: 'UNAUTHENTICATED' }
+        );
+      }
+    }
+
+    // Public write endpoints are abuse-prone: gate them with Turnstile and a
+    // per-IP rate limit. Without a captcha a bot can fill the guest book.
+    if (action === 'SUBMIT_RSVP' || action === 'PUBLIC_CHECKIN_QR') {
+      const ip = resolveClientIp(req.headers);
+      const limit = rateLimitByIp(req, `wedding:${action}`, {
+        limit: 20,
+        windowMs: 10 * 60 * 1000,
+      });
+      if (!limit.allowed) {
+        return apiError(
+          `Terlalu banyak permintaan. Silakan coba lagi dalam ${limit.retryAfterSeconds} detik.`,
+          429,
           {
-            success: false,
-            error: 'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
-          },
-          { status: 401 }
+            code: 'RATE_LIMITED',
+            headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+          }
+        );
+      }
+
+      const captcha = await verifyTurnstileToken(
+        (payload as Record<string, unknown> | undefined)?.turnstileToken as
+          | string
+          | undefined,
+        { expectedAction: 'public_form', remoteIp: ip }
+      );
+      if (!captcha.success) {
+        return apiError(
+          captcha.skipped
+            ? 'Verifikasi keamanan tidak tersedia.'
+            : 'Verifikasi keamanan gagal. Silakan coba lagi.',
+          403,
+          { code: 'CAPTCHA_FAILED' }
         );
       }
     }
@@ -88,22 +138,28 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      case 'UPSERT_GUEST':
-      case 'PUBLIC_CHECKIN_QR': {
-        const guest = serverStore.upsertGuest(
-          action === 'PUBLIC_CHECKIN_QR'
-            ? {
-                ...payload,
-                rsvpStatus: 'Hadir',
-                attendanceStatus: 'Hadir di Lokasi',
-                updatedBy: 'QR Scan Check-In',
-              }
-            : payload
-        );
+      case 'UPSERT_GUEST': {
+        const guest = serverStore.upsertGuest(payload);
         return NextResponse.json({
           success: true,
           guest,
           data: serverStore.getFullState(hideBudget),
+        });
+      }
+
+      case 'PUBLIC_CHECKIN_QR': {
+        const guest = serverStore.upsertGuest({
+          ...payload,
+          rsvpStatus: 'Hadir',
+          attendanceStatus: 'Hadir di Lokasi',
+          updatedBy: 'QR Scan Check-In',
+        });
+        // Public endpoint: return only the affected record. Returning the whole
+        // database would expose every guest (name, phone, address) and the
+        // admin account list to an unauthenticated caller.
+        return NextResponse.json({
+          success: true,
+          guest,
         });
       }
 
@@ -116,12 +172,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'SUBMIT_RSVP': {
-        const forwardedFor = req.headers.get('x-forwarded-for');
-        const realIp = req.headers.get('x-real-ip');
-        const ipAddress =
-          (forwardedFor ? forwardedFor.split(',')[0].trim() : realIp) ||
-          payload?.ipAddress ||
-          'Client Direct';
+        const ipAddress = resolveClientIp(req.headers);
         const userAgent =
           req.headers.get('user-agent') || payload?.userAgent || '';
         const result = serverStore.submitPublicRsvp({
@@ -129,11 +180,12 @@ export async function POST(req: NextRequest) {
           ipAddress,
           userAgent,
         });
+        // Public endpoint: minimal response only. The caller already updates
+        // its local state; echoing the full database leaks PII and account data.
         return NextResponse.json({
           success: true,
           guest: result.guest,
           wish: result.wish,
-          data: serverStore.getFullState(hideBudget),
         });
       }
 

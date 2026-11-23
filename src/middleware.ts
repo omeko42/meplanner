@@ -7,6 +7,46 @@ import {
 const LINK_PREVIEW_BOT_REGEX =
   /whatsapp|facebookexternalhit|facebot|telegrambot|twitterbot|discordbot|linkedinbot|slackbot|skypeuripreview|line-poker|linespider|\bline\/|viber|kakaotalk|pinterest|iframely|embedly|opengraph|metainspector|vkshare|snapchat|redditbot|applebot|quora link preview/i;
 
+/**
+ * Baseline security headers applied to every response.
+ *
+ * The CSP is deliberately permissive about inline styles and images because
+ * the invitation pages render user-supplied content (photos, SVG overlays,
+ * inline CSS variables). Script-src stays strict: no inline script and no
+ * third-party script origin, which is what actually matters for XSS.
+ */
+const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-DNS-Prefetch-Control': 'off',
+  'X-Permitted-Cross-Domain-Policies': 'none',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "media-src 'self' blob: https:",
+    "connect-src 'self' https://*.supabase.co https://challenges.cloudflare.com https://api.resend.com",
+    "frame-src 'self' https://challenges.cloudflare.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    "upgrade-insecure-requests",
+  ].join('; '),
+};
+
+function withSecurityHeaders(response: NextResponse): NextResponse {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
+
 function escapeHtmlAttr(value: string): string {
   return (value || '')
     .replace(/&/g, '&amp;')
@@ -50,7 +90,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (!forceOgPreview && !isBot) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   const pathSegment =
@@ -115,15 +155,17 @@ export async function middleware(req: NextRequest) {
 </body>
 </html>`;
 
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control':
-        'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
-      'X-Robots-Tag': 'all',
-    },
-  });
+  return withSecurityHeaders(
+    new NextResponse(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control':
+          'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+        'X-Robots-Tag': 'all',
+      },
+    })
+  );
 }
 
 export const config = {

@@ -8,20 +8,45 @@ import {
 } from '@/lib/supabaseCloud';
 import { verifyAdminRequest } from '@/lib/auth';
 import { WeddingDatabaseSchema } from '@/types';
+import { apiError } from '@/lib/apiGuard';
+import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env';
+import { stripCredentialFields } from '@/lib/serverStore';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Server-side Supabase credentials.
+ *
+ * The browser only ever holds the publishable anon key, and RLS is locked
+ * down so that key cannot read or write anything on its own. This proxy is
+ * the single place that touches the database, and it authenticates the caller
+ * first. When a service_role key is configured it is used here so the server
+ * bypasses RLS deliberately; otherwise the anon key is used, which only
+ * works while the legacy open policies are still in place.
+ */
 function getSupabaseHeaders(extra?: Record<string, string>): Record<string, string> {
+  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
   return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    apikey: key,
+    Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
     ...(extra || {}),
   };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    // The database holds guest PII and account data — never serve it without
+    // a verified session.
+    const adminSession = verifyAdminRequest(req);
+    if (!adminSession) {
+      return apiError(
+        'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
+        401,
+        { code: 'UNAUTHENTICATED' }
+      );
+    }
+
     const restUrl = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`;
     const res = await fetch(restUrl, {
       method: 'GET',
@@ -92,6 +117,18 @@ export async function POST(req: NextRequest) {
 
     const adminSession = verifyAdminRequest(req);
     const isAuthenticatedAdmin = Boolean(adminSession);
+
+    // Writing to the shared database requires a verified session. Previously
+    // an anonymous POST could rewrite the row, which allowed anyone to
+    // overwrite adminUsers and erase the workspace.
+    if (!isAuthenticatedAdmin) {
+      return apiError(
+        'Akses ditolak (401 Unauthorized). Silakan login terlebih dahulu.',
+        401,
+        { code: 'UNAUTHENTICATED' }
+      );
+    }
+
     const allowForceOverwrite = Boolean(body.forceOverwrite && isAuthenticatedAdmin);
 
     const syncTime = body.updatedAt || new Date().toISOString();
@@ -176,7 +213,10 @@ export async function POST(req: NextRequest) {
         }),
         body: JSON.stringify({
           id: SUPABASE_ROW_ID,
-          data: mergedData,
+          // The browser never receives password hashes, and a hash that
+          // arrives here would be a client-supplied value we must not trust.
+          // Strip them before the state reaches the database.
+          data: stripCredentialFields(mergedData),
           updated_at: syncTime,
         }),
       }
