@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
   SUPABASE_TABLE_NAME,
   SUPABASE_ROW_ID,
   mergeFullDatabaseMultiDevice,
@@ -9,7 +7,7 @@ import {
 import { verifyAdminRequest } from '@/lib/auth';
 import { WeddingDatabaseSchema } from '@/types';
 import { apiError } from '@/lib/apiGuard';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env';
+import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from '@/lib/env';
 import { stripCredentialFields } from '@/lib/serverStore';
 
 export const dynamic = 'force-dynamic';
@@ -25,7 +23,10 @@ export const dynamic = 'force-dynamic';
  * works while the legacy open policies are still in place.
  */
 function getSupabaseHeaders(extra?: Record<string, string>): Record<string, string> {
-  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  const key = SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi.');
+  }
   return {
     apikey: key,
     Authorization: `Bearer ${key}`,

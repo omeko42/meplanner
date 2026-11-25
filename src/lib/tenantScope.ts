@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from '@/lib/env';
-import { SUPABASE_ANON_KEY } from '@/lib/supabaseCloud';
 
 /**
  * Tenant resolution for the server-side data proxy.
@@ -58,7 +57,12 @@ export const LEGACY_SINGLETON_TABLES = new Set([
 ]);
 
 export function dbKey(): string {
-  return SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  // This proxy is used for private database access. Falling back to the anon
+  // key would make production depend on public RLS policies, so fail closed.
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi.');
+  }
+  return SUPABASE_SERVICE_ROLE_KEY;
 }
 
 export function dbHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -121,20 +125,25 @@ export function withTenantFilter(
   table: string,
   tenantId: string | undefined
 ): string {
+  // Remove every client-supplied tenant filter first. The browser must never
+  // be able to select its own tenant, even if it sends tenant_id=eq.other.
   const parts = filters
     .split('&')
     .map((p) => p.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((p) => {
+      try {
+        return !/^tenant_id(?:=|\.)/i.test(decodeURIComponent(p));
+      } catch {
+        return !/^tenant_id(?:=|\.)/i.test(p);
+      }
+    });
 
-  if (tenantId && TENANT_SCOPED_TABLES.has(table)) {
-    // Reject a browser-supplied tenant filter outright — it would be an
-    // attempt to read another tenant's rows.
-    const hasTenantFilter = parts.some((p) =>
-      p.startsWith('tenant_id=') || p.startsWith('tenant_id.eq.')
-    );
-    if (!hasTenantFilter) {
-      parts.push(`tenant_id=eq.${tenantId}`);
+  if (TENANT_SCOPED_TABLES.has(table)) {
+    if (!tenantId) {
+      throw new Error('Tenant session required for tenant-scoped data.');
     }
+    parts.push(`tenant_id=eq.${encodeURIComponent(tenantId)}`);
   }
 
   return parts.join('&');

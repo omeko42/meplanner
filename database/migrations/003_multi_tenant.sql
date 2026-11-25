@@ -243,7 +243,23 @@ begin
   end loop;
 end $$;
 
--- Budget: Panther Committee (Panitia) tidak boleh menghapus/menulis budget.
+-- Budget: Panitia (non-admin) tidak boleh membaca, menulis, mengubah, atau menghapus budget.
+drop policy if exists "tenant_budget_items_tenant_read" on public.tenant_budget_items;
+create policy "tenant_budget_items_tenant_read" on public.tenant_budget_items
+  for select to authenticated
+  using (public.is_tenant_admin(tenant_id));
+
+drop policy if exists "tenant_budget_items_tenant_write" on public.tenant_budget_items;
+create policy "tenant_budget_items_tenant_write" on public.tenant_budget_items
+  for insert to authenticated
+  with check (public.is_tenant_admin(tenant_id));
+
+drop policy if exists "tenant_budget_items_tenant_update" on public.tenant_budget_items;
+create policy "tenant_budget_items_tenant_update" on public.tenant_budget_items
+  for update to authenticated
+  using (public.is_tenant_admin(tenant_id))
+  with check (public.is_tenant_admin(tenant_id));
+
 drop policy if exists "tenant_budget_items_tenant_delete" on public.tenant_budget_items;
 create policy "tenant_budget_items_tenant_delete" on public.tenant_budget_items
   for delete to authenticated
@@ -278,11 +294,16 @@ grant all on public.audit_logs to service_role;
 grant select on public.audit_logs to authenticated;
 
 -- -----------------------------------------------------------------------------
--- 6. SNAPSHOT LAMA: JADI READ-ONLY
+-- 6. SNAPSHOT LAMA: JADI READ-ONLY (jika tabel ada)
 --    Data lama masih dipakai selama masa transisi backfill.
 -- -----------------------------------------------------------------------------
-revoke all on public.wedding_state from anon, authenticated;
-grant all on public.wedding_state to service_role;
+do $$
+begin
+  if to_regclass('public.wedding_state') is not null then
+    revoke all on public.wedding_state from anon, authenticated;
+    grant all on public.wedding_state to service_role;
+  end if;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- 7. VERIFIKASI

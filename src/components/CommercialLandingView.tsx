@@ -8642,6 +8642,19 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   ? 'Platform Undangan Digital & Manajemen Acara Terpadu'
                   : 'Unified Digital Invitation & Event Management Platform'}
               </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-1.5 text-[11px] font-semibold text-stone-500">
+                <a href="/privacy" className="hover:text-[#8B6914] hover:underline">
+                  {lang === 'ID' ? 'Kebijakan Privasi' : 'Privacy Policy'}
+                </a>
+                <span>&bull;</span>
+                <a href="/terms" className="hover:text-[#8B6914] hover:underline">
+                  {lang === 'ID' ? 'Syarat & Ketentuan' : 'Terms of Service'}
+                </a>
+                <span>&bull;</span>
+                <a href="/login" className="hover:text-[#8B6914] hover:underline">
+                  {lang === 'ID' ? 'Portal Login' : 'Login Portal'}
+                </a>
+              </div>
             </div>
           </div>
 

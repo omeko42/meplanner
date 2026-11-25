@@ -96,11 +96,12 @@ export async function GET(req: NextRequest) {
       adminSession.tenantId
     );
 
-    const parts = [`table=${encodeURIComponent(table)}`];
+    const parts = [] as string[];
     if (select) parts.push(`select=${encodeURIComponent(select)}`);
     if (scopedFilters) parts.push(scopedFilters);
 
-    const res = await dbFetch(parts.join('&'), {
+    const query = parts.length > 0 ? `?${parts.join('&')}` : '';
+    const res = await dbFetch(`${table}${query}`, {
       method: 'GET',
       headers: dbHeaders({ Accept: 'application/json' }),
     });

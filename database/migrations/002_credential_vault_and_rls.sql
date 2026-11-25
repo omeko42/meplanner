@@ -105,6 +105,10 @@ begin
     'wedding_payments'
   ]
   loop
+    if to_regclass(format('public.%I', t)) is null then
+      continue;
+    end if;
+
     execute format('alter table public.%I enable row level security', t);
 
     -- Buang seluruh policy lama yang menyalakan akses publik.

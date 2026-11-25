@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAllowedOrigin } from '@/lib/env';
 import {
   resolveInvitationOgPayload,
   resolveWhatsAppRedirectUrlByHash,
@@ -8,12 +9,8 @@ const LINK_PREVIEW_BOT_REGEX =
   /whatsapp|facebookexternalhit|facebot|telegrambot|twitterbot|discordbot|linkedinbot|slackbot|skypeuripreview|line-poker|linespider|\bline\/|viber|kakaotalk|pinterest|iframely|embedly|opengraph|metainspector|vkshare|snapchat|redditbot|applebot|quora link preview/i;
 
 /**
- * Baseline security headers applied to every response.
- *
- * The CSP is deliberately permissive about inline styles and images because
- * the invitation pages render user-supplied content (photos, SVG overlays,
- * inline CSS variables). Script-src stays strict: no inline script and no
- * third-party script origin, which is what actually matters for XSS.
+ * Baseline security headers applied to page responses. API responses receive
+ * the same headers from next.config.mjs.
  */
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
@@ -26,7 +23,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Content-Security-Policy': [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https:",
     "media-src 'self' blob: https:",
@@ -39,6 +36,19 @@ const SECURITY_HEADERS: Record<string, string> = {
     "upgrade-insecure-requests",
   ].join('; '),
 };
+
+const RESERVED_APP_ROUTES = new Set([
+  'login',
+  'reset-password',
+  'privacy',
+  'terms',
+  'admin',
+  'auth',
+  'google-oauth-popup',
+  'manifest.webmanifest',
+]);
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 function withSecurityHeaders(response: NextResponse): NextResponse {
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
@@ -58,6 +68,22 @@ function escapeHtmlAttr(value: string): string {
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
+  // Reject cross-origin state-changing API requests. API routes still perform
+  // their own session and role checks; this is a CSRF defense-in-depth layer.
+  if (pathname.startsWith('/api') && MUTATING_METHODS.has(req.method)) {
+    const origin = req.headers.get('origin');
+    if (origin && !isAllowedOrigin(origin)) {
+      return withSecurityHeaders(
+        NextResponse.json(
+          { success: false, error: 'Origin tidak diizinkan.', code: 'BAD_ORIGIN' },
+          { status: 403 }
+        )
+      );
+    }
+  }
+
+  // API routes and static/media assets are handled by their own route logic.
+  // Security headers for all API responses are set in next.config.mjs.
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -72,6 +98,9 @@ export async function middleware(req: NextRequest) {
   const forceOgPreview = searchParams.get('og_preview') === '1';
 
   const segments = pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  if (segments[0] && RESERVED_APP_ROUTES.has(segments[0].toLowerCase())) {
+    return withSecurityHeaders(NextResponse.next());
+  }
   const isShortWaRoute =
     (segments[0]?.toLowerCase() === 'wa' && Boolean(segments[1])) ||
     searchParams.get('wa') === '1';
@@ -85,7 +114,7 @@ export async function middleware(req: NextRequest) {
   if (isShortWaRoute && !isBot && !forceOgPreview && waHashSegment) {
     const waRedirectUrl = await resolveWhatsAppRedirectUrlByHash(waHashSegment);
     if (waRedirectUrl) {
-      return NextResponse.redirect(waRedirectUrl, 302);
+      return withSecurityHeaders(NextResponse.redirect(waRedirectUrl, 302));
     }
   }
 
@@ -169,5 +198,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/((?!api|_next/static|_next/image|media|favicon.ico|.*\\..*).*)'],
+  matcher: ['/', '/((?!api|_next/static|_next/image|media|favicon.ico|.*\\..*).*)', '/api/:path*'],
 };

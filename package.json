@@ -8,13 +8,19 @@
     "start": "next start",
     "lint": "next lint",
     "lint:security": "next lint --file src/app/api --file src/lib/apiGuard.ts --file src/lib/auth.ts --file src/lib/authSession.ts --file src/lib/email.ts --file src/lib/env.ts --file src/lib/packageCatalog.ts --file src/lib/serverStore.ts --file src/lib/turnstile.ts --file src/middleware.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "hash-password": "node scripts/hash-password.mjs"
   },
   "dependencies": {
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "lucide-react": "^1.57.0",
     "next": "14.2.35",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "recharts": "^3.11.1",
+    "sonner": "^2.0.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20",
