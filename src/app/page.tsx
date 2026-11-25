@@ -731,6 +731,36 @@ function WeddingAppContent() {
     }
   }, [viewMode, publicSelectedClientId]);
 
+  // Keep browser favicon synced with custom brandLogoUrl (or crisp MEPlanner app icon)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const customLogo = (state.settings.brandLogoUrl || '').trim();
+    const targetHref = customLogo || '/icon-192x192.png';
+    const links = document.querySelectorAll<HTMLLinkElement>(
+      "link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"
+    );
+    if (links.length === 0) {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = targetHref;
+      document.head.appendChild(link);
+      return;
+    }
+    links.forEach((link) => {
+      if (customLogo) {
+        link.href = customLogo;
+        link.removeAttribute('type');
+      } else if (link.rel === 'apple-touch-icon') {
+        link.href = '/icon-192x192.png';
+        link.type = 'image/png';
+      } else if (link.getAttribute('type') === 'image/svg+xml') {
+        link.href = '/icon.svg';
+      } else {
+        link.href = '/favicon.ico';
+      }
+    });
+  }, [state.settings.brandLogoUrl]);
+
   // Verify server-side HttpOnly JWT Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
   useEffect(() => {
     let isMounted = true;
